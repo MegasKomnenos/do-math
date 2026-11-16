@@ -1,0 +1,20 @@
+1 MATCH
+2 MATCH
+3 MATCH
+4 MATCH
+5 MATCH
+6 MATCH
+7 MATCH
+8 MATCH
+9 MATCH
+10 MATCH
+[True, True, True, True, True, True, True, True]
+True
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체20_N1_recur.py", line 28, in <module>
+    s=sum(math.exp(-(r+1))*(r+1)**(r-1)/math.factorial(r) for r in range(0,200)); print('borel sum',s)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체20_N1_recur.py", line 28, in <genexpr>
+    s=sum(math.exp(-(r+1))*(r+1)**(r-1)/math.factorial(r) for r in range(0,200)); print('borel sum',s)
+          ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+OverflowError: int too large to convert to float

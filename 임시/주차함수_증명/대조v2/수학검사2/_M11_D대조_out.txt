@@ -1,0 +1,154 @@
+부록 D 항목 수: 42  표 행 수: 42
+표에 없는 D 항목: []
+D에 없는 표 행: []
+순서 일치: False
+  D: M-natural-integrals  표: fiber-enumeration
+  D: four-families  표: fiber-nonunimodal-bound
+  D: fiber-enumeration  표: zeta-constants
+  D: fiber-nonunimodal-bound  표: logconcavity-failure-n80
+  D: zeta-constants  표: cumulative-logconcavity
+  D: logconcavity-failure-n80  표: central-gap-integer
+  D: cumulative-logconcavity  표: central-gap-rational-audit
+  D: central-gap-integer  표: crossing-small-n
+  D: central-gap-rational-audit  표: QL-small-n
+  D: crossing-small-n  표: exact-n20000
+  D: QL-small-n  표: c50
+  D: exact-n20000  표: newton-m170
+  D: c50  표: tail-T1-partAB
+  D: newton-m170  표: bernstein-signs
+  D: tail-T1-partAB  표: band-A-certification
+  D: bernstein-signs  표: critical-window-rig
+  D: band-A-certification  표: window-mass-constant
+  D: critical-window-rig  표: band-check
+  D: window-mass-constant  표: theorem-U-constant
+  D: band-check  표: theorem-D-base
+  D: theorem-U-constant  표: prop-W-thirteen
+  D: theorem-D-base  표: tilt-sum-small-k
+  D: prop-W-thirteen  표: column-certification-k500
+  D: tilt-sum-small-k  표: seed-certificates-k120
+  D: column-certification-k500  표: self-consistent-constants
+  D: seed-certificates-k120  표: xcert-partAB
+  D: self-consistent-constants  표: polar-blocks-488
+  D: xcert-partAB  표: band102-integer
+  D: polar-blocks-488  표: moment-certification
+  D: band102-integer  표: column-certificates-841-2000
+  D: moment-certification  표: Q-fin-1130
+  D: column-certificates-841-2000  표: window-mass-env
+  D: Q-fin-1130  표: bprime-boxes
+  D: window-mass-env  표: band-boxes
+  D: bprime-boxes  표: stored-table-check
+  D: band-boxes  표: m1-column-reading
+  D: stored-table-check  표: H-star-plus-interval
+  D: m1-column-reading  표: AR-integrals
+  D: H-star-plus-interval  표: band-LP
+  D: AR-integrals  표: pair-one-variable
+  D: band-LP  표: M-natural-integrals
+  D: pair-one-variable  표: four-families
+
+===== fiber-enumeration ( 부록D_장2.md )
+
+===== fiber-nonunimodal-bound ( 부록D_장2.md )
+
+===== zeta-constants ( 부록D_장2.md )
+
+===== logconcavity-failure-n80 ( 부록D_장3.md )
+
+===== cumulative-logconcavity ( 부록D_장3.md )
+
+===== central-gap-integer ( 부록D_장4.md )
+
+===== central-gap-rational-audit ( 부록D_장4.md )
+ [진술 불일치]
+   표: 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, 보조정리 {{4:gauss-coeff}}, 보조정리 {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}} 
+   D : 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, {{4:gauss-coeff}}, {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}}
+
+===== crossing-small-n ( 부록D_장4.md )
+
+===== QL-small-n ( 부록D_장4.md )
+
+===== exact-n20000 ( 부록D_장5A.md )
+ [등급 차이] 표: 정확 정수·유리수, 방향 반올림 구간  | D 첫 등급: 정확 정수·유리수  | D 줄: 정확 정수·유리수((ㄱ)–(ㅁ); 정수 구간, 부동소수 없음)와 방향 반올림 구간((ㅂ); mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 정리 {{5:old-5-1}}의 결론은 (ㄱ)(ㄴ 첫째 프로그램)(ㄷ; 4장의 항목)(ㄹ)(ㅁ)의 정수 프로그램만으로 따른다. (ㅂ)
+
+===== c50 ( 부록D_장5A.md )
+
+===== newton-m170 ( 부록D_장5A.md )
+
+===== tail-T1-partAB ( 부록D_장5A.md )
+
+===== bernstein-signs ( 부록D_장5A.md )
+
+===== band-A-certification ( 부록D_장5A.md )
+ [등급 차이] 표: 정확 정수·유리수, 방향 반올림 구간  | D 첫 등급: Laurent 계수는 정확 정수·유리수  | D 줄: Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간(mpmath).
+
+===== critical-window-rig ( 부록D_장5A.md )
+
+===== window-mass-constant ( 부록D_장5B.md )
+
+===== band-check ( 부록D_장5B.md )
+
+===== theorem-U-constant ( 부록D_장6.md )
+
+===== theorem-D-base ( 부록D_장6.md )
+ [등급 차이] 표: 정확 정수·유리수, 방향 반올림 구간  | D 첫 등급: 정확 정수·유리수  | D 줄: 정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi$와 비를 40자리로 평가한다.
+
+===== prop-W-thirteen ( 부록D_장6.md )
+
+===== tilt-sum-small-k ( 부록D_장6.md )
+
+===== column-certification-k500 ( 부록D_장7A.md )
+
+===== seed-certificates-k120 ( 부록D_장7A.md )
+
+===== self-consistent-constants ( 부록D_장7A.md )
+ [등급 차이] 표: 정확 정수·유리수, 방향 반올림 구간  | D 첫 등급: 정확 정수·유리수  | D 줄: 정확 정수·유리수(세 층의 상수, 따름정리의 세 값)와 방향 반올림 구간($e^{-i}$).
+
+===== xcert-partAB ( 부록D_장7A.md )
+
+===== polar-blocks-488 ( 부록D_장7A.md )
+
+===== band102-integer ( 부록D_장7B.md )
+ [진술 불일치]
+   표: 명제 {{7:pair-check-10000}}, 명제 {{7:pair-reach-table}}, 명제 {{7:analytic-transfer}}, 명제 {{7:integer-strips}}, 보조정리 {{7:hermite-nu}} 
+   D : 명제 {{7:pair-check-10000}}·{{7:pair-reach-table}}·{{7:analytic-transfer}}·{{7:integer-strips}}, 보조정리 {{7:hermite-nu}}
+ [등급 차이] 표: 정확 정수·유리수, 방향 반올림 구간  | D 첫 등급:   | D 줄: (ㄱ)(ㄴ)(ㄷ)(ㄹ) 정확 정수·유리수. (ㅁ) 방향 반올림 구간(부동소수점 모형 없음; 포함구간의 상대 폭 약 $2\times10^{-15}$).
+
+===== moment-certification ( 부록D_장7B.md )
+ [등급 차이] 표: 방향 반올림 구간, 정확 정수·유리수  | D 첫 등급:   | D 줄: (ㄱ) 방향 반올림 구간(binary64 끝점 구간; 덧셈·곱셈·나눗셈·융합 곱셈-덧셈의 정확한 반올림만 가정하고, 음이 아닌 $m$개 항의 합은 덧셈 순서·묶음·융합 여부와 무관하게 참값의 $(1\pm\mathsf u)^{m+1}$배 안에 든다는 한계로 행 $n$에서 $m=6n+3$으
+
+===== column-certificates-841-2000 ( 부록D_장7B.md )
+ [진술 불일치]
+   표: 정리 {{7:theorem-C-moment}}, 따름정리 {{7:qstar-implies-wlflat}} 
+   D : 정리 {{7:theorem-C-moment}}; 따름정리 {{7:qstar-implies-wlflat}}의 열 $841\le k\le2000$ 부분
+ [본문 차이]
+   replace: D『섯 자리 저장값은 괄호가 아니다) 원 위의 $|1-\Omega^{\mathrm{pr}}|$의』 → 표『섯 자리 저장값은 괄호가 아니다) 원 위의 $\vert 1-\Omega^{\mathrm{pr}}\ve』
+   replace: D『 $|1-\Omega^{\mathrm{pr}}|$의 참 최솟값($0.10725$, $0.12』 → 표『rt 1-\Omega^{\mathrm{pr}}\vert $의 참 최솟값($0.10725$, $0.12』
+
+===== Q-fin-1130 ( 부록D_장7B.md )
+ [본문 차이]
+   replace: D『귀로 얻은 차분과 직접 뺄셈의 차는 $\max|\Delta|$의 $1.1\times10^{-』 → 표『귀로 얻은 차분과 직접 뺄셈의 차는 $\max\vert \Delta\vert $의 $1.1\times』
+   replace: D『분과 직접 뺄셈의 차는 $\max|\Delta|$의 $1.1\times10^{-11}$ 이하』 → 표『 뺄셈의 차는 $\max\vert \Delta\vert $의 $1.1\times10^{-11}$ 이하』
+
+===== window-mass-env ( 부록D_장8.md )
+
+===== bprime-boxes ( 부록D_장8.md )
+
+===== band-boxes ( 부록D_장8.md )
+
+===== stored-table-check ( 부록D_장8.md )
+
+===== m1-column-reading ( 부록D_장9.md )
+
+===== H-star-plus-interval ( 부록D_장9.md )
+
+===== AR-integrals ( 부록D_장9.md )
+
+===== band-LP ( 부록D_장9.md )
+ [진술 불일치]
+   표: 보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}, 정리 {{9:old-7-31}}, 정리 {{9:old-7-33}} 
+   D : 보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-33}}
+
+===== pair-one-variable ( 부록D_장9.md )
+
+===== M-natural-integrals ( 부록D_장10.md )
+
+===== four-families ( 부록D_장10.md )

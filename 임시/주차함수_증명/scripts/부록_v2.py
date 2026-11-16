@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """둘째 판 부록 A(기호표)·B(인용한 기록)·C(용어 대응표)를 장부 v2와 장 파일에서 생성한다.
 
-사용: python 부록_v2.py [--base 376 --checked 394] [--dry]
+사용: python 부록_v2.py [--base 415 --checked 438 --checked-date 2026-11-13] [--dry]
 출력: 장v2/부록A.md, 장v2/부록B.md, 장v2/부록C.md
 - A: 장부 1.1(변수 글자)·1.2(전역 기호)에서 글자 | 뜻 | 정의 절 | 기록의 글자. 정의 절의 장 순. 본문(장 파일 전체)에 바탕 글자가 보이지 않는 행은 표준 출력에 적는다(세션 검토용).
 - B: 장 파일·부록 D 조각(·부록 A·C)에 든 식별자 [rXXXXXXX] 전부. 기록 폴더·시각(events/<폴더>.json의 at, 없으면 review/assessment.json 수정 시각; KST)·record.json 제목. 시각 순.
@@ -63,8 +63,27 @@ def sec_sort_key(sec):
 MEMO = re.compile(r"첫 판|세션|집필|2차 대조|회수|지시|초안|결정 \d|파견|재대조|확인 요|판정 요|조립본|기록대조|설계 에이전트|집필자|씀 — ")
 
 
+def preclean(text):
+    """첫 판의 절·행 위치 표지 「(3.3·937)」·「(7·8장)」, 설계 질문 번호 「Qnn」, 대조 확인 표지 「(확인)」을 걷어 낸다."""
+    text = re.sub(r"\((?:[\d.]+·)+[\d.]+장?(?:,\s*(?:[\d.]+·)+[\d.]+장?)*\)", "", text)
+    text = re.sub(r"\(Q\d+\)", "", text)
+    text = re.sub(r"\s*—\s*Q\d+(?=[;)])", "", text)
+    text = re.sub(r";\s*Q\d+(?:·Q\d+)*(?=[;)])", "", text)
+    text = re.sub(r"\(확인;\s*", "(", text)
+    text = text.replace("(확인)", "")
+    # 사전 작업 메모의 절 번호 지침(1.1·1.2·1.3 묶음 표지)
+    text = re.sub(r"\(1\.3 \d+\.\d+ 묶음\)", "", text)
+    text = re.sub(r"1\.3 (\d+\.\d+) 묶음의 ", r"\1절 국소 ", text)
+    text = re.sub(r"국소\((\d+\.\d+) 묶음\)", r"\1절 국소", text)
+    text = text.replace("1.2 글자로 풀어 적음", "글자 없이 풀어 적음")
+    text = re.sub(r"1\.2 설명을 기록대로 고침(\([^)]*\))?;\s*", "", text)
+    text = text.replace("(1.1 용량)", "(용량)")
+    return text
+
+
 def clean(text):
     """사전의 뜻·비고 열에서 작업 메모(첫 판 참조, 세션 결정, 대조·회수 기록)를 걷어 낸다. 괄호 단위와 쌍반점 조각 단위로."""
+    text = preclean(text)
     # 균형 잡힌 괄호 단위로 훑어, 작업 메모가 든 괄호(중첩 포함)를 통째로 지운다.
     out, i, n = [], 0, len(text)
     while i < n:
@@ -152,10 +171,21 @@ def record_meta(rid, dirs):
             at = os.path.getmtime(ap)
     when = datetime.datetime.fromtimestamp(at, KST).strftime("%m-%d %H:%M") if at else "—"
     title = rec.get("title", "").replace("|", "／").replace("\n", " ").strip()
-    return at or 0, when, title, d
+    return at or 0, when, title_tex_to_math(title), d
 
 
-def build_B(texts, base, checked):
+_TEX_RUN = re.compile(r"[A-Za-z0-9.+/*^{}_()=<>≥≤·-]*(?:\^\{|_\{)[A-Za-z0-9.+/*^{}_()=<>≥≤·-]*")
+
+
+def title_tex_to_math(title):
+    """기록 제목에 TeX 표기(`r^{3/2}` 같은 `^{`·`_{`)가 섞인 토막을 `$…$`로 감싼다.
+    제목은 record.json의 글자 그대로라 수식 구분자가 없고, 구분자 밖의 TeX는 KaTeX에 닿지 않아 PDF에 그대로 찍힌다
+    (2026-11-15 확인). 토막은 공백·한글·구두점(쉼표·쌍반점) 앞에서 끊고, 유니코드 부등호는 TeX 명령으로 바꾼다."""
+    # 2026-11-16 결정 122-3(사용자): 기록 제목은 고유명이라 평문 그대로 둔다(검색 가능성; 한 표 안의 한 규칙). 감싸지 않는다.
+    return title
+
+
+def build_B(texts, base, checked, checked_date="2026-11-13"):
     ids = {}
     for name, text in texts.items():
         for br in re.finditer(r"\[([^\]]*)\]", text):
@@ -172,8 +202,8 @@ def build_B(texts, base, checked):
     rows.sort()
     out = ["## 부록 B. 인용한 기록", "",
            f"본문과 부록(계산 증거 자료, 기호표의 「기록의 글자」, 용어 대응표)이 대괄호로 인용한 연구 기록을 기록의 시각 순으로 적는다. 식별자는 기록 폴더 이름의 앞 여덟 글자, 곧 `r`과 그 뒤의 16진수 일곱 자리다. 기록은 이 글과 함께 보관되는 연구 인스턴스의 `knowledge/records/` 아래 폴더이며, 각 폴더의 `exposition.md`가 본문, `record.json`이 주장 목록, `review/`가 독립 검토다. "
-           f"이 글의 기준은 지식 저장소의 판 {base}이고, 판 {checked}(2026-11-12)까지 아래 기록 어느 것에도 우려나 철회가 없음을 확인했다.", "",
-           "| 식별자 | 기록의 시각 | 내용 | 폴더 |", "|---|---|---|---|"]
+           f"이 글의 기준은 지식 저장소의 판 {base}(마지막으로 인용한 기록 rfc69320이 들어온 판)이고, 판 {checked}({checked_date})까지 아래 기록 어느 것에도 우려나 철회가 없음을 확인했다.", "",
+           "| 식별자 | 기록의 시각 | 제목 | 폴더 |", "|---|---|---|---|"]
     for _, rid, when, title, d in rows:
         out.append(f"| {rid} | {when} | {title} | `{d}` |")
     out.append("")
@@ -190,7 +220,7 @@ def build_C(ledger):
     out += ["### 낱말: 이 글의 용어와 기록의 용어", "", "| 이 글의 용어 | 기록의 용어 | 처음 정의된 절 |", "|---|---|---|"]
     for r in rows3:
         word, meaning, sec, old = r[0], r[1], r[2], r[3]
-        eng = ", ".join(re.findall(r"\(([A-Za-z][A-Za-z\- ;,]+)\)", meaning + " " + word))
+        eng = ", ".join(re.findall(r"\(([A-Za-z][A-Za-z\- ;,]+)\)", re.sub(r"\$[^$]*\$", "", meaning) + " " + word))  # 수식 안의 괄호는 영어 병기가 아니다
         old_c = clean(old.strip())
         if old_c in ("같음", "", "—") and not eng:
             continue
@@ -205,22 +235,26 @@ def build_C(ledger):
         num, kind, name, recname, sec, label = r[:6]
         if not recname.strip() or label.strip() in ("—", "") or "{{" not in label or label.strip() == "{{}}":
             continue
-        out.append(f"| {recname} | {kind} {label} | {name} |")
+        line = f"| {recname} | {kind} {label} | {name} |"
+        if line in out:
+            continue
+        out.append(line)
     out.append("")
     # 7절: 글자 대응
     s7 = section(ledger, "## 7. 기록 글자 대응", ["\n## 8."])
     rows7 = [r for r in table_rows(s7) if len(r) >= 4 and r[0] != "이 글의 글자"]
     out += ["### 기록의 글자와 이 글의 글자", "", "| 이 글의 글자 | 기록 | 기록의 글자 | 첨자·인수의 이동 |", "|---|---|---|---|"]
     for r in rows7:
-        out.append(f"| {r[0]} | {r[1]} | {r[2]} | {clean(r[3]) or '—'} |")
+        out.append(f"| {preclean(r[0])} | {r[1]} | {preclean(r[2])} | {clean(r[3]) or '—'} |")
     out.append("")
     return "\n".join(out) + "\n"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="376")
-    ap.add_argument("--checked", default="394")
+    ap.add_argument("--base", default="415")
+    ap.add_argument("--checked", default="438")
+    ap.add_argument("--checked-date", default="2026-11-13", help="--checked 판의 날짜(부록 B 머리말에 적힘)")
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--prune", action="store_true", help="본문에 바탕 토큰이 보이지 않는 1.2 행을 부록 A에서 뺀다")
     args = ap.parse_args()
@@ -233,7 +267,7 @@ def main():
     texts_all = dict(texts)
     texts_all["부록A.md"] = A
     texts_all["부록C.md"] = C
-    B, rows_B, missing_B = build_B(texts_all, args.base, args.checked)
+    B, rows_B, missing_B = build_B(texts_all, args.base, args.checked, args.checked_date)
     print(f"부록 A: 본문에 바탕 토큰이 보이지 않는 1.2 행 {len(missing_A)}개" + (": " + "; ".join(missing_A[:40]) if missing_A else ""))
     print(f"부록 B: 식별자 {len(rows_B)}개" + (f", 폴더 없음 {missing_B}" if missing_B else ""))
     if args.dry:

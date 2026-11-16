@@ -1,0 +1,110 @@
+=== (A) 따름정리 gauss-coeff-numeric ===
+a0 1.28789931685406908720068316003 a1 0.938892940101744566341180380023 a0 closed 1.28789931685406908720068316003 a1 closed 0.938892940101744566341180380023
+1.287899<a0<1.2879: True  0.938892<a1<0.939: True
+(나) rational: 495594511/240250000 True 2.062828349635796 True
+(다) value with k^{-1/3}<=0.0464159: 1.680919551923166 >=1.6809: True
+10000^{-1/3} = 0.0464158883361277889241007635092
+k>=30000 조립: 11/2*39/100*2-7/2 = 79/100
+k>=10000 조립: 5.642*1.6809*0.39893-0.0163-3.554 = 106503813777/500000000000 0.213007627554
+Bor(k)k^{3/2} lower (2pi)^{-1/2}(1-1/120000) = 0.398938955882429332667629893717
+4sqrt2(1-26/k) at 1e4, 3e4: 5.64214642844370000669921733411 5.65195164247615346570424237593
+sqrt2/pi e^{1/30000}, e^{1/10000}: 0.45017316360057963092184029744 0.450203176145226708709218793989
+46sqrt2-12 = 53.0538238691623722448776813136  -5000/173-0.02: 24.1320897651161294703112073252
+(나) 46sqrt2-12-5468.28/100 = -1.62897613083762775512231868636
+0.451*3*2.51+0.056+0.01 = 3.4620299999999995  0.4503*3*2.50663+0.16752 = 3.553726467
+3sqrt(2pi) = 7.51988482389300150724729585443
+k^5 e^{-k/520} at 30000: 0.00213872720889915649032687417611
+255k/131072-511/262144 vs k/520 at k=30000: 58.362918853759765625 57.6923076923076923076923076923
+=== (B) 정리 4.7 피적분함수 조립 ===
+p(v) 조립 일치: True
+k^{-1/3}: (om+1/2+3om)= 4*omega + 1/2  k^{-2/3}: om/2+6om = 13*omega/2
+=== (C) 보조정리 gauss-contraction ===
+C1,C2,C3 in gamma: 0 0 0
+at gamma=1/3: [3, -216, 34020]
+ups'''' = -120/gamma**7  expected -120 g^-7
+C1''' = -60/gamma**7 + 192/gamma**8  expected 192g^-8-60g^-7
+C2'' = 15/gamma**7 + 96/gamma**8 - 175/gamma**9  expected -(175g^-9-96g^-8-15g^-7)
+C3' = 25/(2*gamma**7) - 30/gamma**8 - 175/(2*gamma**9) + 120/gamma**10  expected 5/2(48g^-10-35g^-9-12g^-8+5g^-7)
+bounds: 10935 231822 2053593 9032310 11328660
+m1 - ups/g^2: 0  m2 - (C2-2/g^4): 0  m3 - (C3+5(5-g^2)/(2g^7)): 0
+m at 1/3: [6, -378, 60750]
+R coeff X^0: 0
+R coeff X^1: 0
+R coeff X^2: 0
+R coeff X^3: 0
+R coeff X^4: 2729376
+contraction factor: 0.5000000203212808  residual/uhat: 6375000.259096331  total: 14285714.285714285
+x^5 x^6 terms: 290.993472 0.25924872959999995  |uhat-1| bound: 0.333366960476169
+total residual: 4244983.146399999
+d/diota [iota log ups + (1-ups)^2/2] - log ups: 0
+d/diota [log ups - log g /2] - C1/ups: 0
+C1/ups at 1/3: 9/2  1/(g ups) at 1/3: 9/2
+(라) identity: 0
+k/(3k-1)^2 at 1e4: 1.1111851888890534e-05  11/2/9+350*2/81 = 9.253086419753085  nu=-1: 9.26*(1-1/30000)^-4 = 9.261234769562416
+=== (D) 보조정리 gauss-coeff ===
+n(kappa) = kappa**2*(nu**2 + 2*nu*theta + 2*nu + theta**2 - 6*theta + 1) + kappa*(2*nu + 2*theta + 10) + 1  expected 1+(2nu+10+2th)k+((nu+1)^2+2(nu-3)th+th^2)k^2
+nu=0 g coeffs:
+   kappa^0: 4
+   kappa^1: -8*theta - 26
+   kappa^2: 12*theta**2 + 168*theta + 506
+   kappa^3: -16*theta**3 - 594*theta**2 - 5362*theta - 11016
+   kappa^4: 20*theta**4 + 1552*theta**3 + 30012*theta**2 + 154730*theta + 218589
+   max|g3| on [0,1]: 16988.0  max|g4|: 404903.0
+nu=-1 g coeffs:
+   kappa^0: 4
+   kappa^1: -8*theta - 22
+   kappa^2: 12*theta**2 + 152*theta + 414
+   kappa^3: -16*theta**3 - 558*theta**2 - 4626*theta - 8062
+   kappa^4: 20*theta**4 + 1488*theta**3 + 26868*theta**2 + 118818*theta + 136128
+   max|g3| on [0,1]: 13262.0  max|g4|: 283322.0
+Cauchy terms at kappa=1/30000: 0.5662666666666667 0.0004498922222222222 0.37160906726124115 0.31
+(4.9) check: 0
+M4/M0 formula nu=0: 0
+   with center: 2136/k**3 + 35/k**2 + O(k**(-4), (k, oo))
+M4/M0 formula nu=-1: 0
+   with center: 2935/(2*k**3) + 35/k**2 + O(k**(-4), (k, oo))
+nu=0 P: -20*k + 100*theta + 454 + (16*theta**3 + 334*theta**2 + 1348*theta + 1012)/k + (12*theta**4 + 168*theta**3 + 506*theta**2)/k**2
+   denominator y^2 vth: 4*k**2 + k*(-16*theta - 26) + 32*theta**2 + 220*theta + 506 + (-32*theta**3 - 362*theta**2 - 1012*theta)/k + (12*theta**4 + 168*theta**3 + 506*theta**2)/k**2
+   kP+5y^2vth: k*(20*theta + 324) + 16*theta**3 + 494*theta**2 + 2448*theta + 3542 + (12*theta**4 + 8*theta**3 - 1304*theta**2 - 5060*theta)/k + (60*theta**4 + 840*theta**3 + 2530*theta**2)/k**2
+   100kP+499y^2vth k^2 coeff: -4
+nu=-1 P: -20*k + 100*theta + 414 + (16*theta**3 + 298*theta**2 + 872*theta)/k + (12*theta**4 + 128*theta**3 + 110*theta**2 - 828*theta)/k**2
+   denominator y^2 vth: 4*k**2 + k*(-16*theta - 22) + 32*theta**2 + 196*theta + 414 + (-32*theta**3 - 326*theta**2 - 828*theta)/k + (12*theta**4 + 152*theta**3 + 414*theta**2)/k**2
+   kP+5y^2vth: k*(20*theta + 304) + 16*theta**3 + 458*theta**2 + 1852*theta + 2070 + (12*theta**4 - 32*theta**3 - 1520*theta**2 - 4968*theta)/k + (60*theta**4 + 760*theta**3 + 2070*theta**2)/k**2
+   100kP+499y^2vth k^2 coeff: -4
+nu=0 f(2)= 2  f(2-2/k)= -2*(3*k - 2)/k**2
+nu=-1 f(2)= 1  f(2-2/k)= -(k**2 + 4*k - 4)/k**2
+(1-3/k)^2 e^{-12.75/k}(4-26/k) >= 4sqrt2... check k=1e4: 5.64258700988694217324867431181 5.64214642844369974242125468845
+=== (E) two-corrections: 선도 적분 ===
+int F0 = -9.22055179750213e-11
+int F1 = 53.053823848272  46sqrt2-12 = 53.0538238691624
+J leading: 7.519884823893 7.519884823893
+max beta*Dawson: 1.27997614913082
+=== (E2) Borel 꼬리 전개 (4.14) 수치 점검 ===
+k=30000
+  beta=0.300 re_err=9.951e-06 bound=1.152e-05 ok=True | im_err=1.279e-03 bound=1.522e-03 ok=True | |phi|/beta^2=0.5000
+     (4.11) err=1.732e-03 bound=4.720e-08 ok=False
+  beta=1.000 re_err=5.705e-06 bound=9.954e-05 ok=True | im_err=3.072e-04 bound=1.034e-02 ok=True | |phi|/beta^2=0.5000
+     (4.11) err=5.774e-03 bound=1.468e-07 ok=False
+  beta=2.500 re_err=4.626e-03 bound=2.541e-02 ok=True | im_err=1.755e-01 bound=8.416e-01 ok=True | |phi|/beta^2=0.5000
+     (4.11) err=1.443e-02 bound=2.309e-05 ok=False
+  beta=5.000 re_err=3.493e+02 bound=5.792e+03 ok=True | im_err=2.403e+03 bound=6.121e+04 ok=True | |phi|/beta^2=0.4999
+     (4.11) err=3.276e-02 bound=3.650e+00 ok=True
+  beta=8.000 re_err=4.925e+11 bound=1.762e+13 ok=True | im_err=8.403e+11 bound=7.048e+13 ok=True | |phi|/beta^2=0.4997
+     (4.11) err=2.914e+06 bound=6.620e+09 ok=True
+  beta=10.825 re_err=3.307e+23 bound=3.173e+25 ok=True | im_err=1.106e+23 bound=6.285e+25 ok=True | |phi|/beta^2=0.4995
+     (4.11) err=9.559e+17 bound=7.190e+21 ok=True
+k=10000
+  beta=0.300 re_err=2.986e-05 bound=3.459e-05 ok=True | im_err=2.216e-03 bound=2.643e-03 ok=True | |phi|/beta^2=0.5000
+     (4.11) err=3.000e-03 bound=2.453e-07 ok=False
+  beta=1.000 re_err=1.784e-05 bound=3.052e-04 ok=True | im_err=5.979e-04 bound=1.825e-02 ok=True | |phi|/beta^2=0.5000
+     (4.11) err=1.000e-02 bound=7.628e-07 ok=False
+  beta=2.500 re_err=1.384e-02 bound=7.978e-02 ok=True | im_err=3.025e-01 bound=1.537e+00 ok=True | |phi|/beta^2=0.4999
+     (4.11) err=2.500e-02 bound=1.199e-04 ok=False
+  beta=5.000 re_err=1.027e+03 bound=1.804e+04 ok=True | im_err=4.031e+03 bound=1.150e+05 ok=True | |phi|/beta^2=0.4997
+     (4.11) err=8.532e-02 bound=1.875e+01 ok=True
+  beta=8.000 re_err=1.177e+12 bound=5.416e+13 ok=True | im_err=9.235e+11 bound=1.388e+14 ok=True | |phi|/beta^2=0.4991
+     (4.11) err=1.415e+07 bound=3.207e+10 ok=True
+  beta=12.500 re_err=2.057e+31 bound=6.509e+34 ok=True | im_err=4.969e+30 bound=7.101e+34 ok=True | |phi|/beta^2=0.4978
+     (4.11) err=9.255e+26 bound=1.224e+31 ok=True
+(F) is in 검토전체10_P2_장4_F.py
+done

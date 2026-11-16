@@ -1,0 +1,24 @@
+6	\\mathrm\{IPF\}
+6	\bP_2\(
+6	\\omega\^\{?\\mathrm\{?st
+6	\\beta\^?'?_g|\\beta\^\\prime_g
+6	\\mathfrak z_L
+6	\bP_\{d,j\}
+6	\bT_j\(
+6	\\mathrm\{poly\}
+6	\\epsilon_d\b
+6	\\iota_k
+6	t_\{i'\}|t_\{i\^\\prime\}
+6	\\mathcal X\b
+6	\\mathcal N'|\\mathcal N\^\\prime
+6	\bU\s*[:=]+\s*q-1
+6	\bV\s*[:=]+
+6	\\mathcal J\s*[:=]+
+6	\\xi\s*[:=]+
+6	\\mathfrak V\s*[:=]+
+6	\\mathcal A\s*[:=]+
+6	\\mathrm\{tp\}\s*[:=]+
+6	\\mathsf c\s*[:=]+
+6	\\mathfrak q\s*[:=]+
+6	\\mathcal N\s*[:=]+
+6	\bK\s*[:=]+

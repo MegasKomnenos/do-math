@@ -1,0 +1,50 @@
+k=6668: V_k(k)=2.05799 (v(k) lower bound in 6:old-6-19), min V=2.1891e-05
+  y=6667: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.71e-04
+  y=6668: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.70e-04
+  y=6669: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.70e-04
+  stay-law violation y=k: -4.06e-05
+  sum of negative DD_m = -0.00000 (vs -DDL(k)=-1.23990)
+  FLQ(ga): min_{nu,m>=k+2} T_m = 0.00003;  FLQ(na): min_nu (w_{k+1}T_k+theta u)/w_k = 3.11813 at nu=6665
+  Stays(k,460)=0.23011
+  Stays(k,708)=0.19274
+  Stays(k,3200)=0.04588
+  Stays(k,4000)=0.03125
+  Stays(k,6665)=0.00002
+  Stays(k,6667)=0.00000
+k=8065: V_k(k)=2.05815 (v(k) lower bound in 6:old-6-19), min V=1.6215e-05
+  y=8064: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.41e-04
+  y=8065: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.41e-04
+  y=8066: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.41e-04
+  stay-law violation y=k: -3.36e-05
+  sum of negative DD_m = -0.00000 (vs -DDL(k)=-1.12740)
+  FLQ(ga): min_{nu,m>=k+2} T_m = 0.00002;  FLQ(na): min_nu (w_{k+1}T_k+theta u)/w_k = 3.02663 at nu=3872
+  Stays(k,522)=0.21836
+  Stays(k,804)=0.18300
+  Stays(k,3871)=0.04128
+  Stays(k,4839)=0.02812
+  Stays(k,8064)=0.00000
+k=9551: V_k(k)=2.05792 (v(k) lower bound in 6:old-6-19), min V=1.2423e-05
+  y=9550: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.19e-04
+  y=9551: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.19e-04
+  y=9552: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.19e-04
+  stay-law violation y=k: -2.83e-05
+  sum of negative DD_m = -0.00000 (vs -DDL(k)=-1.03598)
+  FLQ(ga): min_{nu,m>=k+2} T_m = 0.00001;  FLQ(na): min_nu (w_{k+1}T_k+theta u)/w_k = 3.03440 at nu=4585
+  Stays(k,585)=0.20824
+  Stays(k,899)=0.17481
+  Stays(k,900)=0.17471
+  Stays(k,4584)=0.03759
+  Stays(k,5730)=0.02564
+  Stays(k,9550)=0.00000
+k=9705: V_k(k)=2.05789 (v(k) lower bound in 6:old-6-19), min V=1.2115e-05
+  y=9704: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.17e-04
+  y=9705: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.17e-04
+  y=9706: max(s-s_up)=0.00e+00  max(s_low-s) over d>=2 =-1.17e-04
+  stay-law violation y=k: -2.79e-05
+  sum of negative DD_m = -0.00000 (vs -DDL(k)=-1.02772)
+  FLQ(ga): min_{nu,m>=k+2} T_m = 0.00001;  FLQ(na): min_nu (w_{k+1}T_k+theta u)/w_k = 3.03507 at nu=4659
+  Stays(k,591)=0.20734
+  Stays(k,909)=0.17401
+  Stays(k,4658)=0.03726
+  Stays(k,5823)=0.02541
+  Stays(k,9704)=0.00000

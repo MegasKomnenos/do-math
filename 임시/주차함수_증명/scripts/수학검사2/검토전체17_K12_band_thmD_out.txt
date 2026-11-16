@@ -1,0 +1,6 @@
+band first cell: hov 1.9570106 sec 0.98855362 top 0.0071375433 K 0.49998894 W 0.016873673  ratio 1.3558739652
+B2(42)= 1.002291  B2(43)= 0.9985532
+excess recursion == last-car for m<=30, 2d<=m+1: True
+m=3,d=1: q= 1.529033529
+pairs 16229  min q 0.856133763429 (689, 39)  max q 1.39176029617 (4, 1)
+d_{n,k_n}<0 for n in: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]  right-half non-decreasing violations: []

@@ -1,0 +1,1415 @@
+ST A TISTICS ONℓ-INTER V AL P ARKING FUNCTIONS
+KYLE CELANO, JENNIFER ELDER, KIMBERLY P. HADA W AY, PAMELA E. HARRIS, JEREMY L. MARTIN,
+AMANDA PRIESTLEY, AND GABE UDELL
+Abstract. The displacement of a car with respect to a parking function is the number of spots it must
+drive past its preferred spot in order to park. An ℓ-interval parking function is one in which each car
+has displacement at most ℓ. Among our results, we enumerate ℓ-interval parking functions with respect
+to statistics such as inversion, displacement, and major index. We show that 1-interval parking functions
+with fixed displacement exhibit a cyclic sieving phenomenon. We give closed formulas for the number of
+1-interval parking functions with a fixed number of inversions. We prove that a well-known bijection of
+Foata preserves the set of ℓ-interval parking functions exactly when ℓ ≤ 2 or ℓ ≥ n − 2, which implies that
+the inversion and major index statistics are equidistributed in these cases.
+Contents
+1. Introduction 1
+2. Background 3
+2.1. Parking functions and ℓ-interval parking functions 3
+2.2. Block structure of unit interval parking functions 4
+2.3. Permutation statistics 5
+3. Enumeration by counting through permutations 5
+3.1. A cyclic sieving phenomenon 7
+3.2. From ℓ = 1 to ℓ = 2 9
+4. Enumeration via ciphers 11
+4.1. The Avalos–Bly and cipher bijections 12
+4.2. Ciphers and Lehmer codes 13
+4.3. Unit Fubini rankings 14
+5. Foata invariance and inv-maj equidistribution 15
+5.1. The Foata transform on words 16
+5.2. Permuting parking functions 16
+5.3. Proof of Theorem 5.1 18
+5.4. Enumeration by major index 22
+6. Further Problems 23
+Acknowledgments 23
+References 24
+1. Introduction
+This paper is about enumerating ℓ-interval parking functions with respect to statistics such as inversion,
+displacement, and major index. Parking functions first appeared in the work of Konheim and Weiss [19] and
+have become standard objects in combinatorics. Suppose that n cars attempt to park in n spots 1, 2, . . . , n
+on a one-way street. Each car drives to its preferred spot ai and parks there if possible; if that spot is taken,
+Date: July 11, 2025.
+2020 Mathematics Subject Classification. Primary 05A05; Secondary 05A15, 05A19.
+Key words and phrases. Parking function, ℓ-interval parking function, unit interval parking function, unit Fubini rank-
+ing, Lehmer code, ordered set partition, permutation, Foata bijection, cyclic sieving, q-analogue, inversion, major index,
+displacement.
+1
+arXiv:2507.07243v1  [math.CO]  9 Jul 2025
+the car continues along the street and parks in the first available spot. If all cars are able to park successfully,
+the tuple α = (a1, a2, . . . , an) ∈ [n]n is called a parking function. In this case, if the ith car parks in spot
+si, then the number si − ai is its displacement.
+An ℓ-interval parking function, or IPF for short, is a parking function in which each car has displace-
+ment less than or equal to some fixed numberℓ; we write IPFn(ℓ) for the set of all ℓ-interval parking functions
+of length n. These objects were first studied by Aguilar-Fraga et al. [2]. (The idea of restricting each car
+to an interval was considered by Colaric et al. [8], although in that paper the intervals were not required to
+have the same length.) The case ℓ = 1 is of particular interest. These unit interval parking functions, or
+UPFs, are enumerated by the Fubini numbers [5, 17], which also count the faces of the permutahedron [7].
+UPFs are also related to Boolean intervals in weak Bruhat order on the symmetric group [10]. Enumerative
+results on ℓ-interval parking functions with ℓ ≥ 1 also give connections to Dyck paths with restricted heights
+and to preferential arrangements [2].
+Bradt et al. [5, Theorem 2.9] proved that unit interval parking functions exhibit a tightly controlled
+block structure, which we describe in Section 2.2. To summarize, if α = (a1, . . . , an) is a UPF with weakly
+increasing rearrangement α↑ = (a′ 1, . . . , a′ n), then a′ i ∈ {i, i−1} for every i, and if α↑ is partitioned into blocks
+by inserting a separator before every entry with α′ i = i, then the elements of each block appear left-to-right
+in α. This structure is key to many of the enumerative results in this paper. No analogous structure is
+known for ℓ-interval parking functions with ℓ ≥ 2.
+In Section 3, we study the generating function Φ n,ℓ(q, t) for IPF n(ℓ) by total displacement and inversion
+number. We use the technique of “counting through permutations”: to count a set X, define an appropriate
+function C : X → Sn, count each fiber, and add up the counts. The formula produced by this method
+cannot always be simplified further, but it is typically much more computationally efficient than brute-force
+enumeration. We give a general formula for Φ n,ℓ(q, t) in Theorem 3.1, involving the q-analogues of certain
+numbers Lℓ(σ; i) associated with a permutation σ (see eqn. (2)). The case ℓ = n − 1 was previously obtained
+in [9]. For UPFs, the polynomial Φ n,1(q, t) has a much simpler expression (Theorem 3.3). In addition,
+if we write Φ n,1(q, t) = P k qkfn,k(t), then each polynomial fn,k(t) exhibits a cyclic sieving phenomenon
+(Theorem 3.6). There is an analogue of Theorem 3.3 for ℓ = 2 (Theorem 3.11), obtained by reducing
+the enumeration of 2-interval parking functions to that of unit interval parking functions. Potentially, this
+technique could be extended to give (more complicated) formulas for Φ n,ℓ(q, t) for n ≥ 3.
+In Section 4, we present explicit closed formulas for the number of upfinv n,k of UPFs of length n with exactly
+k inversions. The main tool is a bijection of Avalos and Bly [4], which we modify to obtain a bijective labeling
+of these UPFs by objects we call ciphers (Theorem 4.1), which can be counted by elementary “stars and
+bars” methods. We work out the formulas for k ≤ 3, which suggest that upf inv n,k = O(2n−2knk) in general
+(Conjecture 4.5). As another application of ciphers, we recover the main result of [10], a bijection between
+unit Fubini rankings (UPFs with all blocks of sizes 1 or 2) and Boolean intervals in weak order (Theorem 4.8).
+In Section 5, we prove that the inversion and major index statistics are equidistributed on ℓ-interval
+parking functions when ℓ ≤ 2 or ℓ ≥ n − 2. Recall that the major index of ( w1, w2, . . . , wn) ∈ Zn is
+maj(w) = P i∈Des(w) i, where Des(w) = {i ∈ [n − 1] : wi > wi+1}. Foata [11] famously constructed a content-
+preserving bijection F on the set of words over a fixed alphabet with the property that inv(F (w)) = maj(w),
+thus proving that the two statistics are equidistributed on any set of words invariant under permutation (as
+proved earlier by MacMahon algebraically [20]). Parking functions are invariant under permutation, but in
+general, the set of ℓ-interval parking functions is not. Nevertheless, we prove (Theorem 5.1) that it preserves
+the set IPF n(ℓ) precisely when ℓ ∈ {0, 1, 2, n− 2, n− 1}. The most difficult cases are ℓ = 1 and (especially)
+ℓ = 2. Along the way, we prove several results (Lemma 5.4, Proposition 5.5, Lemma 5.6) to describe how
+small changes in a parking function (such as transposing two consecutive entries) affect where the cars park;
+these facts may be of independent interest and utility. In Section 5.4, we apply Theorem 5.1 to the results
+of Section 3 to enumerate IPF n(ℓ) by major index.
+We conclude in Section 6 with some open problems for future study.
+2
+2. Background
+In this section, we provide background and definitions related to parking functions and ℓ-interval parking
+functions. A standard source for the basics of parking functions is [26]. For interval and ℓ-interval parking
+functions, see, e.g., [2, 5, 8].
+Remark 2.1. Throughout we interchangeably regard tuples ( a1, a2, . . . , an) and words a1a2 · · ·an as iden-
+tical objects, depending on context.
+Throughout, the symbol N denotes the set of positive integers. For m, n∈ N, we set [ n] = {1, 2, . . . , n}
+and [m, n] = {m, m+ 1, . . . , n}. For a tuple α = (a1, a2, . . . , an) ∈ Nn, we write α↑ for the tuple obtained
+by sorting the elements of α in weakly increasing order. The symbol Sn denotes the symmetric group of
+permutations of [ n]. Throughout, we write permutations in one-line notation.
+2.1. Parking functions and ℓ-interval parking functions. Parking functions are well-studied objects
+that were defined in the introduction; one survey of their properties is [26].
+We write PF n for the set of parking functions of length n. It is known that | PFn | = ( n + 1)n−1 [19].
+Moreover, a tuple α = ( a1, a2, . . . , an) ∈ [n]n is a parking function if and only if its weakly increasing
+rearrangement α↑ = ( a′ 1, a′ 2, . . . , a′ n) satisfies a′ i ≤ i for all i, or equivalently if there is some permutation
+σ ∈ Sn such that ai ≤ σi for all i ∈ [n] [26, p. 4]. We refer to this property as therearrangement criterion.
+It follows that if α ∈ PFn and β = (b1, b2, . . . , bn) satisfy 1 ≤ bi ≤ ai for all i ∈ [n], then β ∈ PFn.
+We write PF ↑ n for the set of weakly increasing parking functions of length n. It is known that | PF↑ n | =
+Catn = 1 n+1  2n n  , the nth Catalan number [23, Exercise 6.19(s)].
+Definition 2.2. Let α = (a1, a2, . . . , an) ∈ PFn. The car permutation of α is carα = (carα(1), . . . ,carα(n)) ∈
+Sn, where car α(i) denotes the car that parks in the ith spot. The spot permutation of α is spot α =
+(spotα(1), . . . ,spotα(n)) ∈ Sn, where spot α(i) denotes the number of spot that the ith car parks in. Note
+carα and spot α are permutations written as tuples and car α = spot−1 α .
+Example 2.3. If α = (1, 4, 4, 3, 2, 2) ∈ PFn, then car α = (1, 5, 4, 2, 3, 6) and spot α = (1, 4, 5, 3, 2, 6).
+Remark 2.4. Much of the parking function literature uses the term “outcome” for what we have called the
+car permutation of a parking function α. We have adopted the terms “car permutation” and “spot permu-
+tation” because we work with both of them in different parts of this paper, and wish to avoid any possible
+ambiguity in the use of the word “outcome”. In the Sage ParkingFunctions library, the car permutation is
+computed as alpha.cars permutation() and the spot permutation is alpha.parking permutation().
+Definition 2.5. Let α = (a1, a2, . . . , an) ∈ PFn. The displacement of the ith car is dispα(i) = spotα(i)−ai.
+That is, disp α(i) is the number of additional spaces car i has to drive past its preferred spot in order to
+park. The (total) displacement1 of α is disp(α) = Pn i=1 dispα(i). The maximum displacement of α is
+maxdisp(α) = max(dispα(1), dispα(2), . . . ,dispα(n)).
+Example 2.6 (Continuing Example 2.3) . If α = (1 , 4, 4, 3, 2, 2) ∈ PFn, then the displacements of cars
+1, 2, . . . ,6 are 0 , 0, 1, 0, 0, 4, respectively.
+Definition 2.7. For a positive integer ℓ ≤ n, we say that α is an ℓ-interval parking function if
+maxdisp(α) ≤ ℓ. The set of ℓ-interval parking functions of length n is denoted IPF n(ℓ). In the case
+ℓ = 1, we call α a unit interval parking function and write UPF n = IPFn(1).
+Example 2.8. We can give exact formulas for | IPFn(ℓ)| in some extreme cases.
+ℓ = n − 1: Every α ∈ PFn satisfies maxdisp(α) ≤ n − 1, so
+| IPFn(n − 1)| = | PFn | = (n + 1)n−1.
+ℓ = n − 2: Let α = (a1, a2, . . . , an) ∈ PFn. Then maxdisp( α) = n − 1 if and only if the car that parks in
+spot n preferred spot 1. This can happen only if (i) that car was the last to park and (ii) the first
+1Total displacement is also called area, since it is exactly the area under the labeled Dyck path representing α; see, e.g.,
+[26, pp. 54–55].
+3
+n − 1 cars parked in the first n − 1 spots. Equivalently, an = 1 and ( a1, a2, . . . , an−1) ∈ PFn−1.
+Therefore,
+| IPFn(n − 2)| = | PFn | − |{α ∈ PFn : maxdisp( α) = n − 1}|
+= (n + 1)n−1 − nn−2.
+ℓ = 1: The parking functions α with maxdisp(α) = 1 are precisely the unit interval parking functions.
+Therefore,
+| IPFn(1)| = | UPFn | = Fubn,
+where Fubn is the number of ordered set compositions of [ n] (see Remark 2.12 below).
+ℓ = 0: The parking functions α with maxdisp(α) = 0 are precisely the permutations. Therefore,
+| IPFn(0)| = n!.
+It is immediate from the definition that any rearrangement of a parking function is a parking function. The
+same is not true for ℓ-parking functions because maximum displacement may change under rearrangement.
+For instance, maxdisp(112) = 1 but maxdisp(121) = 2. On the other hand, a weaker result holds for all ℓ,
+as we prove later (Proposition 5.5).
+2.2. Block structure of unit interval parking functions. In [5], it was proved that unit interval parking
+functions are characterized by a tightly controlled block structure, as we now explain.
+Definition 2.9. A tuple β = (b1, b2, . . . , bn) ∈ [n]n is called a block word if bi ∈ {i, i− 1} for each i (so in
+particular, b1 = 1). When we write a block word, we place a separator before each bi such that bi = i >1.
+The maximal subwords between separators are called blocks. Note that a block word is determined by the
+ordered list of lengths of its blocks.
+For example, the block words of length 3 are 112, 11 | 3, 1 | 22, 1 | 2 | 3.
+We now reformulate the characterization of unit interval parking functions based on their block structure.
+Theorem 2.10 ([5, Theorem 2.9]) . Let α = (a1, a2, . . . , an) ∈ UPFn and α↑ = (a′ 1, a′ 2, . . . , a′ n). Then,
+(1) α↑ is a block word. If α↑ = π1 | π2 | · · · |πm, we refer to the collection of πj’s as the block structure
+of α.
+(2) The entries in each block appear in increasing order in α. That is, α is a shuffle of its blocks.
+(3) Given a block word β, every shuffle of its blocks is a unit interval parking function. Therefore,
+|{α ∈ UPFn : α↑ = β}| =
+ n
+|π1|, |π2|, . . . ,|πm|
+
+.
+Next we state a bijection between the set of unit interval parking functions of length n with m blocks and
+the set of surjective functions from [ n] to [ m].
+Corollary 2.11. Let α = (a1, a2, . . . , an) ∈ UPFn have block structure π1 | π2 | · · · |πm. For each i ∈ [n],
+let s(i) be the index of the block to which ai belongs. Thus, s is a surjective function [n] → [m] (equivalently,
+an ordered partition of [n] into m nonempty blocks). Then the map sending α 7→ s is a bijection
+{α ∈ UPFn : α has m blocks} → {surjective functions [n] → [m]}.
+Remark 2.12. A surjective function [ n] → [m] can be regarded as an (ordered) set composition of [ n] with
+m nonempty blocks. In particular, the number of unit interval parking functions of length n equals the
+F ubini numberFubn of ordered set compositions of [n], as observed by Hadaway [17]. The Fubini numbers
+are sequence #A000670 in [18]. We obtain a new proof this fact following Theorem 3.3.
+Example 2.13. Let α = (8, 1, 5, 5, 1, 2, 4, 7) ∈ UPF8. Then the block structure (as in (2) of Theorem 2.10)
+is α↑ = 112 | 4 | 55 | 7 | 8, and the corresponding element of [5] 8, as in Corollary 2.11, is s = 51331124.
+Block structure appears to be unique to the case ℓ = 1; no result analogous to Theorem 2.10 is known for
+ℓ-interval parking functions when ℓ >1. We state this as an open problem in Section 6.
+4
+2.3. Permutation statistics. Let w = w1 · · ·wn ∈ Nn be a sequence of positive integers. An inversion of
+w is a pair of indices ( i, j) such that 1 ≤ i < j≤ n and wi > wj. We let Inv( w) be the set of inversions of w
+and set inv( w) = | Inv(w)|. A descent is a position i ∈ [n − 1] such that wi > wi+1. We let Des( w) be the
+set of descents of w and set des( w) = | Des(w)|. The major index of w is
+maj(w) =
+X
+i∈Des(w)
+i.
+By a bijection of Foata [20, 12] that we describe in detail in Section 5, inversions and major index are
+equidistributed as statistics on the set of permutations, meaning that there are as many permutations
+w ∈ Sn with inv( w) = j as there are with maj( w) = j, for each nonnegative integer j. More generally,
+inversions and major index are equidistributed on any set of words W ⊆ Nn satisfying the property that if
+w ∈ W and u is a rearrangement ofw, then u ∈ W [13]. Hence, inversions and major index are equidistributed
+on the set of parking functions. In Section 5, we completely characterize the pairs ( n, ℓ) such that inversions
+and major index are equidistributed on IPF n(ℓ).
+It is immediate from the definition that inv( σ) = inv(σ−1) for every permutation σ. The following result
+asserts that inversions of parking functions can be computed as inversions of permutations.
+Lemma 2.14. Let α ∈ UPFn. Then Inv(α) = Inv(spotα).
+Proof. Let α = (a1, a2, . . . , an) ∈ UPFn and let ( i, j) be an inversion of τ = spot α. That is, car i arrives
+earlier than car j and parks to its right. It follows that ai > aj, so ( i, j) ∈ Inv(α).
+Now let (i, j) be an inversion of α. Since ai > aj and i < j, it follows by (3) of Theorem 2.10 that ai and
+aj belong to different blocks. Since cars in earlier blocks have earlier preferences than cars in later blocks
+and park earlier than cars in later blocks, this means that τi > τj. Thus every inversion of α is an inversion
+of τ . □
+An ascent of a word w ∈ Nn is a position i ∈ [n − 1] such that wi < wi+1. We let Asc( w) be the set of
+ascents of w and set asc( w) = | Asc(w)|. It is known [24, Exercise 1.133a] that
+(1)
+X
+σ∈Sn
+2asc(σ) = Fubn = | UPFn |
+(see Corollary 2.11 and Remark 2.12). We obtain a more refined enumerative result in Theorem 3.3.
+3. Enumeration by counting through permutations
+In this section, we study the generating function
+Φn,ℓ = Φn,ℓ(q, t) =
+X
+α∈IPFn(ℓ)
+qdisp(α)tinv(carα).
+We give formulas for Φ n,ℓ for various values of ℓ by partitioning IPF n(ℓ) into the fibers of the function
+Cn,ℓ : IPF n(ℓ) → Sn defined by Cn,ℓ(α) = carα.
+For a permutation σ = σ1σ2 · · ·σn ∈ Sn and position i ∈ [n], define
+(2) Lℓ(i; σ) = min(ℓ + 1, i− t + 1),
+where σt, σt+1, . . . , σi is the longest contiguous subsequence of σ such that σk ≤ σi for all k ∈ [t, i]. That is,
+Lℓ(i; σ) is the number of possible preferred spots for car σi that results in car σi parking in spot i, subject
+to the choices of the previous cars and the constraint that the result must be an ℓ-interval parking function.
+It follows that for all ℓ ∈ N and σ ∈ Sn, we have
+(3) | C−1 n,ℓ(σ)| =
+nY
+i=1
+Lℓ(i; σ).
+The ℓ = n − 1 case of (3) is [19, Eqns. 2.1, 2.2]; see also [9, Proposition 3.1] and [23, Exercise 5.49d]. Our
+Ln−1(i; σ) corresponds to τi,n(σ) in [19] and to ℓ(i; σ) in [9].
+In the case that σ = id is the identity permutation, the number Lℓ(i, id) is either i (if i ≤ ℓ) or ℓ + 1 (if
+ℓ + 1 ≤ i ≤ n), so | C−1 n,ℓ(id)| = (ℓ + 1)n−ℓ · ℓ!. These numbers occur as sequence #A299504 in [18], where
+they count certain permutations; here, they count certain parking functions.
+5
+It follows from (3) that
+(4) | IPFn(ℓ)| =
+X
+σ∈Sn
+nY
+i=1
+Lℓ(i; σ).
+This is more efficient for explicit computation than iterating over all parking functions and picking out those
+with maximum displacement at most ℓ. In general, we do not have a closed formula for | IPFn(ℓ)| except in
+extreme cases; see Example 2.8.
+In [9, Props. 5.2, 5.3], the authors provide q-analogues of equations (3) and (4) for parking functions using
+total displacement. They extend this to a qt-analogue in [9, Cor. 5.3] using permutation statistics. We can
+obtain a similar analogue for ℓ-interval parking functions.
+Theorem 3.1. Let 0 ≤ ℓ ≤ n − 1. For all σ ∈ Sn, we have
+(5)
+X
+α∈C−1 n,ℓ(σ)
+qdisp(α) =
+nY
+i=1
+[Lℓ(i; σ)]q,
+and therefore,
+(6) Φ n,ℓ(q, t) =
+X
+α∈IPFn(ℓ)
+qdisp(α)tinv(carα) = X
+σ∈Sn
+tinv(σ)
+ℓY
+i=1
+[Lℓ(σ; i)]q.
+Proof. Let σ ∈ Sn and α = ( a1, a2, . . . , aℓ) ∈ C−1 n,ℓ(σ). For each i, if car σi wants to park in spot i,
+then ai must be selected from [ i − Lℓ(i; σ) + 1, i]. Hence, for each j ∈ {0, . . . , Lℓ(i; σ) − 1}, the selection of
+ai = i−j ∈ [i−Lℓ(i; σ)+1, i] contributes j to the total displacement. Since [Lℓ(i; σ)]q = 1+q+· · ·+qLℓ(i;σ)−1,
+we obtain (5). For (6), observe that
+Φn,ℓ(q, t) =
+X
+σ∈Sn
+
+ X
+α∈C−1 n,ℓ(σ)
+qdisp(α)
+
+ tinv(σ)
+and then apply (5). □
+The ℓ = n − 1 case is [9, Cor. 5.3]. As noted there, one can replace inversion number in (6) with any
+statistic on permutations. For the case ℓ = n − 2, we can rewrite the formulas in Theorem 3.1 in terms
+of displacement enumerators for (classical) parking functions. This also follows from the description of
+PFn \ IPFn(n − 2) in Example 2.8.
+Corollary 3.2. For all n ≥ 2,
+Φn,n−2(q, t) =
+X
+α∈PFn
+qdisp(α)tinv(α) − (qt)n−1 X
+β∈PFn−1
+qdisp(β)tinv(β)−ones(β),
+where ones(β) = |{i ∈ [n − 1] : bi = 1}|.
+In the case ℓ = 1 (unit interval parking functions), the formula of Theorem 3.1 can be written in a very
+explicit form as a generating function for permutations.
+Theorem 3.3. For all n ≥ 1,
+Φn,1(q, t) =
+X
+σ∈Sn
+(1 + q)asc(σ)tinv(σ).
+Proof. Taking ℓ = 1 in (2), we see that
+L1(i; σ) =
+(
+2 if i − 1 is an ascent of σ,
+1 otherwise.
+The result now follows from Lemma 2.14 and Theorem 3.1, together with the identity inv(σ) = inv(σ−1). □
+6
+Setting q = t = 1 in Theorem 3.3 recovers (1). More generally, setting t = 1 produces
+(7)
+X
+α∈IPFn(1)
+qdisp(α) =
+nX
+k=1
+k!S(n, k)qn−k = X
+σ∈Sn
+(1 + q)asc(σ),
+where S(n, k) denotes the Stirling number of the second kind; the second equality is [16, p. 269, eqn. (6.39)].
+Note that k!S(n, k) is the number of unit interval parking functions with displacement n − k. Extracting the
+q = 1 coefficient from the first and third expressions in (7), we recover the enumerative result [3, Thm. 4]
+that |{α ∈ UPFn : disp( α) = 1}| is the nth Lah number (#A001286 of [18]).
+Remark 3.4. Setting q = −1 in Theorem 3.3 yields
+(8)
+X
+α∈UPFn
+(−1)disp(α)tinv(α) = t( n 2)
+since the permutation w0(i) = n − i + 1 is the only one with no ascents. (Further specializing t = 1
+recovers (1).) This formula can also be proven combinatorially by constructing a sign-reversing, inversion-
+preserving involution on unit interval parking functions. Given α ∈ UPFn \{w0}, let π1 | π2 | · · · |πm be
+its block structure (see Theorem 2.10), and let k be the smallest index such that either (i) |πk| ≥2, or (ii)
+|πk| = 1 and πk appears earlier in α than every member of πk+1. (The condition α ̸= w0 implies that at
+least one of conditions (i), (ii) must be satisfied.) Then, define ϕ(α) by modifying α as follows:
+(1) If πk = (j, j, j+ 1, j+ 2, . . .), then replace the second occurrence of j by j + 1.
+(2) If πk = (j), then replace the first occurrence of j + 1 in α by j.
+The map ϕ is a fixed-point-free involution on UPFn \{w0} satisfying disp(ϕ(α)) = disp(α)±1 and inv(ϕ(α)) =
+inv(α) (we omit the proof). If one associates unit interval parking functions with faces of the permutohedron,
+as done in [7], the function ϕ appears to give an acyclic matching in the sense of discrete Morse theory [14, 15].
+Remark 3.5. We discuss a broader implication of Lemma 2.14. Let α ∈ UPFn and set σ = car α. Then
+Inv(α) = Inv(σ−1) (Lemma 2.14), so Des( α) = Des(σ−1), and in particular
+des(α) = des(σ−1) and maj( α) = maj(σ−1).
+Then the argument of Theorem 3.3 implies that
+(9)
+X
+α∈UPFn
+qdisp(α)tinv(α)xdes(α)ymaj(α) = X
+σ∈Sn
+(1 + q)asc(σ)tinv(σ)xdes(σ−1)ymaj(σ−1).
+An analogous formula holds for any other statistic that depends only on the inversion set.
+3.1. A cyclic sieving phenomenon. Let X be a finite set, let X(q) be a polynomial in q such that X(1) =
+|X|, let C = ⟨g⟩ be a cyclic group of order n acting on X, and let ω be a primitive nth root of unity. The
+triple (X, X(q), C) is said to exhibit the cyclic sieving phenomenon [21] if X(ωj) = |{x ∈ X : cj(x) = x}|
+for every c ∈ C.
+We use the following facts (setting a = 1 in [21, Equation (4.5)]). Let ω be a primitive nth root of unity
+as before, let d be a divisor of n, and let c = (c1, c2, . . . , ck) ⊨ n. Then
+(10)
+ n
+c1, c2, . . . , cℓ
+
+t=ωn/d
+=
+ n
+d
+c1
+d , c2 d , . . . ,ck d
+
+,
+where we adopt the convention that any multinomial expression involving one or more non-integers is zero.
+As shown in [7, Lemma 3.12, Proposition 3.13, Corollary 3.14], there is an Sn-action on UPF n, in which
+α and β belong to the same orbit if and only if α↑ = β↑; that is, α and β have the same block structure. In
+particular, UPF↑ n is a system of representatives for the Sn-orbits of UPF, and total displacement is constant
+on each orbit.
+The cyclic subgroup Cn of Sn generated by the n-cycle g = (1 2 · · ·n) ∈ Sn acts on UPFn by restricting
+the Sn-action on UPF n to Cn. For k ∈ N, let UPF disp n,k be the set of unit interval parking functions with
+total displacement k and set
+f disp n,k (t) = X
+α∈UPFdisp n,k
+tinv(α),
+so that Φ n,1(q, t) = P k qkf disp n,k (t).
+7
+Theorem 3.6. The triple (UPFdisp n,k , fdisp n,k (t), Cn) satisfies the cyclic sieving phenomenon for each n and k.
+That is, if ω is a primitive nth root of unity, then, for all n, k, j,
+f disp n,k (ωj) = X
+α∈UPFdisp n,k
+(ωj)inv(α) = |{α ∈ UPFdisp n,k : gjα = α}|.
+Proof. Let ω be a primitive nth root of unity. It suffices to consider the case that n = d jfor some positive
+integers d, j, so that ωj is a primitive dth root of unity. For each β ∈ UPF↑ n, let O(β) be its Sn-orbit, and
+write its block structure as πβ 1 | πβ 2 | · · · |πβ mβ .
+Recall that the elements of each block of α ∈ UPFn occur in weakly increasing order in α, left to right.
+Therefore, the number of inversions of α is unchanged by replacing each element in its jth block with the
+number j. Accordingly,
+X
+α∈O(β)
+tinv(α) = X
+u∈Sn·wβ
+tinv(u)
+=
+ n
+|πβ 1 |, |πβ 2 |, . . . ,|πβ mβ |
+
+t
+,(11)
+where wβ = 1 · · ·12 · · ·2 · · ·mβ · · ·mβ is a word with |πβ 1 | 1’s, |πβ 2 | 2’s, etc, written in weakly increasing order.
+The equality in (11) is [24, Prop. 1.7.1], originally due to MacMahon [20, pp. 314-315]. Now
+X
+α∈UPFn
+qdisp(α)(ωj)inv(α) = X
+β∈UPF↑ n
+qdisp(β) X
+α∈O(β)
+(ωj)inv(α)
+=
+X
+β∈UPF↑ n
+qdisp(β)
+ n
+|πβ 1 |, |πβ 2 |, . . . ,|πβ mβ |
+
+t=ωj
+=
+X
+β∈UPF↑ n
+qdisp(β)
+ n/d
+|πβ 1 |/d, |πβ 2 |/d, . . . ,|πβ mβ |/d
+
+,(12)
+where the equality in (12) follows from (10).
+We can interpret the multinomial coefficient in (12) combinatorially. By [7, Prop. 3.13], an element
+α = (a1, a2, . . . , an) ∈ UPFn is fixed by gj if and only if, for every i ∈ [j], all entries ai, ai+j, . . . , ai+(d−1)j
+whose indices form a congruence class modulo j belong to a common block. Hence, if α has block structure
+π1 | π2 | · · · |πm, then there are  n/d
+|π1|/d, |π2|/d, . . . ,|πm|/d
+
+elements in the Sn-orbit of α that are fixed by gj. (The elements of each block have to appear in increasing
+order, so the only choice to make is how to apportion the congruence classes among the blocks.) Thus, (12)
+becomes
+(13)
+X
+α∈UPFn
+qdisp(α)(ωj)inv(α) = X
+β∈UPF↑ n
+qdisp(β)|{α ∈ O(β) : gjα = α}|
+and grouping together unit interval parking functions with the same total displacement, we have
+X
+α∈UPFdisp n,k
+(ωj)inv(α) = |{α ∈ UPFdisp n,k : gjα = α}|,
+as desired. □
+Corollary 3.7. Let n be a positive integer.
+(1) If ω is a primitive nth root of unity, then
+X
+α∈UPFn
+qdisp(α)ωinv(α) = qn−1.
+8
+(2) If n is even, then
+X
+α∈UPFn
+qdisp(α)(−1)inv(α) = qn/2 X
+α∈UPFn/2
+qdisp(α).
+Proof. (1) This is the case j = 1 of Theorem 3.6. A UPF is fixed by g if and only if it has a single block of
+size n. There is exactly one such UPF, namely α = (1, 1, 2, . . . , n− 1), which has total displacement n − 1.
+(2) Let UPF 2 n be the set of unit interval parking functions whose block sizes are all divisible by 2 and let
+UPF2↑ n = UPF2 n ∩ UPF↑ n. Since an increasing UPF is determined by its list of block sizes, in order, there is
+a bijection ϕ : UPF 2↑ n → UPF↑ n/2 given by dividing all block sizes by 2. (For instance, ϕ(1123 | 55 | 7789) =
+11 | 3 | 44, because these are the unique increasing UPFs with block sizes 4 , 2, 4 and 2 , 1, 2 respectively.)
+Note also that disp( β) = disp(ϕ(β)) + n/2. Now substituting j = n/2 in (12) yields
+X
+α∈UPFn
+qdisp(α)(−1)inv(α) = X
+β∈UPF2↑ n
+qdisp(β)
+ n/2
+|πβ 1 |/2, πβ 2 |/2, . . . ,|πβ mβ |/2
+
+= qn/2 X
+α∈UPF↑ n/2
+qdisp(α)
+ n/2
+|πα 1 |, |πα 2 |, . . . ,|παmα |
+
+(setting α = ϕ(β))
+= qn/2 X
+α∈UPFn/2
+qdisp(α),
+where the last step follows from (12), replacing n and j with n/2 and d with 1. □
+3.2. F romℓ = 1 to ℓ = 2. Theorem 3.3 can be viewed as reducing the enumeration of 1-interval parking
+functions to the enumeration of 0-interval parking functions, which are just permutations. We now describe
+a similar reduction from 2-interval parking functions to 1-interval parking functions, although it is more
+complicated.
+Let β = (b1, b2, . . . , bn) ∈ UPFn have block structure π1 | π2 | · · · |πm. Let R(β) be the set of numbers
+i ∈ [n] such that bi is the second entry in its block πj, where j >1, and bi occurs after the last entry of block
+πj−1 Let S(β) be the set of numbers i ∈ [n] such that bi is the third or later entry in its block πj. Then
+(14) |S(β)| =
+mX
+i=1
+max(|πi| −2, 0).
+Example 3.8. If β = 7511278935 ∈ UPF10, then its block structure is π1 | π2 | π3 = 1123 | 55 | 7789.
+The second entry in block π2 is b10 = 5 and appears after the last entry of π1, which is b9 = 3. Hence,
+10 ∈ R(β). The second entry in block π3 is b6 = 7 and does not appear after the last entry of π2, which is
+b8 = 7. Hence, 6 /∈ R(β). Thus, we have R(β) = {10}. Lastly, in block π1 = 1123 the third or later entries
+are b5 = 2 and b9 = 3, while in block π3 = 7789 the third or later entries are b7 = 8 and b8 = 9. Hence,
+S(7511278935) = {5, 7, 8, 9}. As expected, by (14), |S(β)| = 2 + 0 + 2 = 4.
+Observe that
+R(β) ∩ S(β) = ∅, and (15)
+R(β) ∪ S(β) = {i ∈ [2, n] : spots bi − 1 and bi are both occupied when car i parks}.(16)
+In particular, if i ∈ R(β), then spot bi − 1 is occupied by the last car of block πj−1, and spot bi by the first
+car of block πj.
+Example 3.9. Continuing Example 3.8, let β = 7511278935 and we can confirm R(β) ∩ S(β) = ∅. One
+can readily confirm that the only indices i ∈ [2, n] such that spots bi − 1 and bi are occupied when car
+i parks are precisely the indices i ∈ {5, 7, 8, 9, 10} = R(β) ∪ S(β). For example, when car 7 parks, spots
+b7 − 1 = 8 − 1 = 7 and b7 = 8 are occupied by cars 1 and 6, respectively.
+Define a map η : IPFn(2) → UPFn by
+η(α)i =
+(
+ai + 1 disp α(i) = 2,
+ai dispα(i) ≤ 1.
+9
+Informally, η(α) is the result of asking each car with displacement 2, “Please lower your expectations by
+one spot.” It is unsurprising, though not entirely obvious, that the result is a unit interval parking function
+with the same spot permutation, as we now prove.
+Lemma 3.10. Let α ∈ IPFn(2) and β = η(α). Then β ∈ UPFn, and spotβ = spotα.
+Proof. We show by induction that spot β(i) = spot α(i) and disp β(i) ≤ 1 for all i ∈ [n]. For i = 1, we have
+dispα(1) = 0, so b1 = a1 = spot β(1) = spot β(1). For the inductive step, suppose that spot α(j) = spot β(j)
+for all j < i.
+• If dispα(i) ≤ 1, then bi = ai and spot β(i) = spotα(i); in particular, disp β(i) ≤ 1.
+• If dispα(i) = 2, then spot α(i) = ai + 2. In particular, spots ai and ai + 1 are full when car i parks.
+Changing the preference of the ith car from ai to bi = ai + 1 does not affect where car i parks, but
+then dispβ(i) = ai + 2 − bi = 1. □
+We now prove our main enumeration result on 2-interval parking functions.
+Theorem 3.11. For all n ≥ 1,
+X
+α∈IPFn(2)
+qdisp(α)tinv(α) = X
+β∈UPFn
+qdisp(β)tinv(β)(1 + q)|S(β)|(1 + qt)|R(β)|.
+In particular,
+| IPFn(2)| =
+X
+β∈UPFn
+2|S(β)|+|R(β)|.
+Proof. Let β = (b1, b2, . . . , bn) ∈ UPFn have block structure π1 | π2 | · · · |πm. Let R = R(β) and S = S(β).
+For R ⊆ Rand S ⊆ S, define α = (a1, a2, . . . , an) = gβ(R, S) by
+ai =
+(
+bi − 1 if i ∈ R ∪ S,
+bi if i ̸∈ R ∪ S.
+Then α is a parking function by the rearrangement criterion. In light of the description of R ∪ Sin (16), it
+follows that for all i ∈ [n],
+i ∈ R ∪ S if and only if disp α(i) = 2; (17a)
+i ̸∈ R ∪ S if and only if disp α(i) ≤ 1; (17b)
+spotα(i) = spotβ(i).(17c)
+Therefore, α ∈ η−1(β) ⊆ IPFn(2). That is, we have a function
+gβ : 2R × 2S → η−1(β).
+We claim that gβ is a bijection. It is injective by definition (note that R ∩ S= ∅). To show that gβ is
+surjective, it suffices to show that if α ∈ η−1(β) and disp α(i) = 2, then i ∈ R ∪ S. Indeed, bi = ai + 1 by
+definition of η. Since disp α(i) = 2, when car i parks, spots ai = bi − 1 and ai + 1 = bi are both occupied,
+and since spot α = spotβ by Lemma 3.10, we have i ∈ R ∪ Sby (16).
+Note that the inverse map fβ = g−1 β is given by fβ(α) = (R, S), where
+R = R ∩ {i ∈ [n] : dispα(i) = 2}, and S = S ∩ {i ∈ [n] : dispα(i) = 2}.
+Now, let β ∈ UPFn, and let α = gβ(R, S) for some R ⊆ R(β) and S ⊆ S(β). Then
+dispα(i) =
+(
+dispβ(i) if i /∈ R ∪ S,
+dispβ(i) + 1 if i ∈ R ∪ S,
+so
+(18) disp( α) = disp(β) + |R| + |S|.
+We now describe inv( α) in terms of inv( β). Suppose for contradiction that ( i, j) is an inversion of β but
+not of α. Then, by definition of gβ, i ∈ R ∪ S, j ̸∈ R ∪ S, and bi = bj + 1. Hence, ai = bi − 1 = bj = aj. Since
+β is a unit interval parking function, it does not have inversions within blocks (Theorem 2.10, part (2));
+10
+hence, bi and bj must be in different blocks. Thus, bi is either the first or second element of some block
+πk+1 and bj is the last element of block πk. If bi is the first element of πk+1, then i /∈ R ∪ S. If bi is the
+second element of πk+1 then again i /∈ R ∪ Sbecause bi occurs before the last entry of πk, namely bj. Hence,
+i /∈ R ∪ S, which is a contradiction. We conclude that Inv( β) ⊆ Inv(α).
+Now suppose that ( i, j) is an inversion of α but not of β. Then i ̸∈ R ∪ S, j ∈ R ∪ S and bi = bj by
+definition of gβ. Hence, j ∈ R because it is the second occurrence of the same number (since i < j) and thus
+is the second entry of its block. Conversely, whenever bi = bj with i < j, the pair ( i, j) is an inversion of α
+but not of β. Therefore,
+(19) inv( α) = inv(β) + |R|.
+and combining (18) and (19) we obtain
+(20) qdisp(α)tinv(α) = qdisp(β)+|R|+|S|tinv(β)+|R|.
+Consequently,
+X
+α∈η−1(β)
+qdisp(α)tinv(α) = X
+R⊆R
+X
+S⊆S
+qdisp(β)+|R|+|S|tinv(β)+|R|
+= qdisp(β)tinv(β)
+
+ X
+R⊆R
+(qt)|R|
+
+
+
+ X
+S⊆S
+q|S|
+
+
+= qdisp(β)tinv(β)(1 + q)|S(β)|(1 + qt)|R(β)|,
+and summing over all β ∈ UPFn yields the theorem. □
+Example 3.12. Let β = 6411624 ∈ UPF7, which has block structure β↑ = 112 |44|66. Positions 4,5,7
+contain the second elements of the blocks. Note that R(β) = {7}, because:
+• 4 /∈ R(β) because it is the second element of the first block.
+• 5 /∈ R(β): the 6 in position 5 is the second element of π3, but it occurs to the left of the largest
+element of π2, namely the 4 in position 7.
+• 7 ∈ R(β): the 4 in position 7 is the second element of π2, and it occurs to the right of the largest
+element of π1, namely the 2 in position 5.
+Meanwhile, S(β) = {6}. We have
+spotβ = 6412735, disp(β) = 0+0+0+1+1+1+1 = 4 , inv(β) = |{12, 13, 14, 16, 17, 23, 24, 26, 56, 57}| = 10.
+The possibilities for R and S and the corresponding 2-interval parking functions α = gβ(R, S) are as follows.
+R S α spotα disp(α)
+∅ ∅ 6411624 6412735 0 + 0 + 0 + 1 + 1 + 1 + 1 = 4
+7 ∅ 6411623 6412735 0 + 0 + 0 + 1 + 1 + 1 + 2 = 5
+∅ 6 6411614 6412735 0 + 0 + 0 + 1 + 1 + 2 + 1 = 5
+7 6 64 11613 6412735 0 + 0 + 0 + 1 + 1 + 2 + 2 = 6
+In the cases that R is nonempty, the new inversion is underlined.
+4. Enumeration via ciphers
+For positive integer n and nonnegative integer k, define
+UPFinv n,k = {α ∈ UPFn : inv( α) = k}, upf inv n,k = | UPFinv n,k |.
+Setting q = 1 in Theorem 3.3 and extracting the coefficient of tk yields
+(21) upf inv n,k = X
+σ∈Sn
+inv(σ)=k
+2asc(σ)
+although it is not clear how to convert this expression to a closed formula. In this section, we describe how
+work of Avalos and Bly [4], together with block structure theory (Theorem 2.10), can be used to determine
+the numbers upf inv n,k through the use of ciphers, an analogue of Lehmer codes for unit interval parking
+11
+functions. We then use ciphers to provide a new proof of [10, Theorem 1.2], which counts Boolean intervals
+of Sn under the right weak order by certain unit interval parking functions.
+4.1. The Avalos–Bly and cipher bijections. Let m and n be nonnegative integers. In what follows,
+T = ( T1, T2, . . . , Tm) always denotes an ordered list of multisets of nonnegative integers. Let type( T ) =
+(|T1|, |T2|, . . . ,|Tm|). Avalos and Bly [4, Defns. 1.8, 1.10] defined
+T m n = {T = (T1, T2, . . . , Tm) : |T1| + |T2| + · · ·+ |Tm| = n and 0 ≤ x ≤ Pi−1 j=1 |Tj| for all x ∈ Ti},
+T m n (k) = {T = (T1, T2, . . . , Tm) ∈ Tm n : X
+i
+X
+x∈Ti
+x = k}.
+They proved [4, Proposition 1.9] that there is a bijection
+φ : [m]n → Tm n
+defined as follows. Given w = (w1, w2, . . . , wn) ∈ [m]n and j ∈ [n], define
+(22) inv( w, j) = |{ℓ ∈ [j + 1, n] : wj > wℓ}|
+(the number of inversions with wj as the left element).
+They then define multisets Ti = {inv(w, j) : wj = i} and set φ(w) = (T1, T2, . . . , Tm). In particular, since
+inv(w) = Pm j=1 inv(w, j), it follows that φ restricts to a bijection
+{w ∈ [m]n : inv( w) = k} → Tm n (k),
+which is [4, Proposition 1.11]. If we define the content of w ∈ [m]n as cont(w) = (|w−1(1)|, . . . ,|w−1(m)|)
+(thinking of w as a map w : [n] → [m]), then the construction implies that type( T ) = cont(w). Therefore,
+for each weak composition c of n, the map φ restricts to bijections
+(23)
+{w ∈ [m]n : cont( w) = c} → {T ∈ Tm n : type( T ) = c},
+{w ∈ [m]n : cont( w) = c, inv(w) = k} → {T ∈ Tm n (k) : type(T ) = c}.
+Combining the Avalos–Bly bijections (23) with that of Corollary 2.11, we obtain bijections
+{α ∈ UPFn : (|π1|, . . . ,|πm|) = c} → {T ∈ Tm n : type( T ) = c},
+{α ∈ UPFinv n,k : (|π1|, . . . ,|πm|) = c} → {T ∈ Tm n (k) : type(T ) = c},
+for each (strict) composition c. We can now state the main result of this section, which follows from gluing
+these last bijections together over all compositions c.
+Theorem 4.1 (Cipher Bijection). Let n and m be positive integers and let k be a nonnegative integer. Then
+(24) ψ : UPF inv n,k →
+n[
+m=1
+Gm n (k),
+where
+Gm n (k) = {(T1, T2, . . . , Tm) ∈ Tm n (k) : |Ti| > 0 for all i}.
+We call ψ(α) the cipher of α. We represent ciphers by writing each Ti as a string of boldface numbers in
+weakly decreasing order, separated by bars. For instance, 00
+110 31 100 110 31 100 110 31 1 is an element of G4 8 (7).
+Example 4.2 (One inversion). Let n ≥ 2. We calculate upf inv n,1. By (24), we have a bijection
+UPFinv n,1 →
+n[
+m=1
+Gm n (1).
+The right-hand side consists of sequences ( T1, T2, . . . , Tm) where each Ti is a nonempty multiset of 0’s and
+1’s, containing a total of n − 1 0’s and one 1, with the 1 not appearing in T1 (so in particular m ≥ 2). The
+ciphers for such a sequence are precisely those words that start with 000, followed by some permutation of the
+following substrings: one copy of
+1 1 1, and n − 2 more strings each of which can be either 000 or 0 0 0. (The number
+of
+0 0 0’s used is thus m − 1.) The “regular expression” for all such ciphers is
+000 ·   { 1 1 1}1, {000, 0 0 0}n−2
+12
+(we use this notation in the next example as well) and it is now elementary that
+(25) upf inv n,1 = 2n−2(n − 1).
+Example 4.3 (Two inversions). Let n ≥ 3. We calculate upf inv n,2. Here are the possibilities:
+(1) The cipher has one 222 and n − 1 000’s. The regular expression is   000000, 0|00|00|0  ·   { 2 2 2}1, { 0 0 0, 000}n−3 . There
+are 2n−2 such words.
+(2) The cipher has two 111’s and n − 2 000’s. There are two subcases:
+(a) The 111’s are in different blocks.
+Regular expression: 000 ·   { 1 1 1}2, { 0 0 0, 000}n−3
+Count: 2 n−3 n−1 2 
+(b) The 111’s are in the same block.
+Regular expression: 000 ·   { 11 11 11}1, { 0 0 0, 000}n−3
+Count: 2 n−3(n − 2)
+Adding these counts, we obtain
+(26) upf inv n,2 = 2n−3
+
+3(n − 2) +
+n − 1
+2
+
+= 2n−4(n − 2)(n + 5).
+Example 4.4 (Three inversions). Let n ≥ 3. We calculate upf inv n,3. The regular expressions and their counts
+are as follows:
+000 ·   { 0 0 0, 000} 2 ·   { 3 3 3}1, { 0 0 0, 000}n−4 22 · 2n−4 · (n − 3)
+{000000, 0
+00 00 0}1 ·   { 21 21 21}1, { 0 0 0, 000}n−4 2 · 2n−4 · (n − 3)
+0
+10 10 1 ·   { 2 2 2}1, { 0 0 0, 000}n−3 2n−3 · (n − 2)
+{000000, 0
+00 00 0}1 ·   { 2 2 2}1, { 1 1 1}1, { 0 0 0, 000}n−4 2 · 2n−4 · (n − 3)(n − 2)
+000 ·   { 1 1 1}3, { 0 0 0, 000}n−4 2n−4 ·  n−1 3 
+000 ·   { 11 11 11}1, { 1 1 1}1, { 0 0 0, 000}n−4 2n−4 · (n − 3)(n − 2)
+000 ·   { 111 111 111}1, { 0 0 0, 000}n−4 2n−4 · (n − 3)
+Adding up the counts, we obtain
+(27) upf inv n,3 = 2n−4
+ 1
+6 n3 + 2n2 − 25 6 n − 8  .
+Comparing the formulas (25), (26), and (27), we are led to the following general conjecture, which we
+leave as an open problem.
+Conjecture 4.5. Let n ≥ 1 and k ∈ {0, 1, . . . , n(n − 1)/2}. Then upf inv n,k = O(2n−2knk).
+4.2. Ciphers and Lehmer codes. We describe another way to construct ciphers by way of Lehmer codes
+for permutations. Let En,k be the set of words w ∈ {0, 1, . . . , n− 1}n satisfying
+(1) wi ≤ i − 1 for all i ∈ [n], and
+(2) Pn i=1 wi = k.
+Then a cipher T ∈ Gn(k) can be constructed from a word w ∈ En,k by inserting bars. If wi < wi+1, we must
+insert a bar between wi and wi+1; otherwise, we may insert a bar. Hence, we can construct 2 n−1−asc(w)
+ciphers from w, and every cipher arises in this way. It follows that
+(28) upf inv n,k = X
+w∈En,k
+2n−1−asc(w).
+Define
+En =
+[
+k≥0
+En,k = {0} × {0, 1} × · · · × {0, 1, . . . , n− 1}.
+Then En is the set of Lehmer codes (backwards); see [24, p. 34]. There is a bijection γ : En → Sn from
+Lehmer codes to permutations: given w ∈ En, construct γ(w) by starting with the empty word and inserting
+13
+1, 2, . . . , nsuccessively, placing i to the left of wi letters. It is not hard to see that for all w ∈ En,
+Asc(w) = Des(γ(w)−1) (29)
+and
+nX
+i=1
+wi = inv(γ(w)).(30)
+Applying (29) to (28) and observing that asc( σ) + des(σ) = n − 1 for all σ ∈ Sn, we obtain
+upf inv n,k = X
+σ∈Sn
+inv(σ)=k
+2n−des(σ−1)−1 = X
+σ∈Sn
+inv(σ)=k
+2asc(σ),
+which recovers the q = 1 specialization of Theorem 3.3.
+Define the underlying code of a cipher T ∈ Gn(k) to be the word code( T ) ∈ En obtained from T by
+removing all bars. Likewise, the underlying code of a UPF α is code( α) = code( ψ(α)), where ψ is the
+Avalos–Bly bijection.
+Corollary 4.6. For a unit interval parking function α, the Lehmer code of spotα is the underlying code of
+α. In particular, if β is a unit interval parking function, then α and β have the same outcome permutation
+if and only if ψ(α) and ψ(β) have the same underlying code.
+Proof. Let π1 | π2 | · · · |πm be the block structure of α = (a1, a2, . . . , an). As in the Avalos–Bly construction
+described above, for each i ∈ [m], let Ti denote the multiset of all numbers inv( α, j) (see (22)) such that
+aj ∈ πi. Then w = code(ψ(α)) is the concatenation T1T2 · · ·Tm, where each Ti is sorted in weakly decreasing
+order. Let σ = γ(w). Then ( i, j) ∈ Inv(γ(w)) if and only if σi > σj and wσi > wσj + wσj +1 + · · ·+ wσi−1;
+in this case ai must belong to a later block than aj, so ( i, j) ∈ Inv(α). Thus Inv( γ(w)) ⊆ Inv(α), and since
+| Inv(γ(w))| =
+nX
+i=1
+wi =
+nX
+i=1
+ψ(α)i = | Inv(α)|
+(by the constructions of γ, w and ψ, respectively), we conclude that Inv( γ(w)) = Inv(α).
+On the other hand, Inv(spot α) = Inv(α). A permutation is uniquely determined by its inversion set, so
+spotα = σ = γ(w). Hence, γ−1(spotα) must be the underlying code of ψ(α). □
+Example 4.7. Let w = 00110311 ∈ E8,7. The corresponding ciphers are of the form 0 · 0|1 · 1 · 0|3 · 1 · 1, where
+each dot is replaced either with | or with the null symbol. The unit interval parking function corresponding
+to any of these 32 ciphers has σ = spotα = 13642785, e.g.,
+00|110|311
+ψ−1
+7− − − →13631674
+C
+7− →13642785,
+00|1|10|3|11
+ψ−1
+7− − − →13641774
+C
+7− →13642785.
+Then σ−1 = 15248367 = γ(w)−1. Note that Des( σ−1) = {2, 5} = Asc(w).
+4.3. Unit F ubini rankings. A unit F ubini ranking is a unit interval parking function whose blocks all
+have size 1 or 2. Unit Fubini rankings were introduced in [10] to study Boolean intervals of Sn under the
+right weak order. We can use ciphers to provide a new proof of the main result of that paper.
+Theorem 4.8 ([10, Theorem 1.2]). Unit Fubini rankings with n − r blocks and k inversions are in bijection
+with rank-r Boolean intervals [σ, τ] of Sn under the right weak order with inv(σ) = k.
+This statement is ostensibly a refinement of [10, Theorem 1.2], which does not mention inversions explicitly,
+but it is not difficult to use the methods of [10] together with elementary facts such as Lemma 2.14 to obtain
+the more refined version.
+Proof. Call a set of integers sparse if it contains no two consecutive integers. Let UFR m n,k be the set of unit
+Fubini rankings of length n with m blocks and k inversions. The bijection (24) restricts to a bijection
+ψ : UFR m n,k → ˆT m n (k) := {(T1, T2, . . . , Tm) ∈ Tm n (k) : |Ti| ∈ {1, 2} for all i}.
+14
+As in Example 4.7, the elements of T m n (k) can be represented as ciphers as follows: choose a word w ∈ En,k,
+insert bars at all its ascents, and insert additional bars as needed so as to obtain m blocks, all of size 1 or
+2. That means that we need a total of m − 1 bars; if B is the set of non-ascents where there are bars, then
+|B| = m − 1 − |Asc(w)|. Thus we have a bijection
+ˆT m n (k) →
+
+
+ (w, B) :
+w ∈ En,k,
+B ⊆ [n − 1] \ Asc(w),
+|B| = m − 1 − |Asc(w)|, and
+[n − 1] \ (Asc(w) ∪ B) is sparse
+
+
+ .
+We may replace ( w, B) with the equivalent data ( σ, C), where σ = γ(w)−1 and C = Asc(σ) \ B. (By (29),
+we have [n − 1] \ Asc(w) = [n − 1] \ Des(σ) = Asc(σ).) Translating the conditions on ( w, B) into conditions
+on (σ, C), we obtain a bijection
+ˆT m n (k) →
+
+
+(σ, C) :
+σ ∈ Sn, inv(σ) = k,
+C ⊆ Asc(σ), |C| = n − m, and
+C is sparse
+
+
+ .
+On the other hand, a Boolean interval in the right weak order with bottom element σ and rank r is given
+precisely by choosing r pairwise commuting elementary transpositions si such that inv( σsi) > inv(σ) for
+every i, which is equivalent to choosing a sparse subset of Asc( σ) of size r. □
+Remark 4.9. Let Fib i denote the ith Fibonacci number: (Fib 0, Fib1, Fib2, Fib3, . . .) = (1 , 1, 2, 3, . . .).
+Theorem 1.1 of [10] states that for each σ ∈ Sn, the number of Boolean intervals in right weak order with
+bottom element σ is Qk i=1 Fibai(σ), where a1(σ), . . . , ak(σ) are the lengths of the maximal ascending subwords
+of σ = (σ1, . . . , σn), or, equivalently, of the maximal non-ascending subwords of w = γ−1(σ−1). The proof of
+Theorem 4.8 provides a generating function for Boolean intervals by rank, as follows. Define the Fibonacci
+polynomials Fibn(q) by
+Fibn(q) =
+X
+S⊆[n−1]
+S sparse
+q|S|
+(see sequence #A011973 in [18]), so that Fib n(1) = Fibn. Then
+(31)
+X
+τ ∈Sn
+[σ,τ] Boolean
+qinv(τ )−inv(σ) =
+kY
+i=1
+Fibai(σ)(q).
+5. Foata invariance and inv-maj equidistribution
+In this section, we prove that a classical bijection of Foata [11] preserves the classes of ℓ-interval parking
+functions for ℓ ∈ {1, 2, n− 2, n− 1}, from which it follows that the inversion and major index statistics are
+equidistributed on each of these classes.
+Theorem 5.1. Let 1 ≤ ℓ < n, and let IPFn(ℓ) denote the class of ℓ-interval parking functions of length n.
+• If ℓ ∈ {1, 2, n− 2, n− 1}, then the Foata transform restricts to a bijection IPFn(ℓ) → IPFn(ℓ), and
+consequently the inversion and major index statistics are equidistributed on IPFn(ℓ), i.e.,
+X
+p∈IPFn(ℓ)
+tinv(p) = X
+p∈IPFn(ℓ)
+tmaj(p).
+• If ℓ ̸∈ {1, 2, n− 2, n− 1}, then inversion and major index are not equidistributed on IPFn(ℓ), so the
+Foata transform cannot be a bijection IPFn(ℓ) → IPFn(ℓ).
+The proof spans several cases, which we order by increasing difficulty.
+• ℓ = n − 2: Proposition 5.7
+• 3 ≤ ℓ ≤ n − 3: Proposition 5.8
+• ℓ = 1: Proposition 5.9
+• ℓ = 2: Proposition 5.10
+15
+5.1. The F oata transform on words. We begin by describing Foata’s bijection [11] and its relevant
+properties.
+Definition 5.2 ([11]). The F oata transformis the function F defined inductively on words w = w1 · · ·wn
+as follows.
+• For n = 1, we set F (w) = w.
+• For n >1, F (w) is defined as follows. Let w′ = F (w1 · · ·wn−1) = w′ 1 · · ·w′ n−1.
+– If wn ≥ w′ n−1, then place a separator after every w′ i such that wn ≥ w′ i.
+– If wn < w′ n−1, then place a separator after every w′ i such that wn < w′ i.
+• Cycle each segment (i.e., each maximal subword between consecutive separators) by moving its
+rightmost entry to the start.
+• Finally, append wn. The result is F (w).
+For an example of the algorithm in action, see [24, Example 1.4.7].
+Foata [11] proved that F is a bijection, and that inv( F (w)) = maj( w) for all words w, which implies
+equidistribution of inversion number and major index for permutations (which are 0-interval parking func-
+tions), i.e.,
+(32)
+X
+w∈Sn
+qinv(w) = X
+w∈Sn
+qmaj(w).
+Equidistribution had been proved previously by MacMahon [20], but the Foata transform gave the first
+combinatorial proof. (For more detail, see [24, pp. 41–43].)
+It is immediate from the definition of F that it preserves the content of a word, i.e., the number of
+occurrences of each letter. In particular, it preserves the class of parking functions (which are ( n − 1)-
+interval parking functions). Moreover, the definition of F also implies that for each i, the “partial Foata
+transform” Fi defined by Fi(w) = F (w1 · · ·wi)wi+1 · · ·wn is also a bijection.
+The motivating question of this section is: When does the Foata transform preserve the class of ℓ-interval
+parking functions of length n? When the answer is positive, equidistribution of inversion number and major
+index for that class follows immediately.
+5.2. Permuting parking functions. Here we compare different parking functions related by permutations
+(specifically, by partial Foata transforms). It is convenient to assign each car a permanent unique identifier
+(its “license plate”, so to speak) and denote a parking function p = (p1, . . . , pn) by a two-line array
+p =
+
+C1 · · ·Cn
+p1 · · ·pn
+
+in which Ci means the car with license plate i; pi is its preference; and the order of columns indicates the
+order with which cars enter the parking lot.
+Remark 5.3. The objective of using Ci is to be able to change the order in which the cars park but not
+change their preferences. For example, when p = 112, we say car 2 prefers to park in spot 1. Then we
+can tell those cars to keep their preferences but change their order in the queue to now park enter in the
+order 1 → 3 → 2. This creates the parking function q = 121. By using the notation Ci we are able to then
+reference that the car that was the 2nd car in p is now the 3rd car in q. In other words,
+p =
+ C1 C2 C3
+1 1 2
+
+becomes q =
+ C1 C3 C2
+1 2 1
+
+.
+This notation is convenient, as it allows one to say clearly how we compare the displacements of the cars as
+we make small changes to a parking function.
+Accordingly, we write spotp(Ci) for the spot in which carCi parks with respect to p, and define dispp(Ci) =
+spotp(Ci) − pi. For example, if p is the parking function
+p =
+ C1 C2 C3 C4 C5 C6
+1 1 1 1 4 3
+
+16
+then its Foata transform is
+r = F (p) =
+ C5 C1 C2 C3 C4 C6
+4 1 1 1 1 3
+
+.
+We can see for example that spot r(C4) = 5 and disp r(C4) = 5 − 1 = 4. Recall that a parking function p is
+an ℓ-interval parking function if and only if max i{dispp(Ci)} ≤ℓ.
+Lemma 5.4 (Interval Rearrangement). Let p be a parking function of length n. Partition [n] into intervals
+B1, . . . , Bk, and let q = p · w, where w ∈ SB1 × · · · ×SBk . (See Section 3.1 for the action of permutations
+on parking functions.) Then for each i ∈ [k] we have
+{spotp(j) : j ∈ Bi} = {spotq(j) : j ∈ Bi}.
+This fact may be known, but we have not found it in the literature, so we give a short proof.
+Proof. The permutation w can be factored as a product of adjacent transpositions, each one belonging to
+some SBi , so it suffices to show that interchanging the order of two adjacent cars either preserves or swaps
+their outcomes. Suppose that S is the set of parking spots available at some point in the algorithm, and
+that the next two cars in line to park prefer spots u and v. Depending on who parks first, the two spots
+they park in are either
+a = min{s ∈ S : s ≥ u}, b = min{s ∈ S \ a : s ≥ v}
+or
+y = min{s ∈ S : s ≥ v}, z = min{s ∈ S \ y : s ≥ u}.
+If u = v then evidently a = y and b = z. Without loss of generality, assume u < v.
+Evidently u ≤ a ≤ z and v ≤ y ≤ b. If ( a, y) = (z, b) then we are done. Otherwise, either a < zor y < b. In
+the first case, the definitions of a and z imply that y = a, from which it follows thatu, u+1, . . . , v−1 ̸∈ S, and
+these two conditions together imply z = b. A similar argument shows that y < bimplies (y, z) = (a, b). □
+Lemma 5.4 generalizes easily from parking functions to parking completions (see [1]). One useful conse-
+quence is the following.
+Proposition 5.5. Suppose p, qare two parking functions obtained by switching two adjacent cars, as follows:
+p =
+ · · ·C1 C2 · · ·
+· · ·x1 x2 · · ·
+
+, q =
+ · · ·C2 C1 · · ·
+· · ·x2 x1 · · ·
+
+,
+with x1 > x2. Then maxdisp(p) ≥ maxdisp(q). In particular, the increasing rearrangement of every ℓ-
+interval parking function is an ℓ-interval parking function.
+Proof. By interval rearrangement (Lemma 5.4), the sets {spotp(Cx), spotp(Cy)} and {spotq(Cx), spotq(Cy)}
+are equal, say to {a, b}, where a < b. If spot p(Cx) = spot q(Cx) and spot p(Cy) = spot q(Cy), then
+maxdisp(p) = maxdisp(q). Otherwise, we have without loss of generality
+a = spotp(C1) = spotq(C2) < spotp(C2) = spotq(C1) = b.
+In particular, b > a≥ x1 > x2, and
+max(dispp(C1), dispp(C2)) = max(a − x1, b− x2)
+> max(dispq(C1), dispq(C2)) = max(b − x1, a− x2).
+Thus, replacing p with q can only decrease the maximum displacement, as claimed. Iterating this argument
+shows that bubble-sorting (taking a ℓ-interval parking function and sorting the smallest element to position
+1, then the second smallest to position 2, etc.) produces an ℓ-interval parking function. □
+Lemma 5.6 (Reserved Spot Lemma) . For 1 ≤ j < k≤ n, let
+p =
+ C1 · · ·Cn
+p1 · · ·pn
+
+and q =
+ C1 · · ·Cj−1 Ck Cj · · ·Ck−1 Ck+1 · · ·Cn
+p1 · · ·pj−1 pk pj · · ·pk−1 pk+1 · · ·pn
+
+be parking functions (where the bars are included merely for clarity), and suppose that spotp(Cj) = spotq(Cj).
+Then spotp(Ci) = spotq(Ci) for all i ∈ [n].
+17
+Proof. Let p and q be parking functions as above with indices j < k.
+If i < jor i < k, then the conclusion follows from interval rearrangement (Lemma 5.4).
+If k = j + 1, then we know that spot p(Ci) = spot q(Ci) for all i ̸= k, so it must be the case that
+spotp(Ck) = spotq(Ck) as well.
+If k > j+ 1, the result follows from the k = j + 1 case by factoring the cycle ( j j+ 1 · · ·k − 1 k) into
+the product of adjacent transpositions ( k − 1 k)(k − 2 k − 1) · · ·(j j+ 1). □
+5.3. Proof of Theorem 5.1. We begin with the easiest cases, showing that the Foata transform is a
+bijection when ℓ = n − 2, but not when 3 ≤ ℓ ≤ n − 3.
+Proposition 5.7. For all n ≥ 3 the Foata transform restricts to a bijection IPFn(n − 2) → IPFn(n − 2).
+Proof. A parking function p of length n fails to be an ( n − 2)-parking function precisely when some car
+has displacement n − 1. That car must be the last to park, must prefer spot 1, and must park in spot n,
+which implies that ˆp = (p1, . . . , pn−1) is a parking function of length n − 1. (In particular, | IPFn(n − 2)| =
+(n + 1)n−1 − nn−2.) Since F fixes the last digit of p and permutes the entries of ˆp, it follows that it fixes
+PFn \ IPFn(n − 2), hence must fix IPF n(n − 2). □
+Proposition 5.8. For n ≥ 6 and 3 ≤ ℓ ≤ n − 3, the statistics inv and maj are not equidistributed on
+IPFn(ℓ).
+Proof. Let In,ℓ = {p ∈ IPFn(ℓ) : inv(p) = 1 } and Mn,ℓ = {p ∈ IPFn(ℓ) : maj( p) = 1 }. We show that
+|Mn,ℓ| < |In,ℓ|. To do so, define
+P I n,ℓ =
+
+(α, i) ∈ IPF↑ n(ℓ) × [n − 1] : (I1) ai < ai+1, and (I2) either ai+1 > ior dispα(Ci) ≤ ℓ − 1  ,
+P M n,ℓ =
+
+(α, i) ∈ IPF↑ n(ℓ) × [n − 1] : (M1) ai < ai+1, and (M2) for all j ∈ [n], if ai+1 ≤ j ≤ i, then disp α(Cj) ≤ ℓ − 1  .
+Our plan is to define bijections κ : P I n,ℓ → In,ℓ and λ : P M n,ℓ → Mn,ℓ, then to show that P I n,ℓ ⊋ P M n,ℓ.
+First, given a pair (α, i) ∈ PI n,ℓ, let β = κ(α, i) be the parking function obtained by swapping ai and ai+1.
+Since α = α↑, it follows that β is a parking function with one inversion, and α can be recovered from β as
+its increasing rearrangement.
+By interval rearrangement (Lemma 5.4), every car has the same outcome in β as does in α, except that
+Ci and Ci+1 may switch places. Since α = α↑, the two parking spots in question are i and i + 1. There are
+two possibilities:
+• If ai+1 = i + 1, then spot β(Cj) = spotα(Cj) for every j ∈ [n], and it follows that β ∈ IPFn(ℓ).
+• If ai+1 ≤ i, then (spotβ(Ci), spotβ(Ci+1)) = (spotα(Ci+1), spotα(Ci)) = (i+ 1, i). By condition (I2),
+dispβ(Ci+1) = disp α(Ci+1) − 1 and disp β(Ci) = disp α(Ci) + 1. Hence β ∈ IPFn(ℓ) if and only if
+dispα(Ci) ≤ ℓ − 1.
+Thus we have a injective map κ : P I n,ℓ → In,ℓ. For surjectivity, observe that if β ∈ In,ℓ has a unique inversion
+bi > bi+1, then α = β↑ ∈ IPF↑ n(ℓ) by Proposition 5.5, and the same case argument shows that ( α, i) ∈ PI n,ℓ.
+Second, given a pair ( α, i) ∈ PM n,ℓ, let β = λ(α, i) be the parking function obtained by moving ai+1 to the
+front. Similarly to the first case, β is a parking function with major index 1, and α = β↑.
+By interval rearrangement (Lemma 5.4), the spots and displacements of cars Ci+2, . . . , Cn are unchanged
+from α to β. By construction, we have for all j ∈ [n],
+spotβ(Cj) =
+
+
+
+ai+1 if j = i + 1,
+spotα(Cj) if j ≤ i and spot α(Cj) < ai+1,
+spotα(Cj) + 1 if j ≤ i and spot α(Cj) ≥ ai+1,
+and
+dispβ(Cj) =
+
+
+
+0 if j = i + 1,
+dispα(Cj) if j ≤ i and spot α(Cj) < ai+1,
+dispα(Cj) + 1 if j ≤ i and spot α(Cj) ≥ ai+1,
+=
+
+
+
+0 if j = i + 1,
+dispα(Cj) if j < ai+1,
+dispα(Cj) + 1 if ai+1 ≤ j ≤ i,
+18
+and now condition (M2) in the definition of P M n,ℓ implies that β has maximum displacement ℓ, hence belongs
+to Mn,ℓ.
+Thus we have an injective map λ : P M n,ℓ → Mn,ℓ. To see that it is a surjection, let β ∈ Mn,ℓ; then α = β↑
+has the form
+α =
+ C2 C3 · · ·Ci+1 C1 Ci+2 · · ·Cn
+b2 b3 · · ·bi+1 b1 bi+2 · · ·Cn
+
+,
+where i is the greatest index such that b1 > bi+1. Then α ∈ IPF↑ n(ℓ) by Proposition 5.5, and again the
+calculation above shows that ( α, i) ∈ PM n,ℓ.
+Third, it is immediate from their definitions thatP I n,ℓ ⊇ PM n,ℓ. To prove that containment is strict, consider
+the parking function
+p = ( 1 , . . . ,1| {z }
+ℓ+1 copies
+, ℓ+ 1, ℓ, ℓ+ 4, ℓ+ 5, . . . , n) ∈ In,ℓ
+(recall that n ≥ 6 and 3 ≤ ℓ ≤ n − 3). Then κ−1(p) = (α, ℓ+ 2), where
+α = ( 1 , . . . ,1| {z }
+ℓ+1 copies
+, ℓ, ℓ+ 1, ℓ+ 4, ℓ+ 5, . . . , n).
+Thus (α, ℓ+ 2) ∈ PI n,ℓ. However, setting i = ℓ + 2 and j = ℓ + 1, we have
+ai+1 = ℓ + 1 ≤ j ≤ i, but disp α(Cj) = (ℓ + 1) − aℓ+1 = (ℓ + 1) − 1 = ℓ.
+So condition (M2) fails and ( α, ℓ+ 2) /∈ PM n,ℓ, proving strict containment as desired. □
+We next consider the case ℓ = 1.
+Proposition 5.9. The Foata transform restricts to a bijection UPFn → UPFn.
+Proof. Let q ∈ UPFn, and let r be the parking function obtained by cycling a single interval [ a, b]:
+q =
+ · · ·Ca · · ·Cb · · ·
+· · ·qa · · ·qb · · ·
+
+→ r =
+ · · ·Cb Ca · · ·Cb−1 · · ·
+· · ·qb qa · · ·qb−1 · · ·
+
+.
+Here the bars are included for clarity. Note that spot r(Cb) ≤ spotq(Cb) because passing from q to r moves
+Cb toward the front of the queue.
+If spot r(Cb) = spot q(Cb), then the Reserved Spot Lemma (Lemma 5.6) implies that all outcomes are
+preserved, so r ∈ UPFn. Accordingly, we assume henceforth that spot r(Cb) < spotq(Cb). Since q is a unit
+interval parking function, we have
+0 ≤ dispr(Cb) = spotr(Cb) − qb < spotq(Cb) − qb = dispq(Cb) ≤ 1
+so the two inequalities are both actually equalities. In particular,
+(33) spot r(Cb) = qb and spot q(Cb) = qb + 1.
+By interval rearrangement (Lemma 5.4),
+bX
+i=a
+spotq(Ci) =
+bX
+i=a
+spotr(Ci)
+so
+bX
+i=a
+dispq(Ci) =
+bX
+i=a
+dispr(Ci)
+and
+1 +
+b−1X
+i=a
+dispq(Ci) =
+b−1X
+i=a
+dispr(Ci)
+19
+and dispr(Ci) ≥ dispq(Ci) for all i ∈ [a, b− 1]. From this we may conclude that there is a unique j ∈ [a, b− 1]
+such that
+dispr(Cj) = dispq(Cj) + 1 and (34)
+dispr(Ci) = dispq(Ci) for all i ∈ [a, b− 1] \ {j}.(35)
+If disp r(Cj) = 1 and disp q(Cj) = 0, then r is a UPF and we are done. Accordingly, assume for the sake
+of contradiction that disp r(Cj) = 2 and disp q(Cj) = 1. By the Reserved Spot Lemma (Lemma 5.6), the
+parking function
+s =
+ · · ·Cb Cj Ca · · ·Cj−1 Cj+1 · · ·Cb−1 · · ·
+· · ·qb qj qa · · ·qj−1 Cj+1 · · ·qb−1 · · ·
+
+satisfies spot s(i) = spotr(i) for all i ∈ [a, b]. On the other hand, certainly
+{spotq(Ci) : i ∈ [a, b]} = {spotr(Ci) : i ∈ [a, b]} = {spots(Ci) : i ∈ [a, b]}
+and we have seen that for i ̸∈ {b, j},
+spots(Ci) = spotr(Ci) = spotq(Ci).
+We conclude that
+{spotr(Cb), spotr(Cj)} = {spotq(Cb), spotq(Cj)},
+which forces
+spotq(Cj) = spotr(Cb) = qb, and
+spotr(Cj) = spotq(Cb) = qb + 1.
+Combining with (34), we have
+dispq(Cj) = 1 = spotq(Cj) − qj = qb − qj
+i.e., qj = qb − 1. So it must be the case that spot qj was occupied by some car in a previous segment, and
+with respect to q, cars Cj and Cb park in spots qj + 1 and qj + 2 respectively. On the other hand, with
+respect to r, car Cb parks first in spot qj + 1, and car Cj must park in spot qn + 2, giving it displacement 2.
+Now, suppose that the cycling operation that produced r from q was a step in the Foata transform
+(Definition 5.2). In particular qj < pn ≤ qb, and in fact pn = qb (by the earlier observation qj = qb − 1). But
+since q is a UPF, we have
+spotq(Cn) ∈ {qb, qb + 1}
+but this is impossible because
+spotq(Cj) = qj + 1 = qb and spot q(Cb) = qj + 2 = qb + 1
+giving the desired contradiction. □
+Finally, we consider the most difficult case, when ℓ = 2.
+Proposition 5.10. For all n ≥ 1, if p ∈ IPFn(2), then F (p) ∈ IPFn(2).
+Proof. We define aBoojum 2 to be a parking functionp such that (i) maxdisp(p) = 2; (ii) maxdisp(F (p)) > 2;
+and (iii) p is of minimal length among all parking functions satisfying (i) and (ii). We show that Boojums
+do not exist.
+Suppose for contradiction that p = ( p1, . . . , pn) is a Boojum. We mostly work with q = Fn−1(p) =
+(q1, . . . , qn), where as before Fn−1 is a partial Foata transform. Accordingly, we assume that the order of
+cars with respect to q is C1, . . . , Cn. Note that q is a parking function (because it is a rearrangement of the
+parking function p). Let r = F (p).
+Observe that q itself is a 2-parking function, because
+• ˆp = (p1, . . . , pn−1) is a 2-parking function, and by minimality of Boojums ˆq = (q1, . . . , qn−1) = F (ˆp)
+is as well; and
+• qn = pn, so by interval rearrangement (Lemma 5.4) and the fact that ˆ q is a permutation of ˆp, we
+have dispq(Cn) = dispp(Cn) ≤ 2.
+2A creature that does not exist: see [6].
+20
+Consider what happens in the last step of calculating the Foata transform of p. We place some set of
+separators in ˆq, cycle each segment, and then append pn. Suppose there are k ≥ 1 separators after positions
+i1, . . . , ik where ik = n − 1. That is,
+q =
+
+C1 · · ·Ci1 Ci1+1 · · ·Ci2 · · ·Cik−1+1 · · ·Cik Cn
+q1 · · ·qi1 qi1+1 · · ·qi2 · · ·qik−1+1 · · ·qik pn
+
+and
+r =
+ Ci1 C1 · · ·Ci1−1 Ci2 Ci1+1 · · ·Ci2−1 · · ·Cik Cik−1+1 · · ·Cik−1 Cn
+qi1 q1 · · ·qi1−1 qi2 qi1+1 · · ·qi2−1 · · ·qik qik−1+1 · · ·qik−1 pn
+
+.
+By the definition of a Boojum, q is a 2-interval parking function and r is not. That is, for some j, we have
+(36) disp q(Cj) ≤ 2 < dispr(Cj).
+Note that j ̸= n, because spot q(Cn) = spot r(Cn) (so, disp r(Cn) = disp q(Cn)). Moreover, if j ≤ ik−1, then
+q1 · · ·qik−1 pn is the ik−1th partial Foata transform of a smaller Boojum, which contradicts the minimality
+assumption on p. Therefore, ik−1 + 1 ≤ qj ≤ ik. Thus, we are concerned only with the behavior of the cars
+with labels in the interval B = [u, . . . , n− 1], where for convenience we set u = ik−1 + 1.
+We claim that spot q(Cn−1) > spotr(Cn−1). Indeed, since Cn−1 parks earlier with respect to r than with
+respect to q, we have spot q(Cn−1) ≥ spotr(Cn−1). If equality holds, then by the Reserved Spot Lemma
+(Lemma 5.6), r would in fact be a 2-interval parking function, a contradiction. Consequently,
+(37) 2 ≥ dispq(Cn−1) > dispr(Cn−1) ≥ 0.
+Also, pn ̸= qj. To see this, observe that because disp r(Cj) > dispr(Cn) even though Cj parks before Cn,
+so their preferred spots cannot possibly be equal.
+We now consider two cases of the Foata bijection.
+Case 1: Assume qu, . . . , qn−2 ≤ pn < qn−1. Observe that no car that originally parked in a spot less than
+qn−1 is affected by the cycling. In particular,
+(38) spot q(Cj) ≥ qn−1.
+The assumptions of Case 1 imply that
+(39) qn−1 > pn > qj.
+Now from (36) and (38) and (39) we get
+(40) qj < pn < qn−1 ≤ spotq(Cj) ≤ 2 + qj.
+Therefore pn = qj + 1, and thus qn−1 = spot q(Cj) = qj + 2. Since disp r(Cj) ≥ 3, we know that spots
+qj +1, qj +2 were already occupied before Cj parks, and qj +3 (at least) is occupied after Cj parks. Therefore,
+Cn, who wanted to park in spot pn = qj + 1, cannot park in any of the spots in the set {qj + 1, qj + 2, qj + 3}.
+So disp r(Cn) ≥ 3. But disp r(Cn) = disp q(Cn), which contradicts the assumption that p is a 2-interval
+parking function and eliminates Case 1.
+Case 2: Assume qu, . . . , qn−2 > pn ≥ qn−1.
+Suppose that spot q(Ci) ̸= qn−1 for all i < u. That is, spot qn−1 is available before the cars in B start to
+park. Since qn−1 is the strictly smallest preference in B, it follows that spot r(Cn−1) = spotq(Cn−1) = qn−1,
+so the Reserved Spot Lemma (Lemma 5.6) implies spot r(Ch) = spotq(h) for all h ∈ [u, n− 2], contradicting
+the assumption that p is a Boojum. Hence spot r(Cn−1) > qn−1, i.e., disp r(Cn−1) > 0, so (37) implies that
+spotr(Cn−1) = qn−1 + 1 and thus spot q(Cn−1) = qn−1 + 2.
+This implies in turn that spot q(Ci) /∈ {qn−1 + 1, qn−1 + 2} for all i < u. Therefore, there must be some h ≥ u
+such that qh = qn−1 + 1 (which is the reason Cn−1 is unable to park there with respect to q), but no other
+car with preference equal to qn−1 + 1 or qn−1 + 2 (because if there were then Cn−1 would not be able to
+park in qn−1 + 2 with respect to q). But this says that the effect of cycling Cn−1 to the front of the segment
+is limited to changing
+(spotq(Cn), spotq(Ch)) = (qn−1 + 2, qn−1 + 1)
+21
+to
+(spotr(Cn), spotr(Ch)) = (qn−1 + 1, qn−1 + 2)
+and all the other cars, in particular Cj, are unaffected. This rules out Case 2, which completes the proof. □
+5.4. Enumeration by major index. The Foata transform F preserves the content of a parking function
+and therefore its displacement. Therefore, Theorem 5.1 has the following immediate consequence.
+Corollary 5.11. Let n ≥ 1 and ℓ ∈ {0, 1, 2, n− 2, n− 1}. Then
+X
+α∈IPFn(ℓ)
+qdisp(α)tinv(α) = X
+α∈IPFn(ℓ)
+qdisp(α)tmaj(α).
+Combining this observation with Corollary 3.2 and Theorem 3.3 (together with the fact that asc(F (σ)−1) =
+asc(σ−1) for each σ ∈ Sn [13, Thm. 1]) yields major-index versions of those results.
+Corollary 5.12. Let n ≥ 2. Then
+X
+α∈IPFn(n−2)
+qdisp(α)tmaj(α) = X
+α∈PFn
+qdisp(α)tmaj(α) − (qt)n−1 X
+β∈PFn−1
+qdisp(β)tmaj(β)−ones(β),
+where ones(β) = |{i ∈ [n − 1] : bi = 1}| and
+X
+α∈UPFn
+qdisp(α)tmaj(α) = X
+σ∈Sn
+(1 + q)asc(σ)tmaj(σ−1).
+For 2-interval parking functions (Theorem 3.11), the appearance of the statistics |R(β)| and |S(β)| makes
+the application of the Foata transform less straightforward. It turns out that F preserves these two statistics,
+thanks to the following observation.
+Lemma 5.13. Let (a1, a2, . . . , an) ∈ Nn. Let j, k∈ [n] such that aj ≤ ak, and let i ≥ max(j, k).
+(1) If ai+1 ̸∈ {aj, . . . , ak − 1} then aj and ak appear in the same order in F (a1a2 · · ·ai+1) as they do in
+F (a1a2 · · ·ai).
+(2) If {aj, . . . , ak − 1} ∩ {ai+1, . . . , an} = ∅, then aj and ak appear in the same order in F (a1 · · ·an) as
+they do in F (a1a2 · · ·ai).
+Proof. (1) The condition ai+1 ̸∈ {aj, . . . , ak−1} implies that, at the (i+1)st stage of the algorithm, separators
+are placed either after both aj and ak, or after neither. If both, then aj and ak belong to different segments.
+If neither, then if they are in the same segment, then neither one is the last entry in that segment. Therefore,
+in all cases, the cycling step maintains the relative position of aj and ak, so they appear in the same order
+in F (a1 · · ·ai+1) as in F (a1 · · ·ai).
+(2) This claim follows from applying (1) repeatedly. □
+Lemma 5.14. If α ∈ UPFn, then |R(α)| = |R(F (α))| and |S(α)| = |S(F (α))|.
+Proof. Since F preserves content, it preserves block structure, hence |S(α)| = |S(F (α))| by (14).
+For α = (a1, a2, . . . , an) ∈ UPFn, let P(α) be the set of positions of the second entries of blocks. Equiva-
+lently, by block structure,
+P(α) = {i ∈ [n] : aj = ai for some j < i}.
+Note that R(α) ⊆ P(α). Moreover, |P(α)| = |P(F (α))|, because F preserves content. For convenience,
+define R′(α) = {ai : i ∈ R(α)}, so that |R′(α)| = |R(α)|.
+We claim that R′(α) = R′(F (α)). Indeed, let k ∈ P(α), and let πs be the block containing ak. Taking
+aj to be either the first entry of πs or the last entry of πs−1, and taking i = max( j, k), block structure
+implies that the elements aj, ak satisfy the conditions of Lemma 5.13, hence appear in the same order in
+F (α) as they do in F (a1a2 · · ·ai), hence the same order as in a1 · · ·ai (due to our choice of i). In particular,
+ak ∈ R′(α) if and only if ak ∈ R′(F (α)). Therefore,
+|R(α)| = |R′(α)| = |R′(F (α))| = |R(F (α))|. □
+22
+Example 5.15. Let α = 34411 ∈ UPF5, with block structure 11 | 3 | 44. Then F (α) = 13441. Note that
+P(α) = {3, 5}, R(α) = {3},
+P(F (α)) = {4, 5}, R(F (α)) = {4},
+and R′(α) = R′(F (α)) = {4}.
+Applying Lemma 5.14 and Theorem 5.1 to Theorem 3.11, we obtain a major-index enumeration for
+2-interval parking functions.
+Corollary 5.16. For all n ≥ 1,
+X
+α∈IPFn(2)
+qdisp(α)tmaj(α) = X
+β∈UPFn
+qdisp(β)(1 + q)|S(β)|(1 + qt)|R(β)|tmaj(β).
+It would be interesting to provide direct proofs of Corollaries 5.12 and 5.16 that do not rely on the Foata
+bijection.
+6. Further Problems
+We provide some open problems for further study.
+Problem 6.1. Describe a block structure for ℓ-interval parking functions that generalizes the ℓ = 1 case
+(Theorem 2.10).
+As we noted in Section 2.2, the block structure of unit interval parking functions appears to be unique to
+the case ℓ = 1. For ℓ >1, the problem seems to be much harder.
+Problem 6.2. What can be said about the effect of the Foata transform on the outcome of a parking function?
+One obvious thing is that if α ∈ Sn, then spot F (α) = F (spotα) (because α = spot α). However, this
+does not hold in general. For instance, let α = 121. Then F (α) = 211, but spot F (α) = 213 whereas
+F (spotα) = F (123) = 123 . For unit interval parking functions (which the previous α is not), it seems that
+F acts on the spots permutations as it did for permutations:
+Conjecture 6.3. For any unit interval parking function α, spotF (α) = F (spotα).
+We have verified Conjecture 6.3 for all unit interval parking functions of length at most 8.
+Problem 6.4. Count ℓ-interval parking functions in terms of (ℓ ± 1)-interval parking functions.
+Theorems 3.3 and 3.11 as well as Corollary 3.2 are solutions to the above problem for ℓ = 1 , 2, n− 2,
+respectively. Let IPF n(ℓ)max be the set of parking functions α of length n such that maxdisp( α) = ℓ. It
+follows from our enumerative results that for all n ≥ 1
+n! = | IPFn(0)max| ≤ |IPFn(1)max| ≤ |IPFn(2)max| and | IPFn(n − 2)max| ≥ |IPFn(n − 1)max| = nn−2
+Experimentally, it seems this pattern continues. See Table 1.
+Conjecture 6.5. For each n ≥ 1, the sequence (| IPFn(ℓ)max|)n−1 ℓ=0 is unimodal i.e. if aℓ = | IPFn(ℓ)max|,
+there exists an integer c ∈ {0, 1, . . . , n− 1} such that
+n! = a0 ≤ a1 ≤ a2 ≤ · · · ≤ac ≥ · · · ≥an−2 ≥ an−1 = nn−2.
+Acknowledgments
+The genesis for this project was the Graduate Research Workshop in Combinatorics 2024, hosted by
+University of Wisconsin, Milwaukee, which was supported in part by NSF Grant DMS – 1953445. We
+thank the developers of SageMath [25], which was useful in this research, and the CoCalc [22] collaboration
+platform. We also thank Steve Butler, Ari Cruz, Kim Harry, Matt McClinton, Keith Sullivan, and Mei Yin
+for their comments and guidance at the start of this project. This work was supported by a grant from the
+Simons Foundation (Travel Support for Mathematicians, P. E. Harris).
+23
+n
+ℓ 0 1 2 3 4 5 6 7 8
+1 1
+2 2 1
+3 6 7 3
+4 24 51 34 16
+5 120 421 377 253 125
+6 720 3963 4594 3688 2546 1296
+7 5040 42253 62145 57398 46142 32359 16807
+8 40320 505515 929856 979430 865970 702292 497442 262144
+9 362880 6724381 15298809 18289811 17520519 15455851 12587507 8977273 4782969
+Table 1. | IPFn(ℓ)max| up to n = 9. OEIS sequence numbers forthcoming.
+References
+[1] Ayomikun Adeniran, Steve Butler, Galen Dorpalen-Barry, Pamela E. Harris, Cyrus Hettle, Qingzhong Liang, Jeremy L.
+Martin, and Hayan Nam. Enumerating parking completions using Join and Split. Electron. J. Combin. , 27(2):Paper No.
+2.44, 19, 2020.
+[2] Tom´ as Aguilar-Fraga, Jennifer Elder, Rebecca E. Garcia, Kimberly P. Hadaway, Pamela E. Harris, Kimberly J. Harry,
+Imhotep B. Hogan, Jakeyl Johnson, Jan Kretschmann, Kobe Lawson-Chavanu, J. Carlos Mart ´ ınez Mori, Casandra D.
+Monroe, Daniel Qui˜ nonez, Dirk Tolson, III, and Dwight Anderson Williams, II. Interval and ℓ-interval rational parking
+functions. Discrete Math. Theor. Comput. Sci. , 26(1):Paper No. 10, 29, [2024–2025].
+[3] Yasmin Aguillon, Dylan Alvarenga, Pamela E. Harris, Surya Kotapati, J. Carlos Mart ´ ınez Mori, Casandra D. Monroe,
+Zia Saylor, Camelle Tieu, and Dwight Anderson Williams, II. On parking functions and the tower of Hanoi. Amer. Math.
+Monthly, 130(7):618–624, 2023.
+[4] Adrian Avalos and Mark Bly. Sequences, q-multinomial identities, integer partitions with kinds, and generalized Galois
+numbers. PUMP J. Undergrad. Res. , 3:72–94, 2020.
+[5] S. Alex Bradt, Jennifer Elder, Pamela E. Harris, Gordon Rojas Kirby, Eva Reutercrona, Yuxuan Wang, and Juliet Whidden.
+Unit interval parking functions and the r-Fubini numbers. Matematica, 3(1):370–384, 2024.
+[6] Lewis Carroll. The hunting of the snark: An agony in eight fits. Originally published 1876; full text at
+poetryfoundation.org/poems/43909/the-hunting-of-the-snark.
+[7] Lucas Chaves Meyles, Pamela E. Harris, Richter Jordaan, Gordon Rojas Kirby, Sam Sehayek, and Ethan Spingarn. Unit-
+interval parking functions and the permutohedron. arXiv:2305.15554, to appear in J. Comb. , 2023.
+[8] Emma Colaric, Ryan DeMuse, Jeremy L. Martin, and Mei Yin. Interval parking functions. Adv. in Appl. Math. , 123:Paper
+No. 102129, 17, 2021. arXiv:2006.09321.
+[9] Laura Colmenarejo, Pamela E. Harris, Zakiya Jones, Christo Keller, Andr´ es Ramos Rodr ´ ıguez, Eunice Sukarto, and
+Andr´ es R. Vindas-Mel´ endez. Countingk-Naples parking functions through permutations and the k-Naples area statistic.
+Enumer. Comb. Appl. , 1(2):Paper No. S2R11, 16, 2021.
+[10] Jennifer Elder, Pamela E. Harris, Jan Kretschmann, and J. Carlos Mart ´ ınez Mori. Parking functions, Fubini rankings, and
+Boolean intervals in the weak order of Sn. J. Comb. , 16(1):65–89, 2025.
+[11] Dominique Foata. On the Netto inversion number of a sequence. Proc. Amer. Math. Soc. , 19:236–240, 1968.
+[12] Dominique Foata and John Riordan. Mappings of acyclic and parking functions. Aequationes Math., 10:10–22, 1974.
+[13] Dominique Foata and Marcel-Paul Sch¨ utzenberger. Major index and inversion number of permutations. Math. Nachr. ,
+83:143–159, 1978.
+[14] Robin Forman. Morse theory for cell complexes. Adv. Math., 134(1):90–145, 1998.
+[15] Robin Forman. A user’s guide to discrete Morse theory. S´ em. Lothar. Combin., 48:Art. B48c, 35, 2002.
+[16] Ronald L. Graham, Donald E. Knuth, and Oren Patashnik. Concrete mathematics. Addison-Wesley Publishing Company,
+Reading, MA, second edition, 1994. A foundation for computer science.
+[17] Kimberly P. Hadaway. On Combinatorial Problems of Generalized Parking Functions, 2021. Williams College Honors
+Thesis.
+[18] OEIS Foundation Inc. The On-Line Encyclopedia of Integer Sequences, 2025. Published electronically at https://oeis.org.
+[19] A. Konheim and B. Weiss. An occupancy discipline and applications. SIAM Journal on Applied Mathematics , 14(6):1266–
+1274, 1966.
+[20] P. A. MacMahon. Two Applications of General Theorems in Combinatory Analysis. Proc. London Math. Soc. (2), 15:314–
+321, 1916.
+[21] Victor. Reiner, Dennis W. Stanton, and Dennis E. White. The cyclic sieving phenomenon. J. Combin. Theory Ser. A ,
+108(1):17–50, 2004.
+[22] SageMath Inc. CoCalc Collaborative Computation Online , 2022. https://cocalc.com/.
+24
+[23] Richard P. Stanley. Enumerative Combinatorics. Volume 2 , volume 62 of Cambridge Studies in Advanced Mathematics .
+Cambridge University Press, Cambridge, 1999. With a foreword by Gian-Carlo Rota and appendix 1 by Sergey Fomin.
+[24] Richard P. Stanley. Enumerative Combinatorics. Volume 1 , volume 49 of Cambridge Studies in Advanced Mathematics .
+Cambridge University Press, Cambridge, second edition, 2012.
+[25] William A. Stein et al. Sage Mathematics Software (Version 9.4) . The Sage Development Team, 2022. http://www.
+sagemath.org.
+[26] Catherine H. Yan. Parking functions. In Handbook of Enumerative Combinatorics , Discrete Math. Appl. (Boca Raton),
+pages 835–893. CRC Press, Boca Raton, FL, 2015.
+(K. Celano) Department of Mathematics, W ake Forest University, NC
+Email address : celanok@wfu.edu
+(J. Elder) Department of Computer Science, Mathematics and Physics, Missouri Western State University, St.
+Joseph, MO 64507
+Email address : jelder8@missouriwestern.edu
+(K. P. Hadaway) Department of Mathematics, Iowa State University, Ames, IA 50010
+Email address : kph3@iastate.edu
+(P. E. Harris) Department of Mathematical Sciences, University of Wisconsin-Milwaukee, Milwaukee, WI 53211
+Email address : peharris@uwm.edu
+(J. L. Martin) Department of Mathematics, University of Kansas, Lawrence, KS 66045
+Email address : jlmartin@ku.edu
+(A. Priestley) Department of Computer Science, The University of Texas at Austin, Austin, TX 78712
+Email address : amandapriestley@utexas.edu
+(G. Udell) Department of Mathematics, Cornell University, Ithaca, NY 14850
+Email address : gru5@cornell.edu
+25

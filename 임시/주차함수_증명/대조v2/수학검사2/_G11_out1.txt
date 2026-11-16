@@ -1,0 +1,191 @@
+진술 수 410
+부록 D 항목 수 43
+
+===== 11.2 표 대조 =====
+11.2 행 수 43
+[11.2 L26] central-gap-rational-audit: 독립 재계산 서술 불일치 (첫 차이 위치 252)
+   표…56.77$; $J$ $1652.1$, $1649.56$). 이 구적은 「재계산」 열의 꺾쇠 괄호에 적힌 스물다섯 자리 정밀도의 수치 평가이고, 정확 유리수 감사의 상계를 다른 방법으로 대조한 것이다.
+   D …56.77$; $J$ $1652.1$, $1649.56$). 이 구적은 이 문단 머리의 꺾쇠 괄호에 적힌 스물다섯 자리 정밀도의 수치 평가이고, 정확 유리수 감사의 상계를 다른 방법으로 대조한 것이다.
+[11.2 L51] column-certificates-841-2000: 확인하는 진술 불일치  표=['7:theorem-C-moment', '7:qstar-implies-wlflat']  D머리=['7:theorem-G-prime', '7:theorem-C-moment', '7:qstar-implies-wlflat']
+[11.2 L51] column-certificates-841-2000: 독립 재계산 서술 불일치 (첫 차이 위치 591)
+   표…llprec.out`); 여섯 자리 저장값은 괄호가 아니다) 원 위의 $\vert 1-\Omega^{\mathrm{pr}}\vert $의 참 최솟값($0.10725$, $0.12352$, $0.16107$)이 인증 
+   D …llprec.out`); 여섯 자리 저장값은 괄호가 아니다) 원 위의 $|1-\Omega^{\mathrm{pr}}|$의 참 최솟값($0.10725$, $0.12352$, $0.16107$)이 인증 하계 $\mathf
+[11.2 L52] Q-fin-1130: 독립 재계산 서술 불일치 (첫 차이 위치 382)
+   표…맞는다). $\beta$ 재귀로 얻은 차분과 직접 뺄셈의 차는 $\max\vert \Delta\vert $의 $1.1\times10^{-11}$ 이하다. 또 $k=7$에서 $\beta$ 재귀의 열이 정확한 정수와 상
+   D …맞는다). $\beta$ 재귀로 얻은 차분과 직접 뺄셈의 차는 $\max|\Delta|$의 $1.1\times10^{-11}$ 이하다. 또 $k=7$에서 $\beta$ 재귀의 열이 정확한 정수와 상대 $2.7\cdo
+
+===== 11.3 표 대조 =====
+[11.3 L96] 쓰는 자리 정리 9:old-7-46(장9.md L956) 블록이 입력 ['7:qstar-implies-wlflat'] 어느 것도 인용하지 않음
+[11.3 L98] 쓰는 자리 명제 7:old-6-15(장7B.md L429) 블록이 입력 ['7:old-6-14'] 어느 것도 인용하지 않음
+[11.3 L98] 쓰는 자리 정리 7:old-6-21(장7B.md L822) 블록이 입력 ['7:old-6-14'] 어느 것도 인용하지 않음
+[11.3 L98] 쓰는 자리 명제 7:old-6-15(장7B.md L429) 블록이 입력 ['7:old-6-14'] 어느 것도 인용하지 않음
+[11.3 L98] 쓰는 자리 정리 7:old-6-21(장7B.md L822) 블록이 입력 ['7:old-6-14'] 어느 것도 인용하지 않음
+[11.3 L119] 쓰는 자리 정리 9:old-7-35(장9.md L822) 블록이 입력 ['2:old-2-34', '2:old-2-40', '2:old-2-41', '6:increment-bounds', '6:D-bound'] 어느 것도 인용하지 않음
+
+===== 11.4 문헌 표 대조 =====
+[11.4 L135] Konheim: 명제 1:old-1-2(장1.md L17) 블록에 ['Konheim'] 없음
+[11.4 L136] Foata: 명제 1:old-1-2(장1.md L17) 블록에 ['Foata', 'Pollak'] 없음
+[11.4 L137] Celano: 정리 2:old-2-3(장2.md L29) 블록에 ['Celano'] 없음
+[11.4 L138] Aguilar: 정리 2:old-2-6(장2.md L72) 블록에 ['Aguilar'] 없음
+[11.4 L139] Stanley: 정리 7:old-6-10(장7A.md L364) 블록에 ['Stanley'] 없음
+[11.4 L139] Stanley: 명제 7:block-exponential(장7B.md L121) 블록에 ['Stanley'] 없음
+[11.4 L140] Stanley: 정리 2:chain-expansion(장2.md L794) 블록에 ['Stanley'] 없음
+[11.4 L140] Stanley: 보조정리 5:stop-lower(장5B.md L268) 블록에 ['Stanley'] 없음
+[11.4 L140] Stanley: 명제 6:chain-count(장6.md L537) 블록에 ['Stanley'] 없음
+[11.4 L140] Stanley: 보조정리 6:split-mass(장6.md L576) 블록에 ['Stanley'] 없음
+[11.4 L140] Stanley: 보조정리 6:lemma-O(장6.md L820) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 보조정리 4:e-integral(장4.md L85) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 명제 4:old-4-6(장4.md L179) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 보조정리 4:correction-contour(장4.md L428) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 보조정리 5:inverse-renewal(장5A.md L304) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 보조정리 5:hat-normalization(장5A.md L906) 블록에 ['Stanley'] 없음
+[11.4 L141] Stanley: 절 4.3 에 ['Stanley'] 없음
+[11.4 L141] Stanley: 절 5.2 에 ['Stanley'] 없음
+[11.4 L141] Stanley: 절 5.4 에 ['Stanley'] 없음
+[11.4 L144] Robbins: 명제 9:prop-6(장9.md L163) 블록에 ['Robbins'] 없음
+[11.4 L144] Robbins: 부록 D.polar-blocks-488 에 ['Robbins'] 없음
+[11.4 L146] Janson: 명제 3:old-3-2(장3.md L43) 블록에 ['Janson'] 없음
+[11.4 L148] Ahlfors: 보조정리 4:correction-contour(장4.md L428) 블록에 ['Ahlfors'] 없음
+[11.4 L148] Ahlfors: 보조정리 7:lemma-P-prime(장7A.md L794) 블록에 ['Ahlfors'] 없음
+[11.4 L148] Ahlfors: 보조정리 6:geometric-mean(장6.md L608) 블록에 ['Ahlfors'] 없음
+[11.4 L148] Ahlfors: 절 7.3 에 ['Ahlfors'] 없음
+[11.4 L148] Ahlfors: 절 7.4 에 ['Ahlfors'] 없음
+[11.4 L149] Graham: 부록 D.zeta-constants 에 ['Graham', 'Euler–Maclaurin'] 없음
+[11.4 L155] OEIS: 보조정리 6:lemma-Hprime(장6.md L1131) 블록에 ['OEIS', 'A078434'] 없음
+-- 역방향: 본문 진술 블록에 저자명이 있으나 11.4 표의 그 문헌 행에 없는 자리
+   Konheim: 따름정리 2:old-2-4 (장2.md L43, 절 2.1) 블록에 ['Konheim'] 있음, 표 행에 없음
+   Stanley: 정의 2:old-2-21 (장2.md L172, 절 2.5) 블록에 ['Stanley'] 있음, 표 행에 없음
+   Stanley: 보조정리 7:prime-decomposition (장7A.md L252, 절 7.2) 블록에 ['Stanley'] 있음, 표 행에 없음
+   Knuth, \*The Art: 보조정리 4:borel-tail-arc (장4.md L404, 절 4.3) 블록에 ['Knuth'] 있음, 표 행에 없음
+   Knuth, \*The Art: 보조정리 5:cut-rep (장5A.md L856, 절 5.4) 블록에 ['Knuth'] 있음, 표 행에 없음
+   Graham: 보조정리 5:stirling-bor (장5B.md L121, 절 5.5) 블록에 ['Graham', 'Euler–Maclaurin'] 있음, 표 행에 없음
+   Tanner: 보조정리 5:old-5-24 (장5B.md L104, 절 5.5) 블록에 ['Tanner'] 있음, 표 행에 없음
+   Tanner: 정리 5:old-5-31 (장5B.md L219, 절 5.5) 블록에 ['Tanner'] 있음, 표 행에 없음
+   Tanner: 보조정리 5:bt-tail (장5B.md L252, 절 5.5) 블록에 ['Tanner'] 있음, 표 행에 없음
+   Tanner: 정리 10:old-8-19 (장10.md L371, 절 10.5) 블록에 ['Tanner'] 있음, 표 행에 없음
+
+===== 부록 C 둘째 표(기록 이름→진술) 대조 =====
+[C L315] C는 이름 없음(—)인데 본문 제목 있음 8:old-6-24: '기록 [r030ffae]의 보조정리 D1'
+[C L339] C는 이름 없음(—)인데 본문 제목 있음 8:old-6-29: '기록 [r030ffae]의 정리 B′'
+
+===== 부록 B 식별자 대조 =====
+B 행 수 85
+
+===== 11.3 인용 폐포 대조 =====
+첫째 증명 폐포 크기 317  둘째 증명 폐포 크기 359  교집합 317
+-- 표: 첫째 고유로 적혔으나 둘째 증명 폐포에도 있음
+   2:old-2-34 (보조정리 수준 방문 보존; 기록 [rae1f209]의 보조정리 , 장2.md L543, 절 2.8)
+   2:old-2-40 (정리 다섯 몫 분해, 장2.md L705, 절 2.10)
+   2:old-2-41 (명제 쌍 항의 정수 꼴; 기록 [rae1f209]의 보조정리, 장2.md L728, 절 2.10)
+   6:D-bound (정리 (D)와 (Υ); 기록 [r696d62c]의 p-lem, 장6.md L688, 절 6.4)
+   6:increment-bounds (따름정리 무게 증분의 하계, 장6.md L258, 절 6.2)
+   7:old-6-22 (정리 주 정리와 둘째 층 비교의 동치, 장7B.md L844, 절 7.7)
+   9:H-star-plus (정리 머리 합 여유 정리; 기록 [r33475a7]의 정리 , 장9.md L271, 절 9.1)
+   9:head-sum-2 (정리 증가 시작점의 두 상계; 기록 [r2ec875c]의 정, 장9.md L257, 절 9.1)
+   9:old-7-16 (정리 해석적 행 정리; 기록 [rae1f209]의 정리 AR, 장9.md L557, 절 9.3)
+   9:old-7-26 (보조정리 $\mathcal Y_k$의 모양과 $\nu_0(k)$, 장9.md L710, 절 9.4)
+   9:old-7-28 (정리 띠 안쪽에서 앞쪽으로; 기록 [rb6a2cd0]의 정리, 장9.md L729, 절 9.4)
+   9:old-7-31 (정리 앞쪽 띠의 첫 단계; 기록 [rb6a2cd0]의 정리 , 장9.md L780, 절 9.4)
+   9:old-7-33 (정리 띠 전체의 FS; 기록 [rb6a2cd0]의 정리 P⁺, 장9.md L800, 절 9.4)
+   9:old-7-35 (정리 쌍 부등식; 기록 [r5909c9e]의 정리 P◇, 장9.md L822, 절 9.5)
+   9:pair-one-variable (보조정리 쌍 비의 $k$-단조성과 한 변수 하계, 장9.md L932, 절 9.5)
+-- 표: 둘째 고유로 적혔으나 첫째 증명 폐포에도 있음
+-- 표: 공유로 적혔으나 첫째 폐포에 없음
+   6:insertion (명제 한 점 삽입 항등식, 장6.md L582, 절 6.4)
+   6:log-derivative (명제 로그 도함수의 다섯 몫, 장6.md L557, 절 6.4)
+   6:trapezoid (보조정리 사다리꼴, 장6.md L620, 절 6.4)
+   7:old-6-14 (정리 한 걸음 항등식, 장7B.md L414, 절 7.5)
+-- 표: 공유로 적혔으나 둘째 폐포에 없음
+   6:insertion (명제 한 점 삽입 항등식, 장6.md L582, 절 6.4)
+   6:log-derivative (명제 로그 도함수의 다섯 몫, 장6.md L557, 절 6.4)
+   6:trapezoid (보조정리 사다리꼴, 장6.md L620, 절 6.4)
+-- 표: 첫째 고유로 적혔으나 첫째 폐포에 없음
+-- 표: 둘째 고유로 적혔으나 둘째 폐포에 없음
+-- 폐포(둘 다)에 있고 표지에 계산/문헌/의존이 있으나 표 어디에도 없음(공유 후보)
+   2:old-2-20 (명제 섬유는 거의 모두 단봉이 아니다; 기록 [r88bed8, 장2.md L281, 절 2.5)
+   2:old-2-5 (정리 비단봉 섬유, 장2.md L56, 절 2.2)
+   3:old-3-1 (명제 해싱 모형과의 대응, 장3.md L25, 절 3.1)
+   4:gauss-coeff (보조정리 Gauss 계수의 상하계; 기록 [rce3dc75]의 , 장4.md L276, 절 4.3)
+   4:gauss-coeff-numeric (따름정리 실수 비교의 수치 귀결, 장4.md L394, 절 4.3)
+   4:gauss-contraction (보조정리 Hermite 비의 수축 부등식과 Hermite 수의 , 장4.md L215, 절 4.3)
+   4:old-4-9 (정리 조건부 로그오목성과 왼쪽의 동치, 장4.md L575, 절 4.4)
+   4:two-corrections (보조정리 두 보정의 수직선 적분; 기록 [rce3dc75]의 보, 장4.md L467, 절 4.3)
+   5:band-inequality (명제 조립 범위의 판정식, 장5B.md L419, 절 5.5)
+   5:cover-edge (보조정리 꼬리 정리 경계의 엄격 증가와 꼬리 띠가 덮는 $\ma, 장5A.md L826, 절 5.4)
+   5:kernel-bounds (보조정리 갱신 핵의 좁은 계수 상하계 (K1)(K2); 기록 [, 장5A.md L497, 절 5.2)
+   5:kernel-sandwich (보조정리 방문 핵의 대수적 포락선과 Wallis 상하계; 기록 , 장5A.md L768, 절 5.4)
+   5:old-5-10 (명제 $\mathsf W\Rightarrow\mathsf Q, 장5A.md L692, 절 5.3)
+   5:old-5-12 (정리 꼬리 띠 A·A⁺; 기록 [r13b0b8f]의 정리 A, 장5A.md L808, 절 5.4)
+   5:old-5-13 (정리 임계 창의 증가; 기록 [ra4c01fc]의 정리 D, 장5A.md L944, 절 5.4)
+   5:old-5-15 (보조정리 $\mathsf W^\sharp\Leftrightarr, 장5A.md L962, 절 5.4)
+   5:old-5-2 (정리 C50: $n\le50000$ 인증, 장5A.md L41, 절 5.1)
+   5:old-5-32 (정리 가중 창 질량의 균일 상수; 기록 [r8a9b11e]의, 장5B.md L349, 절 5.5)
+   5:old-5-38 (보조정리 귀납 틀, 장5B.md L455, 절 5.5)
+   5:old-5-4 (정리 Newton 인증, 꼬리 좌표 170까지; 기록 [r7, 장5A.md L204, 절 5.2)
+   5:old-5-5 (정리 명시적 꼬리 T1; 기록 [r0dc57fa]의 정리 T, 장5A.md L437, 절 5.2)
+   5:old-5-7 (정리 진입 증가 EI; 기록 [r690be93]의 정리 EI, 장5A.md L670, 절 5.2)
+   5:right-part (보조정리 오른쪽 부분의 판정식, 장5B.md L433, 절 5.5)
+   5:sign-sandwich (보조정리 부호 보존 감싸기와 꼬리; 기록 [r690be93]의 , 장5A.md L597, 절 5.2)
+   5:witness-position-bound (명제 작은 행의 증인 위치 상계; 기록 [r19de912]의, 장5A.md L33, 절 5.1)
+   5:zeta-constants (보조정리 세 제타 상수의 구간, 장5B.md L131, 절 5.5)
+   6:above-window (명제 창 위쪽; 기록 [r29c10cd]의 명제 E (나), 장6.md L1213, 절 6.6)
+   6:critical-front (명제 임계 창 앞쪽 조각; 기록 [r29c10cd]의 명제 , 장6.md L1173, 절 6.6)
+   6:far-window (명제 먼 창; 기록 [r9bf2dc6]의 N2, 장6.md L1179, 절 6.6)
+   6:first-layer-end (명제 첫 층의 끝; 기록 [r29c10cd]의 명제 E (가, 장6.md L1189, 절 6.6)
+   6:old-7-20 (보조정리 제한 성장비의 상계; 기록 [r051bfe1]의 c-s, 장6.md L143, 절 6.2)
+   6:prop-R (명제 환원; 기록 [r9bf2dc6]의 명제 R, 장6.md L1081, 절 6.6)
+   6:prop-W (명제 이동 인자의 바닥, 첫 층 질량의 상계, 임계 창 앞쪽, 장6.md L1043, 절 6.6)
+   6:small-k-bulk (명제 작은 $k$의 벌크; 기록 [r9bf2dc6]의 N3, 장6.md L1195, 절 6.6)
+   6:theorem-D (정리 결손 갱신 항등식과 임계 창 수준 질량의 상하계; 기록, 장6.md L1004, 절 6.6)
+   6:theorem-U (정리 기울임 곡률의 상계; 기록 [r845b205]의 정리 , 장6.md L780, 절 6.5)
+   6:tilt-sum (보조정리 기울인 Borel 질량의 합, 장6.md L199, 절 6.2)
+   6:v-negative (명제 핵심 근처 항의 음성; 기록 [r29c10cd]의 명제, 장6.md L1221, 절 6.6)
+   7:analytic-transfer (명제 중앙 틈 사슬의 $\nu$-이전; 기록 [r475ada, 장7B.md L354, 절 7.4)
+   7:column-lemma (보조정리 열 인증; 기록 [rc9aee43]의 보조정리 4.1·, 장7A.md L332, 절 7.2)
+   7:cor-S-prime (따름정리 자기일관 상계가 주는 모멘트 판정의 경계; 기록 [ra, 장7A.md L545, 절 7.2)
+   7:hermite-nu (보조정리 Hermite 계수의 $\nu$-일반 상하계; 기록 [, 장7B.md L302, 절 7.4)
+   7:integer-strips (명제 유한 위치의 구간 인증; 기록 [r475ada3]의 명, 장7B.md L382, 절 7.4)
+   7:old-6-12 (정리 유한 크기 전달 $\mathsf X'$, 장7A.md L729, 절 7.3)
+   7:pair-check-10000 (명제 껍질 $50$까지의 쌍별 판정; 기록 [r475ada3, 장7B.md L237, 절 7.4)
+   7:pair-reach-table (명제 꼬리 삼중과 쌍별로 닿은 껍질; 기록 [r6b37c7e, 장7B.md L291, 절 7.4)
+   7:polar-PD (정리 전달 범위의 원천; 기록 [r207f124]의 정리 P, 장7B.md L545, 절 7.5)
+   7:polar-W (명제 극 영역의 왼쪽 증가; 기록 [r89eb039]의 주정, 장7A.md L864, 절 7.3)
+   7:seed-transfer (정리 유한 전파 정리와 그 설정; 기록 [r9e782f5]의, 장7A.md L288, 절 7.2)
+   7:self-consistent-S (정리 골격 값의 자기일관 상계; 기록 [rad00a59]의 , 장7A.md L476, 절 7.2)
+   7:theorem-C-moment (정리 모멘트 판정의 큰 $n$ 쪽 경계; 기록 [r10ff8, 장7B.md L90, 절 7.4)
+   7:vertical-nu (보조정리 수직선 윤곽의 $\nu$-일반 상하계; 기록 [r475, 장7B.md L336, 절 7.4)
+   8:closed-form-envelope (정리 참 봉투의 닫힌 꼴; 기록 [rfc69320]의 보조정, 장8.md L424, 절 8.2)
+   8:envelope-code-monotone (명제 봉투의 $\xi$-감소와 표 함수의 엄격 감소; 기록 , 장8.md L408, 절 8.2)
+   8:hazard-H1 (보조정리 첫 층 위험률 합의 명시 하계; 기록 [r5bbc534, 장8.md L667, 절 8.4)
+   8:jensen-H-ii (정리 Jensen 조각의 단조성; 기록 [rfc69320]의, 장8.md L364, 절 8.2)
+   8:pieces-k-monotone (정리 여섯 조각의 $k$-단조성; 기록 [rfc69320]의, 장8.md L285, 절 8.2)
+   8:table-lower-bound (정리 끼움 정리와 표의 하계 성질; 기록 [rfc69320], 장8.md L390, 절 8.2)
+-- 첫째 폐포에만 있고 표지에 계산/문헌/의존이 있으나 표에 없음(첫째 고유 후보)
+-- 둘째 폐포에만 있고 표지에 계산/문헌/의존이 있으나 표에 없음(둘째 고유 후보)
+-- 9장 진술 중 계산 표지 있으나 표에 없음
+-- 10장 진술 중 계산 표지 있으나 표에 없음
+-- 쓰는 자리 완전성(입력 라벨을 블록에서 인용하는 폐포 안 진술 가운데 행에 없는 것)
+   [L89] 중앙 틈: 정리 {{4:old-4-5}}…  행에 없는 인용자: 10:old-8-37(장10.md), 4:old-4-8(장4.md), 4:old-4-9(장4.md), 5:old-5-1(장5A.md), 5:old-5-11(장5A.md), 6:first-layer-end(장6.md), 6:old-8-11(장6.md), 6:old-8-12(장6.md), 7:old-6-13(장7B.md), 7:old-6-9(장7A.md), 7:qstar-implies-wlflat(장7B.md), 9:head-sum-1(장9.md)
+   [L90] $n\le20000$의 단봉성: 정리 {{5:old-5-1}}…  행에 없는 인용자: 10:old-8-37(장10.md), 4:old-4-8(장4.md), 5:old-5-10(장5A.md), 5:old-5-11(장5A.md), 5:old-5-2(장5A.md), 5:old-5-38(장5B.md), 5:witness-position-bound(장5A.md), 6:first-layer-end(장6.md), 6:small-k-bulk(장6.md), 7:old-6-9(장7A.md), 7:qstar-implies-wlflat(장7B.md)
+   [L91] 위치쌍 분할과 횡단: 보조정리 {{4:old-4-2}}, 정리 {{4:old-4-8}}…  행에 없는 인용자: 10:old-8-37(장10.md), 4:old-4-9(장4.md), 5:old-5-11(장5A.md)
+   [L92] 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}…  행에 없는 인용자: 10:old-8-37(장10.md), 4:old-4-9(장4.md), 5:old-5-21(장5B.md), 9:head-sum-1(장9.md)
+   [L93] 기저량의 날카로운 하계: 따름정리 {{6:cor-L}}과 그 증명이 거쳐 부르는 보조정리 …  행에 없는 인용자: 5:old-5-28(장5B.md), 6:D-bound(장6.md), 6:path-shift(장6.md)
+   [L94] 왼쪽 잔여 증가와 왼쪽 내부의 동치: 명제 {{7:old-6-9}}, 따름정리 {{7:fl…  행에 없는 인용자: 10:old-8-37(장10.md), 7:polar-R(장7A.md), 7:polar-W(장7A.md), 7:theorem-G-prime(장7A.md)
+   [L95] 중앙 띠: 정리 {{7:old-6-13}}…  행에 없는 인용자: 10:old-8-37(장10.md), 7:qstar-implies-wlflat(장7B.md)
+   [L96] 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-…  행에 없는 인용자: 10:old-8-37(장10.md)
+   [L97] 흡수 귀납: 명제 {{7:old-6-15}}…  행에 없는 인용자: 10:old-8-37(장10.md), 7:old-6-20(장7B.md), 7:qstar-implies-wlflat(장7B.md)
+   [L99] 판정 $\mathsf V$와 V-핵심: 정리 {{6:V-all}}, 정리 {{6:old-6…  행에 없는 인용자: 9:old-7-23(장9.md)
+   [L100] 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정…  행에 없는 인용자: 10:old-8-23(장10.md), 6:D-bound(장6.md), 6:critical-front(장6.md), 6:old-8-12(장6.md), 6:prop-R(장6.md), 9:old-7-12(장9.md)
+   [L101] 원천 쪽: 명제 {{7:src-plus}}…  행에 없는 인용자: 10:old-8-37(장10.md)
+   [L102] 셋째 층부터의 전파와 행 $n=3k$의 문턱 단위: 명제 {{7:old-6-20}}, 보조…  행에 없는 인용자: 10:old-8-37(장10.md)
+   [L103] 열 $2001$–$3130$의 한 걸음 판정: 정리 {{7:qstar-columns}}…  행에 없는 인용자: 10:old-8-37(장10.md)
+   [L104] 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old…  행에 없는 인용자: 8:old-6-23(장8.md), 8:reduction-J(장8.md), 8:table-lower-bound(장8.md), 9:old-7-18(장9.md), 9:old-7-27(장9.md)
+   [L105] 위험률의 하계: 보조정리 {{6:old-7-24}}…  행에 없는 인용자: 9:old-7-31(장9.md)
+   [L106] 2장의 표현: 정리 {{2:old-2-13}}, 보조정리 {{2:old-2-26}}, 정리…  행에 없는 인용자: 10:old-8-19(장10.md), 10:old-8-2(장10.md), 10:old-8-3(장10.md), 2:moving-tail(장2.md), 2:old-2-24(장2.md), 2:old-2-32(장2.md), 2:old-2-38(장2.md), 2:old-2-39(장2.md), 2:old-2-44(장2.md), 2:old-2-45(장2.md), 2:ratio-e(장2.md), 3:old-3-6(장3.md), 5:cayley-ratio(장5A.md), 5:old-5-18(장5B.md), 5:old-5-19(장5B.md), 5:old-5-2(장5A.md), 5:old-5-20(장5B.md), 5:old-5-26(장5B.md), 5:old-5-28(장5B.md), 5:old-5-30(장5B.md), 5:stop-lower(장5B.md), 6:V-all(장6.md), 6:lemma-Hprime(장6.md), 6:lemma-O(장6.md), 6:lemma-ell(장6.md), 6:lemma-omega(장6.md), 6:old-6-19(장6.md), 6:old-7-21(장6.md), 6:old-7-24(장6.md), 6:same-kernel(장6.md), 6:survival-factor(장6.md), 6:theorem-D(장6.md), 6:theorem-U(장6.md), 6:tilt-sum(장6.md), 7:borel-monotone(장7B.md), 7:explicit-bounds(장7B.md), 7:fold-DIP(장7B.md), 7:fold-T(장7B.md), 7:hazard-floor(장7B.md), 7:level-chain(장7A.md), 7:threshold-unit-ratio(장7B.md), 8:explicit-bounds(장8.md), 8:old-6-23(장8.md), 8:old-6-24(장8.md), 8:old-6-29(장8.md), 8:old-6-31(장8.md)
+   [L107] 둘째 층의 한 걸음 항등식과 행 $n=3k$: 정리 {{7:old-6-21}}…  행에 없는 인용자: 10:old-8-3(장10.md)
+   [L108] 표시 나무 무게의 증가: 정리 {{6:old-7-21}}…  행에 없는 인용자: 6:old-7-24(장6.md), 9:old-7-18(장9.md)
+   [L114] 머리 합 여유: 정리 {{9:H-star-plus}}, 정리 {{9:head-sum-2}}…  행에 없는 인용자: 9:old-7-22(장9.md)
+   [L119] 첫째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-34}}, 정리 {{2:ol…  행에 없는 인용자: 9:old-7-22(장9.md), 9:old-7-38(장9.md)
+   [L127] 둘째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-46}}과 그 증명이 부르는…  행에 없는 인용자: 10:old-8-17(장10.md), 10:old-8-25(장10.md), 10:old-8-26(장10.md), 10:old-8-8(장10.md)
+
+===== 부록 A·C의 라벨 존재 =====

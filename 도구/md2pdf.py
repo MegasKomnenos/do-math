@@ -233,6 +233,30 @@ _GLUE_RE = re.compile(r"([([「『{]?)\x00MATH(\d+)\x00([가-힣,.;:)\]」』?!%
 
 _TEXT_SEG = re.compile(r"(<code>.*?</code>|<[^>]+>)|([^<]+)", re.S)
 
+# 구분자 밖에 남은 TeX 표기의 보고. 수식이 아직 자리표인 HTML에서 코드 구간과 평문을 훑는다.
+# 코드 구간(`…`)에 쓴 `e_n^{(k+1)}`이나 수식 구분자가 빠진 평문은 KaTeX에 닿지 않아 오류 0으로 통과하고 글자 그대로 찍히므로
+# (2026-11-15, 558쪽) 렌더링 단계에서도 센다. 치명적이지 않은 경고로 기록하며 판정은 원고 쪽 불변식 검사가 한다.
+_TEX_TRACE_CODE = re.compile(r"\^\{|_\{|\\[A-Za-z]{2,}")
+_TEX_TRACE_TEXT = re.compile(r"\$|\^\{|_\{|\\[A-Za-z]+")
+
+
+def tex_outside_math(body: str) -> list[str]:
+    """자리표 단계의 본문 HTML에서 코드 구간·평문에 남은 TeX 흔적을 찾아 예시 문자열 목록을 돌려준다."""
+    found: list[str] = []
+    for m in _TEXT_SEG.finditer(body):
+        seg = m.group(1)
+        if seg is not None:
+            if seg.startswith("<code>"):
+                inner = html.unescape(re.sub(r"<[^>]+>", "", seg))
+                if _TEX_TRACE_CODE.search(inner):
+                    found.append("코드 " + inner[:80])
+            continue
+        txt = html.unescape(m.group(2))
+        t = _TEX_TRACE_TEXT.search(txt)
+        if t:
+            found.append("평문 …" + txt[max(0, t.start() - 30):t.start() + 50].replace("\n", " "))
+    return found
+
 
 def tighten_quotes(body: str) -> str:
     """본문 글자의 전각 낫표 「『를 .qo로, 」』를 .qc로 감싼다(태그·코드 안은 건드리지 않는다)."""
@@ -1248,6 +1272,11 @@ def main(argv=None) -> int:
     body, title, headings = convert_markdown(md, text, env)
     body = decorate(body)
     log(verbose, f"Markdown 해석 {time.time() - t0:.1f}초, 제목 {len(headings)}개")
+    traces = tex_outside_math(body)
+    if traces:
+        print(f"  [구분자 밖 TeX 흔적 ×{len(traces)}] 수식 구분자 밖(코드 구간·평문)에 TeX 표기가 있어 글자 그대로 찍힌다", file=sys.stderr)
+        for t in traces[:10]:
+            print(f"      {t}", file=sys.stderr)
 
     # 수식 렌더링
     t0 = time.time()

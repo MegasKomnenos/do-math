@@ -1,0 +1,6 @@
+n=779 window [560,600] checked
+n=780 l=575 FAIL rel=-1.717e-09
+n=780 l=576 FAIL rel=-5.555e-09
+n=780 l=577 FAIL rel=-5.881e-09
+n=780 l=578 FAIL rel=-2.672e-09
+n=780 window [560,600] checked

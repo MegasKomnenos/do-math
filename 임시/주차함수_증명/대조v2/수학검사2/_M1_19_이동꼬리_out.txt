@@ -1,0 +1,3 @@
+chain-expansion/moving-tail ok = True
+(바)(라)(아) ok = True
+chain-normalization ok = True

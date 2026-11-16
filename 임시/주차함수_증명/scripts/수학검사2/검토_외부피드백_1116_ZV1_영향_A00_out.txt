@@ -1,0 +1,41 @@
+box A00 u in 0.04491434124 0.04641434124
+
+hatZ_derivs: midpoint values (new - old) and box magnitude bounds (new/old)
+  sig'=0.5: |Zu| 0.02085  dZu 6.060e-12 (rel 2.91e-10);  |Zuu| 0.01043  dZuu 1.328e-10 (rel 1.27e-08);  aZu new/old 1.000000  aZuu new/old 1.000000
+  sig'=1: |Zu| 0.1673  dZu 1.552e-09 (rel 9.27e-09);  |Zuu| 0.1676  dZuu 3.407e-08 (rel 2.03e-07);  aZu new/old 1.000000  aZuu new/old 1.000000
+  sig'=2: |Zu| 1.354  dZu 3.974e-07 (rel 2.94e-07);  |Zuu| 2.727  dZuu 8.797e-06 (rel 3.23e-06);  aZu new/old 1.000000  aZuu new/old 1.000003
+  sig'=3: |Zu| 4.655  dZu 1.020e-05 (rel 2.19e-06);  |Zuu| 14.19  dZuu 2.286e-04 (rel 1.61e-05);  aZu new/old 1.000001  aZuu new/old 1.000017
+  sig'=4: |Zu| 11.32  dZu 1.020e-04 (rel 9.01e-06);  |Zuu| 46.52  dZuu 2.329e-03 (rel 5.01e-05);  aZu new/old 1.000004  aZuu new/old 1.000054
+  sig'=5: |Zu| 22.8  dZu 6.090e-04 (rel 2.67e-05);  |Zuu| 118.8  dZuu 1.422e-02 (rel 1.20e-04);  aZu new/old 1.000015  aZuu new/old 1.000129
+  sig'=6: |Zu| 40.86  dZu 2.624e-03 (rel 6.42e-05);  |Zuu| 259.2  dZuu 6.292e-02 (rel 2.43e-04);  aZu new/old 1.000043  aZuu new/old 1.000263
+
+old table built 31s
+new table built 39s
+midpoint q_u: max |new-old| 2.165e-05, max relative 2.288e-06
+  aqu new/old over the 300 cells: min 1.000000 max 1.000001
+  aquu new/old over the 300 cells: min 1.000000 max 1.000001
+  aqu1 new/old over the 300 cells: min 1.000000 max 1.000000
+unchanged (should be identical): Nm, qm, aN, aq1: True True
+
+eval_sig (regime T, D-form): enclosure of I(u; sigma') over the box; point sigma' and cell [sigma', sigma'+1/80]
+  sig'=0.5 point: |I| 18.153  mid shift 0.000e+00  width old 8.139e-01 new 8.139e-01  (rel shift 0.00e+00, rel width change -2.42e-12);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=0.5 cell : |I| 17.747  mid shift 0.000e+00  width old 5.685e+00 new 5.685e+00  (rel shift 0.00e+00, rel width change -3.34e-13);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 5.808e-03 new 5.808e-03;  err1 old 1.563e+01 new 1.563e+01;  |Fp| mid shift 2.667e-09 of 333.2
+  sig'=1 point: |I| 2.9748  mid shift 0.000e+00  width old 3.597e-02 new 3.597e-02  (rel shift 0.00e+00, rel width change -4.30e-10);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=1 cell : |I| 2.9321  mid shift 0.000e+00  width old 6.971e-01 new 6.971e-01  (rel shift 0.00e+00, rel width change -2.15e-11);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57
+  sig'=2 point: |I| 0.64819  mid shift 0.000e+00  width old 3.310e-03 new 3.310e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=2 cell : |I| 0.64416  mid shift 0.000e+00  width old 2.933e-02 new 2.933e-02  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57
+  sig'=3 point: |I| 0.28166  mid shift 0.000e+00  width old 1.564e-03 new 1.564e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=3 cell : |I| 0.2805  mid shift 0.000e+00  width old 9.131e-03 new 9.131e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57
+  sig'=4 point: |I| 0.15685  mid shift 0.000e+00  width old 1.095e-03 new 1.095e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=4 cell : |I| 0.15636  mid shift 0.000e+00  width old 4.314e-03 new 4.314e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57
+  sig'=5 point: |I| 0.099653  mid shift 0.000e+00  width old 8.939e-04 new 8.939e-04  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=5 cell : |I| 0.099405  mid shift 0.000e+00  width old 2.569e-03 new 2.569e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57
+  sig'=6 point: |I| 0.068737  mid shift 0.000e+00  width old 7.874e-04 new 7.874e-04  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+  sig'=6 cell : |I| 0.068594  mid shift 0.000e+00  width old 1.777e-03 new 1.777e-03  (rel shift 0.00e+00, rel width change +0.00e+00);  I1 new/old 1.000000  I2 new/old 1.000000
+      diag(point): rem old 2.016e-04 new 2.016e-04;  err1 old 1.069e+00 new 1.069e+00;  |Fp| mid shift 1.139e-08 of 14.57

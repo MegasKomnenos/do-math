@@ -1,0 +1,4 @@
+d_{n,k_n}<0 for n in: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] ; right half not nonincreasing among them: []
+Q_L failures n<=60: []
+adjacent ties n<=60: []
+crossing false for n in: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] ; true count: 981 elapsed 988.5

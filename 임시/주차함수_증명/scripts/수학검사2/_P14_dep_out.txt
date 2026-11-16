@@ -1,0 +1,28 @@
+중복 머리: []
+== 대응표 번호/절/종류/이름 불일치
+대응표에 있으나 머리 없음 10:old-8-36
+번호 10:old-8-37 표: 10.36 현행: 10.35
+== 의존지도 1절 대조
+머리 인용 2:old-2-41 | 머리: [] | 지도: ['2:old-2-40']
+머리 인용 4:old-4-6 | 머리: [] | 지도: ['2:J-egf']
+머리 인용 5:old-5-1 | 머리: ['4:old-4-5', '7:column-lemma'] | 지도: ['4:old-4-3', '4:old-4-5', '7:column-lemma']
+머리 인용 5:inverse-renewal | 머리: [] | 지도: ['5:fixed-size-response']
+머리 인용 5:lemma-L | 머리: [] | 지도: ['5:suff-cond']
+머리 인용 5:first-moment-weight | 머리: [] | 지도: ['5:marked-recursion']
+머리 인용 5:weight-envelope | 머리: [] | 지도: ['2:chain-normalization']
+머리 인용 5:kernel-sandwich | 머리: [] | 지도: ['5:kernel-bounds']
+머리 인용 5:omitted-tail | 머리: [] | 지도: ['5:parity-tail']
+머리 인용 5:hat-normalization | 머리: [] | 지도: ['4:old-4-6']
+머리 인용 5:band-inequality | 머리: ['5:old-5-32'] | 지도: ['5:old-5-32', '5:old-5-34']
+머리 인용 5:right-part | 머리: ['5:old-5-32'] | 지도: ['5:old-5-32', '5:old-5-34']
+머리 인용 7:old-6-2 | 머리: [] | 지도: ['2:old-2-14']
+머리 인용 7:factorial-moment | 머리: [] | 지도: ['7:old-6-6']
+머리 인용 7:level-chain | 머리: [] | 지도: ['7:old-6-10']
+머리 인용 7:theorem-G-prime | 머리: [] | 지도: ['7:lemma-P-prime', '7:polar-R']
+머리 인용 7:polar-W | 머리: [] | 지도: ['7:polar-R']
+머리 인용 7:pair-reach-table | 머리: [] | 지도: ['7:pair-criterion-sharp']
+머리 인용 7:vertical-nu | 머리: ['4:two-corrections'] | 지도: ['4:correction-contour', '4:two-corrections']
+머리 인용 7:prop-PF | 머리: [] | 지도: ['7:X-cert']
+머리 인용 8:old-6-27 | 머리: [] | 지도: ['8:old-6-26']
+머리 인용 10:old-8-1 | 머리: [] | 지도: ['7:old-6-14', '7:old-6-15']
+의존지도에 있으나 머리 없음 10:old-8-36 412

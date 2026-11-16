@@ -1,0 +1,28 @@
+Markdown 해석 4.8초, 제목 153개
+수식 35035개 렌더링 33.2초 (오류 1개, 경고 종류 1개)
+  [수식 오류] KaTeX parse error: Undefined control sequence: \geR at position 38: …{\mathfrak o_k}\̲g̲e̲R̲^\flat_v(R^\sha…
+      R^\flat_v(R^\sharp_v)^{\mathfrak o_k}\geR^\flat_v(R^\sharp_v)^2>1=(\mathfrak x^\flat)^0
+  [수식 경고 ×2] unknownSymbol: Unrecognized Unicode character "ㄱ" (12593)
+브라우저: playwright chromium 151.0.7922.34
+  part000.html: 맞춤 0.6초, 인쇄 3.7초
+  part002.html: 맞춤 1.0초, 인쇄 4.0초
+  part001.html: 맞춤 4.5초, 인쇄 10.8초
+  part003.html: 맞춤 2.6초, 인쇄 5.1초
+  part005.html: 맞춤 6.4초, 인쇄 12.3초
+  part004.html: 맞춤 10.7초, 인쇄 18.1초
+  part007.html: 맞춤 4.2초, 인쇄 11.0초
+  part006.html: 맞춤 11.1초, 인쇄 23.0초
+  part008.html: 맞춤 4.4초, 인쇄 10.2초
+  part010.html: 맞춤 1.8초, 인쇄 5.1초
+  part009.html: 맞춤 4.2초, 인쇄 8.1초
+  part011.html: 맞춤 1.6초, 인쇄 3.3초
+  part012.html: 맞춤 0.5초, 인쇄 1.4초
+  part013.html: 맞춤 3.8초, 인쇄 4.6초
+  part014.html: 맞춤 17.8초, 인쇄 23.6초
+본문 15조각 인쇄 154초 (동시 2)
+  front.html: 맞춤 0.0초, 인쇄 0.8초
+  front.html: 맞춤 0.0초, 인쇄 0.9초
+제목·차례 4쪽, 제목 153개의 쪽 확정
+책갈피 153개
+PDF: 임시\주차함수_증명\원고.pdf (639쪽, 12.8 MB)
+exit 1

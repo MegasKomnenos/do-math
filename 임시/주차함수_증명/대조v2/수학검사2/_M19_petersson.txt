@@ -1,0 +1,755 @@
+
+===== PAGE 1 =====
+UPPSALA DISSERTATIONS IN MATHEMATICS
+63
+The Maximum Displacement
+for Linear Probing Hashing
+Niclas Petersson
+Department of Mathematics
+Uppsala University
+UPPSALA 2009
+===== PAGE 2 =====
+Dissertation presented at Uppsala University to be publicly examined in Polhemsalen,
+Ångströmlaboratoriet, Lägerhyddsvägen 1, Uppsala, Friday, February 27, 2009 at
+13:15 for the degree of Doctor of Philosophy. The examination will be conducted in
+English.
+Abstract
+Petersson, N . (2009). The Maximum Displacement for Linear Probing Hashing.
+Uppsala Dissertations in Mathematics 63. viii+20 pp. Uppsala. ISBN 978-91-506-
+2050-4.
+In this thesis we study the standard probabilistic model for hashing with linear prob-
+ing. The main purpose is to determine the asymptotic distribution for the maximum
+displacement. Depending on the ratio between the number of items and the number
+of cells, there are several cases to consider. Paper I solves the problem for the special
+case of almost full hash tables. That is, hash tables where every cell but one is occu-
+pied. Paper II completes the analysis by solving the problem for all remaining cases.
+That is, for every case where the number of items divided by the number of cells lies
+in the interval [0, 1].
+The last two papers treat quite diﬀerent topics. Paper III studies the area covered
+by the supremum process of Brownian motion. One of the main theorems in Paper I
+is expressed in terms of the Laplace transform of this area. Paper IV provides a new
+suﬃcient condition for a collection of independent random variables to be negatively
+associated when conditioned on their total sum. The condition applies to a collection
+of independent Borel-distributed random variables, which made it possible to prove
+a Poisson approximation that where essential for the completion of Paper II.
+Keywords: Probabilistic analysis of algorithms, hashing, linear probing, negative
+dependence, Brownian motion.
+Niclas Petersson, Department of Mathematics, Box 480, Uppsala University,
+SE-751 06 Uppsala, Sweden
+Copyright © Niclas Petersson, 2009
+ISSN 1401-2049
+ISBN 978-91-506-2050-4
+urn:nbn:se:uu:diva-9545 (http://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-9545)
+===== PAGE 3 =====
+Finally, we need a great deal of faith in probability theory
+when we use hashing methods, since they are eﬃcient only
+on the average, while the worst case is terrible!
+Donald Knuth, The Art of Computer Programming
+===== PAGE 4 =====
+
+===== PAGE 5 =====
+List of Papers
+This thesis is based on the following papers, which are referred to in the
+text by their Roman numerals.
+I Petersson, N. (2008). The maximum displacement for linear
+probing hashing I.
+II Petersson, N. (2009). The maximum displacement for linear
+probing hashing II.
+III Janson, S. and Petersson, N. (2007). The integral of the
+supremum process of Brownian motion.
+IV Petersson, N. (2008). Negative dependence of independent
+random variables conditional on their total sum.
+v
+===== PAGE 6 =====
+
+===== PAGE 7 =====
+Contents
+1 I n t r o d u c t i o n ....................................... 1
+1.1 Linear Probing Hashing. ........................... 1
+1 . 2 D i s p l a c e m e n t s ................................... 2
+1 . 3 M o d e lv s . R e a l i t y ................................ 3
+1 . 4 V a r i a t i o n so ft h eA l g o r i t h m......................... 5
+2 Summary of Results . . . .............................. 7
+2 . 1 P a p e rI ........................................ 7
+2 . 2 P a p e rI I........................................ 9
+2 . 3 P a p e rI I I....................................... 1 1
+2 . 4 P a p e rI V ....................................... 1 2
+Summary in Swedish ................................... 1 5
+A c k n o w l e d g e m e n t s ..................................... 1 7
+Bibliography . . ........................................ 1 9
+vii
+===== PAGE 8 =====
+
+===== PAGE 9 =====
+1. Introduction
+As research subject, hashing is shared by mathematicians and computer
+scientists with a common interest in probabilistic analysis of algorithms.
+Hashing can in the present context be described as a special class of
+search methods used for storage of information in a computer memory or
+database.1 Such methods are also calledscatter storage techniques, since
+the principal idea is to spread the information randomly in the memory.
+Although the subject of hashing originates from computer science, it
+is actually quite advantageous to introduce the algorithm in a strictly
+mathematical way. Especially in this thesis, which is devoted to the more
+mathematical aspects of hashing.
+1.1 Linear Probing Hashing
+The standard version of hashing with linear probing can be described
+as follows, where n and m are integers such that 0 ≤ n ≤ m.( F o r t h e
+classic, computer science orientated deﬁnition, see Knuth [14, Sec. 6.4,
+Algorithm 6.4.L].)
+n items x1,...,x n are placed sequentially into a table withm
+cells 1,...,m according to some hash sequence {hi}n 1 where
+hi ∈{ 1,...,m }. That is, item xi is inserted into cell hi if it
+is empty. If not, then xi (linearly) probes cell hi +1 , hi +2 ,
+etc until an empty cell is found and the item can be inserted.
+All positions in the table can be interpreted modulom as any
+item that is rejected from the last cell m, continues to probe
+cell 1, 2, etc until it is inserted in an empty cell.
+Throughout this thesis, all hash sequences also follow the standard
+probabilistic model. 2 That is, the hash addresses hi are independent
+random numbers, uniformly distributed on {1,...,m }. Hence all mn
+possible hash sequences{hi}n 1 are equally likely when choosing a sequence
+at random. A hash table withm cells andn items generated by the above
+algorithm will from now on be denoted Tm,n.
+1The ﬁrst known documentation of the main ideas behind hashing is an internal IBM
+memorandum by H. P. Luhn from 1953, see Knuth [14, Sec. 6.4]. The word hashing
+did not become standard terminology (in print at least) until the late 1960s.
+2The validity of this model is brieﬂy discussed in Section 1.3.
+1
+===== PAGE 10 =====
+A hash table Tm,n is called full if n = m and almost full if n =
+m − 1. A non-full hash table is said to be conﬁned if the last cell in
+the table is empty. Conﬁned hash tables are from now on distinguished
+with a prime T ′ m,n. Due to the circular symmetry of the construction
+procedure, all cells are equally likely to be empty in the ﬁnal table.
+Thus, a conﬁned hash table is nothing but a standard table conditioned
+on the last cell being empty. So any non-full hash table can be given the
+conﬁned property by choosing an empty cell with uniform probability
+(among all the empty cells) and then relabeling the table so that the
+chosen cell becomes the last. It can therefore be assumed that the hash
+table is conﬁned whenever it is suitable for the analysis.
+A block in a hash table T ′ m,n is deﬁned as a sequence of consecutive
+cells {i +1 ,...,j } (modulo m) such that cell i and j are empty and all
+cells in between are occupied. Thus, every block contains exactly one
+empty cell (the last one) and the table has as many blocks as it has empty
+cells. The total number of blocks (usually denoted by N) is therefore
+given by N = m − n. The smallest block size is 1, since an empty cell
+following the empty cell of the previous block constitutes a block of its
+own. Note that the internal structure of diﬀerent blocks are independent
+of each other. Thus, any block of a given length k may be regarded as
+a conﬁned almost full hash table T ′ k,k−1 in itself. An almost full hash
+table T ′ m,m−1 is in this sense the most primitive type of table, since it
+only consists of one block.
+1.2 Displacements
+If item xi is inserted into cell qi,t h e ni t sdisplacement or individual
+displacement is
+di := (qi − hi)m o d m.
+Thus, the displacement equals the number of unsuccessful probes item
+xi makes before being inserted into an empty cell. The displacement is a
+measure of time (or cost) it takes to insert an item into the table. Once
+the hash table has been made,xi may be allocated with the same type of
+linear probing as when the item was inserted. That is, by probing cellhi,
+hi +1, etc until the item is found. The search time needed to allocatexi
+in the ﬁnal table is therefore proportional todi +1. Some displacements
+has already been thoroughly analyzed. The total displacement, i.e.
+D :=
+n∑
+i=1
+di ,
+has for instance been studied by Knuth [14], Flajolet, Poblete and Viola
+[8] and Janson [9]. The (individual) displacement of an item chosen at
+random has also been studied in detail by Janson [10] and Viola [20].
+2
+===== PAGE 11 =====
+The maximum displacement (or worst case) is deﬁned as
+D := max
+1≤i≤n
+di .
+The primary purpose of this thesis is to determine the asymptotic distri-
+bution of the maximum displacement for all 0 ≤ λ ≤ 1 when n, m →∞
+in such a way that n/m → λ. Since the maximum displacement also is
+the record among the maximum displacements within each block, it is
+important to know how the block sizes are distributed. Block behavior
+has been studied by Chassaing et al.3 in [3], [4] and [5] and Janson [9].
+A secondary purpose is to study the number of items with displace-
+ments very close to the maximum. Such items are from now on said to
+have a critical displacement. The exact deﬁnition of a critical displace-
+ment must be adjusted to the ratio λ, but the principle is to deﬁne
+“item xi has a critical displacement” ⇔ di ≥ ζ,
+for some appropriate function ζ = ζ(m, n). Here, the word appropriate
+means that the total number of critical displacements should be a non-
+degenerate random variable asymptotically.
+1.3 Model vs. Reality
+The goal of this section is to connect the mathematical model for hashing
+to its origin in computer science. This will be done with the aid of a small
+example in form of the creation of an address book.
+Assume that one wants to store some sort of basic contact informa-
+tion to n diﬀerent persons in a hash table withm cells. Let every person
+be identiﬁed with a unique key formed by the contraction of that per-
+sons fore- and surname. This is a simple way to produce an key that
+also represents the attached information.4 The author’s current contact
+information could for instance be;
+KEY NICLASPETERSSON
+DATA Niclas Petersson H +46(0)76 817 1871
+S:t Olofsgatan 66A T +46(0)18 144 209
+753 30 Uppsala B niclasp@math.uu.se
+Sweden /born October 9, 1977
+The information above constitutes an item in the mathematical model.
+If the data part is small enough it is possible to store both key and data
+3Co-authors: Janson [3], Louchard [4] and Marckert [5].
+4In case some persons share the same fore- and surname one could add a middle name
+(or perhaps a number) in order to give them separate keys.
+3
+===== PAGE 12 =====
+in one cell. If there is a lot of data attached to some keys, one should
+consider to store the data elsewhere. The cell should then contain the key
+and a pointer to the actual place of storage instead. In the example above
+all items will be of approximately the same small size and it therefore
+makes sense to store key and data together. Thus, each cell must be of
+such size that it (easily) can contain the data of a person with a lot of
+contact information. The choice of cellsize will also determine the size
+of the total amount of memory that is needed for the hash table.
+In order to hash a key Ki into the table one needs some sort of hash
+function h. The hash function in this example should be able to trans-
+form a string of letters, for example
+Ki = NICLASPETERSSON ,
+into a natural number hi = h(Ki) such that 1 ≤ hi ≤ m. The ideal
+situation would be if every hash address is unique, i.e. hi ⁄= hj for
+every i and j such that 1 ≤ i<j ≤ n. Without collisions there are no
+displacements and any table look-up will therefore be performed almost
+instantly. Such hash functions are unfortunately virtually impossible to
+construct for most tables of practical importance.
+If the idea of ﬁnding a hash function that can produce a sequence
+{hi}n 1 of n unique addresses is abandoned, what should replace it? In
+the probabilistic model, every item (or key) is given an (independent)
+random number, uniformly distributed on {1,...,m }, as hash address.
+A hash function able to produce this result would truly be great since no
+systematic errors would ever occur, regardless what the keys look like.
+In practice however, it is impossible to achieve true random numbers
+from strings of non-random letters. Fortunately, there exists a lot of
+techniques designed to simulate random behavior that works very well.5
+Hash functions can also exploit non-random properties in the keys that
+causes fewer collisions than true random numbers would do.
+The eﬀectiveness of a computer program is very much dependent on
+the search methods it uses to access needed information. A signiﬁcant
+part of the total running time for many programs are caused by search-
+ing. Hashing is (when properly used) often an eﬀective way to enhance
+the performance by reducing the search times. To computing the hash
+address for a given key is an instant task, when the hash function has
+been decided. To ﬁnd the address corresponding location in the mem-
+ory is something that simply must be done regardless of storing method.
+Thus, the drawback of hashing occurs when (frequently used) data is
+subject to huge displacements. The size of the table and the ratio be-
+tween the number of items and cells should therefore be chosen with
+care.
+5How to construct such hash functions is beyond the scope of this thesis. The inter-
+ested reader may consult Knuth [14] to learn the basics.
+4
+===== PAGE 13 =====
+Remark 1.1. Assume that n< 365 so that it is possible to chose
+m = 365. Instead of using the name as key one could then use the
+birthday (provided every persons set of data contain the date of birth).
+The obvious hash function would then transform the birthday into a
+number between 1 and 365 according to the day’s place in the calender.
+The authors birthday would for instance generate the hash address 282.
+Except for a minor bias in cell 59, this method would generate a very
+good approximation of a uniform probability distribution.6 The famous
+birthday problem asserts that if 23 persons (or more) are present in a
+room, the chance is over 50 percent that at least two of them share the
+same birthday. Moreover, if one replaces the number 23 with 41 (or 57),
+the risk of a birthday collision would increase to over 90 (respectively 99)
+percent. It shows that collisions, and thus displacements, most certainly
+will occur even in sparse hash tables.
+1.4 Variations of the Algorithm
+This thesis exclusively uses the standard algorithm to model linear prob-
+ing hashing. However, it is easy to think of variations of the algorithm
+that also would be very interesting to analyze. It is for instance pos-
+sible to change the (so called) insertion policy that rules how collisions
+are resolved during the creation of the table. For example, consider the
+following three insertion policies;
+FC First Come (First Served) . The algorithm described on page 1
+where the ﬁrst item that probes a cell is inserted and remains
+there.
+LC Last Come (First Served), see Poblete and Munro [17]. Each new
+item is inserted where it arrives. If the cell is already occupied,
+the old inhabitant moves one step to the right. If that to is
+occupied, its old inhabitant is moved etc.
+RH Robin Hood, see Celis, Larson and Munro [2]. When an item
+probes a cell that is already occupied by another item, the item
+(of the two) with the largest current displacement gets the cell.
+The other item is moved to the next cell where the same rule
+applies recursively. (Ties are resolved either way.)
+The LC-a n dRH-policies tend to give more evenly distributed displace-
+ments than the FC-policy, see Poblete, Viola and Munro [18] and Janson
+[10]. The RH-policy also minimizes the variance of the (individual) dis-
+placements for all linear probing algorithms, see Carlsson, Munro and
+Poblete [1]. The maximum displacement for linear probing hashing with
+the RH-policy has been studied by Devroye, Morin and Viola [6].
+6People born February 29 are assumed to have birthday February 28.
+5
+===== PAGE 14 =====
+It is also possible to change the probing method in the algorithm.
+For example, quadratic, uniform and random probing are all common
+alternatives to linear probing. Quadratic (or square) probing, is deﬁned
+such that item xi probes the cells quadratically hi, hi+1, hi+4, hi+9,e t c
+until an empty position is found. Thus, if position hi is part of a large
+cluster of occupied cells, it is not necessary to probe all cells in the cluster
+before ﬁnding an empty cell. There also exist methods such as double
+hashing, which uses two hash functions instead of one, and hashing with
+chaining, where the cells in the original table are linked lists or small
+hash tables in themselves. Since these methods are not treated in the
+thesis, they will not be described in detail. The interested reader can ﬁnd
+some of the probing methods and algorithms above thoroughly deﬁned
+in Knuth [14].
+6
+===== PAGE 15 =====
+2. Summary of Results
+The primary purpose of this thesis is to determine the asymptotic dis-
+tribution for the maximum displacement D. The problem is solved in
+Paper I and II for all 0 ≤ λ ≤ 1 when n, m →∞ in such a way that
+n/m → λ. Although the last two papers treat quite diﬀerent topics, they
+both contain results that where essential for the completion of the ﬁrst
+two papers (and thus the thesis). Paper III studies the area covered by
+the supremum process of Brownian motion. Paper IV provides a new
+suﬃcient condition for a collection of independent random variables to
+be negatively associated when conditioned on their total sum.
+2.1 Paper I
+One of the main results in Paper I is the distribution of the maximum
+displacement in an almost full hash table. That is, the distribution of
+the worst displacement in the worst type of table. The result is also a
+starting point for further analysis since every hash table consists of a
+number of blocks which all are almost full hash tables in themselves.
+Theorem 2.1. If m →∞ , then the maximum displacement D in an
+almost full hash table T ′ m,m−1 is given by
+P
+(m − D
+m2/3 ≤ z
+)
+→ 1 − ψ(z3/2), 0 <z< ∞,
+where ψ is the function deﬁned by
+ψ(s)= 1 Γ(2/3) ∞∑ n=0 Γ(n +2 /3) Γ(3n/2+1 ) ( −3 √ 2s 4 )n .
+The proof of Theorem 2.1 is based on the idea of reversing the time
+direction for the hashing procedure. Consider a conﬁned almost full
+random hash table T ′ m,m−1 constructed by some unknown hash sequence
+{hi}m−1 i=1 ,w h e r ee a c hhi where chosen with uniform probability. By re-
+moving the items one by one in reversed sequential order, the evolution
+of the table can be reconstructed in an algorithmic way. The largest
+block is then subject to a fragmentation as its size will decrease when
+items are removed from the table. Thus, the probability for items to
+7
+===== PAGE 16 =====
+have a large displacement decreases as the largest block is fragmented.
+At some point the size of the largest block will be less than the maximum
+displacement found so far. The fragmentation can then be stopped since
+no remaining item is capable of beating the current maximum.
+Let r(m)= o(√m) be an arbitrary increasing function of m and let
+the number N of empty cells in T ′ m,m−N be a function of time andr(m),
+N = Nm t = ⌈tr (m)⌉,t > 0.
+The size of the largest block, which is denoted by η, then becomes a
+continuous time process,
+η = ηm t = η ( m, m −⌈ tr (m)⌉ ) ,t > 0.
+Let Xm t be the normalized process of ηm t deﬁned by
+Xm t = m − ηm t r(m)2 ,t > 0.
+A fundamental result in Paper I is that {Xm t } converge to the Lévy
+process known as the stable subordinator of index 1/2.I f Xt denotes the
+subordinator, then for any ﬁxed t> 0,
+P
+(
+Xt ≤ x
+)
+= 1√ 2π ∫ x/t2 0 y−3/2 e−1/2y dy.
+Theorem 2.2. For any normalizing sequence r(m)= o(√m),t h es e -
+quence of random processes {Xm t } converges in distribution to the Lévy
+process known as the stable subordinator of index 1/2,
+Xm t d−→Xt as m →∞ ,
+in the usual Skorohod topology on D[0, ∞).
+That {Xm t } converge to Xt for ﬁxed time-points has been known for
+some time. It follows from the fact that there is a one-to-one correspon-
+dence between linear probing hash tables and Pavlov’s random forests.
+If (ν1,...,ν N ) denotes the block sizes in T ′ m,n and (T1,...,T N ) denotes
+the tree sizes in a random forest with n non-root vertices and N roots,
+then
+(ν1,...,ν N ) d=( T1,...,T N ) d=( B1,...,B N ⏐⏐ B(N ) = N + n),
+where B1,...,B N are independent Borel-distributed random variables,
+see Knuth [14, Sec. 6.4, Exercise 31], Chassaing and Louchard [4, Sec.
+8] and Janson [9, Theorem 4.1]. In particular, the largest block in the
+hash table has the same distribution as the largest tree in the random
+forest. Pavlov’s results for the size of the maximum tree in a random
+forest can therefore be applied to hash tables as well, see [16, Chap. 2].
+8
+===== PAGE 17 =====
+2.2 Paper II
+Paper II extends the analysis initiated in Paper I to include all cases
+where n<m . Recall that N = m − n is the number of empty cells in
+T ′ m,n and let n, N →∞ in such a way that λN = n/(n + N) → λ for
+some constant 0 ≤ λ ≤ 1. Depending on the limit λ, a hash table is
+classiﬁed as sparse (λ =0 ), balanced (0 <λ< 1) or dense (λ =1 ).I n
+dense tables the rate of convergence also plays a fundamental role for
+the limit distribution of the maximum displacement. Dense tables are
+therefore sub-classiﬁed as barely dense, (plain) dense, very dense or ultra
+dense according to the following table.
+λ classiﬁcation n/N → n/(N ln N ) → n/N 2 → n/N 3 →
+0s p a r s e 00 0 0
+(0, 1) balanced α 00 0
+1 barely dense ∞ 00 0
+1 phase transition ∞ α 00
+1d e n s e ∞∞ 00
+1 phase transition ∞∞ α 0
+1 very dense ∞∞ ∞ 0
+1 phase transition ∞∞ ∞ α
+1 ultra dense ∞∞ ∞ ∞
+Two diﬀerent methods are used to analyze the cases above. One
+method for sparse, balanced and barely dense tables and another for
+(plain) dense, very dense and ultra dense tables. The ﬁrst method uses
+that the number of critical displacements converge to a Poisson dis-
+tributed random variable (when chosen properly). The second method
+is based on the fact that the largest block is so big in really dense tables
+that it is very unlikely to ﬁnd the maximum displacement somewhere
+else. That is, the largest block is of the same order as the table itself.
+The main results are listed below.
+Theorem 2.3 (Sparse tables ). Let n, N →∞ in such a way that
+n/N → 0. Then for every 0 ≤ z< ∞,
+P
+(
+D = r − 1
+)
+→ e−z, P ( D = r ) → 1 − e−z,
+where r = r(z,n,N ) either is a ﬁxed natural number such that
+N rr−2
+r! λr N →∞ ,N (r +1 )r−1 (r +1 ) ! λr+1 N → z,
+or r →∞ in such a way that
+1√
+2πNr −5/2(λN e1−λN )r →∞ , 1√ 2πNr −5/2(λN e1−λN )r+1 → z.
+9
+===== PAGE 18 =====
+Theorem 2.4 (Balanced tables ). Let n, N →∞ in such a way that
+λN = n/(n + N) → λ for some constant 0 <λ< 1. Then for every
+δ> 0 there exist constants Cδ, n0 and N0 such that
+P
+(
+|D − r0|≤ Cδ
+)
+> 1 − δ for every pair (n, N) ≥ (n0,N 0),
+where r0 = r0(n, N) is deﬁned as
+r0 = β−1( lnN − 5 2 ln lnN )
+and where β = β(n, N) in turn is deﬁned as
+β = −ln(λN e1−λN ).
+Theorem 2.5 (Barely dense tables ). Let n, N →∞ in such a way
+that n/N →∞ and n/(N lnN) → 0. Then for every −∞ <z< ∞,
+P
+(
+D <r
+)
+→ exp
+{
+−e−z } ,
+where r = r(z,n,N ) run through the natural numbers in such a way that
+r = β−1( lnN − 5 2 ln lnN − ln 2√π + z + o(1) )
+as n and N tend to inﬁnity. Similar to the balanced case, β = β(n, N)
+is deﬁned as
+β = −ln(λN e1−λN )= N 2 2n2 ( 1+ O(N/n) ) .
+Theorem 2.6 (Plain dense tables ). Let n, N →∞ in such a way that
+n/(N lnN) →∞ and n/N2 → 0. Then for every −∞ <z< ∞,
+P
+(
+D <r
+)
+→ exp
+{
+−e−z } ,
+where r = r(z,n,N ) run through the natural numbers in such a way that
+r =2
+( n
+N
+)2(
+ln N 2
+n − 3 2 ln lnN 2 n − ln 2√π + z + o(1) ) ,
+as n and N tend to inﬁnity.
+Theorem 2.7 (Very dense tables ). Let n, N →∞ in such a way that
+n/N2 →∞ and n/N3 → 0. Then for every 0 <z< ∞,
+P
+(n − D
+N 2 ≤ z
+)
+→ 1√ 2π ∫ z 0 y−3/2 e−1/2y dy.
+Theorem 2.8 (Ultra dense tables ). Let n →∞ (and possibly N →
+∞) in such a way that n/N3 →∞ . Then for every 0 <z< ∞,
+P
+(n − D
+n2/3 ≤ z
+)
+→ 1 − 1 Γ(2/3) ∞∑ n=0 Γ(n +2 /3) Γ(3n/2+1 ) ( −3 √ 2 z3/2 4 )n .
+10
+===== PAGE 19 =====
+2.3 Paper III
+Paper III deals with the integral of the supremum process of Brownian
+motion. The area covered by this integral, denoted by A when (0,1] is
+the interval of integration, is formally deﬁned as
+A :=
+∫ 1
+0
+max
+0≤s≤t
+B(s) dt,
+where B(t), t ≥ 0, is (standard) Brownian motion. By Brownian scaling
+it is possible to show the following formula for diﬀerent intervals,
+A(T): =
+∫ T
+0
+max
+0≤s≤t
+B(s) dt d= T 3/2A.
+Thus, it is enough to consider A in any analysis.
+The main theorem in Paper III gives a formula for thedouble Laplace
+transform of A. That is, the Laplace transform of the Laplace transform.
+The formula is intriguing since one can use it to determine the more
+elusive (ordinary) Laplace transform of A. (To determine the ordinary
+transform by direct calculation seems very hard, if it is even possible.)
+Theorem 2.9. Let ψ be the Laplace transform of A. For all α, λ >0,
+∫ ∞
+0
+ψ
+(
+αs3/2) e−λs ds = ∫ ∞
+0
+(
+1+ 3αs
+2
+√
+2λ
+)−2/3
+e−λs ds.
+The proof of Theorem 2.9 is based on excursion theory and local time
+for Brownian motion. Moments of A can be obtained from the formula
+by repeated diﬀerentiation followed by some minor manipulations.
+Theorem 2.10. The n:th moment of A is
+E An = n!Γ (n +2 /3) Γ(2/3) Γ(3n/2+1 ) (3 √ 2 4 )n ,n ∈ N.
+The following corollary is an immediate consequence of Theorem 2.10.
+Corollary 2.11. The Laplace transform of A is
+ψ(s)= 1 Γ(2/3) ∞∑ n=0 Γ(n +2 /3) Γ(3n/2+1 ) ( −3 √ 2s 4 )n .
+A appear in Paper I as a random Poisson-parameter. The papers main
+result, i.e. the distribution for the maximum displacement in an almost
+full hash table, is also expressed in terms of the Laplace transform ofA.
+11
+===== PAGE 20 =====
+2.4 Paper IV
+The main result of Paper IV is a new suﬃcient condition for a collec-
+tion of independent random variables to be negatively associated when
+conditioned on their total sum. The concept of negative association was
+introduced by Joag-Dev and Proschan [12] and is one (of several) ways to
+classify mutual negative dependence between random variables. A col-
+lection of random variables {Xα} is deﬁned to be negatively associated
+if, for all disjoint sets A1, A2 of indices and all bounded functions f and
+g increasing in every variable,
+E
+[
+f(Xα,α ∈ A1)g(Xα,α ∈ A2)
+]
+≤ E
+[
+f(Xα,α ∈ A1)
+]
+E
+[
+g(Xα,α ∈ A2)
+]
+.
+Let (X1,...,X N ) be a collection of independent non-negative integer-
+valued random variables. A combination of Theorem 2.6 in [12] and
+Strassen’s theorem [19, Theorem 11] then gives the following result.
+Theorem 2.12 (Joag-Dev and Proschan 1983; Strassen 1964) . Let
+X1,...,X N be independent random variables such that (X1,...,X N )
+is stochastically increasing in X1 + ··· + XN . Then the distribution of
+(X1,...,X N ) conditional on X1 + ··· + XN is negatively associated.
+There are at least two known suﬃcient conditions for a collection of
+independent random variables to be stochastically increasing in their
+total sum. One condition that was proved by Efron [7] and one that was
+proved by Liggett [15].
+Theorem 2.13 (Efron 1965). A collection of independent random vari-
+ables (X1,...,X N ) is stochastically increasing in X1 + ··· + XN if
+P
+(
+Xi = k +1
+)
+P
+(
+Xi = k
+) ↓ in k for each i =1 ,...,N .
+Theorem 2.14 (Liggett 1999). Let X1,...,X N be independent random
+variables and deﬁne the partial sums Si := ∑i j=1 Xj for i =1 ,...,N .I f
+P
+(
+Xi = k +1
+⏐⏐ Si = n +1 ) ≤ P ( Xi = k ⏐⏐ Si = n )
+and
+P
+(
+Si−1 = k +1
+⏐⏐ Si = n +1 ) ≤ P ( Si−1 = k ⏐⏐ Si = n )
+for every i =2 ,...,N and for every k,n ∈ N such that k ≤ n,t h e n
+(X1,...,X N ) is stochastically increasing in SN .
+Efron’s condition states that any collection of independentlog-concave
+random variables is stochastically increasing in their total sum. Liggett’s
+condition is more complex since it both allow and requires a certain de-
+gree of log-convexity among the variables. In this sense, the two condi-
+tions complement each other. The new condition looks very similar to
+Liggett’s, but it is more general and it can be shown that both Theorem
+2.13 and 2.14 are special cases of Theorem 2.15.
+12
+===== PAGE 21 =====
+Theorem 2.15. Let X1,...,X N be independent random variables and
+deﬁne the partial sums Si := ∑i j=1 Xj for i =1 ,...,N .I f
+P
+(
+Xi ≤ k
+⏐⏐ Si = n ) ≤ P ( Xi ≤ k +1 ⏐⏐ Si = n +1 )
+and
+P
+(
+Si−1 ≤ k
+⏐⏐ Si = n ) ≤ P ( Si−1 ≤ k +1 ⏐⏐ Si = n +1 )
+for every i =2 ,...,N and for every k,n ∈ N such that k ≤ n,t h e n
+X1,...,X N are stochastically increasing in SN .
+With the aid of Theorem 2.15 it was possible to prove the following
+result for the Borel distribution.
+Theorem 2.16. Let Y1,...,Y N be independent Bo(λ)-distributed
+random variables for some 0 <λ< 1. That is,
+P
+(
+Yi = k
+)
+= kk−1
+k! · λk−1e−λk,k =1 , 2,...
+for every i =1 ,...,N .T h e n (Y1,...,Y N ) is stochastically increasing in
+Y1 + ··· + YN .
+The result had a large impact on the sparse, balanced and barely dense
+case in Paper II. The random variables describing the number of critical
+displacements in these cases could all be Poisson approximated due to
+Theorem 2.16.
+13
+===== PAGE 22 =====
+
+===== PAGE 23 =====
+Summary in Swedish
+Titeln på denna avhandling kan fritt översättas till Den maximala för-
+skjutningen för hashning med linjär sondering . Termen hashning utgör
+ett samlingsbegrepp för en speciell klass av probabilistiska sökmetoder
+som används för lagring av information i ett datorminne eller en data-
+bas. Den matematiska standardmodellen för hashning med linjär sonde-
+ring kan beskrivas på följande sätt, där n and m är heltal sådana att
+0 ≤ n ≤ m, se Knuth [14, Sec. 6.4, Algorithm 6.4.L].
+n objekt x1,...,x n placeras i en tabell bestående av totalt
+m celler 1,...,m enligt någon hashsekvens {hi}n 1 där hi ∈
+{1,...,m }. Det vill säga, objektxi placeras i cellhi förutsatt
+att den är tom. Om cell hi inte är tom sonderar xi (linjärt)
+cell hi +1, hi +2, osv tills en tom cell är funnen och objektet
+kan införas i tabellen. Alla positioner i tabellen kan tolkas
+modulo m då varje objekt som avvisas från cell m fortsätter
+att sondera cell 1, 2, osv tills den sätts in i en tom cell.
+Hashsekvenserna antas dessutom följa den probabilistiska standard-
+modellen, dvs varje hashadress hi är ett oberoende slumptal, likformigt
+fördelat på {1,...,m }. Samtliga mn möjliga hashsekvenser {hi}n 1 är så-
+ledes lika sannolika när en hashsekvens väljs på måfå.
+Om objekt xi sätts in i cell qi deﬁnieras dess förskjutning som
+di := (qi − hi)m o d m.
+Förskjutningen är med andra ord en stokastisk variabel som beskriver
+antalet ockuperade celler som måste sonderas innan en tom cell slutligen
+hittas. Förskjutningen är även ett mått på tiden (eller kostnaden) som
+krävs för att placera objektet i tabellen. När hashtabellen väl är skapad
+kan objekt xi lokaliseras via sin ursprungsadress hi. Även det sker med
+linjär sondering av hi, hi +1 , etc tills objektet är återfunnet. Söktiden
+som krävs för lokaliseringen är därmed proportionell mot di +1 .
+Hashtabellens maximala förskjutning deﬁnieras som
+D := max
+1≤i≤n
+di .
+Huvudsyftet med avhandlingen är att bestämma D:s asymptotiska för-
+delning för alla 0 ≤ λ ≤ 1 när n, m →∞ så att n/m → λ. Artikel I
+behandlar specialfallet n = m − 1 och artikel II behandlar övriga fall.
+15
+===== PAGE 24 =====
+Artikel III och IV behandlar inte hashning med linjär sondering ex-
+plicit. Däremot används vissa resultat i de både artiklarna för att lösa
+delar av avhandlingens huvudproblem. I artikel III studeras integralen
+av supremumprocessen för Brownsk rörelse. Den area som täcks av ovan
+nämnda integral förekommer i artikel I i form av en (stokastisk) Poisson
+parameter. I artikel IV presenteras ett nytt tillräckligt villkor för att en
+samling av oberoende stokastiska variabler ska vara negativt associerade
+betingat på deras totala summa. Villkoret går att applicera på en sam-
+ling oberoende Borel-fördelade stokastiska variabler, vilket underlättade
+analysen av den maximala förskjutning i artikel II.
+16
+===== PAGE 25 =====
+Acknowledgements
+Many people have encouraged and supported me during my time as a
+PhD student. I especially want to thank the following persons.
+Svante Janson, your importance can not be overestimated. Sure, I
+would recommend you as advisor for your proof-reading skills alone,
+but what I have appreciated most is learning new mathematics from
+you. Several times when I thought my research problem was a dragon,
+impossible to slay, you provided me with a new sharp sword to ﬁght it
+with. My deepest thanks!
+My family, I know there where times when you would have liked to roll
+up your sleeves and ﬁnish the dragon for me. The fact that you always
+provided me with strong moral support instead (and helped me with a
+lot of practical things)1 is very appreciated. Thank you!
+My friends, I think it is fair to say that you all helped me in your own
+special way. You really made a diﬀerence. I feel particularly indebted
+to Johan Dasht, Norbert Euler and Henrik Wanntorp for their great
+friendship in and outside the mathematical community.
+Finally, I also owe a lot of gratitude to FMB, the (Swedish) Graduate
+School in Mathematics and Computing, for excellent ﬁnancial support.
+1Like buying your own Christmas gift and signing the card “Från Niclas” when you
+knew I was to busy writing this thesis to have time to go shopping.
+17
+===== PAGE 26 =====
+
+===== PAGE 27 =====
+Bibliography
+[1] Carlsson, S., Munro, J. I. and Poblete, P. V. (1987). On linear probing
+hashing. Unpublished manuscript.
+[2] Celis, P., Larson, P-Å. and Munro, J. I. (1985). Robin Hood hashing.
+FOCS 26, 281–288.
+[3] Chassaing, P. and Janson, S. (2001). A Vervaat-like path transformation for
+the reﬂected Brownian bridge conditioned on its local time at 0. Ann. Probab.
+29, no. 4, 1755–1779.
+[4] Chassaing, P. and Louchard, G. (2002). Phase transition for parking blocks,
+Brownian excursion and coalescence. Rand. Struct. Alg. 21, no. 1, 76–119.
+[5] Chassaing P. and Marckert, J-F. (2001). Parking functions, empirical pro-
+cesses, and the width of rooted labeled trees. Electron. J. Combin. 8, no. 1,
+#R14.
+[6] D e v r o y e ,L . ,M o r i n ,P .a n dV i o l a ,A .(2004). On worst-case Robin Hood
+hashing. SIAM. J. Comput. 33, no. 4, 923–936.
+[7] Efron, B. (1965). Increasing properties of Pólya frequency functions. Ann.
+Math. Stat. 36, no. 1, 272–279.
+[8] Flajolet, P., Poblete, P. and Viola, A. (1998). On the analysis of linear
+probing hashing. Algorithmica 22, no. 4, 490–515.
+[9] Janson, S. (2001). Asymptotic distribution for the cost of linear probing hash-
+ing. Random Struct. Alg. 19, no. 3–4, 438–471.
+[10] Janson, S. (2005). Individual displacements for linear probing hashing with
+diﬀerent insertion policies. ACM Transactions on Algorithms 1, no. 2, 177–
+213.
+[11] Janson, S., Łuczak, T. and Rucinski, A. (2000). Random graphs.1 s te d . ,
+Wiley-Interscience, New York,
+[12] Joag-Dev, K. and Proschan, F. (1983). Negative association of random
+variables with applications. Ann. Statist. 11, no. 1, 286–295.
+[13] Karatzas, I. and Shreve, S. E. (2004). Brownian Motion and Stochastic
+Calculus. 2nd ed., Springer, New York.
+[14] Knuth, D. E. (1998). The Art of Computer Programming. Vol. 3: Sorting
+and Searching. 2nd ed., Addison-Wesley, Reading, Mass.
+[15] Liggett, T. M. (2000). Monotonicity of conditional distributions and growth
+models on trees. Annals of Probability. 28, no. 4, 1645–1665.
+19
+===== PAGE 28 =====
+[16] Pavlov, Y. L. (2000). Random Forests. 1st ed., VSP BV, Ridderprint bv,
+Ridderkerk.
+[17] Poblete, P. V. and Munro, J. I. (1989). Last-come-ﬁrst-served hashing. J.
+Algorithms 10, no. 2, 228–248.
+[18] Poblete, P. V., Viola, A. and Munro, J. I. (1997). The diagonal Poisson
+transform and its application to the analysis of a hashing scheme.Rand. Struct.
+Alg. 10, no. 1–2, 221–255.
+[19] Strassen, V. (1965). The existence of probability measures with given
+marginals. Ann. Math. Statist. 36, no. 2, 423–439.
+[20] Viola, A. (2005). Exact distributions of individual displacements in linear prob-
+ing hashing. ACM Transactions on Algorithms , 1, no. 2, 214–242.
+20

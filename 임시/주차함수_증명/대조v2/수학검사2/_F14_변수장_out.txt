@@ -1,0 +1,821 @@
+===== N 선언 1,6,7,8,9,10
+  장1: 4건
+  장2: 0건
+  장3: 0건
+  장4: 4건  <-- 선언과 다름
+       장4 418 \sum_{j=1}^{N}f(j)=\int_1^Nf(w)\,dw+\frac{f(1)+f(N)}2+\int_1^N(\{w\}-\tfrac12)f'(w)\,dw
+       장4 418 \sum_{j\le N}j^{-1/2}=2\sqrt N+\mathfrak M+(N^{-1/2}\text{ 차수의 항})
+       장4 418 \int_1^Nf=2\sqrt N-2
+       장4 418 N\to\infty
+  장5: 0건
+  장6: 159건
+  장7: 17건
+  장8: 163건
+  장9: 144건
+  장10: 148건
+  장11: 1건  <-- 선언과 다름
+       장11 155 \prod_{N\ge1}\frac{(2N)^2}{(2N-1)(2N+1)}=\frac\pi2
+===== r 선언 1,2,4,5,9,11
+  장1: 8건
+  장2: 134건
+  장3: 0건
+  장4: 7건
+  장5: 437건
+  장6: 24건  <-- 선언과 다름
+       장6 561 (t-1)_{j-1}=\prod_{\mathfrak y=1}^{j-1}(t-\mathfrak y)=\prod_{r=d-j+1}^{d-1}(y+r)
+       장6 561 (t-1)_j\prod\mathfrak c\,\mathrm{Br}_w=\prod_{r=d-j+1}^{d-1}(y+r)\cdot\prod\mathfrak c\cdot\dfrac{y^L-(y-1)^L}{\prod_{i<
+       장6 561 \prod_{r=d-j+1}^{d-1}(y+r)\,\mathrm{Wc}(C)
+       장6 572 \log\tilde{\mathcal G}_j=\log(y-1)+\log y+(y+d-j-2)\log(y+d-j)+\sum_{r=d-j+1}^{d-1}\log(y+r)+\log\sum_C\mathrm{Wc}(C)-(y
+       장6 572 \sum_{r=d-j+1}^{d-1}\frac1{y+r}=\sum_{r=1}^{j-1}\frac1{y+d-j+r}
+  장7: 13건  <-- 선언과 다름
+       장7B 115 (i_{r-1},i_r]
+       장7B 115 \sigma_{i_{r-1}}>\sigma_{i_r}
+       장7B 115 (i_{r-1},i_r)
+       장7B 115 \sigma_{i_r}
+       장7B 270 \mathcal M^{(y,n)}_r
+  장8: 48건  <-- 선언과 다름
+       장8 54 \Psi(q)=\sum_{r=1}^q\mathrm{Ren}(r)
+       장8 108 m,r,q\ge1
+       장8 110 (2\pi)^{-1/2}r^{-1/2}e^{-1/(12r)}\le\mathrm{Ren}(r)\le(2\pi)^{-1/2}r^{-1/2}e^{-1/(12r+1)}
+       장8 112 \sum_{j=1}^rj^{-1/2}\le2\sqrt r+\mathsf z_{1/2}+\tfrac12r^{-1/2}
+       장8 112 \sum_{j=1}^rj^{-1/2}\ge2\sqrt r+\mathsf z_{1/2}+\tfrac12r^{-1/2}-\tfrac1{24}r^{-3/2}
+  장9: 1건
+  장10: 5건  <-- 선언과 다름
+       장10 309 s_N(k+1)\le s^{\mathrm W}_{\nu-1}(N,k+1)=1-\sum_{r=0}^{\nu-2}\mathrm{Bor}(r+1)\frac{\nu-1-r}{k+\nu-r}
+       장10 311 r=m-t
+       장10 311 \pi_{m}(m-r)=\mathrm{Bor}(m-r)\mathrm{Bor}(r+1)/\mathrm{Bor}(m+1)\ge\mathrm{Bor}(r+1)
+       장10 311 1-y/t=(m-y-r)/(m-r)
+       장10 678 N-r\le k+\nu
+  장11: 22건
+===== q 선언 1,2,5,6,7,8,9,10,11
+  장1: 3건
+  장2: 126건
+  장3: 0건
+  장4: 5건  <-- 선언과 다름
+       장4 577 q=i,\dots,j-1
+       장4 577 q
+       장4 577 q\le j-1\le k_n-2
+       장4 577 2q\le2k_n-4\le n-3\le n-2
+       장4 577 q\le n-3
+  장5: 58건
+  장6: 340건
+  장7: 156건
+  장8: 403건
+  장9: 112건
+  장10: 351건
+  장11: 5건
+===== nu 선언 1,4,6,7,8,9,10,11
+  장1: 26건
+  장2: 0건
+  장3: 0건
+  장4: 41건
+  장5: 0건
+  장6: 30건
+  장7: 214건
+  장8: 96건
+  장9: 138건
+  장10: 184건
+  장11: 11건
+===== d 선언 1,2,5,6,7,8,9,10,11
+  장1: 14건
+  장2: 91건
+  장3: 1건  <-- 선언과 다름
+       장3 67 d/dx=x^{-1}\,d/dz
+  장4: 28건  <-- 선언과 다름
+       장4 53 \Gamma_d(y;n)
+       장4 57 d
+       장4 61 d_{n,k}=b_{n,k}-b_{n,k-1}
+       장4 61 d_{n,k+1}=b_{n,k+1}-b_{n,k}
+       장4 69 d_{n,k_n}=b_{n,k_n}-b_{n,k_n-1}
+  장5: 283건
+  장6: 535건
+  장7: 70건
+  장8: 36건
+  장9: 120건
+  장10: 235건
+  장11: 9건
+===== y 선언 1,2,3,4,5,6,7,8,9,10,11
+  장1: 9건
+  장2: 136건
+  장3: 7건
+  장4: 70건
+  장5: 414건
+  장6: 416건
+  장7: 213건
+  장8: 57건
+  장9: 3건
+  장10: 329건
+  장11: 3건
+===== Y 선언 1,2,5,6,9
+  장1: 4건
+  장2: 29건
+  장3: 0건
+  장4: 0건
+  장5: 171건
+  장6: 24건
+  장7: 0건
+  장8: 0건
+  장9: 7건
+  장10: 0건
+  장11: 0건
+===== u 선언 2,5,6,7,8,9
+  장1: 0건
+  장2: 20건
+  장3: 11건  <-- 선언과 다름
+       장3 41 u>0
+       장3 41 u^{\beta-1}e^{-u}/\Gamma(\beta)
+       장3 41 0<u<1
+       장3 41 u^{\beta-1}(1-u)^{\beta'-1}/\mathrm B(\beta,\beta')
+       장3 73 u
+  장4: 0건
+  장5: 24건
+  장6: 4건
+  장7: 0건  <-- 선언과 다름
+  장8: 0건  <-- 선언과 다름
+  장9: 8건
+  장10: 0건
+  장11: 0건
+===== v 선언 2,5,6,7,8,9
+  장1: 0건
+  장2: 124건
+  장3: 0건
+  장4: 54건  <-- 선언과 다름
+       장4 148 0\le v\le1
+       장4 159 v=1-\mathfrak Z
+       장4 159 (1-\mathfrak Z)^2=v^2
+       장4 159 V(\mathfrak Z)=v^2/2
+       장4 198 v=1-\mathfrak Z
+  장5: 24건
+  장6: 16건
+  장7: 68건
+  장8: 5건
+  장9: 20건
+  장10: 0건
+  장11: 0건
+===== t 선언 2,3,5,6,7,8,9,10,11
+  장1: 0건
+  장2: 182건
+  장3: 12건
+  장4: 0건
+  장5: 211건
+  장6: 173건
+  장7: 89건
+  장8: 95건
+  장9: 369건
+  장10: 7건
+  장11: 0건  <-- 선언과 다름
+===== m 선언 1,2,3,5,6,7,8,9,10,11
+  장1: 13건
+  장2: 222건
+  장3: 14건
+  장4: 0건
+  장5: 319건
+  장6: 437건
+  장7: 492건
+  장8: 168건
+  장9: 311건
+  장10: 309건
+  장11: 15건
+===== beta 선언 2,5,6
+  장1: 14건  <-- 선언과 다름
+       장1 23 \beta
+       장1 23 \beta
+       장1 23 w(\beta)
+       장1 25 \beta
+       장1 25 \rho(\beta)
+  장2: 2건
+  장3: 16건  <-- 선언과 다름
+       장3 41 \beta,\beta'>0
+       장3 41 \mathrm{Gamma}(\beta)
+       장3 41 u^{\beta-1}e^{-u}/\Gamma(\beta)
+       장3 41 \mathrm{Beta}(\beta,\beta')
+       장3 41 u^{\beta-1}(1-u)^{\beta'-1}/\mathrm B(\beta,\beta')
+  장4: 35건  <-- 선언과 다름
+       장4 453 \beta=\rho z
+       장4 459 \mathrm{Am}_\rho=\exp\bigl[-(k-1)\bigl(\tfrac{\rho^2z^2\varepsilon^2}2-\tfrac12\log(1+\rho^2z^2\varepsilon^2)\bigr)\bigr
+       장4 459 \beta=\rho z
+       장4 473 \beta=\rho z
+       장4 477 \mathfrak Z=1+\mathrm i\beta\varepsilon
+  장5: 19건
+  장6: 4건
+  장7: 31건  <-- 선언과 다름
+       장7A 246 \#\{i:a_i\le\beta\}=\beta
+       장7A 246 1\le\beta\le n
+       장7A 246 \beta=n
+       장7A 246 \beta<n
+       장7A 254 \beta_1<\dots<\beta_{\mathfrak b}=n
+  장8: 8건  <-- 선언과 다름
+       장8 122 \varsigma\mapsto\varsigma^{-\beta}
+       장8 122 \beta>-1
+       장8 122 \beta>-1
+       장8 122 \beta\ne1
+       장8 122 \sum_{j\le r}j^{-\beta}=\zeta(\beta)+\frac{r^{1-\beta}}{1-\beta}+\frac12r^{-\beta}+\beta\int_r^\infty\bigl(\varsigma-\lf
+  장9: 18건  <-- 선언과 다름
+       장9 71 \beta:=S_L-w\in[1,d]
+       장9 79 1-e^{g(t')-g(S_L)}\le g(S_L)-g(t')\le\frac32\bigl(\frac1{t'}-\frac1{S_L}\bigr)=\frac32\cdot\frac{S_L-t'}{t'S_L}\le\frac3
+       장9 79 S_L-t'\le S_L-w-1=\beta-1
+       장9 79 \pi^0_{S_L}(w+1)-\pi^0_{S_L-1}(w)\le\frac{3(\beta-1)}{2(w+1)S_L}\bigl(1-\pi^0_{S_L-1}(w)\bigr)
+       장9 79 (\beta-1)/((w+1)S_L)\le \beta/w^2
+  장10: 18건  <-- 선언과 다름
+       장10 635 \varrho_1(q_0):=\frac1{q_0}[e^{-\iota q_0}-e^{-\beta_0}]
+       장10 635 \varrho_2(q_0):=\frac1{q_0}[e^{-\beta_1}-e^{-\beta_2}]
+       장10 635 \beta_0:=\mathfrak c_{\mathrm R}q_0^{3/2}/(\sqrt2y)
+       장10 635 \beta_1:=\mathfrak c_{\mathrm R}q_0\sqrt{q_0/2+1}/y
+       장10 635 \beta_2:=\mathfrak c_{\mathrm R}q_0^{3/2}/y
+  장11: 2건  <-- 선언과 다름
+       장11 51 \beta
+       장11 51 \beta
+===== F 선언 2,5,6,9
+  장1: 0건
+  장2: 23건
+  장3: 2건  <-- 선언과 다름
+       장3 41 {}_2F_2
+       장3 41 {}_1F_1
+  장4: 8건  <-- 선언과 다름
+       장4 13 F_\ast(y,x)
+       장4 103 F_y(x)=\sum_{n\ge0}\mathcal K_{n,k}(y)x^n/n!
+       장4 107 C:=F_y-e^T
+       장4 127 F_y\equiv F_\ast(y,\cdot)\pmod{x^{2k+2}}
+       장4 138 F_\ast(y,x)
+  장5: 9건
+  장6: 7건
+  장7: 1건  <-- 선언과 다름
+       장7B 106 F_\ast(y,x)
+  장8: 0건
+  장9: 6건
+  장10: 44건  <-- 선언과 다름
+       장10 576 \mathfrak o_F(k)
+       장10 576 \mathrm{Stays}^{\mathrm{up}}_F(k)
+       장10 576 \mathfrak R^\sharp_F(k)
+       장10 576 \mathfrak R^{\sharp\prime}_F(k)
+       장10 576 \mathfrak o_F(k_0)\ge\mathrm{Stays}^{\mathrm{up}}_F(k_0)
+  장11: 7건  <-- 선언과 다름
+       장11 62 \mathfrak o_F(9705)=1.3554526
+       장11 62 \mathfrak R^\sharp_F=4.770257
+       장11 62 \mathfrak R^{\sharp\prime}_F=1.770257
+       장11 62 \mathfrak o_F
+       장11 62 \mathrm{Stays}^{\mathrm{up}}_F
+===== G 선언 2,3,5,6,8,9,10
+  장1: 0건
+  장2: 10건
+  장3: 10건
+  장4: 0건
+  장5: 7건
+  장6: 1건
+  장7: 33건  <-- 선언과 다름
+       장7A 814 G>0
+       장7A 814 \psi_G(n):=\mathfrak v_k\bigl(\mathfrak m^\sharp,Gn/k\bigr)
+       장7A 828 \psi_G(n_1)\ge0
+       장7A 830 \mathfrak P_k(n)\le\Gamma\,\mathfrak P_k(\infty)\le G
+       장7A 838 \mathfrak P_k(n)\le\Gamma\,\mathfrak P_k(\infty)\le G
+  장8: 10건
+  장9: 5건
+  장10: 1건
+  장11: 10건  <-- 선언과 다름
+       장11 36 \mathrm{cum}_i+[0,d]\cdot G_i
+       장11 47 (k,G)
+       장11 47 \psi_G(n^\circ_k)
+       장11 47 G\sqrt k
+       장11 47 G\sqrt k
+===== L 선언 2,3,6,7,9,10
+  장1: 6건  <-- 선언과 다름
+       장1 105 \mathsf P_L
+       장1 105 \mathsf P_L
+       장1 105 \mathsf P_L
+       장1 105 \mathsf P_L
+       장1 133 \mathsf P_L
+  장2: 4건
+  장3: 7건
+  장4: 55건  <-- 선언과 다름
+       장4 20 \mathsf P_L(n)
+       장4 25 \mathsf P_L(n)
+       장4 25 \mathsf P_L
+       장4 29 \mathsf P(n)\Leftrightarrow\mathsf P_L(n)\wedge\mathsf P_X(n)\wedge\mathsf P_C(n)\wedge\mathsf P_R(n)
+       장4 31 \mathsf P_L
+  장5: 9건  <-- 선언과 다름
+       장5A 340 \sqrt{\pi L_1/2},\sqrt{\pi L_2/2},\sqrt{\pi L_3/2}
+       장5A 340 \sum_s\sqrt{L_s}\le\sqrt{3(L_1+L_2+L_3)}
+       장5A 564 \mathsf P(n)\Leftrightarrow\mathsf P_L(n)\wedge\mathsf P_R(n)
+       장5A 564 \mathsf P_L(n)\Rightarrow\mathsf{LH}^+(n)
+       장5A 566 \mathsf P_L(n)
+  장6: 67건
+  장7: 60건
+  장8: 8건  <-- 선언과 다름
+       장8 222 K_{L-2}<\max(6.6\cdot10^9,\,10K_{\mathrm s})\le K_{L-1}
+       장8 222 L
+       장8 270 I=L-1
+       장8 398 k\ge K_{L-1}
+       장8 398 \mathrm{Cr}\le\mathrm{Cr}(K_{L-1})
+  장9: 65건
+  장10: 40건
+  장11: 3건  <-- 선언과 다름
+       장11 70 \mathsf W_L^\flat
+       장11 72 \mathsf W_L^\flat
+       장11 72 \mathsf W_L^\flat
+===== tau 선언 2,5,7
+  장1: 0건
+  장2: 38건
+  장3: 0건
+  장4: 1건  <-- 선언과 다름
+       장4 420 w^{-3/2}(e^{-\phi w}-1+\phi w)=\phi^2w^{1/2}\int_0^1(1-\tau)e^{-\tau \phi w}\,d\tau
+  장5: 25건
+  장6: 17건  <-- 선언과 다름
+       장6 848 \Lambda_0,\tau\ge0
+       장6 848 \mathcal F(\Lambda_0+\tau)-\mathcal F(\Lambda_0)\le\mathcal F(\tau)\,\mathcal F'(\Lambda_0)
+       장6 850 \mathfrak l(\Lambda_0+\tau)=\mathfrak l(\Lambda_0)+\mathfrak l(\tau)+1.5\Lambda_0\tau
+       장6 854 e^{1.5\tau}-1\le1.5\tau e^{1.5\tau}
+       장6 854 \tau e^{1.5\tau}\le\mathcal F_{\mathrm I}(\tau)
+  장7: 20건
+  장8: 7건  <-- 선언과 다름
+       장8 497 \mathfrak T_i(q)\ge\int_i^q\mathrm{Bor}^{\mathrm{low}}(\varrho)\Psi^{\mathrm{low}}_{(q-\varrho)}d\varrho=\tau(i/q;q)
+       장8 497 \tau(\cdot;q)
+       장8 497 \tau(\varsigma+1/q;q)\le\tau(i/q;q)
+       장8 497 \sum_i\omega_i\tau(i/q;q)\ge\int_0^{1-1/q}\tau(\varsigma+1/q;q)\,d_\varsigma[\Omega(\xi_q(1-\varsigma))]
+       장8 497 \tau(v;q)=(2\pi)^{-1/2}\int_v^1\varsigma^{-3/2}e^{-1/(12q\varsigma)}\bigl[\Psi^{\mathrm{low}}_{(q(1-\varsigma))}/\sqrt q
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== xi 선언 8,9,10,11
+  장1: 0건
+  장2: 3건  <-- 선언과 다름
+       장2 859 \xi_v
+       장2 859 \Pr(\xi_v=1)=\mathfrak q_v
+       장2 859 \mathfrak Z:=\sum_v\xi_v
+  장3: 13건  <-- 선언과 다름
+       장3 103 g(z-\xi)w(\xi)
+       장3 103 \xi\to\pm\infty
+       장3 107 R(\xi)=g(z_2-\xi)/g(z_1-\xi)
+       장3 111 z_1-\xi<z_2-\xi
+       장3 115 \xi<\kappa
+  장4: 0건
+  장5: 38건  <-- 선언과 다름
+       장5A 694 \xi:=\mathrm{pt}' e^{1-\mathrm{pt}'}
+       장5A 694 \mathrm{Bor}(j;\mathrm{pt}')=\mathrm{Bor}(j)\,\xi^j/\mathrm{pt}'
+       장5A 694 \mathrm{Bor}^{\mathrm{tail}}_k(\mathrm{pt}')=1-\frac1{\mathrm{pt}'}\sum_{j\le k}\mathrm{Bor}(j)\xi^j
+       장5A 704 |\xi|=e^{1-\cos\mathrm{ag}'}\ge1
+       장5A 706 |\xi|>1
+  장6: 41건  <-- 선언과 다름
+       장6 533 \xi:=|\mathcal Q|=L-1
+       장6 541 \mathrm{Gs}_\xi(y):=\sum_{i=0}^{\xi}(1-1/y)^i
+       장6 541 y^{\xi+1}-(y-1)^{\xi+1}=y^\xi\mathrm{Gs}_\xi(y)
+       장6 561 y^L-(y-1)^L=y^\xi\mathrm{Gs}_\xi(y)
+       장6 561 y^\xi/\prod_{q\in\mathcal Q}(y+q)=\prod_{q\in\mathcal Q}y/(y+q)
+  장7: 111건  <-- 선언과 다름
+       장7A 33 0\le\xi\le1
+       장7A 33 (1+\xi)^Z+(1-\xi)^{Z+H}-2\ge Z(Z-1)\xi^2-H\xi
+       장7A 35 (1+\xi)^Z+(1-\xi)^Z-2=2\sum_{j\ge1}\binom Z{2j}\xi^{2j}\ge2\binom Z2\xi^2=Z(Z-1)\xi^2
+       장7A 35 (1-\xi)^Z-(1-\xi)^{Z+H}=(1-\xi)^Z\bigl[1-(1-\xi)^H\bigr]
+       장7A 35 (1-\xi)^Z\le1
+  장8: 368건
+  장9: 89건
+  장10: 74건
+  장11: 6건
+===== Pi 선언 2,5,7,10
+  장1: 0건
+  장2: 13건
+  장3: 0건
+  장4: 0건
+  장5: 11건
+  장6: 20건  <-- 선언과 다름
+       장6 746 \Pi_j(y)=\prod_{i=1}^{j}y/(y+q_i)
+       장6 758 \mathfrak X^0_d(T):=\mathbb E\bigl[\sum_{j=1}^{L}q_j\Pi_j(T)\bigr]=T\bigl(1-\mathbb E\,\Pi_L(T)\bigr)
+       장6 760 \mathfrak X^1_d(T):=\mathbb E\bigl[\sum_{j=1}^{L}(\mathcal R_j(T)-1)\,q_j\,\Pi_j(T)\bigr]\ge0
+       장6 768 y\Pr_{y+d-1}(M\ge y)=\sum_j\sum_{(q_1,\dots,q_j)}\Pr(\text{보행의 처음 }j\text{걸음})\,\mathcal R_j(y)\,q_j\Pi_j(y)
+       장6 770 \Pi_j(T)=\Pi_{j-1}(T)\,T/(T+q_j)
+  장7: 55건
+  장8: 0건
+  장9: 0건
+  장10: 26건
+  장11: 0건
+===== Psi 선언 2,6,8,9,10,11
+  장1: 0건
+  장2: 14건
+  장3: 0건
+  장4: 0건
+  장5: 9건  <-- 선언과 다름
+       장5A 278 \Psi<\Psi'
+       장5A 278 (\Psi,\Psi']
+       장5A 282 i'-i<\min(\Psi'-i,i'-\Psi)\le\max(\Psi'-i,i'-\Psi)<\Psi'-\Psi
+       장5A 282 (i'-i)+(\Psi'-\Psi)=(\Psi'-i)+(i'-\Psi)
+       장5A 282 \mathrm{tw}_{\Psi'-i}\mathrm{tw}_{i'-\Psi}
+  장6: 26건
+  장7: 26건  <-- 선언과 다름
+       장7A 77 \Psi
+       장7A 77 \Psi(\mathcal D(\alpha))
+       장7A 77 \mathbb E_\Psi
+       장7A 77 \Pr_\Psi
+       장7A 77 \Psi=\mathbf 1\{M\le k-1\}
+  장8: 66건
+  장9: 21건
+  장10: 1건
+  장11: 1건
+===== Phi 선언 4,5,7
+  장1: 0건
+  장2: 11건  <-- 선언과 다름
+       장2 453 J_m(z)=\sum_{\sigma\in\mathfrak S_m}\partial_y\Phi_\sigma(y,z)\big|_{y=k}
+       장2 453 \partial_y\Phi_\sigma=0
+       장2 455 \Phi_\sigma(y,z)=\Phi_{\sigma_{\mathrm L}}(y,z)\,\phi_{i+1}(y,z)\,\Phi_{\sigma_{\mathrm R}}(y,z)
+       장2 457 \sum_{\sigma_{\mathrm L}}\partial_y\Phi_{\sigma_{\mathrm L}}|_{y=k}=J_i(z)
+       장2 457 \Phi_{\sigma_{\mathrm R}}(k,z)=\prod_ih_i
+  장3: 3건  <-- 선언과 다름
+       장3 63 \Phi(z)=e^zf(e^z)
+       장3 67 e^{(\varrho-1)z}\Phi(z)/\mathbb EX^{\varrho-1}
+       장3 67 f_\varrho(x)=e^{(\varrho-1)\log x}\Phi(\log x)
+  장4: 4건
+  장5: 4건
+  장6: 6건  <-- 선언과 다름
+       장6 973 (k+1)\mathrm{Bor}(n+1)c_n(k)-(k-1)\mathrm{Bor}(n)c_{n-1}(k-1)=\sum_{\mathrm{path}\in\mathcal C_n}\mathrm{wt}_n(\mathrm{p
+       장6 988 \Phi_k
+       장6 988 (k+1)\mathrm{wt}'-(k-1)\mathrm{wt}_n=\mathrm{wt}_n\Phi_k
+       장6 992 \Phi_k\ge(k+1)e^{\mathcal L}-(k-1)
+       장6 992 \Phi_k\ge2+(k+1)\mathcal L
+  장7: 2건
+  장8: 8건  <-- 선언과 다름
+       장8 505 \Phi
+       장8 505 \Phi(\varsigma)\ge\min(\Phi(\mathfrak t),\Phi(\mathfrak t+\mathfrak l))-\Upsilon\mathfrak l/4
+       장8 507 \mathcal F:=\Phi-(\text{양 끝을 잇는 선형 함수})
+       장8 507 \Phi
+       장8 549 \Phi\ge\min(\text{양 끝})-\mathrm{Lip}\cdot0.001
+  장9: 17건  <-- 선언과 다름
+       장9 222 \Phi
+       장9 227 \Phi
+       장9 239 P_{k+q}(k)\le\frac{k^{1/3}}{\ell}\bigl(\Phi(\xi,\upsilon)-\mathcal L(\xi,\upsilon)\bigr)
+       장9 239 \Phi\le\mathcal L
+       장9 241 \Phi\le1.0041\,\xi^{5/2}\bigl[0.11399\cdot0.03+0.15958\,\upsilon_1^2+0.85108\sqrt{0.03}\,\upsilon_1\bigr]\le0.01434\,\xi
+  장10: 0건
+  장11: 0건
+===== vartheta 선언 10
+  장1: 0건
+  장2: 1건  <-- 선언과 다름
+       장2 913 \varsigma=\eta\sin^2\vartheta
+  장3: 2건  <-- 선언과 다름
+       장3 23 \psi(\vartheta)=\mathbb E\,e^{-\vartheta\mathcal B}
+       장3 23 (\vartheta\ge0)
+  장4: 16건  <-- 선언과 다름
+       장4 292 \vartheta=\mathfrak N\upsilon_n-n
+       장4 292 \vartheta=\mathfrak g(\kappa)+\mathfrak N\epsilon_n
+       장4 306 \vartheta>4-34/k-3/k^2>0
+       장4 306 \vartheta\ge4-26/k
+       장4 308 \mathrm{He}_n/\mathrm{He}_{n-1}=n+\vartheta
+  장5: 44건  <-- 선언과 다름
+       장5A 175 \vartheta:=1/k\le\frac1{10}
+       장5A 175 \log\mathrm{cr}_k+\log(1+\frac52\vartheta+2\vartheta^2)>1
+       장5A 175 \vartheta>0
+       장5A 175 \log(1+\vartheta)\ge\vartheta-\frac{\vartheta^2}2+\frac{\vartheta^3}3-\frac{\vartheta^4}4
+       장5A 175 \vartheta=0
+  장6: 5건  <-- 선언과 다름
+       장6 574 \mathbb E^{\mathrm{Wc}}[\vartheta_\xi]
+       장6 580 \mathbb E^{\mathrm{Wc}}[\vartheta_\xi+\sum\mathfrak f^\sharp]\ge\mathfrak L^\sharp_j(y)
+       장6 620 \vartheta_\xi=\sum_ii(1-1/y)^{i-1}/\sum_i(1-1/y)^i\ge\sum_iie^{-\mathfrak V i}/\sum_ie^{-\mathfrak V i}=:\mathcal M_\xi
+       장6 638 \mathfrak M=\vartheta_{j-1}
+       장6 638 \vartheta_0=0
+  장7: 8건  <-- 선언과 다름
+       장7A 818 \vartheta>0
+       장7A 818 \mathfrak z:=e^{\vartheta/k}
+       장7A 846 \vartheta>0
+       장7A 846 \mathfrak z:=e^{\vartheta/k}
+       장7A 870 (k,\varsigma_{\mathrm L},\varsigma_{\mathrm U},\vartheta)
+  장8: 8건  <-- 선언과 다름
+       장8 312 \vartheta_1=\xi^{3/2}/(2(2\pi)^{-1/2})
+       장8 312 \vartheta_3\equiv0
+       장8 312 \upsilon+\vartheta_1\approx1+\xi^{3/2}/(2(2\pi)^{-1/2})
+       장8 334 \vartheta_1-\vartheta_3=\sqrt\xi(D_1-D_3)/(2(2\pi)^{-1/2})\ge0
+       장8 431 U\le\vartheta_1+\upsilon\le\frac{\xi^{3/2}}{2(2\pi)^{-1/2}}+\frac{k+1}k(1-\mu)^{-1/2}\le18.42449+1.00734=19.43183
+  장9: 0건
+  장10: 28건
+  장11: 3건  <-- 선언과 다름
+       장11 47 \varsigma+\vartheta
+       장11 47 \vartheta
+       장11 47 \vartheta
+===== zeta 선언 1,8
+  장1: 3건
+  장2: 0건
+  장3: 0건
+  장4: 0건
+  장5: 3건  <-- 선언과 다름
+       장5A 728 \mathfrak l_m=(2+\frac1m)\zeta(2m)\pi^{-2m}
+       장5A 754 \log\frac\varphi{\sin\varphi}=\sum_{m\ge1}\frac{\zeta(2m)}{m\pi^{2m}}\varphi^{2m}
+       장5A 754 1-\varphi\cot\varphi=\sum_{m\ge1}\frac{2\zeta(2m)}{\pi^{2m}}\varphi^{2m}
+  장6: 0건
+  장7: 0건
+  장8: 2건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== lambda 선언 1,3,5,8
+  장1: 3건
+  장2: 0건
+  장3: 5건
+  장4: 0건
+  장5: 32건
+  장6: 0건
+  장7: 0건
+  장8: 2건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== sigma 선언 2,4,5,7,8,11
+  장1: 0건
+  장2: 108건
+  장3: 16건  <-- 선언과 다름
+       장3 35 \sigma
+       장3 35 \mathbb E X^\sigma
+       장3 35 -3/2<\operatorname{Re}\sigma<3/2
+       장3 35 \sigma\le-3/2
+       장3 35 \sigma\ge3/2
+  장4: 4건
+  장5: 10건
+  장6: 118건  <-- 선언과 다름
+       장6 66 d^{-3/2}\le\int_{d-1}^{d}\sigma^{-3/2}d\sigma
+       장6 66 \mathrm{Bor}_>(q)\le(2\pi)^{-1/2}\int_q^\infty \sigma^{-3/2}d\sigma=2(2\pi)^{-1/2}q^{-1/2}\le0.8\,q^{-1/2}
+       장6 66 (d-1)d^{-3/2}\le d^{-1/2}\le\int_{d-1}^{d}\sigma^{-1/2}d\sigma
+       장6 66 \sum_{d=1}^{q}(d-1)\mathrm{Bor}(d)\le(2\pi)^{-1/2}\int_1^q\sigma^{-1/2}d\sigma\le0.8(\sqrt q-1)
+       장6 79 (1-\sigma)^{3/2}\ge1-\frac32\sigma
+  장7: 146건
+  장8: 3건
+  장9: 0건
+  장10: 8건  <-- 선언과 다름
+       장10 448 \rho=\rho_0\sigma^\sharp
+       장10 448 \iota_0+1.5\log\sigma^\sharp
+       장10 448 \sigma^\sharp<\sigma^\sharp_0:=e^{-\iota_0/1.5}=0.0972\ldots
+       장10 448 \int_0^{\mathfrak y}(\sigma^\sharp)^{-1/2}(\iota_0+1.5\log\sigma^\sharp)d\sigma^\sharp=2\sqrt{\mathfrak y}(\iota_0+1.5\l
+       장10 448 0.70836\sqrt{\rho_0}\bigl[(2\iota_0-6+6\sqrt{\sigma^\sharp_0})-1.0288\cdot6\sqrt{\sigma^\sharp_0}\bigr]
+  장11: 4건
+===== f 선언 3,8
+  장1: 0건
+  장2: 4건  <-- 선언과 다름
+       장2 849 f,g
+       장2 849 f(\kappa\varsigma_1+(1-\kappa)\varsigma_2)g(\kappa\varsigma_1+(1-\kappa)\varsigma_2)\le(\kappa f(\varsigma_1)+(1-\kappa)
+       장2 849 \kappa f(\varsigma_1)g(\varsigma_1)+(1-\kappa)f(\varsigma_2)g(\varsigma_2)
+       장2 849 -\kappa(1-\kappa)(f(\varsigma_2)-f(\varsigma_1))(g(\varsigma_2)-g(\varsigma_1))\le0
+  장3: 23건
+  장4: 22건  <-- 선언과 다름
+       장4 346 f_k(v)=e^{-k\eta(v)}=e^{kv^2/2}e^{-k\mathfrak F(v)}
+       장4 362 \mathrm{Bor}(k)\mathcal I_k=\mathrm{Bor}(k)\int_0^1\frac{f_k(v)}{1-v}ve^{-v^2/2}dv
+       장4 368 -f_k'=kv^2f_k/(1-v)
+       장4 372 f_k\to0
+       장4 372 \frac{f_k}{1-v}\mathfrak p(v)
+  장5: 9건  <-- 선언과 다름
+       장5A 148 \Delta^3f(y)=\int_0^1\!\int_0^1\!\int_0^1f'''(y-1+\varsigma_1+\varsigma_2+\varsigma_3)\,d\varsigma_1d\varsigma_2d\varsig
+       장5B 260 \frac{z}{\sqrt{2\pi}}e^{-\varsigma z}e^{z^3/(3\mathfrak W_0^2)}f(\mathfrak W)
+       장5B 260 f(u):=u^{-3/2}e^{-z^2/(2u)-\varsigma u}
+       장5B 260 f
+       장5B 260 f
+  장6: 1건  <-- 선언과 다름
+       장6 740 \Delta^2_yf(y):=f(y+2)-2f(y+1)+f(y)
+  장7: 4건  <-- 선언과 다름
+       장7B 39 f_n=\sum_p\mathcal P^{(k)}_n(p)[f_{p-1}+f_{n-p}]+(\text{원천})
+       장7B 39 f
+       장7B 39 f_n=\sum_{m}\mathrm{cnt}_n(m)\,(\text{크기 }m\text{의 원천})
+       장7B 155 \mathrm{Neu}\,f:=e^{\mathfrak T_{\le k}}\int_0^xf
+  장8: 1건
+  장9: 5건  <-- 선언과 다름
+       장9 304 f(v)
+       장9 304 f(v)>t/2
+       장9 304 f(u)<f(v)
+       장9 304 f
+       장9 304 f\le t/2
+  장10: 0건
+  장11: 0건
+===== g 선언 2,5,6,7,8,9,10
+  장1: 0건
+  장2: 22건
+  장3: 55건  <-- 선언과 다름
+       장3 83 g_1
+       장3 83 g_2
+       장3 93 g_1
+       장3 93 g_2
+       장3 95 g
+  장4: 10건  <-- 선언과 다름
+       장4 99 \mathcal W(g)=g
+       장4 99 g\le k
+       장4 99 \mathcal W(g)=y
+       장4 99 g>k
+       장4 169 g
+  장5: 22건
+  장6: 69건
+  장7: 31건
+  장8: 14건
+  장9: 21건
+  장10: 54건
+  장11: 0건
+===== x 선언 1,3,5,6,11
+  장1: 5건
+  장2: 99건  <-- 선언과 다름
+       장2 111 Q_\ell(x):=\sum_{j=0}^{\ell-1}(\ell-j)p_j\,\frac{x^{j+1}}{(j+1)!}
+       장2 111 Q_\ell'(x)=\sum_{j=0}^{\ell-1}(\ell-j)p_jx^j/j!
+       장2 117 x^{n-1}/(n-1)!
+       장2 119 A_0=1/(1-x)
+       장2 119 Q_1=x
+  장3: 50건
+  장4: 67건  <-- 선언과 다름
+       장4 13 F_\ast(y,x)
+       장4 83 \mathcal E_{<k}(x)=\sum_{j<k}p_jx^j/j!
+       장4 83 e^{T(x)}=\sum_{j\ge0}p_jx^j/j!
+       장4 83 T(x)
+       장4 83 \mathrm{Gr}(x)=T(x)-T(x)^2/2
+  장5: 200건
+  장6: 9건
+  장7: 164건  <-- 선언과 다름
+       장7A 250 C_\infty(x):=\sum_{n\ge1}C_{n,n}x^n/n!
+       장7A 256 A_{k-1}(x)=1/(1-C_k(x))
+       장7A 262 C_\infty(x)=1-e^{-T(x)}
+       장7A 264 A_{k-1}(x)
+       장7A 274 e^{T(x)}
+  장8: 7건  <-- 선언과 다름
+       장8 38 T_\ell(x)=\sum_t\mathcal N_\ell(t)x^t/t!=\sum_t\min(t,\ell+1)A_{t-1,\ell}x^t/t!
+       장8 38 A_\ell(x)=\exp T_\ell(x)
+       장8 38 \mathcal B_k(x)=T_k-T_{k-1}
+       장8 38 \sum_mb_{m,k}x^m/m!=A_k-A_{k-1}=A_{k-1}(e^{\mathcal B_k}-1)
+       장8 38 x^t/t!
+  장9: 30건  <-- 선언과 다름
+       장9 23 P_t(k)=\sum_{t'=k}^{t}x_{t'}(k)
+       장9 23 x_k(k)=-1/k
+       장9 33 x_t(k)
+       장9 117 x_{t'}(k)=\delta_{t'}/t'^{\,t'-1}=[(k+1)c_{t'-1}(k)-(k-1)c_{t'-1}(k-1)]/t'
+       장9 269 x_{k+1}(k)=[(k+1)b_{k,k}-(k-1)b_{k,k-1}]/(k+1)^k=-(k-1)k^{k-2}/(k+1)^k
+  장10: 14건  <-- 선언과 다름
+       장10 88 x\ge1
+       장10 105 g'(x)\le\frac1x-\frac{x-1}{x(x+1)}=\frac2{x(x+1)}
+       장10 323 g(x)=(x-1)\log(1+1/x)
+       장10 329 g'(x)\le3/(2x^2)
+       장10 363 g''(x)=-\frac{3x+1}{x^2(x+1)^2}<0
+  장11: 1건
+===== hatx 선언 1,3,5,6,11
+  장1: 4건
+  장2: 0건
+  장3: 0건  <-- 선언과 다름
+  장4: 0건
+  장5: 29건
+  장6: 6건
+  장7: 0건
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 2건
+===== ell_ast 선언 1,3,4,5,6
+  장1: 13건
+  장2: 0건
+  장3: 13건
+  장4: 16건
+  장5: 3건
+  장6: 12건
+  장7: 0건
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== k_n 선언 1,4,5,6,7
+  장1: 15건
+  장2: 0건
+  장3: 0건
+  장4: 58건
+  장5: 23건
+  장6: 3건
+  장7: 14건
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== e_n 선언 1,2,4,5,7,11
+  장1: 4건
+  장2: 3건
+  장3: 0건
+  장4: 14건
+  장5: 8건
+  장6: 0건
+  장7: 2건
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 1건
+===== w_m 선언 7,10
+  장1: 0건
+  장2: 0건
+  장3: 0건
+  장4: 0건
+  장5: 0건
+  장6: 0건
+  장7: 7건
+  장8: 0건
+  장9: 0건
+  장10: 23건
+  장11: 0건
+===== M 선언 1,2,3,4,5,6,7,8,9,10
+  장1: 14건
+  장2: 53건
+  장3: 12건
+  장4: 2건
+  장5: 3건
+  장6: 14건
+  장7: 18건
+  장8: 7건
+  장9: 7건
+  장10: 4건
+  장11: 0건
+===== X 선언 3,8
+  장1: 2건  <-- 선언과 다름
+       장1 105 \mathsf P_X
+       장1 105 \mathsf P_X
+  장2: 0건
+  장3: 37건
+  장4: 22건  <-- 선언과 다름
+       장4 21 \mathsf P_X(n)
+       장4 25 \mathsf P_X(n)
+       장4 25 \mathsf P_X
+       장4 27 \mathsf P_X(n)
+       장4 29 \mathsf P(n)\Leftrightarrow\mathsf P_L(n)\wedge\mathsf P_X(n)\wedge\mathsf P_C(n)\wedge\mathsf P_R(n)
+  장5: 3건  <-- 선언과 다름
+       장5A 798 X
+       장5A 798 \inf_{U\times X}(\Upsilon_e-\Upsilon_B)>0
+       장5B 464 \mathsf P_X
+  장6: 2건  <-- 선언과 다름
+       장6 489 X:=(n+1)^{1/3}\ge15
+       장6 489 1.99+0.59963X^2+1.24847X\le X^2+2
+  장7: 1건  <-- 선언과 다름
+       장7B 736 \mathsf P_X
+  장8: 1건
+  장9: 2건  <-- 선언과 다름
+       장9 911 \mathsf P_X
+       장9 911 \mathsf P(n)\Leftrightarrow\mathsf P_L(n)\wedge\mathsf P_X(n)\wedge\mathsf P_C(n)\wedge\mathsf P_R(n)
+  장10: 2건  <-- 선언과 다름
+       장10 779 \mathsf P_X
+       장10 779 \mathsf P_L\Rightarrow\mathsf P_X
+  장11: 0건
+===== f_ast?x_ast 선언 1,3
+  장1: 3건
+  장2: 0건
+  장3: 18건
+  장4: 0건
+  장5: 0건
+  장6: 0건
+  장7: 0건
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== E_nk 선언 1,2,4,5,7
+  장1: 1건
+  장2: 2건
+  장3: 0건
+  장4: 3건
+  장5: 15건
+  장6: 0건
+  장7: 0건  <-- 선언과 다름
+  장8: 0건
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== I_v 선언 2,9
+  장1: 0건
+  장2: 13건
+  장3: 0건
+  장4: 0건
+  장5: 0건
+  장6: 0건
+  장7: 0건
+  장8: 0건
+  장9: 3건
+  장10: 0건
+  장11: 0건
+===== K_n 선언 9
+  장1: 0건
+  장2: 0건
+  장3: 0건
+  장4: 0건
+  장5: 0건
+  장6: 0건
+  장7: 0건
+  장8: 0건
+  장9: 4건
+  장10: 0건
+  장11: 0건
+===== R_j 선언 2,5,6
+  장1: 0건
+  장2: 2건
+  장3: 0건
+  장4: 0건
+  장5: 20건
+  장6: 11건
+  장7: 0건
+  장8: 21건  <-- 선언과 다름
+       장8 260 R_1
+       장8 260 R_2
+       장8 270 R_1
+       장8 270 R_2
+       장8 281 R_1
+  장9: 0건
+  장10: 0건
+  장11: 0건
+===== S_i 선언 2,3,5,6,7,8,9,10
+  장1: 0건
+  장2: 47건
+  장3: 14건
+  장4: 0건
+  장5: 46건
+  장6: 36건
+  장7: 6건
+  장8: 4건
+  장9: 48건
+  장10: 7건
+  장11: 0건

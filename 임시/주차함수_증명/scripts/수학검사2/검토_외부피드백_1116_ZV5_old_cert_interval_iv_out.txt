@@ -1,0 +1,23 @@
+[setup] knots 12928, cummin changed 0, Fritsch-Carlson ok True (max alpha/beta 1.7303)
+[setup] max|Omega'| <= 0.585083, K2 = sup s|Omega''| <= 3.328898, L_T <= 0.489312, TV(T') <= 0.943590
+[setup] Omega(0) in [0.959999999999999, 0.960000000000001]
+[setup] Bor_<=(100) in [0.920432508813978, 0.920432508813978],  sqrt(2/pi)/10 in [0.079788456080286, 0.079788456080287]
+[lipG] per-cell bound of |d Flow^-/d xi| computed in 8.8s: min 0.4373, max 1.4487, at xi~0.912: 0.9679
+[interval] i= 0 J_i=      3000: min rel margin 0.011251 at xi=0.912 (cellmin 0.007970, rhs 0.708413, Lip 2.8958, loss 0.002896); first-cell margin 0.039361; min grid-point margin 0.010858; widths lhs 2.03e-11 rhs 3.98e-13; 86.2s
+[interval] i= 1 J_i=      6000: min rel margin 0.015552 at xi=0.912 (cellmin 0.011065, rhs 0.711475, Lip 2.8975, loss 0.002898); first-cell margin 0.039532; min grid-point margin 0.013944; widths lhs 2.06e-11 rhs 3.84e-13; 87.9s
+[interval] i= 2 J_i=     12000: min rel margin 0.018286 at xi=0.912 (cellmin 0.013050, rhs 0.713645, Lip 2.8988, loss 0.002899); first-cell margin 0.039653; min grid-point margin 0.015923; widths lhs 2.08e-11 rhs 3.64e-13; 88.8s
+[interval] i= 3 J_i=     24000: min rel margin 0.019936 at xi=0.912 (cellmin 0.014258, rhs 0.715182, Lip 2.8997, loss 0.002900); first-cell margin 0.039738; min grid-point margin 0.017126; widths lhs 2.10e-11 rhs 3.53e-13; 89.8s
+[interval] i= 4 J_i=     48000: min rel margin 0.020883 at xi=0.912 (cellmin 0.014958, rhs 0.716270, Lip 2.9003, loss 0.002900); first-cell margin 0.039798; min grid-point margin 0.017824; widths lhs 2.11e-11 rhs 3.36e-13; 87.5s
+[interval] i= 5 J_i=     96000: min rel margin 0.021410 at xi=0.912 (cellmin 0.015351, rhs 0.717040, Lip 2.9007, loss 0.002901); first-cell margin 0.039841; min grid-point margin 0.018216; widths lhs 2.12e-11 rhs 3.28e-13; 76.7s
+[interval] i= 6 J_i=    192000: min rel margin 0.021688 at xi=0.912 (cellmin 0.015563, rhs 0.717584, Lip 2.9010, loss 0.002901); first-cell margin 0.039871; min grid-point margin 0.018427; widths lhs 2.12e-11 rhs 3.15e-13; 70.4s
+[interval] i= 7 J_i=    384000: min rel margin 0.021833 at xi=0.912 (cellmin 0.015675, rhs 0.717970, Lip 2.9012, loss 0.002901); first-cell margin 0.039892; min grid-point margin 0.018539; widths lhs 2.14e-11 rhs 3.08e-13; 70.7s
+[interval] i= 8 J_i=    768000: min rel margin 0.021923 at xi=0.912 (cellmin 0.015746, rhs 0.718242, Lip 2.9014, loss 0.002901); first-cell margin 0.039907; min grid-point margin 0.018610; widths lhs 2.13e-11 rhs 2.98e-13; 68.7s
+[interval] i= 9 J_i=   1536000: min rel margin 0.021954 at xi=0.912 (cellmin 0.015773, rhs 0.718435, Lip 2.9015, loss 0.002902); first-cell margin 0.039918; min grid-point margin 0.018637; widths lhs 2.12e-11 rhs 2.92e-13; 71.0s
+[interval] i=10 J_i=   3072000: min rel margin 0.021969 at xi=0.912 (cellmin 0.015786, rhs 0.718571, Lip 2.9016, loss 0.002902); first-cell margin 0.039926; min grid-point margin 0.018651; widths lhs 2.12e-11 rhs 2.83e-13; 70.7s
+[interval] i=11 J_i=   6144000: min rel margin 0.021960 at xi=0.912 (cellmin 0.015782, rhs 0.718667, Lip 2.9016, loss 0.002902); first-cell margin 0.039931; min grid-point margin 0.018646; widths lhs 2.13e-11 rhs 2.79e-13; 68.7s
+[interval] i=12 J_i=  12288000: min rel margin 0.021958 at xi=0.912 (cellmin 0.015782, rhs 0.718736, Lip 2.9017, loss 0.002902); first-cell margin 0.039935; min grid-point margin 0.018646; widths lhs 2.12e-11 rhs 2.72e-13; 71.1s
+[interval] i=13 J_i=  24576000: min rel margin 0.021943 at xi=0.912 (cellmin 0.015772, rhs 0.718784, Lip 2.9017, loss 0.002902); first-cell margin 0.039937; min grid-point margin 0.018637; widths lhs 2.14e-11 rhs 2.69e-13; 69.8s
+[interval] i=14 J_i=  49152000: min rel margin 0.021940 at xi=0.912 (cellmin 0.015771, rhs 0.718818, Lip 2.9017, loss 0.002902); first-cell margin 0.039939; min grid-point margin 0.018636; widths lhs 2.14e-11 rhs 2.63e-13; 70.0s
+[interval] i=15 J_i=  98304000: min rel margin 0.021914 at xi=0.912 (cellmin 0.015753, rhs 0.718842, Lip 2.9017, loss 0.002902); first-cell margin 0.039941; min grid-point margin 0.018618; widths lhs 2.12e-11 rhs 2.60e-13; 71.2s
+[interval] i=16 J_i= 196608000: min rel margin 0.021837 at xi=0.912 (cellmin 0.015699, rhs 0.718900, Lip 2.9018, loss 0.002902); first-cell margin 0.039942; min grid-point margin 0.018563; widths lhs 2.12e-11 rhs 6.88e-15; 52.1s
+[summary] intervals (0, 16): overall min rel margin 0.011251 at xi=0.912; all cells and first cells positive: True; total 1280.4s

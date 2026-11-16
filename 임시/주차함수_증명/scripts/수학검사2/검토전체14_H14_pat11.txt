@@ -1,0 +1,7 @@
+ALL	\\varpi
+ALL	\\mathscr
+ALL	\bB\(x\)
+ALL	\\mathrm\{Src\}|\\mathrm\{Pair\}|\\mathrm\{CF\}|FLlin|\bBT\b|D2S|\\mathrm\{Land\}|\\mathrm\{Top\}
+ALL	\\mathbf (?!1)
+ALL	\$l\$|[^A-Za-z\\]l_[^e]|[=(,]l\b
+ALL	\\mathrm\{top\}\^|\\mathrm\{top\}_\{?\\mathrm H

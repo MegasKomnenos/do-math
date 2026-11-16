@@ -1,0 +1,82 @@
+n=80: 84023389540434452566263924886618364534909977983982121246715289307110432842993124383028872316744611198639623256560041269276054594442852268387046143312 87142111475418532284612097219614488863183113230244586173358403562485724507389584638796945033717536778493444608208130011463075867762201088967794082336 90378331460121557700696711827048176563634816467812178130987883129516669195636445529347710214324779260174112961849954485639467821102195054140547923974
+ b39*b41-b40^2 >0: True
+ ratios: 1.037117306883737 1.037137268421777
+ separator 25928/25000: True True
+ LC violations n<=79: []
+ LC violations n=80: [40]
+d_{n,k_n} sign, right half nonincreasing (k_n<=j<=n-2), b_k<b_{k+1}:
+  n= 1 k= 1 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 2 k= 1 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 3 k= 2 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 4 k= 2 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 5 k= 3 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=False
+  n= 6 k= 3 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 7 k= 4 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=False
+  n= 8 k= 4 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n= 9 k= 5 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=False
+  n=10 k= 5 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=11 k= 6 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=False
+  n=12 k= 6 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=13 k= 7 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=14 k= 7 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=15 k= 8 d=<0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=16 k= 8 d=>0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=17 k= 9 d=>0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=18 k= 9 d=>0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=19 k=10 d=>0 rightNonInc=True b_k<b_k+1=False leftStrict=True
+  n=20 k=10 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+  n=21 k=11 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+  n=22 k=11 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+  n=23 k=12 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+  n=24 k=12 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+  n=25 k=13 d=>0 rightNonInc=False b_k<b_k+1=True leftStrict=True
+Q_L(3..15) all ok
+n=1: distinct capacity multisets=1, nonunimodal fibers=0 
+n=2: distinct capacity multisets=2, nonunimodal fibers=0 
+n=3: distinct capacity multisets=4, nonunimodal fibers=0 
+n=4: distinct capacity multisets=9, nonunimodal fibers=0 
+n=5: distinct capacity multisets=19, nonunimodal fibers=0 
+n=6: distinct capacity multisets=44, nonunimodal fibers=0 
+n=7: distinct capacity multisets=96, nonunimodal fibers=30 (1, 2, 3, 5, 4, 6, 7)
+n=17 b=3 allowed=True bound=0.7395086877
+n=17 b=4 allowed=True bound=0.7789970414
+n=17 b=5 allowed=False bound=0.8778422375
+n=17 b=6 allowed=False bound=0.9509969785
+n=17 b=7 allowed=False bound=0.9864096077
+pairs 4<=m<=700, 8d^3<=m^2: 16229
+d_max(700): 39  d_max(689): 39
+floor(3/4 m^{2/3}) m=10001: 348
+B2(42)= 1.0022908621838165  B2(43)= 0.99855323354027  B2(2000)= 0.6928734764678611
+  tiltsum(2)=0.888889
+  tiltsum(3)=0.850342
+  tiltsum(10)=0.783242
+  tiltsum(20)=0.754646
+  tiltsum(42)=0.727143
+  tiltsum(43)=0.726329
+  d=1: L=2183.0 R=2
+  d=2: L=1726.37 R=3.548
+  d=3: L=1422.53 R=4.881
+  d=4: L=1193.39 R=6.096
+  d=5: L=1007.31 R=7.241
+  d=6: L=848.686 R=8.344
+  d=7: L=708.857 R=9.421
+  d=8: L=582.555 R=10.49
+  d=9: L=466.375 R=11.55
+  d=10: L=358.006 R=12.61
+  d=11: L=255.817 R=13.68
+  d=12: L=158.619 R=14.75
+  d=13: L=65.5197 R=15.85
+  d=14: L=-24.1604 R=16.96
+zeta32 S+2N^-1/2 = 2.6123697578167733763816734116  S+2(N+1)^-1/2 = 2.61235858166776717107515342146  trapezoid lower: 2.61237534798671712585591443454  upper: 2.61237534903509240410068417169  true: 2.61237534868548834334856756792
+zeta(1/2), zeta(-1/2): -1.46035450880958681288949915252 -0.207886224977354566017306725397
+3c(8.133+10.301c)= 14.6521579058833964904677690851  1.5*2.7323*0.8051*c*(17.951+23.462c)= 35.9514886500112292600905414844
+50.62/sqrt(3130)= 0.904794541837701981759500107531
+5.642*1.6809*0.39893-0.0163-3.554 = 0.21300762755400005
+S/2^30 = 2.718281827867031
+4764 5468.280000000001
+sum k_n-1 for 10001..20000: 74995000
+QR positions 5..20000: 99970002  20001..50000: 524955000
+sum_{r=2}^{170}(r-1)= 14365  r<=40: 780
+M0..M5: ['0.65568', '0.34432', '0.311359', '0.377282', '0.556795', '0.952332']  C1..C4: 0.952345 0.61306 0.247178 0.0428669
+L(10^4)= 0.8452047828785871685923580219  M2-M2^(6)= 1.99334970068987406218868004342e-10  bound: 2.32799963563877694684773122097e-10
+0.5+2*0.845204-sqrt(3pi/2)= 0.0196042363251967105227075986215

@@ -1,0 +1,16 @@
+l=580 done, 13 s
+worker 572-581 finished in 14 s
+quick: columns l=572..581, n <= 780, exact integers
+violations in this window: [[780, 575], [780, 576], [780, 577], [780, 578]]
+violations at n = 780: [575, 576, 577, 578]
+  n=780 l=572: relative D/A^2 = 3.0655e-08
+  n=780 l=573: relative D/A^2 = 1.6409e-08
+  n=780 l=574: relative D/A^2 = 5.6110e-09
+  n=780 l=575: relative D/A^2 = -1.7174e-09
+  n=780 l=576: relative D/A^2 = -5.5553e-09
+  n=780 l=577: relative D/A^2 = -5.8810e-09
+  n=780 l=578: relative D/A^2 = -2.6723e-09
+  n=780 l=579: relative D/A^2 = 4.0937e-09
+  n=780 l=580: relative D/A^2 = 1.4440e-08
+  n=780 l=581: relative D/A^2 = 2.8391e-08
+n=779 minimum relative D/A^2 in this window = 1.02688e-08 at l = 576

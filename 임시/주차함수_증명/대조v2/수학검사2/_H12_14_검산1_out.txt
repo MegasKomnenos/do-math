@@ -1,0 +1,21 @@
+--- D.fiber-enumeration ---
+1 multisets 1 nonunimodal fibers 0 
+2 multisets 2 nonunimodal fibers 0 
+3 multisets 4 nonunimodal fibers 0 
+4 multisets 9 nonunimodal fibers 0 
+5 multisets 19 nonunimodal fibers 0 
+6 multisets 44 nonunimodal fibers 0 
+7 multisets 96 nonunimodal fibers 30 ((1, 2, 3, 5, 4, 6, 7), [1, 2, 3, 4, 1, 6, 7], [1, 31, 130, 222, 216, 264, 144])
+7^7= 823543 8^6= 262144 7^5= 16807
+--- D.fiber-nonunimodal-bound ---
+17 best b 3 0.739508687662 first fail b 5
+ exact n=17 b=3: 0.7395086876618862 1870949755656608987/2529990231179046912
+ exact b=4: 0.7789970413828728
+100 best b 4 0.316848426927 first fail b 9
+1000 best b 6 0.0657331752141 first fail b 24
+10000 best b 8 0.0114215514766 first fail b 72
+--- zeta ---
+2.61237534868548834334856756792 -1.46035450880958681288949915252 -0.207886224977354566017306725397
+coarse lower C=2000: 2.61236976200765467002363546733 upper 2.61237534903465567205233333842
+trapezoid lower: 2.61237534798671712585591443453 midpoint upper: 2.61237534903509240410068417168
+0.2078862250607 - true = 8.33454339826932746029520479523e-11

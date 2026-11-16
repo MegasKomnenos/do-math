@@ -1,0 +1,2310 @@
+
+===== PAGE 1 =====
+arXiv:1002.4135v1  [math.PR]  22 Feb 2010
+MOMENTS OF GAMMA TYPE AND THE BROWNIAN
+SUPREMUM PROCESS AREA
+SV ANTE JANSON
+Abstract. We study positive random variables whose moments can be
+expressed by products and quotients of Gamma functions; thi s includes
+many standard distributions. General results are given on e xistence,
+series expansion and asymptotics of density functions. It i s shown that
+the integral of the supremum process of Brownian motion has m oments
+of this type, as well as a related random variable occuring in the study
+of hashing with linear displacement, and the general result s are applied
+to these variables.
+1. Introduction
+We say that a positive random variable X has moments of Gamma type
+if, for s in some interval,
+EX s =CD s
+∏J
+j=1 Γ(ajs +bj) ∏K
+k=1 Γ(a′ ks +b′ k) (1.1)
+for some integers J,K ≥ 0 and some real constants C,D> 0,aj,bj, a′ k,b′ k.
+We may and will assume that aj ⁄= 0 and a′ k ⁄= 0 for all j and k. We often
+denote the right hand side of (1.1) by F (s); this is a meromorphic function
+deﬁned for all complex s (except at its poles).
+Similarly we say that a real random variable Y has moment generating
+function of Gamma type if, for s in some interval,
+EesY =Ce ds
+∏J
+j=1 Γ(ajs +bj) ∏K
+k=1 Γ(a′ ks +b′ k) (1.2)
+for some integers J,K ≥ 0 and some real constants C,d, aj ⁄= 0, bj,a′ k ⁄= 0,
+b′ k, and that Y has characteristic function of Gamma type if, for all real t,
+EeitY =Ce itd
+∏J
+j=1 Γ(bj + iajt) ∏K
+k=1 Γ(b′ k + ia′ kt) (1.3)
+for some such constants.
+Of course, (1.1) and (1.2) are the same if X =eY andD =ed; further, it
+will be shown that (1.2) and (1.3) are equivalent by analytic continuation.
+Moreover, we shall see that the range of validity of (1.1), or (1.2) is always
+Date: 22 February, 2010.
+2000 Mathematics Subject Classiﬁcation. 60E10; 60J65.
+1
+===== PAGE 2 =====
+2 SV ANTE JANSON
+the largest possible. We summarize these simple but useful o bservations in
+Theorem 2.1 below.
+Remark 1.1. The representations in (1.1)–(1.3) are far from unique. Usi ng
+the duplication formula (A.3), or more generally the multip lication formula
+(A.5), and other relations such as the functional equation Γ (z + 1) = zΓ(z),
+a function F (s) of this form may be rewritten in many diﬀerent ways. (More
+or less transparently; some equivalent versions may look qu ite diﬀerent to
+the unaided eye.) See for example Theorems 1.6 and 1.12.
+Remark 1.2. The constant C is determined by the relation F (0) = EX 0 =
+1, which shows that
+C =
+∏K
+k=1 Γ(b′ k)∏J
+j=1 Γ(bj)
+(1.4)
+provided no bj or b′ k is a non-positive integer. In general, C can be found
+by taking limits as s → 0.
+Remark 1.3. The constant D is just a scale factor: X satisﬁes (1.1) if and
+only if X/D satisﬁes the same equation with D replaced by 1 (i.e., without
+the factor Ds). Similarly, Y satisﬁes (1.2) or (1.3) if and only if Y −d
+satisﬁes the same equation with d replaced by 0. Hence we might assume
+D = 1 or d = 0 if convenient (but we will not do so in general).
+Remark 1.4. If r ∈ R, then x −r = Γ(x −r + 1)/Γ(x −r). Hence, any
+rational function Q(x) with all poles and zeros real can be written as a ﬁnite
+product∏ ℓ Γ(x +cℓ)/Γ(x +c′ ℓ) with cℓ,c ′ ℓ ∈ R. Consequently we may allow
+such a rational factor Q(s) in (1.1) and (1.2), or Q(it) in (1.3), without
+changing the class of distributions.
+Remark 1.5. If X has moments of Gamma type and α is a real num-
+ber, then X α has moments of Gamma type. (Just substitute αs for s in
+(1.1).) Similarly, if X1 and X2 are independent and both have moments of
+of Gamma type, then X1X2 has too. (Just use E(X1X2)s = EX s 1 EX s 2 .)
+Several well-known distributions have moments or moment ge nerating
+functions of Gamma type. We give a number of examples in Secti on 3.
+The main motivation for the present paper is that also severa l less well-
+known distributions have moments of Gamma type. It is then st raightfor-
+ward to use Mellin transform techniques to obtain expansion s or asymptotics
+of the density function, and it seems advantageous to do so, a nd to study
+other properties, in general for this class of distribution s.
+In particular, this paper was inspired by the realization th at some recently
+studied random variables have moments of Gamma type. One is t he integral
+of the supremum process of a Brownian motion, i.e., the area u nder the
+supremum process (up to some ﬁxed time T ). Let B(t),t ≥ 0, be a standard
+Brownian motion. Consider the supremum process S(t) := max 0≤s≤tB(t),
+===== PAGE 3 =====
+MOMENTS OF GAMMA TYPE 3
+and its integral
+A(T ) :=
+∫ T
+0
+S(t) dt. (1.5)
+We further let A := A(1). For any given T > 0, the usual Brownian
+scaling {B(Tt )}t≥0 d= {T 1/2B(t)}t≥0 implies the corresponding scaling for
+the supremum process {S(Tt )}t≥0 d= {T 1/2S(t)}t≥0, and thus
+A(T ) = T
+∫ 1
+0
+S(Tt ) dt d=T 3/2A. (1.6)
+In particular, E A(T )s =T 3s/2 E As and it is enough to study A.
+The random area A was studied by Janson and Petersson [19], and using
+their results we will in Section 7 prove the following formul a, showing that
+A has moments of Gamma type. (The result for the integer moment s E An,
+n ∈ N, was given in [19].) We give several diﬀerent, but equivalent , formulas
+of the type (1.1) for E As, which exempliﬁes Remark 1.1. The third version,
+with only two non-constant Gamma factors is perhaps the simp lest. The
+last, where all Gamma factors are of the type Γ( s/2 +b) with 0 <b ≤ 1 is
+of a canonical type where there are no cancellations of poles , and it is thus
+easy to see the poles and zeros, cf. Remark 4.5.
+Theorem 1.6. The moments of A are given by, for Res> −1,
+E As = Γ(s + 1) Γ(s + 2/3) Γ(2/3) Γ(3s/2 + 1) · ( 3√ 8 )s
+= Γ(s + 1) Γ(s + 5/3) Γ(5/3) Γ(3s/2 + 2) · ( 3√ 8 )s
+= 2Γ(1/3) 3√π · Γ(3s/2 + 3/2) Γ(s + 4/3) · ( √ 8 9 )s
+= Γ(1/3) 21/3π · Γ(s/2 + 1/2) Γ(s/2 + 5/6) Γ(s/2 + 2/3) · ( 2 3 )s/2 .
+Further, E As = ∞ for real s ≤ −1.
+Remark 1.7. Several related Brownian areas are studied in Janson [17],
+for example the integral of |B(t)| or the integral of a normalized Brownian
+excursion. These areas do not have moments of Gamma type. In f act, most
+of the Brownian areas studied there have entire functions EX s [17, §29],
+which is impossible for moments of Gamma type, see Theorem 4. 1(iv). (For
+the remaining two areas in [17], we have no formal proof that t hey do not
+have moments of Gamma type, but it seems very unlikely since t he integer
+moments satisfy more complicated recursion formulas [17]. )
+As a consequence of Theorem 1.6 and our general results in Sec tion 6, we
+can express the density function of A using the conﬂuent hypergeometric
+===== PAGE 4 =====
+4 SV ANTE JANSON
+function 1F1 (denoted M in [1] and Φ in [20]) or the conﬂuent hypergeo-
+metric function of the second kind U [1] (also denoted Ψ [20]). (Also the
+proofs of the next two theorems are given in Section 7.)
+Theorem 1.8. A has a density function fA(x) given by, for x> 0,
+fA(x) = 22/3Γ(1/3) 31/2π ∞∑ n=0 (−1)n Γ(n + 5/6) n! Γ(n + 2/3) · ( 3 2 )n+1/2 x2n
++ 22/3Γ(1/3) 31/2π ∞∑ n=0 (−1)n Γ(n + 7/6) n! Γ(n + 4/3) · ( 3 2 )n+5/6 x2n+2/3
+= 21/2
+π1/2 1F1
+( 5
+6 ; 2 3 ; − 3 2x2
+)
++ 2−1/631/3
+Γ(5/6) x2/3 1F1
+( 7
+6 ; 4 3 ; − 3 2x2
+)
+=e− 3 2 x2
+(
+21/2
+π1/2 1F1
+(
+− 1 6 ; 2 3 ; 3 2x2
+)
++ 2−1/631/3
+Γ(5/6) x2/3 1F1
+( 1
+6 ; 4 3 ; 3 2x2
+))
+= 27/6
+Γ(2/3)e− 3 2 x2 U ( − 1 6 ; 2 3 ; 3 2x2 )
+= 25/631/3
+Γ(2/3) x2/3e− 3 2 x2 U ( 1 6 ; 4 3 ; 3 2x2 ) .
+It follows (most easily from the second formula above) that fA has a
+ﬁnite, positive limit fA(0+) =
+√
+2/π as x ց 0. More precisely, fA(x) =√
+2/π +O(x2/3).
+As x → ∞, we obtain from Theorem 1.6 and our general theorems in
+Section 6 the following asymptotic result. Note that the two terms in the
+ﬁrst or second formula for fA in Theorem 1.6 are each much larger, of the
+order x−5/3 by the asymptotics of 1F1 in [1, (13.5.1)], but they cancel each
+other almost completely for large x.
+Theorem 1.9.
+fA(x) ∼ 32/3Γ(1/3) π x1/3e−3x2/2 = 2 · 31/6 Γ(2/3)x1/3e−3x2/2, x → ∞.
+This result was conjectured in [19], where the weaker result P(A> x) =
+exp
+{
+−3x2/2 +o(x2) } was shown from the moment asymptotic
+E As ∼ Γ(1/3) π1/2 s1/6 ( s 3e )s/2 , s → ∞, (1.7)
+for integer s and a Tauberian theorem. (Only integer moments were con-
+sidered in [19]. Note that (1.7) for arbitrary real s → ∞ follows easily from
+Theorem 1.6 and Stirling’s formula; see Theorem 5.7 and (7.8 ).)
+Remark 1.10. Theorem 1.9 also follows from any of the last two formulas
+in Theorem 1.8 and the asymptotic formula for U in [1, (13.5.2)]. Indeed,
+===== PAGE 5 =====
+MOMENTS OF GAMMA TYPE 5
+this gives an asymptotic expansion with further terms, cf. R emark 6.3; in
+this case, by [1, (13.5.2)], the complete asymptotic expans ion can be written
+fA(x) ∼ 2 · 31/6 Γ(2/3)x1/3e−3x2/2 2F0 ( 1 6, − 1 6 ; ; − 2 3x−2 ) , x → ∞,
+where the hypergeometric series 2F0 is divergent and the asymptotic expan-
+sion is interpreted in the usual way: if we truncate the serie s after any ﬁxed
+number of terms, the error is of the order of the ﬁrst omitted t erm. (For
+the general deﬁnition of the (generalized) hypergeometric series pFq, see e.g.
+[13, Section 5.5].)
+Theorem 1.9 may be compared with similar results for several other Brow-
+nian areas in Janson and Louchard [18], see also Janson [17] a nd Remark 1.7.
+In these results for other Brownian areas, the exponent of x is always an
+integer (0, 1 or 2), while here the exponent is 1 /3, which is related to the
+powers1/6 in (1.7).
+Another example with moments of Gamma type comes from Peters son
+[24]. He studied the maximum displacement in hashing with li near probing,
+and found for dense tables, after suitable normalization, c onvergence to a
+limit distribution given by a random variable M with the distribution [24,
+Theorem 5.1]
+P(M ≤ x) = 1 −ψ(x3/2), x> 0, (1.8)
+where ψ(s) := Ee−sA is the Laplace transform of A. Equivalently,
+P(M>x ) = ψ(x3/2) = Ee−x3/2A, x> 0. (1.9)
+This type of relation preserves moments of Gamma type; we giv e a general
+result.
+Lemma 1.11. Suppose that V andZ are two positive random variables and
+α> 0. Then
+P(V >x ) = Ee−xαZ, x> 0, (1.10)
+if and only if
+V d=T 1/α/Z1/α, (1.11)
+whereT ∈ Exp(1) is independent of Z.
+If (1.10) or (1.11) holds, then
+EV s = Γ(s/α + 1) EZ −s/α, s> −α. (1.12)
+In particular, if one of Z and V has moments of Gamma type, then so has
+the other.
+We postpone the simple proof until Section 8. By (1.9), Lemma 1.11
+applies to M and A, and thus M has moments of Gamma type. More
+precisely, Theorem 1.6 implies the following, see Section 8 for details.
+===== PAGE 6 =====
+6 SV ANTE JANSON
+Theorem 1.12. For −3/2< Res< 3/2,
+E Ms = Γ(1 + 2s/3) Γ(2/3 − 2s/3) Γ(1 − 2s/3) Γ(2/3) Γ(1 −s) · ( 2 32/3 )s
+= 2Γ(1/3) 3√π · Γ(1 + 2s/3) Γ(3/2 −s) Γ(4/3 − 2s/3) · ( 34/3 2 )s
+= Γ(1/3) 21/3π · Γ(1 + 2s/3) Γ(1/2 −s/3) Γ(5/6 −s/3) Γ(2/3 −s/3) · ( 3 2 )s/3
+= Γ(1/3) 21/3π3/2 · Γ(1/2 +s/3) Γ(1 +s/3) Γ(1/2 −s/3) Γ(5/6 −s/3) Γ(2/3 −s/3) · 6s/3.
+Further, E Ms = ∞ for real s ≤ −3/2 or s ≥ 3/2.
+The special case s = 1 yields E M = 2Γ(1/3)/32/3, as found by Petersson
+[24]. Petersson [24] further proved that E Ms = ∞ for s ≥ 2; we now see
+that the sharp threshold is s = 3/2.
+Our general theorems apply again; they show that M has a density, and
+they yield a series expansion and asymptotics for the densit y. (Proofs are
+given in Section 8.) Again, the results can be expressed usin g various hy-
+pergeometric functions and series. (Again, see [13] for deﬁ nitions.)
+Theorem 1.13. M has a continuous density function given by, for x> 0,
+fM(x) = 31/2Γ(1/3) 25/6π ∞∑ n=0 (−1)n Γ(1 +n/2) Γ(4/3 +n/2) Γ(7/6 +n/2)n! ( 2 3 )n/2 x3n/2+1/2
+= 21/2
+π1/2x1/2 2F2
+( 4
+3, 1; 7 6, 1 2 ;x3 6 ) − 5 8x2 1F1 ( 11 6 ; 5 3 ;x3 6 ) .
+In particular, for small x we have the asymptotic formula
+fM(x) = 21/2 π1/2x1/2 +O(x2), x ց 0. (1.13)
+For largex, there is a similar formula, which is the beginning of a diver gent
+asymptotic expansion (interpreted as in Remark 1.10):
+Theorem 1.14. As x → ∞,
+fM(x) = 3√ 2πx−5/2 +O(x−7/2). (1.14)
+More precisely, fM(x) has as x → ∞ an asymptotic expansion
+fM(x) ∼ 3√ 2πx−5/2 3F1 ( 3 2, 5 6, 1; 2 3 ; − 6 x3 )
++ 5 Γ(1/3) 21/232/3π1/2x−7/2 2F0 ( 11 6 , 7 6 ; ; − 6 x3 ) . (1.15)
+Yet another recent example of moments of Gamma type comes fro m the
+study of generalized P´ olya urns [10], [16]; see Section 9.
+===== PAGE 7 =====
+MOMENTS OF GAMMA TYPE 7
+We give some basic reults in Section 2, and further results on poles and
+zeros in Section 4. Many examples with standard distributio ns are given in
+Section 3. Asymptotics of the moments are studied in Section 5, and asymp-
+totics and series expansions of the density function are giv en in Section 6.
+As said above, we give proofs of the results above for A and M in Sections
+7 and 8, and we give some results for generalized P´ olya urns i n Section 9.
+We end with a couple of more technical examples (counter exam ples) in
+Section 10 and some further remarks in Section 11. Some stand ard formulas
+for the Gamma function are for convenience collected in Appe ndix A.
+2. The basic theorem and some notation
+Let F (s) denote the right hand side of (1.1) or (1.2). (Thus, the righ t
+hand side of (1.3) is F (it).) Evidently, F is a meromorphic function in the
+complex plane, and all poles are on the real axis. Let ρ+ and ρ− be the
+poles closest to 0:
+ρ+ := min {x> 0 : x is a pole of F },
+ρ− := max{x< 0 : x is a pole of F }, (2.1)
+with the interpretation that ρ+ = ∞ [ρ− = −∞] if there is no pole on (0 , ∞)
+[(−∞, 0)]. Thus −∞ ≤ ρ−< 0<ρ + ≤ ∞. Note that we ignore any pole at
+0 in the deﬁnitions (2.1); however, it follows from Theorem 2 .1 that such a
+pole cannot exist; F (s) is always analytic at s = 0.
+Theorem 2.1. LetX >0 andY be random variables connected by X =eY
+and thus Y = log X, and let C, D > 0, d = log D, aj ⁄= 0 , bj, a′ k ⁄= 0 ,
+b′ k be real constants, for j = 1,...,J ≥ 0 and k = 1,...,K ≥ 0. Let F (s)
+be the meromorphic function in (1.1) and (1.2) and let ρ+ ∈ (0, ∞) and
+ρ− ∈ (−∞, 0) be deﬁned by (2.1). Then the following are equivalent:
+(i) (1.1) holds for all real s in some non-empty interval.
+(ii) (1.1) holds for all complex s in the strip ρ−< Res<ρ +.
+(iii) (1.2) holds for all real s in some non-empty interval.
+(iv) (1.2) holds for all complex s in the strip ρ−< Res<ρ +.
+(v) (1.3) holds for all real t ⁄= 0 in some interval |t|<t 0 with t0 > 0.
+(vi) (1.3) holds for all real t.
+In this case, further EX s = EesY = ∞ if s ≤ρ− or s ≥ρ+; thus
+{s ∈ R : EX s< ∞} = {s ∈ R : EesY < ∞} = (ρ−,ρ +).
+Equivalently,
+ρ+ = sup{s ≥ 0 : EX s < ∞},
+ρ− = inf {s ≤ 0 : EX s< ∞}.
+Furthermore,F (s) = EX s = EesY ⁄= 0 when ρ− < Res<ρ +.
+===== PAGE 8 =====
+8 SV ANTE JANSON
+Proof. (i) ⇐ ⇒(iii) and (ii) ⇐ ⇒(iv) are trivial, since EX s = EesY . Further,
+trivially (iv) = ⇒ (iii), (vi) = ⇒ (v) and (iv) = ⇒ (vi). Hence, to show the
+equivalences it suﬃces to show that (iii) = ⇒ (v) and (v) = ⇒ (iv).
+(v) = ⇒ (iv). Note ﬁrst that ϕ(t) := EeitY → 1 as t → 0. Hence,
+F (it) → 1 as t ց 0, and thus F does not have a pole at 0.
+This shows that F (z) is analytic in the strip ρ− < Rez < ρ+, and thus
+F (iz) is analytic in the strip −ρ+< Imz <−ρ−. By continuity, ϕ(t) = F (it)
+also for t = 0 and thus for the entire interval ( −t0,t 0). Hence, on this
+interval at least, ϕ(t) equals the boundary values of the function F (it) which
+is analytic for 0 ≤ Imz < −ρ− and by a theorem of Marcinkiewicz [22],
+Ee−rY < ∞ for every r ∈ (0, −ρ−); equivalently, EerY < ∞ if ρ− < r <0.
+By considering −Y , we ﬁnd similarly that EerY < ∞ if 0 < r < ρ+.
+Consequently,
+EerY < ∞ if ρ−<r<ρ +. (2.2)
+It is well-known that (2.2) implies that ψ(z) := EezY is deﬁned and ﬁnite for
+ρ−< Rez <ρ+ and thatψ(z) is an analytic function of z in this strip. Since
+ψ(it) = ϕ(t) = F (it) for |t| < t0, analytic continuation yields ψ(z) = F (z)
+in this strip, i.e. (iv) holds.
+(iii) =⇒ (v). Suppose that EesY = F (s) for s ∈ (a,b ), with −∞ < a <
+b < ∞. Let s0 ∈ (a,b ) with s0 ⁄= 0 and suppose that s0 > 0. (The case
+s0< 0 is similar, or follows by considering −Y .) Thus Ees0Y =F (s0)< ∞,
+and it follows that z ↦→ EezY is deﬁned and analytic for 0 < Rez <s0. Since
+EezY =F (z) on an interval in this strip, EezY =F (z) for 0 < Rez <s0.
+For any real t, we may take z = it +ε for 0 < ε < s0; letting ε ց 0 we
+have Ee(it+ε)Y → EeitY by dominated convergence (using E(1+es0Y )< ∞).
+If further t ⁄= 0, then also Ee(it+ε)Y = F (it +ε) → F (it) since F has only
+real poles, and thus EeitY =F (it). Hence (v) holds.
+This completes the proof of the equivalences. Suppose EesY < ∞ for
+some s ≥ ρ+ (and thus ρ+ < ∞). Letting z ր ρ+, we then have, by
+dominated convergence, F (z) = EezY → Eeρ+Y < ∞, while the deﬁnition
+of ρ+ as a pole yields F (z) = |F (z)| → ∞ . This contradiction shows that
+EesY = ∞ for s ≥ ρ+. Similarly, or by considering −Y , EesY = ∞ for
+s ≤ρ−.
+Finally observe that F (s) = 0 only when some a′ ks +b′ k is a pole of Γ, i.e.,
+a non-positive integer, which implies that s is real. However, if ρ−<s<ρ +,
+then F (s) = EesY > 0. □
+Remark 2.2. The equivalence (iii) ⇐ ⇒(iv) (or, equivalently, (i) ⇐ ⇒(ii))
+is an instance of the well-known fact that a (two-sided) Lapl ace transform of
+a positive function or measure has singularities where the r eal axis intersects
+the boundary of the natural strip of deﬁnition, see e.g. [6, §3.4]. The result
+by Marcinkiewicz [22] used above is a sharper version of this .
+We make some simple but useful observations.
+===== PAGE 9 =====
+MOMENTS OF GAMMA TYPE 9
+Corollary 2.3. The distribution of X is determined by the function F (s)
+on the right hand side of (1.1): If EX s 1 =F (s) fors ∈I1 and EX s 2 =F (s)
+for s ∈I2, for non-empty intervals I1 and I2, then X1 d=X2.
+Proof. By Theorem 2.1, Y1 := logX1 and Y2 := logX2 have the same char-
+acteristic function F (it). Hence, Y1 d=Y2 and X1 d=X2. □
+Remark 2.4. As said above, Theorem 2.1 (e.g., by (vi)) implies that 0 is
+not a pole of F ; furthermore, F (0) = EX 0 = 1.
+Remark 2.5. Every pole or zero of F (s) must be a pole of one of the Γ
+factors in (1.1). However, the converse does not hold, since poles in the Γ
+factors may cancel; if s0 is a pole of some factors in the numerator, but also
+a pole of at least as many factors in the denominator, then s0 is a removable
+singularity of F , and F (s0) is well-deﬁned by continuity. Note that such s0
+do not count in the deﬁnition (2.1) of ρ±.
+In particular, s = 0 may be a pole of some of the Gamma factors in F (s).
+(This happens when some bj or b′ k is 0 or a negative integer. This is the
+reason we exclude t = 0 in Theorem 2.1(v).) However, by Remark 2.4, all
+such poles must cancel; i.e., there must be an equal number of such factors
+in the numerator and denominator in (1.1).
+Remark 2.6. In Theorem 2.1(v), it is important that we consider an in-
+terval about 0 (unlike in (i) and (iii)). In fact, for any ε > 0, there exist
+a random variable Y and C,d,a j,b j,a ′ k,b ′ k such that (1.3) holds for |t| ≥ ε
+but not for all ε.
+For an example, let Y be any random variable with characteristic function
+of Gamma type, say EeitY = F (it). Further, let Z be a random variable
+with characteristic function (1 −|t|)+, see [9, Section XV.2], and let W be the
+mixture ofZ and the constant 0 obtained as W :=VZ withV ∈ Be(1/2), i.e.
+P(V = 0) = P(V = 1) = 1/2, and V independent of Z; assume further that
+Y is independent of Z andV . Then, for |t| ≥ 1, the characteristic functions
+EeitZ = 0 and EeitW = 1 2 (EeitZ + 1) = 1 2 , and thus ~Y :=Y +ε−1W has the
+characteristic function
+Eeit ~Y = EeitY Eeiε−1tW = 1 2F (it), when |t| ≥ ε. (2.3)
+Here ~F (it) := 1 2F (it) is another function of the type in (1.3); however (2.3)
+does not hold for all t since ~F (0) = 1/2 ⁄= 1.
+We do not know whether (1.3) for some interval, together with F (0) = 1,
+implies that (1.3) holds for all t.
+For future use, in particular for the asymptotic results in S ections 5 and 6,
+we deﬁne the following parameters, given a random variable X or Y or a
+function F (s) as in (1.1) or (1.2):
+γ :=
+J∑
+j=1
+|aj| −
+K∑
+k=1
+|a′ k|, (2.4)
+===== PAGE 10 =====
+10 SV ANTE JANSON
+γ′ :=
+J∑
+j=1
+aj −
+K∑
+k=1
+a′ k, (2.5)
+δ :=
+J∑
+j=1
+bj −
+K∑
+k=1
+b′ k −J −K 2 , (2.6)
+κ :=
+J∑
+j=1
+aj log |aj| −
+K∑
+k=1
+a′ k log |a′ k| +d, (2.7)
+C1 :=C(2π)(J−K)/2
+∏J
+j=1 |aj|bj −1/2
+∏K
+k=1 |a′ k|b′ k−1/2. (2.8)
+Proposition 2.7. The parameters γ,γ ′,δ, κ,C 1 depend on F only and not
+on the particular representation in (1.1) or (1.2).
+The proof is given in Section 5.
+Remark 2.8. To replace X byX −1, or equivalently Y by −Y , means that
+F (s) is replaced by F (−s), which has the same form but with d replaced by
+−d (D by D−1) and similarly the sign of each aj and a′ k is changed. This
+does not aﬀect γ, δ, and C1, but γ′ and κ change signs. (This also follows
+from (5.2) and (5.3) below.)
+Remark 2.9. More generally,X α, withα real and non-zero, has parameters
+|α|γ, αγ′, δ, ακ +γ′α log |α|, C1|α|δ.
+Remark 2.10. If X = X1X2 with X1,X 2 independent and both having
+moments of Gamma type, cf. Remark 1.5, then the parameters γ,γ ′,δ, κ for
+X are the sums of the corresponding parameters for X1 andX2, while C1 is
+the corresponding product.
+Remark 2.11. If X has moments of Gamma type, then so has a suitably
+conjugated (a.k.a. tilted) distribution: If, for simplici ty, X has a density
+function f (x), x > 0, let ~X have the density function xrf (x)/ EX r for a
+real r such that EX r < ∞. Then E ~X s = EX s+r/ EX r and thus ~X has
+moments of Gamma type, obtained by a simple substitution in ( 1.1). It
+follows that γ, γ′ and κ are the same for ~X as for X, while δ is increased
+byrγ ′ andC1 is multiplied by erκ/ EX r. (Cf. (5.3) below.) Clearly, ρ+ and
+ρ− are both decreased by r.
+For a random variable Y with moment generating function of Gamma
+type, the same applies to ~Y with density function eryf (y)/ EerY , if Y has
+density function f .
+We note also the following relations, for a function F (s) as above:
+Lemma 2.12. We have∑
+j:aj>0
+aj −
+∑
+k:a′ k>0
+a′ k = 1 2 (γ +γ′),
+===== PAGE 11 =====
+MOMENTS OF GAMMA TYPE 11
+∑
+j:aj<0
+|aj| −
+∑
+k:a′ k<0
+|a′ k| = 1 2 (γ −γ′).
+Proof.
+γ +γ′ = ∑
+j
+(|aj| +aj) −
+∑
+k
+(|a′ k| +a′ k) = 2 ( ∑
+j:aj>0
+aj −
+∑
+k:a′ k>0
+a′ k
+)
+.
+γ −γ′ = ∑
+j
+(|aj| −aj) −
+∑
+k
+(|a′ k| −a′ k) = 2 ( ∑
+j:aj<0
+|aj| −
+∑
+k:a′ k<0
+|a′ k| ) . □
+3. Some examples
+There are several well-known examples of distributions wit h moments of
+Gamma type. We collect some of them here. The results below ar e all
+well-known. We usually omit scale parameters that may be add ed to the
+deﬁnitions of the distributions.
+Example 3.1 (Gamma distribution ). Let Γ α have the Gamma distribu-
+tion Γ(α) = Γ(α, 1) with density function f (x) = xα−1e−x/Γ(α), x> 0, for
+a parameter α> 0. Then, for Re s> −α,
+E Γs α =
+∫ ∞
+0
+xsf (x) dx = 1 Γ(α) ∫ ∞ 0 xs+α−1e−x dx = Γ(s +α) Γ(α) , (3.1)
+a simple example of moments of Gamma type. The right hand side of (3.1)
+is an analytic function in Re s > −α, with a pole at −α; thus ρ+ = ∞,
+ρ− = −α, and E Γs α = ∞ when s ≤ −α.
+We have γ =γ′ = 1, δ =α − 1/2, κ = 0, C1 = √ 2π/Γ(α).
+Note that the diﬀerent Gamma distributions can be obtained by conju-
+gation from each other, cf. Remark 2.11.
+Example 3.2 (Exponential distribution ). The exponential distribution
+Exp(1) with density function e−x, x > 0, is the special case α = 1 of the
+Gamma distribution in Example 3.1. We thus obtain from (3.1) (or directly
+from (A.1)), for T ∈ Exp(1),
+ET s = Γ(s + 1), Res> −1, (3.2)
+while ET s = ∞ when s ≤ −1.
+More generally, if Tµ has an exponential distribution Exp( µ) = Γ(1 ,µ )
+with mean µ, which has the density function is µ−1e−x/µ, x > 0, then
+Tµ d=µT and
+ET s µ = Γ(s + 1)µs, Res> −1. (3.3)
+ThusTµ has moments of Gamma type, with ρ+ = ∞,ρ− = −1,γ =γ′ = 1,
+δ = 1/2, κ = logµ, C1 =
+√
+2π.
+===== PAGE 12 =====
+12 SV ANTE JANSON
+Example 3.3 (Uniform distribution ). LetU have a uniform distribution
+U(0, 1) on [0, 1]. Then, obviously, for Re s> −1,
+EU s =
+∫ 1
+0
+xs dx = 1 s + 1. (3.4)
+This can be rewritten as a Gamma type formula by the functiona l equation
+(A.2), which yields
+EU s = Γ(s + 1) Γ(s + 2), Res> −1, (3.5)
+while EU s = ∞ when s ≤ −1.
+Of course, it would be silly to claim that (3.5) is a simpliﬁca tion of (3.4),
+but it shows that the uniform distribution has moments of Gam ma type and
+thus belongs to the class studied here.
+We have ρ+ = ∞, ρ− = −1, γ =γ′ = 0, δ = −1, κ = 0, C1 = 1.
+Example 3.4 (Beta distribution ). Let Bα,β have the Beta distribution
+B(α,β ), where α,β > 0; then Bα,β has a density function f (x) = cxα−1(1 −
+x)β−1, 0 < x <1, where c = Γ(α)−1Γ(β)−1Γ(α +β), cf. (A.8). (Note that
+α =β = 1 yields the uniform distribution in Example 3.3 as a specia l case.)
+Consequently, by (A.8), for Re s> −α,
+EBs α,β =
+∫ 1
+0
+xsf (x) dx = ( Γ(α)Γ(β) Γ(α +β) )−1 Γ(s +α)Γ(β) Γ(s +α +β) = Γ(α +β)Γ(s +α) Γ(α)Γ(s +α +β),
+(3.6)
+while EBs α,β = ∞ if s ≤ −α. We have ρ+ = ∞, ρ− = −α, γ = γ′ = 0,
+δ = −β, κ = 0, C1 = Γ(α +β)/Γ(α).
+Example 3.5 (Chi-square distribution ). The chi-square distribution
+χ2(n) is the distribution of Qn :=∑n i=1N 2 i , where N1,N 2,... are i.i.d. stan-
+dard normal variables. It is well-known, see e.g. [9, Sectio n II.3], that the chi-
+square distribution is a Gamma distribution, diﬀering from t he normalized
+version in Example 3.1 by a scale factor; more precisely, Qn d= 2Γ n/2. Con-
+sequently, the chi-square distribution has moments of Gamm a type, with,
+by (3.1),
+EQs n = 2 s Γ(s +n/2) Γ(n/2) , Res> −n/2, (3.7)
+while EQs n = ∞ for s ≤ −n/2. We have ρ+ = ∞, ρ− = −n/2, γ =γ′ = 1,
+δ = (n − 1)/2, κ = log 2, C1 =
+√
+2π/Γ(n/2).
+If n = 2, then Q2 d= 2Γ 1 d= 2T d= T2, which also follows from (3.7) and
+(3.3).
+Example 3.6 (Chi distribution ). The chi distribution χ(n) is the distri-
+bution of Rn :=
+(∑n
+i=1N 2 i )1/2 = Q1/2 n , with notations as in Example 3.5.
+Hence, using (3.7), the chi distribution has moments of Gamm a type, with
+ERs n = EQs/2 n = 2 s/2 Γ(s/2 +n/2) Γ(n/2) , Res> −n, (3.8)
+===== PAGE 13 =====
+MOMENTS OF GAMMA TYPE 13
+while ERs n = ∞ for s ≤ −n. We have ρ+ = ∞, ρ− = −n, γ = γ′ = 1/2,
+δ = (n − 1)/2, κ = 0, C1 = 2 1−n/2π1/2/Γ(n/2), cf. Remark 2.9.
+In particular, the special case n = 1 shows that if N ∈ N(0, 1), then
+|N | ∈ χ(1) has moments of Gamma type with
+E |N |s =π−1/22s/2Γ(s/2 + 1/2). (3.9)
+Example 3.7 (F -distribution). The F -distribution is the distribution of
+Fm,n := Qm/m Q′n/n = n m Qm Q′n , (3.10)
+where Qm ∈ χ2(m) and Q′ n ∈ χ2(n) are independent. By (3.7), this has
+moments of Gamma type with
+EF s m,n = (n m )s EQs m E(Q′ n)−s = (n m )s Γ(s +m/2)Γ(n/2 −s) Γ(m/2)Γ(n/2) , (3.11)
+for −m/2< Res<n/ 2, while EF s m,n = ∞ for s ≤ −m/2 and s ≥n/2. We
+haveρ+ =n/2,ρ− = −m/2,γ = 2, γ′ = 0, δ = (n+m−2)/2, κ = log(n/m),
+C1 = 2π(Γ(m/2)Γ(n/2))−1. (Cf. Remarks 2.8 and 2.10.)
+Example 3.8 (t-distribution). The t-distribution is the distribution of
+Tn := N Rn/√n, (3.12)
+whereN ∈ N(0, 1) and Rn ∈χ(n) are independent. This random variable is
+not positive; in fact the distribution is symmetric. Howeve r, by (3.10) and
+(3.12), T 2 n d= F1,n, so if we consider |Tn| d= F 1/2 1,n , we see from Example 3.7
+that |Tn| has moments of Gamma type, with
+E |Tn|s = EF s/2 1,n =ns/2 Γ(s/2 + 1/2)Γ(n/2 −s/2)√πΓ(n/2) , (3.13)
+for −1 < Res < n, while E |Tn|s = ∞ for s ≤ − 1 and s ≥ n. We have
+ρ+ = n, ρ− = −1, γ = 1, γ′ = 0, δ = (n − 1)/2, κ = 1 2 logn, C1 =
+23/2−n/2π1/2/Γ(n/2). (Cf. Remark 2.9.)
+Example 3.9 (W eibull distribution). The standard Weibull distribution
+has the distribution function
+P(Wα ≤x) = 1 −e−xα , x> 0, (3.14)
+for a parameter α> 0, and thus density function αxα−1e−xα , x> 0.
+Note thatα = 1 yields the exponential distribution in Example 3.2. More -
+over, for any α and y >0,
+P(W α α ≤y) = P(Wα ≤y1/α) = 1 −e−y = P(T ≤y),
+where T ∈ Exp(1); hence W α α d= T and Wα d= T 1/α. It follows from (3.2)
+that Wα too has moments of Gamma type, see Remark 1.5, with
+EW s α = ET s/α = Γ(s/α + 1), Res> −α, (3.15)
+===== PAGE 14 =====
+14 SV ANTE JANSON
+while EW s α = ∞ if s ≤ −α. We have ρ+ = ∞, ρ− = −α, γ = γ′ = 1/α,
+δ = 1/2, κ =α−1 logα−1, C1 = √ 2π/α, cf. Remark 2.9.
+If α = 1, then obviously W1 d=T ∈ Exp(1). If α = 2, then W2 d=T 1/2 d=
+2−1/2Q1/2 2 d= 2 −1/2R2, which also follows by comparing (3.15) and (3.8).
+Example 3.10 (Stable distribution ). LetSα be a positive stable random
+variable with the Laplace transform Ee−tSα =e−tα , with 0 <α< 1. Recall
+that any positive stable distribution is of this type, for so me α ∈ (0, 1), up
+to a scale factor, see Feller [9, Section XIII.6]. (We may als o allow α = 1,
+but in this exceptional case Sα is degenerate with S1 = 1 a.s.)
+For any s> 0, by (A.10),
+Γ(s) ES−s α =
+∫ ∞
+0
+ts−1 Ee−tSα dt =
+∫ ∞
+0
+ts−1e−tα dt,
+while the change of variables u =tα yields∫ ∞
+0
+ts−1e−tα dt = 1 α ∫ ∞ 0 us/αe−u du u =α−1Γ(s/α).
+Hence,
+ES−s α = Γ(s/α) αΓ(s) = Γ(1 +s/α) Γ(1 +s) , s> 0.
+(In particular, this moment is ﬁnite.) Thus, for s< 0,
+ESs α = Γ(1 −s/α) Γ(1 −s) . (3.16)
+We have shown (3.16) for s <0, but Theorem 2.1 (with ρ+ =α and ρ− =
+−∞) shows that (3.16) holds whenever Re s<α , while ESs α = ∞ fors ≥α.
+(The case α = 1 is exceptional; ESs 1 = 1 for every real s, so (3.16) holds but
+ρ+ = ∞.) Thus Sα has moments of Gamma type.
+We haveγ =α−1 − 1,γ′ = −(α−1 − 1),δ = 0, κ =α−1 logα,C1 =α−1/2.
+Example 3.11 (Mittag-Leﬄer distribution ). The Mittag-Leﬄer distri-
+bution with parameter α ∈ (0, 1) can be deﬁned as the distribution of the
+random variable Mα :=S−α α , where Sα is a positive stable random variable
+with Ee−tSα = e−tα as in Example 3.4. Since Sα has the moments given
+by (3.16), the Mittag-Leﬄer distribution too has moments of Gamma type
+given by, cf. Remark 1.5,
+EM s α = ES−αs α = Γ(s) αΓ(αs) = Γ(s + 1) Γ(αs + 1), Res> −1, (3.17)
+while EM s α = ∞ for s ≤ − 1. In particular, the integer moments are given
+by
+EM n α = n! Γ(nα + 1), n = 0, 1, 2,... (3.18)
+We have ρ+ = ∞, ρ− = −1, γ = γ′ = 1 − α, δ = 0, κ = −α logα,
+C1 =α−1/2, in accordance with Remark 2.9.
+===== PAGE 15 =====
+MOMENTS OF GAMMA TYPE 15
+The reason for the name “Mittag-Leﬄer distribution” is that its moment
+generating function is, by (3.18),
+EesMα =
+∞∑
+n=0
+EM n α sn n! = ∞∑ n=0 sn Γ(nα + 1), (3.19)
+which converges for any complex s and is known as the Mittag-Leﬄer func-
+tion Eα(s) since it was studied by Mittag-Leﬄer [23]. The formula (3.1 9),
+or equivalently (3.18), is often taken as the deﬁnition of th e Mittag-Leﬄer
+distribution.
+We may also allow α = 0 and α = 1, with M0 ∈ Exp(1) (see Example 3.2)
+andM1 ≡ 1; in both cases (3.17) and (3.19) hold, although for α = 0, (3.19)
+converges only for |s|< 1, and δ = 1/2, C1 =
+√
+2π, while for α = 1, (3.17)
+trivially holds for all s with EM s α = 1 < ∞ and ρ− = −∞.
+The Mittag-Leﬄer distribution was introduced by Feller [8] , see also [9,
+Sections XI.5 and XIII.8(b)] and Pollard [26]; Blumenfeld a nd Mandelbrot
+[4] considered also log Mα, which by (3.17) has moment generating function
+Γ(s + 1)/Γ(αs + 1) of Gamma type, and called its distribution the “logarith -
+mic Mittag-Leﬄer distribution”. Feller [8; 9] showed that t he Mittag-Leﬄer
+distribution is the limit distribution as t → ∞ of the number of renewals up
+to time t, properly normalized, of an i.i.d. sequence of positive ran dom vari-
+ables belonging to the domain of attraction of a stable law. I t emerges also,
+for example, as the limit distribution of occupancy times in the Darling–Kac
+theorem, see Bingham, Goldie, Teugels [3, Section 8.11].
+In the special case α = 1/2, the duplication formula (A.3) yields
+EM s 1/2 = Γ(s + 1) Γ(s/2 + 1) =π−1/22sΓ(s/2 + 1/2), (3.20)
+which by comparison with (3.9) shows that M1/2 d= √ 2|N | withN ∈ N(0, 1),
+which is equivalent to the well-known relation S1/2 d= 1 2N −2.
+Example 3.12 (A diﬀerent Mittag-Leﬄer distribution ). Another dis-
+tribution related to the Mittag-Leﬄer function Eα(s) in (3.19), and, rather
+unfortunately, therefore also called “Mittag-Leﬄer distr ibution” was intro-
+duced by Pillai [25] as the distribution of a random variable Lα with distri-
+bution function 1 −Eα(−xα), where 0 <α ≤ 1; equivalently, by (3.19),
+P(Lα >x ) = Eα(−xα) = Ee−xαMα. (3.21)
+This is another instance of the relation (1.10), and Lemma 1. 11 shows that
+Lα has moments of Gamma type with, using (3.17),
+ELs α = Γ(s/α + 1) EM −s/α α = Γ(1 +s/α)Γ(1 −s/α) Γ(1 −s) , −α<s<α,
+(3.22)
+===== PAGE 16 =====
+16 SV ANTE JANSON
+while ELs α = ∞ if s ≤ −α or (provided α < 1) s ≥ α. Note also that
+Lemma 1.11 yields the representation [25]
+Lα d=T 1/αM −1/α α =T 1/αSα, (3.23)
+with T ∈ Exp(1) and the stable variable Sα independent. Equivalently,
+see Example 3.9, Lα d= WαSα, with the Weibull variable Wα and Sα inde-
+pendent. It follows easily from (3.23) that Lα has the Laplace transform
+Ee−tLα = (1 + tα)−1, t> 0 [25].
+For α = 1, we have L1 ∈ Exp(1). For 0 < α <1, ρ+ = α, ρ− = −α,
+γ = 2/α − 1, γ′ = 1, δ = 1/2, κ = 0, C1 = √ 2π/α. (For example by
+Remark 2.10.)
+Example 3.13 (Pareto distribution). The Pareto(α) distribution, where
+α >0, is the distribution of a random variable Pα with P(Pα > x) = x−α,
+x ≥ 1. Hence Pα has density function αx−α−1, x > 1. Direct integration
+shows that the moments are of Gamma type and given by
+EP s α =
+∫ ∞
+1
+αxs−α−1 = α α −s = αΓ(α −s) Γ(α −s + 1), Res<α. (3.24)
+Hence ρ+ =α, ρ− = −∞, γ =γ′ = 0, δ = −1, κ = 0, C1 =α.
+We havePα d=U −1/α withU ∈ U(0, 1), so alternatively these result follow
+from Example 3.3 and Remarks 1.5 and 2.9.
+Example 3.14 (Shifted Pareto distribution ). The shifted Pareto vari-
+able ~Pα := Pα − 1, where α >0, has support (0 , ∞) and density function
+α(x + 1)−α−1, x> 0. The moments are given by, using (A.9),
+E~P s α =
+∫ ∞
+1
+αxs(x + 1)−α−1 =α Γ(s + 1)Γ(α −s) Γ(α + 1) = Γ(s + 1)Γ(α −s) Γ(α) ,
+(3.25)
+for −1 < Res < α, while E~P s α = ∞ if s ≤ − 1 or s ≥ α. Hence also
+the shifted Pareto distribution has moments of Gamma type, w ith ρ+ =α,
+ρ− = −1, γ = 2, γ′ = 0, δ =α, κ = 0, C1 = 2π/Γ(α).
+Forα = 1, (3.25) yields E~P s 1 = Γ(1+s)Γ(1−s) = E~P −s 1 ; hence ~P1 d= ~P −1 1
+(so log ~P1 has a symmetric distribution). Using (A.6), we have
+E~P s 1 = Γ(1 + s)Γ(1 −s) = sΓ(s)Γ(1 −s) = πs sin(πs), −1< Res< 1.
+Further, comparing (3.25) and (3.11) we see that ~P1 d=F2,2.
+More generally, (3.25) and (3.1) imply that if Γ 1 ∈ Γ(1) = Exp(1) and
+Γ′ α ∈ Γ(α) are independent, then E(Γ1/Γ′ α)s = E Γs 1 E(Γ′ α)−s = E~P s α (for
+suitable s); thus ~Pα d= Γ 1/Γ′ α by Corollary 2.3. This is also an instance of
+Lemma 1.11 (with α = 1 in (1.10) and (1.11)).
+===== PAGE 17 =====
+MOMENTS OF GAMMA TYPE 17
+Example 3.15 (Extreme value distributions ). There are three types of
+extreme value distributions, see e.g. Leadbetter, Lindgre n and Rootz´ en [21,
+Chapter I]. We let XI,X II,α,X III,α denote corresponding random variables;
+they have the distribution functions
+P(XI ≤x) = e−e−x , −∞<x< ∞, (3.26)
+P(XII,α ≤x) = e−x−α , 0<x< ∞, (3.27)
+P(XIII,α ≤x) = e−(−x)α , −∞<x< 0, (3.28)
+where (for types II and III) α> 0 is a real parameter.
+The distribution (3.26) (the Gumbel distribution) has the e ntire real line
+as support, and is therefore not qualiﬁed to have moments of G amma type.
+It has, however, moment generating function of Gamma type, s ee Exam-
+ple 3.18
+The distribution (3.27) (the Fr´ echet distribution) satis ﬁes, with T ∈
+Exp(1),
+P(XII,α ≤x) = P(T ≥x−α) = P(T −1/α ≤x), x> 0,
+and thus XII,α d=T −1/α d= 1/Wα, see Example 3.9. Hence it has moments
+of Gamma type with, see (3.2) and (3.15),
+EX s II,α = Γ(1 −s/α), Res<α. (3.29)
+We have ρ+ =α, ρ− = −∞, γ = 1/α, γ′ = −1/α, δ = 1/2, κ =α−1 logα,
+C1 =
+√
+2π/α, cf. Remarks 2.8 and 2.9 and Examples 3.2 and 3.9.
+The distribution (3.28) satisﬁes P(−XIII,α ≥ x) = e−xα , x > 0, so
+−XIII,α d=Wα and XIII,α d= −Wα, see Example 3.9. By (3.15), |XIII,α | =
+−XIII,α has moments of Gamma type with
+E |XIII,α |s = Γ(1 +s/α), Res> −α. (3.30)
+We have ρ+ = ∞, ρ− = −α, γ = γ′ = 1/α, δ = 1/2, κ = α−1 logα−1,
+C1 =
+√
+2π/α.
+We have so far considered distributions with moments of Gamm a type;
+we now turn to a few examples with moment generating function of Gamma
+type. Of course, if X is any of the examples above, log X yields such an
+example. (One such example was mentioned in Example 3.11.)
+Example 3.16 (Exponential distribution again ). We noted in Exam-
+ple 3.2 that T ∈ Exp(1) has moments of Gamma type. It has moment
+generating function of Gamma type too, since
+EesT =
+∫ ∞
+0
+esx−x dx = 1 1 −s = Γ(1 −s) Γ(2 −s), Res< 1. (3.31)
+In fact, T d= − logU d= log P1, and equivalently U d= e−T and P1 d= eT ;
+compare (3.31) to (3.5) and (3.24). We have ρ+ = 1, ρ− = −∞,γ =γ′ = 0,
+δ = −1, κ = 0, C1 = 1.
+===== PAGE 18 =====
+18 SV ANTE JANSON
+Example 3.17 (Gamma distribution again ). A Gamma distributed ran-
+dom variable Γ n ∈ Γ(n) with integer n ≥ 1 can be obtained by taking the
+sum of n independent copies of T ∈ Exp(1), and thus (3.31) implies that Γ n
+has moment generating function of Gamma type with
+EesΓn = ( EesT)n = 1 (1 −s)n = Γ(1 −s)n Γ(2 −s)n, Res< 1. (3.32)
+We have ρ+ = 1, ρ− = −∞, γ =γ′ = 0, δ = −n, κ = 0, C1 = 1.
+More generally, for any real α >0, Γ α has moment generating function
+EesΓα = (1 −s)−α. If α is not an integer, then this function has a singu-
+larity as s ր 1 that is not a pole; hence EesΓα cannot be extended to a
+meromorphic function in the complex plane, and Γ α does not have moment
+generating function of Gamma type. Consequently, the Gamma distribution
+Γ(α) has moment generating function of Gamma type if and only if α is an
+integer.
+Example 3.18 (Gumbel distribution ). If XI has the Gumbel distribu-
+tion (3.26), and T ∈ Exp(1), then
+P
+(
+e−XI ≥x ) = P(XI ≤ − logx) = e−x = P(T ≥x), x> 0,
+soe−XI d=T and XI d= − logT . Consequently, the Gumbel distribution has
+moment generating function of Gamma type with, see (3.2),
+EesXI = ET −s = Γ(1 −s), Res< 1. (3.33)
+We have ρ+ = 1, ρ− = −∞, γ = 1, γ′ = −1, δ = 1/2, κ = 0, C1 = √ 2π.
+Example 3.19 (L´ evy area). The L´ evy stochastic area is deﬁned by the
+stochastic integral At :=
+∫ t
+0Xu dYu −
+∫ t
+0Yu dXu, where ( Xu,Y u), u ≥ 0, is
+a two-dimensional Brownian motion starting at 0 (i.e., Xu and Yu, u ≥ 0,
+are two independent standard Brownian motions). By Brownia n scaling,
+At d= tA1, so we consider only A := A1. Then, for real t, see e.g. Protter
+[28, Theorem II.43], using (A.6),
+EeitA = 1 cosh(t) = 1 cos(it) = 1 sin( π 2 + it) = Γ( 1 2 + it π )Γ( 1 2 − it π ) π . (3.34)
+Consequently, by Theorem 2.1,A has moment generating function of Gamma
+type, with ρ± = ±π/2 and
+EesA = 1 coss = Γ( 1 2 + s π )Γ( 1 2 − s π ) π , | Res|<π/ 2. (3.35)
+We have γ = 2/π, γ′ = 0, δ = 0, κ = 0, C1 = 2.
+It is known thatA has the density function 1/2 cosh(πx/2), −∞<x< ∞,
+see e.g. Protter [28, Corollary to Theorem II.43] and Exampl e 6.18 below.
+Of course, eA has moments of Gamma type, and so has ecA for every real
+c. A comparison with (3.11) shows that eπA d=F1,1. Hence, A d=π−1 logF1,1.
+===== PAGE 19 =====
+MOMENTS OF GAMMA TYPE 19
+Remark 3.20. We have shown that a large number of classical continuous
+distributions have moments of Gamma type, but there are exce ptions. For
+example, if X ∈ U(1, 2), then EX s = (2 s+1 − 1)/(s + 1) has complex zeros
+at −1 + 2πik/ log 2, k = ±1, ±2,... , which is impossible when (1.1) holds.
+More generally, if X is non-degenerate and is supported in a ﬁnite interval
+[a,b ] with 0 < a < b <∞, then EX s is an entire function of s, which by
+Theorem 4.1 below shows that X does not have moments of Gamma type.
+4. Poles and zeros
+In this section it will be convenient to consider the class F of all functions
+of the type in (1.1) and (1.2), regardless of whether they equ al EX s [EesY ]
+for some random variable X [Y ] or not. Thus, F is the set of functions
+F (s) = CD s
+∏J
+j=1 Γ(ajs +bj) ∏K
+k=1 Γ(a′ ks +b′ k) , (4.1)
+where J,K ≥ 0 and C, D, aj, bj, a′ k, b′ k are real with D > 0 and aj ⁄= 0,
+a′ k ⁄= 0 for all j and k. We let Fm ⊂ F be the set of such functions that
+appear in (1.1) and (1.2), i.e., the set of F (s) ∈ F such that F (s) = EX s
+for some positive random variable X and s in some interval.
+A function F (s) ∈ F is a meromorphic function of s in the complex plane
+C. We can easily locate its poles (and zeros) precisely as foll ows. Deﬁne
+ν(s) = νF (s) for all s ∈ C by
+νF (s) =
+
+
+
+m if F has a pole of order m at s,
+−m if F has a zero of order m at s,
+0 otherwise (i.e., F is regular at s with F (s) ⁄= 0).
+(4.2)
+(ForF ∈ F m with F (s) an extension of EX s, we also write νX.)
+SinceDs has neither poles nor zeros, while Γ( z) has a simple pole at each
+z ∈ Z≤0 := {0, −1, −2,... } but no zeros,
+νF (s) =
+J∑
+j=1
+1[ajs +bj ∈ Z≤0] −
+K∑
+k=1
+1[a′ ks +b′ k ∈ Z≤0]
+=
+J∑
+j=1
+1
+[
+s ∈
+{
+−n +bj
+aj
+:n ∈ Z≥0
+}]
+−
+K∑
+k=1
+1
+[
+s ∈
+{
+−n +b′ k
+a′ k :n ∈ Z≥0
+}]
+.
+(4.3)
+Note that all poles and zeros of F lie on the real axis.
+We further deﬁne F0 := {F ∈ F : νF (0) = 0 }, i.e., the set of functions
+F ∈ F that have neither a pole nor a zero at 0. By Remark 2.4, Fm ⊂ F 0 ⊂
+F. Note that F is a group under multiplication and that F0 is a subgroup.
+ForF ∈ Fm we deﬁnedρ± in Section 2; the deﬁnition (2.1) can be written
+ρ+ := min{x> 0 : νF (x)> 0},
+ρ− := max{x< 0 : νF (x)> 0}. (4.4)
+===== PAGE 20 =====
+20 SV ANTE JANSON
+For general F ∈ F we deﬁne
+ρ+ := min{x ≥ 0 : νF (x) ⁄= 0},
+ρ− := max{x ≤ 0 : νF (x) ⁄= 0}, (4.5)
+and note that this is consistent with (4.4) for F ∈ F m by the fact (Theo-
+rem 2.1) that such F has no zeros in ( ρ−,ρ +) and no pole at 0.
+If allaj,a ′ k,b j,b ′ k > 0, thenF (s) has no poles or zeros in the right halfplane
+Res ≥ 0, since none of the factors in (4.1) has; thus ρ+ = ∞. Similarly,
+if all aj,a ′ k < 0 and bj,b ′ k > 0, then F (s) has no poles or zeros in the left
+halfplane Re s ≤ 0 and ρ− = −∞. The converses do not hold, because the
+representation (4.1) is not unique and we may, e.g., add canc elling factors
+that separately have poles at other places. However, we may a lways choose
+a representation of the desired type; this is part of the foll owing theorem.
+Theorem 4.1. LetF ∈ F 0 and let ρ± be as in (4.5).
+(i) It is always possible to ﬁnd a representation (4.1) of F (s) with all
+bj,b ′ k > 0.
+(ii) If ρ− = −∞, then F (s) has a representation (4.1) with all aj,a ′ k < 0
+and bj,b ′ k > 0.
+(iii) If ρ+ = ∞, then F (s) has a representation (4.1) with all aj,a ′ k,b j,
+b′ k > 0.
+(iv) If ρ+ = ∞ and ρ− = −∞ (i.e., F (s) is entire and without zeros),
+then F (s) = CD s for some real constants C and D> 0.
+In particular, if X is a random variable with moments of Gamma type,
+this applies to the meromorphic extension F (s) of EX s. In this case, it is
+not possible that both ρ+ = ∞ and ρ− = −∞ (i.e., that EX s is entire),
+except in the trivial case X =D a.s. for some D> 0 (and thus EX s =Ds).
+We begin by proving a lemma.
+Lemma 4.2. Suppose that aj,a ′ j,b k,b ′ k are real with aj,a ′ k > 0 and that
+F (s) := ∏J j=1 Γ(ajs +bj)/∏K k=1 Γ(a′ ks +b′ k) is analytic and non-zero in a
+half-plane Res < B for some B ∈ (−∞, ∞). Then F (s) = eαsQ(s) for
+some rational function Q with real poles and zeros and some α ∈ R.
+Proof. Say that two non-zero real numbers a and a′ are commensurable if
+a/a′ ∈ Q; this is an equivalence relation on R∗ := R \ {0}. (In algebraic
+language, the equivalence classes are the cosets of Q∗ in R∗.) The poles
+of Γ(as +b) are regularly spaced with distances 1 /|a|. Thus, if a and a′
+are incommensurable, and b,b ′ are any real numbers, then Γ( as +b) and
+Γ(a′s +b′) have at most one common pole.
+We divide the set {aj}J j=1 ∪{a′ k}K k=1 into equivalence classes of commensu-
+rable numbers. This gives a corresponding factorization F (s) =∏L ℓ=1Fℓ(s)
+whereL is the number of equivalence classes and each Fℓ is of the same form
+as F but with all aj and a′ k commensurable. It follows that two diﬀerent
+factors Fℓ1(s) and Fℓ2(s) have at most a ﬁnite number of common zeros or
+===== PAGE 21 =====
+MOMENTS OF GAMMA TYPE 21
+poles; hence, by decreasing B, we may assume that there are no such com-
+mon poles or zeros with Re s < B. Hence, a pole or zero of a factor Fℓ(s)
+in Re s < Bcannot be cancelled by another factor, and thus such poles or
+zeros do not exist. Consequently, each factor Fℓ(s) satisﬁes the assumption
+of the lemma, and we may thus treat each Fℓ(s) separately. This means
+that we may assume that all aj and a′ k are commensurable.
+In this case, there is a positive real number r such that all aj and a′ k
+are (positive) integer multiples of r. Using Gauss’s multiplication formula
+(A.5), we may convert each factor Γ( ajs +bj) or Γ(a′ ks +b′ k) into a product
+of a constant, an exponential factor eβs, and a number of Gamma factors
+Γ(rs +ui) with ui ∈ R. Using the functional relation (A.2), we may further
+assume that each ui ∈ (0, 1], provided we also allow factors ( rs +u)±1 with
+u ∈ R. Collecting the factors, we see that
+F (s) = eαsQ(s)
+∏J ′
+j=1 Γ(rs +uj) ∏K ′
+k=1 Γ(rs +u′ k) (4.6)
+for a constant α, a rational function Q(s) with real zeros and poles, and
+some uj,u ′ k ∈ (0, 1]. We may assume that Q has no poles or zeros with
+Res<B (by again decreasing B if necessary). The factors Γ( rs +uj) and
+Γ(rs +u′ k) have no zeros but each has an inﬁnite number of poles with
+Res < B, and two factors Γ( rs +uj) and Γ( rs +u′ k) have disjoint sets of
+poles unless uj = u′ k. Since the poles with Re s < Bmust cancel in (4.6),
+this shows that the Gamma factors must cancel each other comp letely, and
+thus (4.6) reduces to F (s) = eαsQ(s). □
+Proof of Theorem 4.1. (i): Using Γ( z) = Γ(z + 1)/z repeatedly on any term
+with bj ≤ 0 or b′ k ≤ 0, we may write F (s) as
+CD sQ(s)
+∏J
+j=1 Γ(ajs + ˜bj) ∏K
+k=1 Γ(a′ ks + ˜b′ k) , (4.7)
+with ˜bj, ˜b′ k > 0, where Q(s) is a rational function with only real poles and
+zeros; Q(s) = c∏ i(s −ri)/∏ ℓ(s −r′ ℓ) for some real ri and r′ ℓ, i = 1,...,I
+and ℓ = 1,...,L , say; we may further assume that ri ⁄= r′ ℓ for all i and ℓ.
+Since 0 is not a pole or zero of F , it is by (4.7) not a zero or pole of Q, and
+thus all ri,r ′ ℓ ⁄= 0.
+If r< 0, then
+s −r =s + |r| = Γ(s + |r| + 1) Γ(s + |r|) , (4.8)
+and if r> 0, then
+s −r = −(r −s) = − Γ(−s +r + 1) Γ(−s +r) , (4.9)
+so Q(s) may be written as product of quotients of Gamma factors of th e
+desired type (and a constant), and thus the result follows fr om (4.7).
+===== PAGE 22 =====
+22 SV ANTE JANSON
+(ii): We use (i) and may thus assume that (4.1) holds with bj,b ′ k > 0. We
+factorize F (s) as, with d = logD,
+F (s) = Ce dsF+(s)F−(s), (4.10)
+whereF+(s) contains all factors Γ( ajs +bj) and Γ(a′ ks +b′ k) with aj,a ′ k > 0,
+andF−(s) contains the factors with aj,a ′ k < 0, so F− is of the desired form.
+Since bj,b ′ k > 0, F−(s) has no poles or zeros with Re s ≤ 0. By as-
+sumption, ρ− = −∞, and thus F (s) is analytic and non-zero in the half-
+plane Re s ≤ 0. Consequently, by (4.10), F+(s) also has no poles or ze-
+ros in Re s ≤ 0. By Lemma 4.2, F+(s) = Q(s)eαs for a rational function
+Q(s) = C1
+∏
+j(s −uj)/∏ k(s −vk) where uj andvk are real. We may assume
+that uj ⁄=vk for all j,k , and then each uj or vk is a zero or pole of F+(s),
+and thus all uj,v k > 0. Using (4.9), we thus can write Q(s) in the desired
+form; hence F+(s) and F (s) can be so written.
+(iii): Follows from (ii) by replacing F (s) by F (−s).
+(iv): In this case, F (s) is an entire function without zeros. We use
+again the factorization (4.10). By the proof of (ii), F+(s) = eαsQ(s) for
+a rational function Q. By symmetry, as in the proof of (iii), similarly
+F−(s) = eα−sQ−(s) for another rational function Q−. Thus,
+F (s) = Ce (d+α+α−)sQ(s)Q−(s). (4.11)
+Hence, the rational function Q(s)Q−(s) is entire and has neither poles nor
+zeros; consequently, it is constant. Thus F (s) = C1ed1s for some C1 and
+d1. □
+As a consequence we show that the function νF (s) describing the poles
+and zeros of F (s) essentially determines F , and thus the distribution of X
+and Y satisfying (1.1) or (1.2).
+Theorem 4.3. If F1,F 2 ∈ F and νF1 = νF2, then F2(s) = cDsF1(s) for
+some real constants C ⁄= 0 and D> 0.
+Proof. F := F2/F1 ∈ F and νF (s) = νF1(s) −νF2(s) = 0 for every s.
+Hence, F ∈ F 0 and ρ− = −∞, ρ+ = ∞; thus Theorem 4.1(iv) shows that
+F (s) = CD s. □
+Corollary 4.4. If X1 and X2 are positive random variables with moments
+of Gamma type and νX1 =νX2, then X2 d=DX1 for some constant D >0.
+In other words, a distribution with moments of Gamma type is un iquely
+determined up to a scaling factor by the function νX(s).
+Similarly, if Y1 andY2 have moment generating functions of Gamma type
+with the same ν, then Y2 d=Y1 +d for some real constant d.
+Proof. Let Fj(s) be the meromorphic extension of EX s j , j = 0, 1. Then
+F2(s) = CD sF1(s) by Theorem 4.3. Setting s = 0 we ﬁnd C = 1, and
+thus, for s in some interval, EX s 2 = F2(s) = DsF1(s) = E(DX1)s, whence
+X2 d=DX1 by Corollary 2.3.
+===== PAGE 23 =====
+MOMENTS OF GAMMA TYPE 23
+The ﬁnal statement follows by considering Xj :=eYj . □
+Remark 4.5. The proofs of Theorem 4.1 and Lemma 4.2 yield an almost
+canonical way of expressing F (s) ∈ F 0 in the form (4.1). We start by making
+allbj,b ′ k > 0 by Theorem 4.1(i). We then treat positive and negative aj and
+a′ k separately; furthermore, if these coeﬃcients are not all co mmensurable
+(which they are in most natural examples), we separate them i nto diﬀerent
+equivalence classes of commensurable coeﬃcients. For each class we then
+rewrite the product of the corresponding factors in the form (4.6) for some
+realr (diﬀerent for diﬀerent classes, and chosen with |r| as large as possible).
+Note that diﬀerent factors in (4.6) have no common poles, so it is easy to
+locate all poles and zeros. It only remains to take care of the rational part
+in (4.6); in the examples we know, this is not a problem but we h ave not
+studied this in general, and we do not know whether it is possi ble to use this
+approach to deﬁne a unique canonical representation (4.1) f or each F ; we
+leave this as an open problem. (Alternatively, it might be po ssible to deﬁne
+a canonical representation including a rational factor.)
+See Theorems 1.6 and 1.12 for examples of such ’canonical’ ve rsions, but
+note that they not necessarily are the simplest by other crit eria.
+Let N+(x) := ∑ 0<s≤xνF (s), x> 0, and N−(x) := ∑ x≤s<0νF (s), x< 0.
+Thus N+(x) is the total number of poles minus the total number of zeros
+(with multiplicities) in the interval (0 ,x ], and similarly for N−(x) and the
+interval [x, 0) on the negative half-axis. The following proposition can be
+interpreted as giving the density of poles minus zeros on the positive or
+negative half-axis.
+Proposition 4.6. Let N+(x) := ∑ 0<s≤xνF (s), x > 0, and N−(x) :=∑
+x≤s<0νF (s), x < 0. Then N+(x)/x → 1 2 (γ − γ′) as x → +∞ and
+N−(x)/|x| → 1 2 (γ +γ′) as x → −∞.
+Proof. Use, for simplicity, a representation as in Theorem 4.1(i). Then, using
+(4.3), the terms with aj > 0 and a′ k > 0 give no contributions to νF (s) and
+N+(x) for s >0 and x >0, while each aj < 0 gives a contribution |aj|x +
+O(1) to N+(x) (poles regularly spaced at distances 1 /|aj|), and similarly
+eacha′ k < 0 gives a contribution −|a′ k|x +O(1) to N+(x). Consequently, for
+x> 0, using Lemma 2.12,
+N+(x) = x
+( ∑
+j:aj<0
+|aj| −
+∑
+k:a′ k<0
+|a′ k| ) +O(1) = x 1 2 (γ −γ′) +O(1),
+and the result as x → ∞ follows. The result as x → −∞ follows similarly,
+or by replacing F (s) by F (−s). □
+===== PAGE 24 =====
+24 SV ANTE JANSON
+5. Asymptotics of moments or moment generating function
+In this section we assume that X >0 andY = logX are random variables
+such that (1.1)–(1.3) hold (for ρ−< Res<ρ + and t ∈ R), i.e.
+EX s = EesY =F (s) = CD s
+∏J
+j=1 Γ(ajs +bj) ∏K
+k=1 Γ(a′ ks +b′ k) , (5.1)
+and we write as above D =ed. Recall the deﬁnitions (2.4)–(2.8).
+We begin with asymptotics of F along the imaginary axis and close to it.
+Theorem 5.1. As t → ±∞,
+| EeitY | = |F (it)| ∼ C1|t|δe− π 2 γ|t|. (5.2)
+Moreover, for any ﬁxed real σ, and uniformly for σ in any bounded set,
+|F (σ + it)| ∼ eκσ|t|γ′σ|F (it)| ∼ C1eκσ|t|δ+γ′σe− π 2 γ|t|. (5.3)
+Proof. It is an easy, and well-known, consequence of Stirling’s for mula, see
+e.g. (A.13), that for any complex constant c and all complex z in a sector
+| argz| < π −ε (where ε > 0) with |z| large enough, for example |z| ≥
+2|c|/ sinε,
+log Γ(z +c) − log Γ(z) = c logz +O
+(
+|z|−1) , (5.4)
+uniformly for c in any bounded set and such |z|.
+Ifa> 0 and b ∈ R, we thus have for real t → +∞, taking z = iat in (5.4)
+and in Stirling’s formula (A.12),
+log Γ(ait +b) = log Γ(iat) +b log(iat) +O
+(
+t−1)
+= (iat +b − 1 2 ) log(iat) − iat + log √ 2π +O ( t−1)
+=
+(
+iat +b − 1 2 )( log(at) + iπ/2 ) − iat + log √ 2π +O ( t−1) .
+Taking the real part, we ﬁnd
+log |Γ(ait +b)| = Re(log Γ(ait +b))
+= −π 2at + (b − 1 2 ) log(at) + log √ 2π +O ( t−1) .
+Consequently, for a> 0,
+|Γ(ait +b)| ∼
+√
+2πa b−1/2tb−1/2e− π 2 at, t → +∞. (5.5)
+For general real a and t we thus have (by Γ(¯z) = Γ(z))
+|Γ(ait +b)| =
+⏐⏐Γ(|a|i|t| +b) ⏐⏐ ∼ √ 2π |a|b−1/2|t|b−1/2e− π 2 |a||t|, t → ±∞.
+The result (5.2) follows by multiplying the various factors in F (it) in (5.1),
+noting that |Dit| = 1.
+For (5.3) we note that (5.4) implies
+log |Γ(a(σ + it) +b)| − log |Γ(ait +b)| = Re
+(
+aσ log(ait +b) +O
+(
+t−1))
+=σ
+(
+a log |a| +a log |t| +O
+(
+t−1)) ,
+===== PAGE 25 =====
+MOMENTS OF GAMMA TYPE 25
+and the result follows by multiplying the various factors in F (σ + it)/F (it).
+(Alternatively, at least for ﬁxed σ, we may apply (5.2) with bj replaced by
+bj +σaj, b′ k replaced by b′ k +σa′ k and C replaced by CD σ = Ce dσ; note
+that the proof holds for any function F of this type, without assuming the
+existence of random variables X and Y .) □
+Proof of Proposition 2.7. By (5.2), the values of F (it) determine γ, δ and
+C1. Further, choosing any ﬁxed σ >0 in (5.3), we see that F determinesγ′
+and κ too. □
+Corollary 5.2. We have γ ≥ 0. Further, if γ = 0, then δ ≤ 0.
+Proof. By letting t → ∞ in (5.2), since | EeitY | ≤ 1. □
+Remark 5.3. If γ = 0 and γ′ ⁄= 0, then (5.3) implies a better bound for
+δ. However, we do not know any such example, and we leave it as an open
+problem whether there exists any X with γ = 0 and γ′ ⁄= 0.
+Theorem 5.4. If γ > 0, then X and Y are absolutely continuous, with
+continuous and inﬁnitely diﬀerentiable density functions fX(x) on (0, ∞)
+and fY (y) on (−∞, ∞) given by
+fX(x) = 1 2πi ∫ σ+i∞ σ−i∞ x−s−1F (s) ds, (5.6)
+fY (y) = 1 2πi ∫ σ+i∞ σ−i∞ e−ysF (s) ds, (5.7)
+for any σ ∈ (ρ−,ρ +).
+Proof. By Theorem 5.1, the characteristic function EeitY = F (it) is inte-
+grable, and thus Y has a continuous density fY obtained by Fourier inver-
+sion:
+fY (y) = 1 2π ∫ ∞ −∞ e−ityF (it) dt = 1 2πi ∫ i∞ −i∞ e−syF (s) ds. (5.8)
+SinceY = logX, X also is absolutely continuous, with the density function
+fX(x) = 1 xfY (logx) = 1 2πi ∫ i∞ −i∞ x−s−1F (s) ds. (5.9)
+(Alternatively and equivalently,F (s) is the Mellin transform of fX, and this
+is the Mellin inversion formula.)
+Since Theorem 5.1 further implies that |t|NF (it) is integrable for every
+N ≥ 0,fY andfX are inﬁnitely diﬀerentiable and we may diﬀerentiate (5.9)
+and (5.8) under the integral sign an arbitrary number of time s.
+The integrands in (5.9) and (5.8) are analytic in s for ρ− < Res < ρ+,
+and thus the estimate (5.3) implies that we can move the line o f integration
+to any line Re s =σ with ρ−<σ <ρ +. □
+Remark 5.5. ForX, we consider the density only for x> 0, and ‘inﬁnitely
+diﬀerentiable’ here means on (0 , ∞). Continuity and diﬀerentiability of fX
+at 0 will be considered in Theorem 6.11.
+===== PAGE 26 =====
+26 SV ANTE JANSON
+Remark 5.6. In the case γ = 0, the same argument shows that if δ <−1,
+thenX andY have continuous density functions, which have at least ⌈|δ|⌉−2
+continuous derivatives. However, Example 3.4, where δ = −β, shows that
+we in general do not have more derivatives. Similarly, Examp les 3.3 and 3.4
+show that we do not necessarily have continuous density func tions for γ = 0
+and −1 ≤δ ≤ 0. Example 10.1 gives an example with γ =δ = 0 where the
+distribution is mixed with a point mass besides the absolute ly continuous
+part.
+Note that, by (5.2), γ = δ = 0 if and only if | EX it| = | EeitY | has a
+non-zero limit as t → ±∞ ; by the Riemann–Lebesgue lemma, this implies
+that Y and X do not have absolutely continuous distributions.
+We next consider asymptotics of F along the real axis, when possible.
+Theorem 5.7. (i) If ρ+ = ∞, then for real s → +∞,
+EX s = EesY =F (s) ∼C1sδeγs log s+(κ−γ)s. (5.10)
+(ii) If ρ− = ∞, then for real s → −∞,
+EX s = EesY =F (s) ∼C1|s|δeγ|s| log |s|+(κ+γ)s. (5.11)
+Proof. (i): By Theorem 4.1 and Proposition 2.7, we may assume that al l
+aj,a ′ k > 0. We then argue as for Theorem 5.1. If a> 0 and b ∈ R, then for
+real s → +∞,
+log Γ(as +b) = log Γ(as) +b log(as) +O
+(
+s−1)
+= (as +b − 1 2 ) log(as) −as + log √ 2π +O ( s−1)
+=as logs + (a loga −a)s + (b − 1 2 ) logs
++ (b − 1 2 ) loga + log √ 2π +O ( s−1) , (5.12)
+and the result follows again by multiplying the factors.
+(ii): This follows from (i) by replacing Y by −Y , see Remark 2.8:
+EesY = Ee|s|(−Y ) ∼C1|s|δeγ|s| log |s|+(−κ−γ)|s|. □
+Ifρ+< ∞, then F has poles, and possibly zeros, on the positive real axis.
+Typically, there is an inﬁnite number of such poles (but see E xample 3.3 for a
+counter example), and then we cannot consider asymptotics f or alls → +∞.
+However, we can restrict s to a subset of R and obtain asymptotic results
+similar to Theorem 5.7 in this case too.
+Lemma 5.8. Given real aj,b j,a ′ k,b ′ k for 1 ≤ j ≤ J and 1 ≤ k ≤ K, with
+aj,a ′ k ⁄= 0 , there exists a closed set E ⊂ R and a constant ξ >0 such that
+E ∩I has measure greater than 1/2 for every interval I of length 1, and
+| sin(π(ajs +bj))| ≥ ξ and | sin(π(a′ ks +b′ k))| ≥ ξ for every j and k and all
+s ∈E.
+Proof. Let N be the set of all (real) s such that ajs +bj ∈ Z for some
+j or a′ ks +b′ k ∈ Z for some k. There exists a constant M such that no
+===== PAGE 27 =====
+MOMENTS OF GAMMA TYPE 27
+interval of length 1 contains more than M points of N . (For example,
+M = J +K +∑ j |aj|−1 +∑ k |a′ k|−1.) It follows that E := {x : |x −s| ≥
+1/(2M + 3) for all s ∈N } satisﬁes the properties, for some ξ >0. □
+In the sequel we let E denote this set, deﬁned for a given representation
+(5.1) of F (s). By considering only s ∈ E, we can extend Theorem 5.7 to
+arbitrary F .
+Theorem 5.9. For real s → ±∞ with s ∈E,
+|F (s)| = |s|δeγ′s log |s|+(κ−γ′)s+O(1). (5.13)
+Proof. Ifa< 0 and b ∈ R, then for real s → +∞, by (A.6) and (5.12),
+log |Γ(as +b)| = − log |Γ(|a|s −b + 1)| + logπ − log | sin(π(as +b))|
+= −|a|s logs − (|a| log |a| − |a|)s − ( 1 2 −b) logs − ( 1 2 −b) log |a|
++ log
+√
+π/2 − log | sin(π(as +b))| +O
+(
+s−1) ,
+=as logs + (a log |a| −a)s + (b − 1 2 ) logs − log | sin(π(as +b))| +O(1).
+(5.14)
+If (a,b ) is some ( aj,b j) or (a′ k,b ′ k) with a< 0, we thus have by Lemma 5.8,
+for s ∈E with s → +∞,
+log |Γ(as +b)| =as logs + (a log |a| −a)s + (b − 1 2 ) logs +O(1). (5.15)
+By (5.12), (5.15) holds also for a> 0 (and all s → +∞).
+Further, replacing s by −s and a by −a in (5.15), we see that if ( a,b ) is
+some (aj,b j) or (a′ k,b ′ k), then for s ∈E with s → −∞,
+log |Γ(as +b)| =as log |s| + (a log |a| −a)s + (b − 1 2 ) log |s| +O(1). (5.16)
+Thus (5.16) holds for all such ( a,b ) and s → ±∞ withs ∈E, and the result
+follows from (5.1). □
+Note that if ρ+ = ∞, then γ′ = γ, while if ρ− = ∞, then γ′ = −γ
+by (2.4)–(2.5) together with Theorem 4.1 and Proposition 2. 7; hence the
+exponents in Theorems 5.7 and 5.9 agree (as they must).
+For complex arguments, we will use the following estimate.
+Lemma 5.10. Let Ψ(σ,t ) :=
+∫ t
+0 arctan(u/σ) du for t ≥ 0. Then, for σ >0
+with σ ∈E and all real t,
+|F (σ + it)|
+|F (σ)| = exp
+(
+−π 2 (γ −γ′)|t| −γ′Ψ(σ, |t|) +O(1 + |t|σ−1) ) .
+Proof. We may assume t >0. Consider ﬁrst a factor Γ( as +b) with a >0
+and s =σ + it, σ >0. (We may assume that σ is large so that aσ +b> 0,
+===== PAGE 28 =====
+28 SV ANTE JANSON
+e.g. by using (5.3) for small σ.) By (A.13),
+d
+dt log |Γ(a(σ + it) +b)| = Re d dt log Γ(a(σ + it) +b)
+= Re
+(
+ia log(a(σ + it) +b)
+)
++O
+(
+|σ|−1)
+= Re
+(
+ia log(a(σ + it))
+)
++O
+(
+|σ|−1)
+= −a Im
+(
+log(σ + it)
+)
++O
+(
+|σ|−1)
+= −a arctan(t/σ) +O
+(
+|σ|−1) . (5.17)
+Consequently, integrating from 0 to t,
+log |Γ(a(σ + it) +b)| − log |Γ(aσ +b)| = −aΨ(σ,t ) +O(tσ−1). (5.18)
+If a< 0, we argue as in the proof of Theorem 5.9 and have by (A.6)
+log |Γ(a(σ + it) +b)|
+= − log |Γ(|a|(σ + it) + 1 −b)| − log | sin(π(a(σ + it) +b))| + logπ.
+If further ( a,b ) = ( aj,b j) or ( a′ k,b ′ k) for some j or k, and σ ∈ E, then
+log | sin(π(a(σ + it) +b))| = π|a|t +O(1), and it follows, using (5.18) with
+|a| instead of a, that
+log |Γ(a(σ + it) +b)| − log |Γ(aσ +b)| = |a|Ψ(σ,t ) −π|a|t +O(1 +tσ−1)
+= −aΨ(σ,t ) +πat +O(1 +tσ−1).
+The result follows by multiplying the factors in F , using Lemma 2.12. □
+6. Asymptotics of density function
+We continue to assume that X andY = logX are random variables such
+that (1.1)–(1.3) hold; as above we write EX s = esY = F (s). We assume
+γ > 0, so that density functions of X and Y exist by Theorem 5.4, and
+consider asymptotics of the density function fX(x) as x → 0 or x → ∞, or
+equivalently of fY (y) as y → −∞ or y → ∞ . By symmetry it suﬃces to
+consider one side, and we concentrate on x → ∞ , but for convenience in
+applications we write most results for both sides and for bot h X and Y .
+We consider ﬁrst x → ∞ (y → ∞ ) and begin with the case ρ+ = ∞,
+when X has moments of all (positive) orders and fX decreases rapidly
+(as we will see in detail soon). We use the saddle point method , see e.g.
+Flajolet and Sedgewick [12, Chapter VIII], in a standard way .
+Theorem 6.1. Suppose that ρ+ = ∞ and γ >0. Then
+fX(x) ∼C2xc1−1e−c2x1/γ , x → ∞,
+fY (y) ∼ C1√2πγec1(y−κ)−γe(y−κ)/γ , y → ∞,
+where
+c1 := (δ + 1/2)/γ,
+===== PAGE 29 =====
+MOMENTS OF GAMMA TYPE 29
+c2 :=γe−κ/γ,
+C2 := C1√2πγe−c1κ.
+Proof. By Theorem 4.1 and Proposition 2.7, we may assume that all aj,a ′ k,b j,b ′ k >
+0. We will use (5.6), which now is valid for all x> 0 and σ >0.
+By (A.13) and (A.14), for a,b> 0 and Re s> 0,
+(
+log Γ(as +b)
+)′ =a log(as +b) +O ( |s|−1) =a log(as) +O ( |s|−1) ,
+(
+log Γ(as +b)
+)′′ = a s +O ( |s|−2) .
+Consequently, writing
+f (s) := log F (s) = log C +ds +
+J∑
+j=1
+log Γ(ajs +bj) −
+K∑
+k=1
+log Γ(a′ ks +b′ k),
+we have for Re s> 0,
+f ′(s) = d +
+J∑
+j=1
+(aj logaj +aj logs) −
+K∑
+k=1
+(a′ k loga′ k +a′ k logs) +O ( |s|−1)
+= κ +γ logs +O
+(
+|s|−1) ,
+f ′′(s) = γ s +O ( |s|−2) .
+Fixx> 0 and let G(s) := x−s−1F (s) and g(s) := log G(s) = −(s − 1) logx +
+f (s). Then
+g′(s) = f ′(s) − logx =γ logs + κ − logx +O ( |s|−1) . (6.1)
+We choose (for x large) σ =e(log x−κ)/γ, so γ logσ = logx − κ and g′(σ) =
+O(σ−1); thus σ is an approximate saddle point of G(s). Note that σ → ∞
+as x → ∞, so σ−1 → 0. Since g′′(s) = f ′′(s), we further have, as x → ∞,
+g′′(σ) = γσ −1 +O ( σ−2) ∼γσ −1. (6.2)
+Further, on the line Re s =σ,
+g′′(σ + it) = f ′′(σ + it) = γ σ + it +O ( σ−2) = γ σ +O ( (1 + |t|)σ−2) . (6.3)
+Consequently, Taylor’s formula yields
+g(σ + it) = g(σ) +O
+(
+|t|σ−1) − γ 2σt2 +O ( (|t|2 + |t|3)σ−2) (6.4)
+and, uniformly for |t| ≤ σ0.6,
+G(σ + it) = G(σ)e−γt2/2σ+o(1). (6.5)
+===== PAGE 30 =====
+30 SV ANTE JANSON
+For larger |t|, we have a rapid decay, for example by Lemma 5.10 which
+yields, for large σ and |t| ≥ σ0.6, recalling that now γ′ =γ,
+|G(σ + it)|
+|G(σ)| = |F (σ + it)| |F (σ)| = exp ( −γΨ(σ, |t|) +O(1 + |t|σ−1) )
+≤ exp
+(
+−c min(|t|, |t|2/σ) ) . (6.6)
+for some c > 0. It follows from (6.5) and (6.6) that (5.6) yields, using
+Theorem 5.7 and the choice of σ =e(log x−κ)/γ =e−κ/γx1/γ,
+fX(x) = 1 2π ∫ ∞ −∞ G(σ + it) dt ∼ G(σ) 2π ∫ ∞ −∞ e−γt2/2σ dt = G(σ)√σ√2πγ
+= x−σ−1F (σ)σ1/2 √2πγ ∼ C1√2πγσδ+1/2x−1eγσ log σ+(κ−γ)σ−σ log x
+= C1√2πγe(δ+1/2)(log x−κ)/γx−1e−γσ =C2xc1−1e−c2x1/γ .
+The result for fY follows similarly from (5.7), or simpler by fY (y) =
+eyfX(ey). □
+Remark 6.2. The derivative f ′ X(x) and higher derivatives f (n) X (x) can be
+obtained by repeated diﬀerentiation of (5.6) under the integ ral sign, which
+multiplies the integrand by a factor ( −s − 1) · · ·(−s −n)x−n. The argument
+above, including the estimates (6.5) and (6.6), applies to t his integral as well
+and shows that, for any n ≥ 0,
+f (n) X (x) ∼σnx−nG(σ)√σ/ √ 2πγ ∼σnx−nfX(x) = (c2/γ)nxn(1/γ−1)fX(x).
+In particular, every derivative of fX tends to 0 rapidly (faster than any
+power of x) as x → ∞.
+Remark 6.3. The saddle-point method yields also more precise asymptoti cs
+including higher-order terms by reﬁning the estimates arou nd s =σ in the
+proof above, see e.g. Flajolet and Sedgewick [12, Section VI II.3]; we leave
+the details to the reader. This yields an asymptotic expansi on in powers of
+σ−1, with σ as in the proof above, i.e., in powers of x−1/γ. See Remark 1.10
+for an example of such an expansion (there obtained from a kno wn result
+rather than by performing the calculations).
+We continue with the case ρ+< ∞, when F (s) has a pole at ρ+ of order
+νF (ρ+) ≥ 1. (Recall the notion νF from (4.2).) We denote the coeﬃcients
+of the singular part of the Laurent expansion of F at a point s0 bycℓ(s0):
+F (s) =
+νF (s0)∑
+ℓ=1
+cℓ(s0)(s −s0)−ℓ +O(1) as s →s0. (6.7)
+In particular, c1(s0) is the residue Res s0F .
+We have the following standard result by Mellin inversion, s ee [11].
+===== PAGE 31 =====
+MOMENTS OF GAMMA TYPE 31
+Theorem 6.4. Suppose that ρ+< ∞ and γ >0.
+(i) As x → ∞, for some η> 0,
+fX(x) = x−ρ+−1
+νF (ρ+)−1∑
+ℓ=0
+(−1)ℓ+1cℓ+1(ρ+)
+ℓ! logℓx +O ( x−ρ+−1−η)
+In particular, with ν :=νF (ρ+) ≥ 1,
+fX(x) ∼ (−1)νcν (ρ+) (ν − 1)! x−ρ+−1 logν−1x.
+If ρ+ is a simple pole of F , i.e. ν = 1, this can be written
+fX(x) ∼ − Resρ+(F )x−ρ+−1.
+(ii) More precisely, there is an asymptotic expansion, for any ﬁx edσ> 0,
+fX(x) =
+∑
+0<ρ≤σ
+νF (ρ)−1∑
+ℓ=0
+(−1)ℓ+1cℓ+1(ρ)
+ℓ! x−ρ−1 logℓx +O ( x−σ−1) ,
+summing over all poles ρ of F in (0,σ ]. (The inner sum vanishes
+unless ρ is a pole, so formally we may sum over all ρ.)
+Corresponding asymptotics for fY (y) = eyfX(ey) are obtained by replacing
+eachx−r−1 by e−ry and logℓx by yℓ.
+Proof. As said above, this is a standard result, and we refer to [11] f or details,
+but for completeness and later use we give the simple proof.
+It suﬃces to prove (ii), since (i) follows by taking σ = ρ+ +η. We may
+assume that σ is not a pole of F (otherwise we increase σ a little). We start
+with (5.6), where we integrate over a line with Re s ∈ (ρ−,ρ +). We may,
+using Theorem 5.1, shift the line to Re s =σ >ρ+ too, but then we have to
+subtract the residues of the traversed poles. Thus
+fX(x) = 1 2πi ∫ σ+i∞ σ−i∞ x−s−1F (s) ds − ∑ 0<ρ≤σ Ress=ρ(x−s−1F (s)), (6.8)
+and the result follows by computing the residues, using (6.7 ) and x−s−1 =
+x−ρ−1∑∞ ℓ=0(− logx)ℓ(s −ρ)ℓ/ℓ!, and noting that, by Theorem 5.1 again, ⏐⏐⏐⏐ ∫ σ+i∞ σ−i∞ x−s−1F (s) ds ⏐⏐⏐⏐ ≤x−σ−1 ∫ σ+i∞ σ−i∞ |F (s)| ds =O ( x−σ−1) . □
+In Theorem 6.4(ii) we have an asymptotic expansion, valid fo r ﬁxed σ as
+x → ∞ . It is natural to ask whether this asymptotic expansion actu ally
+yields a series representation for fX(x), i.e., whether we can let σ → ∞ for
+ﬁxed x (with the error term tending to 0) so that fX(x) is represented as a
+convergent series. This is possible sometimes, but not alwa ys. In fact, the
+following theorem shows that this is possible exactly when γ′ < 0, at least
+provided that there is an inﬁnite number of poles ρ> 0 and that these are
+simple.
+===== PAGE 32 =====
+32 SV ANTE JANSON
+Theorem 6.5. Suppose that γ >0.
+(i) If γ′ < 0, then, for all x> 0,
+fX(x) =
+∑
+ρ>0
+νF (ρ)−1∑
+ℓ=0
+(−1)ℓ+1cℓ+1(ρ)
+ℓ! x−ρ−1 logℓx, (6.9)
+summing over all poles ρ> 0 ofF . In particular, if F has only simple poles,
+fX(x) =
+∑
+ρ>0
+− Resρ(F )x−ρ−1. (6.10)
+(ii) If γ′ > 0 and there is an inﬁnite number of poles ρ > 0 of F , all
+simple, then the sum (6.10) diverges for all x> 0.
+(iii) If γ′ = 0, then (6.9) holds for x>e κ; hence (6.10) holds for x>e κ
+provided all poles are simple. However, at least provided th at there is an
+inﬁnite number of poles ρ >0 of F and all such poles are simple, the sum
+(6.10) diverges for 0<x<e κ.
+Corresponding results for fY (y) are obtained by replacing x−ρ−1 by e−ρy
+and logℓx by yℓ. The cut-oﬀs in (iii) becomey >κ and y <κ.
+Proof. (i) and (iii) (convergence): We use again (6.8), and have to show that
+the integral tends to 0 as σ → ∞ for every ﬁxed x> 0. We use Lemma 5.10,
+and note that 0 ≤ Ψ(σ,t ) ≤ π 2t for t ≥ 0, and thus, because γ′ ≤ 0, for
+σ> 0 with σ ∈E,
+|F (σ + it)|
+|F (σ)| ≤ exp
+(
+−π 2 (γ −γ′)|t| −γ′π 2 |t| +O(1 + |t|σ−1) )
+= exp
+(
+−π 2γ|t| +O(1 + |t|σ−1) ) .
+If σ ∈E is large enough we thus have |F (σ + it)| =O
+(
+e−γ|t||F (σ)| ) for all
+real t, and hence, because γ >0,
+∫ σ+i∞
+σ−i∞
+⏐⏐x−s−1F (s) ⏐⏐ | ds| =O ( x−σ−1|F (σ)| )∫ ∞
+−∞
+e−γ|t| dt =O ( x−σ−1|F (σ)| ) .
+If γ′ < 0, then this is by Theorem 5.9 o(1) as σ → ∞ for any ﬁxed x >0,
+which shows (i).
+If γ′ = 0, then Theorem 5.9 yields, for a ﬁxed x > 0, x−σF (σ) =
+O(σδe(κ−log x)σ), which is o(1) for x > eκ, showing the positive part of
+(iii).
+(ii) and (iii) (divergence): Let ρ> 0 be a pole of F that is not too close to
+a zero or another pole, meaning that the distance to every zer o or other pole
+is at least some small constant ξ >0. (This is true for all poles if all aj,a ′ k
+are commensurable and ξ is small enough; in general it is true for a large
+fraction of the poles, and certainly an inﬁnite number of the m.) A simple
+modiﬁcation of the proof of of Theorem 5.9 then yields the sam e estimate
+as there for the residue at ρ:
+| Resρ(F )| =ρδeγ′ρ log ρ+(κ−γ′)ρ+O(1).
+===== PAGE 33 =====
+MOMENTS OF GAMMA TYPE 33
+and thus, for every ﬁxed x,
+|x−ρ−1 Resρ(F )| =ρδeγ′ρ log ρ+(κ−γ′−log x)ρ+O(1).
+Letting ρ → ∞, we see that the terms of (6.10) are unbounded if γ′ > 0 or
+γ′ = 0 and κ> logx; hence the sum diverges. □
+Remark 6.6. To show divergence in (ii) and (iii), we assumed for simplici ty
+thatF has only simple poles on the positive axis; we conjecture tha t, more
+generally, (6.9) diverges also without this restriction.
+To show divergence we also assumed that F has an inﬁnite number of
+positive poles; this is, on the contrary, obviously necessa ry for divergence,
+since otherwise the sums (6.9) and (6.10) are ﬁnite. However , if F has only
+a ﬁnite number of positive poles, then the sum in (6.9) or (6.1 0) is not
+integrable, since it is ∼ cx−ρ−1 logℓx as x → 0, where ρ >0 is the largest
+pole of F and c ⁄= 0, ℓ =νF (ρ) − 1; hence the sum cannot equal fX(x) for
+all x >0. Example 10.2 yields an example where the sum does not equal
+fX(x) for any x >0 (although the diﬀerence tends to 0 rapidly as x → ∞
+by Theorem 6.4).
+In this connection, note that if γ > γ′, then there is an inﬁnite number
+of poles in (0 , ∞) by Proposition 4.6.
+We now consider x → 0 and y → −∞ . We obtain the following by the
+same methods as above (now moving the line of integration tow ards −∞),
+or more simply by applying the results above to X −1 and −Y ; this replaces
+F (s) by F (−s) and the Laurent coeﬃcients cℓ(s0) by ( −1)ℓcℓ(−s0).
+Theorem 6.7. Suppose that ρ− = −∞ and γ >0. Then
+fX(x) ∼C3x−c1−1e−c3x−1/γ , x → 0,
+fY (y) ∼ C1√2πγe−c1(y−κ)−γe−(y−κ)/γ , y → −∞,
+where
+c1 := (δ + 1/2)/γ,
+c3 :=γeκ/γ,
+C3 := C1√2πγec1κ.
+Theorem 6.8. Suppose that ρ−> −∞ and γ >0.
+(i) As x ց 0, for some η >0,
+fX(x) = x|ρ−|−1
+νF (ρ−)−1∑
+ℓ=0
+cℓ+1(ρ−)
+ℓ! logℓ(1/x) +O ( x|ρ−|−1+η)
+In particular, with ν :=νF (ρ−) ≥ 1,
+fX(x) ∼ cν (ρ−) (ν − 1)!x|ρ−|−1 logν−1(1/x).
+===== PAGE 34 =====
+34 SV ANTE JANSON
+If ρ− is a simple pole of F , i.e. ν = 1, this can be written
+fX(x) ∼ Resρ−(F )x|ρ−|−1.
+(ii) More precisely, there is an asymptotic expansion, for any ﬁx edσ> 0,
+fX(x) =
+∑
+0>ρ≥−σ
+νF (ρ)−1∑
+ℓ=0
+cℓ+1(ρ)
+ℓ! x|ρ|−1 logℓ(1/x) +O ( xσ−1) ,
+summing over all poles ρ of F in [−σ, 0).
+Corresponding asymptotics for fY (y) = eyfX(ey) are obtained by replacing
+eachxr−1 by ery and logℓ(1/x) by (−y)ℓ.
+Theorem 6.9. Suppose that γ >0.
+(i) If γ′ > 0, then, for all x> 0,
+fX(x) =
+∑
+ρ<0
+νF (ρ)−1∑
+ℓ=0
+cℓ+1(ρ)
+ℓ! x|ρ|−1 logℓ(1/x), (6.11)
+summing over all poles ρ< 0 ofF . In particular, if F has only simple poles,
+fX(x) =
+∑
+ρ<0
+Resρ(F )x|ρ|−1. (6.12)
+(ii) If γ′ < 0 and there is an inﬁnite number of poles ρ < 0 of F , all
+simple, then the sum (6.10) diverges for all x> 0.
+(iii) If γ′ = 0 , then (6.11) holds for 0<x< e κ; hence (6.12) holds for
+0 < x < eκ provided all poles are simple. However, at least provided th at
+there is an inﬁnite number of poles ρ< 0 ofF and all such poles are simple,
+the sum (6.12) diverges for x>e κ.
+Corresponding results for fY (y) are obtained by replacing x|ρ|−1 by e|ρ|y
+and logℓ(1/x) by (−y)ℓ. The cut-oﬀs in (iii) becomey <κ and y >κ.
+Theorems 6.5 and 6.9 say that (at least if γ > 0), fX(x) has a series
+expansion in positive (but not necessarily integer) powers of x if γ′ > 0,
+and a series expansion in negative (but not necessarily inte ger) powers of x
+if γ′ < 0, in both cases allowing for terms with logarithmic factors too; if
+γ′ = 0 one expansion holds for 0 <x<e κ and the other for x>e κ.
+Remark 6.10. Suppose that all aj,a ′ k are commensurable; then F (s) may
+as in Section 4 (see the proof of Lemma 4.2) be rewritten with a llaj,a ′ k = ±r,
+for some real r > 0. The poles of F in ( −∞, 0) then form one or several
+arithmetic series {sj −n/r} with gap 1/r, possibly apart from a ﬁnite number
+of other poles. If further all poles are simple, then the resi due at such a pole
+sl −n/r is of the form ( C/r)(−D)n(n!)−1∏ j⁄=l Γ(n +cj)/∏ k(Γ(n +c′ k),
+and the contribution to (6.12) from this series of poles is a ( generalized)
+hypergeometric series with argument −Dx1/r, times a constant and a power
+of x. Consequently, if further γ,γ ′ > 0, then the density function may be
+expressed using one or several hypergeometric functions. T ypical examples
+are given in Theorems 1.8 and 1.13.
+===== PAGE 35 =====
+MOMENTS OF GAMMA TYPE 35
+As a corollary, we get results on continuity and diﬀerentiabi lity at 0.
+Theorem 6.11. Suppose that γ >0.
+(i) The density fX is continuous at 0, and thus everywhere on R, if and
+only if ρ− < −1.
+(ii) The density fX has a ﬁnite jump at 0 if and only if ρ− = −1 and this
+is a simple pole of F . In this case fX(0+) = Res ρ−(F ).
+(iii) The density fX is inﬁnitely diﬀerentiable on R if and only if ρ− =
+−∞.
+Proof. Note that fX is inﬁnitely diﬀerentiable on (0 , ∞) by Theorem 5.4, as
+well as, trivially, on ( −∞, 0) where it vanishes.
+Parts (i) and (ii) follow immediately from Theorems 6.7 and 6 .8.
+If fX is inﬁnitely diﬀerentiable at 0, then every derivative f (n) X (0) = 0
+because fX vanishes on ( −∞, 0). Hence a Taylor expansion shows that
+fX(x) = O(xN ) as x → 0 for every integer N . If ρ− were ﬁnite, this would
+contradict Theorem 6.8; hence ρ− = −∞.
+Conversely, if ρ− = −∞, then Theorem 6.7 shows that fX(x) tends to
+0 rapidly as x ց 0. Moreover, by Remark 6.2 and the usual change of
+variablesx ↦→ 1/x, the same holds for each derivative f (n) X (x). It follows, by
+induction, that each derivative f (n) X (x) exists also at x = 0 with f (n) X (0) = 0.
+Hence fX is inﬁnitely diﬀerentiable. □
+Remark 6.12. More generally, fX has n continuous derivatives (at 0) if
+and only if ρ−< −n − 1; we omit the details.
+Remark 6.13. We have in this section assumed γ > 0 in order to have
+good estimates of F (s) as | Ims| → ∞ in the proofs. It seems likely that
+the results can be extended to the case γ = 0 too, under suitable conditions,
+but we have not pursued this beyond noting that the results ab ove hold also
+for the examples in Section 3 with γ = 0.
+For example, the uniform distribution in Example 3.3 has ρ+ = ∞,ρ− =
+−1, γ =γ′ = 0, κ = 0 and a single, simple pole at −1; the series in (6.10)
+is thus 0 and the series in (6.12) is 1, so (6.10) holds for x > eκ = 1 and
+(6.12) holds for x < eκ = 1. The asymptotic result in Theorem 6.1 is not
+directly applicable, since the exponent 1 /γ = ∞, but it can be interpreted
+as fX(x) = 0 for large x, which is correct.
+The same holds, mutatis mutandis , for the Pareto distribution in Exam-
+ple 3.13, where now there is a single pole at α> 0 and the density vanishes
+on (0, 1).
+Similarly, for the Beta distribution B( α,β ) in Example 3.4, the series in
+(6.12) is
+∞∑
+n=0
+(−1)n
+n!
+Γ(α +β)
+Γ(α)Γ(β −n)xn+α−1 = Γ(α +β) Γ(α)Γ(β)xα−1 ∞∑ n=0 (β − 1 n ) (−x)n,
+===== PAGE 36 =====
+36 SV ANTE JANSON
+which for x< 1 = eκ converges to the density f (x) = ( Γ(α +β)/Γ(α)Γ(β) ) ·
+xα−1(1 −x)β−1; for x >1 this series diverges unless β is an integer (when
+the series is ﬁnite but does not yield f (x) = 0 for x> 1), while (6.10) holds
+trivially.
+The Γ(n) distribution in Example 3.17 is an example with a multiple
+pole. There is a single pole at 1, with cn(1) = ( −1)n and cℓ(1) = 0, ℓ ⁄=
+n. Hence the sum in (6.9) is, rewritten for fY as stated in Theorem 6.5,
+(1/(n − 1)!)yn−1e−y, which is the correct density for y >κ = 0.
+We give some examples of applying the theorems above to the di stribu-
+tions in Section 3. This is mainly as an illustration of the th eorems; we
+cannot expect to obtain any new results for these classical d istributions.
+Other applications of the theorems are given in Theorems 1.8 , 1.9, 1.13,
+1.14, 9.1, 9.3, 9.6, 9.7.
+Example 6.14. For the exponential distribution in Example 3.2, Theo-
+rem 6.1 yieldsf (x) ∼e−x asx → ∞ (this is actually an identity for all x> 0)
+and Theorem 6.9 yields, since the poles are at −n − 1, with n = 0, 1,... ,
+f (x) =∑∞ n=0(−1)nxn/n!, x> 0, again a trival result.
+Example 6.15. Similarly, for the Gumbel distribution in Example 3.18,
+f (y) = e−y−e−y and the asymptotic formula in Theorem 6.7 is actually an
+equality for all real y.
+Example 6.16. Consider the stable distribution in Example 3.10 with 0 <
+α< 1. Since γ >0>γ ′, we can apply Theorem 6.5(i). By (3.16), F (s) :=
+ESs α has simple poles at s =nα, n = 1, 2,... , and, using (A.6),
+Resnα(F ) = −α Res1−n(Γ) Γ(1 −nα) = (−1)nα (n − 1)! Γ(1 −nα)
+= (−1)nαΓ(nα) sin(πnα) (n − 1)!π = (−1)n Γ(nα + 1) sin(πnα) πn! . (6.13)
+(This includes the case when nα is an integer, in which case nα is not a pole
+because of cancellation; (6.13) then correctly yields Res nα(F ) = 0.) We thus
+obtain by (6.10)
+fSα(x) =
+∞∑
+n=1
+(−1)n+1 Γ(nα + 1) sin(πnα) πn! x−nα−1. (6.14)
+This is the well-known formula for the stable density, see Feller [9, XVII.(6.8)]
+(with γ = −α for the positive case studied here).
+In particular, as x → ∞, (6.14) or Theorem 6.4 (with ρ+ =α) yields
+fSα(x) ∼ − Resα(F )x−α−1 = α Γ(1 −α)x−α−1, x → ∞.
+As x → 0, Theorem 6.7 yields rapid convergence to 0:
+fSα(x) ∼C3x−(2−α)/(2−2α)e−c3x−α/(1−α) , x ց 0, (6.15)
+with c3 = (1 −α)αα/(1−α) and C3 = (2π(1 −α))−1/2α1/(2−2α).
+===== PAGE 37 =====
+MOMENTS OF GAMMA TYPE 37
+Example 6.17. Consider the Mittag-Leﬄer distribution in Example 3.11
+with 0 < α <1. Since γ,γ ′ > 0, we can apply Theorem 6.9(i). By (3.17),
+F (s) := EM s α has simple poles at s = −n, n = 1, 2,... , and, using (A.6),
+cf. (6.13),
+Res−n(F ) = Res1−n(Γ) Γ(1 −nα) = (−1)n−1 (n − 1)! Γ(1 −nα) = (−1)n−1 Γ(nα) sin(πnα) (n − 1)!π .
+(Again, this includes the case when nα is an integer, in which case −n is
+not a pole but the formula correctly yields 0.) We thus obtain by (6.12)
+fMα(x) =
+∞∑
+n=1
+(−1)n−1 Γ(nα) sin(πnα) (n − 1)!π xn−1
+=
+∞∑
+m=0
+(−1)m Γ(mα +α) sin(πα(m + 1)) m!π xm. (6.16)
+(This is also easily obtained from the stable density (6.14) since Mα =S−α α
+and thus fMα(x) = α−1x−1/α−1fSα(x−1/α).) In particular, in accordance
+with Theorem 6.11,
+fMα(0+) = Γ(α) sin(πα) π = 1 Γ(1 −α).
+As x → ∞, Theorem 6.1 yields
+fMα(x) ∼C2x(2α−1)/(2−2α)e−c2x1/(1−α) , x → ∞,
+with c2 = (1 −α)αα/(1−α) and C2 = (2π(1 −α))−1/2α(2α−1)/(2−2α). (This
+also follows from (6.15).)
+Example 6.18. The L´ evy area in Example 3.19 has the moment generating
+function (3.35) with simple poles at ( n + 1 2 )π, n ∈ Z. Theorem 6.5 yields,
+for y >κ = 0,
+f (y) =
+∞∑
+n=0
+(−1)ne−(n+ 1 2 )πy = e−πy/2
+1 +e−πy = 1 2 cosh(πy/2)
+while Theorem 6.9 yields, for y <0,
+f (y) =
+∞∑
+n=1
+(−1)n−1e(n− 1 2 )πy = eπy/2
+1 +eπy = 1 2 cosh(πy/2).
+The two sums thus sum to the same analytic expression; hence A has the
+density 1/2 cosh(πy/2) for −∞<y < ∞. (For a more elegant proof of this,
+see e.g. Protter [28, p. 91].)
+===== PAGE 38 =====
+38 SV ANTE JANSON
+7. Brownian supremum process area
+We consider the integral A = A(1) of the Brownian supremum process
+deﬁned in (1.5).
+Remark 7.1. LetL(t) denote the local time of B(t) at 0. It is well-known
+that the processes S(t) and L(t), have the same distribution [30, Chapter
+VI.2]:
+{
+S(t)
+}
+t≥0
+d= { L(t) } t≥0.
+Consequently, A(T ) d= ∫ T 0 L(t) dt, so we obtain the same results for this
+integral.
+Let ψ denote the Laplace transform of A:
+ψ(s) := Ee−sA. (7.1)
+Janson and Petersson [19] proved the following formula for t he Laplace trans-
+form of a variation of ψ, or in other words, a double Laplace transform of
+A: For all α,λ> 0,
+∫ ∞
+0
+ψ
+(
+αt3/2) e−λt dt = ∫ ∞
+0
+(
+1 + 3αt√
+8λ
+)−2/3
+e−λt dt. (7.2)
+Janson and Petersson [19] used (7.2) to compute the integer m oments
+E An, n ∈ N; Theorem 1.6 extends their formula to all real and complex
+moments.
+Proof of Theorem 1.6. Consider for convenience X :=
+√
+8
+3 A. Taking α =√
+8/3 in (7.2), we ﬁnd, for λ> 0,
+∫ ∞
+0
+Ee−t3/2Xe−λt dt = ∫ ∞
+0
+(
+1 + t√
+λ
+)−2/3
+e−λt dt. (7.3)
+Denote the common value of the integrals in (7.3) by G(λ).
+Let −1< s <0, and integrate λsG(λ). From the left hand side in (7.3)
+we obtain, using Fubini’s theorem a couple of times, the stan dard Gamma
+integral (A.7), and the change of variables t3/2 =u,
+∫ ∞
+0
+G(λ)λs dλ =
+∫ ∞
+0
+∫ ∞
+0
+Ee−t3/2Xe−λtλs dt dλ
+= Γ(s + 1) E
+∫ ∞
+0
+e−t3/2Xt−s−1 dt
+= Γ(s + 1) E 2 3 ∫ ∞ 0 e−uXu−2s/3−1 du
+= 2 3 Γ(s + 1)Γ(−2s/3) EX 2s/3. (7.4)
+Similarly, from the right hand side of (7.3), using the chang es of variables
+t =λ1/2x and λ =u2/3, and the standard Gamma and Beta integrals (A.7)
+===== PAGE 39 =====
+MOMENTS OF GAMMA TYPE 39
+and (A.9), still assuming −1<s< 0,
+∫ ∞
+0
+G(λ)λs dλ =
+∫ ∞
+0
+∫ ∞
+0
+(
+1 + t√
+λ
+)−2/3
+e−λtλs dt dλ
+=
+∫ ∞
+0
+∫ ∞
+0
+(1 +x)−2/3e−λ3/2xλs+1/2 dx dλ
+= 2 3 ∫ ∞ 0 ∫ ∞ 0 (1 +x)−2/3e−uxu2s/3 dx du
+= 2 3 Γ(2s/3 + 1) ∫ ∞ 0 (1 +x)−2/3x−2s/3−1 dx
+= 2 3 Γ(2s/3 + 1) Γ(−2s/3)Γ(2s/3 + 2/3) Γ(2/3) . (7.5)
+Setting the right hand sides of (7.4) and (7.5) equal, we ﬁnd a fter some
+cancellations,
+EX 2s/3 = Γ(2s/3 + 1)Γ(2s/3 + 2/3) Γ(2/3)Γ(s + 1) ,
+for −1<s< 0, and thus, replacing s by 3s/2,
+EX s = Γ(s + 1)Γ(s + 2/3) Γ(2/3)Γ(3s/2 + 1), (7.6)
+for −2/3<s< 0.
+We use Theorem 2.1 to extend the domain of validity of (7.6). D enote,
+as usual, the right hand side of (7.6) by F (s), and note that s = −2/3
+is not a pole of F (s); it is a removable singularity since the poles in the
+numerator and denominator at −2/3 cancel. The ﬁrst pole of G(s) on the
+negative real axis is s = −1. This can also be seen by the functional equation
+Γ(z + 1) = zΓ(z), which enables us to rewrite (7.6) as
+( √ 8
+3
+)s
+E As = EX s = Γ(s + 1)Γ(s + 5/3) Γ(5/3)Γ(3s/2 + 2), (7.7)
+where the right hand side clearly has a pole at −1 but not in ( −1, ∞). Hence
+ρ− = −1 andρ+ = ∞, so (7.6) and (7.7) hold for Re s> −1 by Theorem 2.1,
+while E As = ∞ for s ≤ −1.
+Next, the triplication and duplication formulas (A.4) and ( A.3) yield
+Γ(s + 1)Γ(s + 4/3)Γ(s + 5/3) = 2π3−3s−3+1/2Γ(3s + 3)
+=π1/223s+33−3s−5/2Γ(3s/2 + 3/2)Γ(3s/2 + 2),
+and thus
+Γ(s + 1)Γ(s + 5/3)
+Γ(3s/2 + 2) =π1/2233−5/2 Γ(3s/2 + 3/2) Γ(s + 4/3) ( 23 33 )s .
+The third formula for E As follows by substituting this into (7.7), and using
+Γ(1/3)Γ(2/3) = π/ sin(π/3) = 2π/
+√
+3 from (A.6). (The constant factor can
+always be found by setting s = 0, see Remark 1.2.)
+===== PAGE 40 =====
+40 SV ANTE JANSON
+Similarly, the ﬁnal formula follows by applying the duplica tion formula
+(A.3) to Γ( s + 4/3) and the triplication formula (A.4) to Γ(3 s/2 + 3/2).
+(Alternatively, we may use (7.6), applying the duplication formula to Γ(s+1)
+and Γ(s + 2/3) and the triplication formula to Γ(3 s/2 + 1).) □
+We have ρ+ = ∞ and ρ− = −1 for A. Further, the parameters in (2.4)–
+(2.8) are, from any of the expressions in Theorem 1.6: γ =γ′ = 1/2,δ = 1/6,
+κ = − 1 2 log 3,C1 =π−1/2Γ(1/3) = 2 √ π/3/Γ(2/3). Theorem 5.7 thus yields
+E As ∼ Γ(1/3) π1/2 s1/6e 1 2 s log s−( 1 2 log 3+ 1 2 )s = Γ(1/3) π1/2 s1/6 ( s 3e )s/2 (7.8)
+as s → ∞, found for integer s in [19].
+Proof of Theorem 1.8. The existence of the density function fA(x) follows
+from Theorem 5.4. The explicit formulas are obtained from Th eorem 6.9 as
+follows. We use the last expression in Theorem 1.6 for F (s) := E As, where
+there is no cancellation of poles. The poles are thus given by , for n ∈ Z≥0,
+s/2 + 1/2 = −n and s/2 + 5/6 = −n, i.e. s = −2n − 1 and s = −2n − 5/3;
+all poles are simple. The same formula yields the residues, u sing (A.11) and
+(A.6),
+Res−2n−1(F ) = Γ(1/3) 21/3π · 2 (−1)n n! Γ(1/3 −n) Γ(1/6 −n) · ( 2 3 )−n−1/2
+= (−1)n 21/631/2Γ(1/3) π · Γ(n + 5/6) n! Γ(n + 2/3) · sin(π/6 −nπ) sin(π/3 −nπ) · ( 3 2 )n
+= (−1)n 21/6Γ(1/3) π · Γ(n + 5/6) n! Γ(n + 2/3) · ( 3 2 )n ,
+Res−2n−5/3(F ) = Γ(1/3) 21/3π · 2 (−1)n n! Γ(−1/3 −n) Γ(−1/6 −n) · ( 2 3 )−n−5/6
+= (−1)n 31/3Γ(1/3) 21/6π · Γ(n + 7/6) n! Γ(n + 4/3) · ( 3 2 )n .
+Consequently, by Theorem 6.9, in particular (6.12),
+fA(x) = 21/6Γ(1/3) π ∞∑ n=0 (−1)n Γ(n + 5/6) n! Γ(n + 2/3) ( 3 2 )n x2n
++ 31/3Γ(1/3) 21/6π ∞∑ n=0 (−1)n Γ(n + 7/6) n! Γ(n + 4/3) ( 3 2 )n x2n+2/3.
+By the deﬁnition of 1F1, and simplifying the constants using (A.3) and
+(A.6), this can be written as
+fA(x) = 21/2 π1/2 1F1 ( 5 6 ; 2 3 ; − 3 2x2 ) + 2−1/631/3 Γ(5/6) x2/3 1F1 ( 7 6 ; 4 3 ; − 3 2x2 ) .
+===== PAGE 41 =====
+MOMENTS OF GAMMA TYPE 41
+By Kummer’s transformation [1, (13.1.27)], this equals
+e− 3 2 x2
+(
+21/2
+π1/2 1F1
+(
+− 1 6 ; 2 3 ; 3 2x2
+)
++ 2−1/631/3
+Γ(5/6) x2/3 1F1
+( 1
+6 ; 4 3 ; 3 2x2
+))
+,
+which can be rewritten as the two last formulas in the theorem by the
+deﬁnition of U [1, (13.1.3)], see also [1, (13.1.29)], again using (A.3) an d
+(A.6) to simplify constants. □
+Proof of Theorem 1.9. Immediate by Theorem 6.1. □
+Remark 7.2. The hypergeometric function 1F1(a;b;x) and U (a;b;x) satis-
+ﬁes Kummer’s equation xF ′′ + (b −x)F ′ −aF = 0 [1, (13.1.1)], and it follows
+easily that fA satisﬁes the diﬀerential equation
+xf ′′ A(x) + (3x2 + 1 3 )f ′ A(x) + 5xfA(x) = 0, x> 0. (7.9)
+We guess that it also is possible to derive this equation dire ctly from (7.2)
+by manipulations of Laplace transforms, but we have not purs ued this.
+8. A hashing variable
+As said in Section 1, when studying the maximum displacement in hashing
+with linear probing, Petersson [24, Theorem 5.1] found as a l imit a random
+variable M with the distribution
+P(M>x ) = ψ(x3/2) = Ee−x3/2A, x> 0, (8.1)
+where A is the Brownian supremum area studied in Section 7. Lemma 1.1 1
+shows that this type of relation preserves moments of Gamma t ype; hence
+M has moments of Gamma type, but we have postponed the proof unt il
+now.
+Proof of Lemma 1.11. Forx ≥ 0,
+P(T 1/α/Z1/α>x ) = P(T >xαZ) = E ( P(T >xαZ |Z) ) = Ee−xαZ
+which shows that (1.10) and (1.11) are equivalent.
+If (1.10) or (1.11) holds, and thus both hold, then, for s > −α, using
+(3.2),
+EV s = ET s/α EZ −s/α = Γ(s/α + 1) EZ −s/α. □
+Proof of Theorem 1.12. By (8.1) and Lemma 1.11, with α = 3/2,
+E Ms = Γ(2s/3 + 1) E A−2s/3,
+and the result follows from Theorem 1.6; for the last formula we also use
+(A.3). □
+Note also that Lemma 1.11 yields the representation
+M d=T 2/3A−2/3, (8.2)
+whereT 2/3 has a Weibull distribution with parameter 3 /2, cf. Example 3.9,
+and is independent of A.
+===== PAGE 42 =====
+42 SV ANTE JANSON
+For M, the parameters in (2.4)–(2.8) are, from any of the expressi ons in
+Theorem 1.12: γ = 1,γ′ = 1/3,δ = 2/3, κ = 1 3 log 2,C1 = 2 7/63−2/3Γ(1/3) =
+213/63−7/6π/Γ(2/3). Furthermore, the function F (s) := E Ms (extended to
+all of the complex plane) has residue −3/
+√
+2π at ρ+ = 3/2, and
+√
+2/π at
+ρ− = −3/2. (See the proofs below for the other residues.)
+Proof of Theorem 1.13. As in the proof of Theorem 1.8, the existence of the
+density function fM(x) follows from Theorem 5.4 and the explicit formulas
+are obtained from Theorem 6.9. We use the third expression in Theorem 1.6
+for F (s) := E Ms. The poles ρ < 0 all come from the factor Γ(1 + 2 s/3)
+and are thus given by, for n ∈ Z≥0, 1 + 2ρ/3 = −n, i.e. ρ = −3n/2 − 3/2.
+All poles are simple and we ﬁnd using (A.11) the residues
+Res− 3 2 n− 3 2 (F )
+= Γ(1/3) 21/3π · Γ(1 +n/2) Γ(4/3 +n/2) Γ(7/6 +n/2) · ( 3 2 )−1/2−n/2 · 3 2 (−1)n n! .
+Consequently, by Theorem 6.9, in particular (6.12),
+fM(x) = 31/2Γ(1/3) 25/6π ∞∑ n=0 (−1)n Γ(1 +n/2) Γ(4/3 +n/2) Γ(7/6 +n/2)n! ( 2 3 )n/2 x3n/2+1/2.
+Splitting the sum into two parts, for n = 2k and n = 2k + 1, and using
+(2k)! = π−1/222kΓ(k + 1/2)k! and (2k + 1)! =π−1/222k+1k! Γ(k + 3/2), both
+instances of (A.3), we obtain, as usual using (A.3) and (A.6) ,
+fM(x) = 31/2Γ(1/3) 25/6π1/2 ∞∑ k=0 Γ(4/3 +k) Γ(7/6 +k) Γ(1/2 +k) ( 1 6 )k x3k+1/2
+− Γ(1/3) 24/3π1/2 ∞∑ k=0 Γ(11/6 +k) Γ(5/3 +k)k! ( 1 6 )k x3k+2
+= 31/2Γ(1/3) 25/6π1/2 Γ(4/3) Γ(7/6) Γ(1/2)x1/2 2F2 ( 4 3, 1; 7 6, 1 2 ;x3 6 )
+− Γ(1/3) 24/3π1/2 Γ(11/6) Γ(5/3) x2 1F1 ( 11 6 ; 5 3 ;x3 6 )
+= 21/2
+π1/2x1/2 2F2
+( 4
+3, 1; 7 6, 1 2 ;x3 6 ) − 5 8x2 1F1 ( 11 6 ; 5 3 ;x3 6 ) . □
+Proof of Theorem 1.14. As remarked above, the residue at ρ+ = 3 /2 is
+−3/
+√
+2π, and the next pole is at 5 /2, which yields (1.14) by Theorem 6.4.
+More precisely, by the last expression in Theorem 1.12, ther e are, on the
+positive real axis, poles when 1 /2 −s/3 = −n or 5/6 −s/3 = −n for integer
+n ≥ 0, i.e., s = 3n + 3/2 and s = 3n + 5/2. The residues are, using (A.11)
+===== PAGE 43 =====
+MOMENTS OF GAMMA TYPE 43
+and (A.6),
+Res3n+3/2(F ) = −3 (−1)n n! Γ(1/3) 21/3π3/2 · Γ(1 +n)Γ(3/2 +n)Γ(1/3 −n) Γ(1/6 −n) · 6n+1/2
+= (−1)n+1 21/63 Γ(1/3) π3/2 · Γ(3/2 +n)Γ(5/6 +n) Γ(2/3 +n) · 6n,
+Res3n+5/2(F ) = −3 (−1)n n! Γ(1/3) 21/3π3/2 · Γ(4/3 +n) Γ(11/6 +n) Γ(−1/3 −n) Γ(−1/6 −n) · 6n+5/6
+= (−1)n+1 21/234/3Γ(1/3) π3/2 · Γ(11/6 +n) Γ(7/6 +n) n! · 6n.
+By Theorem 6.4, there is an asymptotic expansion −∑ ρ>0 Resρ(F )x−ρ−1,
+which by the deﬁnition of the (generalized) hypergeometric series can be
+written as in (1.15), yet again using (A.11) and (A.6). □
+9. Triangular and diagonal P ´olya urns
+A generalized P´ olya urn contains balls of several diﬀerent c olours. At
+each time n ≥ 1, one of the balls is drawn at random, and a set of new
+balls, depending on the colour of the drawn ball, is added to t he urn. We
+consider for simplicity only the case of two colours, say bla ck and white; the
+replacement rule may then be described by a matrix
+( a b
+c d
+)
+, meaning that if
+the drawn ball is black [white], it is replaced together with a black and b
+white balls [ c black and d white balls]. It is here natural to let a,b,c,d be
+non-negative integers, but in fact, the model can be deﬁned ( and the results
+below hold) for arbitrary real a,b,c,d ≥ 0, see [15; 16]. (Further, under
+certain conditions some of the entries can be negative too, b ut that case is
+not interesting here.) Diﬀerent values of the parameters yie ld a variety of
+diﬀerent limit laws for the numbers Bn and Wn of black and white balls in
+the urn after n steps, see e.g. [10; 15; 16] and the references given there. W e
+are here interested in the special case of a triangular urn , meaning that the
+replacement matrix is triangular, say b = 0. We start with B0 = b0 ≥ 0
+black and W0 = w0 ≥ 0 white balls, and assume w0 > 0 (otherwise, there
+will never be any white balls).
+9.1. Balanced triangular urns. Assume that the urn is triangular and
+balanced, meaning that the total number of added balls does not depend
+on the drawn ball, i.e., a = c + d; we further assume that a,c,d > 0;
+thusa>d> 0 and c =a −d. In this case, it is shown by Puyhaubert [29],
+Flajolet, Dumas and Puyhaubert [10, Section 7] and (with a di ﬀerent proof)
+Janson [16, Theorems 1.3(v) and 1.7] that Wn/nd/a d− →W for a random
+variableW with moments of Gamma type given by
+EW s =ds Γ((b0 +w0)/a) Γ(w0/d) · Γ(s +w0/d) Γ(ds/a + (b0 +w0)/a), Res> −w0 d . (9.1)
+===== PAGE 44 =====
+44 SV ANTE JANSON
+In the special case ( b0,w 0) = ( c,d ), and thus b0 +w0 = a, this simpliﬁes
+to dsΓ(s + 1)/Γ(ds/a + 1), so W/d has a Mittag-Leﬄer distribution with
+parameter d/a ∈ (0, 1), see (3.17).
+All poles of F (s) := EW s are on the negative real axis, so ρ+ = ∞.
+In general, (9.1) shows that there is a pole at −w0/d, but if b0 = 0, then
+this singularity is removable and the ﬁrst pole on the negati ve real axis is
+−w0/d − 1. We thus have ρ− = −w0/d when b0 > 0, but ρ− = −w0/d − 1
+whenb0 = 0. In fact, if b0 = 0, so we start with only w0 white balls, the ﬁrst
+drawn ball is necessarily white, and thus urn after the ﬁrst d raw contains c
+black and w0 +d white balls. Thus the limit random variable W is the same
+for the initial conditions (0 ,w 0) and (c,w 0 +d), and we may without loss of
+generality assume that b0 > 0.
+By (9.1), we have γ =γ′ = 1 −d/a =c/a, δ =w0/d − (b0 +w0)/a, κ =
+− d a log d a + logd = (c logd +d loga)/a, and C1 = (a/d)(b0+w0)/a−1/2Γ((b0 +
+w0)/a)/Γ(w0/d).
+The functionF (s) in (9.1) has simple poles at s = −w0/d−n,n = 0, 1,... ,
+(except that some of these may in fact be removable singulari ties) and Theo-
+rems 5.4 and 6.9 yield by a straightforward calculation of th e residues, using
+(A.11) and (A.6), the following:
+Theorem 9.1. The limit variable W for a balanced triangular urn
+( a 0
+c d
+)
+with a =c +d and a,c,d,w 0 > 0 has a density function fW on (0, ∞) given
+by, for x> 0,
+fW (x) = Γ((b0 +w0)/a) Γ(w0/d) ∞∑ n=0 (−1)n n! · d−n−w0/d Γ(−dn/a +b0/a)xn+w0/d−1
+= Γ((b0 +w0)/a) πdΓ(w0/d) ∞∑ n=0 (−1)n n! Γ (dn +a −b0 a ) sinπ(b0 −dn) a (x d )n+w0/d−1 .
+In fact, [10] even gives a local limit theorem to this density function.
+Remark 9.2. It follows from Theorem 9.1 by comparison with Exam-
+ple 6.17, or more simply directly from (9.1) and (3.17), that in the special
+case b0 = 0, W/d has a Mittag-Leﬄer( d/a) distribution conjugated with
+xw0/d, see Remark 2.11; similarly, in the special case b0 = c = a −d, W/d
+has a Mittag-Leﬄer(d/a) distribution conjugated with x(w0−d)/d.
+Theorem 9.1 shows immediately that as x ց 0, the density fW (x) satisﬁes
+fW (x) ∼C ′xw0/d−1 whereC ′ = Γ((b0 +w0)/a)(Γ(w0/d)Γ(b0/a))−1d−w0/d>
+0, provided b0> 0. For large x, Theorem 6.1 yields:
+Theorem 9.3. As x → ∞,
+fW (x) ∼C2xc1−1e−c2xa/c ,
+withc1 = (δ + 1/2)a/c, c2 =ca−a/cd−1, C2 =C1(2πc/a)−1/2(dad/c)−(δ+1/2),
+whereδ and C1 are given above.
+===== PAGE 45 =====
+MOMENTS OF GAMMA TYPE 45
+Remark 9.4. For non-balanced triangular urns (a ⁄=c+d), limit results are
+given in [16], but the results are more complicated and we do n ot believe that
+the limits have moments of Gamma type. (See for example [16, T heorem
+1.6], which gives a complicated integral formula for the mom ents in the case
+a > d >0, c >0. In the balanced case, it simpliﬁes to (9.1), but as far as
+we know, there is no similar simpliﬁcation in general.
+Remark 9.5. The case of triangular urns with three or more colours is not
+yet fully explored. Limit laws with moments of Gamma type occ ur in some
+cases, but presumably not in all. Some such results are given by Puyhaubert
+[29], see also Flajolet, Dumas and Puyhaubert [10].
+9.2. Diagonal urns. In the diagonal case b = c = 0 (with a,d,b 0,x 0 > 0
+to avoid trivialities), there are simple limit results, see [16, Theorem 1.4].
+We distinguish between three cases.
+(i) If a = d, the classical P´ olya urn [7; 27], Wn/n → W where W/d ∈
+B(w0/a,b 0/a). Hence, by Example 3.4, W has moments of Gamma type
+EW s =as Γ((b0 +w0)/a) Γ(w0/a) · Γ(s +w0/a) Γ(s + (b0 +w0)/a), s> −w0 a . (9.2)
+Hence, recalling that a = d, (9.1) holds in this case too. We have ρ+ =
+∞, ρ− = −w0/a, γ = γ′ = 0, δ = −b0/a, κ = log a, C1 = Γ(( b0 +
+w0)/a)/Γ(w0/a).
+(ii) If a > d, Wn/nd/a d− →W := dU −d/aV where U ∈ Γ(b0/a) and V ∈
+Γ(w0/d) are independent. Thus, by (3.1),
+EW s =ds Γ(b0/a −ds/a) Γ(w0/d +s) Γ(b0/a) Γ(w0/d) , −w0 d < Res< b0 d. (9.3)
+We have ρ+ = b0/d, ρ− = −w0/d, γ = 1 + d/a, γ′ = 1 −d/a, δ = b0/a +
+w0/d − 1, κ = − d a log d a + logd, C1 = 2π(Γ(b0/a)Γ(w0/d))−1(d/a)b0/a−1/2.
+Theorems 5.4 and 6.9 apply again and yield the following:
+Theorem 9.6. The limit variable W for a diagonal urn
+( a 0
+0 d
+)
+witha>d>
+0 and b0,w 0 > 0 has a density function fW on (0, ∞) given by, for x> 0,
+fW (x) = 1 dΓ(b0/a)Γ(w0/d) ∞∑ n=0 (−1)n n! Γ (dn +b0 +w0 a )(x d )n+w0/d−1 .
+Again, the asymptotic fW (x) ∼C ′xw0/d−1 as x ց 0, for some C ′ > 0, is
+immediate. For large x, we this time use Theorem 6.4, since ρ+ < ∞. The
+poles of (9.3) on the positive real axis are ( an +b0)/d, n = 0, 1,... , and the
+residues are easily calculated. This yields a divergent asy mptotic expansion,
+interpreted as in Remark 1.10.
+Theorem 9.7. As x → ∞, the density fW (x) has an asymptotic expansion
+fW (x) ∼ a d2Γ(b0/a)Γ(w0/d) ∞∑ n=0 (−1)n n! Γ (an +b0 +w0 d )(x d )−an/d−b0/d−1 .
+===== PAGE 46 =====
+46 SV ANTE JANSON
+(iii) If a < d, we may interchange the two colours and obtain n−a/d(nd −
+Wn) d− →W := dUV −a/d, with U and V as above, and aW/d has the
+distribution in (ii) with the exchanges a ↔d and b0 ↔w0.
+10. Further examples
+We give a couple of further examples, or rather counter examp les.
+Example 10.1. Let X have a distribution that is a mixture of a point
+mass at 1 and a uniform distribution on [0 , 1], with equal weights; thus
+X = 1 −V +VU where V ∈ Be(1/2) and U ∈ U(0, 1) are independent.
+Then, for Re s> −1,
+EX s = 1 2 · 1s + 1 2 · EU s = 1 2 + 1 2 1 s + 1 = s + 2 2(s + 1) = Γ(s + 3) Γ(s + 1) 2 Γ(s + 2)2 .
+(10.1)
+Equivalently,
+EX s = s/2 + 1 s + 1 = Γ(s/2 + 2) Γ(s + 1) Γ(s/2 + 1) Γ(s + 2). (10.2)
+Hence X has moments of Gamma type. We have ρ+ = ∞, ρ− = −1,
+γ =γ′ =δ = κ = 0 and C1 = 1/2. Note that EX it → 1/2 ⁄= 0 as t → ±∞;
+cf. Remark 5.6.
+Example 10.2. Consider X := T/U , where T ∼ Exp(1) and U ∼ U(0, 1)
+are independent. Then, see Remark 1.5 and Examples 3.2 and 3. 3, X has
+moments of Gamma type
+EX s = Γ(s + 1) 1 −s = Γ(s + 1) Γ(1 −s) Γ(2 −s) , −1< Res< 1. (10.3)
+Consequently,ρ+ = 1 and ρ− = −1. There is an inﬁnite number of poles
+on the negative real axis, viz. −1, −2,... , but the only pole on the positive
+real axis is 1. We have γ =γ′ = 1, δ = −1/2, κ = 0, C1 = √ 2π.
+It is easy to ﬁnd the density of X =T/U : for x> 0,
+P(T/U >x ) = P(T >Ux ) =
+∫ 1
+0
+P(T >ux) du =
+∫ 1
+0
+e−ux du = 1 −e−x
+x
+and thus X has the density function
+f (x) = − d dx 1 −e−x x = 1 − (1 +x)e−x x2 , x> 0. (10.4)
+Sinceγ,γ ′ > 0, Theorem 6.9 applies. The residue at −n−1 is (−1)n/(n! (n+
+2) and (6.12) yields
+f (x) =
+∞∑
+n=0
+(−1)n
+(n + 2)n!xn
+which, of course, also follows directly from (10.4).
+However, in Theorem 6.5, although the sum in (6.10) consists of a single
+termx−2 and thus converges, the sum x−2 ⁄=f (x) for all x> 0, as asserted
+===== PAGE 47 =====
+MOMENTS OF GAMMA TYPE 47
+in Remark 6.6. (But the error is exponentially small, and the estimates in
+Theorem 6.4 apply.)
+11. Further remarks
+Remark 11.1. Suppose that X is a positive random variable with ﬁnite
+moments (of all positive orders): EX n < ∞ for n ≥ 0. If X has moments
+of Gamma type, then ρ+ = ∞ and (1.1) gives, in particular, a formula
+for all integer moments EX n in terms of Gamma functions. However, the
+converse does not hold; even if (1.1) holds for every integer s ≥ 0, it does not
+necessarily hold for other s. An example is provided by Stieltjes’ original
+example of indeterminacy in the moment problem [32, §55]: Let, for λ ∈
+[−1, 1], Xλ have the density function a(1 +λ sin(x1/4)) exp(−x1/4) with the
+normalizing constant a = 1/24. Then, using sin( y) = ( eiy −e−iy)/2i and
+(A.7),
+EX n λ =a
+∫ ∞
+0
+xn( 1 +λ sin(x1/4) ) e−x1/4 dx
+= 4a
+∫ ∞
+0
+y4n+3( 1 +λ sin(y) ) e−y dy = 1 6 Γ(4n + 4),
+for any integer n ≥ 0 and any λ ∈ [−1, 1]; thus the variables Xλ have the
+same integer moments. For λ = 0, the same calculation applies to non-
+integer n as well, and shows that EX s 0 = 1 6 Γ(4s + 4), −1 < s <∞, so X0
+has moments of Gamma type. However, this formula cannot hold for any
+other λ (and s in an interval), by the uniqueness Corollary 2.3.
+Note that X0 d=Z 4, where Z has the Gamma distribution Γ(4), cf. Exam-
+ple 3.1. A similar example is provided by N 6 (or |N |α for any real number
+α> 4) with N ∈ N(0, 1), see [2]; indeed |N |α d= 2 α/2Z α/2 with Z ∈ Γ(1/2),
+see Examples 3.5 and 3.6, and cZ β with c > 0 and Z ∈ Γ(γ) is not de-
+termined by its (integer) moments for any γ > 0 and β > 2, see e.g. [14,
+Section 4.10], so it too provides a counter example. See also [31].
+Remark 11.2. Many of the examples in Section 3 are inﬁnitely divisible,
+for example the Gamma distribution Γ( α), Wα [5, p. 26], ~Pα and thus Pα
+[5, p. 26], Lα [25]. We do not know whether there are any interesting
+connections between moments of Gamma type and inﬁnite divis ibility.
+Remark 11.3. It is possible to consider, more generally, moments of the
+form (1.1) where aj,b j,a ′ k,b ′ k may be complex (and appearing in conjugate
+pairs to make the function real for real s). We have not pursued this exten-
+sion and do not know whether there are any interesting result s or examples
+for this class. A trivial example is the following.
+LetX have a two-point distribution with P(X =x1) = P(X =x2) = 1/2,
+where 0 <x 1 <x 2 < ∞. Then Y := logX too has a two-point distribution
+with P(Y = y1) = P(Y = y2) = 1 /2 where yj = log xj, j = 1, 2. Let
+===== PAGE 48 =====
+48 SV ANTE JANSON
+d := EY = (y1 +y2)/2 and β := (y2 −y1)/2π; thus y1,y 2 =d ±πβ. Then,
+using (A.6),
+EX s = EesY =esd cosh(πβs) = esd sin (π 2 +πβsi ) = πesd Γ ( 1 2 + iβs ) Γ ( 1 2 − iβs ).
+Appendix A. Some standard formulas
+For the readers’ (and our own) convenience we here collect so me well-
+known formulas for the Gamma function, see e.g. [1, Chapter 6 ]. Recall
+that Γ is a meromorphic function in the complex plane, with si mple poles
+at the non-negative integers 0 , −1, −2,... and no zeros, so 1 /Γ is an entire
+function.
+Γ(s) =
+∫ ∞
+0
+ts−1e−t dt, Res> 0; (A.1)
+Γ(z + 1) = zΓ(z); (A.2)
+Γ(2z) = π−1/222z−1Γ(z)Γ(z + 1 2 ); (A.3)
+Γ(3z) = (2π)−133z−1/2Γ(z)Γ(z + 1 3 )Γ(z + 2 3 ); (A.4)
+Γ(mz) = (2π)−(m−1)/2mmz−1/2
+m−1∏
+j=0
+Γ(z + j m ) (A.5)
+Γ(z)Γ(1 −z) = π sin(πz) ; (A.6) ∫ ∞
+0
+ts−1e−at dt =a−sΓ(s), Res> 0, Rea> 0; (A.7)
+∫ 1
+0
+ts−1(1 −t)u−1 dt = Γ(s)Γ(u) Γ(s +u), Res, Reu> 0; (A.8) ∫ ∞
+0
+ts−1(1 +t)−v dt = Γ(s)Γ(v −s) Γ(v) , Rev> Res> 0; (A.9)
+Equation (A.7) yields by Fubini–Tonelli a relation between the Laplace
+transform and negative moments for any positive random vari able X:
+∫ ∞
+0
+ts−1 Ee−tX dt = E
+∫ ∞
+0
+ts−1e−tX dt = Γ(s) EX −s, s> 0. (A.10)
+The residue Res −n(Γ) = ( −1)n/n! (an easy consequence of (A.2)). Thus,
+more generally, for any complex a ⁄= 0 and b,
+Resz=−(n+b)/a
+(
+Γ(az +b)
+)
+=a−1 (−1)n
+n! . (A.11)
+Stirling’s formula says that for all complex z in a sector | argz| < π−ε
+avoiding the negative real axis
+log Γ(z) = (z − 1 2 ) logz −z + log √ 2π +O ( |z|−1) , (A.12)
+===== PAGE 49 =====
+MOMENTS OF GAMMA TYPE 49
+where the logarithm log z is the principal value with imaginary part in
+(−π,π ). (Here, ε >0 is arbitrary, but the implicit constant in the O term
+depends on ε.) By diﬀerentiating (A.12) twice we ﬁnd, for | argz| < π−ε
+(e.g., for Re z >0),
+d
+dz
+(
+log Γ(z)
+)
+= logz +O
+(
+|z|−1) , (A.13)
+d2
+dz2
+(
+log Γ(z)
+)
+= 1 z +O ( |z|−2) . (A.14)
+(Note that also the error term may be diﬀerentiated since the f unctions
+are analytic in a larger sector and we may use Cauchy’s estima te for the
+derivative.)
+References
+[1] M. Abramowitz & I. A. Stegun, eds., Handbook of Mathematical Func-
+tions. Dover, New York, 1972.
+[2] C. Berg, The cube of a normal distribution is indetermina te. Ann.
+Probab. 16 (1988), no. 2, 910–913.
+[3] N. H. Bingham, C. M. Goldie & J. L. Teugels, Regular Variation. Cam-
+bridge Univ. Press, Cambridge, 1987.
+[4] R. Blumenfeld & B. B. Mandelbrot, L´ evy dusts, Mittag-Le ﬄer statis-
+tics, mass fractal lacunarity, and perceived dimension. Phys. Rev. E (3)
+56 (1997), no. 1, part A, 112–118.
+[5] L. Bondesson, Generalized gamma convolutions and related classes of
+distributions and densities. Lecture Notes in Statistics 76, Springer-
+Verlag, New York, 1992.
+[6] G. Doetsch, Handbuch der Laplace-transformation I , Birkh¨ auser, Basel,
+1950.
+[7] F. Eggenberger & G. P´ olya, ¨Uber die Statistik verketteter Vorg¨ ange.
+Zeitschrift Angew. Math. Mech. 3 (1923), 279–289.
+[8] W. Feller, Fluctuation theory of recurrent events. Trans. Amer. Math.
+Soc. 67 (1949), 98–119.
+[9] W. Feller, An Introduction to Probability Theory and its Applications,
+Volume II, 2nd ed., Wiley, New York, 1971.
+[10] P. Flajolet, P. Dumas & V. Puyhaubert, Some exactly solv able models
+of urn process theory. Proc. Fourth Colloquium on Mathematics and
+Computer Science Algorithms, Trees, Combinatorics and Proba bilities,
+Discrete Math. Theor. Comput. Sci. Proc. AG, 2006, 59–118.
+[11] P. Flajolet, X. Gourdon & P. Dumas, Mellin transforms an d asymp-
+totics: harmonic sums. Theor. Computer Science 144 (1995), 3–58.
+[12] P. Flajolet and R. Sedgewick, Analytic Combinatorics, Cambridge Univ.
+Press, Cambridge, UK, 2009.
+[13] R. L. Graham, D. E. Knuth & O. Patashnik, Concrete Mathematics .
+2nd ed., Addison–Wesley, Reading, Mass., 1994.
+[14] A. Gut, Probability: A Graduate Course . Springer, New York, 2005.
+===== PAGE 50 =====
+50 SV ANTE JANSON
+[15] S. Janson, Functional limit theorems for multitype bra nching processes
+and generalized P´ olya urns. Stochastic Process. Appl. 110 (2004), no.
+2, 177–245.
+[16] S. Janson, Limit theorems for triangular urn schemes. Probab. Theory
+Rel. Fields 134 (2005), 417–452.
+[17] S. Janson, Brownian excursion area, Wright’s constant s in graph enu-
+meration, and other Brownian areas. Probability Surveys 4 (2007), 80–
+145.
+[18] S. Janson & G. Louchard, Tail estimates for the Brownian excursion
+area and other Brownian areas. Electronic J. Probab. 12 (2007), no. 58,
+1600–1632.
+[19] S. Janson & N. Petersson, The integral of the supremum pr ocess of
+Brownian motion. J. Appl. Probab. 46 (2009), no. 2, 593–600.
+[20] N. N. Lebedev, Special Functions and their Applications . (Translated
+from Russian.) Dover, New York, 1972.
+[21] M. R. Leadbetter, G. Lindgren & H. Rootz´ en, Extremes and Related
+Properties of Random Sequences and Processes . Springer-Verlag, New
+York, 1983.
+[22] J. Marcinkiewicz, Sur les fonctions ind´ ependants III . Fund. Math. 31
+(1938), 86–102.
+[23] G. Mittag-Leﬄer, Sur la repr´ esentation analytique d’ une branche uni-
+forme d’une fonction monog` ene (cinqui` eme note).Acta Math. 29 (1905),
+no. 1, 101–181.
+[24] N. Petersson, The maximum displacement for linear prob ing hashing
+I. Tech. report 2008:8, Uppsala. In The Maximum Displacement for
+Linear Probing Hashing , Ph. D. thesis, Uppsala, 2009.
+[25] R. N. Pillai, On Mittag-Leﬄer functions and related dis tributions. Ann.
+Inst. Statist. Math. 42 (1990), no. 1, 157–161.
+[26] H. Pollard, The completely monotonic character of the M ittag-Leﬄer
+function Ea(−x). Bull. Amer. Math. Soc. 54 (1948), 1115–1116.
+[27] G. P´ olya, Sur quelques points de la th´ eorie des probabilit´ es.Ann. Inst.
+Poincar´ e1 (1931), 117–161.
+[28] P. Protter, Stochastic Integration and Diﬀerential Equations . 2nd ed.,
+Springer, Berlin, 2004.
+[29] V. Puyhaubert, Mod` eles d’urnes et ph´ enom` enes de seuils en combina-
+toire analytique. Ph. D. thesis, ´Ecole Polytechnique, Palaiseau, 2005.
+[30] D. Revuz & M. Yor, Continuous Martingales and Brownian Motion .
+3rd ed., Springer–Verlag, Berlin, 1999.
+[31] E. V. Slud, The moment problem for polynomial forms in no rmal ran-
+dom variables. Ann. Probab. 21 (1993), no. 4, 2200–2214.
+[32] T. J. Stieltjes, Recherches sur les fractions continue s. Ann. Fac. Sci.
+Toulouse Math. 8(J) (1894), 1–122; 9(A) (1895), 1–47. Reprinted in
+Oeuvres Compl` etes2, pp. 402–566, Noordhoﬀ, Groningen, 1918.
+===== PAGE 51 =====
+MOMENTS OF GAMMA TYPE 51
+Department of Mathematics, Uppsala University, PO Box 480, SE-751 06
+Uppsala, Sweden
+E-mail address : svante.janson@math.uu.se
+URL: http://www.math.uu.se/∼svante/

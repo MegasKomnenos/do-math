@@ -1,0 +1,17 @@
+2	{{4:e-integral}}, {{4:old-4-7}}
+2	{{10:old-8-6}}, {{10:old-8-8}}
+2	{{5:SR-implies-QR}}, {{5:old-5-4}}
+2	{{7:level-chain}}, {{7:old-6-10}}
+2	{{7:polar-W}}, {{7:qstar-implies-wlflat}}
+2	{{10:old-8-25}}, {{10:old-8-33}}
+2	{{10:old-8-15}}, {{10:reduction-na}}
+2	{{1:main-theorem}}, {{3:peak-asymptotics}}
+3	{{7:analytic-transfer}}, {{7:hermite-nu}}, {{7:vertical-nu}}
+3	{{7:X-cert}}, {{7:fourier-lemmas}}, {{7:old-6-12}}
+3	{{7:old-6-16}}, {{7:theorem-W}}, {{7:top-roots}}
+3	{{10:old-8-28}}, {{10:old-8-31}}, {{10:old-8-32}}
+4	{{2:old-2-15}}, {{2:old-2-16}}, {{2:old-2-20}}, {{2:old-2-21}}
+5	{{7:old-6-22}}, {{9:old-7-17}}, {{9:old-7-44}}, {{9:old-7-46}}, {{9:old-7-6}}
+7	{{5:old-5-28}}, {{5:old-5-31}}, {{5:old-5-33}}, {{6:cor-L}}, {{6:pair-rearrange}}, {{6:path-shift}}, {{6:prop-W}}
+12	{{8:closed-form-envelope}}, {{8:envelope-code-monotone}}, {{8:escape-y-monotone}}, {{8:old-6-23}}, {{8:old-6-28}}, {{8:old-6-29}}, {{8:old-6-30}}, {{8:old-6-31}}, {{8:old-6-32}}, {{8:reduction-J}}, {{8:table-lower-bound}}, {{8:table-tolerance}}
+38	{{4:old-4-8}}, {{4:old-4-9}}, {{5:band-inequality}}, {{5:old-5-10}}, {{5:old-5-11}}, {{5:old-5-13}}, {{5:old-5-15}}, {{5:old-5-18}}, {{5:old-5-1}}, {{5:old-5-21}}, {{5:old-5-2}}, {{5:old-5-30}}, {{5:old-5-34}}, {{5:old-5-38}}, {{5:old-5-5}}, {{5:old-5-7}}, {{5:old-5-8}}, {{5:right-part}}, {{5:witness-position-bound}}, {{6:D-bound}}, {{6:old-6-19}}, {{6:old-8-11}}, {{7:column-lemma}}, {{9:H-star-plus}}, {{9:head-sum-1}}, {{9:head-sum-2}}, {{9:old-7-22}}, {{9:old-7-23}}, {{9:old-7-25}}, {{9:old-7-26}}, {{9:old-7-27}}, {{9:old-7-28}}, {{9:old-7-30}}, {{9:old-7-31}}, {{9:old-7-32}}, {{9:old-7-33}}, {{9:old-7-34}}, {{9:old-7-45}}

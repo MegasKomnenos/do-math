@@ -1,0 +1,104 @@
+차이	$a_i$	장부=1,2,7	없음=	추가=3,5,8,11	keys=a_i | a_{i}
+차이	$b^{(2)}_m$	장부=2,9,10	없음=	추가=5	keys=b^{
+차이	$b^{T}_{t,\ell}$	장부=2,9	없음=9	추가=	keys=b^T_{t,\ell} | b^{T}_{t,\ell}
+차이	$d_i$	장부=1,2,7	없음=	추가=4,5,6,8,10,11	keys=d_i | d_{i}
+짧은 글자(손으로)	$f$	3, 8
+짧은 글자(손으로)	$g(x)$	2, 5, 6, 7, 8, 9, 10
+차이	$m_1(k)$	장부=9	없음=	추가=4	keys=m_1 | m_{1}
+차이	$m_0$	장부=10	없음=	추가=8,9	keys=m_0 | m_{0}
+차이	$r_0(n)$	장부=5	없음=	추가=8	keys=r_0 | r_{0}
+차이	$s_m(y)$	장부=1,2,3,5,6,7,8,9,10	없음=3,8	추가=	keys=s_{m} | s_m
+차이	$s^{\mathrm F}(k,\nu)$	장부=6,10	없음=	추가=4,7,8,9	keys=s^{\mathrm F} | \nu)
+차이	$s^{\mathrm{low}}_q$	장부=8	없음=	추가=10	keys=s^{\mathrm{low}}_q | s^{\mathrm{low}}_{q}
+차이	$s^{\mathrm W}_q(m,y)$	장부=10	없음=	추가=1,2,3,4,5,6,7,8,11	keys=s^{\mathrm W}_q | s^{\mathrm W}_{q} | y)
+차이	$t_0(y)$	장부=5	없음=	추가=2,3,4,6,7,8,9,10,11	keys=t_0 | t_{0}
+차이	$w_m$	장부=7,10	없음=	추가=11	keys=w_m | w_{m}
+차이	$x, \hat x$	장부=1,3,5,6,11	없음=3	추가=	keys=\hat x
+차이	$x_t(y)$	장부=2,5,6,9	없음=	추가=8	keys=x_t | x_{t}
+차이	$A^\sigma_\ell$	장부=2,7	없음=7	추가=	keys=A^\sigma_\ell
+차이	$A_\ell(x)$	장부=2,5,7,8,9	없음=5,7,9	추가=	keys=A_\ell
+차이	$A^{(t)}_N, A^\circ_N, A^\diamond_N$	장부=9	없음=	추가=2,5,6,7,10	keys=A^{ | A^\circ_{N} | A^\circ_N
+차이	$B_{n,\ell}$	장부=1,2,4,5,7,11	없음=1,4,5,7,11	추가=	keys=B_{n,\ell}
+차이	$D_k$	장부=6,9	없음=	추가=7	keys=D_{k} | D_k
+짧은 글자(손으로)	$F$	2, 5, 6, 9
+짧은 글자(손으로)	$G$	2, 3, 5, 6, 8, 9, 10
+차이	$H_k(\sigma), H_k(F)$	장부=2,5,6,7,8,9	없음=6	추가=	keys=H_k | H_{k} | H_k
+짧은 글자(손으로)	$L$	2, 3, 6, 7, 9, 10
+차이	$M(\alpha), M_n, M$	장부=1,2,3,4,5,6,7,8,9,10	없음=4,5,6,7,8,9,10	추가=	keys=M_n | M_{n}
+짧은 글자(손으로)	$M(F)$	2, 6, 9
+차이	$P_t(k)$	장부=2,5,6,9	없음=5,6	추가=	keys=P_t | P_{t}
+차이	$P^{\theta}_t(k)$	장부=9	없음=9	추가=	keys=P^{\theta}_{t} | P^{\theta}_t
+차이	$Q_\ell(x)$	장부=2,5,7	없음=5,7	추가=	keys=Q_\ell
+차이	$R_j$	장부=2,5,6	없음=	추가=8	keys=R_{j} | R_j
+차이	$T_\ell(x)$	장부=2,8,9	없음=9	추가=	keys=T_\ell
+짧은 글자(손으로)	$T(x)$	2, 4, 5, 7, 11
+짧은 글자(손으로)	$V(x)$	4, 5, 7
+차이	$X_n, X$	장부=3,8	없음=8	추가=	keys=X_{n} | X_n
+차이	$Z_k(\sigma), Z_k(F)$	장부=2,5,6,7,8,9	없음=6,9	추가=	keys=Z_{k} | Z_k | Z_{k}
+차이	$\beta_i$	장부=2,5,6	없음=2,5,6	추가=	keys=\beta_i | \beta_{i}
+차이	$\chi_m(j)$	장부=7,10	없음=10	추가=	keys=\chi_m | \chi_{m}
+차이	$\delta_t$	장부=2,6,7,9	없음=7	추가=	keys=\delta_t | \delta_{t}
+차이	$\Gamma^{\pm}$	장부=4,5	없음=4,5	추가=	keys=\Gamma^{\pm}
+차이	$\kappa_N$	장부=6,7,8	없음=8	추가=	keys=\kappa_N | \kappa_{N}
+차이	$\mu_n(k)$	장부=7,10	없음=10	추가=	keys=\mu_n | \mu_{n}
+차이	$\Omega(\xi), \Omega_q$	장부=8,9,11	없음=	추가=5,6,7	keys=\Omega | \Omega_q | \Omega_{q}
+차이	$\Phi, \Phi^{\mathrm{aux}}$	장부=4,5,7	없음=	추가=2,3,6,8,9	keys=\Phi | \Phi^{\mathrm{aux}}
+차이	$\pi^0_n(y)$	장부=2,5,6,8,9,10	없음=6,8,10	추가=	keys=\pi^0_{n} | \pi^0_n
+차이	$\pi_n(m)$	장부=2,3,5,6,7,8,9,10	없음=6,7,10	추가=	keys=\pi_n | \pi_{n}
+차이	$\Pi$	장부=2,5,7,10	없음=	추가=6	keys=\Pi
+차이	$\pi_n(t_1,t_2)$	장부=9	없음=	추가=2,3,5,8	keys=\pi_n | \pi_{n} | t_{2})
+차이	$\Psi(q)$	장부=2,6,8,9,10,11	없음=	추가=5,7	keys=\Psi
+차이	$\psi(y)$	장부=6,10	없음=	추가=2,3,4,5,7,9,11	keys=\psi
+차이	$\sigma, \sigma_i$	장부=2,4,5,7,8,11	없음=	추가=3,6,10	keys=\sigma | \sigma_i | \sigma_{i}
+차이	$\tau$	장부=2,5,7	없음=	추가=3,4,6,8	keys=\tau
+차이	$\theta_t(k)$	장부=2,6,8,9	없음=8	추가=	keys=\theta_t | \theta_{t}
+차이	$\vartheta, \vartheta_0$	장부=10	없음=	추가=2,3,4,5,6,7,8,11	keys=\vartheta | \vartheta_{0} | \vartheta_0
+차이	$\xi$	장부=8,9,10,11	없음=	추가=2,3,5,6,7	keys=\xi
+차이	$\zeta$	장부=1,8	없음=	추가=5	keys=\zeta
+차이	$\mathcal B_\ell(x)$	장부=2,8,9	없음=8,9	추가=	keys=\mathcal B_\ell
+차이	$\mathcal C_n$	장부=9	없음=	추가=6	keys=\mathcal C_{n} | \mathcal C_n
+차이	$\mathcal D(\beta)$	장부=4	없음=	추가=5,6,7,9	keys=\mathcal D
+차이	$\mathcal G_y(q), \mathcal G^y(q)$	장부=10	없음=	추가=7	keys=\mathcal G_{y} | \mathcal G_y | \mathcal G^y
+차이	$\mathcal J_1(k),\dots,\mathcal J_4(k)$	장부=9	없음=	추가=1,2,3,4,5,6,7,8,10,11	keys=\mathcal J_{1} | \mathcal J_1 | \dots
+차이	$\mathcal Y_k(n), \mathcal Y^{\mathrm{LP}}_k(n), \mathcal Y^\dagger_k(n)$	장부=9,11	없음=	추가=7	keys=\mathcal Y_k | \mathcal Y_{k} | \mathcal Y^{\mathrm{LP}}_k
+차이	$\mathcal Z$	장부=7,10	없음=	추가=5,6,11	keys=\mathcal Z
+차이	$\mathfrak a_n$	장부=5,6,7	없음=6	추가=	keys=\mathfrak a_{n} | \mathfrak a_n
+차이	$\mathfrak a^\circ_n$	장부=7	없음=7	추가=	keys=\mathfrak a^\circ_n | \mathfrak a^\circ_{n}
+차이	$\mathfrak a^\rho_m$	장부=7,11	없음=11	추가=	keys=\mathfrak a^\rho_m | \mathfrak a^\rho_{m}
+차이	$\mathfrak B_N, \mathfrak B^{\mathrm{low}}(k,\nu)$	장부=8	없음=	추가=4,6,7,9,10	keys=\mathfrak B_N | \mathfrak B_{N} | \mathfrak B^{\mathrm{low}}
+차이	$\mathfrak d_k, \bar{\mathfrak d}_k$	장부=9	없음=	추가=7	keys=\mathfrak d_{k} | \mathfrak d_k | \bar{\mathfrak d}_k
+차이	$\mathfrak g(\theta)$	장부=5	없음=	추가=4,6,7,8,9,10	keys=\mathfrak g
+차이	$\mathfrak l_m(t)$	장부=9	없음=	추가=5	keys=\mathfrak l_m | \mathfrak l_{m}
+차이	$\mathfrak m(n)$	장부=5,6,9,10	없음=	추가=4,7,8	keys=\mathfrak m
+차이	$\mathfrak P_k(n)$	장부=7	없음=	추가=11	keys=\mathfrak P_{k} | \mathfrak P_k
+차이	$\mathfrak Q(y,\xi)$	장부=10	없음=	추가=3,5,6,7,8,9	keys=\mathfrak Q | \xi)
+차이	$\mathfrak r_N$	장부=6,7,9,10	없음=7,10	추가=	keys=\mathfrak r_{N} | \mathfrak r_N
+차이	$\mathfrak v_k(Z,H)$	장부=2,7	없음=	추가=4,6,8	keys=\mathfrak v_k | \mathfrak v_{k} | H)
+차이	$\mathfrak z_m(d)$	장부=5,6	없음=6	추가=	keys=\mathfrak z_m | \mathfrak z_{m}
+차이	$\mathsf a_j$	장부=4,7	없음=7	추가=	keys=\mathsf a_{j} | \mathsf a_j
+차이	$\mathsf P, \mathsf P(n)$	장부=1,2,4,5,7,9,10,11	없음=	추가=3	keys=\mathsf P | \mathsf P
+차이	$\mathsf Q, \mathsf Q_L, \mathsf Q_R, \mathsf Q(n,\ell)$	장부=1,4,5	없음=	추가=2,3,6,7,9,10,11	keys=\mathsf Q | \mathsf Q_L | \mathsf Q_{L}
+차이	$\mathsf W, \mathsf W^\sharp$	장부=1,5,6,9,10	없음=	추가=7,11	keys=\mathsf W | \mathsf W^\sharp
+차이	$\mathrm{Bd}^{\mathrm T}(k,\nu)$	장부=10	없음=	추가=4,6,7,8,9	keys=\mathrm{Bd}^{\mathrm T} | \nu)
+차이	$\mathrm{Bor}(m)$	장부=2,4,5,6,7,8,9,10	없음=	추가=11	keys=\mathrm{Bor}
+차이	$\mathrm{Bor}^{*j}(m)$	장부=2,5,6,8,10	없음=6,8,10	추가=	keys=\mathrm{Bor}^{*j}
+차이	$\mathrm{Bor}_{>}(q)$	장부=6,8	없음=6	추가=9	keys=\mathrm{Bor}_{
+차이	$\mathrm{Bor}_{\le}(q)$	장부=6,8,9,11	없음=6,11	추가=	keys=\mathrm{Bor}_{\le}
+차이	$\mathrm{cl}^+_m, \mathrm{cl}^-_m$	장부=7,9,10	없음=9	추가=	keys=\mathrm{cl}^+_{m} | \mathrm{cl}^+_m | \mathrm{cl}^-_m
+차이	$\mathrm{DD}(m,y)$	장부=6,10	없음=	추가=1,2,3,4,5,7,8,11	keys=\mathrm{DD} | y)
+차이	$\mathrm{DDL}(k)$	장부=10	없음=	추가=11	keys=\mathrm{DDL}
+차이	$\mathrm{IH}(n,y)$	장부=5	없음=	추가=1,2,3,4,6,7,8,10,11	keys=\mathrm{IH} | y)
+차이	$\mathrm{inc}^{\pm}_q$	장부=10	없음=10	추가=	keys=\mathrm{inc}^{\pm}_q | \mathrm{inc}^{\pm}_{q}
+차이	$\mathrm{KD}_n$	장부=1,2,7,8,9,10	없음=7,10	추가=	keys=\mathrm{KD}_n | \mathrm{KD}_{n}
+차이	$\mathrm{Lc}(Y,q)$	장부=5	없음=	추가=2,4,6,7,8,9,10,11	keys=\mathrm{Lc} | q)
+차이	$\mathrm{nf}(n,d)$	장부=2,5	없음=	추가=6,7,9,10,11	keys=\mathrm{nf} | d)
+차이	$\mathrm{pos}_i$	장부=1,2,7	없음=7	추가=	keys=\mathrm{pos}_i | \mathrm{pos}_{i}
+차이	$\mathrm{rb}_m$	장부=2,3,5,6,9	없음=6	추가=	keys=\mathrm{rb}_m | \mathrm{rb}_{m}
+차이	$\mathrm{Stays}^{\mathrm{adm}}(k,\nu), \mathrm{Stays}^{\mathrm{adm}}_{\mathrm{new}}$	장부=10	없음=	추가=4,6,7,8,9	keys=\mathrm{Stays}^{\mathrm{adm}} | \nu) | \mathrm{Stays}^{\mathrm{adm}}_{\mathrm{new}}
+차이	$\mathrm{tilt}_q(q^\prime)$	장부=2,6,10	없음=6,10	추가=	keys=\mathrm{tilt}_{q} | \mathrm{tilt}_q
+차이	$\mathrm{top}, \mathrm{top}_\pi$	장부=5	없음=	추가=9,11	keys=\mathrm{top} | \mathrm{top}_\pi
+차이	$\Pr_n, \mathbb E_n$	장부=1,2,3,4,5,6,7,8,9,10	없음=1,5,7,8,9,10	추가=	keys=\Pr_n | \Pr_{n} | \mathbb E_n
+차이	$\Pr^{\sigma}_{n,k}, \mathbb E^{\sigma}_{n,k}$	장부=7,8,11	없음=8,11	추가=	keys=\Pr^{\sigma}_{n,k} | \mathbb E^{\sigma}_{n,k}
+짧은 글자(손으로)	$(\mathrm G)_d$	5
+짧은 글자(손으로)	$(\star)(n)$	1, 7, 10
+짧은 글자(손으로)	$(\mathrm P\Diamond)$	9

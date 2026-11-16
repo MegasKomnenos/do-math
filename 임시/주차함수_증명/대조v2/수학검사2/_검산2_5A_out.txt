@@ -1,0 +1,77 @@
+OK A_{n,l} 전수 = 정리 2.6 재귀 (n<=7)
+OK 정리 2.28 d_{n,k} = 2E - B (전수)
+OK 따름 2.29 2E2-B <= d (전수)
+OK green-connection (다): B_{n,l} = p_l Gamma_{n-l-1}(l;n), l+1<=n<=2l+1
+OK green-connection (라): b_{n,l} = sum_m A_{m,l}Gamma_{n-m-1}(l;n)
+OK green-connection (다) 첫째: Gamma^- = p_{k-1}Gamma_{n-k}(k-1;n) = B_{n,k-1}, k<=n<=2k-1
+OK source-rep (가) K_{n,k}(y) = phi_n + y sum phi_m Gamma (전수, n<=7, n<=2k+1)
+OK 따름 2.4: K(k+1)=A_{n,k}, K(k)=A_{n,k-1}
+OK K(k-1) = A_{n,k-2} + B_{n,k-1} (모든 n)
+OK K(k+1)-2K(k)+K(k-1) = 2E_{n,k}
+OK source-rep (나) 2E = sum phi sd(k), 2E+c = sum phi sd(k+1), c>=0 (전수)
+OK source-rep (다) Gamma^+ = K(k+2)-A_{n,k+1}; S_{n,k} = sum_d phi[Gamma^+ sd_d(k) - Gamma^- sd_d(k+1)] (전수)
+OK marked-riccati 네 용량 회복 (전수 n<=7)
+OK marked-riccati ODE J' = k xx J^2 + R J (k=2, x^5까지)
+OK marked-riccati ODE J' = k xx J^2 + R J (k=3, x^5까지)
+OK response-kernel (가) ODE (k=2,t=2, x^6까지)
+OK response-kernel (나) R_m(t)=int tau^{t-1}K_m, K_m(1)=a_m (k=2,t=2)
+OK fixed-size-response (나) 가중 합 = n! k a_{t-1} fs_{n-t}/t (k=2,t=2)
+OK response-kernel (가) ODE (k=2,t=3, x^6까지)
+OK response-kernel (나) R_m(t)=int tau^{t-1}K_m, K_m(1)=a_m (k=2,t=3)
+OK fixed-size-response (나) 가중 합 = n! k a_{t-1} fs_{n-t}/t (k=2,t=3)
+OK response-kernel (가) ODE (k=3,t=3, x^6까지)
+OK response-kernel (나) R_m(t)=int tau^{t-1}K_m, K_m(1)=a_m (k=3,t=3)
+OK fixed-size-response (나) 가중 합 = n! k a_{t-1} fs_{n-t}/t (k=3,t=3)
+OK response-kernel (가) ODE (k=3,t=4, x^6까지)
+OK response-kernel (나) R_m(t)=int tau^{t-1}K_m, K_m(1)=a_m (k=3,t=4)
+OK fixed-size-response (나) 가중 합 = n! k a_{t-1} fs_{n-t}/t (k=3,t=4)
+OK fixed-size-response (다) (n)_m fs_m = Gamma_m(k;n), k<=n<=2k, k<=7
+OK inverse-renewal fs'_d 재귀 = Gamma_d(y;n)/(n)_d (n<=11, y=3/2,2,5,-1)
+OK tw_2/tw_1=1/2 < tw_3/tw_2=4/3, 비 비감소
+OK [x^j]e^{-T} = -tw_j (j<=8)
+OK 생일 법칙: [rho^j]hb_d, hb_d(1), bd_d 확률분포·꼬리, tm_d(1) (d<=8)
+OK suff-cond (가) 계수비 R_j, R_{r-1}=r, R_{r-2}=(r+1)/2, rho=1 비; V_r(k-1)<=(1+1/r)^r V_{r-1}(k) 표본
+OK suff-cond (다) 두 부등식 표본 (3<=r<=8)
+OK suff-cond (라) 경계 이득 표본; p_k/p_{k-1} = (k+1)cr_k
+OK Robbins 1/(12m+1) < rb_m < 1/(12m) (m<=200)
+OK Ren(m)/(o cb_m) = e^{rb_m-rb_{2m}} in [1, 1+1/(12(2m-1))] (m<=200)
+OK (K1) Ren(m) >= o cb_m(1+1/(25(2m-1))) (m<=2000)
+OK W_m 정의 = (m+1)Ren(m+1)/Ren(m) - m
+OK 1/2-1/(2m) <= W_m <= 1/2-1/(24m)+11/(24m^2) <= 1/2+1/(2m)
+OK (K) 1/2-1/(24m) <= W_m <= 1/2-1/(44m) (m<=5000)
+OK [z^m]E = Ren(m)W_m in [o cb(1/2-1/(2m)), o cb(1/2+1/m)]; (K2) [o cb(1/2-1/(12(2m-1))), o cb/2]
+OK rb_{2m}-2rb_m in (-1/(6m), 0); cb_m in [(1-1/(6m))/sqrt(pi m), 1/sqrt(pi m)]
+OK cb_N sqrt N 증가, cb_N sqrt(N+1/2) 감소 (N<=300)
+OK (1-2/S^2)/sqrt pi <= cb_{r+3} sqrt r <= 1/sqrt pi (r=S^2, S=13..40)
+OK 1/(sqrt pi(1+5/(4r))) <= sqrt r cb_{r+2} <= 1/sqrt pi (r<=300)
+OK Ren(m)/cb_m 감소, 첫 값 2/e
+OK third-group (나): gamma/(gamma+1) <= Ren(g+1)/Ren(g) <= 1
+OK sign-sandwich (다) [z^U]w^i 네 경우 (i=-9..7, U<=8)
+OK kernel-bounds P_Theta 항등식
+OK kernel-bounds Q_Theta 항등식
+OK P_Theta, Q_Theta Bernstein 계수 [0,1/3] 모두 양
+OK Theta'(t) = (t - log(1+t))/t^2
+OK marked-recursion (가): Delta^iota Ch_j(r) = [z^{r+iota}]Z^{(iota)}_j (j<=3, r<=6, iota=2,3)
+OK Z^{(3)}_2 = z(1+z)C^2 + z^2 C E
+OK [z^0]E = 1/e, [z^m]E = (m+1)Ren(m+1) - m Ren(m)
+OK marked-recursion (나) Y_j, marked-chain-rec (나) O_j = 직접 합의 둘째 차분 (j<=3, r<=5)
+OK marked-chain-rec (가) N 분해 (j=3 기호)
+OK marked-recursion (나) L 분해 (j=3 기호)
+OK marked-chain-rec (가) j=1: N = 35/8(g-1)^2-(g-1)/12
+OK weight-envelope (가) lc_i(d): 급수 합 = log nf, lc_1, lc_2, 0<=lc_i<=5d^i/(2i)
+OK third-group (마) 양쪽 부등식 (n,r)=(60,5),(90,7),(200,9), j<=3; (라) j=1 식
+OK last-gap 상계 (1+6rq/(5(1-rq)))
+OK parity-tail (가) 양쪽 부등식; j=1 식
+OK weight-envelope (다) 첫째·둘째 보정 적용 부등식
+OK omitted-tail (다) Tl_j, sign-sandwich (마) dc_j 꼬리 상계
+OK weight-envelope (나): [n^0]=1, [n^-1]=L, [n^-2]=N, 0<=[n^-i]W<=binom(j+1/2+i,i)r^i (기호 보기)
+OK third-group (가) nabla^3, nabla^2 식 (v=3..8)
+OK third-group (다) nf 비 = e(1-1/r)^{r-3}, 1<= 비 <=1+6/r
+OK last-gap: v Ren(v-1)/nabla^3 iota° <= v(2v-5)/(5v-12) <= 2v/5
+OK third-group (나): Ren(v-2) <= nabla^3 iota° <= 3Ren(v-2)
+OK sign-sandwich (나) o^j Lp^-_j <= Z^{(3)}_j <= o^j Lp^+_j (j=2,3,4, z^14까지), Lp^-의 z계수 비음
+OK [z^m]o(1/2 w^-1 - 3/4 + w - w^2/4): m=1 -> 0, m>=2 -> o cb(1/2-1/(2m-1)); [z^m]o(1/2w^-1+5/2-2w) = o cb(1/2+2/(2m-1))
+OK D.exact-n20000 (ㄹ) 미달 수 재귀 A^c_{n,k-1} (k<=8, k+1<=n<=2k+1)
+OK D.c50 Y^{(k)}, Z^{(k)} 재귀: Z = b e^{-n}/n!, Y = hB(n+1)s_n (k<=6, n<=2k+1)
+OK pi_n(s) = C(n,s)s^{s-1}p_{n-s}/p_n = Bor(n+1-s)hB(s)/hB(n+1)
+ALL OK

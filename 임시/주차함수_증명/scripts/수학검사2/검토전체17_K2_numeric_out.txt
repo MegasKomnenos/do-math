@@ -1,0 +1,43 @@
+tail: Pr(X>x) ~ C x^{-3/2}, C from product rep = 0.797884560803 ; sqrt(2/pi) = 0.797884560803
+density const 1.5*C = 1.1968268412 ; 3/sqrt(2pi) = 1.1968268412
+Legendre check: 0.0
+Mellin at 0.7: formula 1.62533807845 ; direct 1.62533803482
+(3/4)^{3/2} = 0.64951905 ; 2^{-3}3^{3/2} = 0.649519052838329
+a0 = 1.287899317 (1.287899<a0<1.2879: True) ; a1 = 0.9388929401 (0.938892<a1<0.939: True)
+Cor (na) rational = 495594511/240250000 ; equals 495594511/240250000: True ; >2: True ; float 2.06283
+Cor (da) value with upper bounds = 1.6809196 (>=1.6809: True); k^{-1/3}=0.046415888
+assembly k>=10000: 5.642*1.6809*0.39893-0.0163-3.554 = 0.21300763
+assembly k>=30000: 11/2*39/100*2-7/2 = 0.79
+46sqrt2-12 = 53.053824 ; minus 5000/173 and 0.02 = 24.13209 (>24: True)
+46sqrt2-12-54.6828 = -1.6289761 (>-1.63: True)
+J bound k>=30000: 0.451*3*2.51+0.056+0.01 = 3.46203 ; 3sqrt(2pi)=7.5198848 ; sqrt(2pi)=2.5066283
+J bound k>=10000: 0.4503*3*2.50663+1675.2/10000 = 3.5537265 (<3.554: True)
+Bn bound sqrt2/pi*e^{1/30000} = 0.45017316 ; e^{1/10000} version = 0.45020318
+4sqrt2(1-26/10000) = 5.6421464 ; (1-26/30000) = 5.6519516
+Bor(k)k^{3/2} lower: (2pi)^{-1/2}(1-1/120000) = 0.39893896 ; (2pi)^{-1/2}e^{-1/(12*30000)} = 0.39894117
+x bound k/(3k-1)^2 at k=10000: 1.1111852e-5
+y_k: 255/131072 vs 1/520: 0.0019454956 vs 0.0019230769
+k^5 e^{-k/520} at k=30000: 0.00213873
+130(k/256)^6 e^{-k/512} at k=30000: 1.20306e-11
+g series nu=0 theta=0: c0=4 c1=-26 (pred -26) c2=506 (pred 506)
+g series nu=0 theta=1: c0=4 c1=-34 (pred -34) c2=686 (pred 686)
+g series nu=0 theta=1/2: c0=4 c1=-30 (pred -30) c2=593 (pred 593)
+g series nu=-1 theta=0: c0=4 c1=-22 (pred -22) c2=414 (pred 414)
+g series nu=-1 theta=1: c0=4 c1=-30 (pred -30) c2=578 (pred 578)
+g series nu=-1 theta=1/2: c0=4 c1=-26 (pred -26) c2=493 (pred 493)
+R coefficients x^0..x^3: [0, 0, 0, 0]
+R x^4 coefficient at gamma=1/3: 2729376
+ups'''' = -120/gamma**7 (text -120 g^-7)
+C1''' = 0 (text 192g^-8-60g^-7)
+C2'' - text = 0
+C3' - text = 0
+m1,m2,m3 differences from text: 0 0 0
+d/diota[iota log ups + (1-ups)^2/2] - log ups = 0
+d/diota[log ups - log gamma/2] - C1/ups = 0
+eta antiderivative check: (phi*sqrt(-1/(phi - 1))*(1 - phi)**(3/2) + phi + sqrt(-1/(phi - 1))*(1 - phi)**(5/2) - 1)/(sqrt(phi)*(1 - phi)**(5/2))
+nu=0: P expanded (k^2,k^1,k^0 coeffs): [0, -20, 2*(50*theta + 227)]
+nu=0: kP+5y^2th k^2,k coeffs: [0, 4*(5*theta + 81)] ; 100kP+499y^2th k^2 coeff: -4
+nu=0: M4/M0 center series in 1/k: 35*kappa**2 + 2136*kappa**3 + O(kappa**4)
+nu=-1: P expanded (k^2,k^1,k^0 coeffs): [0, -20, 2*(50*theta + 207)]
+nu=-1: kP+5y^2th k^2,k coeffs: [0, 4*(5*theta + 76)] ; 100kP+499y^2th k^2 coeff: -4
+nu=-1: M4/M0 center series in 1/k: 35*kappa**2 + 2935*kappa**3/2 + O(kappa**4)

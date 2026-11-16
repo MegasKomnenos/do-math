@@ -1,0 +1,100 @@
+11.2 행 45 / D 항목 45 / 표에 없는 항목 [] / 항목 없는 행 []
+
+[64행] D:M-natural-integrals (장v2\부록D_장10.md) OK
+
+[65행] D:four-families (장v2\부록D_장10.md) OK
+
+[21행] D:fiber-enumeration (장v2\부록D_장2.md) OK
+
+[22행] D:fiber-nonunimodal-bound (장v2\부록D_장2.md) OK
+
+[23행] D:logconcavity-failure-n80 (장v2\부록D_장3.md) OK
+
+[24행] D:cumulative-logconcavity (장v2\부록D_장3.md) OK
+
+[25행] D:central-gap-integer (장v2\부록D_장4.md) OK
+
+[26행] D:central-gap-rational-audit (장v2\부록D_장4.md) <<<
+    (가) 라벨 다름: 표 [('따름정리', '4:gauss-coeff-numeric'), ('보조정리', '4:gauss-coeff'), ('보조정리', '4:gauss-contraction'), ('보조정리', '4:two-corrections'), ('정리', '4:old-4-5')] / D 머리 [('따름정리', '4:gauss-coeff-numeric'), ('보조정리', '4:gauss-contraction'), ('정리', '4:old-4-5')]
+
+[27행] D:crossing-small-n (장v2\부록D_장4.md) OK
+
+[28행] D:QL-small-n (장v2\부록D_장4.md) OK
+
+[29행] D:exact-n20000 (장v2\부록D_장5A.md) OK
+
+[30행] D:c50 (장v2\부록D_장5A.md) OK
+
+[31행] D:newton-m170 (장v2\부록D_장5A.md) OK
+
+[32행] D:tail-T1-partAB (장v2\부록D_장5A.md) OK
+
+[33행] D:bernstein-signs (장v2\부록D_장5A.md) OK
+
+[34행] D:band-A-certification (장v2\부록D_장5A.md) OK
+
+[35행] D:critical-window-rig (장v2\부록D_장5A.md) <<<
+    (라) 문장이 D 줄에 없음: 이 글을 쓰며 위의 알고리즘을 그대로 구현한 하나의 코드로 $44$개 상자를 모두 다시 돌렸다(작업자 $3$개; 상자별 소요 시간의 합 $19.4$시간, 벽시계 $6$시간 $51$분).
+    (라) 문장이 D 줄에 없음: 모든 셀의 여유가 양수이고 최솟값은 $0.001827$(A00, $\hat x\in[9.8,10]$)이며, 상자별 최소 여유는 기록의 인증서가 저장한 값보다 $11$개 상자에서 $6.5$–$8.3\times10^{-6}$ 작고 나머지 $33$개 상자에서 $4.0\times10^{-5}$–$1.29\times10^{-3}$ 크다.
+
+[36행] D:window-mass-constant (장v2\부록D_장5B.md) OK
+
+[37행] D:zeta-constants (장v2\부록D_장5B.md) OK
+
+[38행] D:band-check (장v2\부록D_장5B.md) OK
+
+[39행] D:induction-rows (장v2\부록D_장5B.md) OK
+
+[40행] D:lemma-H-interval (장v2\부록D_장5B.md) OK
+
+[41행] D:lemma-V-coefficients (장v2\부록D_장5B.md) OK
+
+[42행] D:theorem-U-constant (장v2\부록D_장6.md) OK
+
+[43행] D:theorem-D-base (장v2\부록D_장6.md) OK
+
+[44행] D:prop-W-thirteen (장v2\부록D_장6.md) OK
+
+[45행] D:tilt-sum-small-k (장v2\부록D_장6.md) OK
+
+[46행] D:column-certification-k500 (장v2\부록D_장7A.md) <<<
+    (라) 문장이 D 줄에 없음: 기록의 검토는 세 재귀와 분할 정복을 전혀 쓰지 않고 마지막 차 재귀(정리 {{2:old-2-6}})를 $\mathfrak x$로 척도화한 $n\mathfrak e_n=\mathfrak x\sum_{j=0}^{n-1}\min(j+1,y)\mathfrak e_j\mathfrak e_{n-1-j}$를 160비트 정수 구간으로 직접 계산하는 별도 프로그램으로 $k=121,128,140,160$(기록 작성자의 반지름과 범위 그대로)과 $k=161$을 다시 인증했고 모두 통과했다.
+
+[47행] D:seed-certificates-k120 (장v2\부록D_장7A.md) OK
+
+[48행] D:self-consistent-constants (장v2\부록D_장7A.md) OK
+
+[49행] D:xcert-partAB (장v2\부록D_장7A.md) OK
+
+[50행] D:polar-blocks-488 (장v2\부록D_장7A.md) OK
+
+[51행] D:band102-integer (장v2\부록D_장7B.md) OK
+
+[52행] D:moment-certification (장v2\부록D_장7B.md) <<<
+    (나) 등급 다름: 표 ['방향 반올림 구간', '정확 정수·유리수'] / D 첫 문장 ['방향 반올림 구간'] ⟨(ㄱ) 방향 반올림 구간(binary64 끝점 구간; 덧셈·곱셈·나눗셈·융합 곱셈-덧셈의 정확한 반올림만 가정하고, 음이 아닌 $m$개 항의 합은 덧셈 순서·묶음·융합 여부와 무관하게 참값의 $(1\pm\mathsf u)^{m+1}$배 안에 든다는 한계로 행 $n$에서 $m=6n+3$으로 넓히며, 언더플로는 합마다 절대 $2m\cdot2^{-1074}$로 ⟩
+
+[53행] D:column-certificates-841-2000 (장v2\부록D_장7B.md) <<<
+    (가) 라벨 다름: 표 [('따름정리', '7:qstar-implies-wlflat'), ('정리', '7:theorem-C-moment'), ('정리', '7:theorem-G-prime')] / D 머리 [('따름정리', '7:qstar-implies-wlflat'), ('정리', '7:theorem-C-moment')]
+    (머리) 7:theorem-G-prime 머리에 계산 표지 없음:  (열별 갱신 인증서; 기록 [rb7effe0]의 정리 G′) [증명됨; rb7effe0].
+
+[54행] D:Q-fin-1130 (장v2\부록D_장7B.md) OK
+
+[55행] D:window-mass-env (장v2\부록D_장8.md) OK
+
+[56행] D:bprime-boxes (장v2\부록D_장8.md) OK
+
+[57행] D:band-boxes (장v2\부록D_장8.md) OK
+
+[58행] D:stored-table-check (장v2\부록D_장8.md) OK
+
+[59행] D:m1-column-reading (장v2\부록D_장9.md) OK
+
+[60행] D:H-star-plus-interval (장v2\부록D_장9.md) OK
+
+[61행] D:AR-integrals (장v2\부록D_장9.md) OK
+
+[62행] D:band-LP (장v2\부록D_장9.md) OK
+
+[63행] D:pair-one-variable (장v2\부록D_장9.md) OK
+
+문제 있는 행: 5

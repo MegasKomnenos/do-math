@@ -1,0 +1,3 @@
+Dawson check D(1)= 0.7247784590070752 (ref 0.7340...? for this normalization sqrt2*dawsn(1/sqrt2)= see below)
+int F0 = -3.0110074570428105e-09 (claimed 0); scale of |F0| integral: 1.0454744974882637
+int F1 = 53.053823859661975 claimed 46sqrt2-12 = 53.05382386916237

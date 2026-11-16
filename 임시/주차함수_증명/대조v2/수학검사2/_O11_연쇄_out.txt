@@ -1,0 +1,4 @@
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체9_O11_연쇄검사.py", line 58
+    print("
+          ^
+SyntaxError: unterminated string literal (detected at line 58)

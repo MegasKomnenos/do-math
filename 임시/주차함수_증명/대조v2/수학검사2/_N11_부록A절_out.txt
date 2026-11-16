@@ -1,0 +1,307 @@
+부록 A 기호 행 수: 306
+$n$ | 주장: 1.1 | 첫 출현: [('n', ('장1', '1.1', 7))] 
+$m$ | 주장: 1.5 | 첫 출현: [('m', ('장1', '1.1', 9))]  !! 절 다름
+$t$ | 주장: 2.4 | 첫 출현: [('t', ('장1', '1.1', 9))]  !! 절 다름
+$N:=n-k$ | 주장: 1.5 | 첫 출현: [('N', ('장1', '1.4', 143))]  !! 절 다름
+$k$ | 주장: 1.5 | 첫 출현: [('k', ('장1', '1.1', 9))]  !! 절 다름
+$\ell=k-1$ | 주장: 1.3 | 첫 출현: [('\\ell', ('장1', '1.3', 45))] 
+$y$ | 주장: 2.6 | 첫 출현: [('y', ('장1', '1.1', 15))]  !! 절 다름
+$Y$ | 주장: 2.6 | 첫 출현: [('Y', ('장1', '1.4', 168))]  !! 절 다름
+$i$, $j$ | 주장: 1.1 | 첫 출현: [('i', ('장1', '1.1', 7)), ('j', ('장1', '1.1', 17))] 
+$u$, $v$ | 주장: 2.4 | 첫 출현: [('u', ('장1', '1.1', 9)), ('v', ('장1', '1.3', 87))]  !! 절 다름
+$r:=n-\ell-1$ | 주장: 1.5 | 첫 출현: [('r', ('장1', '1.1', 9))]  !! 절 다름
+$\nu:=n-2k$ | 주장: 1.5 | 첫 출현: [('\\nu', ('장1', '1.4', 137))]  !! 절 다름
+$d$ | 주장: 1.5 | 첫 출현: [('d', ('장1', '1.1', 9))]  !! 절 다름
+$q$ | 주장: 1.5 | 첫 출현: [('q', ('장1', '1.1', 15))]  !! 절 다름
+$a_i$ | 주장: 1.1 | 첫 출현: [('a_i', ('장1', '1.1', 7))] 
+$p_n$ | 주장: 1.1 | 첫 출현: [('p_n', ('장1', '1.1', 29))] 
+$\alpha$ | 주장: 1.1 | 첫 출현: [('\\alpha', ('장1', '1.1', 9))] 
+$\mathrm{PF}_n$ | 주장: 1.1 | 첫 출현: [('\\mathrm{PF}_n', ('장1', '1.1', 9))] 
+$d_i$ | 주장: 1.2 | 첫 출현: [('d_i', ('장1', '1.2', 33))] 
+$M(\alpha), M_n, M$ | 주장: 1.2 | 첫 출현: [('M(\\alpha), M_n, M', None)]  !! 못 찾음
+$\mathrm{pos}_i$ | 주장: 1.2 | 첫 출현: [('\\mathrm{pos}_i', ('장1', '1.2', 33))] 
+$b_{n,\ell}$ | 주장: 1.3 | 첫 출현: [('b_{n,\\ell}', ('장1', '1.3', 47))] 
+$\ell^\ast$ | 주장: 1.3 | 첫 출현: [('\\ell^\\ast', ('장1', '1.3', 75))] 
+$A_{n,\ell}$ | 주장: 1.3 | 첫 출현: [('A_{n,\\ell}', ('장1', '1.3', 48))] 
+$\mathsf P, \mathsf P(n)$ | 주장: 1.3, 4.1 | 첫 출현: [('\\mathsf P, \\mathsf P(n)', None)]  !! 못 찾음
+$d_{n,k}$ | 주장: 1.5 | 첫 출현: [('d_{n,k}', ('장1', '1.4', 113))]  !! 절 다름
+$k_n$ | 주장: 1.5 | 첫 출현: [('k_n', ('장1', '1.4', 99))]  !! 절 다름
+$x, \hat x$ | 주장: 1.5 | 첫 출현: [('x, \\hat x', None)]  !! 못 찾음
+$\lambda$ | 주장: 1.5 | 첫 출현: [('\\lambda', ('장1', '1.5', 220))] 
+$\zeta$ | 주장: 1.5 | 첫 출현: [('\\zeta', ('장1', '1.5', 220))] 
+$h_i$ | 주장: 2.1 | 첫 출현: [('h_i', ('장2', '2.1', 23))] 
+$A^\sigma_\ell$ | 주장: 2.1 | 첫 출현: [('A^\\sigma_\\ell', ('장2', '2.1', 31))] 
+$\sigma, \sigma_i$ | 주장: 2.1 | 첫 출현: [('\\sigma, \\sigma_i', None)]  !! 못 찾음
+$\mathfrak S_n$ | 주장: 2.1 | 첫 출현: [('\\mathfrak S_n', ('장2', '2.1', 15))] 
+$b^\sigma_\ell$ | 주장: 2.2 | 첫 출현: [('b^\\sigma_\\ell', ('장2', '2.2', 56))] 
+$A_\ell(x)$ | 주장: 2.3 | 첫 출현: [('A_\\ell(x)', ('장2', '2.3', 109))] 
+$Q_\ell(x)$ | 주장: 2.3 | 첫 출현: [('Q_\\ell(x)', ('장2', '2.3', 113))] 
+$t_v$ | 주장: 2.4 | 첫 출현: [('t_v', ('장2', '2.4', 127))] 
+$F$ | 주장: 2.4 | 첫 출현: [('F', ('장1', '1.1', 9))]  !! 절 다름
+$I_v$ | 주장: 2.4 | 첫 출현: [('I_v', ('장2', '2.4', 127))] 
+$M(F)$ | 주장: 2.4 | 첫 출현: [('M(F)', ('장2', '2.4', 127))] 
+$T_\ell(x)$ | 주장: 2.4 | 첫 출현: [('T_\\ell(x)', ('장2', '2.4', 133))] 
+$U_v$ | 주장: 2.4 | 첫 출현: [('U_v', ('장2', '2.4', 160))] 
+$\tau$ | 주장: 2.4 | 첫 출현: [('\\tau', ('장2', '2.4', 127))] 
+$\mathcal N_\ell(t)$ | 주장: 2.4 | 첫 출현: [('\\mathcal N_\\ell(t)', ('장2', '2.4', 143))] 
+$G$ | 주장: 2.5 | 첫 출현: [('G', ('장2', '2.5', 188))] 
+$H_k(\sigma), H_k(F)$ | 주장: 2.5 | 첫 출현: [('H_k(\\sigma), H_k(F)', None)]  !! 못 찾음
+$L$ | 주장: 2.5 | 첫 출현: [('L', ('장1', '1.4', 105))]  !! 절 다름
+$S_1>S_2>\cdots$ | 주장: 2.5 | 첫 출현: [('S_1>S_2>\\cdots', ('장2', '2.5', 267))] 
+$T(x)$ | 주장: 2.5 | 첫 출현: [('T(x)', ('장2', '2.5', 176))] 
+$Z_k(\sigma), Z_k(F)$ | 주장: 2.5 | 첫 출현: [('Z_k(\\sigma), Z_k(F)', None)]  !! 못 찾음
+$\pi^0_n(y)$ | 주장: 2.5 | 첫 출현: [('\\pi^0_n(y)', ('장2', '2.5', 196))] 
+$\pi_n(m)$ | 주장: 2.5 | 첫 출현: [('\\pi_n(m)', ('장2', '2.5', 186))] 
+$\mathfrak v_k(Z,H)$ | 주장: 2.5 | 첫 출현: [('\\mathfrak v_k(Z,H)', ('장2', '2.5', 229))] 
+$\mathrm{Bor}(m)$ | 주장: 2.5 | 첫 출현: [('\\mathrm{Bor}(m)', ('장2', '2.5', 174))] 
+$\mathrm{Bor}^{*j}(m)$ | 주장: 2.5 | 첫 출현: [('\\mathrm{Bor}^{*j}(m)', ('장2', '2.5', 178))] 
+$\Pr_n, \mathbb E_n$ | 주장: 2.5 | 첫 출현: [('\\Pr_n, \\mathbb E_n', None)]  !! 못 찾음
+$c_m(Y)$ | 주장: 2.6 | 첫 출현: [('c_m(Y)', ('장1', '1.5', 188))]  !! 절 다름
+$g(x)$ | 주장: 2.6 | 첫 출현: [('g(x)', ('장2', '2.6', 348))] 
+$s^{T}_t(y)$ | 주장: 2.6 | 첫 출현: [('s^{T}_t(y)', None)]  !! 못 찾음
+$s_m(y)$ | 주장: 2.6 | 첫 출현: [('s_m(y)', ('장1', '1.5', 187))]  !! 절 다름
+$\Pr_{\mathrm B}$ | 주장: 2.6 | 첫 출현: [('\\Pr_{\\mathrm B}', ('장2', '2.6', 308))] 
+$e_n$ | 주장: 2.7 | 첫 출현: [('e_n', ('장1', '1.4', 119))]  !! 절 다름
+$B_{n,\ell}$ | 주장: 2.7 | 첫 출현: [('B_{n,\\ell}', ('장2', '2.7', 384))] 
+$E_{n,k}, E2_{n,k}$ | 주장: 2.7 | 첫 출현: [('E_{n,k}, E2_{n,k}', None)]  !! 못 찾음
+$J_n(z)$ | 주장: 2.7 | 첫 출현: [('J_n(z)', ('장2', '2.7', 417))] 
+$M^{\#}(\alpha)$ | 주장: 2.7 | 첫 출현: [('M^{\\#}(\\alpha)', ('장2', '2.7', 384))] 
+$\Xi_{n,k}$ | 주장: 2.7 | 첫 출현: [('\\Xi_{n,k}', ('장2', '2.7', 425))] 
+$\mathcal K_{n,k}(y)$ | 주장: 2.7 | 첫 출현: [('\\mathcal K_{n,k}(y)', ('장2', '2.7', 380))] 
+$\mathrm{Gr}(x)$ | 주장: 2.7 | 첫 출현: [('\\mathrm{Gr}(x)', ('장2', '2.7', 433))] 
+$\mathcal G_{z,i,n}$ | 주장: 2.7 | 첫 출현: [('\\mathcal G_{z,i,n}', ('장2', '2.7', 435))] 
+$\mathcal P_m(j)$ | 주장: 2.8 | 첫 출현: [('\\mathcal P_m(j)', ('장2', '2.8', 491))] 
+$x_t(y)$ | 주장: 2.9 | 첫 출현: [('x_t(y)', ('장2', '2.9', 573))] 
+$M^{T}_t$ | 주장: 2.9 | 첫 출현: [('M^{T}_t', None)]  !! 못 찾음
+$P_t(k)$ | 주장: 2.9 | 첫 출현: [('P_t(k)', ('장2', '2.9', 669))] 
+$\Pi$ | 주장: 2.9 | 첫 출현: [('\\Pi', ('장2', '2.9', 579))] 
+$\Psi(q)$ | 주장: 2.9 | 첫 출현: [('\\Psi(q)', ('장2', '2.9', 605))] 
+$\theta_t(k)$ | 주장: 2.9 | 첫 출현: [('\\theta_t(k)', ('장2', '2.9', 597))] 
+$\mathsf z_{1/2}, \mathsf z_{-1/2}, \mathsf z_{3/2}$ | 주장: 2.9 | 첫 출현: [('\\mathsf z_{1/2}, \\mathsf z_{-1/2}, \\mathsf z_{3/2}', None)]  !! 못 찾음
+$\mathrm{rb}_m$ | 주장: 2.9 | 첫 출현: [('\\mathrm{rb}_m', ('장2', '2.9', 629))] 
+$\mathrm{Ren}(j)$ | 주장: 2.9 | 첫 출현: [('\\mathrm{Ren}(j)', ('장2', '2.9', 605))] 
+$\Pr^{T}_t, \mathbb E^{T}_t$ | 주장: 2.9 | 첫 출현: [('\\Pr^{T}_t, \\mathbb E^{T}_t', None)]  !! 못 찾음
+$b^{(2)}_m$ | 주장: 2.10 | 첫 출현: [('b^{(2)}_m', ('장2', '2.10', 715))] 
+$b^{T}_{t,\ell}$ | 주장: 2.10 | 첫 출현: [('b^{T}_{t,\\ell}', None)]  !! 못 찾음
+$c^{(2)}_m$ | 주장: 2.10 | 첫 출현: [('c^{(2)}_m', ('장2', '2.10', 715))] 
+$\delta_t$ | 주장: 2.10 | 첫 출현: [('\\delta_t', ('장2', '2.10', 711))] 
+$\Theta_n$ | 주장: 2.10 | 첫 출현: [('\\Theta_n', ('장1', '1.4', 123))]  !! 절 다름
+$\mathcal B_\ell(x)$ | 주장: 2.10 | 첫 출현: [('\\mathcal B_\\ell(x)', ('장2', '2.10', 699))] 
+$\mathrm{BV}_n$ | 주장: 2.10 | 첫 출현: [('\\mathrm{BV}_n', ('장1', '1.4', 123))]  !! 절 다름
+$\mathrm{FL}_n$ | 주장: 2.10 | 첫 출현: [('\\mathrm{FL}_n', ('장1', '1.4', 123))]  !! 절 다름
+$\mathrm{KD}_n$ | 주장: 2.10($\mathrm{KD}_n$), 7.7($\mathrm{KD}^\prime_n$) | 첫 출현: [('\\mathrm{KD}_n', ('장1', '1.4', 123))]  !! 절 다름
+$\mathrm{PAIR}_n$ | 주장: 2.10 | 첫 출현: [('\\mathrm{PAIR}_n', ('장1', '1.4', 123))]  !! 절 다름
+$R_j$ | 주장: 2.11 | 첫 출현: [('R_j', ('장2', '2.11', 754))] 
+$\beta_i$ | 주장: 2.11 | 첫 출현: [('\\beta_i', None)]  !! 못 찾음
+$\mathcal H_{\mathrm B}(q)$ | 주장: 2.11 | 첫 출현: [('\\mathcal H_{\\mathrm B}(q)', ('장2', '2.11', 756))] 
+$\mathrm{tilt}_q(q^\prime)$ | 주장: 2.11 | 첫 출현: [('\\mathrm{tilt}_q(q^\\prime)', None)]  !! 못 찾음
+$\Pr^y(q\to q^\prime)$ | 주장: 2.11 | 첫 출현: [('\\Pr^y(q\\to q^\\prime)', None)]  !! 못 찾음
+$\Pr^y, \mathbb E^y$ | 주장: 2.11 | 첫 출현: [('\\Pr^y, \\mathbb E^y', None)]  !! 못 찾음
+$W_n(\gamma)$ | 주장: 2.12 | 첫 출현: [('W_n(\\gamma)', ('장2', '2.12', 835))] 
+$\mathrm{nf}(n,d)$ | 주장: 2.12 | 첫 출현: [('\\mathrm{nf}(n,d)', ('장2', '2.12', 875))] 
+$f$ | 주장: 3.1 | 첫 출현: [('f', ('장1', '1.1', 9))]  !! 절 다름
+$X_n, X$ | 주장: 3.1 | 첫 출현: [('X_n, X', None)]  !! 못 찾음
+$x_\ast$ | 주장: 3.2 | 첫 출현: [('x_\\ast', ('장1', '1.4', 111))]  !! 절 다름
+$\ell_n$ | 주장: 3.4 | 첫 출현: [('\\ell_n', ('장3', '3.4', 265))] 
+$\mathsf{LH}(n), \mathsf{LH}^+(n)$ | 주장: 4.1 | 첫 출현: [('\\mathsf{LH}(n), \\mathsf{LH}^+(n)', None)]  !! 못 찾음
+$\mathsf P_L, \mathsf P_X, \mathsf P_C, \mathsf P_R$ | 주장: 4.1 | 첫 출현: [('\\mathsf P_L, \\mathsf P_X, \\mathsf P_C, \\mathsf P_R', None)]  !! 못 찾음
+$\Gamma^{\pm}$ | 주장: 4.2 | 첫 출현: [('\\Gamma^{\\pm}', None)]  !! 못 찾음
+$\Gamma_d(y;n)$ | 주장: 4.2 | 첫 출현: [('\\Gamma_d(y;n)', ('장4', '4.2', 53))] 
+$\mathcal S_{n,k}$ | 주장: 4.2 | 첫 출현: [('\\mathcal S_{n,k}', ('장4', '4.2', 63))] 
+$\mathsf Q, \mathsf Q_L, \mathsf Q_R, \mathsf Q(n,\ell)$ | 주장: 4.2 | 첫 출현: [('\\mathsf Q, \\mathsf Q_L, \\mathsf Q_R, \\mathsf Q(n,\\ell)', None)]  !! 못 찾음
+$V(x)$ | 주장: 4.3 | 첫 출현: [('V(x)', ('장4', '4.3', 90))] 
+$\Phi, \Phi^{\mathrm{aux}}$ | 주장: 4.3 | 첫 출현: [('\\Phi, \\Phi^{\\mathrm{aux}}', None)]  !! 못 찾음
+$\mathcal A_{k,n}$ | 주장: 4.3 | 첫 출현: [('\\mathcal A_{k,n}', ('장4', '4.3', 152))] 
+$\mathcal D(\beta)$ | 주장: 4.3 | 첫 출현: [('\\mathcal D(\\beta)', ('장4', '4.3', 481))] 
+$\mathcal I_k$ | 주장: 4.3 | 첫 출현: [('\\mathcal I_k', ('장4', None, 13))]  !! 절 다름
+$\mathcal M_i$ | 주장: 4.3 | 첫 출현: [('\\mathcal M_i', ('장4', '4.3', 157))] 
+$\mathsf a_j$ | 주장: 4.3 | 첫 출현: [('\\mathsf a_j', ('장4', '4.3', 340))] 
+$\mathsf b_D, \mathsf b_J$ | 주장: 4.3 | 첫 출현: [('\\mathsf b_D, \\mathsf b_J', None)]  !! 못 찾음
+$\mathsf g_k$ | 주장: 4.3 | 첫 출현: [('\\mathsf g_k', ('장4', '4.3', 332))] 
+$\mathsf n_k, \mathsf n_\infty$ | 주장: 4.3 | 첫 출현: [('\\mathsf n_k, \\mathsf n_\\infty', None)]  !! 못 찾음
+$\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)$ | 주장: 4.3 | 첫 출현: [('\\mathrm{Bor}^{\\mathrm{tail}}_k(\\mathfrak Z)', ('장4', '4.3', 88))] 
+$\mathrm{He}_j$ | 주장: 4.3 | 첫 출현: [('\\mathrm{He}_j', ('장4', '4.3', 215))] 
+$A^{c}_{n,\ell}$ | 주장: 5.1 | 첫 출현: [('A^{c}_{n,\\ell}', ('장5A', '5.1', 17))] 
+$\mathfrak a_n$ | 주장: 5.1, 7.5 | 첫 출현: [('\\mathfrak a_n', ('장5A', '5.1', 17))] 
+$\mathfrak m(n)$ | 주장: 5.2 | 첫 출현: [('\\mathfrak m(n)', ('장5A', None, 11))]  !! 절 다름
+$\mathrm{rq}_r, \mathrm{rq}$ | 주장: 5.2, 5.4 | 첫 출현: [('\\mathrm{rq}_r, \\mathrm{rq}', None)]  !! 못 찾음
+$(\mathrm G)_d$ | 주장: 5.2 | 첫 출현: [('(\\mathrm G)_d', ('장5A', '5.2', 128))] 
+$r_0(n)$ | 주장: 5.3 | 첫 출현: [('r_0(n)', ('장5A', '5.3', 500))] 
+$\mathsf W, \mathsf W^\sharp$ | 주장: 5.3, 5.4 | 첫 출현: [('\\mathsf W, \\mathsf W^\\sharp', None)]  !! 못 찾음
+$q_{\max}(Y)$ | 주장: 5.5 | 첫 출현: [('q_{\\max}(Y)', ('장5B', '5.5', 211))] 
+$t_0(y)$ | 주장: 5.5 | 첫 출현: [('t_0(y)', ('장5B', '5.5', 56))] 
+$\Lambda_{\mathrm w}(Y)$ | 주장: 5.5 | 첫 출현: [('\\Lambda_{\\mathrm w}(Y)', ('장5B', '5.5', 226))] 
+$\mathfrak g(\theta)$ | 주장: 5.5 | 첫 출현: [('\\mathfrak g(\\theta)', ('장5B', '5.5', 325))] 
+$\mathfrak z_m(d)$ | 주장: 5.5 | 첫 출현: [('\\mathfrak z_m(d)', ('장5B', '5.5', 151))] 
+$\mathsf w_0$ | 주장: 5.5 | 첫 출현: [('\\mathsf w_0', ('장5B', '5.5', 343))] 
+$\mathrm{IH}(n,y)$ | 주장: 5.5 | 첫 출현: [('\\mathrm{IH}(n,y)', ('장5B', '5.5', 56))] 
+$\mathrm{Lc}(Y,q)$ | 주장: 5.5 | 첫 출현: [('\\mathrm{Lc}(Y,q)', ('장5B', '5.5', 215))] 
+$\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime | 주장: 5.5 | 첫 출현: [('\\mathrm{POS}_0, \\mathrm{POS}^\\prime_0, \\mathrm{POS}^{\\prime-}_0', None)]  !! 못 찾음
+$\mathrm{tail}_s(y)$ | 주장: 5.5 | 첫 출현: [('\\mathrm{tail}_s(y)', ('장5B', '5.5', 44))] 
+$\mathrm{top}, \mathrm{top}_\pi$ | 주장: 5.5 | 첫 출현: [('\\mathrm{top}, \\mathrm{top}_\\pi', None)]  !! 못 찾음
+$\mathrm{WIN}_0, \mathrm{WIN}^{\mathrm V}_0$ | 주장: 5.5 | 첫 출현: [('\\mathrm{WIN}_0, \\mathrm{WIN}^{\\mathrm V}_0', None)]  !! 못 찾음
+$s^{\mathrm F}(k,\nu)$ | 주장: 6.1 | 첫 출현: [('s^{\\mathrm F}(k,\\nu)', ('장6', '6.1', 107))] 
+$\mathrm{Bor}_{>}(q)$ | 주장: 6.1 | 첫 출현: [('\\mathrm{Bor}_{>}(q)', None)]  !! 못 찾음
+$\kappa_N$ | 주장: 6.2 | 첫 출현: [('\\kappa_N', ('장6', '6.2', 227))] 
+$\epsilon_N$ | 주장: 6.2 | 첫 출현: [('\\epsilon_N', ('장6', '6.2', 231))] 
+$\varrho_t, \varrho^{\mathrm H}, \varrho^{\mathrm L}, \varrh | 주장: 6.2($\varrho_t$·$\varrho^{\mathrm H}$·$\varrho^{\mathrm L}$·$\varrho_{\min}$), 9.4($\varrho^{\mathrm{lb}}_t$) | 첫 출현: [('\\varrho_t, \\varrho^{\\mathrm H}, \\varrho^{\\mathrm L}, \\varrho_{\\min}, \\varrho^{\\mathrm{lb}}_t', None)]  !! 못 찾음
+$\mathfrak r_N$ | 주장: 6.2 | 첫 출현: [('\\mathfrak r_N', ('장6', '6.2', 133))] 
+$\mathfrak w_n(t)$ | 주장: 6.2 | 첫 출현: [('\\mathfrak w_n(t)', ('장6', None, 9))]  !! 절 다름
+$\mathsf x_k$ | 주장: 6.2 | 첫 출현: [('\\mathsf x_k', ('장6', '6.2', 143))] 
+$\mathrm{dec}_N$ | 주장: 6.2 | 첫 출현: [('\\mathrm{dec}_N', ('장6', '6.2', 135))] 
+$\mathrm{hz}_k(N)$ | 주장: 6.2 | 첫 출현: [('\\mathrm{hz}_k(N)', ('장6', '6.2', 135))] 
+$\varsigma_m(\ell)$ | 주장: 6.3 | 첫 출현: [('\\varsigma_m(\\ell)', ('장6', '6.3', 290))] 
+$\mathfrak s_d(y)$ | 주장: 6.3 | 첫 출현: [('\\mathfrak s_d(y)', ('장6', None, 7))]  !! 절 다름
+$D_k$ | 주장: 6.4 | 첫 출현: [('D_k', ('장6', '6.4', 708))] 
+$\Upsilon_k, \hat\Upsilon_k$ | 주장: 6.4 | 첫 출현: [('\\Upsilon_k, \\hat\\Upsilon_k', None)]  !! 못 찾음
+$\varphi^\flat_k$ | 주장: 6.4 | 첫 출현: [('\\varphi^\\flat_k', ('장6', '6.4', 495))] 
+$\mathsf u(k)$ | 주장: 6.4 | 첫 출현: [('\\mathsf u(k)', ('장6', '6.4', 453))] 
+$\Pi_j(y)$ | 주장: 6.5 | 첫 출현: [('\\Pi_j(y)', ('장6', '6.5', 746))] 
+$\psi(y)$ | 주장: 6.5 | 첫 출현: [('\\psi(y)', ('장6', '6.5', 750))] 
+$\mathcal U_k(m)$ | 주장: 6.5 | 첫 출현: [('\\mathcal U_k(m)', ('장6', None, 13))]  !! 절 다름
+$\mathcal V_k(m)$ | 주장: 6.5 | 첫 출현: [('\\mathcal V_k(m)', ('장6', None, 13))]  !! 절 다름
+$\mathfrak b_m$ | 주장: 6.5 | 첫 출현: [('\\mathfrak b_m', ('장6', '6.5', 716))] 
+$\mathfrak p_m$ | 주장: 6.5 | 첫 출현: [('\\mathfrak p_m', ('장6', '6.5', 716))] 
+$\mathfrak X_d(y), \mathfrak X^0_d, \mathfrak X^1_d$ | 주장: 6.5 | 첫 출현: [('\\mathfrak X_d(y), \\mathfrak X^0_d, \\mathfrak X^1_d', None)]  !! 못 찾음
+$\mathsf V$ | 주장: 6.5 | 첫 출현: [('\\mathsf V', ('장1', '1.4', 141))]  !! 절 다름
+$\mathsf v(k), \mathsf v^\prime_k$ | 주장: 6.5 | 첫 출현: [('\\mathsf v(k), \\mathsf v^\\prime_k', None)]  !! 못 찾음
+$\mathrm{Bd}^{\mathrm V}_k$ | 주장: 6.5 | 첫 출현: [('\\mathrm{Bd}^{\\mathrm V}_k', ('장6', '6.5', 898))] 
+$\mathrm{DD}(m,y)$ | 주장: 6.5 | 첫 출현: [('\\mathrm{DD}(m,y)', ('장6', '6.5', 738))] 
+$\mathsf s_{\mathrm B}$ | 주장: 6.6 | 첫 출현: [('\\mathsf s_{\\mathrm B}', ('장6', '6.6', 1033))] 
+$\mathrm{Bor}_\le(q)$ | 주장: 6.6 | 첫 출현: [('\\mathrm{Bor}_\\le(q)', ('장8', '8.1', 76))]  !! 절 다름
+$\bar A_n(y)$ | 주장: 7.1 | 첫 출현: [('\\bar A_n(y)', ('장7A', '7.1', 49))] 
+$\mu_n(k)$ | 주장: 7.1 | 첫 출현: [('\\mu_n(k)', ('장7A', '7.1', 21))] 
+$\mathcal T_k(\sigma), \mathcal T_{n,k}$ | 주장: 7.1 | 첫 출현: [('\\mathcal T_k(\\sigma), \\mathcal T_{n,k}', None)]  !! 못 찾음
+$\mathsf t_k$ | 주장: 7.1 | 첫 출현: [('\\mathsf t_k', ('장7A', '7.1', 69))] 
+$\mathrm{Conv}_{n,k}, \mathrm{Kink}_{n,k}$ | 주장: 7.1 | 첫 출현: [('\\mathrm{Conv}_{n,k}, \\mathrm{Kink}_{n,k}', None)]  !! 못 찾음
+$\Pr^{\sigma}_{n,k}, \mathbb E^{\sigma}_{n,k}$ | 주장: 7.1 | 첫 출현: [('\\Pr^{\\sigma}_{n,k}, \\mathbb E^{\\sigma}_{n,k}', None)]  !! 못 찾음
+$n^\sharp_k, n^\flat_k, n^\circ_k$ | 주장: 7.2($n^\sharp_k$·$n^\flat_k$), 7.3($n^\circ_k$) | 첫 출현: [('n^\\sharp_k, n^\\flat_k, n^\\circ_k', None)]  !! 못 찾음
+$C_k(x), C_{n,k}$ | 주장: 7.2 | 첫 출현: [('C_k(x), C_{n,k}', None)]  !! 못 찾음
+$\rho_k$ | 주장: 7.2 | 첫 출현: [('\\rho_k', ('장7A', '7.2', 264))] 
+$\mathfrak a^\circ_n$ | 주장: 7.2 | 첫 출현: [('\\mathfrak a^\\circ_n', None)]  !! 못 찾음
+$\mathfrak a^\rho_m$ | 주장: 7.2 | 첫 출현: [('\\mathfrak a^\\rho_m', ('장7A', '7.2', 360))] 
+$\mathfrak P_k(n)$ | 주장: 7.2 | 첫 출현: [('\\mathfrak P_k(n)', ('장7A', '7.2', 356))] 
+$\mathsf W_L, \mathsf W_L^\flat$ | 주장: 7.2 | 첫 출현: [('\\mathsf W_L, \\mathsf W_L^\\flat', None)]  !! 못 찾음
+$n_{\mathrm X}(k)$ | 주장: 7.3 | 첫 출현: [('n_{\\mathrm X}(k)', ('장7A', '7.3', 715))] 
+$\mathrm{lp}_k, \mathrm{lpr}_k$ | 주장: 7.3 | 첫 출현: [('\\mathrm{lp}_k, \\mathrm{lpr}_k', None)]  !! 못 찾음
+$\mathfrak P_k(\infty)$ | 주장: 7.3 | 첫 출현: [('\\mathfrak P_k(\\infty)', ('장7A', '7.3', 644))] 
+$\mathrm{pr}_{n,k}, \mathrm{pr}^\circ_n$ | 주장: 7.3 | 첫 출현: [('\\mathrm{pr}_{n,k}, \\mathrm{pr}^\\circ_n', None)]  !! 못 찾음
+$J^{\mathrm G}_n(z)$ | 주장: 7.4 | 첫 출현: [('J^{\\mathrm G}_n(z)', ('장7B', '7.4', 132))] 
+$\mathcal P^{(k)}_m(j)$ | 주장: 7.4 | 첫 출현: [('\\mathcal P^{(k)}_m(j)', ('장7B', '7.4', 7))] 
+$n_{\mathrm{PD}}(k)$ | 주장: 7.5 | 첫 출현: [('n_{\\mathrm{PD}}(k)', ('장7B', '7.5', 528))] 
+$\chi_m(j)$ | 주장: 7.5 | 첫 출현: [('\\chi_m(j)', ('장7B', '7.5', 380))] 
+$\mathcal W^{(>102)}, \mathcal W^{(>40)}$ | 주장: 7.5 | 첫 출현: [('\\mathcal W^{(>102)}, \\mathcal W^{(>40)}', None)]  !! 못 찾음
+$\mathcal Z$ | 주장: 7.5 | 첫 출현: [('\\mathcal Z', ('장5A', '5.2', 365))]  !! 절 다름
+$\mathsf Q^\star, \mathsf Q^\star_2$ | 주장: 7.5($\mathsf Q^\star$), 7.7($\mathsf Q^\star_2$) | 첫 출현: [('\\mathsf Q^\\star, \\mathsf Q^\\star_2', None)]  !! 못 찾음
+$\mathrm{cl}^+_m, \mathrm{cl}^-_m$ | 주장: 7.5 | 첫 출현: [('\\mathrm{cl}^+_m, \\mathrm{cl}^-_m', None)]  !! 못 찾음
+$\mathrm{inh}_k(n), \mathrm{inh}^{\mathrm{lin}}_k(n)$ | 주장: 7.5($\mathrm{inh}_k$), 7.6($\mathrm{inh}^{\mathrm{lin}}_k$) | 첫 출현: [('\\mathrm{inh}_k(n), \\mathrm{inh}^{\\mathrm{lin}}_k(n)', None)]  !! 못 찾음
+$\mathrm{src}_k(m)$ | 주장: 7.5 | 첫 출현: [('\\mathrm{src}_k(m)', ('장7B', '7.5', 382))] 
+$(\star)(n)$ | 주장: 7.5 | 첫 출현: [('(\\star)(n)', ('장1', '1.4', 139))]  !! 절 다름
+$\mathsf{SRC}^+$ | 주장: 7.6 | 첫 출현: [('\\mathsf{SRC}^+', ('장7B', '7.6', 632))] 
+$w_m$ | 주장: 7.7 | 첫 출현: [('w_m', ('장7B', '7.7', 653))] 
+$\Pi^{\mathrm{up}}_j$ | 주장: 7.7 | 첫 출현: [('\\Pi^{\\mathrm{up}}_j', ('장7B', '7.7', 702))] 
+$\mathcal R_2$ | 주장: 7.7 | 첫 출현: [('\\mathcal R_2', ('장1', '1.4', 147))]  !! 절 다름
+$\mathfrak u_n$ | 주장: 7.7 | 첫 출현: [('\\mathfrak u_n', ('장7B', '7.7', 678))] 
+$\mathsf{LRP}_2$ | 주장: 7.7 | 첫 출현: [('\\mathsf{LRP}_2', ('장1', '1.4', 145))]  !! 절 다름
+$\mathrm{Left}_n$ | 주장: 7.7 | 첫 출현: [('\\mathrm{Left}_n', ('장7B', '7.7', 657))] 
+$\mathrm{Quad}_n, \mathrm{Stem}_n$ | 주장: 7.7 | 첫 출현: [('\\mathrm{Quad}_n, \\mathrm{Stem}_n', None)]  !! 못 찾음
+$s^{\mathrm{low}}_q$ | 주장: 8.1 | 첫 출현: [('s^{\\mathrm{low}}_q', ('장8', '8.1', 66))] 
+$\Omega(\xi), \Omega_q$ | 주장: 8.1 | 첫 출현: [('\\Omega(\\xi), \\Omega_q', None)]  !! 못 찾음
+$\xi$ | 주장: 8.1 | 첫 출현: [('\\xi', ('장2', '2.12', 863))]  !! 절 다름
+$\mathfrak D^{\mathrm{src}}_q$ | 주장: 8.1 | 첫 출현: [('\\mathfrak D^{\\mathrm{src}}_q', ('장8', '8.1', 70))] 
+$\mathfrak D_q$ | 주장: 8.1 | 첫 출현: [('\\mathfrak D_q', ('장8', '8.1', 66))] 
+$\mathfrak E_q$ | 주장: 8.1 | 첫 출현: [('\\mathfrak E_q', ('장8', '8.1', 82))] 
+$\mathfrak R_q$ | 주장: 8.1 | 첫 출현: [('\\mathfrak R_q', ('장8', '8.1', 49))] 
+$\mathrm{dup}_m$ | 주장: 8.1 | 첫 출현: [('\\mathrm{dup}_m', ('장8', '8.1', 44))] 
+$\mathrm{Flow}_q$ | 주장: 8.1 | 첫 출현: [('\\mathrm{Flow}_q', ('장8', '8.1', 90))] 
+$\tilde s^{\mathrm{env}}(\xi), \tilde s^{\mathrm{env}}_{\mat | 주장: 8.2 | 첫 출현: [('\\tilde s^{\\mathrm{env}}(\\xi), \\tilde s^{\\mathrm{env}}_{\\mathrm W}, \\tilde s^{\\mathrm{env}}_{\\mathrm G}', None)]  !! 못 찾음
+$s^{\mathrm{cf}}(\xi)$ | 주장: 8.2 | 첫 출현: [('s^{\\mathrm{cf}}(\\xi)', ('장8', '8.2', 426))] 
+$s^{\mathrm{env}}(\xi), s^{\mathrm{env}}_{\mathrm W}, s^{\ma | 주장: 8.2 | 첫 출현: [('s^{\\mathrm{env}}(\\xi), s^{\\mathrm{env}}_{\\mathrm W}, s^{\\mathrm{env}}_{\\mathrm G}', None)]  !! 못 찾음
+$\Psi^{\mathrm{low}}_{(\varrho)}$ | 주장: 8.2 | 첫 출현: [('\\Psi^{\\mathrm{low}}_{(\\varrho)}', ('장8', '8.2', 116))] 
+$\mathfrak B_N, \mathfrak B^{\mathrm{low}}(k,\nu)$ | 주장: 8.2 | 첫 출현: [('\\mathfrak B_N, \\mathfrak B^{\\mathrm{low}}(k,\\nu)', None)]  !! 못 찾음
+$\mathsf c_\Psi$ | 주장: 8.2 | 첫 출현: [('\\mathsf c_\\Psi', ('장8', '8.2', 116))] 
+$\mathsf j_\infty(\xi)$ | 주장: 8.2 | 첫 출현: [('\\mathsf j_\\infty(\\xi)', ('장8', '8.2', 222))] 
+$\mathrm{km}_N$ | 주장: 8.2 | 첫 출현: [('\\mathrm{km}_N', ('장8', '8.2', 141))] 
+$\mathrm{Lip}$ | 주장: 8.2 | 첫 출현: [('\\mathrm{Lip}', ('장8', '8.2', 549))] 
+$\mathfrak c_0(N)$ | 주장: 8.3 | 첫 출현: [('\\mathfrak c_0(N)', ('장8', '8.3', 575))] 
+$m_{\mathrm{fb}}$ | 주장: 8.4 | 첫 출현: [('m_{\\mathrm{fb}}', ('장8', '8.4', 629))] 
+$q_{\mathrm{fb}}, q^\circ_{\mathrm{fb}}$ | 주장: 8.4 | 첫 출현: [('q_{\\mathrm{fb}}, q^\\circ_{\\mathrm{fb}}', None)]  !! 못 찾음
+$\mathfrak R^{\mathrm{low}}_k$ | 주장: 8.4 | 첫 출현: [('\\mathfrak R^{\\mathrm{low}}_k', ('장8', '8.4', 681))] 
+$\mathrm{fb}(\lambda), \mathrm{fb}^\circ(\lambda)$ | 주장: 8.4 | 첫 출현: [('\\mathrm{fb}(\\lambda), \\mathrm{fb}^\\circ(\\lambda)', None)]  !! 못 찾음
+$\mathrm{LB}^{\mathrm{mono}}, \mathrm{LB}^{\mathrm{low}}, \m | 주장: 8.4 | 첫 출현: [('\\mathrm{LB}^{\\mathrm{mono}}, \\mathrm{LB}^{\\mathrm{low}}, \\mathrm{LOW}_k', None)]  !! 못 찾음
+$m_1(k)$ | 주장: 9.1 | 첫 출현: [('m_1(k)', ('장9', '9.1', 29))] 
+$P^+_t(k)$ | 주장: 9.1 | 첫 출현: [('P^+_t(k)', ('장9', '9.1', 25))] 
+$\pi_2(t)$ | 주장: 9.1 | 첫 출현: [('\\pi_2(t)', ('장9', '9.1', 297))] 
+$\mathsf H^\ast_+$ | 주장: 9.1 | 첫 출현: [('\\mathsf H^\\ast_+', ('장9', '9.1', 31))] 
+$A^{(t)}_N, A^\circ_N, A^\diamond_N$ | 주장: 9.2 | 첫 출현: [('A^{(t)}_N, A^\\circ_N, A^\\diamond_N', None)]  !! 못 찾음
+$K_n(m)$ | 주장: 9.2 | 첫 출현: [('K_n(m)', ('장9', '9.2', 346))] 
+$\gamma_m$ | 주장: 9.2 | 첫 출현: [('\\gamma_m', ('장9', '9.2', 346))] 
+$\pi_n(t_1,t_2)$ | 주장: 9.2 | 첫 출현: [('\\pi_n(t_1,t_2)', ('장9', '9.2', 320))] 
+$\Theta^\circ_n$ | 주장: 9.2 | 첫 출현: [('\\Theta^\\circ_n', ('장9', '9.2', 332))] 
+$\mathcal C_n$ | 주장: 9.2 | 첫 출현: [('\\mathcal C_n', ('장6', '6.6', 956))]  !! 절 다름
+$\mathcal Q_m$ | 주장: 9.2 | 첫 출현: [('\\mathcal Q_m', ('장9', '9.2', 382))] 
+$\mathsf B^+$ | 주장: 9.2 | 첫 출현: [('\\mathsf B^+', ('장1', '1.4', 151))]  !! 절 다름
+$(\mathrm P\Diamond)$ | 주장: 9.2 | 첫 출현: [('(\\mathrm P\\Diamond)', ('장9', '9.2', 421))] 
+$\mathcal J_1(k),\dots,\mathcal J_4(k)$ | 주장: 9.3 | 첫 출현: [('\\mathcal J_1(k),\\dots,\\mathcal J_4(k)', None)]  !! 못 찾음
+$\mathfrak d_k, \bar{\mathfrak d}_k$ | 주장: 9.3 | 첫 출현: [('\\mathfrak d_k, \\bar{\\mathfrak d}_k', None)]  !! 못 찾음
+$\mathfrak l_m(t)$ | 주장: 9.3 | 첫 출현: [('\\mathfrak l_m(t)', ('장9', '9.3', 446))] 
+$\mathfrak V_m$ | 주장: 9.3 | 첫 출현: [('\\mathfrak V_m', ('장9', '9.3', 464))] 
+$\mathsf L_\ast(k)$ | 주장: 9.3 | 첫 출현: [('\\mathsf L_\\ast(k)', ('장9', '9.3', 541))] 
+$\mathrm{FL}^{(1)}_m$ | 주장: 9.3 | 첫 출현: [('\\mathrm{FL}^{(1)}_m', ('장9', '9.3', 431))] 
+$\mathrm{land}_m$ | 주장: 9.3 | 첫 출현: [('\\mathrm{land}_m', ('장9', '9.3', 450))] 
+$\mathrm{OB}_m$ | 주장: 9.3 | 첫 출현: [('\\mathrm{OB}_m', ('장9', '9.3', 431))] 
+$\mathrm{Pcor}_m, \mathrm{Pcor}^{\pm}_m$ | 주장: 9.3 | 첫 출현: [('\\mathrm{Pcor}_m, \\mathrm{Pcor}^{\\pm}_m', None)]  !! 못 찾음
+$t^\dagger$ | 주장: 9.4 | 첫 출현: [('t^\\dagger', ('장9', '9.4', 716))] 
+$P^{\theta\dagger}(t^\dagger)$ | 주장: 9.4 | 첫 출현: [('P^{\\theta\\dagger}(t^\\dagger)', ('장9', '9.4', 720))] 
+$P^{\theta}_t(k)$ | 주장: 9.4 | 첫 출현: [('P^{\\theta}_t(k)', None)]  !! 못 찾음
+$\nu_0(k), \nu_1(k)$ | 주장: 9.4 | 첫 출현: [('\\nu_0(k), \\nu_1(k)', None)]  !! 못 찾음
+$\varrho^\dagger(t^\dagger)$ | 주장: 9.4 | 첫 출현: [('\\varrho^\\dagger(t^\\dagger)', ('장9', '9.4', 720))] 
+$\mathcal F_k(\nu), \mathcal F^+_k, \mathcal F^{\mathrm{LP}} | 주장: 9.4 | 첫 출현: [('\\mathcal F_k(\\nu), \\mathcal F^+_k, \\mathcal F^{\\mathrm{LP}}_k', None)]  !! 못 찾음
+$\mathcal O_n$ | 주장: 9.4 | 첫 출현: [('\\mathcal O_n', ('장9', '9.4', 585))] 
+$\mathcal Y_k(n), \mathcal Y^{\mathrm{LP}}_k(n), \mathcal Y^ | 주장: 9.4 | 첫 출현: [('\\mathcal Y_k(n), \\mathcal Y^{\\mathrm{LP}}_k(n), \\mathcal Y^\\dagger_k(n)', None)]  !! 못 찾음
+$\mathsf{FS}(n)$ | 주장: 9.4 | 첫 출현: [('\\mathsf{FS}(n)', ('장9', '9.4', 579))] 
+$\mathsf h_N$ | 주장: 9.4 | 첫 출현: [('\\mathsf h_N', ('장9', '9.4', 743))] 
+$\mathrm{flat}_k(t)$ | 주장: 9.4 | 첫 출현: [('\\mathrm{flat}_k(t)', ('장9', '9.4', 616))] 
+$\mathrm{LP}_k(n)$ | 주장: 9.4 | 첫 출현: [('\\mathrm{LP}_k(n)', ('장9', '9.4', 747))] 
+$\mathrm{regen}_n$ | 주장: 9.4 | 첫 출현: [('\\mathrm{regen}_n', ('장9', '9.4', 577))] 
+$A^{\diamond,\mathrm{up}}, A^\diamond_{\mathrm{dec}}$ | 주장: 9.5 | 첫 출현: [('A^{\\diamond,\\mathrm{up}}, A^\\diamond_{\\mathrm{dec}}', None)]  !! 못 찾음
+$\Psi^{\mathrm{lb}}(d)$ | 주장: 9.5 | 첫 출현: [('\\Psi^{\\mathrm{lb}}(d)', ('장9', '9.5', 834))] 
+$\mathrm{merge}, \mathrm{merge}^{\mathrm{up}}$ | 주장: 9.5 | 첫 출현: [('\\mathrm{merge}, \\mathrm{merge}^{\\mathrm{up}}', None)]  !! 못 찾음
+$\varkappa_m$ | 주장: 10.1 | 첫 출현: [('\\varkappa_m', ('장10', '10.1', 51))] 
+$\mathfrak f_m$ | 주장: 10.1 | 첫 출현: [('\\mathfrak f_m', ('장10', '10.1', 53))] 
+$\mathfrak T_m$ | 주장: 10.1 | 첫 출현: [('\\mathfrak T_m', ('장10', '10.1', 57))] 
+$m_0$ | 주장: 10.2 | 첫 출현: [('m_0', ('장8', '8.4', 657))]  !! 절 다름
+$m^\flat$ | 주장: 10.2 | 첫 출현: [('m^\\flat', ('장10', '10.2', 158))] 
+$\omega_m, \omega_y(d), \tilde\omega(d)$ | 주장: 10.2($\omega_m$), 10.5($\omega_y$), 10.6($\tilde\omega$) | 첫 출현: [('\\omega_m, \\omega_y(d), \\tilde\\omega(d)', None)]  !! 못 찾음
+$\mathrm{Bd}^{\mathrm S}$ | 주장: 10.2 | 첫 출현: [('\\mathrm{Bd}^{\\mathrm S}', ('장10', '10.2', 145))] 
+$\mathrm{Stays}, \mathrm{Stays}^{\mathrm{vis}}, \mathrm{Stay | 주장: 10.2($\mathrm{Stays}$), 10.4($\mathrm{Stays}^{\mathrm{vis}}$·$\mathrm{Stays}_{\mathrm{PM}}$) | 첫 출현: [('\\mathrm{Stays}, \\mathrm{Stays}^{\\mathrm{vis}}, \\mathrm{Stays}_{\\mathrm{PM}}', None)]  !! 못 찾음
+$\nu_{\min}(k), \bar\nu$ | 주장: 10.3($\nu_{\min}$), 10.6($\bar\nu$) | 첫 출현: [('\\nu_{\\min}(k), \\bar\\nu', None)]  !! 못 찾음
+$\vartheta, \vartheta_0$ | 주장: 10.3($\vartheta$), 10.6($\vartheta_0$) | 첫 출현: [('\\vartheta, \\vartheta_0', None)]  !! 못 찾음
+$\mathsf{FLQ}$ | 주장: 10.3 | 첫 출현: [('\\mathsf{FLQ}', ('장1', '1.4', 153))]  !! 절 다름
+$s^{\mathrm W}_q(m,y)$ | 주장: 10.4 | 첫 출현: [('s^{\\mathrm W}_q(m,y)', ('장10', '10.4', 307))] 
+$\pi^{\mathrm{two}}_N$ | 주장: 10.4 | 첫 출현: [('\\pi^{\\mathrm{two}}_N', ('장10', '10.4', 249))] 
+$\vartheta_{\mathrm{lb}}$ | 주장: 10.4 | 첫 출현: [('\\vartheta_{\\mathrm{lb}}', ('장10', '10.4', 247))] 
+$\mathsf r_\ast$ | 주장: 10.4 | 첫 출현: [('\\mathsf r_\\ast', ('장10', '10.4', 249))] 
+$\mathrm{Bd}^{\mathrm T}(k,\nu)$ | 주장: 10.4 | 첫 출현: [('\\mathrm{Bd}^{\\mathrm T}(k,\\nu)', ('장10', '10.4', 244))] 
+$\mathrm{DDL}(k)$ | 주장: 10.4 | 첫 출현: [('\\mathrm{DDL}(k)', ('장10', '10.4', 245))] 
+$\mathrm{PM}_y(d)$ | 주장: 10.4 | 첫 출현: [('\\mathrm{PM}_y(d)', ('장10', '10.4', 295))] 
+$\mathrm{Stays}^{\mathrm{adm}}(k,\nu), \mathrm{Stays}^{\math | 주장: 10.4($\mathrm{Stays}^{\mathrm{adm}}$), 10.6($\mathrm{Stays}^{\mathrm{adm}}_{\mathrm{new}}$) | 첫 출현: [('\\mathrm{Stays}^{\\mathrm{adm}}(k,\\nu), \\mathrm{Stays}^{\\mathrm{adm}}_{\\mathrm{new}}', None)]  !! 못 찾음
+$y_0$ | 주장: 10.5 | 첫 출현: [('y_0', ('장10', '10.5', 323))] 
+$\mathfrak M_y(q), \mathfrak M^y(q)$ | 주장: 10.5($\mathfrak M_y$), 10.6($\mathfrak M^y$) | 첫 출현: [('\\mathfrak M_y(q), \\mathfrak M^y(q)', None)]  !! 못 찾음
+$\mathfrak A_j, \mathfrak A^{\mathrm{crit}}_d(q)$ | 주장: 10.5 | 첫 출현: [('\\mathfrak A_j, \\mathfrak A^{\\mathrm{crit}}_d(q)', None)]  !! 못 찾음
+$\mathfrak H_d$ | 주장: 10.5 | 첫 출현: [('\\mathfrak H_d', ('장10', '10.5', 406))] 
+$\mathfrak h_y(q)$ | 주장: 10.5 | 첫 출현: [('\\mathfrak h_y(q)', ('장10', '10.5', 325))] 
+$\mathfrak k_d(q)$ | 주장: 10.5 | 첫 출현: [('\\mathfrak k_d(q)', ('장10', '10.5', 363))] 
+$\mathfrak s^{\mathrm{fr}}_d(y)$ | 주장: 10.5 | 첫 출현: [('\\mathfrak s^{\\mathrm{fr}}_d(y)', ('장10', '10.5', 333))] 
+$\mathfrak s^{\mathrm{up}}_d(y)$ | 주장: 10.5 | 첫 출현: [('\\mathfrak s^{\\mathrm{up}}_d(y)', ('장10', '10.5', 462))] 
+$\mathsf m_{\mathrm S}$ | 주장: 10.5 | 첫 출현: [('\\mathsf m_{\\mathrm S}', ('장10', '10.5', 462))] 
+$\mathrm{DDL}_2(k), \mathrm{DDL}^\natural(k)$ | 주장: 10.5 | 첫 출현: [('\\mathrm{DDL}_2(k), \\mathrm{DDL}^\\natural(k)', None)]  !! 못 찾음
+$\mathrm{inc}^{\pm}_q$ | 주장: 10.5 | 첫 출현: [('\\mathrm{inc}^{\\pm}_q', None)]  !! 못 찾음
+$\mathrm{Res}_d$ | 주장: 10.5 | 첫 출현: [('\\mathrm{Res}_d', ('장10', '10.5', 335))] 
+$\mathrm{tr}_y(q)$ | 주장: 10.5 | 첫 출현: [('\\mathrm{tr}_y(q)', ('장10', '10.5', 347))] 
+$d^\star$ | 주장: 10.6 | 첫 출현: [('d^\\star', ('장10', '10.6', 639))] 
+$k_0, k^\ast$ | 주장: 10.6 | 첫 출현: [('k_0, k^\\ast', None)]  !! 못 찾음
+$\mathfrak Q(y,\xi)$ | 주장: 10.6 | 첫 출현: [('\\mathfrak Q(y,\\xi)', ('장10', '10.6', 624))] 
+$\mathfrak s^{\mathrm{low}}_d(y)$ | 주장: 10.6 | 첫 출현: [('\\mathfrak s^{\\mathrm{low}}_d(y)', ('장10', '10.6', 582))] 
+$\mathsf f_1$ | 주장: 10.6 | 첫 출현: [('\\mathsf f_1', ('장10', '10.6', 578))] 
+$\mathrm{Stays}^{\mathrm{up}}(k;\bar\nu), \mathrm{Stays}^{\m | 주장: 10.6 | 첫 출현: [('\\mathrm{Stays}^{\\mathrm{up}}(k;\\bar\\nu), \\mathrm{Stays}^{\\mathrm{up}}_F, \\mathrm{Stays}^{\\mathrm{up}}_\\circ', None)]  !! 못 찾음

@@ -1,0 +1,6 @@
+17 first non-admissible b = 5
+17 best b 3 bound 0.739508687662
+100 first non-admissible b = 9
+100 best b 4 bound 0.316848426927
+1000 first non-admissible b = 24
+1000 best b 6 bound 0.0657331752141

@@ -1,0 +1,12 @@
+(('stop-lower upper: max(pi0 - Pr(beta>j)) <=0', 0.0),)
+(('5-31 violations q<=Y+1', [], 0),)
+(('5-31 ratio range c/Lc (q<=qmax)', 1.0000079787622411, 2.941140540285744),)
+(('Lambda_w(Y)', 0.7375317479491311),)
+(('5-33 violations', [], 0),)
+(('5-33 sample ratio chi=5,m=2Y+1', 3.1804588942716974),)
+(('rig-int: Lambda_w >= o_rig ?', 0.7375317479491311, 0.5487021202533431, True),)
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체17_K4_하계검산.py", line 99, in <module>
+    vbt=[(z,D) for z in range(1,40) for D in range(z+1,400) if BT(z,D)>z/sqrt(2*pi)/D/sqrt(D-z)*exp(-z*z/(2*(D-z))+z**3/(3*(D-z)**2))*(1+1e-12)]
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: math range error

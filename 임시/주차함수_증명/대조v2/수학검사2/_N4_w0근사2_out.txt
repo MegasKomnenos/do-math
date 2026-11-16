@@ -1,0 +1,4 @@
+int g [0,4.1] = 0.770735; max g = 0.59465 at 0.5375
+int rho [0,12] = 0.909335; max rho = 0.58591
+(5.3) float bound = 0.718593; certified w0 = 0.71216801
+int g over [4.1, 4.2427] (dropped) = 1.916e-05

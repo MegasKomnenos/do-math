@@ -1,0 +1,19 @@
+(나) value 495594511/240250000 True 2.062828349635796
+a0 1.28789931685406908720068316003 a1 0.938892940101744566341180380023
+(다) 1.68092002497457198269658102913
+final margin 0.213007627554
+14.653 check 14.6521579058833974703225588558
+x^0 coeff: 0
+x^1 coeff: 0
+x^2 coeff: 0
+x^3 coeff: 0
+x^4 coeff: 2729376
+g coeff kappa^0: 4
+g coeff kappa^1: -4*nu - 8*theta - 26
+g coeff kappa^2: 5*nu**2 + 16*nu*theta + 97*nu + 12*theta**2 + 168*theta + 506
+g coeff kappa^3: -6*nu**3 - 26*nu**2*theta - 239*nu**2 - 36*nu*theta**2 - 762*nu*theta - 3187*nu - 16*theta**3 - 594*theta**2 - 5362*theta - 11016
+   nu 0 max|coef| on [0,1]: 16988.0
+   nu -1 max|coef| on [0,1]: 13262.0
+g coeff kappa^4: 7*nu**4 + 38*nu**3*theta + 483*nu**3 + 75*nu**2*theta**2 + 2181*nu**2*theta + 11904*nu**2 + 64*nu*theta**3 + 3219*nu*theta**2 + 38055*nu*theta + 93889*nu + 20*theta**4 + 1552*theta**3 + 30012*theta**2 + 154730*theta + 218589
+   nu 0 max|coef| on [0,1]: 404903.0
+   nu -1 max|coef| on [0,1]: 283322.0

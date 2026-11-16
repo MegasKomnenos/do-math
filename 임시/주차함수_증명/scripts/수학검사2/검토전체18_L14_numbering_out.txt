@@ -1,0 +1,4 @@
+heads 398
+대응표 rows 398
+4절 rows 447
+의존지도 rows 398

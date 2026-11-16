@@ -1,0 +1,40 @@
+n=2 k_n=1 sign(d_{n,k_n})=- l*=0 unimodal=True sum_ok=True
+n=3 k_n=2 sign(d_{n,k_n})=- l*=1 unimodal=True sum_ok=True
+n=4 k_n=2 sign(d_{n,k_n})=- l*=1 unimodal=True sum_ok=True
+n=5 k_n=3 sign(d_{n,k_n})=- l*=1 unimodal=True sum_ok=True
+n=6 k_n=3 sign(d_{n,k_n})=- l*=2 unimodal=True sum_ok=True
+n=7 k_n=4 sign(d_{n,k_n})=- l*=2 unimodal=True sum_ok=True
+n=8 k_n=4 sign(d_{n,k_n})=- l*=3 unimodal=True sum_ok=True
+n=9 k_n=5 sign(d_{n,k_n})=- l*=3 unimodal=True sum_ok=True
+n=10 k_n=5 sign(d_{n,k_n})=- l*=4 unimodal=True sum_ok=True
+n=11 k_n=6 sign(d_{n,k_n})=- l*=4 unimodal=True sum_ok=True
+n=12 k_n=6 sign(d_{n,k_n})=- l*=5 unimodal=True sum_ok=True
+n=13 k_n=7 sign(d_{n,k_n})=- l*=6 unimodal=True sum_ok=True
+n=14 k_n=7 sign(d_{n,k_n})=- l*=6 unimodal=True sum_ok=True
+n=15 k_n=8 sign(d_{n,k_n})=- l*=7 unimodal=True sum_ok=True
+n=16 k_n=8 sign(d_{n,k_n})=+ l*=8 unimodal=True sum_ok=True
+n=17 k_n=9 sign(d_{n,k_n})=+ l*=9 unimodal=True sum_ok=True
+n=18 k_n=9 sign(d_{n,k_n})=+ l*=9 unimodal=True sum_ok=True
+n=19 k_n=10 sign(d_{n,k_n})=+ l*=10 unimodal=True sum_ok=True
+n=20 k_n=10 sign(d_{n,k_n})=+ l*=11 unimodal=True sum_ok=True
+n=21 k_n=11 sign(d_{n,k_n})=+ l*=12 unimodal=True sum_ok=True
+n=22 k_n=11 sign(d_{n,k_n})=+ l*=13 unimodal=True sum_ok=True
+n=23 k_n=12 sign(d_{n,k_n})=+ l*=14 unimodal=True sum_ok=True
+n=24 k_n=12 sign(d_{n,k_n})=+ l*=14 unimodal=True sum_ok=True
+n=25 k_n=13 sign(d_{n,k_n})=+ l*=15 unimodal=True sum_ok=True
+n=26 k_n=13 sign(d_{n,k_n})=+ l*=16 unimodal=True sum_ok=True
+n=27 k_n=14 sign(d_{n,k_n})=+ l*=17 unimodal=True sum_ok=True
+n=28 k_n=14 sign(d_{n,k_n})=+ l*=18 unimodal=True sum_ok=True
+n=29 k_n=15 sign(d_{n,k_n})=+ l*=19 unimodal=True sum_ok=True
+n=30 k_n=15 sign(d_{n,k_n})=+ l*=20 unimodal=True sum_ok=True
+fibers n=1: non-unimodal=0
+fibers n=2: non-unimodal=0
+fibers n=3: non-unimodal=0
+fibers n=4: non-unimodal=0
+fibers n=5: non-unimodal=0
+fibers n=6: non-unimodal=0
+fibers n=7: non-unimodal=30
+Prop2-20 n=17: best b=3 bound=0.739509
+Prop2-20 n=100: best b=4 bound=0.316848
+Prop2-20 n=1000: best b=6 bound=0.065733
+Prop2-20 n=10000: best b=8 bound=0.011422

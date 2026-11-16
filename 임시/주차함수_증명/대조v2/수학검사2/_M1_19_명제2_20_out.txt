@@ -1,0 +1,4 @@
+17 best b 3 bound 0.7395086876
+100 best b 4 bound 0.3168484269
+1000 best b 6 bound 0.0657331752
+10000 best b 8 bound 0.0114215514

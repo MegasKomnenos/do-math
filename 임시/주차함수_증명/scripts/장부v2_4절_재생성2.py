@@ -52,6 +52,8 @@ def collect_heads():
                 sec = m.group(1)
                 continue
             h = HEAD_RE.match(ln)
+            if h and ln[h.end():].startswith("의 증명"):
+                h = None  # 뒤로 미룬 증명의 머리(「**정리 {{…}}의 증명.**」)는 진술이 아니다
             if not h:
                 continue
             kind, label, ch, short = h.group(1), h.group(2), h.group(3), h.group(4)

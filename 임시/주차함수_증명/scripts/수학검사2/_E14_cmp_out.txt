@@ -1,0 +1,14 @@
+heads(진술 머리, 증명 머리 제외): 398
+
+==== 장부 4절 vs 진술 머리
+4절 행: 447
+
+==== 대응표 vs 진술 머리
+대응표 행: 426
+
+==== 네 파일이 부르는 라벨의 존재
+부록 D 라벨 수: 42
+장부_v2.md 존재하지 않는 라벨: {'5:marked-riccati': 4}
+구조표_v2.md 존재하지 않는 라벨: {'5:tail-poly': 2, '5:rational-cert': 2, '5:sharp-546': 2, '5:marked-riccati': 1, '5:response-kernel': 2, '5:fixed-size-response': 1, '5:third-group': 1, '5:last-gap': 1, '5:sign-sandwich': 1, '5:arc-leading': 3, '7:S-infinity': 1, '7:lm-core': 1, '7:moment-band': 1, '7:moment-window': 1}
+의존지도_v2.md 존재하지 않는 라벨: {'7:fold-*': 1, '10:old-8-26': 1, '10:old-8-27': 1, '10:old-8-29': 1, '10:old-8-5': 1, '10:old-8-7': 1, '2:old-2-23': 2, '2:old-2-42': 2, '5:arc-leading': 1, '5:cumulant-bounds': 1, '5:dawson-facts': 1, '5:fixed-size-response': 2, '5:gauss-moments': 1, '5:last-gap': 1, '5:marked-riccati': 2, '5:mass-envelope-U2': 1, '5:old-5-16': 1, '5:old-5-17': 1, '5:old-5-29': 1, '5:old-5-3': 2, '5:old-5-35': 1, '5:old-5-36': 1, '5:old-5-37': 2, '5:old-5-39': 1, '5:old-5-40': 2, '5:old-5-41': 1, '5:old-5-6': 2, '5:rational-cert': 1, '5:response-kernel': 2, '5:sharp-546': 1, '5:sign-sandwich': 1, '5:tail-poly': 1, '5:third-group': 2, '5:zeta-constants': 1, '6:V-core-identity': 1, '7:S-infinity': 1, '7:error-induction': 1, '7:hazard-floor': 1, '7:hazard-identity': 1, '7:lm-core': 1, '7:moment-band': 1, '7:moment-window': 1, '7:old-6-17': 1, '7:theorem-H-star': 1, '9:H-star': 2, '9:old-7-14': 1, '9:old-7-15': 1, '9:old-7-2': 2, '9:old-7-43': 1, '9:old-7-9': 1}
+대조v2/라벨_번호_대응표_1114.md 존재하지 않는 라벨: 없음

@@ -1,0 +1,307 @@
+README 세션 표 382행, 파일 목록 1081행
+README 파일 목록의 라벨 가운데 D에 없는 것: []
+
+====================================================================================================
+[M-natural-integrals]
+ 6열: D의 문장 부분집합(문장 2/6; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 5행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[four-families]
+ 6열: D의 문장 부분집합(문장 2/6; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 15행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[fiber-enumeration]
+ !! 6열에 D 문단에 없는 문장: ['기록의 검토에서는 선호 수열 $7^7$개를 모두 직접 주차시켜 $n=7$의 그 섬유의 행이 $(1,31,130,222,216,264,144)$임을 재확인했다(`peer_verify.py`, `peer-checks.json`의 `original_process_target_fiber`). 이 글을 쓰며 곱 공식을 쓰지 않고 $n\\le7$의 모든 선호 수열 $n^n$개를 직접 주차시켜 섬유 전수를 다시 세었고, 같은 결과를 얻었다.']
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 5행; D 자료 줄 이름 가운데 README에 없음 1: ['fiber_exhaustive.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[fiber-nonunimodal-bound]
+ !! 6열에 D 문단에 없는 문장: ['기록의 검토에서 정의만 보고 새로 짠 코드(`rv_check2.py`; `mpmath` 40자리, 허용 조건은 $k=\\lfloor n/2\\rfloor+1$에서 확인)로 네 값 $0.7395$, $0.3168$, $0.06573$, $0.01142$를 재현했다(`rv_check2.txt` 19–22행). 이 글을 쓰며 같은 상계를 구간 산술(소수 $30$자리, 허용 조건은 $n/2<k\\le n$ 전부에서 정확 정수로 확인)로 다시 계산해 위의 구간 위 끝을 얻었다.']
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 4행; D 자료 줄 이름 가운데 README에 없음 1: ['fiber_bound_iv_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[logconcavity-failure-n80]
+ 6열: D의 문장 부분집합(문장 2/5; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 8행; D 자료 줄 이름 가운데 README에 없음 1: ['lc_n80_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[cumulative-logconcavity]
+ 6열: D의 문장 부분집합(문장 2/6; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 5개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 11행; D 자료 줄 이름 가운데 README에 없음 4: ['lca_exact_N800.txt', 'lca_violations_N800.json', 'part1.json', 'part2.json']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[central-gap-integer]
+ 6열: D의 문장 부분집합(문장 2/4; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 1개 검사, 없음 0개 (계산 중 폴더 포함): []
+ README 파일 목록(이 라벨) 21행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[central-gap-rational-audit]
+ !! 6열에 D 문단에 없는 문장: ['기록의 검토에서는 기록 작성자의 감사 스크립트 여섯과 `audit_K1.py`를 사본에서 재실행해 바이트 단위로 같은 출력을 얻었고, (ㄴ)을 기호 계산으로 증명했으며(`rev_uhat_laurent.py`), (ㅁ)(ㅂ)의 적분을 $\\pi$를 유리수 하계로 바꾸지 않고 수치로 구적해 상계 이하임을 확인했다(`rev_majorant_quad.py`: 합 $4749.0$, $5456.77$; $J$ $1652.1$, $1649.56$). 이 구적은 「재계산」 열의 꺾쇠 괄호에 적힌 스물다섯 자리 정밀도의 수치 평가이고, 정확 유리수 감사의 상계를 다른 방법으로 대조한 것이다.']
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 23행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[crossing-small-n]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 7행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[QL-small-n]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 5행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[exact-n20000]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 59행; D 자료 줄 이름 가운데 README에 없음 2: ['peer-rerun', 'records']
+   README 행 가운데 D 자료 줄에 이름이 없음 10: ['rr2000-class.sha256', 'rr2000-summary.json', 'rr20000-rows.sha256', 'rr20000-summary.json', 'rr20000.log', 'rw-10000-b.json', 'rw-10000-c.json', 'rw-10000-d.json', 'rw-10000-e.json', 'rw-10000-f.json']
+====================================================================================================
+[c50]
+ 6열: D의 문장 부분집합(문장 2/7; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 17개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 21행; D 자료 줄 이름 가운데 README에 없음 14: ['build.bat', 'c20_post.json', 'c20_rows.tsv', 'c20_summary.json', 'c50_post.json', 'c50_rows.tsv', 'c50_summary.json', 'exact_small.py', 'make_tables_iv.py', 'postprocess_iv.py', 'probe_undercount.py', 'run_commands.txt', 't300_exact_check.txt', 'tables_iv_manifest.json']
+   README 행 가운데 D 자료 줄에 이름이 없음 4: ['e50_2_summary.json', 'e50_3_summary.json', 'e50_4_summary.json', 'e50_5_summary.json']
+====================================================================================================
+[newton-m170]
+ 6열: D의 문장 부분집합(문장 2/6; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 12행; D 자료 줄 이름 가운데 README에 없음 1: ['newton_cert_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[tail-T1-partAB]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 7행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[bernstein-signs]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 22행; D 자료 줄 이름 가운데 README에 없음 2: ['kernel_sample', 'reproduction']
+   README 행 가운데 D 자료 줄에 이름이 없음 12: ['byte_compare.txt', 'kernel_sample_N1050000.json', 'kernel_sample_N160000.json', 'kernel_sample_N20010.json', 'kernel_sample_N320000.json', 'kernel_sample_N40000.json', 'kernel_sample_N640000.json', 'kernel_sample_N80000.json', 'log_check_certs.txt', 'log_direct.txt', 'log_kernel_audit.txt', 'log_times.txt']
+====================================================================================================
+[band-A-certification]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 13행; D 자료 줄 이름 가운데 README에 없음 9: ['J_identity_check.json', 'cert_critical_strip.py', 'certificate-run.log', 'critical-strip-certificate-rerun.json', 'gf_identity_check.json', 'laurent_series_check.json', 'strip_sample.json', 'tsv_crosscheck.json', 'verification.json']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[critical-window-rig]
+ 자료 줄: 원고_자료 경로·맨이름 34개 검사, 없음 1개 (계산 중 폴더 포함): ['세션_재계산/critical_window_rerun//verify_exact_cover_out.txt']
+ README 파일 목록(이 라벨) 103행; D 자료 줄 이름 가운데 README에 없음 25: ['A00.json', 'G13.json', '_test_exact_grid.py', 'boxes.py', 'cache', 'cert2', 'cert3', 'check_fixes.py', 'check_fixes_out.txt', 'common.py', 'launch_rerun.py', 'logs', 'orig', 'producer-code', 'recert_first.py', 'rerun_boxes.py', 'rerun_launches.txt', 'summarize.py', 'summary_out.txt', 'v1_floatgrid', 'verify_A00.py', 'verify_A00_cells.py', 'verify_exact_cover.py', 'verify_exact_cover_out.txt', 'verify_fix_on_old_cache.py']
+   README 행 가운데 D 자료 줄에 이름이 없음 85: ['SHA256SUMS.txt', 'check_egf_N.py', 'check_lagrange.py', 'check_series_e.py', 'check_stieltjes.py', 'check_vertical.py', 'check_vertical_fast.py', 'check_vertical_fast2.py', 'circle.py', 'contain_A00.log', 'contain_more.log', 'dbg2.py', 'dbg_T.py', 'dbg_TD.py', 'dbg_attr.py', 'dbg_pipeline.py', 'dbg_u2.py', 'dbg_width.py', 'dbg_width2.py', 'diag_Harc.py', 'diag_abel.py', 'diag_cross.py', 'diag_discount.py', 'diag_green.py', 'fpipe.py', 'lab.py', 'make_table.py', 'patch1.py', 'patch2.py', 'patch3.py']
+====================================================================================================
+[window-mass-constant]
+ 6열: D의 문장 부분집합(문장 2/3; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 1행; D 자료 줄 이름 가운데 README에 없음 2: ['ul_iv_1600x1200.txt', 'ul_iv_800x600.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[zeta-constants]
+ !! 6열에 D 문단에 없는 문장: ['이 글을 쓰며 2026-11-13에 `원고_자료/세션_재계산/zeta_constants/zeta_iv.py`(mpmath 구간 산술, 소수 $30$자리, $N=4000$)를 실행해 세 구간을 확인했다(출력 `zeta_iv_out.txt`). 사다리꼴 보정 없이 위 식 항목에서 정의한 부분합에 두 적분 상하계 $2(N+1)^{-1/2}$·$2(N+\\tfrac12)^{-1/2}$만 더하는 더 성긴 방법으로는 $N=2000$에서 하단이 $2.6123698$이 되어 구간 $[2.61237,2.61238]$을 확인하지 못하므로 기록의 코드와 이 글의 재계산은 모두 위 식 항목의 사다리꼴 하계를 쓴다.']
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 2행; D 자료 줄 이름 가운데 README에 없음 1: ['zeta_iv_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[band-check]
+ 자료 줄: 원고_자료 경로·맨이름 6개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 2행; D 자료 줄 이름 가운데 README에 없음 6: ['band_cells.py', 'band_cells_CE0.tsv', 'band_iv_out_CE0.txt', 'band_read.py', 'band_read_out_CE0.txt', 'rplus_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[induction-rows]
+ 자료 줄: 원고_자료 경로·맨이름 3개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 1행; D 자료 줄 이름 가운데 README에 없음 2: ['induction_rows_out.txt', 'r19de912/v2run20000-rows.tsv']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[lemma-H-interval]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 14행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[lemma-V-coefficients]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 6행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[theorem-U-constant]
+ 6열: D의 문장 부분집합(문장 2/3; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 3개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 6행; D 자료 줄 이름 가운데 README에 없음 2: ['theorem_U_iv_out.txt', 'theorem_U_iv_out_32000.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[theorem-D-base]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 3행; D 자료 줄 이름 가운데 README에 없음 2: ['thmD_base_L700.out', 'thmD_base_iv_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[prop-W-thirteen]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 2행; D 자료 줄 이름 가운데 README에 없음 1: ['iv13_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[tilt-sum-small-k]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 4행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[column-certification-k500]
+ !! 6열에 D 문단에 없는 문장: ['기록의 검토는 세 재귀와 분할 정복을 전혀 쓰지 않고 마지막 차 재귀(정리 {{2:old-2-6}})를 $\\mathfrak x$로 척도화한 $n\\mathfrak e_n=\\mathfrak x\\sum_{j=0}^{n-1}\\min(j+1,y)\\mathfrak e_j\\mathfrak e_{n-1-j}$를 160비트 정수 구간으로 직접 계산하는 별도 프로그램으로 $k=121,128,140,160$(기록 작성자의 반지름과 범위 그대로)과 $k=161$을 다시 인증했고 모두 통과했다']
+ 자료 줄: 원고_자료 경로·맨이름 13개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 15행; D 자료 줄 이름 가운데 README에 없음 12: ['colk500.py', 'compare_indep.py', 'compare_indep_out.txt', 'k121.json', 'k500.json', 'lastcar_iv.py', 'run_w0.log', 'run_w1.log', 'summarize.py', 'summary_out.txt', 'test_small.py', 'test_small_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+   세션 폴더 세션_재계산/column_k500_iv: 디스크 파일 393개 가운데 README 세션 표에 없음 381: ['세션_재계산/column_k500_iv/D항목_초안.md', '세션_재계산/column_k500_iv/res/k121.json', '세션_재계산/column_k500_iv/res/k122.json', '세션_재계산/column_k500_iv/res/k123.json', '세션_재계산/column_k500_iv/res/k124.json', '세션_재계산/column_k500_iv/res/k125.json', '세션_재계산/column_k500_iv/res/k126.json', '세션_재계산/column_k500_iv/res/k127.json', '세션_재계산/column_k500_iv/res/k128.json', '세션_재계산/column_k500_iv/res/k129.json', '세션_재계산/column_k500_iv/res/k130.json', '세션_재계산/column_k500_iv/res/k131.json'] …
+====================================================================================================
+[seed-certificates-k120]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 126행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 121: ['lower-cone-k10-cut30.json.gz', 'lower-cone-k100-cut200.json.gz', 'lower-cone-k101-cut202.json.gz', 'lower-cone-k102-cut204.json.gz', 'lower-cone-k103-cut206.json.gz', 'lower-cone-k104-cut208.json.gz', 'lower-cone-k105-cut210.json.gz', 'lower-cone-k106-cut212.json.gz', 'lower-cone-k107-cut214.json.gz', 'lower-cone-k108-cut216.json.gz', 'lower-cone-k109-cut218.json.gz', 'lower-cone-k11-cut33.json.gz', 'lower-cone-k110-cut220.json.gz', 'lower-cone-k111-cut222.json.gz', 'lower-cone-k112-cut224.json.gz', 'lower-cone-k113-cut226.json.gz', 'lower-cone-k114-cut228.json.gz', 'lower-cone-k115-cut230.json.gz', 'lower-cone-k116-cut232.json.gz', 'lower-cone-k117-cut234.json.gz', 'lower-cone-k118-cut236.json.gz', 'lower-cone-k119-cut238.json.gz', 'lower-cone-k12-cut36.json.gz', 'lower-cone-k120-cut240.json.gz', 'lower-cone-k13-cut39.json.gz', 'lower-cone-k14-cut42.json.gz', 'lower-cone-k15-cut45.json.gz', 'lower-cone-k16-cut48.json.gz', 'lower-cone-k17-cut51.json.gz', 'lower-cone-k18-cut36.json.gz']
+====================================================================================================
+[self-consistent-constants]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 10행; D 자료 줄 이름 가운데 README에 없음 0: []
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[xcert-partAB]
+ 6열: D의 문장 부분집합(문장 2/4; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 25개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 91행; D 자료 줄 이름 가운데 README에 없음 25: ['asym_iv.py', 'common.py', 'crosscheck_fft.py', 'crosscheck_fft.txt', 'fixed_App23', 'fixed_Upp', 'ivlib.py', 'ivv.py', 'layerA1.py', 'layerA2.py', 'layerA3.py', 'layerAint.py', 'layerB.py', 'midfft.py', 'partA_int', 'partB', 'resA2.jsonl', 'resA3.json', 'resB_p0.jsonl', 'resB_p1.jsonl', 'summarize.py', 'summary.json', 'summary.txt', 'tables_iv.npz', 'tables_iv.py']
+   README 행 가운데 D 자료 줄에 이름이 없음 56: ['log_m4r0.txt', 'log_m4r1.txt', 'log_m4r2.txt', 'log_m4r3.txt', 'log_r0.txt', 'log_r0b.txt', 'log_r1.txt', 'log_r1b.txt', 'rerun_env.py', 'rerun_env_0.jsonl', 'rerun_env_0.jsonl', 'rerun_env_0.log', 'rerun_env_1.jsonl', 'rerun_env_1.jsonl', 'rerun_env_1.log', 'rerun_fixed_0.jsonl', 'rerun_fixed_0.jsonl', 'rerun_fixed_0.log', 'rerun_fixed_1.jsonl', 'rerun_fixed_1.jsonl', 'rerun_fixed_1.log', 'rerun_fixed_2.jsonl', 'rerun_fixed_2.jsonl', 'rerun_fixed_2.log', 'rerun_walk.py', 'sigma_bracket.py', 'sigma_bracket.py', 'tables.py', 'tables_cache.npz', 'tail_lemma.py']
+   세션 폴더 세션_재계산/xcert_iv: 디스크 파일 209개 가운데 README 세션 표에 없음 162: ['세션_재계산/xcert_iv/D항목_원본.md', '세션_재계산/xcert_iv/D항목_초안.md', '세션_재계산/xcert_iv/progress.md', '세션_재계산/xcert_iv/sigmaA1_cache_p0.jsonl', '세션_재계산/xcert_iv/sigmaA1_cache_p1.jsonl', '세션_재계산/xcert_iv/sigmaA1_cache_p3.jsonl', '세션_재계산/xcert_iv/sigmaA1_cache_test.jsonl', '세션_재계산/xcert_iv/sigma_cache_p0.jsonl', '세션_재계산/xcert_iv/sigma_cache_p1.jsonl', '세션_재계산/xcert_iv/sigma_cache_p3.jsonl', '세션_재계산/xcert_iv/sigma_cache_test.jsonl', '세션_재계산/xcert_iv/slot1.done'] …
+====================================================================================================
+[polar-blocks-488]
+ 6열: D의 문장 부분집합(문장 2/11; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 31개 검사, 없음 1개: ['세션_재계산/r89eb039_polar/.log']
+ README 파일 목록(이 라벨) 101행; D 자료 줄 이름 가운데 README에 없음 16: ['.log', 'NEW_adaptive_2087_5000.jsonl', 'NEW_blocks_merged.jsonl', 'achain_iv.jsonl', 'achain_iv.log', 'achain_iv.py', 'bvt_block_9843156_10000000.json', 'bvt_block_9843156_10000000.txt', 'consts_check.py', 'consts_check.txt', 'data', 'summarize.py', 'summary.txt', 'test_ia.py', 'truth_accuracy_check.json', 'truth_accuracy_check.py']
+   README 행 가운데 D 자료 줄에 이름이 없음 62: ['adaptive_2087_2400.log', 'adaptive_2087_5000.log', 'block_vs_truth.log', 'bvt_20000.json', 'bvt_20000.json', 'bvt_2001.json', 'bvt_2001.json', 'bvt_2001_fixed.json', 'bvt_2001_fixed.json', 'bvt_block_144741_147635.json', 'bvt_block_144741_147635.json', 'bvt_block_2001_2011.json', 'bvt_block_2001_2011.json', 'bvt_block_2895680_2953593.json', 'bvt_block_2895680_2953593.json', 'bvt_block_4670_4716.json', 'bvt_block_4670_4716.json', 'bvt_block_935263_953968.json', 'bvt_block_935263_953968.json', 'check_thmAB.out', 'l15_1e7_fast2.log', 'l15_check_10000000.json', 'l15_check_10000000.json', 'l15_sweep_100000.json', 'l15_sweep_100000.json', 'l15_sweep_1000000.json', 'l15_sweep_1000000.json', 'l15_sweep_10000000.json', 'l15_sweep_10000000.json', 'l15_sweep_1e6.log']
+====================================================================================================
+[band102-integer]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 150행; D 자료 줄 이름 가운데 README에 없음 3: ['audit', 'audit_rerun', 'icert']
+   README 행 가운데 D 자료 줄에 이름이 없음 86: ['audit_lm_K10000_nu1_19.txt', 'audit_lm_K11100_nu20_40.txt', 'audit_param_K1000000_nu41_237.txt', 'audit_param_K1000000_nu41_590_ext.txt', 'audit_param_K100000_nu194_228_ext2.txt', 'audit_param_K100000_nu41_110.txt', 'audit_param_K100000_nu41_228_ext.txt', 'audit_param_K10000_nu41_86_ext.txt', 'audit_param_K10000_nu41_86_ext2.txt', 'audit_param_K11100_nu41_60_ext2.txt', 'audit_param_K12000_nu41_92_ext2.txt', 'audit_param_K13000_nu41_93_ext2.txt', 'audit_param_K14000_nu41_95_ext2.txt', 'audit_param_K15000_nu41_58.txt', 'audit_param_K15000_nu41_96_ext.txt', 'audit_param_K15000_nu55_96_ext2.txt', 'audit_param_K15000_nu97_102_ext2.txt', 'audit_param_K200000_nu284_298_ext2.txt', 'audit_param_K200000_nu41_138.txt', 'audit_param_K200000_nu41_298_ext.txt', 'audit_param_K20000_nu113_115_ext2.txt', 'audit_param_K20000_nu41_112_ext.txt', 'audit_param_K20000_nu41_64.txt', 'audit_param_K20000_nu70_112_ext2.txt', 'audit_param_K30000_nu41_132_ext.txt', 'audit_param_K30000_nu41_73.txt', 'audit_param_K30000_nu93_132_ext2.txt', 'audit_param_K500000_nu400_435_ext2.txt', 'audit_param_K500000_nu41_188.txt', 'audit_param_K500000_nu41_435_ext.txt']
+====================================================================================================
+[moment-certification]
+ 6열: D의 문장 부분집합(문장 2/8; 앞부분만은 아님)
+ 자료 줄: 원고_자료 경로·맨이름 14개 검사, 없음 0개 (계산 중 폴더 포함): []
+ README 파일 목록(이 라벨) 34행; D 자료 줄 이름 가운데 README에 없음 14: ['cert', 'compare.py', 'compare_out.txt', 'nM.json', 'nM.py', 'nM_out.txt', 'summarize.py', 'summary.txt', 'sweep_p0.jsonl', 'sweep_p0.log', 'sweep_p1.jsonl', 'sweep_p1.log', 'test_exact.py', 'test_exact_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 21: ['band_A.txt', 'band_B.txt', 'extra_cols.txt', 'extra_k1200.txt', 'extra_k1500.txt', 'extra_k1500b.txt', 'full_501_800.txt', 'full_B1.txt', 'full_B2.txt', 'full_C1.txt', 'full_C2.txt', 'full_D1.txt', 'full_D2.txt', 'full_E1.txt', 'full_E2.txt', 'wband_A.txt', 'wband_B.txt', 'win_0.txt', 'win_1.txt', 'win_2.txt', 'win_3.txt']
+====================================================================================================
+[column-certificates-841-2000]
+ !! 4열 7.3·7.4·7.5 ≠ 머리 괄호 진술의 절 7.4·7.5
+ 자료 줄: 원고_자료 경로·맨이름 22개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 54행; D 자료 줄 이름 가운데 README에 없음 24: ['bor_pr0.npy', 'cert', 'check', 'crosscheck_review.py', 'crosscheck_review_out.txt', 'ivlib.py', 'res_ext_p0.jsonl', 'res_ext_p1.jsonl', 'res_p0.jsonl', 'res_p1.jsonl', 'run_ext_p0.log', 'run_ext_p1.log', 'run_p0.log', 'run_p1.log', 'summary.py', 'summary_all_out.txt', 'summary_ext_out.txt', 'summary_out.txt', 'tables.py', 'test_1171.txt', 'test_2000.txt', 'test_841.txt', 'turn3', 'twiddle_2p21.npy']
+   README 행 가운데 D 자료 줄에 이름이 없음 36: ['bf_gf.out', 'bf_gf.py', 'block_claims.out', 'block_claims.py', 'e2e_sign.out', 'e2e_sign.py', 'finite_check.py', 'finite_check_1000.out', 'finite_check_501.out', 'finite_check_840.out', 'fullprec.out', 'fullprec.py', 'indep_1000.out', 'indep_501.out', 'indep_840.out', 'indep_col.py', 'misc_numbers.out', 'misc_numbers.py', 'nv_full.out', 'nv_full.py', 'probe_circle.py', 'probe_second_zero.out', 'probe_second_zero.py', 'rerun_3000.out', 'rerun_a.json', 'rerun_b.json', 'rerun_b.out', 'rerun_big.out', 'rerun_c.json', 'rerun_c.out']
+====================================================================================================
+[Q-fin-1130]
+ !! 6열에 D 문단에 없는 문장: ['이 글을 쓰며 2026-11-13에 위의 방향 반올림 구간 산술로 $1130$열 전부를 다시 계산해 위의 결과를 얻었다(`원고_자료/세션_재계산/Q_fin_1130/qfin_iv.py`). 원천 쪽 로그 여유의 하계는 기록의 값과 $7.6\\cdot10^{-12}$ 안에서 같고 최적 $\\mathfrak l$은 $1130$열 모두에서 같다.']
+ 자료 줄: 원고_자료 경로·맨이름 12개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 12행; D 자료 줄 이름 가운데 README에 없음 11: ['extract_inputs_out.txt', 'qfin_iv.py', 'qfin_iv_out_p0.txt', 'qfin_iv_out_p1.txt', 'qfin_iv_result_p0.jsonl', 'qfin_iv_result_p1.jsonl', 'summarize.py', 'summarize_out.txt', 'test_small.py', 'test_small_out.txt', 'xcert_rows_2001_3131.json']
+   README 행 가운데 D 자료 줄에 이름이 없음 6: ['xcert_501_5000_m4r0.jsonl', 'xcert_501_5000_m4r1.jsonl', 'xcert_501_5000_m4r2.jsonl', 'xcert_501_5000_m4r3.jsonl', 'xcert_501_5000_r0.jsonl', 'xcert_501_5000_r1.jsonl']
+====================================================================================================
+[window-mass-env]
+ 자료 줄: 원고_자료 경로·맨이름 13개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 26행; D 자료 줄 이름 가운데 README에 없음 14: ['.json', 'cert_Cb_iv.py', 'cert_Cb_iv_out_1_2280.txt', 'cert_Cb_iv_out_2280_3000.txt', 'cert_Cb_iv_result_1_2280.json', 'cert_Cb_iv_result_2280_3000.json', 'cert_interval_iv.py', 'cert_interval_iv_out.txt', 'cert_interval_iv_result.json', 'check_table_iv.py', 'check_table_iv_out.txt', 'rerun', 'summarize.py', 'summarize_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 8: ['REVIEW_Bprime_3.6.out', 'REVIEW_Cb_1_60.out', 'REVIEW_Cb_2980_3000.out', 'REVIEW_LOWH_T0.48_k6668.out', 'REVIEW_build_env.out', 'REVIEW_interval_0_0.out', 'REVIEW_interval_11_16.out', 'REVIEW_interval_part1_killed.out']
+====================================================================================================
+[bprime-boxes]
+ 자료 줄: 원고_자료 경로·맨이름 23개 검사, 없음 4개: ['세션_재계산/bprime_boxes/window_mass_env/ia.py', '세션_재계산/bprime_boxes/세션_재계산/rerun_omega_h1.sh', '세션_재계산/bprime_boxes/_p1.json', '세션_재계산/bprime_boxes/.npy']
+ README 파일 목록(이 라벨) 8행; D 자료 줄 이름 가운데 README에 없음 18: ['.npy', '_p1.json', 'box_RK1.04_RNU1.03_k6668_NY6000_p0.json', 'bprime_iv.py', 'bprime_result.txt', 'bprime_summary.py', 'checks_out.txt', 'compare_record.py', 'compare_record_out.txt', 'design.json', 'ia.py', 'ivbox_lib_v1_binary64omega.py', 'rerun', 'rerun_omega_h1.sh', 'tail_out.txt', 'test_lib.py', 'test_lib_out.txt', 'v1_binary64omega']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+   세션 폴더 세션_재계산/r030ffae_window/work: 디스크 파일 41개 가운데 README 세션 표에 없음 31: ['세션_재계산/r030ffae_window/work/build_env_fixed.py', '세션_재계산/r030ffae_window/work/build_env_profile.py', '세션_재계산/r030ffae_window/work/cert_assembly.py', '세션_재계산/r030ffae_window/work/cert_assembly_fixed.py', '세션_재계산/r030ffae_window/work/cert_assembly_low.py', '세션_재계산/r030ffae_window/work/cert_assembly_lowH.py', '세션_재계산/r030ffae_window/work/cert_assembly_mono.py', '세션_재계산/r030ffae_window/work/cert_lib.py', '세션_재계산/r030ffae_window/work/cert_lib_fixed.py', '세션_재계산/r030ffae_window/work/check_lip.py', '세션_재계산/r030ffae_window/work/design.json', '세션_재계산/r030ffae_window/work/FIXED_cert_assembly_result_U_X3.6_k6668.json'] …
+====================================================================================================
+[band-boxes]
+ 자료 줄: 원고_자료 경로·맨이름 16개 검사, 없음 11개: ['세션_재계산/bprime_boxes/run_all.sh', '세션_재계산/bprime_boxes/band_summary.py', '세션_재계산/bprime_boxes/band_result.txt', '세션_재계산/bprime_boxes/tail_H_T12-25_k6668.txt', '세션_재계산/bprime_boxes/tail_H_T57-100_k100000.txt', '세션_재계산/bprime_boxes/tail_N_T11-25_k6668.txt', '세션_재계산/bprime_boxes/tail_N_T53-100_k100000.txt', '세션_재계산/bprime_boxes/box_FH_…_p0.json', '세션_재계산/bprime_boxes/_p1.json', '세션_재계산/bprime_boxes/.npy', '세션_재계산/bprime_boxes/세션_재계산/rerun_omega_h1.sh']
+ README 파일 목록(이 라벨) 12행; D 자료 줄 이름 가운데 README에 없음 16: ['.json', '.npy', '_p1.json', 'band_result.txt', 'band_summary.py', 'box_FH_…_p0.json', 'compare_record.py', 'compare_record_out.txt', 'rerun', 'rerun_omega_h1.sh', 'run_all.sh', 'tail_H_T12-25_k6668.txt', 'tail_H_T57-100_k100000.txt', 'tail_N_T11-25_k6668.txt', 'tail_N_T53-100_k100000.txt', 'v1_binary64omega']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[stored-table-check]
+ 자료 줄: 원고_자료 경로·맨이름 0개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 11행; D 자료 줄 이름 가운데 README에 없음 1: ['.out']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[m1-column-reading]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 5행; D 자료 줄 이름 가운데 README에 없음 1: ['m1_read_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[H-star-plus-interval]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 3행; D 자료 줄 이름 가운데 README에 없음 2: ['hplus_interval_out.txt', 'hplus_sanity.out']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[AR-integrals]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 4행; D 자료 줄 이름 가운데 README에 없음 1: ['ar_integrals_iv_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[band-LP]
+ 자료 줄: 원고_자료 경로·맨이름 14개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 18행; D 자료 줄 이름 가운데 README에 없음 13: ['out_da_22001_38886.txt', 'out_da_9467_22000.txt', 'out_ga_na.txt', 'out_ra_20001_29500.txt', 'out_ra_29501_38886.txt', 'out_ra_6668_8000.txt', 'out_ra_8001_9466.txt', 'out_ra_9467_20000.txt', 'part_da.py', 'part_ga_na.py', 'part_ra.py', 'xcheck_mp.py', 'xcheck_mp_out.txt']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+====================================================================================================
+[pair-one-variable]
+ 자료 줄: 원고_자료 경로·맨이름 2개 검사, 없음 0개: []
+ README 파일 목록(이 라벨) 19행; D 자료 줄 이름 가운데 README에 없음 4: ['pair_iv_out.txt', 'pdiamond_final.out', 'pdiamond_proof.out', 'w_data']
+   README 행 가운데 D 자료 줄에 이름이 없음 0: []
+
+====================================================================================================
+README 표 경로 1412개: 디스크에 없음 4: ['세션_재계산/band_boxes/run_a0.txt', '세션_재계산/band_boxes/run_a1.txt', '세션_재계산/band_boxes/run_all_log.txt', '세션_재계산/band_boxes/run_all_stdout.txt']
+SHA 불일치 47: [('세션_재계산/band_boxes/band_result.txt', '87ac7995e5ca', '703df3b5dd42'), ('세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json', 'ec2bbff1be7e', '80e58da7d57f'), ('세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json', '3f52ba36303d', 'be7f446f857b'), ('세션_재계산/band_boxes/box_FH_T57-100_k100000_RK1.04_RNU1.03_NY6000_p0.json', '6b54a184c27e', '6dfd1de703aa'), ('세션_재계산/band_boxes/box_FH_T57-100_k100000_RK1.04_RNU1.03_NY6000_p1.json', 'e20719c6227c', '71bd1f9d6d64'), ('세션_재계산/band_boxes/box_FN_T11-25_k6668_RK1.04_RNU1.03_NY6000_p0.json', '709ca4122cf7', 'da78ab4c915e'), ('세션_재계산/band_boxes/box_FN_T11-25_k6668_RK1.04_RNU1.03_NY6000_p1.json', '03740c40d6fb', 'a202b653da2d'), ('세션_재계산/band_boxes/box_FN_T53-100_k100000_RK1.04_RNU1.03_NY6000_p0.json', '7bcf54c5157c', 'ebf6d469948b'), ('세션_재계산/band_boxes/box_FN_T53-100_k100000_RK1.04_RNU1.03_NY6000_p1.json', '165838b4bff5', '004dd45d8faf'), ('세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json', 'fe5ea02c507d', 'fdf479a30bf2'), ('세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json', '8732fc4b028a', 'd2a98875f2a8'), ('세션_재계산/band_boxes/box_H_T57-100_k100000_RK1.04_RNU1.03_NY6000_p0.json', 'd653086b813f', '6feda1c4d35a'), ('세션_재계산/band_boxes/box_H_T57-100_k100000_RK1.04_RNU1.03_NY6000_p1.json', 'f1f4c5b22f99', '9a3174e1a9d0'), ('세션_재계산/band_boxes/box_N_T11-25_k6668_RK1.04_RNU1.03_NY6000_p0.json', '9a701ae90a21', '41d76919d1ce'), ('세션_재계산/band_boxes/box_N_T11-25_k6668_RK1.04_RNU1.03_NY6000_p1.json', '56a394153a4d', 'e66f89f0e633'), ('세션_재계산/band_boxes/box_N_T53-100_k100000_RK1.04_RNU1.03_NY6000_p0.json', 'd4118a7eef75', '8e7405fc8584'), ('세션_재계산/band_boxes/box_N_T53-100_k100000_RK1.04_RNU1.03_NY6000_p1.json', '7dd58b0d82df', '40084120c4f8'), ('세션_재계산/band_boxes/compare_record_out.txt', '8ae08cea093c', 'f9a45d11b8f1'), ('세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt', '6d6f8bf27593', '1bf9e6064221'), ('세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt', '8a92d8030c9c', '393482b83668'), ('세션_재계산/band_boxes/log_FH_T57-100_k100000_RK1.04_RNU1.03_NY6000_p0.txt', 'cc271ec7fdb3', '1d55361115a2'), ('세션_재계산/band_boxes/log_FH_T57-100_k100000_RK1.04_RNU1.03_NY6000_p1.txt', 'e82b2ff3f4bd', 'd86a04faff8f'), ('세션_재계산/band_boxes/log_FN_T11-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt', 'e4ef18ec129a', '4a636939fc2d'), ('세션_재계산/band_boxes/log_FN_T11-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt', '148101c35217', '4763521fa977'), ('세션_재계산/band_boxes/log_FN_T53-100_k100000_RK1.04_RNU1.03_NY6000_p0.txt', 'a765153c41ef', 'f0c08242c042'), ('세션_재계산/band_boxes/log_FN_T53-100_k100000_RK1.04_RNU1.03_NY6000_p1.txt', 'a322b55f1b45', '97c0383a00c8'), ('세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt', '2845ec917b44', '6a0f55e147ba'), ('세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt', '71df9bc661bb', '4dd0697aa86d'), ('세션_재계산/band_boxes/log_H_T57-100_k100000_RK1.04_RNU1.03_NY6000_p0.txt', '07aa82a110f1', 'c57ee09d394a'), ('세션_재계산/band_boxes/log_H_T57-100_k100000_RK1.04_RNU1.03_NY6000_p1.txt', 'a8d07cdd6e05', 'e1f845d9a192'), ('세션_재계산/band_boxes/log_N_T11-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt', '11f6ecace7a1', 'eaedd4039619'), ('세션_재계산/band_boxes/log_N_T11-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt', '1024a30196f6', 'a17e50f8b21b'), ('세션_재계산/band_boxes/log_N_T53-100_k100000_RK1.04_RNU1.03_NY6000_p0.txt', 'aa4ea91d7dbe', 'b593441bac69'), ('세션_재계산/band_boxes/log_N_T53-100_k100000_RK1.04_RNU1.03_NY6000_p1.txt', '3d1104aeb3cd', 'ee15e2248144'), ('세션_재계산/band_boxes/tail_H_T12-25_k6668.txt', 'ef1df15003f2', 'df0e1d6fdd6f'), ('세션_재계산/band_boxes/tail_H_T57-100_k100000.txt', '863cb298fba0', '9546d76d4b9a'), ('세션_재계산/band_boxes/tail_N_T11-25_k6668.txt', 'a3662ec945e9', '1adf372e0e4d'), ('세션_재계산/band_boxes/tail_N_T53-100_k100000.txt', 'c5441026d9ec', 'cd3645ed81e9'), ('세션_재계산/bprime_boxes/box_RK1.04_RNU1.03_k6668_NY6000_p0.json', 'b64974cbe33c', '8a64964143dc'), ('세션_재계산/bprime_boxes/box_RK1.04_RNU1.03_k6668_NY6000_p1.json', 'c6833a7e6bfc', '691b5f2ac953'), ('세션_재계산/bprime_boxes/bprime_result.txt', '47cc54b61f1c', '8a29532c36b7'), ('세션_재계산/bprime_boxes/compare_record_out.txt', 'de5a4b92cf72', 'f1f06265dde9'), ('세션_재계산/bprime_boxes/ivbox_lib.py', '48d00836c7d1', 'f8f4d33c95b9'), ('세션_재계산/bprime_boxes/log_box_RK1.04_RNU1.03_k6668_NY6000_p0.txt', 'cd2d02bc6341', '633643a82010'), ('세션_재계산/bprime_boxes/log_box_RK1.04_RNU1.03_k6668_NY6000_p1.txt', '444c69cda42d', '87d819761c89'), ('세션_재계산/bprime_boxes/test_lib.py', '6e328b267cdc', '8876e988d63f'), ('세션_재계산/moment_cert_iv/mcert_iv.py', '0e4f98c3d668', '4a8796d8a96c')]
+====================================================================================================
+====================================================================================================
+부록D_장10.md {'칸': 5, '블록': 0, '사슬': 4, '한쪽 경계': 0, '위 끝/아래 끝': 5, '상단/하단': 0, '상한/하한': 0}
+부록D_장2.md {'칸': 0, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 4, '상단/하단': 0, '상한/하한': 0}
+부록D_장3.md {'칸': 0, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 0, '상단/하단': 0, '상한/하한': 0}
+부록D_장4.md {'칸': 0, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 0, '상단/하단': 0, '상한/하한': 0}
+부록D_장5A.md {'칸': 5, '블록': 2, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 7, '상단/하단': 4, '상한/하한': 0}
+부록D_장5B.md {'칸': 0, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 6, '상단/하단': 1, '상한/하한': 0}
+부록D_장6.md {'칸': 0, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 6, '상단/하단': 0, '상한/하한': 0}
+부록D_장7A.md {'칸': 14, '블록': 0, '사슬': 6, '한쪽 경계': 3, '위 끝/아래 끝': 13, '상단/하단': 14, '상한/하한': 0}
+부록D_장7B.md {'칸': 1, '블록': 3, '사슬': 1, '한쪽 경계': 0, '위 끝/아래 끝': 19, '상단/하단': 0, '상한/하한': 2}
+부록D_장8.md {'칸': 6, '블록': 0, '사슬': 1, '한쪽 경계': 2, '위 끝/아래 끝': 6, '상단/하단': 0, '상한/하한': 0}
+부록D_장9.md {'칸': 8, '블록': 0, '사슬': 0, '한쪽 경계': 4, '위 끝/아래 끝': 13, '상단/하단': 2, '상한/하한': 1}
+장11.md {'칸': 1, '블록': 0, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 2, '상단/하단': 1, '상한/하한': 0}
+README.md {'칸': 1, '블록': 0, '사슬': 1, '한쪽 경계': 0, '위 끝/아래 끝': 8, '상단/하단': 0, '상한/하한': 0}
+재실행표.md {'칸': 2, '블록': 3, '사슬': 0, '한쪽 경계': 1, '위 끝/아래 끝': 8, '상단/하단': 0, '상한/하한': 0}
+빠른_확인.py {'칸': 1, '블록': 4, '사슬': 0, '한쪽 경계': 0, '위 끝/아래 끝': 0, '상단/하단': 0, '상한/하한': 0}
+
+  부록D_장10.md:30 …1)$, $\mathfrak s_{q_0+1}(k_0)$은 2.11절의 사슬 법칙의 첫 걸음 재귀 $\mathfrak s_1(y)=1$, $\mat…
+  부록D_장10.md:32 …g\mathrm{Bor}(n)$을 $\log j$의 구간 합으로 만들고 사슬 재귀를 구간 산술로 계산해 $\mathfrak s_q(k_0+1)$($…
+  부록D_장10.md:40 …의 모든 값을 다시 계산해 넷째 자리까지 같은 값이 나왔고, 그에 앞서 사슬 재귀가 $2\le y\le12$에서 정확한 $A_{n,\ell}$과 일…
+  부록D_장10.md:42 …/re71a735…/evidence/peer/thmC_float.py`(사슬 재귀 `s_all`), `records/re71a735…/evidenc…
+  부록D_장5A.md:36 …가 참값을 제 쪽에서 막는다. 내적은 $32$행씩 묶은 Toeplitz 블록에서 3단 합(누산기 $8$개, $32$항 묶음, $64$묶음 군)으로 …
+  부록D_장5A.md:36 …$32$항 묶음, $64$묶음 군)으로 더하고, $S_1$은 $64$열 블록의 맨 위 열에서 직접 계산한 뒤 아래 열로 내려가며 $s=k+1$ 항을…
+  부록D_장7A.md:104 …\Omega'$과 $\Gamma$는 증가한다). 층 A″-3: (6)의 사슬을 mpmath `iv`(소수 $50$자리)로 평가하되 $\mathfra…
+  부록D_장7A.md:133 …hrm S$는 제2종 Stirling 수), 모든 항이 양이므로 인자별 한쪽 경계; $\mathcal E^{\mathrm U}_j$($j=2,3,4$)는…
+  부록D_장7A.md:137 …(4) $k\ge10^7$의 사슬(변수 $\mathfrak s:=\varsigma_k$, $\mathfr…
+  부록D_장7A.md:137 …에서); 하계 $\mathcal J^{\mathrm L}$은 같은 식의 반대쪽 경계. [A4] $\Xi(\mathfrak s)\le\Xi^{\mathrm …
+  부록D_장7A.md:177 …L}(k_1+\mathfrak n_1-1)^v$($v=0,1$). 상계 사슬(`restricted_moments_up_blocks`, 94–102행…
+  부록D_장7A.md:177 …rm S(j,v)\mathfrak y^{\mathrm U}_v$. 하계 사슬(`restricted_moment2_lo_blocks`, 104–108…
+  부록D_장7A.md:214 …$U(10.9,10^7)\le0.99204$. $k=10^7$ 한 점의 사슬 값은 $\eta=0.01418$, $k\theta_a=1.251$, $…
+  부록D_장7A.md:216 …산해 모두 인증된 하계 이상임을 확인했다. $\varsigma$-구간의 사슬은 기록의 검토가 주요 부등식을 재유도하고 흡수된 꼬리와 전변동 상수를 …
+  부록D_장7A.md:216 … $k=10^7$의 참값과 $k=10^5$–$10^7$의 16개 점에서 경계식 20개를 대조했다. $2472$개 구간의 기록 값은 기록의 검토가 다시…
+  부록D_장7B.md:1 … 정리의 네 계산: 쌍별 판정의 껍질 검사, 꼬리 삼중의 인증, 해석적 사슬의 정확 유리수 감사, 유한 위치의 정수 구간 인증 (명제 {{7:pai…
+  부록D_장7B.md:27 …8$ 또는 $256$)의 합에서 두 첨자가 모두 $n_0$ 미만인 항은 블록 전체에 대해 한 번의 행렬곱으로 모은다(덧셈 순서만 바뀌므로 한계는 그…
+  부록D_장7B.md:35 … 반 단위까지). 작은 열($k=3,5,7,12$, $n\le240$; 블록 경로와 직접 경로 모두)에서는 (7.3)을 정확 유리수로 계산한 값이 …
+  부록D_장7B.md:57 …여섯 자리; `blk3_stats.py`·`blk3_stats.out` 블록 통계; `samples3.out` 표본 열; `validate_eps3…
+  부록D_장8.md:5 …athfrak S^+$의 적분은 왼끝 값으로 위에서 막아 계산한다(모두 한쪽 경계).…
+  부록D_장8.md:7 …3}\sum_i|x_i|$로 포위한다. 기록의 코드는 같은 격자와 같은 한쪽 경계를 binary64로 평가했고 셀 최솟값에서 허용 오차 $10^{-9}$…
+  부록D_장8.md:17 …ce/peer/rerun/work/window_lib.py`(봉투 함수·사슬), `fixes.py`(`E_env_rigorous_fixed`, `l…
+  부록D_장9.md:39 …**확인하는 진술.** (가) 보조정리 {{9:old-7-26}}의 세 경계값: $k=6668$에서 $k\mu(k)/(1-\mu(k))=741.8\l…
+  부록D_장9.md:41 …으면 된다. (다) $\nu$의 구간 $[\nu_a,\nu_b]$에서는 한쪽 경계 하나를 평가한다. $P^{\theta\dagger}$는 $\nu_a$에…
+  부록D_장9.md:41 …는 $t=k+2,\dots,2k+1$ 전부를 쓴다. 기록의 코드는 같은 한쪽 경계를 배정밀도로 평가했고, (라)의 선형 최소화 값은 탐욕 채움으로 직접 …
+  부록D_장9.md:53 …의 코드는 같은 단조 괄호, 곧 단조 인자를 구간의 끝에서 평가해 얻는 한쪽 경계를 배정밀도로 평가했다.…
+  README.md:525 …ert_ia2.py`, `recert.py` 등)과 $k\ge10^7$ 사슬의 구간판 `achain_iv.py`가 있다. 결과는 `out/NEW_b…
+  재실행표.md:36 …-I summarize.py > out/summary.txt` | 488블록 전부 통과(new FAIL blocks: []), $\varsigma$…
+  재실행표.md:36 …cdacb465ac866a3517ee`; 외 1개(README 표) | 블록 재인증은 프로세스 3개가 각 2시간 30분(13:43–16:15; `o…
+  재실행표.md:48 …:band-LP}} | (가) 보조정리 {{9:old-7-26}}의 세 경계값: $k=6668$에서 … | `세션_재계산/band_LP/part_ga…
+  재실행표.md:48 …4\times10^{-7}$, $k=38887$); (다)·(라) 실패 블록 0 | `세션_재계산/band_LP/out_ga_na.txt` `e70…
+  빠른_확인.py:160 …    dict(name="극영역-첫블록", label="polar-blocks-488", slow=True,…
+  빠른_확인.py:163 …     note="구간 판(r89eb039_polar_iv)으로 488블록 가운데 첫 블록(약 50초). out/run_w0.log의 [2001,…
+  빠른_확인.py:163 …="구간 판(r89eb039_polar_iv)으로 488블록 가운데 첫 블록(약 50초). out/run_w0.log의 [2001,2011] 줄과 …
+  빠른_확인.py:186 …         note="C20의 최소 여유 자리를 지나는 열 블록 하나를 미달 수 재귀의 참조 구간과 대조. runs/c20_probeB…

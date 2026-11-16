@@ -1,0 +1,4 @@
+k 1 n=2k+1 brute vs closed: 3 9
+k 2 n=2k+1 brute vs closed: 176 236
+k 3 n=2k+1 brute vs closed: 21093 24453
+bad 0

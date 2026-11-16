@@ -1,0 +1,20 @@
+col 573 done
+col 574 done
+col 575 done
+col 576 done
+col 577 done
+col 578 done
+col 579 done
+col 580 done
+779 574 sign 1 rel 1.5953e-08
+779 575 sign 1 rel 1.1349e-08
+779 576 sign 1 rel 1.0269e-08
+779 577 sign 1 rel 1.2734e-08
+779 578 sign 1 rel 1.8767e-08
+779 579 sign 1 rel 2.8392e-08
+780 574 sign 1 rel 5.6110e-09
+780 575 sign -1 rel -1.7174e-09
+780 576 sign -1 rel -5.5553e-09
+780 577 sign -1 rel -5.8810e-09
+780 578 sign -1 rel -2.6723e-09
+780 579 sign 1 rel 4.0937e-09

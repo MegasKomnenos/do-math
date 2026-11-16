@@ -1,0 +1,127 @@
+앞 장 입력(닫힘): 첫째 262 둘째 272 공유 262 첫째만 0 둘째만 10
+
+첫째만: []
+
+둘째만: ['2:old-2-44', '2:old-2-46', '6:DD-lower-bound', '6:lemma-omega', '6:lemma-phi', '6:old-8-12', '6:old-8-13', '6:same-kernel', '6:stay-margin-identity', '7:old-6-14']
+
+표: 공유 56 첫째 17 둘째 13
+
+[표 공유인데 닫힘상 공유 아님]: ['6:insertion', '6:log-derivative', '6:trapezoid', '7:old-6-14']
+    6:insertion - -
+    6:log-derivative - -
+    6:trapezoid - -
+    7:old-6-14 - B
+
+[닫힘상 공유인데 표 공유에 없음]: ['2:J-egf', '2:b-top', '2:chain-expansion', '2:chain-normalization', '2:convex-bonferroni', '2:moving-tail', '2:old-2-12', '2:old-2-14', '2:old-2-15', '2:old-2-16', '2:old-2-17', '2:old-2-18', '2:old-2-19', '2:old-2-20', '2:old-2-28', '2:old-2-29', '2:old-2-3', '2:old-2-30', '2:old-2-32', '2:old-2-33', '2:old-2-34', '2:old-2-35', '2:old-2-36', '2:old-2-4', '2:old-2-41', '2:old-2-5', '2:old-2-7', '2:old-2-8', '2:ratio-e', '3:old-3-1', '3:old-3-6', '4:borel-tail-arc', '4:correction-contour', '4:e-integral', '4:gauss-coeff', '4:gauss-coeff-numeric', '4:gauss-contraction', '4:old-4-3', '4:old-4-4', '4:old-4-6', '4:old-4-7', '4:old-4-9', '4:two-corrections', '5:SR-implies-QR', '5:band-inequality', '5:borel-gf', '5:bt-tail', '5:cayley-ratio', '5:cover-edge', '5:cut-rep', '5:first-moment-weight', '5:fixed-size-response', '5:green-connection', '5:hat-normalization', '5:hover-tail', '5:inverse-renewal', '5:kernel-C-bound', '5:kernel-bounds', '5:kernel-crude', '5:kernel-sandwich', '5:laurent-coeff', '5:lemma-L', '5:marked-chain-rec', '5:marked-recursion', '5:marked-riccati', '5:nf-ratio', '5:old-5-10', '5:old-5-12', '5:old-5-13', '5:old-5-14', '5:old-5-15', '5:old-5-2', '5:old-5-20', '5:old-5-21', '5:old-5-22', '5:old-5-26', '5:old-5-27', '5:old-5-28', '5:old-5-30', '5:old-5-31', '5:old-5-32', '5:old-5-33', '5:old-5-34', '5:old-5-38', '5:old-5-4', '5:old-5-5', '5:old-5-7', '5:old-5-8', '5:old-5-9', '5:omitted-tail', '5:parity-tail', '5:renewal-fkg', '5:response-kernel', '5:riemann-unimodal', '5:rig-int', '5:right-part', '5:scaled-integrand', '5:source-rep', '5:stirling-bor', '5:stop-lower', '5:suff-cond', '5:unit-circle', '5:weight-envelope', '6:D-bound', '6:above-window', '6:cayley-propagation', '6:chain-recursion', '6:critical-front', '6:far-window', '6:first-layer-end', '6:increment-bounds', '6:lemma-A', '6:lemma-B', '6:lemma-E', '6:lemma-F', '6:lemma-Hprime', '6:lemma-M', '6:lemma-N', '6:lemma-O', '6:lemma-ell', '6:path-shift', '6:prop-R', '6:prop-W', '6:small-k-bulk', '6:theorem-D', '6:theorem-U', '6:tilt-interval', '6:tilt-split', '6:tilt-sum', '6:v-negative', '7:X-cert', '7:analytic-transfer', '7:band-propagation', '7:block-exponential', '7:blocked-majorant', '7:borel-monotone', '7:column-lemma', '7:cor-S-prime', '7:explicit-bounds', '7:factorial-moment', '7:fold-A', '7:fold-DIP', '7:fold-L1', '7:fold-R', '7:fold-T', '7:fourier-lemmas', '7:green-atom', '7:heavy-block', '7:hermite-nu', '7:integer-strips', '7:kernel-bound', '7:lemma-P-pole', '7:lemma-P-prime', '7:lemma-R-sc', '7:level-chain', '7:old-6-10', '7:old-6-11', '7:old-6-12', '7:old-6-16', '7:old-6-2', '7:old-6-21', '7:old-6-22', '7:old-6-3', '7:old-6-4', '7:old-6-6', '7:old-6-7', '7:old-6-8', '7:pair-check-10000', '7:pair-criterion', '7:pair-criterion-sharp', '7:pair-reach-table', '7:pair-terms', '7:polar-N', '7:polar-PD', '7:polar-R', '7:polar-W', '7:pole-monotone', '7:pole-unique', '7:prime-decomposition', '7:prop-PF', '7:riccati', '7:root-symmetry', '7:seed-transfer', '7:self-consistent-S', '7:supermultiplicative', '7:tail-bound', '7:theorem-C-moment', '7:theorem-G-prime', '7:theorem-W', '7:top-roots', '7:transfer-F', '7:vertical-nu', '8:cell-bound', '8:closed-form-envelope', '8:envelope-code-monotone', '8:escape-y-monotone', '8:explicit-bounds', '8:hazard-H1', '8:jensen-H-ii', '8:large-q-bounds', '8:old-6-24', '8:old-6-26', '8:old-6-27', '8:old-6-29', '8:old-6-31', '8:old-6-32', '8:pieces-k-monotone', '8:prop-U-apriori', '8:reduction-J', '8:table-lower-bound']
+
+[표 첫째 고유인데 닫힘상]: [('2:b-top', 'A', 'B'), ('2:old-2-34', 'A', 'B'), ('2:old-2-41', 'A', 'B'), ('6:D-bound', 'A', 'B'), ('6:increment-bounds', 'A', 'B'), ('7:old-6-21', 'A', 'B'), ('7:old-6-22', 'A', 'B'), ('8:old-6-29', 'A', 'B'), ('9:H-star-plus', 'A', 'B'), ('9:head-sum-2', 'A', 'B'), ('9:old-7-16', 'A', 'B'), ('9:old-7-26', 'A', 'B'), ('9:old-7-28', 'A', 'B'), ('9:old-7-31', 'A', 'B'), ('9:old-7-33', 'A', 'B'), ('9:old-7-35', 'A', 'B'), ('9:pair-one-variable', 'A', 'B')]
+
+[표 둘째 고유인데 닫힘상]: []
+
+[닫힘상 첫째만(앞 장)인데 표 첫째 고유에 없음]: []
+
+[닫힘상 둘째만(앞 장)인데 표 둘째 고유에 없음]: ['7:old-6-14']
+
+[표 첫째 고유의 9장 진술이 A 닫힘에 없음]: []
+[표 둘째 고유의 10장 진술이 B 닫힘에 없음]: []
+
+=== 입력별 직접 인용 진술(9·10장 닫힘 안, 그리고 7:old-6-22) ===
+2:b-top: 9장 ['9:H-star-plus', '9:old-7-12', '9:regeneration-S'] | 10장 [] | 7:old-6-22 -
+2:old-2-10: 9장 ['9:centroid-stop', '9:chain-moments', '9:old-7-1'] | 10장 [] | 7:old-6-22 -
+2:old-2-11: 9장 ['9:chain-bounds', '9:chain-rep', '9:old-7-2'] | 10장 [] | 7:old-6-22 -
+2:old-2-13: 9장 ['9:old-7-12', '9:theorem-A-plus'] | 10장 ['10:old-8-14'] | 7:old-6-22 -
+2:old-2-26: 9장 ['9:theorem-A-plus'] | 10장 ['10:old-8-2', '10:old-8-23', '10:old-8-3'] | 7:old-6-22 -
+2:old-2-31: 9장 ['9:old-7-12', '9:old-7-22'] | 10장 ['10:old-8-14', '10:old-8-3'] | 7:old-6-22 -
+2:old-2-34: 9장 ['9:old-7-16'] | 10장 [] | 7:old-6-22 -
+2:old-2-37: 9장 ['9:prop-6', '9:psi-two-sided', '9:theorem-A-plus'] | 10장 ['10:old-8-19', '10:old-8-30', '10:old-8-34'] | 7:old-6-22 -
+2:old-2-38: 9장 ['9:old-7-28'] | 10장 [] | 7:old-6-22 -
+2:old-2-39: 9장 ['9:old-7-28', '9:old-7-29'] | 10장 [] | 7:old-6-22 -
+2:old-2-40: 9장 ['9:old-7-18'] | 10장 [] | 7:old-6-22 -
+2:old-2-41: 9장 ['9:old-7-38', '9:old-7-6'] | 10장 [] | 7:old-6-22 -
+2:old-2-44: 9장 [] | 10장 [] | 7:old-6-22 -
+2:old-2-45: 9장 [] | 10장 ['10:old-8-19', '10:old-8-30'] | 7:old-6-22 -
+2:old-2-46: 9장 [] | 10장 ['10:families', '10:old-8-31'] | 7:old-6-22 -
+2:old-2-6: 9장 [] | 10장 [] | 7:old-6-22 -
+2:zeta-constants: 9장 ['9:psi-low', '9:psi-two-sided'] | 10장 [] | 7:old-6-22 -
+4:old-4-2: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+4:old-4-5: 9장 ['9:head-sum-1', '9:head-sum-2', '9:old-7-34', '9:old-7-45', '9:old-7-46'] | 10장 ['10:old-8-37', '10:reduction-ga'] | 7:old-6-22 Y
+4:old-4-8: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+5:old-5-1: 9장 ['9:head-sum-2', '9:old-7-34', '9:old-7-45', '9:old-7-46'] | 10장 ['10:old-8-37', '10:reduction-ga'] | 7:old-6-22 Y
+5:old-5-11: 9장 [] | 10장 ['10:old-8-37'] | 7:old-6-22 -
+5:old-5-18: 9장 ['9:head-sum-1', '9:head-sum-2', '9:old-7-46'] | 10장 ['10:old-8-37', '10:reduction-ga'] | 7:old-6-22 Y
+5:witness-position-bound: 9장 [] | 10장 ['10:reduction-ga'] | 7:old-6-22 -
+6:D-bound: 9장 ['9:old-7-22', '9:old-7-23', '9:old-7-26'] | 10장 [] | 7:old-6-22 -
+6:DD-lower-bound: 9장 [] | 10장 ['10:old-8-14', '10:old-8-17', '10:old-8-8'] | 7:old-6-22 -
+6:V-all: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37', '10:row-3k'] | 7:old-6-22 -
+6:chain-count: 9장 [] | 10장 [] | 7:old-6-22 -
+6:class-polynomial: 9장 [] | 10장 [] | 7:old-6-22 -
+6:classes-increase: 9장 [] | 10장 [] | 7:old-6-22 -
+6:concave-split: 9장 [] | 10장 [] | 7:old-6-22 -
+6:cor-L: 9장 [] | 10장 [] | 7:old-6-22 -
+6:diag-first-layer: 9장 [] | 10장 [] | 7:old-6-22 -
+6:geometric-mean: 9장 [] | 10장 [] | 7:old-6-22 -
+6:highest-long-cell: 9장 [] | 10장 [] | 7:old-6-22 -
+6:increment-bounds: 9장 ['9:old-7-23', '9:old-7-25', '9:old-7-30'] | 10장 [] | 7:old-6-22 -
+6:insertion: 9장 [] | 10장 [] | 7:old-6-22 -
+6:lemma-omega: 9장 [] | 10장 [] | 7:old-6-22 -
+6:lemma-phi: 9장 [] | 10장 [] | 7:old-6-22 -
+6:log-derivative: 9장 [] | 10장 [] | 7:old-6-22 -
+6:old-6-19: 9장 ['9:old-7-23', '9:old-7-25', '9:old-7-26', '9:old-7-30', '9:old-7-32'] | 10장 ['10:row-3k'] | 7:old-6-22 -
+6:old-7-13: 9장 ['9:old-7-12', '9:old-7-16'] | 10장 ['10:old-8-14', '10:old-8-23'] | 7:old-6-22 -
+6:old-7-20: 9장 [] | 10장 ['10:old-8-10', '10:old-8-3'] | 7:old-6-22 -
+6:old-7-21: 9장 ['9:old-7-18', '9:old-7-22', '9:old-7-25', '9:old-7-27', '9:old-7-30', '9:old-7-32'] | 10장 [] | 7:old-6-22 -
+6:old-7-24: 9장 ['9:old-7-31', '9:old-7-32'] | 10장 [] | 7:old-6-22 -
+6:old-8-11: 9장 [] | 10장 ['10:old-8-14'] | 7:old-6-22 -
+6:old-8-12: 9장 [] | 10장 ['10:bulk-majorants', '10:old-8-14', '10:old-8-25', '10:old-8-26', '10:old-8-33'] | 7:old-6-22 -
+6:old-8-13: 9장 [] | 10장 ['10:old-8-14', '10:old-8-25'] | 7:old-6-22 -
+6:pair-rearrange: 9장 [] | 10장 [] | 7:old-6-22 -
+6:pointwise: 9장 [] | 10장 [] | 7:old-6-22 -
+6:same-kernel: 9장 [] | 10장 [] | 7:old-6-22 -
+6:split-mass: 9장 [] | 10장 [] | 7:old-6-22 -
+6:stay-margin-identity: 9장 [] | 10장 [] | 7:old-6-22 -
+6:survival-factor: 9장 [] | 10장 [] | 7:old-6-22 -
+6:trapezoid: 9장 [] | 10장 [] | 7:old-6-22 -
+7:flat-threshold: 9장 [] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:old-6-13: 9장 ['9:old-7-34', '9:old-7-45'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:old-6-14: 9장 [] | 10장 ['10:old-8-2'] | 7:old-6-22 -
+7:old-6-15: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:old-6-20: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:old-6-21: 9장 ['9:old-7-46'] | 10장 [] | 7:old-6-22 Y
+7:old-6-22: 9장 ['9:old-7-46'] | 10장 [] | 7:old-6-22 -
+7:old-6-9: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:qstar-columns: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:qstar-implies-wlflat: 9장 ['9:old-7-46'] | 10장 ['10:old-8-37'] | 7:old-6-22 Y
+7:src-plus: 9장 [] | 10장 ['10:old-8-37'] | 7:old-6-22 -
+7:threshold-unit-ratio: 9장 [] | 10장 ['10:old-8-14', '10:old-8-3', '10:row-3k'] | 7:old-6-22 -
+8:old-6-23: 9장 ['9:old-7-11', '9:old-7-12'] | 10장 [] | 7:old-6-22 -
+8:old-6-28: 9장 ['9:old-7-35', '9:old-7-37'] | 10장 [] | 7:old-6-22 -
+8:old-6-29: 9장 ['9:old-7-18', '9:old-7-27', '9:old-7-28', '9:old-7-31', '9:old-7-33'] | 10장 [] | 7:old-6-22 -
+8:old-6-30: 9장 ['9:old-7-22'] | 10장 [] | 7:old-6-22 -
+8:old-6-33: 9장 ['9:old-7-12', '9:old-7-16', '9:old-7-18', '9:old-7-27', '9:old-7-28'] | 10장 ['10:old-8-10', '10:old-8-37'] | 7:old-6-22 -
+8:table-tolerance: 9장 [] | 10장 [] | 7:old-6-22 -
+9:H-star-plus: 9장 ['9:old-7-22', '9:old-7-23'] | 10장 [] | 7:old-6-22 -
+9:head-sum-2: 9장 ['9:H-star-plus'] | 10장 [] | 7:old-6-22 -
+9:old-7-16: 9장 ['9:old-7-17'] | 10장 [] | 7:old-6-22 -
+9:old-7-26: 9장 ['9:old-7-27', '9:old-7-28', '9:old-7-31', '9:old-7-33', '9:old-7-45'] | 10장 [] | 7:old-6-22 -
+9:old-7-28: 9장 ['9:old-7-31', '9:old-7-33'] | 10장 [] | 7:old-6-22 -
+9:old-7-31: 9장 ['9:old-7-33'] | 10장 [] | 7:old-6-22 -
+9:old-7-33: 9장 ['9:old-7-34', '9:old-7-45'] | 10장 [] | 7:old-6-22 -
+9:old-7-35: 9장 ['9:old-7-44'] | 10장 [] | 7:old-6-22 -
+9:pair-one-variable: 9장 ['9:old-7-35'] | 10장 [] | 7:old-6-22 -
+10:check-ga: 9장 [] | 10장 ['10:old-8-36'] | 7:old-6-22 -
+10:check-na: 9장 [] | 10장 ['10:old-8-36'] | 7:old-6-22 -
+10:old-8-23: 9장 [] | 10장 ['10:bulk-majorants', '10:check-na', '10:old-8-35', '10:reduction-ga', '10:reduction-na'] | 7:old-6-22 -
+10:old-8-36: 9장 [] | 10장 ['10:old-8-37'] | 7:old-6-22 -
+
+=== 10장 블록이 9장 라벨 또는 첫째 고유 입력을 인용하는 자리 ===
+  10:old-8-37 L785 cites 9:old-7-46: …athsf P_R$은 정리 {{5:old-5-18}}과 정리 {{5:old-5-11}}에서 나온다. 보조정리 {{4:old-4-2}}로 넷의 연언이 모든 $n$에서의 $\mathsf P(n)$이다. 이 고리는 정리 {{9:old-7-46}}의 증명 마지막 고리와 같다. ∎…
+
+=== 7:old-6-22 블록이 인용하는 라벨 === ['4:old-4-2', '4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-18', '7:analytic-transfer', '7:flat-threshold', '7:old-6-13', '7:old-6-15', '7:old-6-20', '7:old-6-21', '7:old-6-9', '7:pair-reach-table', '7:qstar-columns', '7:qstar-implies-wlflat']
+=== 7:old-6-21 블록이 인용하는 라벨 === ['6:V-all', '6:old-6-19', '6:old-7-21', '7:old-6-20', '7:threshold-unit-ratio']
+=== 9:old-7-46 블록 === ['4:old-4-2', '4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-18', '6:V-all', '7:old-6-15', '7:old-6-20', '7:old-6-21', '7:old-6-22', '7:old-6-9', '7:qstar-columns', '7:qstar-implies-wlflat', '9:old-7-44', '9:old-7-45', '9:old-7-6']
+=== 9:old-7-45 블록 === ['4:old-4-5', '5:old-5-1', '7:old-6-13', '9:old-7-18', '9:old-7-26', '9:old-7-27', '9:old-7-33', '9:old-7-34']
+=== 10:old-8-37 블록 === ['10:old-8-10', '10:old-8-36', '4:old-4-2', '4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-11', '5:old-5-18', '6:V-all', '7:flat-threshold', '7:old-6-13', '7:old-6-15', '7:old-6-20', '7:old-6-9', '7:qstar-columns', '7:qstar-implies-wlflat', '7:src-plus', '8:old-6-33', '9:old-7-46']
+=== 10:old-8-10 블록 === ['10:old-8-2', '10:old-8-3', '10:old-8-6', '6:old-7-20', '8:old-6-33']
+=== 6:old-8-13 블록 === ['6:lemma-omega', '6:lemma-phi', '6:same-kernel']
+=== 6:cor-L 블록 === ['6:diag-first-layer', '6:pair-rearrange']
+=== 5:old-5-18 블록 === ['5:band-inequality', '5:old-5-11', '5:old-5-15', '5:old-5-2', '5:old-5-22', '5:old-5-26', '5:old-5-30', '5:old-5-32', '5:old-5-34', '5:old-5-38', '5:right-part', '6:cor-L']

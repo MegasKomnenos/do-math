@@ -3,14 +3,15 @@
 
 사용: python 불변식_v2.py [원고 경로]
 실패(종료 코드 1):
-  1. 진술 머리의 지위 표지 문법(쌍반점 하나; 다섯 낱말 가운데 증명됨·비형식 증명·계산 증거만 허용; 덧붙임 계산 보조(층)·작성자 판단·시작점 비명시·…에 의존; 층 이름 네 갈래), 식별자 꼴(r+7자리), 기록 이름 괄호의 식별자.
+  1. 진술 머리의 지위 표지 문법(쌍반점 하나; 두 지위 낱말 증명됨·계산 증거만 허용; 덧붙임 계산 보조(층)·작성자 판단·시작점 비명시·…에 의존; 층 이름 네 갈래), 식별자 꼴(r+7자리), 기록 이름 괄호의 식별자.
   2. 본문·부록 D가 인용한 식별자 집합 = 부록 B의 식별자 집합.
   3. 장별 번호의 연속, 참조된 번호의 존재.
   4. 구분자 균형($ 짝수, 중괄호).
-  5. 금지어: 마디, 뿌리 문제, 뿌리 명제, 공표, 판 N(전체); 11장·부록 밖의 노드·프런티어·생산자·peer·검토·세션·인스턴스.
+  5. 금지어: 마디, 뿌리 문제, 뿌리 명제, 공표, 판 N(전체); 11장·부록 밖의 노드·프런티어·생산자·peer·검토·세션·인스턴스·운영자.
   6. 구별 문장(…와 다른 양/기호/뜻/결과/명제, 구별한다/구별된다), 기록 표기 문장(기록은 …로 적는다/부른다), 앞당김(이름은 …절에서 정한다), 정정 이력(검토가 … 고쳤다/정정했다), 「계산의 층과 범위」, 언급 금지 꼴(다루지 않는다, 옮기지 않는다, 싣지 않는다, 생략한다, 출처만, 기록을 보라, 않기로 했다, 사슬 밖).
   7. 남은 라벨·임시 기호({{…}}), 「부록 D.n」 참조가 실제 항목을 가리킴.
   8. 「보행」 첫 출현 앞에 「확률보행」.
+  9. 수식 구분자 밖의 TeX(인라인 코드 구간·평문의 `^{`·`_{`·`\명령`), 한 줄의 `$` 홀수, 수식 안의 한글(`_tex_outside_math_check.py`).
 참고 목록(실패 아님): 걸음 출현, 기록 이름 호출 후보(정리 T 등), 「무관」 출현, 사족 후보(확인하지 못, 보지 못, 적지 않는다), [todo] 목록, 지위 표지의 낯선 낱말.
 """
 import io
@@ -18,10 +19,10 @@ import os
 import re
 import sys
 
-STATUS_OK = ["증명됨", "비형식 증명", "계산 증거"]
-STATUS_BAD = ["형식 증명", "추측", "발견적"]
-MODIFIERS = ["계산 보조", "작성자 판단", "시작점 비명시"]
-LAYER_WORDS = ["정확 정수·유리수", "방향 반올림 구간", "binary64 사전 오차 해석", "인증 아님"]
+STATUS_OK = ["증명됨", "계산 증거"]
+STATUS_BAD = ["형식 증명", "추측", "발견적"]  # 첫 판·연구 기록의 지위 낱말. 1.5절에는 없으나(결정 91, 2026-11-16 판단 ZJ2) 머리에 되살아나지 않게 막는다 — 「형식 증명」은 「비형식 증명」에도 부분 일치. 합의 v2 11절 「발견적 지위의 진술 0건」의 검사
+MODIFIERS = ["계산 보조", "문헌 인용", "작성자 판단", "시작점 비명시"]
+LAYER_WORDS = ["정확 정수·유리수", "방향 반올림 구간", "binary64 사전 오차 해석", "평가"]
 STMT_RE = re.compile(r"^\*\*(정의|정리|명제|보조정리|따름정리) (\d+)\.(\d+)(?: \(((?:[^()]|\([^()]*\))*)\))?(?: \[([^\]]*)\])?\.?\*\*")
 ID_RE_BRACKET = re.compile(r"\[([^\]]*)\]")
 ID_TOKEN_RE = re.compile(r"(?<![0-9a-zA-Z])r[0-9a-f]{7}(?![0-9a-zA-Z])")
@@ -121,7 +122,7 @@ def main():
                 if w in extra:
                     failures.append(f"{i}: 이 글에 쓰이지 않는 지위 「{w}」 [{bracket}]")
             extra = re.sub(r"의존(?:하는)?|(?:\([가-힣]\))+", "", extra)
-            extra = re.sub(r"[,，·\s은는이가의와과에서도만\(\)]+|항등식|부등식|대응|극한 진술|진술|앞 두 문장|셋째 문장|마지막 문장|문장|부분|입력|의존|(?:정리|명제|보조정리|따름정리) \d+\.\d+(?:·\d+\.\d+)*에?|\$[^$]*\$|" + "|".join(map(re.escape, LAYER_WORDS)) + r"|배정밀도 평가|30자리 수치 적분|40자리 평가|전수|\d+", "", extra)
+            extra = re.sub(r"[,，·\s은는이가의와과에서도만\(\)]+|항등식|부등식|대응|극한 진술|진술|앞 두 문장|셋째 문장|마지막 문장|문장|부분|입력|의존|(?:정리|명제|보조정리|따름정리) \d+\.\d+(?:·\d+\.\d+)*에?|\$[^$]*\$|" + "|".join(map(re.escape, LAYER_WORDS)) + r"|배정밀도 평가|30자리 수치 적분|\d+ ?자리 평가|전수|\d+", "", extra)
             if extra.strip():
                 notes.append(f"{i}: 지위 표지에 낯선 낱말 '{extra.strip()}' ([{bracket}])")
             for m2 in re.finditer(r"계산 (보조|증거)(\(([^()]*(?:\([^()]*\))?[^()]*)\))?", status_part):
@@ -131,8 +132,6 @@ def main():
                     continue
                 if inner and not any(w in inner for w in LAYER_WORDS):
                     failures.append(f"{i}: 계산 {m2.group(1)}의 괄호에 층 이름이 없음 '({inner})' [{bracket}]")
-            if re.search(r"(?<!비형식 )증명됨", status_part) and "계산 보조" in status_part and "비형식 증명" not in status_part:
-                failures.append(f"{i}: 「증명됨」과 「계산 보조」를 함께 둘 수 없음 [{bracket}]")
         if kind != "정의" and not ids_part:
             failures.append(f"{i}: 식별자 없음 [{bracket}]")
         for tok in re.split(r"[,\s]+", ids_part):
@@ -269,6 +268,12 @@ def main():
             first_b = i
     if first_b is not None and "확률보행" not in "\n".join(lines[:first_b]):
         failures.append(f"{first_b}: 「보행」 첫 출현 앞에 「확률보행」 정의가 없음")
+
+    # 9. 구분자 밖의 TeX, 짝 없는 $, 수식 안의 한글 (KaTeX 검사의 모집단 밖; 2026-11-15 558쪽의 결함 부류)
+    sys.path.insert(0, here)
+    from _tex_outside_math_check import scan_text
+    for m in scan_text(text, os.path.basename(path)):
+        failures.append(m)
 
     todo = sum(1 for n in notes if "[todo]" in n)
     print(f"검사 대상: {path} ({len(lines)} lines)")

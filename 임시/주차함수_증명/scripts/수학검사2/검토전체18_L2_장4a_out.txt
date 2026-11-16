@@ -1,0 +1,20 @@
+x^0 coeff simplified: 0
+x^1 coeff simplified: 0
+x^2 coeff simplified: 0
+x^3 coeff simplified: 0
+n=2 k_n=1 d=-1 sign=- right_half_nonincreasing=True
+n=3 k_n=2 d=-4 sign=- right_half_nonincreasing=True
+n=4 k_n=2 d=-17 sign=- right_half_nonincreasing=True
+n=5 k_n=3 d=-124 sign=- right_half_nonincreasing=True
+n=6 k_n=3 d=-906 sign=- right_half_nonincreasing=True
+n=7 k_n=4 d=-11256 sign=- right_half_nonincreasing=True
+n=8 k_n=4 d=-113460 sign=- right_half_nonincreasing=True
+n=9 k_n=5 d=-2064668 sign=- right_half_nonincreasing=True
+n=10 k_n=5 d=-25157750 sign=- right_half_nonincreasing=True
+n=11 k_n=6 d=-618731328 sign=- right_half_nonincreasing=True
+n=12 k_n=6 d=-7883666450 sign=- right_half_nonincreasing=True
+n=13 k_n=7 d=-254602075936 sign=- right_half_nonincreasing=True
+n=14 k_n=7 d=-2309417520844 sign=- right_half_nonincreasing=True
+n=15 k_n=8 d=-108596809084112 sign=- right_half_nonincreasing=True
+n=16 k_n=8 d=1477396444365712 sign=+ right_half_nonincreasing=True
+n=17 k_n=9 d=18882703175184212 sign=+ right_half_nonincreasing=True

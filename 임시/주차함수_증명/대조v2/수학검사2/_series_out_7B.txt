@@ -1,0 +1,20 @@
+OK   (7.7) D = exp(T<=k + z int D>=k)  (k=2, x^8)
+OK   m<k: K_m(z)=p_m (k=2)
+OK   G_* = e^T(1 - T>k + z int(G_*-D<k)) (k=2)
+OK   D<k + Q_k = e^T(1 - T>k) (k=2)
+OK   X의 최저 차수 = 2k+2 (k=2)  6
+OK   bd_t(z) = z K_{t-1,k}(z) - t^(t-1) (k=2)
+OK   (7.8) X = e^{T<=k}[z int X + bd^2/2] mod x^{3k+3} (k=2, 비교 차수 < 9)
+OK   K''_n(k) = POS^G_n + X''_n(k), n<=2k+1에서 X''=0 (k=2)
+OK   Neumann 전개 X = sum z^j Neu^j[e^{T<=k} bd^2/2] mod x^{3k+3} (k=2)
+OK   X''(k) = sum k^j Neu^j[e^{T<=k} Q_j] mod x^{3k+3} (k=2)
+OK   bd_t(k), bd'_t(k), bd''_t(k)의 값과 (7.10) (k=2)
+OK   Q_j의 x^m/m! 계수 = sum C(m,t) q_j(t,t') (k=2)
+OK   Green 원자: n<=2k 등호 (k=2)
+OK   Green 원자: J_n(z) <= J^G_n(z), 0<=z<=k+1 표본, 2k<n<=8 (k=2)
+OK   Green 원자 두 꼴 일치 (k=2)
+OK   (Gr)' = e^T (k=2)
+OK   (7.7) D = exp(T<=k + z int D>=k)  (k=3, x^8)
+OK   m<k: K_m(z)=p_m (k=3)
+
+실패 수: 0

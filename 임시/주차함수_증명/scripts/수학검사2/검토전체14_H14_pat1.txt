@@ -1,0 +1,19 @@
+5A	\\mathfrak s_[01]
+D	\\mathfrak s_[01]
+5B	\\mathfrak W\b
+5B	\bU\s*[:=]+
+5B	\\mathfrak p\s*[:=]+
+5B	u_0\s*[:=]+
+5B	\\theta\s*[:=]+
+5B	\\kappa\s*[:=]+
+5B	\\mathfrak h\s*[:=]+
+5B	\\rho_0\s*[:=]+
+3	w_n\s*[:=]+
+3	\bR\s*[:=]+
+4	\bU\s*[:=]+
+4	\bC\s*[:=]+
+4	\bL\s*[:=]+
+4	\\vartheta\s*[:=]+
+4	\\mathcal P\s*[:=]+
+5A	\\xi\s*[:=]+
+5A	\bw\s*[:=]+\\sqrt

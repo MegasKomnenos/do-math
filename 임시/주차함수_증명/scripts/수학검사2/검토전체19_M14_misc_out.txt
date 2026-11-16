@@ -1,0 +1,58 @@
+15:52 ch1: max=5 n=5 missing=[] dup=[]
+15:52 ch2: max=51 n=51 missing=[] dup=[]
+15:52 ch3: max=7 n=7 missing=[] dup=[]
+15:52 ch4: max=16 n=16 missing=[] dup=[]
+15:52 ch5: max=77 n=77 missing=[] dup=[]
+15:52 ch6: max=62 n=62 missing=[] dup=[]
+15:52 ch7: max=80 n=80 missing=[] dup=[]
+15:52 ch8: max=29 n=29 missing=[] dup=[]
+15:52 ch9: max=56 n=56 missing=[] dup=[]
+15:52 ch10: max=38 n=38 missing=[] dup=[]
+== 기록 주장 열(/ 앞) vs 머리 대괄호 ; 뒤 식별자
+  {{5:old-5-1}}: 머리=['r15df76b', 'r19de912', 'r6373c70', 'rc9aee43', 'rce3dc75'] 지도=['r15df76b', 'r19de912', 'rc9aee43', 'rce3dc75']
+== 의존지도 첫 판 번호 열 vs 라벨
+== 고정 문자열 검색(건수: 파일별)
+  첫 층 나무                       장2.md=2
+  \mathsf S_R                  0
+  (5.50)                       0
+  (5.51)                       0
+  (5.52)                       0
+  (5.53)                       0
+  Fekete                       0
+  1.446                        0
+  0.44k                        0
+  0.44 k                       0
+  0.53k                        0
+  \Psi^{\mathrm{lb}}           부록A.md=1 부록C.md=1 장9.md=11
+  \mathcal I_4                 장9.md=3
+  \mathsf{UL}                  0
+  UL                           0
+  (Diag)                       부록B.md=1
+  경계 응답 부등식                    부록A.md=2 부록B.md=3 부록C.md=1 장4.md=3 장5A.md=4
+  첫째 범위                        부록D_장7B.md=8
+  둘째 범위                        부록D_장7B.md=8 장11.md=1
+  \mathrm{dip}                 0
+  error-induction              0
+  H^*_+                        0
+  H^st_+                      0
+  \mathsf H^st_+              0
+  \mathsf H^*_+                0
+  x_t(y)                       부록A.md=2 부록C.md=4 장2.md=2 장5B.md=23 장6.md=2
+  \mathsf z_{1/2}              부록A.md=2 부록C.md=1 부록D_장2.md=7 부록D_장8.md=3 장11.md=1 장2.md=2 장8.md=25 장9.md=2
+== 부록 B 식별자 86; 본문·부록 D 대괄호 식별자 86; B에만=[]; 본문에만=[]
+  r801ec22: B=False 본문=False
+  r0af7f41: B=False 본문=False
+  r5c20a94: B=False 본문=False
+  r77d0f73: B=False 본문=False
+  rb1d8cd5: B=True 본문=True
+  r1b79fab: B=False 본문=False
+  rba2ecf4: B=True 본문=True
+  rbeae3a3: B=True 본문=True
+  rda45d0e: B=True 본문=True
+  r9e782f5: B=True 본문=True
+  r7798355: B=True 본문=True
+  rc391829: B=True 본문=True
+  rfc69320: B=True 본문=True
+  r4daca3d: B=True 본문=True
+  ra7615a0: B=True 본문=True
+  rb4b7771: B=False 본문=False

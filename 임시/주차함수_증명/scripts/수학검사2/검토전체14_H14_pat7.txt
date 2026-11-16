@@ -1,0 +1,3 @@
+8	A\^\{\(|A_N\^\{\(|A_\{N\}\^\{\(
+9	\\mathcal O(?!_n)\b|\\bar U|\\overline U|\\overline\{U\}
+9	A\^\{\(

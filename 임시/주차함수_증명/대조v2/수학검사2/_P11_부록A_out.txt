@@ -1,0 +1,70 @@
+부록 A 기호 행 수: 305
+?? 못 찾음: $n$ | 표 1.5
+?? 못 찾음: $m$ | 표 1.5
+?? 못 찾음: $t$ | 표 2.4
+?? 못 찾음: $N:=n-k$ | 표 1.5
+?? 못 찾음: $k$ | 표 1.5
+$\ell=k-1$                                    표 1.5          첫 출현 장2.md:707 §2.10 (키 『\ell=k-1』)  <<< 다름
+?? 못 찾음: $y$ | 표 1.5
+?? 못 찾음: $Y$ | 표 1.5
+?? 못 찾음: $i$, $j$ | 표 1.5
+?? 못 찾음: $u$, $v$ | 표 2.4
+?? 못 찾음: $r:=n-\ell-1$ | 표 1.5
+$\nu:=n-2k$                                   표 1.5          첫 출현 장1.md:137 §1.4 (키 『\nu』)  <<< 다름
+?? 못 찾음: $d$ | 표 1.5
+?? 못 찾음: $q$ | 표 1.5
+$d_{n,k}$                                     표 1.5          첫 출현 장1.md:113 §1.4 (키 『d_{n』)  <<< 다름
+$k_n$                                         표 1.5          첫 출현 장1.md:99 §1.4 (키 『k_n』)  <<< 다름
+?? 못 찾음: $x, \hat x$ | 표 1.5
+?? 못 찾음: $F$ | 표 2.4
+?? 못 찾음: $G$ | 표 2.5
+?? 못 찾음: $L$ | 표 2.5
+$c_m(Y)$                                      표 2.6          첫 출현 장1.md:188 §1.5 (키 『c_m(Y)』)  <<< 다름
+?? 못 찾음: $s^{T}_t(y)$ | 표 2.6
+$s_m(y)$                                      표 2.6          첫 출현 장1.md:187 §1.5 (키 『s_m(y)』)  <<< 다름
+$e_n$                                         표 2.7          첫 출현 장1.md:119 §1.4 (키 『e_n』)  <<< 다름
+$B_{n,m}$                                     표 2.7          첫 출현 장1.md:117 §1.4 (키 『B_{n』)  <<< 다름
+$E_{n,k}, E2_{n,k}$                           표 2.7          첫 출현 장1.md:117 §1.4 (키 『E_{n』)  <<< 다름
+?? 못 찾음: $M^{T}_t$ | 표 2.9
+?? 못 찾음: $\Pr^{T}_t, \mathbb E^{T}_t$ | 표 2.9
+?? 못 찾음: $b^{T}_{t,\ell}$ | 표 2.10
+$\Theta_n$                                    표 2.10         첫 출현 장1.md:123 §1.4 (키 『\Theta_n』)  <<< 다름
+$\mathrm{BV}_n$                               표 2.10         첫 출현 장1.md:123 §1.4 (키 『\mathrm{BV}_n』)  <<< 다름
+$\mathrm{FL}_n$                               표 2.10         첫 출현 장1.md:123 §1.4 (키 『\mathrm{FL}_n』)  <<< 다름
+$\mathrm{KD}_n$                               표 2.10($\mathrm{KD}_n$), 7.7($\mathrm{KD}^\prime_n$) 첫 출현 장1.md:123 §1.4 (키 『\mathrm{KD}_n』)  <<< 다름
+$\mathrm{PAIR}_n$                             표 2.10         첫 출현 장1.md:123 §1.4 (키 『\mathrm{PAIR}_n』)  <<< 다름
+?? 못 찾음: $\beta_i$ | 표 2.11
+?? 못 찾음: $f$ | 표 3.1
+$x_\ast$                                      표 3.2          첫 출현 장1.md:111 §1.4 (키 『x_\ast』)  <<< 다름
+$\mathsf P_L, \mathsf P_X, \mathsf P_C, \math 표 4.1          첫 출현 장1.md:105 §1.4 (키 『\mathsf P_L』)  <<< 다름
+?? 못 찾음: $\Gamma^{\pm}$ | 표 4.2
+$\mathsf Q, \mathsf Q_L, \mathsf Q_R, \mathsf 표 4.2          첫 출현 장1.md:131 §1.4 (키 『\mathsf Q』)  <<< 다름
+$\Phi, \Phi^{\mathrm{aux}}$                   표 4.3          첫 출현 장2.md:451 §2.7 (키 『\Phi』)  <<< 다름
+$\mathcal I_k$                                표 4.3          첫 출현 장4.md:13 §None (키 『\mathcal I_k』)  <<< 다름
+$\mathfrak m(n)$                              표 5.2          첫 출현 장5A.md:11 §None (키 『\mathfrak m(n)』)  <<< 다름
+$\mathsf W, \mathsf W^\sharp$                 표 5.3, 5.4     첫 출현 장1.md:131 §1.4 (키 『\mathsf W』)  <<< 다름
+?? 못 찾음: $\mathrm{Bor}_{>}(q)$ | 표 6.1
+$\mathfrak w_n(t)$                            표 6.2          첫 출현 장6.md:9 §None (키 『\mathfrak w_n(t)』)  <<< 다름
+$\mathcal U_k(m)$                             표 6.5          첫 출현 장6.md:13 §None (키 『\mathcal U_k(m)』)  <<< 다름
+$\mathcal V_k(m)$                             표 6.5          첫 출현 장6.md:13 §None (키 『\mathcal V_k(m)』)  <<< 다름
+$\mathrm{Bor}_{\le}(q)$                       표 6.6          첫 출현 장8.md:90 §8.1 (키 『\mathrm{Bor}_{\le}(q)』)  <<< 다름
+$\rho_k$                                      표 7.2          첫 출현 장3.md:149 §3.3 (키 『\rho_k』)  <<< 다름
+?? 못 찾음: $\mathfrak a^\circ_n$ | 표 7.2
+?? 못 찾음: $\mathfrak a^{\rho}_m$ | 표 7.2
+$\mathsf W_L, \mathsf W_L^\flat$              표 7.2          첫 출현 장1.md:155 §1.4 (키 『\mathsf W_L』)  <<< 다름
+$\mathcal Z$                                  표 7.5          첫 출현 장5A.md:463 §5.2.3 (키 『\mathcal Z』)  <<< 다름
+$\mathsf Q^\star, \mathsf Q^\star_2$          표 7.5($\mathsf Q^\star$), 7.7($\mathsf Q^\star_2$) 첫 출현 장1.md:153 §1.4 (키 『\mathsf Q^\star』)  <<< 다름
+$(\star)(n)$                                  표 7.5          첫 출현 장1.md:139 §1.4 (키 『(\star)(n)』)  <<< 다름
+$\mathcal R_2$                                표 7.7          첫 출현 장1.md:147 §1.4 (키 『\mathcal R_2』)  <<< 다름
+$\mathsf{LRP}_2$                              표 7.7          첫 출현 장1.md:145 §1.4 (키 『\mathsf{LRP}_2』)  <<< 다름
+$\Omega(\xi), \Omega_q$                       표 8.1          첫 출현 장8.md:473 §8.2 (키 『\Omega(\xi)』)  <<< 다름
+$\xi$                                         표 8.1          첫 출현 장2.md:863 §2.12 (키 『\xi』)  <<< 다름
+$\mathcal C_n$                                표 9.2          첫 출현 장6.md:959 §6.6 (키 『\mathcal C_n』)  <<< 다름
+$\mathsf B^+$                                 표 9.2          첫 출현 장1.md:151 §1.4 (키 『\mathsf B^+』)  <<< 다름
+$\mathfrak d_k, \bar{\mathfrak d}_k$          표 9.3          첫 출현 장7A.md:328 §7.2 (키 『\mathfrak d_k』)  <<< 다름
+?? 못 찾음: $P^{\theta}_t(k)$ | 표 9.4
+$m_0$                                         표 10.2         첫 출현 장8.md:657 §8.4 (키 『m_0』)  <<< 다름
+$\vartheta, \vartheta_0$                      표 10.3($\vartheta$), 10.6($\vartheta_0$) 첫 출현 장2.md:917 §2.12 (키 『\vartheta』)  <<< 다름
+$\mathsf{FLQ}$                                표 10.3         첫 출현 장1.md:153 §1.4 (키 『\mathsf{FLQ}』)  <<< 다름
+?? 못 찾음: $\mathrm{inc}^{\pm}_q$ | 표 10.5
+$k_0, k^\ast$                                 표 10.6         첫 출현 장10.md:417 §10.5 (키 『k_0』)  <<< 다름

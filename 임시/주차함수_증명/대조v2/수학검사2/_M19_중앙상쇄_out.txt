@@ -1,0 +1,3 @@
+scipy/numpy 없음 No module named 'scipy'
+20<=n<=120 에서 b_{n,k_n}<b_{n,k_n+1} 어긋나는 n: []
+n<=120 로그오목 실패 n: [80, 81, 82, 83, 84]

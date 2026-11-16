@@ -1,0 +1,1154 @@
+[49] $a_i$
+   declared=[1, 2, 7] actual=[1, 2, 7, 9] +[9] -[] appendix=['A', 'C', 'D3', 'D6']
+     ch9: a_1,a_2,a_3
+     ch9: (a_1k-a_2\sqrt k)/(a_3k+1)
+     ch9: a_1+a_2a_3\sqrt k/2-a_2/(2\sqrt k)>0
+[62] $f$
+   declared=[3, 8] actual=[2, 3, 4, 5, 6, 7, 8, 9] +[2, 4, 5, 6, 7, 9] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch2: f,g
+     ch2: f(\kappa\varsigma_1+(1-\kappa)\varsigma_2)g(\kappa\varsigma_1+(1-\kappa)\varsigma_2)\le(\kappa f(\varsigma_1)+(1-\kappa)f(\varsigma_2))(\kappa g(\varsigma_1)+(1
+     ch2: \kappa f(\varsigma_1)g(\varsigma_1)+(1-\kappa)f(\varsigma_2)g(\varsigma_2)
+     ch4: \sum_{j=1}^{N}f(j)=\int_1^Nf(w)\,dw+\frac{f(1)+f(N)}2+\int_1^N(\{w\}-\tfrac12)f'(w)\,dw
+     ch4: f(w)=w^{-1/2}
+     ch4: f(1)/2=\frac12
+     ch5: \Delta^3f(y)=\int_0^1\!\int_0^1\!\int_0^1f'''(y-1+\varsigma_1+\varsigma_2+\varsigma_3)\,d\varsigma_1d\varsigma_2d\varsigma_3
+     ch5: \nabla f(\mathfrak v):=f(\mathfrak v)-f(\mathfrak v-1)
+     ch5: \nabla^i\{(\mathfrak v+\Theta)f(\mathfrak v)\}=(\mathfrak v+\Theta)\nabla^if(\mathfrak v)+i\,\nabla^{i-1}f(\mathfrak v-1)
+     ch6: \Delta^2f(y):=f(y+2)-2f(y+1)+f(y)
+     ch6: f(\sigma'):=\log(1+\sigma')-\sigma'(1-\sigma')/(1+\sigma')-\frac32\sigma'^2+\frac53\sigma'^3
+     ch6: f(0)=0
+     ch7: f
+     ch7: \mathrm{Neu}\,f:=e^{\mathfrak T_{\le k}}\int_0^xf
+     ch9: f(v)
+     ch9: f(v)>t/2
+     ch9: f(u)<f(v)
+[63] $g(x)$
+   declared=[2, 5, 6, 7, 8, 9, 10] actual=[2, 3, 4, 5, 6, 7, 8, 9, 10] +[3, 4] -[] appendix=['A', 'C', 'D7', 'D8', 'D9']
+     ch3: 
+(g*w)'(z)=\int g'(z-\xi)\,w(\xi)\,d\xi=\int g(z-\xi)\,Dw(d\xi)
+
+     ch3: 
+(g*w)'(z_2)=\int R(\xi)\,g(z_1-\xi)\,Dw(d\xi)\le R(\kappa)\int g(z_1-\xi)\,Dw(d\xi)=R(\kappa)\,(g*w)'(z_1)
+
+     ch3: g(z-\xi)w(\xi)
+     ch4: 
+[x^n]\,g(T(x))=\frac1{2\pi\mathrm i}\oint g(T(x))\,\frac{dx}{x^{n+1}}=\frac1{2\pi\mathrm i}\oint_{\mathcal C}g(\mathfrak Y)\,(1-\mathfrak Y)\,e^{n\mathfrak Y}\
+     ch4: g(T(x))
+     ch4: g(\mathfrak Y)=e^{\mathfrak Y}e^{-y(1-\mathfrak Y)^2/2}(1-\mathfrak Y)^r
+[69] $m_0$
+   declared=[10] actual=[9, 10] +[9] -[] appendix=['A', 'D10', 'D7']
+     ch9: m_0:=\lfloor n^{2/3}-6n^{1/3}\rfloor
+     ch9: m_0\ge573\ge171
+     ch9: m_0^{3/2}+9m_0\le n(1-\epsilon)^{3/2}+9n^{2/3}(1-\epsilon)\le n-\frac32\epsilon n+\frac{\epsilon^2}2n+9n^{2/3}-9\epsilon n^{2/3}=n-36n^{1/3}<n
+[89] $w_m$
+   declared=[7, 10] actual=[3, 5, 6, 7, 8, 10] +[3, 5, 6, 8] -[] appendix=['A', 'C']
+     ch3: w_\varrho:=g_2*\bar K_\varrho
+     ch3: w_\varrho
+     ch3: w=w_\varrho
+     ch5: w_j\ge0
+     ch5: \pi_j\propto w_jk^j
+     ch6: w_1
+     ch6: w_L
+     ch6: S_i=t_{w_i}
+     ch8: w_i:=\xi_{i+1}-\xi_i\in[0.000499,0.00051]
+     ch8: \tilde s^{\mathrm{env}}(\xi)\ge\tilde s^{\mathrm{env}}(\xi_{i+1})+\mathsf r_{\mathrm G}(1-t)w_i
+     ch8: \eta-t\mathfrak d-(1-t)\mathsf r_{\mathrm G}w_i\le\eta-\min(\mathfrak d,\mathsf r_{\mathrm G}w_i)\le0
+[90] $x, \hat x$
+   declared=[1, 3, 5, 6] actual=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] +[2, 4, 7, 8, 9, 10] -[] appendix=['A', 'C', 'D5', 'D7', 'D9']
+     ch2: 
+A_\ell(x):=\sum_{n\ge0}A_{n,\ell}\frac{x^n}{n!}
+
+     ch2: 
+A_\ell'=(\ell+1)A_\ell^2-Q_\ell'A_\ell,\qquad A_\ell(x)=\frac{e^{-Q_\ell(x)}}{1-(\ell+1)\int_0^x e^{-Q_\ell(\varsigma)}\,d\varsigma}
+
+     ch2: 
+T_\ell(x)=\sum_{t\ge1}\mathcal N_\ell(t)\frac{x^t}{t!}=\sum_{t\ge1}\min(t,\ell+1)A_{t-1,\ell}\frac{x^t}{t!}
+
+     ch4: 
+\frac{e_n}{n!}=[x^n]\,\Phi(T(x)),\qquad
+\Phi(\mathfrak Y)=e^{\mathfrak Y}\int_0^{\mathfrak Y}(1-\mathfrak Z)^2\,\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)\,e^
+     ch4: 
+F_y'=\Bigl[\sum_{j<k}(j+1)p_j\frac{x^j}{j!}+y\sum_{j\ge k}\mathcal K_{j,k}(y)\frac{x^j}{j!}\Bigr]F_y=\bigl[(x\mathcal E_{<k})'+yU\bigr]F_y,\qquad U:=F_y-\mathc
+     ch4: 
+C'\equiv(x\mathcal E_{<k})'\,C+H'e^T\pmod{x^{2k+1}}
+
+     ch7: 
+C_k(x):=\sum_{n\ge1}C_{n,k}\frac{x^n}{n!}
+
+     ch7: 
+\mathcal C_y(x):=\sum_{n=1}^{y}C_{n,y}\frac{x^n}{n!}=\sum_{n=1}^{y}(n-1)^{n-1}\frac{x^n}{n!},\qquad \mathcal G_y:=C_y-\mathcal C_y
+
+     ch7: 
+\mathfrak Y_{\mathfrak k}(x):=\sum_{n<\mathfrak k}d_{n,k}\frac{x^n}{n!},\qquad \mathcal X_{\mathfrak k}(x):=(1-C_{k-1})(1-C_k)(1-C_{k+1})\bigl(A_k-2A_{k-1}+A_{
+     ch8: T_\ell(x)=\sum_t\mathcal N_\ell(t)x^t/t!=\sum_t\min(t,\ell+1)A_{t-1,\ell}x^t/t!
+     ch8: A_\ell(x)=\exp T_\ell(x)
+     ch8: \mathcal B_k(x)=T_k-T_{k-1}
+     ch9: 
+\mathrm{FL}^{(1)}_m:=\sum_{t=k+1}^{2k+1}\binom mt b^{(2)}_{t-1}A_{m-t,k-1},\qquad
+\mathrm{OB}_m:=\sum_{t=k+1}^{m}\binom mt\bigl(A_{t-1,k}+A_{t-1,k-2}\bigr)A_{m
+     ch9: T_{k-1}(x)=\sum_{t'}\mathcal N_{k-1}(t')x^{t'}/t'!
+     ch9: A_{k-1}(x)=\exp T_{k-1}(x)
+     ch10: x\ge1
+     ch10: g(x)=(x-1)\log(1+\frac1x)
+     ch10: g'(x)=\log(1+\frac1x)-\frac{x-1}{x(x+1)}
+[96] $A_\ell(x)$
+   declared=[2, 5, 7, 8, 9] actual=[2, 8] +[] -[5, 7, 9] appendix=['A', 'C']
+[105] $F$
+   declared=[2, 5, 6, 7, 9] actual=[2, 5, 6, 7, 9, 10, 11] +[10, 11] -[] appendix=['A', 'C', 'D10', 'D5', 'D7']
+     ch10: 
+\mathfrak R^\sharp_F:=\begin{cases}3+\mathrm{Bd}^{\mathrm T}(k,1.3k^{2/3})+\mathrm{DDL}^\natural(k)+\mathrm{Stays}^{\mathrm{up}}(k;1.3k^{2/3})&(1a),\\ 3\mathfr
+     ch10: \mathfrak o_F
+     ch10: \mathfrak o_F=2-\mathfrak e^{\mathrm c}(k,1.3k^{2/3})-\mathrm{Bd}^{\mathrm T}(k,1.3k^{2/3})-\mathrm{DDL}^\natural(k)
+     ch11: \mathfrak R^\sharp_F=4.770257
+     ch11: \mathfrak R^{\sharp\prime}_F=1.770257
+     ch11: \mathfrak o_F
+[107] $H_k(\sigma), H_k(F)$
+   declared=[2, 5, 6, 7, 8] actual=[2, 5, 7, 8] +[] -[6] appendix=['A', 'C']
+[112] $L$
+   declared=[2, 3, 6, 7, 9, 10] actual=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] +[1, 4, 5, 8, 11] -[] appendix=['A', 'C', 'D5', 'D7', 'D8']
+     ch1: \mathsf P_L
+     ch1: \mathsf P_L
+     ch1: \mathsf P_L
+     ch4: \mathsf P_L
+     ch4: \mathsf P_L
+     ch4: \mathsf Q_L
+     ch5: 
+\partial_{q_i}\log L=\frac{\mathrm{tl}(\mathcal A_i)-\mathrm{tl}(\mathcal A_i\mid\mathcal A_1)}{1+q_i}\le0\qquad(i\ge2)
+
+     ch5: 
+\hat L:=k\log\mathrm{et}=\sum_{m\ge1}\mathfrak l_m\mathrm{ku}^{3(m-1)}\hat\varphi^{2m},\quad
+\mathrm{lg}:=\frac{(\log\mathrm{et})'}{\varphi}=\sum_{m\ge1}2m\,\m
+     ch5: 
+\mathrm{qy}:=k(\mathrm{et}-1)=\frac{e^{\mathrm{ku}^3\hat L}-1}{\mathrm{ku}^3},\qquad
+\mathrm{Zh}:=\frac{\xi-1}{\mathrm{ku}^2},\qquad
+\mathfrak A(\hat{\mathrm{a
+     ch8: 
+\hat{\mathcal J}(\xi):=\max\Bigl(\max_{0\le i<L-1}\bigl[\mathrm{Bp}(\xi K_{i+1}^{2/3},K_{i+1})+\mathrm{Cr}(\xi K_i^{2/3},K_i)\bigr],\ \max\bigl(\mathsf j_\inft
+     ch8: K_{L-2}<\max(6.6\cdot10^9,\,10K_{\mathrm s})\le K_{L-1}
+     ch8: L
+     ch11: L
+[122] $R_j$
+   declared=[2, 5, 6] actual=[2, 5, 6, 8] +[8] -[] appendix=['A', 'C', 'D7']
+     ch8: 
+\varphi(\xi,k'):=e^{-1/(12\xi k'^{2/3})}\bigl(1+\xi k'^{-1/3}\bigr),\quad\rho_j:=\frac{R_j}{E_0},\quad\vartheta_1:=\frac{\sqrt\xi\,(\xi-k'^{-2/3})}{2(2\pi)^{-1
+[124] $T_\ell(x)$
+   declared=[2, 8, 9] actual=[2, 3, 5, 8, 9] +[3, 5] -[] appendix=['A', 'C']
+     ch3: 
+\frac{T_k}{\gamma_k}=1+\rho_k+\rho_k\rho_{k+1}+\dots+\rho_k\rho_{k+1}\cdots\rho_{j_1-1}
+
+     ch3: T_k=\sum_{j\ge k}\gamma_j
+     ch3: T_k/\gamma_k
+     ch5: s^T_{y+1}(y+1)=1
+[125] $T(x)$
+   declared=[2, 4, 5, 7, 11] actual=[2, 4, 5, 6, 7, 9, 11] +[6, 9] -[] appendix=['A', 'C', 'D5', 'D7', 'D9']
+     ch6: 
+\mathbb E\Bigl[\sum_{j=1}^{L}\phi(R_j)\,q_j\,\Pi_j(T)\Bigr]\ \le\ T\sum_{\mathfrak N=0}^{d-1}\mathfrak n_d(\mathfrak N;T)\,\Delta\phi_d(\mathfrak N),\qquad \De
+     ch6: 
+\mathfrak n_d(\mathfrak N;T)\ \le\ \min\Bigl(\mathrm{Ren}(\mathfrak N),\ \mathsf c\,\mathfrak N^{-3/2}\,\frac{T(T+q)}{q^2}\Bigr)
+
+     ch6: 
+\mathfrak n_d(\mathfrak N;T)\le\sum_{i\ge1}\mathrm{Bor}^{*i}(\mathfrak N)\Bigl(\frac T{T+q}\Bigr)^i\le\mathsf c\,\mathfrak N^{-3/2}\sum_{i\ge1}i\Bigl(\frac T{T
+     ch9: 
+P_t(k)=\mathrm{T1}+\mathrm{T2}+\mathrm{T3},\qquad
+\mathrm{T1}:=-\frac1k\bigl[1-C_{t-2}\bigr],\quad
+\mathrm{T2}:=-\frac{k-1}{t}\,c_{t-1}(k-1),\quad
+\mathrm{T3}:
+     ch9: 
+P_{k+q}(k)\ \le\ \mathrm{T1}-\frac{k-1}{k+q}\,c_{\ell+q}(\ell)+(k+1)\sum_{d=1}^{q-1}c_{\ell+d}(\ell)\,\frac{\eta(d)^+}{k+1+d}
+\tag{9.1}
+
+     ch9: \mathrm{T1}
+[127] $V(x)$
+   declared=[4, 5, 7] actual=[4, 5] +[] -[7] appendix=['A', 'C']
+[129] $X_n, X$
+   declared=[3, 8] actual=[1, 3, 4, 5, 6, 7, 8, 9, 10] +[1, 4, 5, 6, 7, 9, 10] -[] appendix=['A', 'C']
+     ch1: \mathsf P_X
+     ch1: \mathsf P_X
+     ch4: \mathsf P_X
+     ch4: \mathsf P_X
+     ch4: \mathsf P_X
+     ch5: X
+     ch5: \inf_{U\times X}(\Upsilon_e-\Upsilon_B)>0
+     ch5: \mathsf P_X
+     ch6: X:=(n+1)^{1/3}\ge15
+     ch6: 1.99+0.59963X^2+1.24847X\le X^2+2
+     ch7: \mathsf P_X
+     ch9: \mathsf P_X
+     ch10: 
+\mathrm{Stays}\ \le\ \mathrm{Stays}_X:=\sum_{y\in\{k,k-1\}}\Bigl\{\omega^\sharp_y(d_0)\mathfrak s^{\mathrm{up}}_{d_0}(y)+\sum_{d_0<d\le d^\star}\bigl[\omega^\s
+     ch10: \mathsf P_X
+     ch10: \mathsf P_L\Leftrightarrow\mathsf P_X
+[130] $Z_k(\sigma), Z_k(F)$
+   declared=[2, 5, 6, 7, 8, 9] actual=[2, 5, 7, 8] +[] -[6, 9] appendix=['A', 'C']
+[132] $\beta_i$
+   declared=[2, 5, 6] actual=[2, 6, 7, 10] +[7, 10] -[5] appendix=['A', 'C']
+     ch7: \beta_1<\dots<\beta_{\mathfrak b}=n
+     ch7: \beta_0:=0
+     ch7: (\beta_{j-1},\beta_j]
+     ch10: \varrho_1(q_0):=\frac1{q_0}[e^{-\iota q_0}-e^{-\beta_0}]
+     ch10: \varrho_2(q_0):=\frac1{q_0}[e^{-\beta_1}-e^{-\beta_2}]
+     ch10: \beta_0:=\mathfrak c_{\mathrm R}q_0^{3/2}/(\sqrt2y)
+[133] $\chi_m(j)$
+   declared=[7, 10] actual=[5, 7, 10] +[5] -[] appendix=['A', 'C', 'D5']
+     ch5: 
+c_m(Y)\ \ge\ \mathrm{hov}\Bigl(\frac{Y}{m+1},\chi_{\mathrm w}\Bigr)\cdot\mathfrak V\bigl(m,Y,\chi_{\mathrm w},q_{\max}(Y)\bigr)\cdot\Lambda_{\mathrm w}(Y),
+
+     ch5: 
+\mathfrak V(m,Y,\chi_{\mathrm w},q):=\frac1{\sqrt{2\pi}}\Bigl[\frac{m+1}{(Y+1)(m-Y)}\Bigr]^{3/2}\exp\Bigl(-\frac1{12(m-\chi_{\mathrm w}-Y-q+1)}-\frac1{12(Y+1)}
+     ch5: 
+\mathfrak V_\ast:=\frac1{\sqrt{2\pi}}\Bigl[\frac n{y(n-y)}\Bigr]^{3/2}\exp\Bigl(-\frac1{12(n-\chi_2-\chi_{\mathrm w}-y-q_{\max}(y)+1)}-\frac1{12y}\Bigr)
+
+[136] $\Gamma_d(\ell;n)$
+   declared=[4, 5] actual=[4, 5, 6, 9] +[6, 9] -[] appendix=['A', 'C', 'D5', 'D6']
+     ch6: 
+\Pi_j(t)^{1-\mathrm{tp}}=\prod_i\Bigl(1+\frac{q_i}t\Bigr)^{-(1-\mathrm{tp})}\le\prod_i\Bigl(1+\frac{q_i}{\Gamma_{\mathrm{tp}} t}\Bigr)^{-1}=\Pi_j(\Gamma_{\math
+     ch6: 
+\sum_{d=2}^{\mathcal A}\bigl[(\mathfrak X^1_d)''(t)\bigr]^+\ \le\ \frac3t\,\mathcal S_{\mathrm I}(1)+\frac{1.5\,\Gamma_\ast\mathsf c_\ast}t\,\mathcal S_{\mathr
+     ch6: 
+\mathcal J_{\mathrm I}(1)\le8.133,\quad \mathcal Y_{\mathrm I}(1)\le10.301,\quad \mathcal J_{\mathrm X}(\Gamma_\ast)\le17.951,\quad \mathcal Y_{\mathrm X}(\Gam
+     ch9: 
+P_t(k)=\mathrm{T1}+\mathrm{T2}+\mathrm{T3},\qquad
+\mathrm{T1}:=-\frac1k\bigl[1-C_{t-2}\bigr],\quad
+\mathrm{T2}:=-\frac{k-1}{t}\,c_{t-1}(k-1),\quad
+\mathrm{T3}:
+     ch9: 
+C_{t-2}:=k\sum_{j=k}^{t-2}c_j(k-1)\frac{2j-k+3}{(j+1)(j+2)},\qquad \Gamma_j:=c_{j+1}(k)-c_j(k-1)
+
+     ch9: \Gamma_j=c_{j+1}(k)-c_j(k-1)
+[137] $\gamma_m$
+   declared=[9] actual=[2, 3, 5, 6, 7, 9] +[2, 3, 5, 6, 7] -[] appendix=['A', 'C', 'D5', 'D7', 'D9']
+     ch2: 
+\mathcal W_n(\gamma_1,\gamma_2)=\frac{n!}{(\gamma_1-1)!\,\gamma_2!\,\mathfrak t_2!}\,\mathfrak t_2^{\mathfrak t_2-1}\,\gamma_1^{\gamma_1-1}\,\gamma_2^{\gamma_2
+     ch2: 
+\mathcal W_n(\gamma_1,\dots,\gamma_j)=\frac{n!\,\mathfrak t_j^{\mathfrak t_j-1}\,\gamma_1^{\gamma_1-1}\prod_{i=2}^j\gamma_i^{\gamma_i}}{\mathfrak t_j!\,(\gamma
+     ch2: 
+b_{n,n-r-1}-b_{n,n-r}=-d_{n,n-r}=\sum_{j=1}^{r+1}(-1)^{j+1}\mathcal Q_{n,r,j},\qquad
+\mathcal Q_{n,r,j}:=\sum_{\substack{\gamma_1,\dots,\gamma_j\ge1\\ \gamma_1
+     ch3: 
+\frac{T_k}{\gamma_k}=1+\rho_k+\rho_k\rho_{k+1}+\dots+\rho_k\rho_{k+1}\cdots\rho_{j_1-1}
+
+     ch3: \gamma_j
+     ch3: \gamma_{j_0},\dots,\gamma_{j_1}
+     ch5: 
+\gamma_d=\binom ndp_d+y\sum_{j=0}^{d-1}\binom{n-d+j}{j}p_j\,\gamma_{d-1-j}
+
+     ch5: 
+\frac{\Delta^\iota_r\bigl[A^c_{n,n-d}\bigr]}{n^{n-2}}=\sum_{j\ge1}(-1)^{j+1}\mathcal Q^{(\iota)}_{n,r,j},\qquad
+\mathcal Q^{(\iota)}_{n,r,j}=e\,n^{1-j}\sum_{\g
+     ch5: 
+\mathrm{Ch}_j(d):=\sum_{\gamma_1,\dots,\gamma_j\ge1}\prod_{i=1}^j\mathrm{Ren}(\gamma_i)\prod_{i=1}^j(d-\mathfrak d_i)_+,\qquad
+\mathcal Z^{(\iota)}_j(z):=(1-z)
+     ch6: 
+m\,c_m(m-d)\ \ge\ \mathcal N\Bigl[\gamma_-\bigl(\Psi(d)-\mathrm{Bor}_\le(d)\bigr)-\frac{\gamma_-\mathrm{Tm}(d)}{m-d}+\mathrm{Bor}_\le(d)(1-\mathrm{es})\Bigr]
+
+     ch6: 
+m\,c_m(m-d)\le\Bigl(1+\frac{0.09}m\Bigr)\Bigl[\mathrm{Bor}_\le(d)+\gamma_+\bigl(\Psi(d)-\mathrm{Bor}_\le(d)\bigr)+\frac{1.74\,\Psi(d)}{m-d}+\frac{(1.74+1.54)\g
+     ch6: 
+\mathfrak d(k):=\gamma_W\upsilon_k+\frac{\mathsf u(k)}{e\,2^{3/2}},\qquad \mathcal O(k,m):=\mathfrak d(k)\,e^{1+1/(12(m+1))}\Bigl(\frac{m+1}k\Bigr)^{3/2},\qqua
+     ch7: 
+\gamma_v:=\frac{\mathcal U_{k+1}(\mathfrak j_v,\mathfrak j'_v)}{\mathcal U_k(\mathfrak j_v,\mathfrak j'_v)}=1+\frac{\mathfrak h_v}{\mathfrak d^\sharp_v},\qquad
+     ch7: 
+\upsilon_v\gamma_v^{\mathfrak o_k}\ \ge\ (\mathfrak x^\flat)^{1-\mathfrak h_v}
+
+     ch7: 
+\mathfrak Z_\tau R_\tau^{\mathfrak o_k}=\prod_v\upsilon_v\gamma_v^{\mathfrak o_k}\ \ge\ (\mathfrak x^\flat)^{\sum_v(1-\mathfrak h_v)}=\mathfrak x^\flat
+
+[138] $\kappa_N$
+   declared=[6, 8] actual=[6, 7, 8, 11] +[7, 11] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch7: 
+K(x):=e^{Q_{k-1}(x)}\int_0^x\mathfrak f^k\,e^{-Q_{k-1}(\mathfrak f)}\,d\mathfrak f=\sum_{j\ge k+1}\kappa_j\,x^j
+
+     ch7: 
+\mathbb E^{\sigma}_{n,k}[H_k]=(n+1)\,\mathfrak a_{k-1}\sum_{j=k+1}^{n+1}\kappa_j\,\frac{\mathfrak a_{n+1-j}}{\mathfrak a_n}.
+
+     ch7: 
+\mathfrak P_k(n)=\Bigl(1+\frac1n\Bigr)k\,\mathfrak a_{k-1}\sum_j\kappa_j\rho_k^{\,j-1}\frac{\mathfrak a^\rho_{n+1-j}}{\mathfrak a^\rho_n}=\Bigl(1+\frac1n\Bigr)
+     ch11: \kappa_K
+[141] $\mu_n(k)$
+   declared=[7, 10] actual=[3, 6, 7, 10] +[3, 6] -[] appendix=['A', 'C']
+     ch3: \mu_\varrho
+     ch3: 0<x<\mu_\varrho
+     ch3: x>\mu_\varrho
+     ch6: 
+\mu_1:=\mathbb E_m\bigl[Z_{m-d}(F)\bigr],\qquad \mu_2:=\mathbb E_m\bigl[Z_{m-d}(F)^2\bigr]
+
+     ch6: 
+c_m(m-d)\ \ge\ \frac{\mu_1}m\Bigl(1-\frac dm\Bigr)^{\mu_2/\mu_1-1},\qquad
+\mu_1=\sum_{j=1}^d\theta_{m+1}(m+1-j),\qquad
+\mu_2=\mu_1+2\sum_{1\le j<j'\le d}\theta
+     ch6: 
+\mu_2-\mu_1\ \le\ 2\cdot\frac12\,(d-1)\Bigl(1-\frac d{m+1}\Bigr)^{-3/2}e^{1/(12(m+1))}=(d-1)\Bigl(\frac{k+d+1}{k+1}\Bigr)^{3/2}e^{1/(12(m+1))}
+
+[144] $\Omega(\xi), \Omega_q$
+   declared=[8, 9, 11] actual=[5, 6, 7, 8, 9, 11] +[5, 6, 7] -[] appendix=['A', 'C', 'D5', 'D7', 'D8', 'D9']
+     ch5: 
+\Omega_e(\hat{\mathrm{ag}}):=\mathrm i\mathrm{ku}\hat{\mathrm{ag}}-\frac{\hat x\hat{\mathrm{ag}}^2}2+\sum_{m\ge3}\bigl[\hat x\mathrm{ku}^{m-2}-(2^{m-1}-2)\math
+     ch5: 
+\Upsilon_e:=\mathrm{Re}\int_0^{\pi/\mathrm{ku}}\mathfrak A\,e^{\Omega_e}\bigl[\mathrm{ch}_0-\mathfrak A^2\mathrm{ch}_1+\mathfrak A^4\mathrm{ch}_2\bigr]d\hat{\m
+     ch5: \Omega_e'(\hat{\mathrm{ag}})=\mathrm i\bigl(\mathrm{ku}-\hat x\mathfrak A-\mathfrak A^2\bigr)
+     ch6: 
+\Omega_y(d,q):=\frac{\pi_{y+d}(y+1+q)\,\mathrm{Cv}(q)}{y+1+q}-(y+1)\Bigl[\sum_{q<q''<d}\mathrm{Er}_y(d,q'')+\mathrm{Er}_y(d,q)\frac q{y+q}\Bigr]\ \ge\ 0.2\,\fr
+     ch6: 
+\mathfrak J_y(d)\ \ge\ \frac{(d-1)\pi_{y+d}(y+1)}{y+1}+\sum_{q=1}^{d-1}\Omega_y(d,q)\,c_{y+q}(y)+\sum_{q=1}^{d-1}\mathrm{Mg}_y(d,q)\,\mathfrak s_{q+1}(y)+\sum_
+     ch6: \Omega_y(d,q)=\mathfrak G-\mathcal M-\mathcal L
+     ch7: 
+\mathcal U_k(\mathfrak j,\mathfrak j'):=\frac{\min(\mathfrak j+1,k)+\min(\mathfrak j'+1,k)}2,\qquad \Omega_\tau(k):=\prod_{v\in\tau}\mathcal U_k(\mathfrak j_v,
+     ch7: 
+\sum_{\sigma\in\mathcal S(\tau)}A^\sigma_{k-1}=|\mathcal S(\tau)|\,\Omega_\tau(k)
+
+     ch7: 
+0<\mathfrak m_L\le\mathfrak m_\Pi,\qquad \mathcal B\ge\Omega^{\mathrm{pr}}(\mathfrak z)-1,\qquad \mathcal E^{\mathrm L}_2\le\Omega_2(1),\qquad \mathcal E^{\mat
+[145] $\omega_m, \omega_y(d), \omega^\sharp_y(d), \tilde\omega(d)$
+   declared=[10] actual=[3, 5, 6, 7, 8, 10] +[3, 5, 6, 7, 8] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch3: 
+\mathbb E_n\omega_n=\sum_{j=1}^{\lfloor n/2\rfloor}j\,\pi_n(j)=\sum_{j=1}^{\lfloor n/2\rfloor}\binom nj j^j\frac{p_{n-j}}{p_n}
+
+     ch3: 
+\mathbb E_n\omega_n\le\frac{n+1}{\sqrt{2\pi(n+1)}}\cdot2\sqrt{\frac{n+2}{n}}=\sqrt{\frac2\pi}\sqrt{\frac{(n+1)(n+2)}{n}}
+
+     ch3: \omega_n
+     ch5: \kappa=\omega^2
+     ch5: 2\omega P_{\min}(\omega^2)
+     ch6: 
+1-e^{-\omega}(1-\mathcal J)\ \ge\ 1-\Bigl(1-\omega+\frac{\omega^2}2\Bigr)(1-\mathcal J)\ \ge\ \omega-\frac{\omega^2}2+(1-\omega)\mathcal J
+
+     ch6: 
+\prod_iV_i-\prod_i\bar V_i=\sum_{i=1}^Z(V_i-\bar V_i)\prod_{i'<i}V_{i'}\prod_{i'>i}\bar V_{i'}\ \ge\ \sum_{i=1}^Z\frac1{t_{v_i}}\prod_{i'\ne i}\bar V_{i'}\ \ge
+     ch6: e^{-\omega}\le1-\omega+\omega^2/2
+     ch7: 
+\mathfrak P_k(n)=\Bigl(1+\frac1n\Bigr)\mathfrak P_k(\infty)\sum_{j=k+1}^{n+1}\omega_j\,\frac{\mathfrak a^\rho_{n+1-j}}{\mathfrak a^\rho_n}
+
+     ch7: 
+\mathfrak P_k(n)=\Bigl(1+\frac1n\Bigr)k\,\mathfrak a_{k-1}\sum_j\kappa_j\rho_k^{\,j-1}\frac{\mathfrak a^\rho_{n+1-j}}{\mathfrak a^\rho_n}=\Bigl(1+\frac1n\Bigr)
+     ch7: 
+R_U:=\frac{1+\varepsilon(\mathfrak X_1)+\sum_{i=2}^{\mathfrak I}\bar\omega_{i-1}\bigl(1+\varepsilon(\mathfrak X_i)\bigr)+\mathfrak m_U\bar\omega_{\mathfrak I}}
+     ch8: \omega_i:=\Omega_{q-i}-\Omega_{q-i+1}\ge0
+     ch8: \Omega_{q-j}-\Omega_q=\sum_{i=1}^j\omega_i
+     ch8: \mathrm{Flow}_q=\sum_{i=1}^{q-1}\omega_i\mathfrak T_i(q)
+[146] $\Phi, \Phi^{\mathrm{aux}}$
+   declared=[4, 5, 7] actual=[2, 3, 4, 5, 6, 7, 8, 9] +[2, 3, 6, 8, 9] -[] appendix=['A', 'C', 'D5', 'D7', 'D8', 'D9']
+     ch2: 
+\Phi_\sigma(y,z):=\Bigl(\prod_{i:\,h_i<k}h_i\Bigr)\,y^{H_k(\sigma)}\,z^{Z_k(\sigma)}
+
+     ch2: J_m(z)=\sum_{\sigma\in\mathfrak S_m}\partial_y\Phi_\sigma(y,z)\big|_{y=k}
+     ch2: \partial_y\Phi_\sigma=0
+     ch3: 
+f_\varrho(e^z)=e^{\varrho z}f(e^z)=e^{(\varrho-1)z}\Phi(z)
+
+     ch3: \Phi(z)=e^zf(e^z)
+     ch3: e^{(\varrho-1)z}\Phi(z)/\mathbb EX^{\varrho-1}
+     ch6: 
+\Phi_k(S_1,\dots,S_L):=(k+1)\cdot\frac{\mathrm{Bor}(S_L+1)}{\mathrm{Bor}(S_L)}\cdot\frac{\pi^0_{S_L}(k)}{\pi^0_{S_L-1}(k-1)}\cdot\frac{(k+1)^L-k^L}{k^L-(k-1)^L
+     ch6: 
+\frac{\mathcal U_k(m)}e=(k+1)\mathrm{Bor}(m+1)c_m(k)+\sum_{n=m+1}^{2k}\ \sum_{\mathrm{path}\in\mathcal C_n}\mathrm{wt}_n(\mathrm{path})\,\Phi_k(\mathrm{path})-
+     ch6: 
+\Phi_k(\mathrm{path})\ \ge\ -\frac12+\mathfrak S(\mathrm{path})+\frac32\Bigl(1-\frac k{S_L}\Bigr)-\frac5{2k}-\frac{(L-1)(k+1)}{2k^2}.\tag{6.44}
+
+     ch8: \Phi
+     ch8: \Phi(\varsigma)\ge\min(\Phi(\mathfrak t),\Phi(\mathfrak t+\mathfrak l))-\Upsilon\mathfrak l/4
+     ch8: \mathcal F:=\Phi-(\text{양 끝을 잇는 선형 함수})
+     ch9: 
+\ell\cdot(\text{셋째 항})\ \le\ k^{1/3}\,\Phi(\xi,\upsilon),\qquad
+\Phi(\xi,\upsilon):=\Bigl(1+\frac1\ell\Bigr)\mathfrak c_1\,e^{\mathfrak u_q}\bigl[0.11399\,\xi^
+     ch9: 
+k\,P_t(k)\ \le\ -1+0.5320\,\mathfrak c_1\xi^{3/2}+\frac{\Phi(\xi,\upsilon)-\mathcal L(\xi,\upsilon)}{\upsilon}
+
+     ch9: 
+\mathcal G(\xi,\upsilon):=\Phi(\xi,\upsilon)+\upsilon\Bigl(0.5320\,\mathfrak c_1\xi^{3/2}+\frac15\Bigr)\ \le\ \mathcal L(\xi,\upsilon)
+
+[155] $\Psi(q)$
+   declared=[2, 6, 8, 9, 10, 11] actual=[2, 5, 6, 7, 8, 9, 10, 11] +[5, 7] -[] appendix=['A', 'C', 'D5', 'D6', 'D8']
+     ch5: 
+\Theta(i'-i)\,\Theta(\Psi'-\Psi)\ \ge\ \Theta(\Psi'-i)\,\Theta(i'-\Psi)
+
+     ch5: 
+\frac{2\Psi^3P_\Theta(\Psi)}{1155(1-\Psi)^3},\qquad P_\Theta(\Psi)=175-665\Psi+581\Psi^2-427\Psi^3+375\Psi^4-309\Psi^5+150\Psi^6+15\Psi^7
+
+     ch5: 
+-\frac{\Psi^4Q_\Theta(\Psi)}{945(1-\Psi)^3(1+\Psi)},\qquad Q_\Theta(\Psi)=945+42\Psi-252\Psi^2+66\Psi^3-108\Psi^4+42\Psi^5-60\Psi^6-10\Psi^7
+
+     ch7: 
+\mathbb E_\Psi\bigl[\#\{i:h_i(\sigma(\alpha))>y\}\bigr]\ \ge\ \frac{n-y}{y+1}
+
+     ch7: 
+\Pr_\Psi(\mathrm{pos}_n\le y)\le\frac y n
+
+     ch7: 
+\mathbb E_\Psi[\mathfrak M]=n\Pr_\Psi(\mathrm{pos}_n\le y)\le y
+
+[156] $\psi(y)$
+   declared=[6, 10] actual=[2, 3, 5, 6, 9, 10] +[2, 3, 5, 9] -[] appendix=['A', 'C', 'D7']
+     ch2: \psi(\varsigma):=[\varsigma(m-\varsigma)]^{-1/2}
+     ch2: \int_0^m\psi(\varsigma)d\varsigma=\pi
+     ch2: \psi(i)\le\int_{i-1}^i\psi(\varsigma)d\varsigma
+     ch3: 
+\Pr\Bigl(\frac{m-M}{m^{2/3}}\le x\Bigr)\longrightarrow1-\psi(x^{3/2})
+
+     ch3: \psi(\vartheta)=\mathbb E\,e^{-\vartheta\mathcal B}
+     ch3: \Pr(X_n\le x)\to1-\psi(x^{3/2})
+     ch5: 
+\int_0^\infty\psi-\mathfrak h\sup\psi\ \le\ \sum_{z\ge1}\mathfrak h\,\psi(z\mathfrak h)\ \le\ \int_0^\infty\psi+\mathfrak h\sup\psi .
+
+     ch5: 
+\sum_{z\ge1}\mathfrak h\,\mathfrak g(z\mathfrak h)\ \ge\ \sum_{z\ge1}\mathfrak h\,\tilde\psi(z\mathfrak h)\ \ge\ \int_0^{4.1}\tilde\psi-\mathfrak h_0\max\tilde
+     ch5: \psi\le\psi(z\mathfrak h)
+     ch9: \psi(q)\ge\int_{q-1}^q\psi
+[159] $\rho_k$
+   declared=[7] actual=[3, 7] +[3] -[] appendix=['A', 'C', 'D7']
+     ch3: 
+\frac{T_k}{\gamma_k}=1+\rho_k+\rho_k\rho_{k+1}+\dots+\rho_k\rho_{k+1}\cdots\rho_{j_1-1}
+
+     ch3: \rho_k\cdots\rho_{k+i-1}
+     ch3: \rho_{k+1}\cdots\rho_{k+i}
+[160] $\sigma, \sigma_i$
+   declared=[2, 4, 5, 7, 8, 11] actual=[2, 3, 4, 5, 6, 7, 8, 10, 11] +[3, 6, 10] -[] appendix=['A', 'C', 'D10', 'D2', 'D6', 'D7']
+     ch3: 
+\mathbb E X^\sigma=\Bigl(\frac32\Bigr)^{\sigma/3}\Gamma\Bigl(1+\frac{2\sigma}3\Bigr)\frac{\Gamma(\frac56-\frac\sigma3)}{\Gamma(\frac56)}\cdot\frac{\Gamma(\frac
+     ch3: 
+\mathbb E[E^{2\sigma/3}]=\Gamma\Bigl(1+\frac{2\sigma}3\Bigr),\qquad \mathbb E[H^{-\sigma/3}]=\frac{\Gamma(\frac56-\frac\sigma3)}{\Gamma(\frac56)},\qquad \mathb
+     ch3: \sigma
+     ch6: 
+\log(1+\sigma)-\frac t{(t+1)(t+2)}>\frac1{t+1}-\frac1{2(t+1)^2}-\frac t{(t+1)(t+2)}=\frac{3t+2}{2(t+1)^2(t+2)}>0
+
+     ch6: 
+g'(j)=\log\Bigl(1+\frac1j\Bigr)-\frac{j-1}{j(j+1)}\ \ge\ \frac{\frac32\sigma^2-\frac16\sigma^3+\frac1{12}\sigma^4-\frac14\sigma^5}{1+\sigma}\ \ge\ \frac3{2j^2}
+     ch6: 
+1-\frac\sigma2+\frac{\sigma^2}{12}-\frac{\sigma^4}{720}\ \le\ \mathfrak h(\sigma)\ \le\ 1-\frac\sigma2+\frac{\sigma^2}{12}
+
+     ch10: \rho=\rho_0\sigma^\sharp
+     ch10: \iota_0+1.5\log\sigma^\sharp
+     ch10: \sigma^\sharp<\sigma^\sharp_0:=e^{-\iota_0/1.5}=0.0972
+[161] $\tau$
+   declared=[2, 5, 7] actual=[2, 3, 5, 6, 7, 8] +[3, 6, 8] -[] appendix=['A', 'C', 'D6', 'D8']
+     ch3: 
+K_\varrho(z)=e^{-3\tau_\varrho z}\bigl(1-e^{-3z}\bigr)^{-5/6},\qquad \tau_\varrho=\frac{5-2\varrho}6>0
+
+     ch3: 
+(\log K_\varrho)'(z)=-3\tau_\varrho-\frac{5/2}{e^{3z}-1}<0
+
+     ch6: 
+\mathcal F_{\mathrm I}(\Lambda_0+\tau)-\mathcal F_{\mathrm I}(\Lambda_0)=e^{1.5\Lambda_0}\bigl[(e^{1.5\tau}-1)\mathfrak l(\Lambda_0)+e^{1.5\tau}\bigl(\mathfrak
+     ch6: \Lambda_0,\tau\ge0
+     ch6: \mathcal F(\Lambda_0+\tau)-\mathcal F(\Lambda_0)\le\mathcal F(\tau)\,\mathcal F'(\Lambda_0)
+     ch8: 
+\tau(v;q):=\int_{vq}^q\mathrm{Bor}^{\mathrm{low}}(\varrho)\,\Psi^{\mathrm{low}}_{(q-\varrho)}\,d\varrho=(2\pi)^{-1/2}q^{-1/2}\int_v^1\varsigma^{-3/2}e^{-1/(12q
+     ch8: 
+\frac{\partial\mathrm{Flow}^-}{\partial\xi}(q,\xi)=\frac1\xi\int_{\xi/q}^\xi\tau\Bigl(1-\frac{\varsigma'}\xi+\frac1q;q\Bigr)\frac{d}{d\varsigma'}\bigl[\varsigm
+     ch8: \mathfrak T_i(q)\ge\int_i^q\mathrm{Bor}^{\mathrm{low}}(\varrho)\Psi^{\mathrm{low}}_{(q-\varrho)}d\varrho=\tau(i/q;q)
+[162] $\theta_t(k)$
+   declared=[2, 6, 8, 9] actual=[2, 6, 9] +[] -[8] appendix=['A', 'C', 'D9']
+[165] $\Upsilon_k, \hat\Upsilon_k$
+   declared=[6, 9, 11] actual=[4, 5, 6, 7, 8, 9, 11] +[4, 5, 7, 8] -[] appendix=['A', 'C', 'D5', 'D7', 'D8', 'D9']
+     ch4: \Upsilon\downarrow0
+     ch4: \sum_{j\ge1}j\,\mathrm{Bor}(j)e^{-\Upsilon j}=\frac{T(e^{-1-\Upsilon})}{1-T(e^{-1-\Upsilon})}
+     ch4: T(e^{-1-\Upsilon})=1-\sqrt{2\Upsilon}+\frac23\Upsilon+(\Upsilon^{3/2}\text{ 차수의 항})
+     ch5: 
+\frac{e_n}{p_n}=\frac{\mathfrak n_n\mathrm{Bor}(k)}\pi\,\mathrm{ku}^4\,\Upsilon_e,\qquad
+\frac{B_{n,k-1}}{p_n}=\frac{\mathfrak n_n\mathrm{Bor}(k)}\pi\,\mathrm{
+     ch5: 
+\Upsilon_e:=\mathrm{Re}\int_0^{\pi/\mathrm{ku}}\mathfrak A\,e^{\Omega_e}\bigl[\mathrm{ch}_0-\mathfrak A^2\mathrm{ch}_1+\mathfrak A^4\mathrm{ch}_2\bigr]d\hat{\m
+     ch5: e_n>B_{n,k-1}\iff\Upsilon_e>\Upsilon_B
+     ch7: 
+\mathrm{Im}\,\Omega^{\mathrm{pr}}(\mathfrak f e^{\mathrm i\theta})=\sum_m\varrho^{\mathrm{pr}}_m\mathfrak f^m\sin m\theta\ge\theta\,\Omega_1(\mathfrak f)-\frac
+     ch7: \Upsilon\in(0,1)
+     ch7: \theta_a:=\Upsilon\sqrt{6\mathfrak m_L/\mathcal E^{\mathrm U}_3}
+     ch8: \Upsilon
+     ch8: \Phi(\varsigma)\ge\min(\Phi(\mathfrak t),\Phi(\mathfrak t+\mathfrak l))-\Upsilon\mathfrak l/4
+     ch8: \Upsilon
+[166] $\varkappa_m$
+   declared=[10] actual=[6, 10] +[6] -[] appendix=['A', 'C', 'D7']
+     ch6: 
+\partial_t^2\bigl[(\mathcal R_j(t)-1)\Pi_j(t)\bigr]\ \le\ \mathcal R_j(t)\,\Pi_j(t)\,\frac{\Sigma_1}{t^2}\Bigl[3+2.25\,\Sigma_1+1.5\,(\chi^2-\varkappa_d\chi)^+
+     ch6: \varkappa_d:=1.498+2\mathrm{rt}
+     ch6: 1.5(\chi^2-\varkappa_d\chi)^+
+[170] $\varsigma_m(\ell)$
+   declared=[6, 10] actual=[2, 5, 6, 7, 8, 9, 10, 11] +[2, 5, 7, 8, 9, 11] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch2: \varsigma_1<\varsigma_2
+     ch2: f(\kappa\varsigma_1+(1-\kappa)\varsigma_2)g(\kappa\varsigma_1+(1-\kappa)\varsigma_2)\le(\kappa f(\varsigma_1)+(1-\kappa)f(\varsigma_2))(\kappa g(\varsigma_1)+(1
+     ch2: \kappa f(\varsigma_1)g(\varsigma_1)+(1-\kappa)f(\varsigma_2)g(\varsigma_2)
+     ch5: \Delta^3f(y)=\int_0^1\!\int_0^1\!\int_0^1f'''(y-1+\varsigma_1+\varsigma_2+\varsigma_3)\,d\varsigma_1d\varsigma_2d\varsigma_3
+     ch5: \varsigma_z:=(z-1)/(2Y)
+     ch5: \xi_1:=e^{-\varsigma_z}
+     ch7: \varsigma_k:=k\log(e\rho_k)
+     ch7: \rho_k=e^{-1+\varsigma_k/k}
+     ch7: \mathfrak m_\Pi=ke^{-1+\varsigma_k/k}
+     ch8: \max(0,\min_j\varsigma_j)=\min_j\max(0,\varsigma_j)
+     ch9: 
+\mathfrak s_2\le(2\pi)^{-1}\iint_{\varsigma_1,\varsigma_2\ge0,\ \varsigma_1+\varsigma_2\le d}(2d+2-2\varsigma_1-\varsigma_2)\,\varsigma_1^{-1/2}\varsigma_2^{-1
+     ch9: \varsigma_1\le i+1
+     ch9: \varsigma_2\le j
+     ch11: \varsigma_k
+     ch11: \varsigma_k
+     ch11: \varsigma_k
+[171] $\vartheta, \vartheta_0$
+   declared=[10] actual=[2, 3, 4, 5, 6, 7, 9, 10, 11] +[2, 3, 4, 5, 6, 7, 9, 11] -[] appendix=['A', 'C', 'D10', 'D4', 'D5', 'D7', 'D9']
+     ch2: \varsigma=m\sin^2\vartheta
+     ch3: \psi(\vartheta)=\mathbb E\,e^{-\vartheta\mathcal B}
+     ch3: (\vartheta\ge0)
+     ch4: 
+\mathcal M^{(y,n)}_0=\frac{e^{-y/2}}{p_n}\bigl(\mathrm{He}_n-n\,\mathrm{He}_{n-1}\bigr)=\frac{e^{-y/2}\,\mathrm{He}_{n-1}\,\vartheta}{p_n},\qquad \vartheta:=\f
+     ch4: 
+\Bigl|\vartheta-\Bigl[4-\frac{26+4\nu+8\theta}k+\frac{506+97\nu+5\nu^2+(168+16\nu)\theta+12\theta^2}{k^2}\Bigr]\Bigr|<\frac2{k^2}\qquad(k\ge30000) \tag{4.8}
+
+     ch4: 
+\frac{\mathcal M^{(y,n)}_2}{\mathcal M^{(y,n)}_0}=1-\frac{2n}y+\frac{n(n+1)}{y^2}-\frac{n(n+1)}{y^2\vartheta}=\frac{\vartheta\bigl[(n-y)^2+n\bigr]-n(n+1)}{y^2\
+     ch5: 
+\log\mathrm{cr}_k=(k-2)\log(1+\vartheta)\ \ge\ \Bigl(\frac1\vartheta-2\Bigr)\Bigl(\vartheta-\frac{\vartheta^2}2+\frac{\vartheta^3}3-\frac{\vartheta^4}4\Bigr)=1
+     ch5: 
+(2+w)\bigl(\log\mathrm{cr}_k+\log(1+w)-1\bigr)\ \ge\ (2+w)\Bigl(-\frac52\vartheta+\frac43\vartheta^2-\frac{11}{12}\vartheta^3+\frac12\vartheta^4\Bigr)+5\varthe
+     ch5: 
+\bigl(\log u^\pm-\Theta\bigr)'=\frac{\vartheta^2(u^\pm)'(\vartheta)-\bigl(\vartheta-\log(1+\vartheta)\bigr)u^\pm(\vartheta)}{\vartheta^2u^\pm(\vartheta)}
+
+     ch6: \vartheta_0=0
+     ch7: 
+\mathcal Q_z(n)\le\vartheta(n):=\frac{k/(\mathfrak Ln)+\mathfrak R_{\mathcal J}}{1-\Xi}
+
+     ch7: 
+\sum_{z'>z}\mathcal Q_{z'}(n)\Pr^{\mathrm S}(z'\to z)\le\mathfrak R_{\mathcal J}+\sum_{\varkappa<\mathcal J^{\mathrm S}}\mathcal Q'_\varkappa\bigl(\bar{\mathfr
+     ch7: \mathfrak P_k(n)\le\frac{k\,\mathsf x_k}n+\mathfrak R_{\mathcal J}+\vartheta(n)\,\Xi^{(k)}
+     ch9: 
+\frac{\mathrm{PAIR}_n}{\binom nkk^{k-2}A^\diamond_N}\ \ge\ \mathfrak F(k,\vartheta):=\Bigl(\frac{N+1}{\nu+1}\Bigr)^{3/2}\bigl(1-2.3\times10^{-4}\bigr)(2\pi)^{-
+     ch9: 
+\mathfrak F(6668,\vartheta)\ \ge\ B\cdot\frac{\bigl((N+1)/(\nu+1)\bigr)^{3/2}\big|_{\vartheta_b}}{A^\diamond_{\mathrm{dec}}\big|_{\vartheta_a}+(\mathfrak e\tex
+     ch9: \vartheta:=\nu/k
+     ch11: \varsigma+\vartheta
+     ch11: \vartheta
+     ch11: \vartheta
+[174] $\xi$
+   declared=[8, 9, 10, 11] actual=[2, 3, 5, 7, 8, 9, 10, 11] +[2, 3, 5, 7] -[] appendix=['A', 'C', 'D10', 'D5', 'D7', 'D8', 'D9']
+     ch2: \xi_v
+     ch2: \Pr(\xi_v=1)=\mathfrak q_v
+     ch2: \mathfrak Z:=\sum_v\xi_v
+     ch3: 
+(g*w)'(z)=\int g'(z-\xi)\,w(\xi)\,d\xi=\int g(z-\xi)\,Dw(d\xi)
+
+     ch3: 
+\frac{d}{d\xi}\log R(\xi)=(\log g)'(z_1-\xi)-(\log g)'(z_2-\xi)\ge0
+
+     ch3: 
+(g*w)'(z_2)=\int R(\xi)\,g(z_1-\xi)\,Dw(d\xi)\le R(\kappa)\int g(z_1-\xi)\,Dw(d\xi)=R(\kappa)\,(g*w)'(z_1)
+
+     ch5: 
+\mathrm{Bor}^{\mathrm{tail}}_k(\mathrm{pt}')=\frac{\xi^{k+1}}{\pi\mathrm{pt}'}\int_1^\infty\frac{\mathrm{Im}\,T_+(\mathrm{et}/e)\,\mathrm{et}^{-k-1}}{\mathrm{e
+     ch5: 
+\mathrm{qy}:=k(\mathrm{et}-1)=\frac{e^{\mathrm{ku}^3\hat L}-1}{\mathrm{ku}^3},\qquad
+\mathrm{Zh}:=\frac{\xi-1}{\mathrm{ku}^2},\qquad
+\mathfrak A(\hat{\mathrm{a
+     ch5: \xi:=\mathrm{pt}' e^{1-\mathrm{pt}'}
+     ch7: 
+\phi^\sharp(\xi):=\xi-2+\mathfrak x^\flat\xi^{-\mathfrak o_k}\qquad(\xi>0)
+
+     ch7: 
+\phi^\sharp(\xi_0)=\Bigl(1+\frac1k\Bigr)^{\mathsf t_k}+\Bigl(1-\frac1k\Bigr)^{2\mathsf t_k+1}-2
+
+     ch7: 
+\frac{\mathfrak g_{\mathrm S}(\mathsf y k^2)}{k^4}=(\mathsf y-\xi)(\mathsf y-2\xi-\xi^2)-(1+\xi)^2\bigl(\mathfrak A_0\xi+\mathfrak B_0\mathsf y\bigr)
+
+[176] $\mathcal A_{k,n}$
+   declared=[4, 7] actual=[4, 5, 7] +[5] -[] appendix=['A', 'C', 'D7']
+     ch5: 
+\partial_{q_j}\mathrm{tl}(\mathcal A_i)=\frac{\mathrm{tl}(\mathcal A_i)\mathrm{tl}(\mathcal A_j\mid\mathcal A_i)-\mathrm{tl}(\mathcal A_i)\mathrm{tl}(\mathcal 
+     ch5: 
+\partial_{q_i}\log L=\frac{\mathrm{tl}(\mathcal A_i)-\mathrm{tl}(\mathcal A_i\mid\mathcal A_1)}{1+q_i}\le0\qquad(i\ge2)
+
+     ch5: \mathcal A_i
+[178] $\mathcal C_n$
+   declared=[9] actual=[6, 7, 9] +[6, 7] -[] appendix=['A', 'C', 'D7']
+     ch6: 
+\frac{\mathcal U_k(m)}e=(k+1)\mathrm{Bor}(m+1)c_m(k)+\sum_{n=m+1}^{2k}\ \sum_{\mathrm{path}\in\mathcal C_n}\mathrm{wt}_n(\mathrm{path})\,\Phi_k(\mathrm{path})-
+     ch6: \mathcal C_n
+     ch6: \sum_{\mathrm{path}\in\mathcal C_n}\mathrm{wt}_n(\mathrm{path})=\mathrm{Bor}(n)\,c_{n-1}(k-1)
+     ch7: 
+\mathcal C_y(x):=\sum_{n=1}^{y}C_{n,y}\frac{x^n}{n!}=\sum_{n=1}^{y}(n-1)^{n-1}\frac{x^n}{n!},\qquad \mathcal G_y:=C_y-\mathcal C_y
+
+     ch7: 
+(1-\mathcal C_{k+1})A_k=\bigl(1-C_{k+1}+\mathcal G_{k+1}\bigr)A_k=1+\mathcal G_{k+1}A_k
+
+     ch7: 
+A_k-2A_{k-1}+A_{k-2}-\mathfrak Y_{\mathfrak k}=\mathcal X_{\mathfrak k}\,A_{k-2}A_{k-1}A_k=\tilde{\mathcal X}_{\mathfrak k}\cdot\bigl[(1-\mathcal C_{k+1})A_k\b
+[179] $\mathcal D(\beta)$
+   declared=[4] actual=[4, 7] +[7] -[] appendix=['A', 'C']
+     ch7: 
+(Z_y(\sigma))_\iota\sum_{\varepsilon}\Psi(\mathcal D(\varepsilon))=\sum_{\varepsilon}\Psi^{[y,\iota]}(\mathcal D(\varepsilon))
+
+     ch7: \mathcal D(\alpha):=\{d_1,\dots,d_n\}
+     ch7: \Psi(\mathcal D(\alpha))
+[180] $\mathcal F_k(\nu), \mathcal F^+_k, \mathcal F^{\mathrm{LP}}_k$
+   declared=[9, 11] actual=[2, 4, 5, 6, 9, 11] +[2, 4, 5, 6] -[] appendix=['A', 'C', 'D4', 'D6', 'D9']
+     ch2: 
+\mathcal F_{m+1}(\chi)\le\mathcal F_m(\chi)\le\mathcal F_{m+1}(\chi+1)
+
+     ch2: \mathcal F_m(\chi):=\sum_{j\le\chi}\mathcal P_m(j)
+     ch2: \mathfrak j:=\min\{j:\mathcal F_m(j)\ge\upsilon\}
+     ch4: 
+\mathcal F_0(z)=-\mathsf n_\infty z^4e^{-z^2}\int_0^1\rho^2e^{\mu z^2/2}\,\mathrm{Pq}\,(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\rho z)\,d\rho
+
+     ch4: 
+\mathcal F_1(z)=-\mathsf n_\infty z^4e^{-z^2}\int_0^1\rho^2e^{\mu z^2/2}\,\mathrm{Pq}\Bigl[\frac43\rho^2z^2-\frac23\rho z^4\Bigr]d\rho
+
+     ch4: \mathcal F_0
+     ch5: 
+\mathcal T_y'=\sum_{t\ge1}t\,[x^t]\mathcal T_y\,x^{t-1}=y\sum_{t>k}\frac{\mathcal K_{t-1,k}(y)}{(t-1)!}x^{t-1}+\sum_{t=1}^{k}t\,\frac{\mathcal K_{t-1,k}(y)}{(t
+     ch5: 
+\mathcal H'=y\mathcal F_y^2+\mathcal R_y\mathcal F_y-\mathcal R_y\mathcal F_0-y\mathcal Q_{<k}\mathcal F_0
+=\bigl[\mathcal R_y+y(\mathcal F_y+\mathcal F_0)\big
+     ch5: \mathcal F_y(x):=\sum_{n\ge0}\mathcal K_{n,k}(y)x^n/n!
+     ch6: 
+\mathcal F_{\mathrm I}(\Lambda):=e^{1.5\Lambda}\Lambda(1+0.75\Lambda),\qquad \mathcal F_{\mathrm X}(\Lambda):=e^{1.5\Lambda}\Lambda\qquad(\Lambda\ge0)
+
+     ch6: 
+\mathcal F_{\mathrm I}(\Lambda_0+\tau)-\mathcal F_{\mathrm I}(\Lambda_0)=e^{1.5\Lambda_0}\bigl[(e^{1.5\tau}-1)\mathfrak l(\Lambda_0)+e^{1.5\tau}\bigl(\mathfrak
+     ch6: \mathcal F=\mathcal F_{\mathrm I}
+[181] $\mathcal G_y(q), \mathcal G^y(q)$
+   declared=[10] actual=[2, 5, 6, 7, 10] +[2, 5, 6, 7] -[] appendix=['A', 'C', 'D7']
+     ch2: 
+\mathcal G_{z,i,n}:=n!\,[x^n]\;e^{T(x)}e^{z\mathrm{Gr}(x)}\int_0^x e^{-z\mathrm{Gr}(\varsigma)}\frac{\varsigma^{i}}{i!}\,d\varsigma
+
+     ch2: 
+J_n(z)=p_{k-1}\,\mathcal G_{z,k-1,n}=p_{k-1}\,n!\,[x^n]\;e^{T(x)}e^{z\mathrm{Gr}(x)}\int_0^x e^{-z\mathrm{Gr}(\varsigma)}\frac{\varsigma^{k-1}}{(k-1)!}\,d\vars
+     ch2: \mathcal G_{z,i,n}
+     ch5: 
+\mathcal G_{y,i,n}=n!\,[x^n]\,e^{T}\frac{x^{i+1}}{(i+1)!}+y\sum_{j\ge0}\binom{j+i+1}{j}p_j\,\mathcal G_{y,\,i+1+j,\,n}
+=\binom{n}{i+1}p_{n-i-1}+y\sum_{j\ge0}\b
+     ch5: \mathcal G_{y,n-d-1,n}
+     ch5: \Gamma_d(y;n)=\mathcal G_{y,\,n-d-1,\,n}
+     ch6: 
+\mathcal G_j(t):=\frac{w(w+1)}t\,\Pr_m(M=w,\ \text{깊이}=j)\qquad(1\le j\le d)
+
+     ch6: 
+\sum_{j=1}^{d}\mathcal G_j(t)=\frac{w(w+1)}{t}\,c_m(w)=\frac{w(w+1)\,c_{w+d}(w)}{w+d+1}\tag{6.32}
+
+     ch6: 
+\mathcal G_j(t)=\tilde{\mathcal G}_j(y)\,\pi^0_{t-1-j}(w),\qquad \tilde{\mathcal G}_j(y):=\frac{(y-1)\,y\,(y+d-j)^{y+d-j-2}\,\mathcal K_{d,j}(y)}{(y+d)^{y+d-1}
+     ch7: 
+\mathcal C_y(x):=\sum_{n=1}^{y}C_{n,y}\frac{x^n}{n!}=\sum_{n=1}^{y}(n-1)^{n-1}\frac{x^n}{n!},\qquad \mathcal G_y:=C_y-\mathcal C_y
+
+     ch7: 
+\Bigl(\sum_{\mathcal F}\phi_{\mathcal F}\mathcal G_{\mathcal F}\Bigr)'=\sum_{\mathcal F}\Bigl[\phi_{\mathcal F}'+\Bigl(\sum_{y\in\mathcal F}Q_{y-1}'\Bigr)\phi_
+     ch7: 
+(1-\mathcal C_{k+1})A_k=\bigl(1-C_{k+1}+\mathcal G_{k+1}\bigr)A_k=1+\mathcal G_{k+1}A_k
+
+[183] $\mathcal I_k$
+   declared=[4, 7] actual=[4, 6, 7, 9, 11] +[6, 9, 11] -[] appendix=['A', 'C', 'D6']
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\ \le\ \sum_{q=2}^{\mathcal A}\mathsf c\,\frac{\sqrt q}{\mathfrak A}\,\mathcal I_{\mathcal F}\Bigl(\frac q{\mathfrak A}\Bigr)\,\
+     ch6: 
+\mathrm{In}_{\mathfrak V}(U):=\frac{\sqrt{U+\mathfrak V}\;\mathcal I_{\mathcal F}\bigl((U+\mathfrak V)/(1+U)\bigr)}{1+U-\mathfrak V},\quad \omega(U):=1-\mathsf
+     ch6: \mathcal I_{\mathcal F}(\mathfrak T):=\mathfrak T^{-1/2}\int_0^{\mathfrak T}\sigma^{-3/2}\phi_{\mathcal F}(\sigma)\,d\sigma
+     ch9: 
+\Xi(\chi)=e^{g(S_L)-g(m+1)}\cdot \mathcal I_3\cdot \mathcal I_4\cdot \mathcal I_5,\qquad
+\mathcal I_3:=\frac{\pi^0_{S_L}(w+1)}{\pi^0_{S_L-1}(w)},\quad \mathcal
+     ch9: 
+\mathcal I_3-1\ \le\ \frac{3\beta}{2w^2}\Bigl(\frac1{\pi^0_{S_L-1}(w)}-1\Bigr)
+
+     ch9: \mathcal I_5\le w/(w+1)
+     ch11: \mathcal I_{\mathcal F}
+[184] $\mathcal J_1(k),\dots,\mathcal J_4(k)$
+   declared=[9] actual=[5, 9] +[5] -[] appendix=['A', 'C', 'D9']
+     ch5: R_j=\mathcal J_1+\dots+\mathcal J_j
+     ch5: (\mathcal J_1,\dots,\mathcal J_z)
+[185] $\mathcal K_{n,k}(y)$
+   declared=[2, 4, 5, 7] actual=[2, 4, 5, 6, 7] +[6] -[] appendix=['A', 'C', 'D4']
+     ch6: 
+\mathcal G_j(t)=\tilde{\mathcal G}_j(y)\,\pi^0_{t-1-j}(w),\qquad \tilde{\mathcal G}_j(y):=\frac{(y-1)\,y\,(y+d-j)^{y+d-j-2}\,\mathcal K_{d,j}(y)}{(y+d)^{y+d-1}
+     ch6: 
+\mathcal K_{d,j}(y):=\prod_{r=d-j+1}^{d-1}(y+r)\cdot\sum_C\mathrm{Wc}(C),\qquad \mathrm{Wc}(C):=\prod_{\mathfrak j\in C}\mathfrak c_{\,q'-q}\cdot\mathrm{Gs}_n(
+     ch6: \mathcal K_{d,j}
+[186] $\mathcal M_r$
+   declared=[4, 7] actual=[2, 4, 6, 7] +[2, 6] -[] appendix=['A', 'C', 'D4', 'D7']
+     ch2: 
+\mathcal M_n=\sum_{j=0}^{n-1}\binom{n-1}j(j+1)\,\mathcal M_j\otimes\mathcal M_{n-1-j}\oplus\{j+1\}
+
+     ch2: \mathcal M_n
+     ch2: \mathcal M_0=\{\varnothing\}
+     ch6: \vartheta_n=\sum_ii(1-1/y)^{i-1}/\sum_i(1-1/y)^i\ge\sum_iie^{-\mathfrak V i}/\sum_ie^{-\mathfrak V i}=:\mathcal M_n
+     ch6: \mathcal M_n=-\frac{d}{d\mathfrak V}\log\frac{1-e^{-(n+1)\mathfrak V}}{1-e^{-\mathfrak V}}=\frac1{e^{\mathfrak V}-1}-\frac{n+1}{e^{(n+1)\mathfrak V}-1}
+     ch6: \mathcal M_n=[\mathfrak h(\mathfrak V)-\mathfrak h((n+1)\mathfrak V)]/\mathfrak V
+[187] $\mathcal N_\ell(t)$
+   declared=[2, 7, 8, 9] actual=[2, 5, 7, 8, 9] +[5] -[] appendix=['A', 'C', 'D5']
+     ch5: \mathcal N_j(d):=\sum_\gamma\mathcal N(\gamma)\prod_i\mathrm{Ren}(\gamma_i)\prod_i(d-\mathfrak d_i)_+
+     ch5: \mathcal O_j(z):=(1-z)^2\sum_d\mathcal N_j(d)z^d
+     ch5: \Delta^2\mathcal N_j(r)=[z^{r+2}]\mathcal O_j
+[188] $\mathcal O_n$
+   declared=[9] actual=[5, 7, 9] +[5, 7] -[] appendix=['A', 'C', 'D5']
+     ch5: 
+\mathcal O_1=z\Bigl[\tfrac{35}8\bigl(z(zC')'-2zC'+C\bigr)-\tfrac1{12}\bigl(zC'-C\bigr)\Bigr],
+
+     ch5: 
+\mathcal O_j=Cz\Bigl(\mathcal O_{j-1}'+\frac{2\mathcal O_{j-1}}{1-z}\Bigr)+\bigl((j+\tfrac52)zC'-C\bigr)z\Bigl(\mathcal Y_{j-1}'+\frac{2\mathcal Y_{j-1}}{1-z}\
+     ch5: \mathcal O_j(z):=(1-z)^2\sum_d\mathcal N_j(d)z^d
+     ch7: 
+\frac{s_{n-\mathfrak l}(k+1)}{s_{n-1-k}(k+1)}\ <\ \mathcal O_k(n,\mathfrak l):=\frac{\mathrm{Bor}(k+1)\,\mathrm{Bor}(n-k)}{\mathrm{Bor}(\mathfrak l+2)\,\mathrm
+     ch7: \mathcal O_k(n,\mathfrak l)
+[191] $\mathcal Q_m$
+   declared=[9] actual=[2, 4, 5, 7, 9] +[2, 4, 5, 7] -[] appendix=['A', 'C']
+     ch2: 
+b_{n,n-r-1}-b_{n,n-r}=-d_{n,n-r}=\sum_{j=1}^{r+1}(-1)^{j+1}\mathcal Q_{n,r,j},\qquad
+\mathcal Q_{n,r,j}:=\sum_{\substack{\gamma_1,\dots,\gamma_j\ge1\\ \gamma_1
+     ch2: 
+\mathcal Q_{n,r,1}-\mathcal Q_{n,r,2}\ \le\ b_{n,n-r-1}-b_{n,n-r}\ \le\ \mathcal Q_{n,r,1},\qquad \mathcal Q_{n,r,1}=\binom nr(n-r)^{n-r-2}(r+1)^r
+
+     ch2: 
+\mathcal Q_{n,r,2}=\sum_{\gamma_1+\gamma_2\le r}\frac{2\,\mathcal W_n(\gamma_1,\gamma_2)}{\mathfrak t_1\mathfrak t_2}+\sum_{\gamma_1+\gamma_2=r+1}\frac{(\gamma
+     ch4: 
+F_y\equiv e^T+He^T=\mathcal E_{<k}+\mathcal Q_k+y\,e^{T}\!\int_0^xU\pmod{x^{2k+2}},\qquad \mathcal Q_k:=(1-T)\bigl(e^T-\mathcal E_{<k}\bigr)
+
+     ch4: 
+I=e^{y\mathrm{Gr}(x)}\int_0^x\mathcal Q_k(w)\,e^{-y\mathrm{Gr}(w)}\,dw
+
+     ch4: 
+F_\ast(y,x):=\mathcal E_{<k}+\mathcal Q_k+y\,e^{T}e^{y\mathrm{Gr}(x)}\int_0^x\mathcal Q_k(w)\,e^{-y\mathrm{Gr}(w)}\,dw
+
+     ch5: 
+\mathcal H'=(\ell+1)A_\ell^2-\ell A_{\ell-1}^2-Q_\ell'A_\ell+Q_{\ell-1}'A_{\ell-1}
+=\bigl[\ell(A_\ell+A_{\ell-1})-Q_{\ell-1}'\bigr]\mathcal H+A_\ell\bigl(A_\el
+     ch5: 
+\mathcal H'=y\mathcal F_y^2+\mathcal R_y\mathcal F_y-\mathcal R_y\mathcal F_0-y\mathcal Q_{<k}\mathcal F_0
+=\bigl[\mathcal R_y+y(\mathcal F_y+\mathcal F_0)\big
+     ch5: Q_\ell'-Q_{\ell-1}'=\mathcal Q_{<\ell}
+     ch7: 
+\mathcal Q_z(n)=\Pr(z_1=z)+\sum_{z'=z+1}^{n}\mathcal Q_{z'}(n)\,\Pr^{\mathrm S}(z'\to z)
+
+     ch7: 
+\sum_{z'>z}\mathcal Q_{z'}(n)\,\mathfrak q^{(z)}(z')=\Pr(z_1>z)\le1,\qquad \Pr^{\mathrm S}(z'\to z)=\mathfrak q^{(z)}(z')\,\gamma^{(z)}(z')
+
+     ch7: 
+\mathcal Q_z(n)\le\vartheta(n):=\frac{k/(\mathfrak Ln)+\mathfrak R_{\mathcal J}}{1-\Xi}
+
+[193] $\mathcal S_{n,k}$
+   declared=[4, 5] actual=[4, 5, 6, 8] +[6, 8] -[] appendix=['A', 'C']
+     ch6: 
+\sum_{d=2}^{\mathcal A}\bigl[(\mathfrak X^1_d)''(t)\bigr]^+\ \le\ \frac3t\,\mathcal S_{\mathrm I}(1)+\frac{1.5\,\Gamma_\ast\mathsf c_\ast}t\,\mathcal S_{\mathr
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\ \le\ \sum_{q=2}^{\mathcal A}\mathsf c\,\frac{\sqrt q}{\mathfrak A}\,\mathcal I_{\mathcal F}\Bigl(\frac q{\mathfrak A}\Bigr)\,\
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\ \le\ \mathsf c\sqrt t\int_{\mathfrak V}^{1+2\mathfrak V}\mathrm{In}_{\mathfrak V}(U)\Bigl[\omega(U)+\mathsf c\,\min\Bigl(\frac
+     ch8: 
+\mathfrak B_N\ \ge\ \mathfrak B^{\mathrm{low}}(k,\nu):=\frac{(2\pi)^{-1/2}}{k+\nu}\Bigl[(\nu+1)\mathcal S_{1/2}(\nu)-\mathcal S_{-1/2}(\nu)-\frac{(\nu+1)\maths
+     ch8: \mathcal S_{1/2}(\nu):=2\sqrt\nu+\mathsf z_{1/2}+\tfrac1{2\sqrt\nu}-\tfrac1{24}\nu^{-3/2}
+     ch8: \mathcal S_{-1/2}(\nu):=\tfrac23\nu^{3/2}+\tfrac12\sqrt\nu+\mathsf z_{-1/2}+\tfrac1{24\sqrt\nu}
+[194] $\mathcal T_k(\sigma), \mathcal T_{n,k}$
+   declared=[7, 11] actual=[4, 5, 6, 7, 11] +[4, 5, 6] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch4: 
+\Bigl|\operatorname{Re}\sqrt k\,\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)-(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\beta)-\frac43\beta^2\varepsilo
+     ch4: 
+\mathcal T_{\mathrm R}=\frac35+\frac{12}5\beta^2+\frac32\beta^4+\frac1{25}\beta^6,\qquad
+\mathcal T_{\mathrm I}=\frac1{100}+\frac{201}{100}\beta+\frac7{10}\bet
+     ch4: \mathcal T_{\mathrm R}=\frac35+\frac{12}5\beta^2+\frac85\beta^4+\frac1{25}\beta^6
+     ch5: 
+\mathcal T_y'=\sum_{t\ge1}t\,[x^t]\mathcal T_y\,x^{t-1}=y\sum_{t>k}\frac{\mathcal K_{t-1,k}(y)}{(t-1)!}x^{t-1}+\sum_{t=1}^{k}t\,\frac{\mathcal K_{t-1,k}(y)}{(t
+     ch5: 
+\mathcal T_{\mathfrak x'}'=k\mathcal J_{\mathfrak x'}-\sum_{j=0}^{k-2}(k-1-j)p_j\frac{x^j}{j!}+(\mathfrak x'-1)\,k\,\frac{A_{t-1,k-1}}{(t-1)!}x^{t-1}=k\mathcal
+     ch5: \mathcal F_y=\exp(\mathcal T_y)
+     ch6: 
+\varsigma_{y+d-1}(y)=\mathcal T_y(d)+\sum_{q=1}^{d-1}\pi_{y+d}(y+1+q)\Bigl[\frac y{y+q}\,\varsigma_{y+q-1}(y)+\frac{q\,\mathfrak s_q(y+1)}{(y+q)(y+1+q)}\Bigr],
+     ch6: 
+\mathfrak J_y(d)=\frac{(d-1)\pi_{y+d}(y+1)}{y+1}-(y+1)\mathcal T_y(d)+\sum_{q=1}^{d-1}\frac{\pi_{y+d}(y+1+q)}{y+1+q}\Bigl\{\mathrm{Cv}(q)\,c_{y+q}(y)+\mathrm{C
+     ch6: 
+(y+1)\mathcal T_y(d)\le\sum_{q'=1}^{d-1}c_{y+q'}(y)\,(y+1)\Bigl[\sum_{q'<q''<d}\mathrm{Er}_y(d,q'')+\mathrm{Er}_y(d,q')\frac{q'}{y+q'}\Bigr]+\sum_{q=1}^{d-1}\m
+[195] $\mathcal U_k(m)$
+   declared=[6] actual=[2, 5, 6, 7] +[2, 5, 7] -[] appendix=['A', 'C', 'D5']
+     ch2: \mathcal U_\ell:=1/A_\ell
+     ch2: \mathcal U_\ell'=-A_\ell'/A_\ell^2=-(\ell+1)+Q_\ell'\,\mathcal U_\ell
+     ch2: \mathcal U_\ell(0)=1
+     ch5: 
+e\,n^{1-j}\Bigl[\Delta^2\mathrm{Ch}_j(r)+\frac1n\Delta^2\mathcal U_j(r)\Bigr]\ \le\ \mathcal Q^{(2)}_{n,r,j}\ \le\ e\,n^{1-j}\Bigl[\Delta^2\mathrm{Ch}_j(r)\big
+     ch5: 
+n^{-j}\Bigl[\Delta^2\mathrm{Ch}_j(r)+\frac{\Delta^2\mathcal U_j(r)}n\Bigr]\ \le\ \frac{\mathcal Q^{(2)}_{n,r,j}}{en}\ \le\ n^{-j}\Bigl[\Delta^2\mathrm{Ch}_j(r)
+     ch5: \mathcal U_j(d):=\sum_\gamma\mathcal L(\gamma)\prod_i\mathrm{Ren}(\gamma_i)\prod_i(d-\mathfrak d_i)_+
+     ch7: 
+\mathcal U_k(\mathfrak j,\mathfrak j'):=\frac{\min(\mathfrak j+1,k)+\min(\mathfrak j'+1,k)}2,\qquad \Omega_\tau(k):=\prod_{v\in\tau}\mathcal U_k(\mathfrak j_v,
+     ch7: 
+\gamma_v:=\frac{\mathcal U_{k+1}(\mathfrak j_v,\mathfrak j'_v)}{\mathcal U_k(\mathfrak j_v,\mathfrak j'_v)}=1+\frac{\mathfrak h_v}{\mathfrak d^\sharp_v},\qquad
+     ch7: \prod_v\mathcal U_k(\mathfrak j_v,\mathfrak j'_v)=\Omega_\tau(k)
+[196] $\mathcal V_k(m)$
+   declared=[6, 7, 9, 10] actual=[5, 6, 7, 9, 10] +[5] -[] appendix=['A', 'C']
+     ch5: \mathcal V_\ast:=e^Te^{y\mathrm{Gr}}\int_0^xe^{-y\mathrm{Gr}}\Theta
+     ch5: \mathcal V_\ast'=(T'+ye^T)\mathcal V_\ast+e^Te^{y\mathrm{Gr}}e^{-y\mathrm{Gr}}\Theta=(T'+ye^T)\mathcal V_\ast+e^T\Theta
+     ch5: \mathcal V_\ast(0)=0
+[198] $\mathcal Y_k(n), \mathcal Y^{\mathrm{LP}}_k(n), \mathcal Y^\dagger_k(n)$
+   declared=[9, 11] actual=[2, 5, 6, 7, 9, 11] +[2, 5, 6, 7] -[] appendix=['A', 'C', 'D5', 'D6', 'D9']
+     ch2: 
+\mathcal Y(x):=p_{k-1}\,e^{T(x)+z\mathrm{Gr}(x)}\int_0^xe^{-z\mathrm{Gr}(\varsigma)}\frac{\varsigma^{k-1}}{(k-1)!}\,d\varsigma=\sum_{n\ge0}\mathcal Y_n\frac{x^
+     ch2: \mathcal Y_0=0
+     ch2: \mathcal Y_n=p_{k-1}\mathcal G_{z,k-1,n}
+     ch5: 
+\mathcal Y_1=\tfrac52z\bigl(zC'-C\bigr),\qquad
+\mathcal Y_j=Cz\Bigl(\mathcal Y_{j-1}'+\frac{2\mathcal Y_{j-1}}{1-z}\Bigr)+\bigl((j+\tfrac32)zC'-C\bigr)z\Bigl(\
+     ch5: 
+\mathcal O_j=Cz\Bigl(\mathcal O_{j-1}'+\frac{2\mathcal O_{j-1}}{1-z}\Bigr)+\bigl((j+\tfrac52)zC'-C\bigr)z\Bigl(\mathcal Y_{j-1}'+\frac{2\mathcal Y_{j-1}}{1-z}\
+     ch5: \mathcal Y_j(z):=(1-z)^2\sum_d\mathcal U_j(d)z^d
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\le\mathsf c\sqrt t\,\bigl[\mathcal J_{\mathcal F}(\Gamma)+\mathsf c\,\mathcal Y_{\mathcal F}(\Gamma)\bigr],\qquad
+\mathcal J_{\
+     ch6: 
+\mathcal J_{\mathrm I}(1)\le8.133,\quad \mathcal Y_{\mathrm I}(1)\le10.301,\quad \mathcal J_{\mathrm X}(\Gamma_\ast)\le17.951,\quad \mathcal Y_{\mathrm X}(\Gam
+     ch6: 
+\sum_{d=2}^{\mathcal A}\bigl[(\mathfrak X^1_d)''(t)\bigr]^+\le\frac1{\sqrt t}\Bigl[3\mathsf c\bigl(\mathcal J_{\mathrm I}+\mathsf c\,\mathcal Y_{\mathrm I}\big
+     ch7: 
+\mathfrak O_z(x):=\frac{\min(z,k)\,\mathfrak a_{z-1}}{z}\,x^z,\qquad \mathfrak j_z(x):=\int_0^x\mathfrak O_z(\mathfrak f)\mathrm{Ex}(\mathfrak f)\,d\mathfrak f
+     ch7: 
+\mathcal Y_z=A_{k-1}\,\mathfrak O_z+\frac{k\,\mathrm{Ex}\,\mathfrak j_z}{(\Delta^\sharp)^2}
+
+     ch7: 
+\mathcal Y_z=\frac{\mathrm{Ex}\,\mathfrak O_z}{\Delta^\sharp}+\frac{\mathrm{Ex}\cdot k\,\mathfrak j_z}{(\Delta^\sharp)^2}=A_{k-1}\mathfrak O_z+\frac{k\,\mathrm
+[199] $\mathcal Z$
+   declared=[7, 10] actual=[6, 7, 10] +[6] -[] appendix=['A']
+     ch6: 
+\frac{\bigl((\mathcal R_j-1)\Pi_j\bigr)''}{\Pi_j}=\mathcal R_j\bigl(\Lambda_j''+\Lambda_j'^2\bigr)+2\mathcal R_j\Lambda_j'\frac\chi t+(\mathcal R_j-1)\frac{\ma
+     ch6: \mathcal Z:=\chi^2-2\chi+\sum_i(\mathrm{ex}_i)^2
+     ch6: \Pi_j''/\Pi_j=(\chi/t)^2+(\chi/t)'=\mathcal Z/t^2
+[200] $\mathfrak a_n$
+   declared=[5, 6, 7] actual=[5, 6, 7, 10] +[10] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch10: \mathfrak a_y
+     ch10: \mathfrak a^\sharp_y\le\mathfrak a_y\le\bar{\mathfrak a}^\sharp_y
+[203] $\mathfrak A_j, \mathfrak A^{\mathrm{crit}}_d(q)$
+   declared=[10] actual=[5, 6, 7, 10] +[5, 6, 7] -[] appendix=['A', 'C', 'D10', 'D4', 'D7']
+     ch5: 
+\Upsilon_e:=\mathrm{Re}\int_0^{\pi/\mathrm{ku}}\mathfrak A\,e^{\Omega_e}\bigl[\mathrm{ch}_0-\mathfrak A^2\mathrm{ch}_1+\mathfrak A^4\mathrm{ch}_2\bigr]d\hat{\m
+     ch5: \Omega_e'(\hat{\mathrm{ag}})=\mathrm i\bigl(\mathrm{ku}-\hat x\mathfrak A-\mathfrak A^2\bigr)
+     ch5: \mathfrak J=\frac{v^2}2-\frac{\mathrm{ku}^2\mathfrak A^2}2
+     ch6: 
+1+\mathsf c\sum_{\mathfrak N=1}^{\mathfrak H}\min\bigl(\mathfrak N^{-1/2},\mathfrak Z\mathfrak N^{-3/2}\bigr)\mathcal F'\bigl(\log(1+\mathfrak N/\mathfrak A)\b
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\ \le\ \sum_{q=2}^{\mathcal A}\mathsf c\,\frac{\sqrt q}{\mathfrak A}\,\mathcal I_{\mathcal F}\Bigl(\frac q{\mathfrak A}\Bigr)\,\
+     ch6: \int_0^q\mathfrak F=\mathfrak A^{-1/2}\int_0^{q/\mathfrak A}\sigma^{-3/2}\phi_{\mathcal F}(\sigma)\,d\sigma=(\sqrt q/\mathfrak A)\mathcal I_{\mathcal F}(q/\math
+     ch7: 
+\mathbb E^{\sigma}_{n,k}[\mathcal T_k]\ \ge\ \frac{(n-k)(n-2k-1)}{(k+1)^2}-\bigl(k\,\mathfrak A_0+n\,\mathfrak B_0\bigr)=\frac{\mathfrak g_{\mathrm S}(n)}{(k+1
+     ch7: 
+\frac{\mathfrak g_{\mathrm S}(\mathsf y k^2)}{k^4}=(\mathsf y-\xi)(\mathsf y-2\xi-\xi^2)-(1+\xi)^2\bigl(\mathfrak A_0\xi+\mathfrak B_0\mathsf y\bigr)
+
+     ch7: \mathfrak A(k)\le\mathfrak A_0:=\mathsf x_{k^{\mathrm S}_0}+\Xi^{(k^{\mathrm S}_0)}/(\mathfrak L(1-\Xi))
+[204] $\mathfrak b_m$
+   declared=[6] actual=[5, 6, 7, 11] +[5, 7, 11] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch5: 
+\sum_{D>\mathfrak S_{\mathrm{cut}}}\mathrm{Bor}^{*z}(D)e^{-\varsigma D}\ \le\ \frac{z}{\sqrt{2\pi}}\,e^{-\varsigma z}\,e^{z^3/(3\mathfrak W_0^2)}\Bigl[\mathfra
+     ch5: 
+\mathfrak Q(\theta,\kappa):=P_{\min}(\kappa)\,e^{-\theta\kappa-\theta \mathfrak h_0^2}\,(1-\kappa \mathfrak h_0-\mathfrak h_0^3)\,\bigl(\mathfrak b_{\min}(\the
+     ch5: \mathfrak b_z:=z^2/2
+     ch7: 
+\bigl|\partial_\theta^{\mathfrak c}(1/\Lambda)\bigr|\le\sum_{j=1}^{\mathfrak c}\frac{j!\,\mathrm B_{\mathfrak c,j}(\mathfrak l_1,\dots,\mathfrak l_{\mathfrak c
+     ch7: |\Lambda|\ge\mathfrak b_0>0
+     ch7: |\Psi^{(j)}(\upsilon)|=j!/|\upsilon|^{j+1}\le j!/\mathfrak b_0^{\,j+1}
+     ch11: \mathfrak b_0
+     ch11: \mathfrak b_0
+[205] $\mathfrak B_N, \mathfrak B^{\mathrm{low}}(k,\nu)$
+   declared=[8] actual=[2, 7, 8] +[2, 7] -[] appendix=['A', 'C', 'D7', 'D8']
+     ch2: 
+\mathfrak R_m(\mathfrak q):=(-1)^{m+1}\Bigl[\prod_{v\in\mathcal V}(1-\mathfrak q_v)-\mathfrak B_m(\mathfrak q)\Bigr]\qquad(m\ge-1)
+
+     ch2: 
+\partial_v\mathfrak R_m(\mathfrak q)=(-1)^{m+1}\Bigl[-\prod_{w\ne v}(1-\mathfrak q_w)+\sum_{i=1}^m(-1)^{i-1}\mathfrak e_{i-1}(\mathfrak q_{\ne v})\Bigr]=(-1)^{
+     ch2: \mathfrak B_m(\mathfrak q):=\sum_{i=0}^m(-1)^i\mathfrak e_i(\mathfrak q)
+     ch7: 
+\mathbb E^{\sigma}_{n,k}[\mathcal T_k]\ \ge\ \frac{(n-k)(n-2k-1)}{(k+1)^2}-\bigl(k\,\mathfrak A_0+n\,\mathfrak B_0\bigr)=\frac{\mathfrak g_{\mathrm S}(n)}{(k+1
+     ch7: 
+\frac{\mathfrak g_{\mathrm S}(\mathsf y k^2)}{k^4}=(\mathsf y-\xi)(\mathsf y-2\xi-\xi^2)-(1+\xi)^2\bigl(\mathfrak A_0\xi+\mathfrak B_0\mathsf y\bigr)
+
+     ch7: \mathfrak B(k)\le\mathfrak B_0:=\mathfrak R_{\mathcal J}(1+\Xi^{(k^{\mathrm S}_0)}/(1-\Xi))
+[206] $\mathfrak c_0$
+   declared=[8] actual=[5, 8] +[5] -[] appendix=['A', 'C', 'D8']
+     ch5: 
+\mathrm{WIN}^{\mathrm V}_0\ \le\ \frac{\pi_n(y)}y\cdot\frac1{\sqrt{2\pi}}\cdot\frac23(\varrho_0+1)^{3/2}\,\mathfrak c_0\Bigl(1+\frac{\varrho_0}y\Bigr)^{3/2}e^{
+     ch5: \mathfrak c_0=\frac32\frac{2y+2\varrho_0-n}{y(n-y-\varrho_0)}
+     ch5: \frac32\frac{2t-2-n}{(t-1)(n-t+1)}\le\frac32\frac{2(y+\varrho_0)-n}{y(n-y-\varrho_0)}=\mathfrak c_0
+[208] $\mathfrak D_q$
+   declared=[8] actual=[7, 8] +[7] -[] appendix=['A', 'C', 'D7']
+     ch7: 
+\sum_{j}\omega_j\frac{\mathfrak a^\rho_{n+1-j}}{\mathfrak a^\rho_n}\le\frac{1}{1-\varepsilon(n_{\mathrm X}(k))}\Bigl[(1+\varepsilon(\mathfrak X_1))+\sum_{i=2}^
+     ch7: 1\le\mathfrak D_1<\dots<\mathfrak D_{\mathfrak I}
+     ch7: \mathfrak X_i:=n_{\mathrm X}(k)-\mathfrak D_ik
+[209] $\mathfrak d_k, \bar{\mathfrak d}_k$
+   declared=[9] actual=[5, 7, 9, 10] +[5, 7, 10] -[] appendix=['A', 'C', 'D10', 'D4', 'D7', 'D9']
+     ch5: 
+\frac{\Delta^\iota_r\bigl[A^c_{n,n-d}\bigr]}{n^{n-2}}=\sum_{j\ge1}(-1)^{j+1}\mathcal Q^{(\iota)}_{n,r,j},\qquad
+\mathcal Q^{(\iota)}_{n,r,j}=e\,n^{1-j}\sum_{\g
+     ch5: 
+\mathrm{Ch}_j(d):=\sum_{\gamma_1,\dots,\gamma_j\ge1}\prod_{i=1}^j\mathrm{Ren}(\gamma_i)\prod_{i=1}^j(d-\mathfrak d_i)_+,\qquad
+\mathcal Z^{(\iota)}_j(z):=(1-z)
+     ch5: 
+\nabla^3\iota_{\mathrm{ws}}(\mathfrak v)=\mathrm{nf}(n,\mathfrak d_{j-1}+\mathfrak v-3)\,\nabla^3\iota^\circ(\mathfrak v)+\mathfrak v\,\mathrm{Ren}(\mathfrak v
+     ch7: \mathfrak d_k
+     ch7: \mathcal M^{(y,n)}_2/\mathcal M^{(y,n)}_0=1-2n/y+n(n+1)/y^2-n(n+1)/(y^2\mathfrak d_y)
+     ch7: \mathfrak d_y
+     ch10: 
+\mathrm{Stays}_{\mathrm{PM}}\le\bar{\mathfrak d}(k):=\frac{72.217}{\sqrt k},\qquad 3\mathfrak s^{\mathrm{up}}_{\nu+1}(k+1)\le\bar{\mathfrak a}(k):=\frac{3\cdot
+     ch10: 
+\mathfrak R^\sharp_F:=\begin{cases}3+\mathrm{Bd}^{\mathrm T}(k,1.3k^{2/3})+\mathrm{DDL}^\natural(k)+\mathrm{Stays}^{\mathrm{up}}(k;1.3k^{2/3})&(1a),\\ 3\mathfr
+     ch10: \bar{\mathfrak d}(k)
+[210] $\mathfrak E_q$
+   declared=[8] actual=[7, 8] +[7] -[] appendix=['A', 'C', 'D7']
+     ch7: 
+\underline{\mathfrak E}_{\mathcal J}(k^{\mathrm S}_0):=\sum_{i=1}^{k^{\mathrm S}_0-\mathfrak j^\ast}\frac{\mathfrak a^\circ_{\mathcal J^{\mathrm S}+i}}{\mathfr
+     ch7: \mathcal E\ge\sum_{j=1}^{z}(\mathfrak L/e)^j\ge\sum_{j=1}^{k^{\mathrm S}_0}(\mathfrak L/e)^j=\mathfrak E_\infty(k^{\mathrm S}_0)
+     ch7: \mathfrak E_\infty
+[211] $\mathfrak f_m$
+   declared=[10] actual=[5, 10] +[5] -[] appendix=['A', 'C', 'D7']
+     ch5: \mathfrak f_1\le\mathfrak f_2\le\mathfrak f_3\le\mathfrak f_4
+     ch5: \mathfrak f_1+\mathfrak f_4=\mathfrak f_2+\mathfrak f_3
+     ch5: \mathrm{tw}_{\mathfrak f_1}\mathrm{tw}_{\mathfrak f_4}\ge\mathrm{tw}_{\mathfrak f_2}\mathrm{tw}_{\mathfrak f_3}
+[212] $\mathfrak g(\theta)$
+   declared=[5] actual=[4, 5, 8] +[4, 8] -[] appendix=['A', 'C', 'D4', 'D5', 'D8']
+     ch4: 
+\mathfrak g(\kappa)=4-(26+4\nu+8\theta)\kappa+\bigl(506+97\nu+5\nu^2+(168+16\nu)\theta+12\theta^2\bigr)\kappa^2+\mathfrak g_3\kappa^3+\mathfrak g_4\kappa^4+\cd
+     ch4: \mathfrak g(\kappa):=\bigl(\tilde{\mathfrak N}\hat\upsilon(\mathfrak x_n)-2-\nu\kappa\bigr)/\kappa
+     ch4: \vartheta=\mathfrak g(\kappa)+\mathfrak N\epsilon_n
+     ch8: 1-\mathfrak g(\xi)
+     ch8: \mathfrak g(\xi):=\min\{1,\,0.04+0.12\,\mathfrak e(\xi-1)\}
+     ch8: (1-\mathfrak g(\xi^{\mathsf K}_i))\mathfrak w_i
+[214] $\mathfrak h_y(q)$
+   declared=[10] actual=[5, 6, 7, 10] +[5, 6, 7] -[] appendix=['A', 'C', 'D5', 'D7', 'D8']
+     ch5: 
+\mathcal T_z(q_{\max}-\mathfrak t)\ \le\ \mathcal T_{\max}(\theta,\mu(\theta,\kappa)),\qquad \mathcal T_{\max}(\theta,\mu):=\frac{\theta}{\sqrt{2\pi}}\,e^{\the
+     ch5: 
+\bar\varrho(\theta):=\sqrt2\,\theta^{3/2}\exp\Bigl(-\theta\sqrt{\mathfrak y(\theta)}+\tfrac13\min\bigl(\theta^2\mathfrak h_0,\,\upsilon_{\max}\theta^{3/2}\bigr
+     ch5: 
+\frac1Y\sum_zz\int_0^{q_{\max}-z+1}\mathcal F_z(\mathfrak t)\,d\mathfrak t\ \ge\ \sum_{z\ge1}\mathfrak h\,\mathfrak g(z\mathfrak h),\qquad \mathfrak g(\theta):
+     ch6: 
+\mathfrak h_k(q):=\mathrm{Bor}_>(q)+\sum_{\mathcal N=0}^{q-1}\mathrm{Bor}(\mathcal N+1)\,\frac k{k+q-\mathcal N}\,\mathfrak h_k(q-1-\mathcal N)
+
+     ch6: \mathfrak h_k(0):=1
+     ch6: s_{k+q}(k)\le \mathfrak h_k(q)
+     ch7: 
+\gamma_v:=\frac{\mathcal U_{k+1}(\mathfrak j_v,\mathfrak j'_v)}{\mathcal U_k(\mathfrak j_v,\mathfrak j'_v)}=1+\frac{\mathfrak h_v}{\mathfrak d^\sharp_v},\qquad
+     ch7: 
+\upsilon_v\gamma_v^{\mathfrak o_k}\ \ge\ (\mathfrak x^\flat)^{1-\mathfrak h_v}
+
+     ch7: 
+\mathfrak Z_\tau R_\tau^{\mathfrak o_k}=\prod_v\upsilon_v\gamma_v^{\mathfrak o_k}\ \ge\ (\mathfrak x^\flat)^{\sum_v(1-\mathfrak h_v)}=\mathfrak x^\flat
+
+[215] $\mathfrak K_N, \mathfrak K^{\prime}_N$
+   declared=[9] actual=[5, 6, 9] +[5, 6] -[] appendix=['A', 'C']
+     ch5: 
+\mathfrak K_m(\tau):=[x^m]\,A_{k-1}(x)\exp\Bigl(k\sum_{j\ge1}\frac{\mathfrak a_{j-1}}{j}(1-\tau^j)x^j\Bigr)\qquad(0\le\tau\le1)
+
+     ch5: 
+\mathfrak R_m(t)=\int_0^1\tau^{t-1}\mathfrak K_m(\tau)\,d\tau\qquad(t\ge k,\ m\ge0)
+
+     ch5: \mathfrak K_m(\tau)\ge0
+     ch6: 
+(N+1)\,\mathfrak U_{N+1}=z\sum_{i=0}^{N}\mathfrak K_i\,\mathfrak U_i\,\mathfrak U_{N-i}\tag{6.11}
+
+     ch6: 
+(N+1)\,\mathcal D_N=(1-z\,\mathfrak K_N)\,\mathfrak U_N+z\sum_{i=0}^{N-1}\mathfrak K_i\,\mathfrak U_i\,\mathcal D_{N-1-i}\tag{6.12}
+
+     ch6: \mathfrak K_i:=\min(i+1,k)
+[216] $\mathfrak k_d(q)$
+   declared=[10] actual=[5, 6, 7, 10, 11] +[5, 6, 7, 11] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch5: 
+\mathrm{Pc}(\mathfrak k_r)\ \ge\ \mathfrak s\Bigl(\frac12+2\cdot0.845204-\sqrt{3\pi/2}\Bigr)+\frac12-\Bigl[\frac1{3\mathfrak s}+\frac8{3\mathfrak s^2}+\frac{2.
+     ch5: \mathfrak k_r:=\lceil r^{3/2}+8r\rceil
+     ch5: \rho_r:=\mathfrak k_r/(\mathfrak k_r+r)
+     ch6: \mathfrak k_{\mathrm I}(\sigma')=\sigma'^{3/2}(1+3\Lambda+1.125\Lambda^2)
+     ch6: \mathfrak k_{\mathrm X}(\sigma')=\sigma'^{3/2}(1+1.5\Lambda)
+     ch6: \mathfrak k_{\mathrm I}(1)=1
+     ch7: \mathfrak k_k
+     ch7: \max(16,2k-1)\le n<\mathfrak k_k
+     ch7: n\ge\mathfrak k_k
+     ch11: k=\mathfrak k_r
+[217] $\mathfrak l_m(t)$
+   declared=[9] actual=[5, 7, 9] +[5, 7] -[] appendix=['A', 'C', 'D7']
+     ch5: 
+\hat L:=k\log\mathrm{et}=\sum_{m\ge1}\mathfrak l_m\mathrm{ku}^{3(m-1)}\hat\varphi^{2m},\quad
+\mathrm{lg}:=\frac{(\log\mathrm{et})'}{\varphi}=\sum_{m\ge1}2m\,\m
+     ch5: \log\mathrm{et}(\varphi)=\sum_{m\ge1}\mathfrak l_m\varphi^{2m}
+     ch5: \mathfrak l_m=(2+\frac1m)\zeta(2m)\pi^{-2m}
+     ch7: 
+\bigl|\partial_\theta^{\mathfrak c}(1/\Lambda)\bigr|\le\sum_{j=1}^{\mathfrak c}\frac{j!\,\mathrm B_{\mathfrak c,j}(\mathfrak l_1,\dots,\mathfrak l_{\mathfrak c
+     ch7: 
+|\Lambda_{\mathfrak z}(\theta)-\Lambda^{\mathrm{pl}}(\theta)|\le(1-\mathfrak t)|\Lambda_{\mathfrak z}(\theta)-\tilde\Lambda_j|+\mathfrak t|\Lambda_{\mathfrak z
+     ch7: |\Lambda^{(i)}|\le\mathfrak l_i
+[219] $\mathfrak p_m$
+   declared=[6, 7, 9, 10] actual=[2, 6, 7, 8, 9, 10] +[2, 8] -[] appendix=['A', 'C']
+     ch2: \mathfrak p_n(\omega):=\Pr_n(S_{\mathfrak b}>n/2,\ \text{구성}=\omega)
+     ch2: \mathfrak p_n(\omega)\to\mathfrak p(\omega)
+     ch2: \sum_\omega\mathfrak p_n(\omega)=\Pr_n(S_{\mathfrak b}>n/2)\to1=\sum_\omega\mathfrak p(\omega)
+     ch8: \mathfrak p\ge\mathfrak p_{\min}:=69.3708
+     ch8: \mathcal H(\mathfrak p)\le\tfrac23\mathfrak p^{3/2}+\tfrac12\mathfrak p^{1/2}\le\tfrac23\mathfrak q^{3/2}(1+\tfrac3{4\mathfrak p_{\min}})
+     ch8: \rho_2\le\tfrac58(1+\tfrac3{4\mathfrak p_{\min}})(1+\xi\varepsilon)^{5/2}\xi^2k^{-2/3}\le0.129421
+[222] $\mathfrak Q(y,\xi)$
+   declared=[10] actual=[5, 10] +[5] -[] appendix=['A', 'C', 'D10', 'D5']
+     ch5: 
+\frac1Y\sum_zz\int_0^{q_{\max}-z+1}\mathcal F_z(\mathfrak t)\,d\mathfrak t\ \ge\ \sum_{z\ge1}\mathfrak h\,\mathfrak g(z\mathfrak h),\qquad \mathfrak g(\theta):
+     ch5: 
+\mathfrak Q(\theta,\kappa):=P_{\min}(\kappa)\,e^{-\theta\kappa-\theta \mathfrak h_0^2}\,(1-\kappa \mathfrak h_0-\mathfrak h_0^3)\,\bigl(\mathfrak b_{\min}(\the
+     ch5: \mathfrak Q(\theta,\kappa)
+[223] $\mathfrak r_N$
+   declared=[6, 7, 9, 10] actual=[6, 7, 8, 9, 10] +[8] -[] appendix=['A', 'C', 'D4', 'D8']
+     ch8: \mathfrak r_0:=0
+     ch8: \mathfrak r_i:=\frac{\mathsf K}{\mathsf K+i}\sum_{j=1}^i\mathrm{Bor}(j)\bigl[\hat{\mathcal T}(\xi^{\mathsf K}_{i-j})+\mathfrak r_{i-j}\bigr]
+     ch8: \mathfrak w_i:=\mathfrak r_i/\Psi(i)
+[224] $\mathfrak R_q$
+   declared=[8, 11] actual=[2, 5, 7, 8, 11] +[2, 5, 7] -[] appendix=['A', 'C', 'D7', 'D8']
+     ch2: 
+\mathfrak R_m(\mathfrak q):=(-1)^{m+1}\Bigl[\prod_{v\in\mathcal V}(1-\mathfrak q_v)-\mathfrak B_m(\mathfrak q)\Bigr]\qquad(m\ge-1)
+
+     ch2: 
+\partial_v\mathfrak R_m(\mathfrak q)=(-1)^{m+1}\Bigl[-\prod_{w\ne v}(1-\mathfrak q_w)+\sum_{i=1}^m(-1)^{i-1}\mathfrak e_{i-1}(\mathfrak q_{\ne v})\Bigr]=(-1)^{
+     ch2: (-1)^m\mathfrak R_m
+     ch5: 
+\mathfrak R_m(t)=\int_0^1\tau^{t-1}\mathfrak K_m(\tau)\,d\tau\qquad(t\ge k,\ m\ge0)
+
+     ch5: 
+t\,\mathfrak R_m(t)=\mathfrak a_m+k\sum_{j=0}^{m-1}\mathfrak a_j\,\mathfrak R_{m-1-j}(t+j+1)
+
+     ch5: \mathfrak R_m(t):=\dfrac{[x^{t+m}]\mathcal H_t}{k\,\mathfrak a_{t-1}}
+     ch7: 
+\underline{\mathfrak E}_{\mathcal J}(k^{\mathrm S}_0):=\sum_{i=1}^{k^{\mathrm S}_0-\mathfrak j^\ast}\frac{\mathfrak a^\circ_{\mathcal J^{\mathrm S}+i}}{\mathfr
+     ch7: 
+\Xi:=\sum_{\varkappa<\mathcal J^{\mathrm S}}\bigl(\bar{\mathfrak x}_\varkappa-\mathfrak R_{\mathcal J}\,\underline{\mathfrak q}_\varkappa\bigr)^+,\qquad \Xi^{(
+     ch7: 
+\mathcal Q_z(n)\le\vartheta(n):=\frac{k/(\mathfrak Ln)+\mathfrak R_{\mathcal J}}{1-\Xi}
+
+[226] $\mathfrak S_n$
+   declared=[2, 4, 7] actual=[2, 4, 5, 7] +[5] -[] appendix=['A', 'D2']
+     ch5: 
+\sum_{D>\mathfrak S_{\mathrm{cut}}}\mathrm{Bor}^{*z}(D)e^{-\varsigma D}\ \le\ \frac{z}{\sqrt{2\pi}}\,e^{-\varsigma z}\,e^{z^3/(3\mathfrak W_0^2)}\Bigl[\mathfra
+     ch5: \mathfrak S_{\mathrm{cut}}\ge z
+     ch5: \mathfrak W_0:=\mathfrak S_{\mathrm{cut}}-z+1\ge z^2/3
+[227] $\mathfrak s_d(y)$
+   declared=[6, 7, 10] actual=[5, 6, 7, 9, 10] +[5, 9] -[] appendix=['A', 'C', 'D10', 'D7']
+     ch5: x^{3/2}\le\mathfrak s_0^{3}/20001
+     ch5: r\le\mathfrak s_0^2
+     ch5: x^{3/2}=r^{3/2}/n\le\mathfrak s_0^3/20001
+     ch9: 
+\mathfrak s_1:=\sum_{i<d}(d-i)\mathrm{Ren}(i+1),\qquad \mathfrak s_2:=\sum_{0\le i<i'<d}(2d-i-i')\,\mathrm{Ren}(i+1)\mathrm{Ren}(i'-i)
+
+     ch9: 
+\mathfrak s_2\le(2\pi)^{-1}\iint_{\varsigma_1,\varsigma_2\ge0,\ \varsigma_1+\varsigma_2\le d}(2d+2-2\varsigma_1-\varsigma_2)\,\varsigma_1^{-1/2}\varsigma_2^{-1
+     ch9: \mathbb E[L\mathcal A]\le\mathfrak g\,\mathfrak s_1+\mathfrak g^2\mathfrak s_2
+[231] $\mathfrak T_m$
+   declared=[10] actual=[5, 7, 8, 10] +[5, 7, 8] -[] appendix=['A', 'C', 'D7']
+     ch5: \mathfrak T_1:=\sqrt{\varsigma\mathfrak W_0}
+     ch5: \mathfrak T_2:=\sqrt{\mathfrak b/\mathfrak W_0}
+     ch5: (\mathfrak T_1\mp \mathfrak T_2)^2=\varsigma\mathfrak W_0+\mathfrak b/\mathfrak W_0\mp2\sqrt{\varsigma\mathfrak b}
+     ch7: 
+(\mathcal O\phi)_{\mathcal F}:=\phi_{\mathcal F}'+\Bigl(\sum_{y\in\mathcal F}Q_{y-1}'\Bigr)\phi_{\mathcal F}+\sum_{y\notin\mathcal F}\mathfrak T_y\,\phi_{\math
+     ch7: 
+\Bigl(\sum_{\mathcal F}\phi_{\mathcal F}\mathcal G_{\mathcal F}\Bigr)'=\sum_{\mathcal F}\Bigl[\phi_{\mathcal F}'+\Bigl(\sum_{y\in\mathcal F}Q_{y-1}'\Bigr)\phi_
+     ch7: \mathcal G_y'=Q_{y-1}'\mathcal G_y+\mathfrak T_y
+     ch8: \mathrm{Flow}_q=\sum_{i=1}^{q-1}\omega_i\mathfrak T_i(q)
+     ch8: \mathfrak T_i(q):=\sum_{j=i}^{q-1}\mathrm{Bor}(j)\Psi(q-j)
+     ch8: \mathfrak T_i(q)\ge\int_i^q\mathrm{Bor}^{\mathrm{low}}(\varrho)\Psi^{\mathrm{low}}_{(q-\varrho)}d\varrho=\tau(i/q;q)
+[232] $\mathfrak u_n$
+   declared=[7, 10] actual=[7, 8, 9, 10] +[8, 9] -[] appendix=['A', 'C', 'D9']
+     ch8: 
+\mathfrak Z_N=\sum_{m=y+1}^N\mathrm{Bor}(m)s_{m-1}(y)\frac{m-y}m\Bigl[\mathrm{Bor}(N+1-m)+\sum_{j=1}^{N-m}\mathrm{Bor}(j)\,\mathfrak u_{N+1-m-j}\Bigr]
+
+     ch8: \mathfrak u_0:=1
+     ch8: \mathfrak u_r:=\sum_{i\ge1}\mathrm{Bor}^{*i}(r)=\mathrm{Ren}(r)
+     ch9: 
+\eta(d)^+\ \le\ \frac{\ell(\mathfrak u_d+\mathfrak v_d)e^{\mathfrak u_d}}{\ell+1}\ \le\ e^{\mathfrak u_q}\,\frac{d(d+1)/2+3.2d^{3/2}}{\ell(\ell+1)}
+
+     ch9: 
+\ell\cdot(\text{셋째 항})\ \le\ k^{1/3}\,\Phi(\xi,\upsilon),\qquad
+\Phi(\xi,\upsilon):=\Bigl(1+\frac1\ell\Bigr)\mathfrak c_1\,e^{\mathfrak u_q}\bigl[0.11399\,\xi^
+     ch9: \mathfrak u_d:=d(d+1)/(2\ell^2)
+[233] $\mathfrak v_k(Z,H)$
+   declared=[2, 7] actual=[2, 7, 8, 9] +[8, 9] -[] appendix=['A', 'C', 'D2', 'D7']
+     ch8: \mathfrak v_+:=\sup\mathcal F'\ge0
+     ch8: \mathfrak v_-:=-\inf\mathcal F'\ge0
+     ch8: \mathfrak v_++\mathfrak v_-\le\Upsilon
+     ch9: 
+\eta(d)^+\ \le\ \frac{\ell(\mathfrak u_d+\mathfrak v_d)e^{\mathfrak u_d}}{\ell+1}\ \le\ e^{\mathfrak u_q}\,\frac{d(d+1)/2+3.2d^{3/2}}{\ell(\ell+1)}
+
+     ch9: \mathfrak v_d:=3.2d^{3/2}/\ell^2
+     ch9: \eta(d)=[\ell(e^{\mathfrak u_d}(1+\mathfrak v_d)-1)-1]/(\ell+1)
+[234] $\mathfrak V_m$
+   declared=[9] actual=[5, 6, 7, 9] +[5, 6, 7] -[] appendix=['A', 'C', 'D6', 'D7']
+     ch5: 
+\mathfrak V_\ast:=\frac1{\sqrt{2\pi}}\Bigl[\frac n{y(n-y)}\Bigr]^{3/2}\exp\Bigl(-\frac1{12(n-\chi_2-\chi_{\mathrm w}-y-q_{\max}(y)+1)}-\frac1{12y}\Bigr)
+
+     ch5: 
+\mathrm{POS}_0\ \ge\ \frac{\mathrm{hov}(\rho_0,\chi_{\mathrm w})\,\mathfrak V_\ast}n\Bigl[\sum_{m=n-\chi_2}^{n-1}\bigl(\mathrm{Bor}(n-m)-\pi_n(t_0-1)\bigr)\Big
+     ch5: 
+\mathrm{POS}'^-_0:=\frac{\mathrm{hov}(\rho_0,\chi_{\mathrm w})\,\mathfrak V_\ast}{n}\,\mathsf w_0\Bigl[2\sum_{i=1}^{\chi_2}\mathrm{Bor}(i)-2\chi_2\pi_n(t_0-1)-
+     ch6: 
+\mathcal S_{\mathcal F}(\Gamma)\le\mathsf c\sqrt t\,\bigl[\mathcal J_{\mathcal F}(\Gamma)+\mathsf c\,\mathcal Y_{\mathcal F}(\Gamma)\bigr],\qquad
+\mathcal J_{\
+     ch6: \mathfrak V_0:=1/3130
+     ch6: \mathfrak V\le\mathfrak V_0
+     ch7: \mathfrak V_{\mathfrak F}
+     ch7: \Pr(\mathfrak V_{\mathfrak F}\ge \mathfrak f)\le\Pr(\mathrm{Hyp}(n,y,\mathfrak F)\ge \mathfrak f)
+     ch7: \mathfrak N'=\{\mathfrak V_{\mathfrak F}<\mathfrak f\}
+[235] $\mathfrak w_n(t)$
+   declared=[6, 7, 9] actual=[6, 7, 8, 9] +[8] -[] appendix=['A', 'C', 'D7', 'D8']
+     ch8: \mathfrak w_i:=\mathfrak r_i/\Psi(i)
+     ch8: \mathfrak w_0:=1
+     ch8: (1-\mathfrak g(\xi^{\mathsf K}_i))\mathfrak w_i
+[236] $\mathfrak X_d(y), \mathfrak X^0_d, \mathfrak X^1_d$
+   declared=[6, 10] actual=[5, 6, 7, 10] +[5, 7] -[] appendix=['A', 'C', 'D7']
+     ch5: \mathfrak X_j:=[\rho^j]\mathrm{hb}_r
+     ch5: \mathrm{hb}_r'\mathrm{hb}_{r-1}-\mathrm{hb}_r\mathrm{hb}_{r-1}'=\sum_{i<j}(j-i)(\mathfrak X_j\mathfrak X'_i-\mathfrak X_i\mathfrak X'_j)\rho^{i+j-1}
+     ch5: \mathcal R_j:=\mathfrak X_j/\mathfrak X'_j=\frac{(r+1)^{r-j-1}}{r^{r-j-2}(r-j)}
+     ch7: 
+R_U:=\frac{1+\varepsilon(\mathfrak X_1)+\sum_{i=2}^{\mathfrak I}\bar\omega_{i-1}\bigl(1+\varepsilon(\mathfrak X_i)\bigr)+\mathfrak m_U\bar\omega_{\mathfrak I}}
+     ch7: 
+\sum_{j}\omega_j\frac{\mathfrak a^\rho_{n+1-j}}{\mathfrak a^\rho_n}\le\frac{1}{1-\varepsilon(n_{\mathrm X}(k))}\Bigl[(1+\varepsilon(\mathfrak X_1))+\sum_{i=2}^
+     ch7: \mathfrak X_i:=n_{\mathrm X}(k)-\mathfrak D_ik
+[237] $\mathfrak z_m(d)$
+   declared=[5, 6] actual=[5, 6, 10] +[10] -[] appendix=['A', 'C', 'D10', 'D4', 'D7', 'D8']
+     ch10: 
+k\,c_{k+q_0}(k)\ \ge\ \frac k{k+1}\Bigl(1-\frac{q_0}{2k}\Bigr)\Bigl[\max\bigl(\mathfrak z_{\mathrm R},\ \mathfrak s_{q_0}(y)-\Pr(\mathrm{Bor}\ge q_0)\bigr)+\ma
+     ch10: 
+\mathfrak z_{\mathrm R}:=\sum_{q=1}^{q_0-1}\mathrm{Ren}_*(q_0-q)\,\exp\Bigl(-\frac{q+\mathfrak A^{\mathrm{up}}_{q_0}(q)}y\Bigr)\,\mathfrak s_q(y),\qquad
+\mathr
+     ch10: \mathfrak z_{\mathrm R}
+[258] $\mathsf r_\ast$
+   declared=[10] actual=[8, 10] +[8] -[] appendix=['A', 'C']
+     ch8: \mathsf r_{\mathrm G}:=7.429\cdot10^{-4}
+     ch8: \tilde s^{\mathrm{env}}(\xi)-\tilde s^{\mathrm{env}}(\xi')\ge\mathsf r_{\mathrm G}(\xi'-\xi)
+     ch8: \eta\le\min(\mathfrak d,\mathsf r_{\mathrm G}\min_iw_i)
+[265] $\mathsf v(k), \mathsf v^\prime_k$
+   declared=[6, 7, 9, 10, 11] actual=[6, 7, 9, 10] +[] -[11] appendix=['A', 'C', 'D9']
+[271] $\mathsf z_{1/2}, \mathsf z_{-1/2}, \mathsf z_{3/2}$
+   declared=[5, 8, 9] actual=[5, 8, 9, 11] +[11] -[] appendix=['A', 'C', 'D5', 'D7', 'D8']
+     ch11: \mathsf z_{3/2}
+[316] $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$
+   declared=[5] actual=[5, 7] +[7] -[] appendix=['A', 'C', 'D7']
+     ch7: 
+\mathrm{POS}^{\mathrm G}_n:=n!\,[x^n]\,\Phi(T(x))
+
+     ch7: 
+d_{n,k}\ \ge\ \mathcal K''_{n,k}(k)-J^{\mathrm G}_n(k-1)\ =\ \bigl(\mathrm{POS}^{\mathrm G}_n-J^{\mathrm G}_n(k-1)\bigr)+\mathcal X''_n(k)
+\tag{7.8}
+
+     ch7: e_n=\mathcal K''_{n,k}(k)=\mathrm{POS}^{\mathrm G}_n
+[317] $\mathrm{pr}_{n,k}, \mathrm{pr}^\circ_n$
+   declared=[7] actual=[7, 11] +[11] -[] appendix=['A', 'C', 'D7']
+     ch11: \vert 1-\Omega^{\mathrm{pr}}\vert 
+[324] $\mathrm{src}_k(m)$
+   declared=[7, 10] actual=[7, 8, 10] +[8] -[] appendix=['A', 'C']
+     ch8: 
+\mathfrak D_q\le\mathfrak D^{\mathrm{src}}_q+\frac k{k+q}\sum_{j=1}^{q-1}\mathrm{Bor}(j)\mathfrak D_{q-j},\qquad
+\mathfrak D^{\mathrm{src}}_q:=\frac q{k+q}\Psi
+     ch8: \mathfrak D^{\mathrm{src}}_q
+     ch8: \mathfrak E_q\ge\mathfrak D^{\mathrm{src}}_q+\frac k{k+q}\sum_{j=1}^{q-1}\mathrm{Bor}(j)\mathfrak E_{q-j}
+[328] $\mathrm{tail}_s(y)$
+   declared=[5] actual=[4, 5, 7] +[4, 7] -[] appendix=['A', 'C', 'D5', 'D7']
+     ch4: 
+\mathrm{Bor}(j;\mathfrak Z)=\frac{e^{-j\mathfrak Z}(j\mathfrak Z)^{j-1}}{j!}\quad(j\ge1),\qquad
+\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)=1-\sum_{j=1}^{k}\ma
+     ch4: 
+\frac{e_n}{n!}=[x^n]\,\Phi(T(x)),\qquad
+\Phi(\mathfrak Y)=e^{\mathfrak Y}\int_0^{\mathfrak Y}(1-\mathfrak Z)^2\,\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)\,e^
+     ch4: 
+e^{-\mathfrak Y}\mathcal E_{<k}(\mathfrak Y e^{-\mathfrak Y})=\sum_{j<k}\frac{p_j}{j!}\mathfrak Y^je^{-(j+1)\mathfrak Y}=\sum_{i=1}^{k}\frac{e^{-i\mathfrak Y}(
+     ch7: 
+\mathcal S^{\mathrm G}(z;x)=\int_0^{T(x)}e^{z(V(\mathrm s)-V(T(x)))}(1-\mathrm s)^2\,\mathrm{Bor}^{\mathrm{tail}}_k(\mathrm s)\,d\mathrm s
+
+     ch7: e^{-\mathrm w}\mathcal E_{<k}(\mathrm w e^{-\mathrm w})=\sum_{m<k}(m+1)^{m-1}\mathrm w^me^{-(m+1)\mathrm w}/m!=\sum_{j=1}^ke^{-j\mathrm w}(j\mathrm w)^{j-1}/j!=
+     ch7: \mathcal Q_k(\mathrm s)\,d\mathrm s=(1-\mathrm w)e^{\mathrm w}\bigl(1-e^{-\mathrm w}\mathcal E_{<k}\bigr)(1-\mathrm w)e^{-\mathrm w}d\mathrm w=(1-\mathrm w)^2\m
+[329] $\mathrm{tilt}_q(q^\prime)$
+   declared=[2, 6, 10] actual=[2, 6, 7, 10] +[7] -[] appendix=['A', 'C', 'D7']
+     ch7: 
+\mathrm{tilt}_k:=\sum_{L=k}^{2k}e^{\gamma_kL}\frac{e^{-L}d_{L,k}}{L!}\ \ge\ \sum_{L=k}^{2k}\varepsilon_k(n-1-L)\,e^{\gamma_kL}\frac{e^{-L}|d_{L,k}|}{L!}
+\tag{7
+     ch7: \mathrm{tilt}_k-\sum_L\varepsilon_k(n-1-L)e^{\gamma_kL}e^{-L}|d_{L,k}|/L!
+[330] $\mathrm{top}, \mathrm{top}_\pi$
+   declared=[5] actual=[5, 9, 11] +[9, 11] -[] appendix=['A', 'C', 'D5']
+     ch9: \upsilon_{\max}(\xi):=\min(\upsilon_{\mathrm{top}},\sqrt{\xi/2})
+     ch9: \upsilon_{\mathrm{top}}
+     ch11: [0,u_{\mathrm{top}}]
+     ch11: u_{\mathrm{top}}^3\cdot10001\ge1
+     ch11: u_{\mathrm{top}}^3\cdot10001\ge1

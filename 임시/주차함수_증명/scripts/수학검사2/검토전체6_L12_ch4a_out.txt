@@ -1,0 +1,16 @@
+cols 109.25643301010132
+d_{n,kn}<0 for n in: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+ n 2 right half nonincreasing True; n 3 right half nonincreasing True; n 4 right half nonincreasing True; n 5 right half nonincreasing True; n 6 right half nonincreasing True; n 7 right half nonincreasing True; n 8 right half nonincreasing True; n 9 right half nonincreasing True; n 10 right half nonincreasing True; n 11 right half nonincreasing True; n 12 right half nonincreasing True; n 13 right half nonincreasing True; n 14 right half nonincreasing True; n 15 right half nonincreasing True;
+crossing true for n in 5..19: [] ; false in 20..300: []
+decreasing levels n<=300: 6304 QL strict fails: [] strict-unimodal fails: [] ties: []
+A^c recurrence mismatches: 1877
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체6_L12_ch4a.py", line 99, in <module>
+    Aa,d,z,jj=rec_exact(k,2*k)
+              ^^^^^^^^^^^^^^^^
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체6_L12_ch4a.py", line 85, in rec_exact
+    r=[Fraction(p(i),math.factorial(i)) for i in range(N+2)]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\fractions.py", line 277, in __new__
+    raise TypeError("both arguments should be "
+TypeError: both arguments should be Rational instances

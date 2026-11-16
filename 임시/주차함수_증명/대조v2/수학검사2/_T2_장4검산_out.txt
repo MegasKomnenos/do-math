@@ -1,0 +1,15 @@
+x^0 coeff: 0
+x^1 coeff: 0
+x^2 coeff: 0
+x^3 coeff: 0
+C1 logderiv samples: [-6.666666666666667, -6.160714285714286, -5.892857142857143, -5.833333333333333, -6.0, -6.4772727272727275, -7.5, -9.807692307692308, -17.142857142857142]
+C2 logderiv samples: [-13.981481481481481, -12.406358885017422, -11.337134251290879, -10.654761904761905, -10.323529411764707, -10.393763213530656, -11.077586206896552, -13.098776223776223, -20.18860353130016]
+C3 logderiv samples: [-21.634615384615383, -19.007188579557, -17.153525706157286, -15.865384615384615, -15.053571428571429, -14.734413721142559, -15.097402597402597, -16.850682021466906, -23.714390448261415]
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체13_T2_장4검산.py", line 33, in <module>
+    logHe=logbig(He1)
+          ^^^^^^^^^^^
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체13_T2_장4검산.py", line 32, in logbig
+    s=str(v); return math.log(10)*(len(s)-1)+math.log(float(s[0]+'.'+s[1:16]))
+      ^^^^^^
+ValueError: Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit

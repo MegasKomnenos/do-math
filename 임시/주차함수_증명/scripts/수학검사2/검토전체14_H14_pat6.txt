@@ -1,0 +1,11 @@
+8	\\mathfrak v_
+8	A\^\{\(k-1\)\}
+8	\\mathfrak z\s*[:=]+
+9	\\mathcal O\^
+9	\\bar U
+9	\\ell_0
+9	j_\\ast\s*[:=]+|j_\*\s*[:=]+
+9	\\omega\(t\)
+9	\\mathfrak a\s*[:=]+
+9	\\mathfrak e\s*[:=]+
+10	\\mathfrak i\s*[:=]+

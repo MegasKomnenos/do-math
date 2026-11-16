@@ -1,0 +1,17 @@
+3.6: lam^8=0.101186 sum1=11.24582 sum2=7.63613  terms: 0.10119 0.36277 0.00764 total=0.47159
+n=1 E omega=0 <= sqrt n: True
+n=2 E omega=2/3 <= sqrt n: True
+n=3 E omega=9/16 <= sqrt n: True
+n=4 E omega=136/125 <= sqrt n: True
+n=5 E omega=1265/1296 <= sqrt n: True
+a0=1.28789931685 a1=0.938892940102
+(다) lower bound at k=10000 with a0<1.2879,a1<0.939: 1.68092
+(나) exact: 495594511/240250000 = 2.062828 ; stated 495594511/240250000 = 2.062828
+assembly k>=10000: 0.213008
+assembly k>=30000: 11/2*39/100*2-7/2 = 0.7900
+46sqrt2-12=53.05382 ; -5000/173-0.02 -> 24.1321 ; (나): 46sqrt2-12-54.6828=-1.62898
+k=50 nu=0: (4.9) exact match True ; M4/M0 formula match True ; theta=3.612730 ; M2/M0*k=-3.91340 ; M4/M0*k^2=18.0311
+k=50 nu=-1: (4.9) exact match True ; M4/M0 formula match True ; theta=3.669471 ; M2/M0*k=-3.95873 ; M4/M0*k^2=18.3523
+k=200 nu=0: (4.9) exact match True ; M4/M0 formula match True ; theta=3.881092 ; M2/M0*k=-4.64288 ; M4/M0*k^2=28.6139
+k=200 nu=-1: (4.9) exact match True ; M4/M0 formula match True ; theta=3.899100 ; M2/M0*k=-4.66259 ; M4/M0*k^2=28.8429
+M0 approx k=200 nu=0: 5.39662 (4sqrt2=5.657)

@@ -1,0 +1,52 @@
+module: rig_ray4_v1_bug -> C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\rig_ray4_v1_bug.py
+
+[3.1] E1p coefficient of w^{m-1}: code vs exact m/(m+1)!
+  code has the record pattern  t=t*w/(m-1); s+=m*t/(m+1)! : True
+  m=1: code 1/2  exact 1/2  OK
+  m=2: code 1/3  exact 1/3  OK
+  m=3: code 1/16  exact 1/8  DIFF
+  m=4: code 1/180  exact 1/30  DIFF
+  m=5: code 1/3456  exact 1/144  DIFF
+  m=6: code 1/100800  exact 1/840  DIFF
+[3.1] E1pp coefficient of w^{m-2}: code vs exact m(m-1)/(m+1)!
+  m=2: code 1/3  exact 1/3  OK
+  m=3: code 1/4  exact 1/4  OK
+  m=4: code 1/20  exact 1/10  DIFF
+  m=5: code 1/216  exact 1/36  DIFF
+  m=6: code 1/4032  exact 1/168  DIFF
+
+[3.2] w = 1/1000 (real):
+  exact lower bounds: 12008003/24000000 = 0.5003334583333333 ; 10007503/30000000 = 0.33358343333333335
+  E1p(1/1000)  returned [0.500333395838889139, 0.500333395838889139]  ->  true lower bound > upper end: True
+  E1pp(1/1000) returned [0.333583383337963224, 0.333583383337963224]  ->  true lower bound > upper end: True
+  60-digit true values: 0.5003334583666736123 0.33358343336111706453
+  contained (true in returned interval)?  E1p: False  E1pp: False
+
+[3.3] A00 midpoint, sigma' = 1:
+  u_m = 1645231281648331/36028797018963968 = 0.0456643412429883210901238   (feedback: 1645231281648331/36028797018963968 -> True )
+  cert/A00.json u endpoints equal boxes.py endpoints: True
+  u_m is a point interval: True  (width 0.0 )
+  sigma'=1: |Zu analytic - numeric| = 1.29e-57
+     Z   contained True   gap (0.0, 0.0)
+     Z_u contained False   gap (re, im) (1.5479047198708733e-09, 1.0620262265389462e-10)   width (re) 1.001e-31
+     Z_uu contained False   gap (re, im) (3.3816244182100233e-08, 4.135814601109314e-09)
+     whole-box enclosure contains the midpoint truth: Z True Z_u True Z_uu True
+  sigma'=2: |Zu analytic - numeric| = 1.27e-57
+     Z   contained True   gap (0.0, 0.0)
+     Z_u contained False   gap (re, im) (3.937099580949818e-07, 5.4296974162444116e-08)   width (re) 1.578e-30
+     Z_uu contained False   gap (re, im) (8.538247863991708e-06, 2.11627409478304e-06)
+     whole-box enclosure contains the midpoint truth: Z True Z_u True Z_uu True
+  sigma'=3: |Zu analytic - numeric| = 5.32e-58
+     Z   contained True   gap (0.0, 0.0)
+     Z_u contained False   gap (re, im) (9.981250218761379e-06, 2.0822907193580775e-06)   width (re) 1.006e-29
+     Z_uu contained False   gap (re, im) (0.00021371886670585498, 8.127080436832229e-05)
+     whole-box enclosure contains the midpoint truth: Z True Z_u True Z_uu True
+  sigma'=6: |Zu analytic - numeric| = 7.95e-58
+     Z   contained True   gap (0.0, 0.0)
+     Z_u contained False   gap (re, im) (0.0024042598159796998, 0.0010518985762578152)   width (re) 1.641e-28
+     Z_uu contained False   gap (re, im) (0.04745790126519297, 0.041318759211835275)
+     whole-box enclosure contains the midpoint truth: Z True Z_u True Z_uu True
+  grid sigma'=i/80, i=1..480 at u_m: Z_u not contained at 480/480 points, Z_uu not contained at 480/480; largest Z_u gap 2.404e-03 at i=480
+
+[check] E1p/E1pp containment at 200 random complex w with |w| <= 0.06 (the production range is |w| <~ 0.04):
+  failures: 200 / 200

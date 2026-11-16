@@ -1,0 +1,20 @@
+진술 수: 398 | 인용 라벨(중복 제외): 381 | 장 파일 밖 라벨: []
+선언 의존 그래프 순환: 0 []
+크기 2 이상 강결합 성분: 17
+   4 ['2:old-2-15', '2:old-2-16', '2:old-2-20', '2:old-2-21'] 
+   12 ['8:closed-form-envelope', '8:envelope-code-monotone', '8:escape-y-monotone', '8:old-6-23', '8:old-6-28', '8:old-6-29'] ...
+   2 ['4:e-integral', '4:old-4-7'] 
+   2 ['5:SR-implies-QR', '5:old-5-4'] 
+   7 ['5:old-5-28', '5:old-5-31', '5:old-5-33', '6:cor-L', '6:pair-rearrange', '6:path-shift'] ...
+   3 ['7:analytic-transfer', '7:hermite-nu', '7:vertical-nu'] 
+   38 ['4:old-4-8', '4:old-4-9', '5:band-inequality', '5:old-5-1', '5:old-5-10', '5:old-5-11'] ...
+   3 ['7:old-6-16', '7:theorem-W', '7:top-roots'] 
+   3 ['7:X-cert', '7:fourier-lemmas', '7:old-6-12'] 
+   2 ['10:old-8-6', '10:old-8-8'] 
+   2 ['10:old-8-25', '10:old-8-33'] 
+   2 ['10:old-8-15', '10:reduction-na'] 
+   3 ['10:old-8-28', '10:old-8-31', '10:old-8-32'] 
+   2 ['7:level-chain', '7:old-6-10'] 
+   2 ['7:polar-W', '7:qstar-implies-wlflat'] 
+   5 ['7:old-6-22', '9:old-7-17', '9:old-7-44', '9:old-7-46', '9:old-7-6'] 
+   2 ['1:main-theorem', '3:peak-asymptotics'] 

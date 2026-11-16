@@ -1,0 +1,88 @@
+== D.fiber-enumeration ==
+1 multisets 1 nonunimodal fibers 0 
+2 multisets 2 nonunimodal fibers 0 
+3 multisets 4 nonunimodal fibers 0 
+4 multisets 9 nonunimodal fibers 0 
+5 multisets 19 nonunimodal fibers 0 
+6 multisets 44 nonunimodal fibers 0 
+7 multisets 96 nonunimodal fibers 30 ((1, 2, 3, 5, 4, 6, 7), (1, 2, 3, 4, 1, 6, 7), (1, 31, 130, 222, 216, 264, 144))
+n=7 parking functions 262144 = 8^6? True target fiber row [1, 31, 130, 222, 216, 264, 144]
+== D.fiber-nonunimodal-bound ==
+17 3 allowed True 0.7395086876618862
+17 4 allowed True 0.7789970413828728
+17 5 allowed False 
+17 6 allowed False 
+17 7 allowed False 
+17 8 allowed False 
+100 first disallowed b: 9
+1000 first disallowed b: 24
+10000 first disallowed b: 72
+100 min bound (float) (0.31684842692655557, 4)
+1000 min bound (float) (0.06573317521467109, 6)
+10000 min bound (float) (0.011421551498808562, 8)
+== rows via last-car recursion ==
+logconcavity fails n<=80: [(80, 40)]
+b80,39 digits 149 prefix ok True suffix ok True
+b80,40 ok True True b80,41 ok True True
+ratios 1.037117306883737 1.037137268421777 sep 25928/25000 ok: True
+b39<b40<b41 True b39*b41-b40^2>0 True
+== D.central-gap-integer (ㄴ) / crossing / chain ==
+d_{n,k_n}<0 for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+b_{n,k_n}<b_{n,k_n+1} false set in 5..60: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+chain b0<...<b_{k-1} breaks at [5, 7, 9, 11]
+ n 5 row [120, 421, 377, 253] capacities kk with b_kk<b_{kk-1}: [2]
+ n 7 row [5040, 42253, 62145, 57398, 46142] capacities kk with b_kk<b_{kk-1}: [3]
+ n 9 row [362880, 6724381, 15298809, 18289811, 17520519, 15455851] capacities kk with b_kk<b_{kk-1}: [4]
+ n 11 row [39916800, 1582715773, 5373200117, 8177419578, 9160454598, 9008899440, 8390168112] capacities kk with b_kk<b_{kk-1}: [5]
+Q_L fails 3..15: []
+rows n<=15 unimodal: True
+== D.crossing-small-n recurrence check ==
+A^c recurrence matches for l<20, n<=min(2l+4,60): True
+== D.theorem-D-base pair count ==
+16229 m=700 dmax 39
+== D.tilt-sum-small-k ==
+2 0.8888888888888888 True
+3 0.850341796875 True
+10 0.7832422098298588 True
+20 0.7546455056288828 True
+42 0.7271426238378939 True
+43 0.7263294826388621 True
+== D.prop-W-thirteen ==
+1 2183.0 2 True
+2 1726.37 3.5481 True
+3 1422.53 4.881 True
+4 1193.39 6.0962 True
+5 1007.31 7.2413 True
+6 848.686 8.3439 True
+7 708.857 9.4214 True
+8 582.555 10.486 True
+9 466.375 11.546 True
+10 358.006 12.607 True
+11 255.817 13.676 True
+12 158.619 14.755 True
+13 65.5197 15.848 True
+14 -24.1604 16.957 False
+== D.theorem-U-constant arithmetic ==
+3c(J+cY) 14.6521579058833964904677690851 1.5*G*c*c(JX+cYX) 35.9514886500112292600905414844
+with computed 14.6488878194101470704563754324 35.9472237200301875733287390844
+== D.zeta-constants ==
+2.61237534868548834334856756792 -1.46035450880958681288949915252 -0.207886224977354566017306725397
+S+2N^-1/2+N^-3/2/2 2.61237534798671712585591443454 S+2(N-1/2)^-1/2 2.61237534903509240410068417169
+sum_{j<=N}+2(N+1)^-1/2 2.61236976200765467002363546733 sum_{j<N}+2(N+1)^-1/2 2.61235858166776717107515342146
+== D.tail-T1 (B) ==
+slope 0.0196042363251970219109561181276
+t=100 lhs 2.45635484251970219109561181276 rhs 2.456
+== central-gap-rational-audit (ㅅ) ==
+True 2.062828349635796 0.21300762755400005
+495594511/240250000
+k^5 e^{-k/520} at 30000: 0.00213872720889915649032687417612
+sum D(1/16) 4764 D(1/8) 5468.28
+== D.band-check product ==
+1.3558738085655762
+== induction-rows m=10001 == 9653
+== counts == 14520 7260 19985: 19985
+(ㄹ) positions 5..20000: 99970002 C50: 524955000
+(ㄴ) comparisons: 74995000
+newton counts: 14365 780
+10001^(-1/3)= 0.04641434124298832 0.0015/1.25^12= 0.00010307921510400001
+pi/0.019= 165.34698176788385  166*10001^(-1/6)*exp(-0.1267*10001) exponent: -1263.5497856061395

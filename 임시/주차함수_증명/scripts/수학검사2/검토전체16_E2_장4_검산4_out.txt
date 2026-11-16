@@ -1,0 +1,15 @@
+Q_L(n), 3<=n<=15:
+3 True; 4 True; 5 True; 6 True; 7 True; 8 True; 9 True; 10 True; 11 True; 12 True; 13 True; 14 True; 15 True; 
+20<=n<=80: b_{n,k_n} < b_{n,k_n+1} 모두: True
+n<=19:  [(4, False), (5, False), (6, False), (7, False), (8, False), (9, False), (10, False), (11, False), (12, False), (13, False), (14, False), (15, False), (16, False), (17, False), (18, False), (19, False)]
+n=100 상대 여유 (b_{k+1}-b_k)/b_k = 3.3133e-02
+n=200 상대 여유 (b_{k+1}-b_k)/b_k = 2.0636e-02
+n=300 상대 여유 (b_{k+1}-b_k)/b_k = 1.4786e-02
+n=400 상대 여유 (b_{k+1}-b_k)/b_k = 1.1475e-02
+n=500 상대 여유 (b_{k+1}-b_k)/b_k = 9.3554e-03
+n=600 상대 여유 (b_{k+1}-b_k)/b_k = 7.8857e-03
+n=700 상대 여유 (b_{k+1}-b_k)/b_k = 6.8083e-03
+n=800 상대 여유 (b_{k+1}-b_k)/b_k = 5.9854e-03
+n=900 상대 여유 (b_{k+1}-b_k)/b_k = 5.3368e-03
+n=1000 상대 여유 (b_{k+1}-b_k)/b_k = 4.8129e-03
+81<=n<=1000 최소 상대 여유: (1000, np.float64(0.004812853439130085))

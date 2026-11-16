@@ -1,0 +1,19 @@
+k=3 (4.2) y=7/3: n<=2k+1 all equal: True ; n=2k+2 equal: False
+k=3 (4.1) e_n for n<=2k+1 all equal: True ; e_n values: ['0', '0', '0', '0', '0', '32', '762', '14874'] ; n=2k+2 equal: False
+k=3 Prop 4.6 / J-egf: J_n(k-1) n<=2k all equal: True ; J values: ['0', '0', '0', '3', '18', '156', '1758']
+k=4 (4.2) y=7/3: n<=2k+1 all equal: True ; n=2k+2 equal: False
+k=4 (4.1) e_n for n<=2k+1 all equal: True ; e_n values: ['0', '0', '0', '0', '0', '0', '250', '7592', '182546', '4268962'] ; n=2k+2 equal: False
+k=4 Prop 4.6 / J-egf: J_n(k-1) n<=2k all equal: True ; J values: ['0', '0', '0', '0', '16', '128', '1392', '18848', '305216']
+(4.9) n=10 y=3: equal True
+(4.9) n=11 y=7/2: equal True
+(4.9) n=20 y=10: equal True
+(4.9) n=19 y=10: equal True
+(4.9) n=20 y=19/2: equal True
+M4/M0 k=5 nu=0: formula equal True
+M4/M0 k=5 nu=-1: formula equal True
+M4/M0 k=6 nu=0: formula equal True
+M4/M0 k=6 nu=-1: formula equal True
+M4/M0 k=7 nu=0: formula equal True
+M4/M0 k=7 nu=-1: formula equal True
+M4/M0 k=8 nu=0: formula equal True
+M4/M0 k=8 nu=-1: formula equal True

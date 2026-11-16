@@ -1,0 +1,6 @@
+k 2 ok
+k 3 ok
+k 4 ok
+k 5 ok
+k 6 ok
+bad 0

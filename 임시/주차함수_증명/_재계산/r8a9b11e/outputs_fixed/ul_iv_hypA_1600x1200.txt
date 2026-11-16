@@ -1,0 +1,6 @@
+L0=25000 H0=0.0342 N1=1600 N2=1200 DNU=0.1 NQ=6400
+  int psi~ >= 0.76429913,  max psi~ = 0.590156 (peak cell 210, zeta~0.538)
+  positive part >= 0.74411578
+  sum_z h qbar <= 0.93354745;  neg1 <= 2.045e-5;  negative part <= 0.031947769
+  ==> s0_cert = 0.71216801   (interval arithmetic, dps=40);  time 316s
+exit=0 elapsed=316s

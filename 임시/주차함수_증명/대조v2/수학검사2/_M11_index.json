@@ -1,0 +1,3234 @@
+{
+"1:old-1-1": {
+"type": "정의",
+"name": "주차함수",
+"tag": null,
+"file": "장1.md",
+"line": 9,
+"sec": "1.1"
+},
+"1:old-1-2": {
+"type": "명제",
+"name": null,
+"tag": "증명됨; 표준",
+"file": "장1.md",
+"line": 17,
+"sec": "1.1"
+},
+"1:old-1-3": {
+"type": "정의",
+"name": "최대 변위",
+"tag": null,
+"file": "장1.md",
+"line": 35,
+"sec": "1.2"
+},
+"1:old-1-4": {
+"type": "정의",
+"name": "단봉성",
+"tag": null,
+"file": "장1.md",
+"line": 75,
+"sec": "1.3"
+},
+"1:main-theorem": {
+"type": "정리",
+"name": "주 정리",
+"tag": "증명됨, 정리 {{9:old-7-46}}·{{10:old-8-37}}에 의존; rae1f209, rb6a2cd0, r5909c9e, r3d0856b, re71a735",
+"file": "장1.md",
+"line": 93,
+"sec": "1.4"
+},
+"10:old-8-1": {
+"type": "정의",
+"name": "명제 $\\mathsf Q^\\star_2$",
+"tag": "r3d0856b",
+"file": "장10.md",
+"line": 25,
+"sec": "10.1"
+},
+"10:old-8-2": {
+"type": "보조정리",
+"name": "장부 항등식; 기록 [r3d0856b]의 보조정리 1, 기록 [r317d678]의 c-ledger",
+"tag": "증명됨; r3d0856b, r317d678",
+"file": "장10.md",
+"line": 61,
+"sec": "10.1"
+},
+"10:old-8-3": {
+"type": "보조정리",
+"name": "분할 무게; 기록 [r3d0856b]의 보조정리 2",
+"tag": "증명됨, 보조정리 {{6:old-7-20}}에 의존; r3d0856b",
+"file": "장10.md",
+"line": 84,
+"sec": "10.1"
+},
+"10:old-8-4": {
+"type": "보조정리",
+"name": "열 꼬리; 기록 [r3d0856b]의 보조정리 3",
+"tag": "증명됨; r3d0856b",
+"file": "장10.md",
+"line": 111,
+"sec": "10.1"
+},
+"10:old-8-6": {
+"type": "명제",
+"name": "꼬리합 꼴; 기록 [r3d0856b]의 명제 6",
+"tag": "증명됨; r3d0856b",
+"file": "장10.md",
+"line": 117,
+"sec": "10.1"
+},
+"10:old-8-8": {
+"type": "명제",
+"name": "머묾 꼴; 기록 [r3d0856b]의 명제 S",
+"tag": "증명됨; r3d0856b",
+"file": "장10.md",
+"line": 147,
+"sec": "10.2"
+},
+"10:old-8-9": {
+"type": "정의",
+"name": "명제 FLQ",
+"tag": "r3d0856b",
+"file": "장10.md",
+"line": 189,
+"sec": "10.3"
+},
+"10:old-8-10": {
+"type": "정리",
+"name": "FLQ ∧ 띠 ⇒ $\\mathsf Q^\\star_2$; 기록 [r3d0856b]의 관계 q-flq-relation",
+"tag": "증명됨, 정리 {{8:old-6-33}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b",
+"file": "장10.md",
+"line": 208,
+"sec": "10.3"
+},
+"10:row-3k": {
+"type": "보조정리",
+"name": "$n=3k$에서의 FLQ",
+"tag": "증명됨, 정리 {{6:V-all}}·{{6:old-6-19}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b",
+"file": "장10.md",
+"line": 232,
+"sec": "10.3"
+},
+"10:old-8-14": {
+"type": "명제",
+"name": "(나)의 머묾 질량 환원; 기록 [r3d0856b]의 명제 T",
+"tag": "증명됨, 따름정리 {{6:old-8-11}}·{{6:DD-lower-bound}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b",
+"file": "장10.md",
+"line": 265,
+"sec": "10.4"
+},
+"10:old-8-15": {
+"type": "명제",
+"name": "창의 생존 상계; 기록 [r3d0856b]의 명제 W",
+"tag": "증명됨; r3d0856b",
+"file": "장10.md",
+"line": 305,
+"sec": "10.4"
+},
+"10:old-8-16": {
+"type": "보조정리",
+"name": "h-변환; 기록 [re71a735]의 보조정리 1",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 325,
+"sec": "10.5"
+},
+"10:old-8-17": {
+"type": "보조정리",
+"name": "얼린 볼록성; 기록 [r845b205]의 보조정리 5, 기록 [re71a735]의 보조정리 2",
+"tag": "증명됨; r845b205, re71a735",
+"file": "장10.md",
+"line": 337,
+"sec": "10.5"
+},
+"10:old-8-18": {
+"type": "정리",
+"name": "나머지의 수준별 공식; 기록 [re71a735]의 정리 A",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 347,
+"sec": "10.5"
+},
+"10:old-8-19": {
+"type": "정리",
+"name": "젊은 사슬; 기록 [re71a735]의 정리 B",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 371,
+"sec": "10.5"
+},
+"10:old-8-20": {
+"type": "보조정리",
+"name": "걸음 수를 고정한 방문 상계와 젊은 걸음; 기록 [re71a735]의 보조정리 4·5",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 392,
+"sec": "10.5"
+},
+"10:old-8-21": {
+"type": "보조정리",
+"name": "젊은 걸음 합; 기록 [re71a735]의 보조정리 N",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 400,
+"sec": "10.5"
+},
+"10:old-8-22": {
+"type": "정리",
+"name": "대각선 손실의 명시 상계; 기록 [re71a735]의 정리 C",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 404,
+"sec": "10.5"
+},
+"10:old-8-23": {
+"type": "명제",
+"name": "대각선 손실의 닫힌 꼴; 기록 [re71a735]의 명제 M♮",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); re71a735",
+"file": "장10.md",
+"line": 419,
+"sec": "10.5"
+},
+"10:old-8-24": {
+"type": "보조정리",
+"name": "상위해 원리; 기록 [re71a735]의 보조정리 SS",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 454,
+"sec": "10.5"
+},
+"10:old-8-25": {
+"type": "정리",
+"name": "첫 층 생존의 상계; 기록 [re71a735]의 정리 S′",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 462,
+"sec": "10.5"
+},
+"10:old-8-26": {
+"type": "명제",
+"name": "머묾 질량의 명시 상계; 기록 [re71a735]의 명제 X",
+"tag": "증명됨, 정리 {{6:old-8-12}}에 의존; re71a735",
+"file": "장10.md",
+"line": 504,
+"sec": "10.5"
+},
+"10:old-8-28": {
+"type": "정리",
+"name": "수준 질량의 사슬 표현; 기록 [re71a735]의 정리 P",
+"tag": "증명됨, 작성자 판단; re71a735",
+"file": "장10.md",
+"line": 514,
+"sec": "10.5"
+},
+"10:reduction-na": {
+"type": "명제",
+"name": "(나)의 환원",
+"tag": "증명됨, 명제 {{10:old-8-14}}·{{10:old-8-23}}에 의존; re71a735",
+"file": "장10.md",
+"line": 539,
+"sec": "10.6"
+},
+"10:reduction-ga": {
+"type": "명제",
+"name": "(가)의 환원",
+"tag": "증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{10:old-8-14}}·{{10:old-8-23}}에 의존; re71a735",
+"file": "장10.md",
+"line": 547,
+"sec": "10.6"
+},
+"10:families": {
+"type": "정의",
+"name": "네 가족",
+"tag": "re71a735",
+"file": "장10.md",
+"line": 571,
+"sec": "10.6"
+},
+"10:old-8-30": {
+"type": "보조정리",
+"name": "창의 생존 하계; 기록 [re71a735]의 보조정리 J",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 586,
+"sec": "10.6"
+},
+"10:old-8-31": {
+"type": "보조정리",
+"name": "수준 질량 하계; 기록 [re71a735]의 보조정리 R",
+"tag": "증명됨; re71a735",
+"file": "장10.md",
+"line": 597,
+"sec": "10.6"
+},
+"10:old-8-32": {
+"type": "보조정리",
+"name": "두 부분 적분 꼴; 기록 [re71a735]의 보조정리 R′",
+"tag": "증명됨, 작성자 판단; re71a735",
+"file": "장10.md",
+"line": 626,
+"sec": "10.6"
+},
+"10:old-8-33": {
+"type": "명제",
+"name": "$\\nu$에 무관한 머묾 상계; 기록 [re71a735]의 명제 U",
+"tag": "증명됨, 정리 {{6:old-8-12}}에 의존; re71a735",
+"file": "장10.md",
+"line": 645,
+"sec": "10.6"
+},
+"10:old-8-34": {
+"type": "보조정리",
+"name": "상쇄 보조정리; 기록 [re71a735]의 상쇄 보조정리",
+"tag": "증명됨, 작성자 판단; re71a735",
+"file": "장10.md",
+"line": 677,
+"sec": "10.6"
+},
+"10:old-8-35": {
+"type": "명제",
+"name": "가족별 하계; 기록 [re71a735]의 명제 L",
+"tag": "증명됨, 명제 {{10:old-8-14}}·{{10:old-8-23}}에 의존; re71a735",
+"file": "장10.md",
+"line": 692,
+"sec": "10.6"
+},
+"10:bulk-majorants": {
+"type": "보조정리",
+"name": "벌크의 명시 상계",
+"tag": "증명됨, 정리 {{6:old-8-12}}·명제 {{10:old-8-23}}·{{10:old-8-33}}·{{10:old-8-35}}에 의존; re71a735",
+"file": "장10.md",
+"line": 705,
+"sec": "10.6"
+},
+"10:check-na": {
+"type": "명제",
+"name": "(나)의 가족 검사",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 명제 {{10:reduction-na}}·{{10:old-8-23}}·{{10:old-8-33}}·{{10:old-8-35}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735",
+"file": "장10.md",
+"line": 721,
+"sec": "10.6"
+},
+"10:check-ga": {
+"type": "명제",
+"name": "(가)의 가족 검사",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 명제 {{10:reduction-ga}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735",
+"file": "장10.md",
+"line": 736,
+"sec": "10.6"
+},
+"10:old-8-36": {
+"type": "정리",
+"name": "명제 FLQ의 증명; 기록 [re71a735]의 정리 FLQ",
+"tag": "증명됨, 보조정리 {{10:row-3k}}·명제 {{10:check-na}}·{{10:check-ga}}에 의존; re71a735",
+"file": "장10.md",
+"line": 765,
+"sec": "10.6"
+},
+"10:old-8-37": {
+"type": "정리",
+"name": "주 정리의 둘째 증명",
+"tag": "증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{6:V-all}}·{{7:qstar-columns}}·{{7:old-6-13}}·{{5:old-5-1}}·{{5:old-5-18}}·{{5:old-5-11}}·{{4:old-4-8}}·{{4:old-4-5}}·명제 {{7:old-6-20}}·{{7:src-plus}}·{{7:old-6-9}}·따름정리 {{7:qstar-implies-wlflat}}에 의존; r3d0856b, re71a735",
+"file": "장10.md",
+"line": 773,
+"sec": "10.7"
+},
+"2:old-2-1": {
+"type": "정의",
+"name": "결과 순열과 섬유",
+"tag": null,
+"file": "장2.md",
+"line": 15,
+"sec": "2.1"
+},
+"2:old-2-2": {
+"type": "정의",
+"name": "선호 용량",
+"tag": null,
+"file": "장2.md",
+"line": 21,
+"sec": "2.1"
+},
+"2:old-2-3": {
+"type": "정리",
+"name": "섬유의 곱 구조",
+"tag": "증명됨; r81e7051, r15524fd",
+"file": "장2.md",
+"line": 29,
+"sec": "2.1"
+},
+"2:old-2-4": {
+"type": "따름정리",
+"name": null,
+"tag": "증명됨; r81e7051, r15524fd",
+"file": "장2.md",
+"line": 43,
+"sec": "2.1"
+},
+"2:old-2-5": {
+"type": "정리",
+"name": "비단봉 섬유",
+"tag": "앞 두 문장은 증명됨, 마지막 문장은 계산 증거(정확 정수·유리수); r81e7051, r15524fd",
+"file": "장2.md",
+"line": 56,
+"sec": "2.2"
+},
+"2:old-2-6": {
+"type": "정리",
+"name": "마지막 차 재귀",
+"tag": "증명됨; r15524fd, r81e7051",
+"file": "장2.md",
+"line": 72,
+"sec": "2.3"
+},
+"2:old-2-7": {
+"type": "명제",
+"name": "균등 분해",
+"tag": "증명됨; r81e7051",
+"file": "장2.md",
+"line": 84,
+"sec": "2.3"
+},
+"2:old-2-8": {
+"type": "명제",
+"name": "역수 생성함수",
+"tag": "증명됨; r15524fd, r81e7051",
+"file": "장2.md",
+"line": 111,
+"sec": "2.3"
+},
+"2:old-2-9": {
+"type": "정의",
+"name": "뿌리 숲과 국소 역전 수",
+"tag": null,
+"file": "장2.md",
+"line": 125,
+"sec": "2.4"
+},
+"2:old-2-10": {
+"type": "정리",
+"name": "숲 개수의 일치",
+"tag": "증명됨; r42d9a17",
+"file": "장2.md",
+"line": 129,
+"sec": "2.4"
+},
+"2:old-2-11": {
+"type": "정리",
+"name": "모양 조건부 독립성",
+"tag": "증명됨; r42d9a17",
+"file": "장2.md",
+"line": 149,
+"sec": "2.4"
+},
+"2:old-2-21": {
+"type": "정의",
+"name": "Borel 질량",
+"tag": null,
+"file": "장2.md",
+"line": 172,
+"sec": "2.5"
+},
+"2:old-2-12": {
+"type": "정의",
+"name": "가장 큰 나무 사슬",
+"tag": null,
+"file": "장2.md",
+"line": 194,
+"sec": "2.5"
+},
+"2:old-2-13": {
+"type": "정리",
+"name": "가장 큰 나무 사슬 공식; 기록 [r39ea75d]의 heavy-path-recurrence",
+"tag": "증명됨; r39ea75d",
+"file": "장2.md",
+"line": 198,
+"sec": "2.5"
+},
+"2:old-2-14": {
+"type": "보조정리",
+"name": "섬유의 부호식; 기록 [r88bed8a]의 식 (1.1)",
+"tag": "증명됨, 작성자 판단; r88bed8a",
+"file": "장2.md",
+"line": 225,
+"sec": "2.5"
+},
+"2:old-2-15": {
+"type": "보조정리",
+"name": "용량 구간의 포갬 구조; 기록 [r88bed8a]의 보조정리 L",
+"tag": "증명됨; r88bed8a",
+"file": "장2.md",
+"line": 241,
+"sec": "2.5"
+},
+"2:old-2-16": {
+"type": "보조정리",
+"name": "톱니; 기록 [r88bed8a]의 보조정리 S",
+"tag": "증명됨; r88bed8a",
+"file": "장2.md",
+"line": 249,
+"sec": "2.5"
+},
+"2:old-2-17": {
+"type": "보조정리",
+"name": "용량 다중집합의 법칙; 기록 [r88bed8a]의 보조정리 D",
+"tag": "증명됨; r88bed8a",
+"file": "장2.md",
+"line": 257,
+"sec": "2.5"
+},
+"2:old-2-18": {
+"type": "보조정리",
+"name": "사슬 구성의 셈; 기록 [r88bed8a]의 보조정리 C",
+"tag": "증명됨; r88bed8a",
+"file": "장2.md",
+"line": 267,
+"sec": "2.5"
+},
+"2:old-2-19": {
+"type": "따름정리",
+"name": "사슬의 국소 극한; 기록 [r88bed8a]의 따름정리 C′",
+"tag": "증명됨, 전변동 수렴 단계는 작성자 판단; r88bed8a",
+"file": "장2.md",
+"line": 275,
+"sec": "2.5"
+},
+"2:old-2-20": {
+"type": "명제",
+"name": "섬유는 거의 모두 단봉이 아니다; 기록 [r88bed8a]의 명제 F",
+"tag": "진술은 증명됨, 유한 $n$의 상계값은 계산 증거(방향 반올림 구간); r88bed8a",
+"file": "장2.md",
+"line": 283,
+"sec": "2.5"
+},
+"2:old-2-22": {
+"type": "정의",
+"name": "임계 볼츠만 법칙(critical Boltzmann law)",
+"tag": null,
+"file": "장2.md",
+"line": 306,
+"sec": "2.6"
+},
+"2:old-2-24": {
+"type": "정의",
+"name": "생존 확률",
+"tag": null,
+"file": "장2.md",
+"line": 322,
+"sec": "2.6"
+},
+"2:old-2-25": {
+"type": "정의",
+"name": "수준 질량",
+"tag": null,
+"file": "장2.md",
+"line": 338,
+"sec": "2.6"
+},
+"2:old-2-26": {
+"type": "보조정리",
+"name": "함수 $g$의 성질",
+"tag": "증명됨, 작성자 판단; r58b4caa, r23f10e9",
+"file": "장2.md",
+"line": 348,
+"sec": "2.6"
+},
+"2:old-2-27": {
+"type": "정의",
+"name": "동률과 막힘",
+"tag": null,
+"file": "장2.md",
+"line": 382,
+"sec": "2.7"
+},
+"2:old-2-28": {
+"type": "정리",
+"name": "동률–막힘 항등식",
+"tag": "증명됨; r631b0f4, r37c204b",
+"file": "장2.md",
+"line": 386,
+"sec": "2.7"
+},
+"2:old-2-29": {
+"type": "따름정리",
+"name": null,
+"tag": "증명됨; r631b0f4, r37c204b",
+"file": "장2.md",
+"line": 407,
+"sec": "2.7"
+},
+"2:old-2-30": {
+"type": "보조정리",
+"name": null,
+"tag": "증명됨; r5f5cf73, r37c204b",
+"file": "장2.md",
+"line": 417,
+"sec": "2.7"
+},
+"2:J-egf": {
+"type": "보조정리",
+"name": "$J_n(z)$의 지수 생성함수 표현; 기록 [rba2ecf4]의 green-reconstruction, 기록 [r37c204b]의 보조정리 3.3",
+"tag": "증명됨, 작성자 판단; rba2ecf4, r37c204b",
+"file": "장2.md",
+"line": 435,
+"sec": "2.7"
+},
+"2:old-2-31": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장2.md",
+"line": 517,
+"sec": "2.8"
+},
+"2:old-2-32": {
+"type": "보조정리",
+"name": "마지막 차 자리 법칙의 두 단조성; 기록 [r79ee9e0]의 보조정리 Πβ(i)와 Πn",
+"tag": "증명됨; r79ee9e0",
+"file": "장2.md",
+"line": 489,
+"sec": "2.8"
+},
+"2:old-2-33": {
+"type": "보조정리",
+"name": "마지막 차 자리의 한 걸음 결합; 기록 [r79ee9e0]의 보조정리 R",
+"tag": "증명됨; r79ee9e0",
+"file": "장2.md",
+"line": 509,
+"sec": "2.8"
+},
+"2:ratio-e": {
+"type": "따름정리",
+"name": "지수 생성함수 계수 비의 상계; 기록 [r60a6f55]의 식 (8)",
+"tag": "증명됨; r60a6f55",
+"file": "장2.md",
+"line": 535,
+"sec": "2.8"
+},
+"2:old-2-34": {
+"type": "보조정리",
+"name": "수준 방문 보존; 기록 [rae1f209]의 보조정리 C",
+"tag": "증명됨; rae1f209",
+"file": "장2.md",
+"line": 545,
+"sec": "2.8"
+},
+"2:old-2-35": {
+"type": "보조정리",
+"name": "나무를 고정한 행 차분",
+"tag": "증명됨; r4868e30, r33475a7",
+"file": "장2.md",
+"line": 577,
+"sec": "2.9"
+},
+"2:old-2-36": {
+"type": "보조정리",
+"name": "문턱 부분나무의 기대 수",
+"tag": "증명됨; r4868e30",
+"file": "장2.md",
+"line": 595,
+"sec": "2.9"
+},
+"2:old-2-37": {
+"type": "보조정리",
+"name": "갱신 방문 핵과 갱신 항등식",
+"tag": "증명됨; r030ffae, r6a8c8b6, r2ec875c",
+"file": "장2.md",
+"line": 609,
+"sec": "2.9"
+},
+"2:zeta-constants": {
+"type": "보조정리",
+"name": "세 제타 상수의 구간",
+"tag": "계산 증거(방향 반올림 구간); r8a9b11e",
+"file": "장2.md",
+"line": 633,
+"sec": "2.9"
+},
+"2:old-2-38": {
+"type": "정리",
+"name": "문턱 부분나무로 잰 나무 곡률; 기록 [r4868e30]의 c-threshold-subtree, 정리 T",
+"tag": "증명됨; r4868e30",
+"file": "장2.md",
+"line": 637,
+"sec": "2.9"
+},
+"2:old-2-39": {
+"type": "따름정리",
+"name": "머리 합의 안쪽 층",
+"tag": "증명됨; r4868e30, r2ec875c",
+"file": "장2.md",
+"line": 673,
+"sec": "2.9"
+},
+"2:b-top": {
+"type": "보조정리",
+"name": "행의 마지막 항",
+"tag": "증명됨; r33475a7",
+"file": "장2.md",
+"line": 705,
+"sec": "2.10"
+},
+"2:old-2-40": {
+"type": "정리",
+"name": "다섯 몫 분해",
+"tag": "증명됨; r6f5f48f",
+"file": "장2.md",
+"line": 719,
+"sec": "2.10"
+},
+"2:old-2-41": {
+"type": "명제",
+"name": "쌍 항의 정수 꼴; 기록 [rae1f209]의 보조정리 2",
+"tag": "증명됨; rae1f209",
+"file": "장2.md",
+"line": 742,
+"sec": "2.10"
+},
+"2:old-2-43": {
+"type": "정의",
+"name": "Borel 갱신 집합",
+"tag": "r6a8c8b6",
+"file": "장2.md",
+"line": 754,
+"sec": "2.11"
+},
+"2:old-2-44": {
+"type": "명제",
+"name": "갱신 집합의 기대 크기",
+"tag": "증명됨; r6a8c8b6",
+"file": "장2.md",
+"line": 760,
+"sec": "2.11"
+},
+"2:old-2-45": {
+"type": "보조정리",
+"name": "무거운 사슬의 수준 방문 확률; 기록 [re71a735]의 보조정리 3",
+"tag": "증명됨; re71a735",
+"file": "장2.md",
+"line": 768,
+"sec": "2.11"
+},
+"2:old-2-46": {
+"type": "보조정리",
+"name": "갱신 다리; 기록 [re71a735]의 보조정리 B",
+"tag": "증명됨; re71a735",
+"file": "장2.md",
+"line": 788,
+"sec": "2.11"
+},
+"2:chain-expansion": {
+"type": "정리",
+"name": "지정 사슬의 쌍 공식과 사슬 전개; 기록 [r42d9a17]의 식 (7)–(11)",
+"tag": "증명됨, 작성자 판단; r42d9a17",
+"file": "장2.md",
+"line": 810,
+"sec": "2.12"
+},
+"2:convex-bonferroni": {
+"type": "보조정리",
+"name": "Bonferroni 잔차의 볼록성; 기록 [r42d9a17]의 convex-bonferroni",
+"tag": "증명됨; r42d9a17",
+"file": "장2.md",
+"line": 861,
+"sec": "2.12"
+},
+"2:moving-tail": {
+"type": "정리",
+"name": "이동 꼬리의 균일 추정; 기록 [r42d9a17]의 uniform-moving-tail",
+"tag": "증명됨, 작성자 판단; r42d9a17",
+"file": "장2.md",
+"line": 873,
+"sec": "2.12"
+},
+"2:chain-normalization": {
+"type": "보조정리",
+"name": "사슬 가중치의 정규화와 그 상하계; 기록 [r1aa0be6]의 chain-normalization",
+"tag": "증명됨, 작성자 판단; r1aa0be6",
+"file": "장2.md",
+"line": 943,
+"sec": "2.12"
+},
+"3:old-3-1": {
+"type": "명제",
+"name": "해싱 모형과의 대응",
+"tag": "증명됨, 극한 진술은 문헌 인용; r81e7051",
+"file": "장3.md",
+"line": 25,
+"sec": "3.1"
+},
+"3:old-3-2": {
+"type": "명제",
+"name": "곱 표현",
+"tag": "증명됨, 문헌 인용; r81e7051",
+"file": "장3.md",
+"line": 43,
+"sec": "3.1"
+},
+"3:old-3-3": {
+"type": "정리",
+"name": "극한 밀도의 엄격 단봉성",
+"tag": "증명됨, 문헌 인용, 작성자 판단, 명제 {{3:old-3-2}}에 의존; r81e7051",
+"file": "장3.md",
+"line": 61,
+"sec": "3.2"
+},
+"3:old-3-4": {
+"type": "정리",
+"name": "로그오목성의 실패",
+"tag": "$n\\le80$의 진술은 계산 증거(정확 정수·유리수), $n\\ge n_0$의 진술은 증명됨, 문헌 인용, 시작점 비명시, 명제 {{3:old-3-1}}에 의존; r81e7051, r15524fd",
+"file": "장3.md",
+"line": 135,
+"sec": "3.3"
+},
+"3:old-3-5": {
+"type": "정리",
+"name": "누적 로그오목성의 실패",
+"tag": "계산 증거(정확 정수·유리수); r059f11e",
+"file": "장3.md",
+"line": 177,
+"sec": "3.3"
+},
+"3:old-3-6": {
+"type": "정리",
+"name": "봉우리의 위치",
+"tag": "증명됨; r39d72f6",
+"file": "장3.md",
+"line": 187,
+"sec": "3.4"
+},
+"3:peak-asymptotics": {
+"type": "따름정리",
+"name": "봉우리 위치의 점근식",
+"tag": "증명됨, 작성자 판단, 명제 {{3:old-3-1}}·정리 {{1:main-theorem}}·{{3:old-3-3}}에 의존; r81e7051",
+"file": "장3.md",
+"line": 265,
+"sec": "3.4"
+},
+"4:old-4-1": {
+"type": "정의",
+"name": "네 위치쌍 명제",
+"tag": "rce3dc75",
+"file": "장4.md",
+"line": 19,
+"sec": "4.1"
+},
+"4:old-4-2": {
+"type": "보조정리",
+"name": "분할의 정확성; 기록 [rce3dc75]의 보조정리 1.1",
+"tag": "증명됨; rce3dc75",
+"file": "장4.md",
+"line": 29,
+"sec": "4.1"
+},
+"4:old-4-3": {
+"type": "정의",
+"name": "감소 뒤의 로그오목성; 조건부 로그오목성 $\\mathsf Q$",
+"tag": "r708d99c",
+"file": "장4.md",
+"line": 39,
+"sec": "4.2"
+},
+"4:old-4-4": {
+"type": "정리",
+"name": "$\\mathsf Q$는 $\\mathsf P$를 함의한다",
+"tag": "증명됨; r15524fd",
+"file": "장4.md",
+"line": 43,
+"sec": "4.2"
+},
+"4:old-4-5": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장4.md",
+"line": 541,
+"sec": "4.3"
+},
+"4:e-integral": {
+"type": "보조정리",
+"name": "$e_n$의 적분 표현",
+"tag": "증명됨, 작성자 판단; r37c204b, ra7615a0",
+"file": "장4.md",
+"line": 85,
+"sec": "4.3"
+},
+"4:old-4-6": {
+"type": "명제",
+"name": "$J$의 보조 분해; 기록 [rce3dc75]의 명제 3.1",
+"tag": "증명됨; rce3dc75",
+"file": "장4.md",
+"line": 179,
+"sec": "4.3"
+},
+"4:gauss-contraction": {
+"type": "보조정리",
+"name": "Hermite 비의 수축 부등식과 Hermite 수의 하계; 기록 [rce3dc75]의 보조정리 H의 수축 오차 (H3)과 $M_0$ 하계의 전반부",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 작성자 판단; rce3dc75",
+"file": "장4.md",
+"line": 215,
+"sec": "4.3"
+},
+"4:gauss-coeff": {
+"type": "보조정리",
+"name": "Gauss형 계수의 상하계; 기록 [rce3dc75]의 보조정리 H",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 작성자 판단, 보조정리 {{4:gauss-contraction}}에 의존; rce3dc75",
+"file": "장4.md",
+"line": 276,
+"sec": "4.3"
+},
+"4:old-4-7": {
+"type": "정리",
+"name": "실수 비교; 기록 [rce3dc75]의 정리 1",
+"tag": "증명됨; rce3dc75",
+"file": "장4.md",
+"line": 340,
+"sec": "4.3"
+},
+"4:gauss-coeff-numeric": {
+"type": "따름정리",
+"name": "실수 비교의 수치 귀결",
+"tag": "증명됨, 계산 보조(정확 정수·유리수); rce3dc75",
+"file": "장4.md",
+"line": 394,
+"sec": "4.3"
+},
+"4:borel-tail-arc": {
+"type": "보조정리",
+"name": "Borel 꼬리의 전개와 호 위 상계; 기록 [rce3dc75]의 보조정리 V의 (V6)과 §7.1의 꼬리 상계",
+"tag": "증명됨, 작성자 판단; rce3dc75",
+"file": "장4.md",
+"line": 404,
+"sec": "4.3"
+},
+"4:correction-contour": {
+"type": "보조정리",
+"name": "두 보정의 윤곽 적분 표현",
+"tag": "증명됨, 작성자 판단; rce3dc75",
+"file": "장4.md",
+"line": 428,
+"sec": "4.3"
+},
+"4:two-corrections": {
+"type": "보조정리",
+"name": "두 보정의 수직선 적분; 기록 [rce3dc75]의 보조정리 V",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 작성자 판단; rce3dc75",
+"file": "장4.md",
+"line": 467,
+"sec": "4.3"
+},
+"4:old-4-8": {
+"type": "정리",
+"name": "횡단과 왼쪽의 동치; 기록 [rce3dc75]의 명제 8.4와 기록 [r656206c]의 따름정리 C",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 정리 {{4:old-4-5}}·{{5:old-5-1}}에 의존; rce3dc75, r656206c, re79cb4d",
+"file": "장4.md",
+"line": 563,
+"sec": "4.4"
+},
+"4:old-4-9": {
+"type": "정리",
+"name": "조건부 로그오목성과 왼쪽의 동치",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 정리 {{4:old-4-8}}에 의존; rdc27681, rbeae3a3",
+"file": "장4.md",
+"line": 575,
+"sec": "4.4"
+},
+"5:old-5-1": {
+"type": "정리",
+"name": "모든 $n\\le20000$의 단봉성",
+"tag": "계산 증거(정확 정수·유리수), 정리 {{4:old-4-5}}·보조정리 {{7:column-lemma}}에 의존; r15df76b, rc9aee43, rce3dc75, r19de912, r6373c70",
+"file": "장5A.md",
+"line": 19,
+"sec": "5.1"
+},
+"5:witness-position-bound": {
+"type": "명제",
+"name": "작은 행의 증인 위치 상계; 기록 [r19de912]의 mode-formula-crosscheck",
+"tag": "계산 증거(정확 정수·유리수, 방향 반올림 구간), 정리 {{5:old-5-1}}·{{5:old-5-2}}에 의존; r19de912",
+"file": "장5A.md",
+"line": 33,
+"sec": "5.1"
+},
+"5:old-5-2": {
+"type": "정리",
+"name": "$n\\le50000$의 오른쪽 절반 인증",
+"tag": "계산 증거(방향 반올림 구간); r59c82d7",
+"file": "장5A.md",
+"line": 41,
+"sec": "5.1"
+},
+"5:green-connection": {
+"type": "보조정리",
+"name": "경계 응답 다항식의 Green 연결; 기록 [rda45d0e]의 exact-green-connection, 정리 G",
+"tag": "증명됨, 작성자 판단; rda45d0e",
+"file": "장5A.md",
+"line": 60,
+"sec": "5.2.1"
+},
+"5:source-rep": {
+"type": "정리",
+"name": "양의 원천 표현과 원천별 비교; 기록 [r708d99c]의 명제 C1, positive-source-representation, source-comparison-implies-S",
+"tag": "증명됨; r708d99c",
+"file": "장5A.md",
+"line": 124,
+"sec": "5.2.1"
+},
+"5:SR-implies-QR": {
+"type": "따름정리",
+"name": "경계 응답 부등식에서 조건부 로그오목성으로; 기록 [r708d99c]의 따름정리 B2",
+"tag": "증명됨; r708d99c",
+"file": "장5A.md",
+"line": 177,
+"sec": "5.2.1"
+},
+"5:cayley-ratio": {
+"type": "보조정리",
+"name": "Cayley 비의 하계; 기록 [r708d99c]의 보조정리 D1",
+"tag": "증명됨; r708d99c",
+"file": "장5A.md",
+"line": 187,
+"sec": "5.2.1"
+},
+"5:old-5-4": {
+"type": "정리",
+"name": "Newton 인증, 꼬리 좌표 170까지; 기록 [r708d99c]의 명제 D2",
+"tag": "증명됨, 계산 보조(정확 정수·유리수); r708d99c",
+"file": "장5A.md",
+"line": 204,
+"sec": "5.2.1"
+},
+"5:marked-riccati": {
+"type": "보조정리",
+"name": "세 표시 Riccati 식과 네 용량의 회복; 기록 [rbeae3a3]의 three-mark-riccati",
+"tag": "증명됨; rbeae3a3",
+"file": "장5A.md",
+"line": 224,
+"sec": "5.2.2"
+},
+"5:response-kernel": {
+"type": "보조정리",
+"name": "단일 표시 응답의 양의 Hausdorff 핵; 기록 [rbeae3a3]의 hausdorff-response-kernel, 정리 3",
+"tag": "증명됨; rbeae3a3",
+"file": "장5A.md",
+"line": 246,
+"sec": "5.2.2"
+},
+"5:fixed-size-response": {
+"type": "보조정리",
+"name": "고정 크기 갱신 응답의 재귀; 기록 [rbeae3a3]의 fixed-size-response-recurrence, response-equals-positive-renewal",
+"tag": "증명됨; rbeae3a3",
+"file": "장5A.md",
+"line": 284,
+"sec": "5.2.2"
+},
+"5:inverse-renewal": {
+"type": "보조정리",
+"name": "역수 형태와 타일 모형; 기록 [rbeae3a3]의 inverse-renewal-form",
+"tag": "증명됨; rbeae3a3",
+"file": "장5A.md",
+"line": 304,
+"sec": "5.2.2"
+},
+"5:renewal-fkg": {
+"type": "보조정리",
+"name": "타일 측도의 양의 연관; 기록 [rbeae3a3]의 renewal-fkg, 보조정리 6.1",
+"tag": "증명됨; rbeae3a3",
+"file": "장5A.md",
+"line": 314,
+"sec": "5.2.2"
+},
+"5:suff-cond": {
+"type": "정리",
+"name": "원천별 비교 항의 충분조건; 기록 [r5ddf8a8]의 endpoint-comparison, colored-count-mean, doubly-marked-curvature, boundary-gain-lemma, 정리 2와 기록 [r0dc57fa]의 (10.1)",
+"tag": "증명됨; r5ddf8a8, r0dc57fa",
+"file": "장5A.md",
+"line": 341,
+"sec": "5.2.2"
+},
+"5:lemma-L": {
+"type": "보조정리",
+"name": "기울인 생일 평균의 해석적 하계와 환원; 기록 [r0dc57fa]의 보조정리 L과 주장 tilted-birthday-lemma·explicit-coverage",
+"tag": "증명됨; r0dc57fa",
+"file": "장5A.md",
+"line": 396,
+"sec": "5.2.2"
+},
+"5:old-5-5": {
+"type": "정리",
+"name": "명시적 꼬리 T1; 기록 [r0dc57fa]의 정리 T1",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); r0dc57fa",
+"file": "장5A.md",
+"line": 437,
+"sec": "5.2.2"
+},
+"5:kernel-C-bound": {
+"type": "보조정리",
+"name": "갱신 핵의 상하계; 기록 [r7798355]의 matched-third-kernels",
+"tag": "증명됨; r7798355",
+"file": "장5A.md",
+"line": 472,
+"sec": "5.2.3"
+},
+"5:kernel-bounds": {
+"type": "보조정리",
+"name": "갱신 핵의 좁은 계수 하계 (K1); 기록 [r690be93]의 kernel-bounds",
+"tag": "증명됨; r690be93",
+"file": "장5A.md",
+"line": 486,
+"sec": "5.2.3"
+},
+"5:nf-ratio": {
+"type": "보조정리",
+"name": "정규화 인자 비의 로그; 기록 [r1aa0be6]의 third-group-comparison의 정규화 인자 단계",
+"tag": "증명됨; r1aa0be6",
+"file": "장5A.md",
+"line": 494,
+"sec": "5.2.3"
+},
+"5:marked-recursion": {
+"type": "보조정리",
+"name": "사슬 합의 양의 생성함수 재귀와 일차 표시; 기록 [r1aa0be6]의 renewal-bounds, 기록 [r690be93]의 (7.2)",
+"tag": "증명됨; r1aa0be6, r690be93",
+"file": "장5A.md",
+"line": 498,
+"sec": "5.2.3"
+},
+"5:laurent-coeff": {
+"type": "보조정리",
+"name": "Laurent 단항식의 계수와 중앙 이항계수의 상하계; 기록 [r690be93] §6의 계수 감싸기",
+"tag": "증명됨; r690be93",
+"file": "장5A.md",
+"line": 515,
+"sec": "5.2.3"
+},
+"5:kernel-crude": {
+"type": "보조정리",
+"name": "갱신 핵의 거친 한 항 상계; 기록 [r13b0b8f] §6",
+"tag": "증명됨; r13b0b8f",
+"file": "장5A.md",
+"line": 527,
+"sec": "5.2.3"
+},
+"5:first-moment-weight": {
+"type": "보조정리",
+"name": "사슬 가중치의 일차 보정; 기록 [r690be93]의 first-moment-weight, (7.1)",
+"tag": "증명됨; r690be93",
+"file": "장5A.md",
+"line": 535,
+"sec": "5.2.4"
+},
+"5:parity-tail": {
+"type": "보조정리",
+"name": "홀짝 정규화와 꼬리; 기록 [r690be93]의 entry-increase-EI의 증명 구조",
+"tag": "증명됨; r690be93",
+"file": "장5A.md",
+"line": 556,
+"sec": "5.2.4"
+},
+"5:old-5-7": {
+"type": "정리",
+"name": "진입 증가 EI; 기록 [r690be93]의 정리 EI",
+"tag": "증명됨, 계산 보조(정확 정수·유리수); r690be93",
+"file": "장5A.md",
+"line": 570,
+"sec": "5.2.4"
+},
+"5:old-5-8": {
+"type": "정의",
+"name": "오른쪽 벌크 증가 W",
+"tag": "r0dc57fa",
+"file": "장5A.md",
+"line": 584,
+"sec": "5.3"
+},
+"5:old-5-9": {
+"type": "명제",
+"name": "$\\mathsf Q_R\\Rightarrow\\mathsf P_R$",
+"tag": "증명됨; r0dc57fa, r690be93, rdc27681",
+"file": "장5A.md",
+"line": 588,
+"sec": "5.3"
+},
+"5:old-5-10": {
+"type": "명제",
+"name": "$\\mathsf W\\Rightarrow\\mathsf Q_R$",
+"tag": "증명됨, 정리 {{5:old-5-1}}·{{5:old-5-4}}·{{5:old-5-5}}에 의존; r0dc57fa",
+"file": "장5A.md",
+"line": 592,
+"sec": "5.3"
+},
+"5:old-5-11": {
+"type": "정리",
+"name": "$\\mathsf P_R\\Rightarrow\\mathsf W$, 그리고 세 동치",
+"tag": "증명됨, 정리 {{5:old-5-7}}·{{4:old-4-5}}·{{5:old-5-1}}·{{4:old-4-8}}·{{4:old-4-9}}·명제 {{5:old-5-10}}에 의존; r690be93",
+"file": "장5A.md",
+"line": 596,
+"sec": "5.3"
+},
+"5:weight-envelope": {
+"type": "보조정리",
+"name": "사슬 가중치의 계수별 포락선; 기록 [r13b0b8f]의 (3.1)–(3.5)",
+"tag": "증명됨; r13b0b8f",
+"file": "장5A.md",
+"line": 618,
+"sec": "5.4.1"
+},
+"5:marked-chain-rec": {
+"type": "보조정리",
+"name": "둘째 차수까지의 표시 사슬 합의 생성함수 재귀; 기록 [r13b0b8f]의 (4.1)(4.2)",
+"tag": "증명됨; r13b0b8f",
+"file": "장5A.md",
+"line": 645,
+"sec": "5.4.1"
+},
+"5:kernel-sandwich": {
+"type": "보조정리",
+"name": "방문 핵의 대수적 포락선과 Wallis 상하계; 기록 [r13b0b8f]의 식 (5.1)",
+"tag": "증명됨; r13b0b8f",
+"file": "장5A.md",
+"line": 668,
+"sec": "5.4.1"
+},
+"5:omitted-tail": {
+"type": "보조정리",
+"name": "생략한 사슬 길이의 꼬리; 기록 [r13b0b8f] §6",
+"tag": "증명됨, 작성자 판단; r13b0b8f",
+"file": "장5A.md",
+"line": 684,
+"sec": "5.4.1"
+},
+"5:old-5-12": {
+"type": "정리",
+"name": "꼬리 띠 A·A⁺; 기록 [r13b0b8f]의 정리 A·A⁺",
+"tag": "증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간); r13b0b8f",
+"file": "장5A.md",
+"line": 700,
+"sec": "5.4.1"
+},
+"5:cover-edge": {
+"type": "보조정리",
+"name": "꼬리 정리 경계의 엄격 증가와 꼬리 띠가 덮는 $\\mathsf W$의 부분; 기록 [r13b0b8f] §9.1의 (E)와 따름 W⁺",
+"tag": "증명됨, 정리 {{5:old-5-12}}에 의존; r13b0b8f",
+"file": "장5A.md",
+"line": 718,
+"sec": "5.4.1"
+},
+"5:unit-circle": {
+"type": "보조정리",
+"name": "단위원 위의 두 피적분함수의 지배; 기록 [ra4c01fc]의 보조정리 A·B",
+"tag": "증명됨; ra4c01fc",
+"file": "장5A.md",
+"line": 736,
+"sec": "5.4.2"
+},
+"5:cut-rep": {
+"type": "보조정리",
+"name": "Borel 꼬리의 절단 표현과 반직선 꼴; 기록 [ra4c01fc]의 보조정리 S, 따름정리 S′, 명제 H, 식 (5.1)",
+"tag": "증명됨; ra4c01fc",
+"file": "장5A.md",
+"line": 748,
+"sec": "5.4.2"
+},
+"5:hat-normalization": {
+"type": "보조정리",
+"name": "두 정규화 범함수; 기록 [ra4c01fc]의 (6.1)",
+"tag": "증명됨; ra4c01fc",
+"file": "장5A.md",
+"line": 798,
+"sec": "5.4.2"
+},
+"5:old-5-13": {
+"type": "정리",
+"name": "임계 창의 증가; 기록 [ra4c01fc]의 정리 D",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; ra4c01fc",
+"file": "장5A.md",
+"line": 836,
+"sec": "5.4.2"
+},
+"5:old-5-14": {
+"type": "정의",
+"name": "임계 창 잔여 $\\mathsf W^\\sharp$",
+"tag": "ra4c01fc",
+"file": "장5A.md",
+"line": 852,
+"sec": "5.4.3"
+},
+"5:old-5-15": {
+"type": "보조정리",
+"name": "$\\mathsf W^\\sharp\\Leftrightarrow\\mathsf W$; 기록 [ra4c01fc]의 보조정리 R♯",
+"tag": "증명됨, 정리 {{5:old-5-2}}·{{5:old-5-13}}·보조정리 {{5:cover-edge}}에 의존; ra4c01fc",
+"file": "장5A.md",
+"line": 854,
+"sec": "5.4.3"
+},
+"5:old-5-18": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장5B.md",
+"line": 453,
+"sec": "5.5.9"
+},
+"5:old-5-19": {
+"type": "보조정리",
+"name": "열 재귀",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 29,
+"sec": "5.5.1"
+},
+"5:old-5-20": {
+"type": "보조정리",
+"name": "핵의 단조·볼록성",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 38,
+"sec": "5.5.1"
+},
+"5:old-5-21": {
+"type": "정의",
+"name": "이음 행",
+"tag": "r58b4caa",
+"file": "장5B.md",
+"line": 56,
+"sec": "5.5.2"
+},
+"5:old-5-22": {
+"type": "명제",
+"name": "Abel 환원; 기록 [r58b4caa]의 이름 (★′)",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 64,
+"sec": "5.5.2"
+},
+"5:old-5-23": {
+"type": "보조정리",
+"name": "사슬별 둘째 차분",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 96,
+"sec": "5.5.3"
+},
+"5:old-5-24": {
+"type": "보조정리",
+"name": "방문 확률",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 104,
+"sec": "5.5.3"
+},
+"5:old-5-25": {
+"type": "보조정리",
+"name": "창 항의 항별 상계",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 112,
+"sec": "5.5.3"
+},
+"5:stirling-bor": {
+"type": "보조정리",
+"name": "Borel 질량과 Borel 꼬리의 상하계",
+"tag": "증명됨; 표준",
+"file": "장5B.md",
+"line": 121,
+"sec": "5.5.3"
+},
+"5:old-5-26": {
+"type": "보조정리",
+"name": "창 항의 닫힌 상계",
+"tag": "증명됨; r8a9b11e",
+"file": "장5B.md",
+"line": 129,
+"sec": "5.5.3"
+},
+"5:old-5-27": {
+"type": "보조정리",
+"name": "기저 항등식",
+"tag": "증명됨; r58b4caa",
+"file": "장5B.md",
+"line": 140,
+"sec": "5.5.4"
+},
+"5:old-5-28": {
+"type": "정리",
+"name": "크기 방향 하계; 기록 [r23f10e9]의 정리 A",
+"tag": "증명됨; r23f10e9",
+"file": "장5B.md",
+"line": 149,
+"sec": "5.5.4"
+},
+"5:old-5-30": {
+"type": "보조정리",
+"name": "흡수",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 191,
+"sec": "5.5.5"
+},
+"5:old-5-31": {
+"type": "정리",
+"name": "착지 창 열 값의 하계; 기록 [r8a9b11e]의 정리 W",
+"tag": "증명됨; r8a9b11e",
+"file": "장5B.md",
+"line": 213,
+"sec": "5.5.6"
+},
+"5:borel-gf": {
+"type": "보조정리",
+"name": "Borel 생성함수의 성질",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 230,
+"sec": "5.5.6"
+},
+"5:bt-tail": {
+"type": "보조정리",
+"name": "Borel–Tanner 꼬리의 상계",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 246,
+"sec": "5.5.6"
+},
+"5:stop-lower": {
+"type": "보조정리",
+"name": "쪼개짐 확률의 상하계",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 262,
+"sec": "5.5.6"
+},
+"5:rig-int": {
+"type": "보조정리",
+"name": "가중 창 질량의 두 닫힌 꼴 하계",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 276,
+"sec": "5.5.6"
+},
+"5:scaled-integrand": {
+"type": "보조정리",
+"name": "척도 변수의 단조 묶음",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 294,
+"sec": "5.5.6"
+},
+"5:riemann-unimodal": {
+"type": "보조정리",
+"name": "단봉 함수의 Riemann 합",
+"tag": "증명됨; r8a9b11e",
+"file": "장5B.md",
+"line": 336,
+"sec": "5.5.6"
+},
+"5:old-5-32": {
+"type": "정리",
+"name": "가중 창 질량의 균일 상수; 기록 [r8a9b11e]의 정리 U-L",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); r8a9b11e",
+"file": "장5B.md",
+"line": 343,
+"sec": "5.5.6"
+},
+"5:old-5-33": {
+"type": "정리",
+"name": "꼭대기 행 하계; 기록 [r8a9b11e]의 정리 T",
+"tag": "증명됨; r8a9b11e",
+"file": "장5B.md",
+"line": 362,
+"sec": "5.5.7"
+},
+"5:old-5-34": {
+"type": "따름정리",
+"name": "꼭대기 항의 하계; 기록 [r8a9b11e]의 따름정리 T-POS",
+"tag": "증명됨; r8a9b11e",
+"file": "장5B.md",
+"line": 378,
+"sec": "5.5.7"
+},
+"5:hover-tail": {
+"type": "보조정리",
+"name": "떠돌기 인자의 두 하계",
+"tag": "증명됨, 작성자 판단; r8a9b11e",
+"file": "장5B.md",
+"line": 406,
+"sec": "5.5.8"
+},
+"5:band-inequality": {
+"type": "명제",
+"name": "조립 범위의 판정식",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{5:old-5-32}}에 의존; r8a9b11e",
+"file": "장5B.md",
+"line": 413,
+"sec": "5.5.8"
+},
+"5:right-part": {
+"type": "보조정리",
+"name": "오른쪽 부분의 판정식",
+"tag": "증명됨, 작성자 판단, 정리 {{5:old-5-32}}에 의존; r8a9b11e",
+"file": "장5B.md",
+"line": 427,
+"sec": "5.5.8"
+},
+"5:old-5-38": {
+"type": "보조정리",
+"name": "귀납 틀",
+"tag": "증명됨, 정리 {{5:old-5-5}}·{{5:old-5-7}}에 의존; r58b4caa",
+"file": "장5B.md",
+"line": 449,
+"sec": "5.5.9"
+},
+"6:old-7-13": {
+"type": "정리",
+"name": "첫 층 생존의 상계; 기록 [r7e03176]의 정리 F′",
+"tag": "증명됨; r7e03176",
+"file": "장6.md",
+"line": 19,
+"sec": "6.1"
+},
+"6:old-7-19": {
+"type": "보조정리",
+"name": "두 나무 꼴; 기록 [rb6a2cd0]의 식 (2.1)",
+"tag": "증명됨; rb6a2cd0",
+"file": "장6.md",
+"line": 121,
+"sec": "6.2"
+},
+"6:old-7-20": {
+"type": "보조정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장6.md",
+"line": 211,
+"sec": "6.2"
+},
+"6:difference-identity": {
+"type": "보조정리",
+"name": "차분 항등식",
+"tag": "증명됨; r051bfe1",
+"file": "장6.md",
+"line": 155,
+"sec": "6.2"
+},
+"6:cayley-propagation": {
+"type": "보조정리",
+"name": "Cayley 구간의 감소는 모든 크기로 전파된다",
+"tag": "증명됨; r051bfe1",
+"file": "장6.md",
+"line": 165,
+"sec": "6.2"
+},
+"6:tilt-interval": {
+"type": "보조정리",
+"name": "Cayley 구간의 기울인 무게",
+"tag": "증명됨; r051bfe1",
+"file": "장6.md",
+"line": 191,
+"sec": "6.2"
+},
+"6:tilt-sum": {
+"type": "보조정리",
+"name": "기울인 Borel 질량의 합",
+"tag": "증명됨, 계산 보조(정확 정수·유리수); r051bfe1",
+"file": "장6.md",
+"line": 199,
+"sec": "6.2"
+},
+"6:old-7-21": {
+"type": "정리",
+"name": "표시 나무 무게의 증가; 기록 [rcb2e2d4]의 정리 L",
+"tag": "증명됨, 보조정리 {{6:old-7-20}}에 의존; rcb2e2d4",
+"file": "장6.md",
+"line": 215,
+"sec": "6.2"
+},
+"6:old-7-24": {
+"type": "보조정리",
+"name": "위험률의 하계; 기록 [r051bfe1]의 (Hz)",
+"tag": "증명됨, 보조정리 {{6:tilt-sum}}에 의존; r051bfe1",
+"file": "장6.md",
+"line": 231,
+"sec": "6.2"
+},
+"6:lemma-ell": {
+"type": "보조정리",
+"name": "이웃비 로그의 Taylor 상하계",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 260,
+"sec": "6.2"
+},
+"6:increment-bounds": {
+"type": "따름정리",
+"name": "무게 증분의 하계",
+"tag": "증명됨, 정리 {{6:old-7-21}}·보조정리 {{6:old-7-24}}에 의존; rb6a2cd0, r051bfe1",
+"file": "장6.md",
+"line": 268,
+"sec": "6.2"
+},
+"6:old-8-13": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장6.md",
+"line": 423,
+"sec": "6.3"
+},
+"6:chain-recursion": {
+"type": "보조정리",
+"name": "첫 층 사슬 재귀",
+"tag": "증명됨; r98fb348",
+"file": "장6.md",
+"line": 306,
+"sec": "6.3"
+},
+"6:same-kernel": {
+"type": "명제",
+"name": "같은 핵의 두 재귀",
+"tag": "증명됨; r98fb348",
+"file": "장6.md",
+"line": 325,
+"sec": "6.3"
+},
+"6:stay-margin-identity": {
+"type": "명제",
+"name": "머묾 여유의 항등식",
+"tag": "증명됨; r98fb348",
+"file": "장6.md",
+"line": 357,
+"sec": "6.3"
+},
+"6:lemma-omega": {
+"type": "보조정리",
+"name": "머묾 여유 주항의 하계; 기록 [r98fb348]의 보조정리 Ω",
+"tag": "증명됨; r98fb348",
+"file": "장6.md",
+"line": 379,
+"sec": "6.3"
+},
+"6:lemma-phi": {
+"type": "보조정리",
+"name": "머묾 여유 보조 항의 하계; 기록 [r98fb348]의 보조정리 Φ",
+"tag": "증명됨; r98fb348",
+"file": "장6.md",
+"line": 415,
+"sec": "6.3"
+},
+"6:old-8-11": {
+"type": "따름정리",
+"name": "중앙 행 수준 질량의 상계; 기록 [r7e03176]의 따름정리 E",
+"tag": "증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}에 의존; r7e03176, r317d678",
+"file": "장6.md",
+"line": 451,
+"sec": "6.4"
+},
+"6:old-8-12": {
+"type": "정리",
+"name": "벌크 수준 질량의 상계; 기록 [r7e03176]의 p-bulk-point-mass",
+"tag": "증명됨, 작성자 판단, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}에 의존; r7e03176",
+"file": "장6.md",
+"line": 477,
+"sec": "6.4"
+},
+"6:pair-rearrange": {
+"type": "보조정리",
+"name": "짝 재배열; 기록 [r29b01e8]의 식 (4.1)",
+"tag": "증명됨; r29b01e8",
+"file": "장6.md",
+"line": 503,
+"sec": "6.4"
+},
+"6:diag-first-layer": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장6.md",
+"line": 676,
+"sec": "6.4"
+},
+"6:chain-count": {
+"type": "명제",
+"name": "결손 $d$의 사슬 셈",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 543,
+"sec": "6.4"
+},
+"6:class-polynomial": {
+"type": "명제",
+"name": "부류의 다항식 꼴",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 552,
+"sec": "6.4"
+},
+"6:log-derivative": {
+"type": "명제",
+"name": "로그 도함수의 다섯 몫",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 563,
+"sec": "6.4"
+},
+"6:split-mass": {
+"type": "보조정리",
+"name": "쪼개기 질량",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 582,
+"sec": "6.4"
+},
+"6:insertion": {
+"type": "명제",
+"name": "한 점 삽입 항등식",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 588,
+"sec": "6.4"
+},
+"6:concave-split": {
+"type": "보조정리",
+"name": "오목한 쪼개기",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 606,
+"sec": "6.4"
+},
+"6:highest-long-cell": {
+"type": "보조정리",
+"name": "가장 높은 긴 구획",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 610,
+"sec": "6.4"
+},
+"6:geometric-mean": {
+"type": "보조정리",
+"name": "기하 무게의 평균",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 614,
+"sec": "6.4"
+},
+"6:trapezoid": {
+"type": "보조정리",
+"name": "사다리꼴",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 626,
+"sec": "6.4"
+},
+"6:pointwise": {
+"type": "정리",
+"name": "점별 지배",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 634,
+"sec": "6.4"
+},
+"6:survival-factor": {
+"type": "보조정리",
+"name": "생존 인자",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 664,
+"sec": "6.4"
+},
+"6:classes-increase": {
+"type": "정리",
+"name": "모든 부류의 증가",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 672,
+"sec": "6.4"
+},
+"6:cor-L": {
+"type": "따름정리",
+"name": "기저량의 날카로운 하계; 기록 [r696d62c]의 따름정리 L",
+"tag": "증명됨; r696d62c",
+"file": "장6.md",
+"line": 680,
+"sec": "6.4"
+},
+"6:D-bound": {
+"type": "정리",
+"name": "(D)와 (Υ); 기록 [r696d62c]의 p-lemmaD-sharp, 기록 [r29b01e8]의 p-ups-bound",
+"tag": "증명됨, (나)는 따름정리 {{6:old-8-11}}에 의존; r696d62c, r29b01e8",
+"file": "장6.md",
+"line": 694,
+"sec": "6.4"
+},
+"6:old-6-18": {
+"type": "명제",
+"name": "사다리",
+"tag": "증명됨; raad7e6d",
+"file": "장6.md",
+"line": 731,
+"sec": "6.5"
+},
+"6:tilt-split": {
+"type": "보조정리",
+"name": "사슬 공식과 정지 분해; 기록 [r845b205]의 식 (C)와 정리 S",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 755,
+"sec": "6.5"
+},
+"6:theorem-U": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장6.md",
+"line": 873,
+"sec": "6.5"
+},
+"6:lemma-B": {
+"type": "보조정리",
+"name": "경로별 곡률 부등식",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 797,
+"sec": "6.5"
+},
+"6:lemma-A": {
+"type": "보조정리",
+"name": "Abel 합",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 813,
+"sec": "6.5"
+},
+"6:lemma-O": {
+"type": "보조정리",
+"name": "할인된 방문 수",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 821,
+"sec": "6.5"
+},
+"6:lemma-F": {
+"type": "보조정리",
+"name": "인수분해",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 851,
+"sec": "6.5"
+},
+"6:lemma-E": {
+"type": "보조정리",
+"name": "가중 유한합의 적분 상계; 기록 [r845b205]의 보조정리 E",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 861,
+"sec": "6.5"
+},
+"6:lemma-N": {
+"type": "보조정리",
+"name": "가중치 상수의 상계; 기록 [r845b205]의 보조정리 N",
+"tag": "증명됨; r845b205",
+"file": "장6.md",
+"line": 865,
+"sec": "6.5"
+},
+"6:old-6-19": {
+"type": "정리",
+"name": "V-핵심",
+"tag": "증명됨, 정리 {{6:theorem-U}}·따름정리 {{6:old-8-11}}에 의존; r845b205, r317d678",
+"file": "장6.md",
+"line": 905,
+"sec": "6.5"
+},
+"6:DD-lower-bound": {
+"type": "따름정리",
+"name": "대각선 둘째 차분의 하계와 기울임 곡률의 합",
+"tag": "증명됨, 정리 {{6:theorem-U}}에 의존; r845b205",
+"file": "장6.md",
+"line": 947,
+"sec": "6.5"
+},
+"6:path-shift": {
+"type": "정리",
+"name": "경로 이동 항등식과 경로별 하계; 기록 [r29c10cd]의 정리 1과 보조정리 2",
+"tag": "증명됨; r29c10cd",
+"file": "장6.md",
+"line": 972,
+"sec": "6.6"
+},
+"6:theorem-D": {
+"type": "정리",
+"name": "결손 갱신 항등식과 임계 창 수준 질량의 상하계; 기록 [r5bbc534]의 정리 DR·보조정리 K·정리 D",
+"tag": "증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간); r5bbc534",
+"file": "장6.md",
+"line": 999,
+"sec": "6.6"
+},
+"6:prop-W": {
+"type": "명제",
+"name": "이동 인자의 바닥, 첫 층 질량의 상계, 임계 창 앞쪽의 하계; 기록 [r29c10cd]의 명제 W (나)(다)(라)",
+"tag": "증명됨, 작성자 판단, (다)는 정리 {{6:theorem-D}}에 의존; r29c10cd",
+"file": "장6.md",
+"line": 1038,
+"sec": "6.6"
+},
+"6:prop-R": {
+"type": "명제",
+"name": "환원; 기록 [r9bf2dc6]의 명제 R",
+"tag": "증명됨, 명제 {{6:prop-W}}·따름정리 {{6:old-8-11}}에 의존; r9bf2dc6",
+"file": "장6.md",
+"line": 1076,
+"sec": "6.6"
+},
+"6:pair-formula": {
+"type": "보조정리",
+"name": "포개진 두 꼭짓점의 쌍 공식; 기록 [r9bf2dc6]의 보조정리 P",
+"tag": "증명됨; r9bf2dc6, r42d9a17",
+"file": "장6.md",
+"line": 1096,
+"sec": "6.6"
+},
+"6:lemma-H": {
+"type": "보조정리",
+"name": "무거운 사슬 점질량의 하계; 기록 [r9bf2dc6]의 보조정리 H",
+"tag": "증명됨; r9bf2dc6",
+"file": "장6.md",
+"line": 1104,
+"sec": "6.6"
+},
+"6:lemma-Hprime": {
+"type": "보조정리",
+"name": "닫힌 꼴; 기록 [r9bf2dc6]의 보조정리 H′",
+"tag": "증명됨, 보조정리 {{2:zeta-constants}}에 의존; r9bf2dc6",
+"file": "장6.md",
+"line": 1126,
+"sec": "6.6"
+},
+"6:lemma-M": {
+"type": "보조정리",
+"name": "단조성; 기록 [r9bf2dc6]의 보조정리 M",
+"tag": "증명됨; r9bf2dc6",
+"file": "장6.md",
+"line": 1152,
+"sec": "6.6"
+},
+"6:critical-front": {
+"type": "명제",
+"name": "임계 창 앞쪽 조각; 기록 [r7e03176]의 따름정리 W′",
+"tag": "증명됨, 명제 {{6:prop-W}}·따름정리 {{6:old-8-11}}에 의존; r29c10cd, r7e03176",
+"file": "장6.md",
+"line": 1168,
+"sec": "6.6"
+},
+"6:far-window": {
+"type": "명제",
+"name": "먼 창; 기록 [r9bf2dc6]의 N2",
+"tag": "증명됨, 명제 {{6:prop-R}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6",
+"file": "장6.md",
+"line": 1174,
+"sec": "6.6"
+},
+"6:first-layer-end": {
+"type": "명제",
+"name": "첫 층의 끝; 기록 [r29c10cd]의 명제 E (가)",
+"tag": "증명됨, 정리 {{4:old-4-5}}에 의존; r29c10cd",
+"file": "장6.md",
+"line": 1184,
+"sec": "6.6"
+},
+"6:small-k-bulk": {
+"type": "명제",
+"name": "작은 $k$의 벌크; 기록 [r9bf2dc6]의 N3",
+"tag": "증명됨, 작성자 판단, 정리 {{5:old-5-1}}·명제 {{5:witness-position-bound}}·{{6:prop-R}}·{{6:first-layer-end}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6",
+"file": "장6.md",
+"line": 1190,
+"sec": "6.6"
+},
+"6:above-window": {
+"type": "명제",
+"name": "창 위쪽; 기록 [r29c10cd]의 명제 E (나)",
+"tag": "증명됨, $\\hat x>10$의 경우는 작성자 판단, 정리 {{5:old-5-1}}·{{5:old-5-13}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{6:first-layer-end}}에 의존; r29c10cd",
+"file": "장6.md",
+"line": 1208,
+"sec": "6.6"
+},
+"6:v-negative": {
+"type": "명제",
+"name": "핵심 근처 항의 음성; 기록 [r29c10cd]의 명제 W (가)",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); r29c10cd",
+"file": "장6.md",
+"line": 1216,
+"sec": "6.6"
+},
+"6:V-all": {
+"type": "정리",
+"name": "(V)의 모든 절단점",
+"tag": "증명됨, 정리 {{6:old-6-19}}·명제 {{6:v-negative}}·{{6:critical-front}}·{{6:far-window}}·{{6:small-k-bulk}}·{{6:first-layer-end}}·{{6:above-window}}에 의존; r29c10cd, r9bf2dc6, r845b205, r317d678",
+"file": "장6.md",
+"line": 1228,
+"sec": "6.6"
+},
+"7:old-6-1": {
+"type": "정의",
+"name": "용량 가중 결과 순열 법칙",
+"tag": "r1892593",
+"file": "장7A.md",
+"line": 15,
+"sec": "7.1"
+},
+"7:old-6-2": {
+"type": "정리",
+"name": "상대 둘째 차분의 모멘트 표현",
+"tag": "증명됨; r1892593",
+"file": "장7A.md",
+"line": 25,
+"sec": "7.1"
+},
+"7:old-6-3": {
+"type": "보조정리",
+"name": null,
+"tag": "증명됨; r1892593",
+"file": "장7A.md",
+"line": 33,
+"sec": "7.1"
+},
+"7:old-6-4": {
+"type": "따름정리",
+"name": "모멘트 판정",
+"tag": "증명됨; r1892593",
+"file": "장7A.md",
+"line": 43,
+"sec": "7.1"
+},
+"7:old-6-5": {
+"type": "명제",
+"name": "볼록–꺾임 분해",
+"tag": "증명됨; r6b37c7e",
+"file": "장7A.md",
+"line": 53,
+"sec": "7.1"
+},
+"7:old-6-6": {
+"type": "정리",
+"name": "대칭 변위 가중 법칙의 평균 하계; 기록 [rb6423c6]의 정리 B",
+"tag": "증명됨; rb6423c6",
+"file": "장7A.md",
+"line": 79,
+"sec": "7.2"
+},
+"7:factorial-moment": {
+"type": "따름정리",
+"name": "계승 모멘트 하계; 기록 [rb6423c6]의 명제 P7과 정리 C",
+"tag": "증명됨; rb6423c6",
+"file": "장7A.md",
+"line": 123,
+"sec": "7.2"
+},
+"7:old-6-7": {
+"type": "명제",
+"name": "세 용량 개수의 결합 부등식; 기록 [r39ba7c1]의 결합 부등식",
+"tag": "증명됨; r39ba7c1",
+"file": "장7A.md",
+"line": 159,
+"sec": "7.2"
+},
+"7:old-6-8": {
+"type": "정리",
+"name": "반감 경계; 기록 [rb6423c6]의 정리 P2",
+"tag": "증명됨; rb6423c6",
+"file": "장7A.md",
+"line": 224,
+"sec": "7.2"
+},
+"7:band-propagation": {
+"type": "보조정리",
+"name": "비 전파; 기록 [r39ba7c1]의 명제 6.1",
+"tag": "증명됨; r39ba7c1",
+"file": "장7A.md",
+"line": 238,
+"sec": "7.2"
+},
+"7:prime-decomposition": {
+"type": "보조정리",
+"name": "소인 분해와 열의 극; 기록 [rf09e7ef]의 prime-decomposition, 기록 [r7c079be]의 exact-identities",
+"tag": "증명됨; rf09e7ef, r7c079be",
+"file": "장7A.md",
+"line": 252,
+"sec": "7.2"
+},
+"7:seed-transfer": {
+"type": "정리",
+"name": "유한 전파 정리와 그 설정; 기록 [r9e782f5]의 positive-tail-system, finite-seed-transfer, certified-left-prefix",
+"tag": "증명됨, (라)는 계산 보조(정확 정수·유리수); r9e782f5",
+"file": "장7A.md",
+"line": 288,
+"sec": "7.2"
+},
+"7:column-lemma": {
+"type": "보조정리",
+"name": "열 인증; 기록 [rc9aee43]의 보조정리 4.1·4.2",
+"tag": "증명됨, (다)는 계산 보조(정확 정수·유리수), 작성자 판단; rc9aee43",
+"file": "장7A.md",
+"line": 332,
+"sec": "7.2"
+},
+"7:old-6-9": {
+"type": "명제",
+"name": "왼쪽 잔여 증가와 왼쪽 내부의 동치",
+"tag": "증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{7:seed-transfer}}·보조정리 {{7:column-lemma}}에 의존; rb6423c6",
+"file": "장7A.md",
+"line": 350,
+"sec": "7.2"
+},
+"7:supermultiplicative": {
+"type": "보조정리",
+"name": "초승법성; 기록 [r7c26b8b]의 보조정리 4.1",
+"tag": "증명됨; r7c26b8b, rb7effe0",
+"file": "장7A.md",
+"line": 360,
+"sec": "7.2"
+},
+"7:old-6-10": {
+"type": "정리",
+"name": "문턱 자리 평균의 첫 상계; 기록 [r7c26b8b]의 정리 1",
+"tag": "증명됨; r7c26b8b",
+"file": "장7A.md",
+"line": 364,
+"sec": "7.2"
+},
+"7:flat-threshold": {
+"type": "따름정리",
+"name": "문턱 자리 평균의 상계가 주는 증가 경계; 기록 [r7c26b8b]의 따름정리 3, 기록 [rb6423c6]의 명제 P8",
+"tag": "증명됨; r7c26b8b, rb6423c6",
+"file": "장7A.md",
+"line": 410,
+"sec": "7.2"
+},
+"7:level-chain": {
+"type": "보조정리",
+"name": "수준 사슬과 마지막 이탈 분해; 기록 [rb7effe0]의 명제 2.1, 기록 [rad00a59]의 식 (2.1)·(2.2)",
+"tag": "증명됨; rb7effe0, rad00a59",
+"file": "장7A.md",
+"line": 420,
+"sec": "7.2"
+},
+"7:lemma-R-sc": {
+"type": "보조정리",
+"name": "막힌 비의 하계; 기록 [rad00a59]의 보조정리 R",
+"tag": "증명됨; rad00a59",
+"file": "장7A.md",
+"line": 458,
+"sec": "7.2"
+},
+"7:self-consistent-S": {
+"type": "정리",
+"name": "골격 값의 자기일관 상계; 기록 [rad00a59]의 정리 S",
+"tag": "증명됨, (다)는 계산 보조(정확 정수·유리수, 방향 반올림 구간); rad00a59",
+"file": "장7A.md",
+"line": 476,
+"sec": "7.2"
+},
+"7:cor-S-prime": {
+"type": "따름정리",
+"name": "자기일관 상계가 주는 모멘트 판정의 경계; 기록 [rad00a59]의 따름정리 S′",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 정리 {{7:self-consistent-S}}에 의존; rad00a59",
+"file": "장7A.md",
+"line": 545,
+"sec": "7.2"
+},
+"7:riccati": {
+"type": "명제",
+"name": "표시 생성함수와 Riccati 식; 기록 [rb7effe0]의 명제 3.1",
+"tag": "증명됨, 작성자 판단; rb7effe0",
+"file": "장7A.md",
+"line": 567,
+"sec": "7.3"
+},
+"7:pole-unique": {
+"type": "보조정리",
+"name": "극의 유일성과 단순성; 기록 [r7c079be] §2, 기록 [rf09e7ef]의 fixed-bound §1",
+"tag": "증명됨; r7c079be, rf09e7ef",
+"file": "장7A.md",
+"line": 603,
+"sec": "7.3"
+},
+"7:pole-monotone": {
+"type": "보조정리",
+"name": "극의 단조성; 기록 [rf09e7ef]의 fixed-bound-pole",
+"tag": "증명됨, 작성자 판단; rf09e7ef",
+"file": "장7A.md",
+"line": 621,
+"sec": "7.3"
+},
+"7:old-6-11": {
+"type": "정리",
+"name": "문턱 밀도의 유한 크기 공식; 기록 [rb7effe0]의 정리 C",
+"tag": "증명됨; rb7effe0",
+"file": "장7A.md",
+"line": 637,
+"sec": "7.3"
+},
+"7:fourier-lemmas": {
+"type": "보조정리",
+"name": "단위원 위의 해석성과 도함수 상계; 기록 [rf451d83]의 보조정리 2–6",
+"tag": "증명됨, 작성자 판단; rf451d83",
+"file": "장7A.md",
+"line": 677,
+"sec": "7.3"
+},
+"7:X-cert": {
+"type": "정리",
+"name": "갱신 인증서; 기록 [rf451d83]의 정리 X-cert",
+"tag": "증명됨; rf451d83",
+"file": "장7A.md",
+"line": 717,
+"sec": "7.3"
+},
+"7:old-6-12": {
+"type": "정리",
+"name": "유한 크기 전달; 기록 [rf451d83]의 $\\mathsf X'$",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); rf451d83",
+"file": "장7A.md",
+"line": 729,
+"sec": "7.3"
+},
+"7:transfer-F": {
+"type": "정리",
+"name": "조건부 전달 정리; 기록 [rb7effe0]의 정리 F",
+"tag": "증명됨, 작성자 판단; rb7effe0",
+"file": "장7A.md",
+"line": 739,
+"sec": "7.3"
+},
+"7:lemma-P-pole": {
+"type": "보조정리",
+"name": "고정된 열의 단일 극 상계; 기록 [rb7effe0]의 보조정리 P",
+"tag": "증명됨; rb7effe0",
+"file": "장7A.md",
+"line": 754,
+"sec": "7.3"
+},
+"7:lemma-P-prime": {
+"type": "보조정리",
+"name": "원 위의 감김수로 얻는 단일 극 상계; 기록 [rb7effe0]의 보조정리 P′",
+"tag": "증명됨; rb7effe0",
+"file": "장7A.md",
+"line": 794,
+"sec": "7.3"
+},
+"7:polar-R": {
+"type": "명제",
+"name": "극 영역의 판정 연쇄; 기록 [r89eb039]의 명제 R",
+"tag": "증명됨; r89eb039",
+"file": "장7A.md",
+"line": 816,
+"sec": "7.3"
+},
+"7:theorem-G-prime": {
+"type": "정리",
+"name": "열별 갱신 인증서; 기록 [rb7effe0]의 정리 G′",
+"tag": "증명됨; rb7effe0",
+"file": "장7A.md",
+"line": 846,
+"sec": "7.3"
+},
+"7:polar-N": {
+"type": "보조정리",
+"name": "극 영역의 시작 행과 평탄 문턱; 기록 [r89eb039]의 보조정리 N",
+"tag": "증명됨, 작성자 판단; r89eb039",
+"file": "장7A.md",
+"line": 856,
+"sec": "7.3"
+},
+"7:polar-W": {
+"type": "명제",
+"name": "극 영역의 왼쪽 증가; 기록 [r89eb039]의 주정리와 §7",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; r89eb039",
+"file": "장7A.md",
+"line": 864,
+"sec": "7.3"
+},
+"7:moment-recursion": {
+"type": "보조정리",
+"name": "최대 원소 분해와 모멘트 재귀; 기록 [r10ff8c2]의 보조정리 2.1과 명제 2.2",
+"tag": "증명됨; r10ff8c2",
+"file": "장7B.md",
+"line": 13,
+"sec": "7.4"
+},
+"7:variance-formula": {
+"type": "보조정리",
+"name": "전분산 공식과 분산–포화 분해; 기록 [r10ff8c2]의 정리 2.3",
+"tag": "증명됨; r10ff8c2",
+"file": "장7B.md",
+"line": 41,
+"sec": "7.4"
+},
+"7:theorem-C-moment": {
+"type": "정리",
+"name": "모멘트 판정의 큰 $n$ 쪽 경계; 기록 [r10ff8c2]의 정리 C와 정리 D",
+"tag": "증명됨, 계산 보조(방향 반올림 구간, 정확 정수·유리수); r10ff8c2, rb7effe0",
+"file": "장7B.md",
+"line": 65,
+"sec": "7.4"
+},
+"7:blocked-majorant": {
+"type": "보조정리",
+"name": "막힌 수의 경계 다항식 상계",
+"tag": "증명됨, 작성자 판단; r37c204b, r475ada3",
+"file": "장7B.md",
+"line": 73,
+"sec": "7.4"
+},
+"7:block-exponential": {
+"type": "명제",
+"name": "조각의 지수 공식과 초과 항등식; 기록 [r475ada3]의 정리 B(I)–(III)",
+"tag": "증명됨; r475ada3",
+"file": "장7B.md",
+"line": 95,
+"sec": "7.4"
+},
+"7:green-atom": {
+"type": "보조정리",
+"name": "Green 원자; 기록 [r8d6850a]의 green-marker-majorant-all-n, 기록 [r475ada3] §6.3의 둘째 단계",
+"tag": "증명됨; r8d6850a, r475ada3",
+"file": "장7B.md",
+"line": 130,
+"sec": "7.4"
+},
+"7:pair-terms": {
+"type": "보조정리",
+"name": "Neumann 전개와 쌍별 항; 기록 [r475ada3] §3.5",
+"tag": "증명됨; r475ada3",
+"file": "장7B.md",
+"line": 155,
+"sec": "7.4"
+},
+"7:heavy-block": {
+"type": "보조정리",
+"name": "무거운 조각의 모멘트와 꼬리 확률; 기록 [r475ada3]의 보조정리 3.2, 기록 [r6b37c7e]의 식 (3.13)",
+"tag": "증명됨; r475ada3, r6b37c7e",
+"file": "장7B.md",
+"line": 179,
+"sec": "7.4"
+},
+"7:pair-criterion": {
+"type": "보조정리",
+"name": "강화한 쌍별 판정; 기록 [r475ada3]의 보조정리 P",
+"tag": "증명됨; r475ada3",
+"file": "장7B.md",
+"line": 196,
+"sec": "7.4"
+},
+"7:pair-check-10000": {
+"type": "명제",
+"name": "껍질 $50$까지의 쌍별 판정; 기록 [r475ada3] §3.6",
+"tag": "첫 문장은 계산 증거(정확 정수·유리수), 둘째 문장은 증명됨; r475ada3",
+"file": "장7B.md",
+"line": 207,
+"sec": "7.4"
+},
+"7:kernel-bound": {
+"type": "보조정리",
+"name": "가장 큰 나무 핵의 상계; 기록 [r6b37c7e]의 보조정리 T1",
+"tag": "증명됨; r6b37c7e",
+"file": "장7B.md",
+"line": 213,
+"sec": "7.4"
+},
+"7:tail-bound": {
+"type": "보조정리",
+"name": "첫 층 꼬리 확률의 상계; 기록 [r6b37c7e]의 보조정리 T",
+"tag": "증명됨; r6b37c7e",
+"file": "장7B.md",
+"line": 232,
+"sec": "7.4"
+},
+"7:pair-criterion-sharp": {
+"type": "보조정리",
+"name": "꼬리 상계를 넣은 쌍별 판정; 기록 [r6b37c7e]의 보조정리 P♯",
+"tag": "증명됨; r6b37c7e",
+"file": "장7B.md",
+"line": 251,
+"sec": "7.4"
+},
+"7:pair-reach-table": {
+"type": "명제",
+"name": "꼬리 삼중과 쌍별로 닿은 껍질; 기록 [r6b37c7e] §3.6",
+"tag": "(가)와 (나)의 첫 주장은 계산 증거(정확 정수·유리수), (나)의 둘째 주장은 증명됨; r6b37c7e",
+"file": "장7B.md",
+"line": 261,
+"sec": "7.4"
+},
+"7:hermite-nu": {
+"type": "보조정리",
+"name": "Hermite 계수의 $\\nu$-일반 상하계; 기록 [r475ada3]의 보조정리 H′",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:gauss-contraction}}에 의존; r475ada3",
+"file": "장7B.md",
+"line": 272,
+"sec": "7.4"
+},
+"7:vertical-nu": {
+"type": "보조정리",
+"name": "수직선 윤곽의 $\\nu$-일반 상하계; 기록 [r475ada3]의 보조정리 V′",
+"tag": "증명됨, (마)는 보조정리 {{4:two-corrections}}에 의존; r475ada3",
+"file": "장7B.md",
+"line": 306,
+"sec": "7.4"
+},
+"7:analytic-transfer": {
+"type": "명제",
+"name": "중앙 틈 사슬의 $\\nu$-이전; 기록 [r475ada3]의 정리 C·C′·C″, 기록 [r6b37c7e]의 정리 4.A의 감사 부분",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{7:hermite-nu}}·{{7:vertical-nu}}·따름정리 {{4:gauss-coeff-numeric}}에 의존; r475ada3, r6b37c7e",
+"file": "장7B.md",
+"line": 324,
+"sec": "7.4"
+},
+"7:integer-strips": {
+"type": "명제",
+"name": "유한 위치의 구간 인증; 기록 [r475ada3]의 명제 F1·F2, 기록 [r6b37c7e]의 정리 4.B의 인증 부분",
+"tag": "계산 증거(방향 반올림 구간); r475ada3, r6b37c7e",
+"file": "장7B.md",
+"line": 352,
+"sec": "7.4"
+},
+"7:old-6-13": {
+"type": "정리",
+"name": "띠 40과 띠 102",
+"tag": "증명됨, 명제 {{7:pair-check-10000}}·{{7:pair-reach-table}}·{{7:analytic-transfer}}·{{7:integer-strips}}·정리 {{4:old-4-5}}에 의존; r475ada3, r6b37c7e",
+"file": "장7B.md",
+"line": 362,
+"sec": "7.4"
+},
+"7:old-6-14": {
+"type": "정리",
+"name": "한 걸음 항등식",
+"tag": "증명됨; r3172894",
+"file": "장7B.md",
+"line": 384,
+"sec": "7.5"
+},
+"7:old-6-15": {
+"type": "명제",
+"name": "흡수 귀납",
+"tag": "증명됨; r3172894",
+"file": "장7B.md",
+"line": 399,
+"sec": "7.5"
+},
+"7:qstar-implies-wlflat": {
+"type": "따름정리",
+"name": "한 걸음 판정에서 왼쪽 잔여 증가로; 기록 [r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여)",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-13}}·{{7:theorem-C-moment}}·{{5:old-5-1}}·{{4:old-4-5}}·따름정리 {{7:cor-S-prime}}·명제 {{7:polar-W}}에 의존; r3172894, r6b37c7e, r10ff8c2",
+"file": "장7B.md",
+"line": 415,
+"sec": "7.5"
+},
+"7:fold-A": {
+"type": "명제",
+"name": "원천의 세 조각; 기록 [r207f124]의 명제 A와 E-단위 분해",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 423,
+"sec": "7.5"
+},
+"7:fold-R": {
+"type": "명제",
+"name": "대각선 접기; 기록 [r207f124]의 명제 R",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 439,
+"sec": "7.5"
+},
+"7:fold-T": {
+"type": "보조정리",
+"name": "이동 부등식; 기록 [r207f124]의 명제 T",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 458,
+"sec": "7.5"
+},
+"7:fold-L1": {
+"type": "정리",
+"name": "모든 $n$의 원천 하계; 기록 [r207f124]의 정리 L1*",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 472,
+"sec": "7.5"
+},
+"7:fold-DIP": {
+"type": "따름정리",
+"name": "생존 감소 판정; 기록 [r207f124]의 따름정리 DIP",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 483,
+"sec": "7.5"
+},
+"7:borel-monotone": {
+"type": "보조정리",
+"name": "Borel 질량의 세 단조성; 기록 [r207f124] §6.8의 Borel 보조정리",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 511,
+"sec": "7.5"
+},
+"7:polar-PD": {
+"type": "정리",
+"name": "전달 범위의 원천; 기록 [r207f124]의 정리 PD",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-12}}에 의존; r207f124",
+"file": "장7B.md",
+"line": 515,
+"sec": "7.5"
+},
+"7:prop-PF": {
+"type": "명제",
+"name": "첫 층 상속의 갱신열 판정; 기록 [r207f124]의 명제 PF",
+"tag": "증명됨; r207f124",
+"file": "장7B.md",
+"line": 530,
+"sec": "7.5"
+},
+"7:qstar-columns": {
+"type": "정리",
+"name": "열 2001–3130의 한 걸음 판정; 기록 [r207f124]의 정리 Q-fin",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-12}}에 의존; r207f124",
+"file": "장7B.md",
+"line": 546,
+"sec": "7.5"
+},
+"7:root-symmetry": {
+"type": "보조정리",
+"name": "뿌리 법칙의 대칭; 기록 [r79ee9e0]의 보조정리 r",
+"tag": "증명됨; r79ee9e0",
+"file": "장7B.md",
+"line": 564,
+"sec": "7.6"
+},
+"7:old-6-16": {
+"type": "정리",
+"name": "문턱 손실의 망원 상환; 기록 [r79ee9e0]의 명제 S1′과 정리 T",
+"tag": "증명됨; r79ee9e0",
+"file": "장7B.md",
+"line": 568,
+"sec": "7.6"
+},
+"7:explicit-bounds": {
+"type": "보조정리",
+"name": "Borel 질량과 뿌리 자리 법칙의 명시 상계; 기록 [r79ee9e0] §4.3의 보조정리 B·Πβ′",
+"tag": "증명됨; r79ee9e0",
+"file": "장7B.md",
+"line": 584,
+"sec": "7.6"
+},
+"7:top-roots": {
+"type": "정리",
+"name": "여러 꼭대기 뿌리의 상환; 기록 [r79ee9e0]의 정리 V″",
+"tag": "증명됨; r79ee9e0",
+"file": "장7B.md",
+"line": 600,
+"sec": "7.6"
+},
+"7:theorem-W": {
+"type": "정리",
+"name": "꼭대기 뿌리의 무게; 기록 [r79ee9e0]의 정리 W와 명제 W′",
+"tag": "증명됨, 보조정리 {{6:old-7-24}}에 의존; r79ee9e0",
+"file": "장7B.md",
+"line": 614,
+"sec": "7.6"
+},
+"7:src-plus": {
+"type": "명제",
+"name": "원천 쪽 $\\mathsf{SRC}^+$; 기록 [r79ee9e0]의 명제 SRC⁺",
+"tag": "증명됨, 정리 {{7:theorem-W}}·{{7:polar-PD}}에 의존; r79ee9e0, r207f124",
+"file": "장7B.md",
+"line": 632,
+"sec": "7.6"
+},
+"7:old-6-20": {
+"type": "명제",
+"name": "셋째 층부터의 전파; 기록 [r317d678]의 명제 P",
+"tag": "증명됨, 명제 {{7:src-plus}}·정리 {{6:V-all}}·{{6:old-7-21}}에 의존; r317d678",
+"file": "장7B.md",
+"line": 670,
+"sec": "7.7"
+},
+"7:threshold-unit-ratio": {
+"type": "보조정리",
+"name": "문턱 단위와 분할 무게의 비; 기록 [r317d678]의 식 (9.1)과 정리 T의 셋째 단계",
+"tag": "증명됨; r317d678",
+"file": "장7B.md",
+"line": 685,
+"sec": "7.7"
+},
+"7:old-6-21": {
+"type": "정리",
+"name": "둘째 층의 한 걸음 항등식; 기록 [r317d678]의 정리 R과 정리 T",
+"tag": "증명됨, 둘째 주장은 정리 {{6:old-6-19}}·{{6:V-all}}·{{6:old-7-21}}에 의존; r317d678",
+"file": "장7B.md",
+"line": 708,
+"sec": "7.7"
+},
+"7:old-6-22": {
+"type": "정리",
+"name": "주 정리와 둘째 층 비교의 동치",
+"tag": "증명됨, 정리 {{4:old-4-5}}·{{4:old-4-8}}·{{5:old-5-1}}·{{5:old-5-18}}·{{7:old-6-13}}·{{7:old-6-21}}·{{7:qstar-columns}}·명제 {{7:old-6-20}}·{{7:old-6-9}}·따름정리 {{7:qstar-implies-wlflat}}에 의존; r317d678",
+"file": "장7B.md",
+"line": 730,
+"sec": "7.7"
+},
+"8:old-6-23": {
+"type": "보조정리",
+"name": "한 나무 재귀; 기록 [r030ffae]의 사실 (E1)",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 31,
+"sec": "8.1"
+},
+"8:old-6-24": {
+"type": "보조정리",
+"name": "기록 [r030ffae]의 보조정리 D1",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 58,
+"sec": "8.1"
+},
+"8:old-6-25": {
+"type": "보조정리",
+"name": "부족량 부등식; 기록 [r030ffae]의 보조정리 E",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 68,
+"sec": "8.1"
+},
+"8:old-6-26": {
+"type": "보조정리",
+"name": "비교 원리; 기록 [r030ffae]의 보조정리 F",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 82,
+"sec": "8.1"
+},
+"8:old-6-27": {
+"type": "보조정리",
+"name": "대수적 꼴; 기록 [r030ffae]의 보조정리 G",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 88,
+"sec": "8.1"
+},
+"8:explicit-bounds": {
+"type": "보조정리",
+"name": "명시 상하계",
+"tag": "증명됨; 표준",
+"file": "장8.md",
+"line": 108,
+"sec": "8.2"
+},
+"8:jensen-lower": {
+"type": "보조정리",
+"name": "Jensen 하계; 기록 [r8456f59]의 보조정리 W",
+"tag": "증명됨; r8456f59",
+"file": "장8.md",
+"line": 132,
+"sec": "8.2"
+},
+"8:escape-lower": {
+"type": "정리",
+"name": "기하 탈출 하계; 기록 [r8456f59]의 정리 G",
+"tag": "증명됨; r8456f59",
+"file": "장8.md",
+"line": 141,
+"sec": "8.2"
+},
+"8:lowest-violation": {
+"type": "명제",
+"name": "가장 낮은 위반; 기록 [r8456f59] §4.7의 항등식 (V)",
+"tag": "증명됨; r8456f59",
+"file": "장8.md",
+"line": 153,
+"sec": "8.2"
+},
+"8:prop-U-apriori": {
+"type": "명제",
+"name": "사전 상계; 기록 [r8456f59]의 명제 U",
+"tag": "증명됨; r8456f59, r030ffae",
+"file": "장8.md",
+"line": 175,
+"sec": "8.2"
+},
+"8:envelope-H": {
+"type": "보조정리",
+"name": "Jensen 봉투; 기록 [r030ffae]의 보조정리 H",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 194,
+"sec": "8.2"
+},
+"8:envelope-HG": {
+"type": "보조정리",
+"name": "탈출 봉투; 기록 [r030ffae]의 보조정리 H-G",
+"tag": "증명됨, 작성자 판단; r030ffae",
+"file": "장8.md",
+"line": 231,
+"sec": "8.2"
+},
+"8:pieces-k-monotone": {
+"type": "정리",
+"name": "여섯 조각의 $k$-단조성; 기록 [rfc69320]의 정리 B",
+"tag": "증명됨, 보조정리 {{2:zeta-constants}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 285,
+"sec": "8.2"
+},
+"8:escape-y-monotone": {
+"type": "정리",
+"name": "탈출 봉투의 $\\xi$-비증가; 기록 [rfc69320]의 정리 A와 보조정리 1–3",
+"tag": "증명됨; rfc69320",
+"file": "장8.md",
+"line": 314,
+"sec": "8.2"
+},
+"8:jensen-H-ii": {
+"type": "정리",
+"name": "Jensen 조각의 단조성; 기록 [rfc69320]의 정리 C",
+"tag": "증명됨, 보조정리 {{2:zeta-constants}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 364,
+"sec": "8.2"
+},
+"8:table-lower-bound": {
+"type": "정리",
+"name": "끼움 정리와 표의 하계 성질; 기록 [rfc69320]의 정리 D와 따름정리",
+"tag": "증명됨, 정리 {{8:pieces-k-monotone}}·{{8:jensen-H-ii}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 390,
+"sec": "8.2"
+},
+"8:envelope-code-monotone": {
+"type": "명제",
+"name": "봉투의 $\\xi$-감소와 표 함수의 엄격 감소; 기록 [rfc69320]의 명제 E·F",
+"tag": "증명됨, 정리 {{8:jensen-H-ii}}·{{8:table-lower-bound}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 408,
+"sec": "8.2"
+},
+"8:closed-form-envelope": {
+"type": "정리",
+"name": "참 봉투의 닫힌 꼴; 기록 [rfc69320]의 보조정리 8.1, 명제 W\\*·G\\*, 정리 CF",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:pieces-k-monotone}}·{{8:jensen-H-ii}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 424,
+"sec": "8.2"
+},
+"8:table-tolerance": {
+"type": "보조정리",
+"name": "저장된 표의 하계 성질과 허용 오차; 기록 [rfc69320]의 §8.4와 보조정리 8.2·8.3",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:closed-form-envelope}}·{{8:table-lower-bound}}·{{8:jensen-H-ii}}에 의존; rfc69320",
+"file": "장8.md",
+"line": 453,
+"sec": "8.2"
+},
+"8:large-q-bounds": {
+"type": "보조정리",
+"name": "큰 $q$의 단조 상하계; 기록 [r030ffae] §3.6의 보조정리 K(i)",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 489,
+"sec": "8.2"
+},
+"8:cell-bound": {
+"type": "보조정리",
+"name": "셀 하계; 기록 [r030ffae]의 보조정리 L",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 505,
+"sec": "8.2"
+},
+"8:reduction-J": {
+"type": "명제",
+"name": "정리 {{8:old-6-28}}로의 환원; 기록 [r030ffae]의 명제 J",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 511,
+"sec": "8.2"
+},
+"8:old-6-28": {
+"type": "정리",
+"name": "창의 수준 질량 하계; 기록 [r030ffae]의 정리 W",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{8:table-tolerance}}에 의존; r030ffae, rfc69320",
+"file": "장8.md",
+"line": 543,
+"sec": "8.2"
+},
+"8:old-6-30": {
+"type": "보조정리",
+"name": "용량 이동 비; 기록 [r030ffae]의 보조정리 C₀",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 557,
+"sec": "8.3"
+},
+"8:old-6-31": {
+"type": "보조정리",
+"name": "가장 큰 나무 법칙과 Borel 질량의 로그 볼록성; 기록 [r030ffae]의 사실 1·2",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 587,
+"sec": "8.3"
+},
+"8:old-6-32": {
+"type": "보조정리",
+"name": "용량–크기 보조정리; 기록 [r030ffae] §4″.3의 보조정리 K",
+"tag": "증명됨; r030ffae",
+"file": "장8.md",
+"line": 607,
+"sec": "8.3"
+},
+"8:old-6-29": {
+"type": "정리",
+"name": "기록 [r030ffae]의 정리 B′",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}에 의존; r030ffae",
+"file": "장8.md",
+"line": 631,
+"sec": "8.4"
+},
+"8:hazard-H1": {
+"type": "보조정리",
+"name": "첫 층 위험률 합의 명시 하계; 기록 [r5bbc534]의 정리 H1(a)에 해당",
+"tag": "증명됨, 작성자 판단, 보조정리 {{6:old-7-24}}에 의존; r5bbc534",
+"file": "장8.md",
+"line": 667,
+"sec": "8.4"
+},
+"8:old-6-33": {
+"type": "정리",
+"name": "둘째 층 띠; 기록 [r030ffae]의 정리 B‴",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}·{{8:hazard-H1}}에 의존; r030ffae",
+"file": "장8.md",
+"line": 680,
+"sec": "8.4"
+},
+"9:F5-upper": {
+"type": "보조정리",
+"name": "경로 비의 마지막 인자의 상계",
+"tag": "증명됨; r23f10e9",
+"file": "장9.md",
+"line": 39,
+"sec": "9.1"
+},
+"9:theorem-A-plus": {
+"type": "정리",
+"name": "경로마다의 위쪽 대각 판; 기록 [rc391829]의 정리 A⁺",
+"tag": "증명됨; rc391829",
+"file": "장9.md",
+"line": 47,
+"sec": "9.1"
+},
+"9:prop-H": {
+"type": "명제",
+"name": "머리 합의 세 몫과 그 상계; 기록 [rc391829]의 명제 H와 명제 HC",
+"tag": "증명됨; rc391829",
+"file": "장9.md",
+"line": 97,
+"sec": "9.1"
+},
+"9:chain-rep": {
+"type": "보조정리",
+"name": "사슬 표현",
+"tag": "증명됨; r2ec875c",
+"file": "장9.md",
+"line": 125,
+"sec": "9.1"
+},
+"9:chain-moments": {
+"type": "보조정리",
+"name": "크기별 기대 개수와 두 깊이의 동시 출현",
+"tag": "증명됨; r2ec875c",
+"file": "장9.md",
+"line": 135,
+"sec": "9.1"
+},
+"9:chain-bounds": {
+"type": "보조정리",
+"name": "합집합 상계와 Jensen 하계",
+"tag": "증명됨; r2ec875c",
+"file": "장9.md",
+"line": 152,
+"sec": "9.1"
+},
+"9:prop-6": {
+"type": "명제",
+"name": "결손 수준 질량의 명시적 상하계; 기록 [r2ec875c]의 명제 6",
+"tag": "증명됨; r2ec875c",
+"file": "장9.md",
+"line": 163,
+"sec": "9.1"
+},
+"9:psi-two-sided": {
+"type": "보조정리",
+"name": "Borel 갱신함수의 상하계",
+"tag": "증명됨, 보조정리 {{2:zeta-constants}}에 의존; r2ec875c",
+"file": "장9.md",
+"line": 189,
+"sec": "9.1"
+},
+"9:head-sum-1": {
+"type": "정리",
+"name": "머리 합의 부호; 기록 [r2ec875c]의 정리 1",
+"tag": "증명됨, 보조정리 {{9:psi-two-sided}}에 의존; r2ec875c",
+"file": "장9.md",
+"line": 199,
+"sec": "9.1"
+},
+"9:head-sum-2": {
+"type": "정리",
+"name": "증가 시작점의 두 상계; 기록 [r2ec875c]의 정리 2",
+"tag": "증명됨, 계산 보조(정확 정수·유리수), 정리 {{5:old-5-18}}·{{4:old-4-5}}·{{5:old-5-1}}에 의존; r2ec875c",
+"file": "장9.md",
+"line": 257,
+"sec": "9.1"
+},
+"9:H-star-plus": {
+"type": "정리",
+"name": "머리 합 여유 정리; 기록 [r33475a7]의 정리 H*₊",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{9:head-sum-1}}·{{9:head-sum-2}}에 의존; r33475a7",
+"file": "장9.md",
+"line": 267,
+"sec": "9.1"
+},
+"9:centroid-stop": {
+"type": "보조정리",
+"name": "무게중심 정지 확률; 기록 [r2fe0259]의 명제 C1",
+"tag": "증명됨; r2fe0259",
+"file": "장9.md",
+"line": 295,
+"sec": "9.1"
+},
+"9:old-7-1": {
+"type": "정의",
+"name": "짝 없는 문턱 손실",
+"tag": "rae1f209",
+"file": "장9.md",
+"line": 326,
+"sec": "9.2"
+},
+"9:old-7-2": {
+"type": "보조정리",
+"name": "짝 없는 문턱 손실의 닫힌 꼴; 기록 [rae1f209]의 보조정리 1",
+"tag": "증명됨; rae1f209",
+"file": "장9.md",
+"line": 338,
+"sec": "9.2"
+},
+"9:old-7-3": {
+"type": "보조정리",
+"name": "잘린 병합 항등식; 기록 [rae1f209]의 보조정리 T",
+"tag": "증명됨; rae1f209",
+"file": "장9.md",
+"line": 362,
+"sec": "9.2"
+},
+"9:old-7-4": {
+"type": "정리",
+"name": "병합 항등식",
+"tag": "증명됨; r6f5f48f",
+"file": "장9.md",
+"line": 384,
+"sec": "9.2"
+},
+"9:old-7-5": {
+"type": "정리",
+"name": "환원; 기록 [rae1f209]의 정리 A",
+"tag": "증명됨; rae1f209",
+"file": "장9.md",
+"line": 396,
+"sec": "9.2"
+},
+"9:old-7-6": {
+"type": "명제",
+"name": "줄기 더하기 쌍, 벌크; 기록 [rae1f209]의 명제 B⁺",
+"tag": "증명됨, 따름정리 {{9:old-7-44}}에 의존; rae1f209",
+"file": "장9.md",
+"line": 406,
+"sec": "9.2"
+},
+"9:old-7-7": {
+"type": "보조정리",
+"name": "덮인 문턱의 꼴; 기록 [r5909c9e]의 보조정리 4",
+"tag": "증명됨; r5909c9e",
+"file": "장9.md",
+"line": 420,
+"sec": "9.2"
+},
+"9:old-7-8": {
+"type": "정리",
+"name": "한 나무 항등식; 기록 [r77e234e]의 (OB)",
+"tag": "증명됨; r77e234e",
+"file": "장9.md",
+"line": 439,
+"sec": "9.3"
+},
+"9:old-7-9": {
+"type": "명제",
+"name": "행 조건의 정확한 식; 기록 [rae1f209]의 명제 B",
+"tag": "증명됨; rae1f209",
+"file": "장9.md",
+"line": 465,
+"sec": "9.3"
+},
+"9:old-7-10": {
+"type": "보조정리",
+"name": "쌍 보정의 분해; 기록 [r77e234e]의 보조정리 P",
+"tag": "증명됨, 작성자 판단; r77e234e",
+"file": "장9.md",
+"line": 479,
+"sec": "9.3"
+},
+"9:old-7-11": {
+"type": "보조정리",
+"name": "쌍 보정의 흡수; 기록 [rae1f209]의 보조정리 V",
+"tag": "증명됨; rae1f209",
+"file": "장9.md",
+"line": 495,
+"sec": "9.3"
+},
+"9:old-7-12": {
+"type": "보조정리",
+"name": "정규화 수준 질량의 상계; 기록 [r77e234e]의 보조정리 F",
+"tag": "증명됨, 둘째 부등식의 귀납은 작성자 판단; r77e234e",
+"file": "장9.md",
+"line": 505,
+"sec": "9.3"
+},
+"9:old-7-16": {
+"type": "정리",
+"name": "해석적 행 정리; 기록 [rae1f209]의 정리 AR",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 정리 {{8:old-6-33}}에 의존; rae1f209",
+"file": "장9.md",
+"line": 531,
+"sec": "9.3"
+},
+"9:old-7-17": {
+"type": "따름정리",
+"name": "$\\mathsf B^+$의 남은 내용",
+"tag": "증명됨, 정리 {{9:old-7-16}}에 의존; rae1f209",
+"file": "장9.md",
+"line": 588,
+"sec": "9.3"
+},
+"9:regeneration-S": {
+"type": "명제",
+"name": "재생 항등식; 기록 [r05cf8c9]의 보조정리 1·명제 4와 교차항의 비음성",
+"tag": "증명됨; r05cf8c9",
+"file": "장9.md",
+"line": 602,
+"sec": "9.4"
+},
+"9:old-7-18": {
+"type": "명제",
+"name": "재생 원천의 분해; 기록 [rb6a2cd0]의 명제 2.1",
+"tag": "증명됨; rb6a2cd0",
+"file": "장9.md",
+"line": 623,
+"sec": "9.4"
+},
+"9:old-7-22": {
+"type": "보조정리",
+"name": "한 걸음 무게 비의 상계; 기록 [rb6a2cd0]의 보조정리 R",
+"tag": "증명됨, 정리 {{6:old-7-21}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 643,
+"sec": "9.4"
+},
+"9:old-7-23": {
+"type": "정리",
+"name": "꼬리는 핵심 한 자리를 빼고 모두 양이다; 기록 [rb6a2cd0]의 정리 10",
+"tag": "증명됨, 정리 {{9:H-star-plus}}·{{6:D-bound}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 653,
+"sec": "9.4"
+},
+"9:old-7-25": {
+"type": "정리",
+"name": "첫 층 선속의 균일 하계; 기록 [rb6a2cd0]의 정리 11",
+"tag": "증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·{{6:old-7-21}}·따름정리 {{6:increment-bounds}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 670,
+"sec": "9.4"
+},
+"9:old-7-26": {
+"type": "보조정리",
+"name": "$\\mathcal Y_k$의 모양과 $\\nu_0(k)$; 기록 [rb6a2cd0]의 보조정리 4.1",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{6:old-6-19}}·{{6:D-bound}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 684,
+"sec": "9.4"
+},
+"9:old-7-27": {
+"type": "따름정리",
+"name": "벌크의 첫 층 선속; 기록 [rb6a2cd0]의 따름정리 13",
+"tag": "증명됨, 정리 {{9:old-7-25}}·{{6:old-7-21}}·보조정리 {{9:old-7-26}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 697,
+"sec": "9.4"
+},
+"9:old-7-28": {
+"type": "정리",
+"name": "띠 안쪽에서 앞쪽으로; 기록 [rb6a2cd0]의 정리 P",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}·{{9:old-7-25}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 703,
+"sec": "9.4"
+},
+"9:old-7-29": {
+"type": "보조정리",
+"name": "꼬리의 상계; 기록 [rb6a2cd0]의 보조정리 C",
+"tag": "증명됨; rb6a2cd0",
+"file": "장9.md",
+"line": 727,
+"sec": "9.4"
+},
+"9:old-7-30": {
+"type": "정리",
+"name": "자르는 크기 하나의 위치 하계; 기록 [rb6a2cd0]의 정리 11′",
+"tag": "증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·{{6:old-7-21}}·따름정리 {{6:increment-bounds}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 737,
+"sec": "9.4"
+},
+"9:old-7-31": {
+"type": "정리",
+"name": "앞쪽 띠의 첫 단계; 기록 [rb6a2cd0]의 정리 P⁺",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-30}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 754,
+"sec": "9.4"
+},
+"9:old-7-32": {
+"type": "정리",
+"name": "선형 최소화의 위치 하계; 기록 [rb6a2cd0]의 정리 11″",
+"tag": "증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·{{6:old-7-21}}·보조정리 {{6:old-7-24}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 764,
+"sec": "9.4"
+},
+"9:old-7-33": {
+"type": "정리",
+"name": "띠 전체의 FS; 기록 [rb6a2cd0]의 정리 P⁺⁺",
+"tag": "증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-32}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 774,
+"sec": "9.4"
+},
+"9:old-7-34": {
+"type": "따름정리",
+"name": "띠의 원 비교; 기록 [rb6a2cd0]의 따름정리 P′⁺⁺",
+"tag": "증명됨, 정리 {{9:old-7-33}}·{{5:old-5-1}}·{{4:old-4-5}}·{{7:old-6-13}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 780,
+"sec": "9.4"
+},
+"9:old-7-35": {
+"type": "정리",
+"name": "?의 증명",
+"tag": null,
+"file": "장9.md",
+"line": 916,
+"sec": "9.5"
+},
+"9:old-7-36": {
+"type": "보조정리",
+"name": "쌍의 무게; 기록 [r5909c9e]의 보조정리 1",
+"tag": "증명됨; r5909c9e",
+"file": "장9.md",
+"line": 812,
+"sec": "9.5"
+},
+"9:old-7-37": {
+"type": "보조정리",
+"name": "창 나무의 수준 질량; 기록 [r5909c9e]의 보조정리 2",
+"tag": "증명됨, 정리 {{8:old-6-28}}에 의존; r5909c9e",
+"file": "장9.md",
+"line": 820,
+"sec": "9.5"
+},
+"9:old-7-38": {
+"type": "보조정리",
+"name": "나머지의 Borel 인자; 기록 [r5909c9e]의 보조정리 3",
+"tag": "증명됨; r5909c9e",
+"file": "장9.md",
+"line": 828,
+"sec": "9.5"
+},
+"9:psi-low": {
+"type": "보조정리",
+"name": "갱신함수의 구획 하계",
+"tag": "증명됨, 보조정리 {{2:zeta-constants}}에 의존; r5909c9e",
+"file": "장9.md",
+"line": 851,
+"sec": "9.5"
+},
+"9:old-7-39": {
+"type": "보조정리",
+"name": "쪼개짐 확률의 상계; 기록 [r5909c9e]의 보조정리 5",
+"tag": "증명됨, 보조정리 {{9:psi-low}}에 의존; r5909c9e",
+"file": "장9.md",
+"line": 859,
+"sec": "9.5"
+},
+"9:old-7-40": {
+"type": "보조정리",
+"name": "덮개 몫의 상계; 기록 [r5909c9e]의 보조정리 6",
+"tag": "증명됨; r5909c9e",
+"file": "장9.md",
+"line": 871,
+"sec": "9.5"
+},
+"9:old-7-41": {
+"type": "보조정리",
+"name": "구획 위의 인자; 기록 [r5909c9e]의 보조정리 7",
+"tag": "증명됨; r5909c9e",
+"file": "장9.md",
+"line": 883,
+"sec": "9.5"
+},
+"9:old-7-42": {
+"type": "보조정리",
+"name": "구획 합의 적분 하계; 기록 [r5909c9e]의 보조정리 8",
+"tag": "증명됨, 보조정리 {{9:psi-low}}에 의존; r5909c9e",
+"file": "장9.md",
+"line": 887,
+"sec": "9.5"
+},
+"9:pair-one-variable": {
+"type": "보조정리",
+"name": "쌍 비의 $k$-단조성과 한 변수 하계",
+"tag": "증명됨, 계산 보조(방향 반올림 구간); r5909c9e",
+"file": "장9.md",
+"line": 906,
+"sec": "9.5"
+},
+"9:old-7-44": {
+"type": "따름정리",
+"name": "$\\mathsf B^+$의 성립",
+"tag": "증명됨, 정리 {{9:old-7-35}}·따름정리 {{9:old-7-17}}에 의존; rae1f209, r5909c9e",
+"file": "장9.md",
+"line": 922,
+"sec": "9.6"
+},
+"9:old-7-45": {
+"type": "정리",
+"name": "$\\mathsf B^+$가 $\\mathsf{LRP}_2$를 함의한다; 기록 [rb6a2cd0]의 정리 Q",
+"tag": "증명됨, 정리 {{9:old-7-33}}·{{5:old-5-1}}·{{4:old-4-5}}·{{7:old-6-13}}·따름정리 {{9:old-7-27}}·보조정리 {{9:old-7-26}}에 의존; rb6a2cd0",
+"file": "장9.md",
+"line": 926,
+"sec": "9.6"
+},
+"9:old-7-46": {
+"type": "정리",
+"name": "문제 $\\mathsf P$의 첫째 증명",
+"tag": "증명됨, 따름정리 {{9:old-7-44}}·{{7:qstar-implies-wlflat}}·정리 {{9:old-7-45}}·{{7:old-6-22}}·{{6:V-all}}·{{7:qstar-columns}}·{{7:old-6-21}}·{{4:old-4-8}}·{{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{7:old-6-20}}·{{7:old-6-9}}에 의존; rae1f209, rb6a2cd0, r5909c9e",
+"file": "장9.md",
+"line": 930,
+"sec": "9.6"
+}
+}

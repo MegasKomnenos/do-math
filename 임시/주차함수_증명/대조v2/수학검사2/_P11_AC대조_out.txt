@@ -1,0 +1,108 @@
+C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체10_P11_AC대조.py:8: SyntaxWarning: invalid escape sequence '\,'
+  def norm(s): return re.sub(r'\s+','',s.replace('\,','').replace('\prime',"'"))
+C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체10_P11_AC대조.py:8: SyntaxWarning: invalid escape sequence '\p'
+  def norm(s): return re.sub(r'\s+','',s.replace('\,','').replace('\prime',"'"))
+부록 C 글자 표 행 수: 202
+A 『$p_n$』 기록의 글자 '—'  /  C 행 『$p_n$, $e^{T(x)}$』 기록 ['[r37c204b]', '[r475ada3]', '[r4daca3d]', '[r60a6f55]', '[r708d99c]', '[rba2ecf4]', '[rce3dc75]', '[rda45d0e]'] 글자 『$P=\sum p_nx^n/n!$, $P=e^T$』
+A 『$T(x)$』 기록 ['[r37c204b]']  /  C 행 『$T(x)$』에만 있는 기록 ['[r475ada3]', '[r60a6f55]', '[ra4c01fc]', '[rba2ecf4]']
+A 『$\mathrm{Gr}(x)$』 기록 ['[r37c204b]', '[ra4c01fc]', '[rba2ecf4]', '[rce3dc75]', '[rda45d0e]']  /  C 행 『$\mathrm{Gr}(x)$』에만 있는 기록 ['[r475ada3]', '[r4daca3d]']
+A 『$\Xi_{n,k}$』 기록의 글자 '—'  /  C 행 『$\Xi_{n,k}$』 기록 ['[r37c204b]', '[rba2ecf4]', '[rce3dc75]'] 글자 『$C^{ev}_{n,k}=\mathbf 1_{n=2k}\binom{2k-1}{k-1}k^{2k-4}$, $C_{n,k}$』
+A 『$d_{n,k}$』 기록 ['[r3d0856b]', '[r7c079be]']  /  C 행 『$d_{n,k}$』에만 있는 기록 ['[r13b0b8f]', '[r37c204b]', '[r708d99c]', '[ra4c01fc]']
+A 『$B_{n,m}$』 기록의 글자 '—'  /  C 행 『$B_{n,m}$』 기록 ['[r37c204b]', '[r5f5cf73]', '[ra4c01fc]', '[rce3dc75]', '[rda45d0e]'] 글자 『$B_{n,k-1}$, $B_{n,c-1}$, $B_{n,k}$(첨자 수준), $B_{n,k-1}=J_n(k-1)$ (L64)』
+A 『$\bar A_n(y)$』 기록의 글자 '—'  /  C 행 『$\bar A_n(y)$』 기록 ['[r37c204b]'] 글자 『$\mathscr C_n(x)=\sum_\sigma\prod_i\min(x,h_i)$』
+A 『$\mathrm{Bor}^{\mathrm{tail}}_k(\mathfra』 기록의 글자 '—'  /  C 행 『$\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)$』 기록 ['[r37c204b]', '[r475ada3]', '[r5f5cf73]', '[ra4c01fc]', '[rce3dc75]'] 글자 『$H_k(t)$, $H_k(s)$, $H_c(s)$』
+A 『$\mathcal K_{n,k}(y)$』 기록의 글자 '—'  /  C 행 『$\mathcal K_{n,k}(y)$』 기록 ['[r475ada3]', '[r5ddf8a8]', '[r5f5cf73]', '[r708d99c]', '[rce3dc75]', '[rda45d0e]'] 글자 『$\mathcal K(\cdot)$; $Z_{n,k}(u)$; $\mathcal A_{n,k}(\gamma)$; $\mathc』
+A 『$V(x)$』 기록의 글자 '—'  /  C 행 『$V(x)$』 기록 ['[r475ada3]', '[ra4c01fc]', '[rce3dc75]'] 글자 『$V(x)=(1-x)^2/2$』
+A 『$\mathcal A_{k,n}$』 기록의 글자 '—'  /  C 행 『$\mathcal A_{k,n}$』 기록 ['[r5f5cf73]', '[ra4c01fc]', '[rce3dc75]'] 글자 『$\mathcal A_{k,n}$』
+A 『$\mathcal M_r$』 기록의 글자 '—'  /  C 행 『$\mathcal M_r$, $\mathcal M^{(y,n)}_r$』 기록 ['[r5f5cf73]', '[ra4c01fc]', '[rce3dc75]'] 글자 『$M_r=M^{(k,n)}_r$, $M^{(c,n)}_r$』
+A 『$\mathsf g_k$』 기록의 글자 '—'  /  C 행 『$\mathsf g_k$, $\mathsf g_k(n)$』 기록 ['[r475ada3]', '[r5f5cf73]', '[ra4c01fc]', '[rce3dc75]'] 글자 『$\lambda_k=2-kM_2/M_0$; $\lambda_n$』
+A 『$\mathrm{He}_j$』 기록의 글자 '—'  /  C 행 『$\mathrm{He}_j$』 기록 ['[rce3dc75]'] 글자 『$H_j=j![t^j]\exp(At-ct^2/2)$, $A=n+c+1$』
+A 『$\mathcal D(\beta)$』 기록의 글자 '—'  /  C 행 『$\mathcal D(\beta)$』 기록 ['[r5f5cf73]', '[rce3dc75]'] 글자 『$\mathcal D(\beta)$』
+A 『$s_m(y)$』 기록 ['[r030ffae]', '[r051bfe1]', '[r207f124]', '[r317d678]', '[r39ea75d]', '[r3d0856b]', '[r5909c9e]', '[r5bbc534]', '[r60a6f55]', '[r79ee9e0]', '[r845b205]', '[r98fb348]', '[rae1f209]', '[rb6a2cd0]', '[re71a735]']  /  C 행 『$s_m(y)$』에만 있는 기록 ['[r13b0b8f]', '[r23f10e9]', '[r58b4caa]', '[r8a9b11e]', '[rc391829]']
+A 『$c_m(Y)$』 기록 ['[r030ffae]', '[r2ec875c]', '[r3d0856b]', '[r5909c9e]', '[rae1f209]', '[re71a735]']  /  C 행 『$c_m(Y)$』에만 있는 기록 ['[r13b0b8f]', '[r23f10e9]', '[r58b4caa]', '[r60a6f55]', '[r8a9b11e]']
+A 『$t_v$』 기록의 글자 '—'  /  C 행 『$t_v$』 기록 ['[r2ec875c]', '[r42d9a17]', '[r60a6f55]', '[rbeae3a3]'] 글자 『$s_v$; $s_w$』
+A 『$\mathfrak a_n$』 기록 ['[r207f124]', '[r60a6f55]', '[rad00a59]', '[rb7effe0]']  /  C 행 『$\mathfrak a_n$』에만 있는 기록 ['[r051bfe1]', '[r7c26b8b]', '[rbeae3a3]', '[rf451d83]']
+A 『$A_\ell(x)$』 기록 ['[rb7effe0]']  /  C 행 『$A_\ell(x)$』에만 있는 기록 ['[r05cf8c9]', '[r58b4caa]', '[r60a6f55]', '[r9e782f5]', '[rbeae3a3]', '[rf09e7ef]']
+A 『$\mathrm{Ren}(j)$』 기록 ['[r030ffae]', '[r1aa0be6]', '[r2ec875c]', '[r42d9a17]', '[r4868e30]', '[r5bbc534]', '[r79ee9e0]', '[r8456f59]', '[r98fb348]', '[re71a735]']  /  C 행 『$\mathrm{Ren}(j)$』에만 있는 기록 ['[r13b0b8f]', '[r690be93]', '[r7798355]']
+A 『$W_n(\gamma)$』 기록 ['[r1aa0be6]', '[r42d9a17]']  /  C 행 『$W_n(\gamma)$』에만 있는 기록 ['[r13b0b8f]', '[r690be93]']
+A 『$f$』 기록의 글자 '—'  /  C 행 『$\Pr(X\le x)$, $f$, $x_\ast$』 기록 ['[r0dc57fa]', '[r1aa0be6]', '[r29c10cd]', '[r690be93]', '[r81e7051]', '[rc391829]'] 글자 『$F$, $f$, $m$; $f_X$, $m$, $m_r$; $m_f$; $x_*$; $\mathfrak m$; $m^*$』
+A 『$x_\ast$』 기록 ['[r0dc57fa]', '[r1aa0be6]', '[r29c10cd]', '[r690be93]', '[r81e7051]']  /  C 행 『$\Pr(X\le x)$, $f$, $x_\ast$』에만 있는 기록 ['[rc391829]']
+A 『$\lambda$』 기록의 글자 '—'  /  C 행 『$\lambda$』 기록 ['[r23f10e9]', '[r58b4caa]', '[r8456f59]', '[r8a9b11e]'] 글자 『$\lambda=y/n$; $\lambda=k/N$』
+A 『$\mathcal S_{n,k}$』 기록의 글자 '—'  /  C 행 『$\mathcal S_{n,k}$, $(\mathrm G)_d$』 기록 ['[r5ddf8a8]', '[r708d99c]'] 글자 『$S$, (G)』
+A 『$\mathcal B_\ell(x)$』 기록의 글자 '—'  /  C 행 『$\mathcal B_\ell(x)$』 기록 ['[r05cf8c9]'] 글자 『$a=T_{k+1}-T_k$, $b=T_k-T_{k-1}$(첨자 용량)』
+A 『$t_v$』 기록의 글자 '—'  /  C 행 『$\mathfrak a_j$, $t_v$, $H_s(F)$, $Z_k(F)$, $\math』 기록 ['[rbeae3a3]'] 글자 『$f_j=C_{j,k}/j!$, $s_v$, $N_s(T)$, $Z_k(T)$, $\rho_k=(k/(k+1))^{k-1}$,』
+A 『$r_0(n)$』 기록의 글자 '—'  /  C 행 『$r_0(n)$』 기록 ['[r690be93]'] 글자 『$r_0(n)$($64r^3\le27n^2$의 최대 정수)』
+A 『$h_i$』 기록의 글자 '—'  /  C 행 『$h_i$, $i-h_i$, $t_v$, $\Pr^\sigma_{n,k}$, $Z_k$, 』 기록 ['[r88bed8a]'] 글자 『$h_i$, $t_i$, $s_v$, $\nu_{n,k}$, $Z_k$, $H_k$, $\mu_n(k)$』
+A 『$t_v$』 기록의 글자 '—'  /  C 행 『$h_i$, $i-h_i$, $t_v$, $\Pr^\sigma_{n,k}$, $Z_k$, 』 기록 ['[r88bed8a]'] 글자 『$h_i$, $t_i$, $s_v$, $\nu_{n,k}$, $Z_k$, $H_k$, $\mu_n(k)$』
+A 『$\mu_n(k)$』 기록 ['[r207f124]', '[r39ba7c1]', '[r79ee9e0]']  /  C 행 『$h_i$, $i-h_i$, $t_v$, $\Pr^\sigma_{n,k}$, $Z_k$, 』에만 있는 기록 ['[r88bed8a]']
+A 『$\mathrm{Bor}(m)$』 기록 ['[r051bfe1]', '[r2ec875c]', '[r4868e30]', '[r6b37c7e]', '[r79ee9e0]', '[r7e03176]', '[r8456f59]']  /  C 행 『$\mathrm{Bor}(m)$』에만 있는 기록 ['[r13b0b8f]', '[r207f124]', '[r39ea75d]', '[r475ada3]', '[r5bbc534]', '[r5f5cf73]', '[r7c079be]', '[r845b205]', '[r89eb039]', '[r8a9b11e]', '[ra4c01fc]', '[rae1f209]', '[rb7effe0]']
+A 『$\mathrm{Bor}^{*j}(m)$』 기록 ['[r5909c9e]', '[r8a9b11e]', '[re71a735]']  /  C 행 『$\mathrm{Bor}^{*j}(m)$』에만 있는 기록 ['[r58b4caa]']
+A 『$\Psi(q)$』 기록 ['[r030ffae]', '[r2ec875c]', '[r4868e30]']  /  C 행 『$\Psi(q)$』에만 있는 기록 ['[r5909c9e]', '[r5bbc534]', '[r9bf2dc6]']
+A 『$\mathrm{Ren}(j)$』 기록 ['[r030ffae]', '[r1aa0be6]', '[r2ec875c]', '[r42d9a17]', '[r4868e30]', '[r5bbc534]', '[r79ee9e0]', '[r8456f59]', '[r98fb348]', '[re71a735]']  /  C 행 『$\mathrm{Ren}(j)$』에만 있는 기록 ['[rad00a59]']
+A 『$\pi_n(m)$』 기록 ['[r030ffae]', '[r13b0b8f]', '[r207f124]', '[r23f10e9]', '[r39ea75d]', '[r5909c9e]', '[r5bbc534]', '[r6b37c7e]', '[r8456f59]', '[r8a9b11e]', '[r98fb348]', '[rae1f209]']  /  C 행 『$\pi_n(m)$』에만 있는 기록 ['[r58b4caa]']
+A 『$\pi^0_n(y)$』 기록 ['[r030ffae]', '[r29c10cd]', '[r2fe0259]', '[r5909c9e]', '[r696d62c]', '[r8456f59]', '[rae1f209]']  /  C 행 『$\pi^0_n(y)$』에만 있는 기록 ['[r23f10e9]', '[r39ea75d]', '[r8a9b11e]', '[rb1d8cd5]', '[rc391829]']
+A 『$g(x)$』 기록 ['[r207f124]', '[rb6a2cd0]']  /  C 행 『$g(x)$』에만 있는 기록 ['[r23f10e9]', '[r58b4caa]', '[r5bbc534]', '[rcb2e2d4]']
+A 『$\mathrm{hz}_k(N)$』 기록 ['[r030ffae]', '[r051bfe1]', '[r5bbc534]', '[r79ee9e0]', '[rb6a2cd0]']  /  C 행 『$\mathrm{hz}_k(N)$』에만 있는 기록 ['[r207f124]']
+A 『$\mathsf m_{\mathrm S}$』 기록의 글자 '—'  /  C 행 『$\mathsf f_1$, $\mathsf m_{\mathrm S}$, $\vartheta』 기록 ['[re71a735]'] 글자 『$I_1=4\beta/3$, $C=1.15$, $\theta_0=(2e^{-0.48}-1)e^{-0.48}$, $\lambda』
+A 『$\mathfrak H_d$』 기록의 글자 '—'  /  C 행 『$\mathrm{DDL}_2(k)$, $\mathrm{DDL}^\natural(k)$, $』 기록 ['[re71a735]'] 글자 『$DDL_2$, $CF^\natural$, $H_2(d)$, $\mathrm{Res}_d$』
+A 『$\mathrm{Res}_d$』 기록의 글자 '—'  /  C 행 『$\mathrm{DDL}_2(k)$, $\mathrm{DDL}^\natural(k)$, $』 기록 ['[re71a735]'] 글자 『$DDL_2$, $CF^\natural$, $H_2(d)$, $\mathrm{Res}_d$』
+A 『$\mathfrak k_d(q)$』 기록의 글자 '—'  /  C 행 『$\mathfrak h_y(q)$, $\mathrm{inc}^\pm_q$, $\mathca』 기록 ['[re71a735]'] 글자 『$h_y(a)$, $u_b$·$v_b$, $G_y(b)$, $Q_2(y,x)$, $\tilde X_j$, $X^{crit}_d』
+A 『$\mathfrak s^{\mathrm{fr}}_d(y)$』 기록의 글자 '—'  /  C 행 『$\mathfrak h_y(q)$, $\mathrm{inc}^\pm_q$, $\mathca』 기록 ['[re71a735]'] 글자 『$h_y(a)$, $u_b$·$v_b$, $G_y(b)$, $Q_2(y,x)$, $\tilde X_j$, $X^{crit}_d』
+A 『$\mathfrak s^{\mathrm{up}}_d(y)$』 기록 ['[r6b37c7e]']  /  C 행 『$\mathfrak s^{\mathrm{up}}_d(y)$』에만 있는 기록 ['[re71a735]']
+A 『$\xi$』 기록 ['[r030ffae]', '[r5909c9e]', '[re71a735]', '[rfc69320]']  /  C 행 『$\xi$』에만 있는 기록 ['[r9bf2dc6]']
+A 『$\mathfrak u_n$』 기록 ['[r3d0856b]']  /  C 행 『$\mathfrak T_m$, $w_m$, $\vartheta$, $\mathfrak u_』에만 있는 기록 ['[re71a735]']
+A 『$\varkappa_m$』 기록 ['[r3d0856b]']  /  C 행 『$\mathfrak T_m$, $w_m$, $\vartheta$, $\mathfrak u_』에만 있는 기록 ['[re71a735]']
+A 『$\varsigma_m(\ell)$』 기록 ['[r3d0856b]', '[re71a735]']  /  C 행 『$\varsigma_{n-1}(\ell)$, $\varsigma_n(\ell+1)$, $\』에만 있는 기록 ['[r845b205]']
+A 『$\mathsf s_{\mathrm B}$』 기록 ['[r29c10cd]', '[r7e03176]']  /  C 행 『$\mathsf s_{\mathrm B}$』에만 있는 기록 ['[r9bf2dc6]']
+A 『$\mathcal N_\ell(t)$』 기록 ['[r4868e30]', '[r5909c9e]']  /  C 행 『$\mathcal N_\ell(t)$』에만 있는 기록 ['[r05cf8c9]', '[rcb2e2d4]']
+A 『$\delta_t$』 기록의 글자 '—'  /  C 행 『$x_t(k)$, $\delta_t$』 기록 ['[r05cf8c9]', '[r4868e30]', '[rc391829]', '[rcb2e2d4]'] 글자 『$x_N(k)$; $\hat\delta_s$, $\delta_s$; $\delta_s$; $V_{s-1}$』
+A 『$\mathfrak w_n(t)$』 기록 ['[r4868e30]', '[rb6a2cd0]', '[rcb2e2d4]']  /  C 행 『$\mathfrak w_n(t)$, $\tilde{\mathfrak w}_n(t)$』에만 있는 기록 ['[r33475a7]', '[rc391829]']
+A 『$\Theta_n$』 기록의 글자 '—'  /  C 행 『$\Theta_n$』 기록 ['[r05cf8c9]', '[rcb2e2d4]'] 글자 『$\mathrm{thr}_n=\varpi_n(k)/k$(7.5의 국소 $\mathrm{thr}_n$과 다른 양); $K_n=-』
+A 『$d_{n,k}$』 기록 ['[r3d0856b]', '[r7c079be]']  /  C 행 『$d_{n,k}$, $b^{(2)}_m$, $c^{(2)}_m$』에만 있는 기록 ['[rae1f209]', '[rcb2e2d4]']
+A 『$b^{(2)}_m$』 기록 ['[rae1f209]']  /  C 행 『$d_{n,k}$, $b^{(2)}_m$, $c^{(2)}_m$』에만 있는 기록 ['[r3d0856b]', '[rcb2e2d4]']
+A 『$c^{(2)}_m$』 기록 ['[r3d0856b]', '[r5909c9e]', '[rae1f209]']  /  C 행 『$d_{n,k}$, $b^{(2)}_m$, $c^{(2)}_m$』에만 있는 기록 ['[rcb2e2d4]']
+A 『$s_m(y)$』 기록 ['[r030ffae]', '[r051bfe1]', '[r207f124]', '[r317d678]', '[r39ea75d]', '[r3d0856b]', '[r5909c9e]', '[r5bbc534]', '[r60a6f55]', '[r79ee9e0]', '[r845b205]', '[r98fb348]', '[rae1f209]', '[rb6a2cd0]', '[re71a735]']  /  C 행 『$s_m(y)$(6·7장 기록)』에만 있는 기록 ['[r7e03176]', '[rcb2e2d4]']
+A 『$c_m(Y)$』 기록 ['[r030ffae]', '[r2ec875c]', '[r3d0856b]', '[r5909c9e]', '[rae1f209]', '[re71a735]']  /  C 행 『$c_m(Y)$(6·7장 기록)』에만 있는 기록 ['[r77e234e]', '[r79ee9e0]', '[r845b205]']
+A 『$\mathcal V_k(m)$』 기록 ['[r23f10e9]', '[r3d0856b]', '[r845b205]']  /  C 행 『$\mathcal V_k(m)$』에만 있는 기록 ['[rb6a2cd0]']
+A 『$x_\ast$』 기록 ['[r0dc57fa]', '[r1aa0be6]', '[r29c10cd]', '[r690be93]', '[r81e7051]']  /  C 행 『$x_\ast$』에만 있는 기록 ['[rc391829]']
+A 『$\mu_n(k)$』 기록 ['[r207f124]', '[r39ba7c1]', '[r79ee9e0]']  /  C 행 『$\mu_n(k)$』에만 있는 기록 ['[r3d0856b]', '[r88bed8a]']
+A 『$Q_\ell(x)$』 기록 ['[r37c204b]', '[r7c079be]', '[r89eb039]', '[rb7effe0]', '[rf09e7ef]', '[rf451d83]']  /  C 행 『$Q_{k-1}(x)$, $Q_\ell(x)$』에만 있는 기록 ['[rbeae3a3]']
+A 『$\mathrm{src}_k(m)$』 기록 ['[r10ff8c2]', '[r207f124]']  /  C 행 『$\mathrm{src}_k(m)$, $\chi_m(j)$, $\mathrm{inh}_k(』에만 있는 기록 ['[r79ee9e0]']
+A 『$\chi_m(j)$』 기록 ['[r79ee9e0]']  /  C 행 『$\mathrm{src}_k(m)$, $\chi_m(j)$, $\mathrm{inh}_k(』에만 있는 기록 ['[r207f124]']
+A 『$\mathfrak u_n$』 기록 ['[r3d0856b]']  /  C 행 『$w_m$, $\mathfrak u_n$』에만 있는 기록 ['[re71a735]']
+A 『$\Pi$』 기록의 글자 '—'  /  C 행 『$\Pi$, $\Pi_j(y)$』 기록 ['[r23f10e9]', '[r845b205]', '[re71a735]'] 글자 『$W_v=\prod_{S_j>v}v/S_j$(용량 $v$); $\Pi_j(t)$(실수 $t$); $\Pi_J(y)$』
+A 『$\Pi_j(y)$』 기록 ['[r845b205]', '[re71a735]']  /  C 행 『$\Pi$, $\Pi_j(y)$』에만 있는 기록 ['[r23f10e9]']
+A 『$e_n$』 기록의 글자 '—'  /  C 행 『$e_n$, $E2_{n,k}$』 기록 ['[r5f5cf73]', '[ra4c01fc]'] 글자 『$e_n=\mathcal K^{\prime\prime}_{n,c}(c)$, $E2_{n,c}$; $e_n$』
+A 『$\mathrm{tail}_s(y)$』 기록 ['[r58b4caa]']  /  C 행 『$\mathrm{tail}_s(y)$, $t_0(y)$, $x_t(y)$, $\mathrm』에만 있는 기록 ['[r23f10e9]', '[r8a9b11e]', '[rc391829]']
+A 『$t_0(y)$』 기록 ['[r58b4caa]']  /  C 행 『$\mathrm{tail}_s(y)$, $t_0(y)$, $x_t(y)$, $\mathrm』에만 있는 기록 ['[r23f10e9]', '[r8a9b11e]', '[rc391829]']
+A 『$x_t(y)$』 기록의 글자 '—'  /  C 행 『$\mathrm{tail}_s(y)$, $t_0(y)$, $x_t(y)$, $\mathrm』 기록 ['[r23f10e9]', '[r58b4caa]', '[r8a9b11e]', '[rc391829]'] 글자 『$\mathcal T_s(y)=\sum_{t=s+1}^nx_t(y)$, $t_0(y)$, $x_t(y)$, $H(n,y)$; 』
+A 『$\mathrm{IH}(n,y)$』 기록 ['[r8a9b11e]']  /  C 행 『$\mathrm{tail}_s(y)$, $t_0(y)$, $x_t(y)$, $\mathrm』에만 있는 기록 ['[r23f10e9]', '[r58b4caa]', '[rc391829]']
+A 『$\mathfrak z_m(d)$』 기록 ['[r23f10e9]', '[r29c10cd]']  /  C 행 『$\mathrm{top}$, $\mathfrak z_m(d)$』에만 있는 기록 ['[r8a9b11e]']
+A 『$Y$』 기록의 글자 '—'  /  C 행 『$\Lambda_{\mathrm w}(Y)$, $\mathrm{Lc}(Y,q)$, $q_{』 기록 ['[r8a9b11e]'] 글자 『$\Lambda_w(\ell,R)$, $\mathrm{Lc}(\ell,r)$, $R_\ell=\lfloor6\ell^{2/3}』
+A 『$\mathsf c_\Psi$』 기록 ['[rfc69320]']  /  C 행 『$\Psi^{\mathrm{low}}_{(\varrho)}$, $\mathsf c_\Psi』에만 있는 기록 ['[r030ffae]']
+A 『$\mathrm{Lip}$』 기록의 글자 '—'  /  C 행 『$\mathrm{LB}^{\mathrm{mono}}$, $\mathrm{LB}^{\math』 기록 ['[r030ffae]'] 글자 『$\rho_{\mathrm{mono}}$, $\rho_{\mathrm{low}}$, $\mathrm{LOW}_k$, $\hat』
+A 『$G$』 기록 ['[r030ffae]', '[r5bbc534]', '[r88bed8a]']  /  C 행 『$G$, $\zeta$, $q$, $\mathrm{Ren}(r)$』에만 있는 기록 ['[r8456f59]']
+A 『$\zeta$』 기록 ['[r3d0856b]']  /  C 행 『$G$, $\zeta$, $q$, $\mathrm{Ren}(r)$』에만 있는 기록 ['[r030ffae]', '[r5bbc534]', '[r8456f59]']
+A 『$q$』 기록의 글자 '—'  /  C 행 『$G$, $\zeta$, $q$, $\mathrm{Ren}(r)$』 기록 ['[r030ffae]', '[r5bbc534]', '[r8456f59]'] 글자 『$G$ (L35·121), $t=\nu/k^{2/3}$, $a$($N=k+a-1$), $x=N-y$, $u_r$; $G_N$ 』
+A 『$K_n(m)$』 기록의 글자 '—'  /  C 행 『$\gamma_m$, $K_n(m)$, $\mathcal Q_m$, $\mathcal C_』 기록 ['[rae1f209]'] 글자 『$c_m=k(m+1)/(m+1-k)$($\lambda_1(m)=k/(m+1-k)$), $K_n(m)$, $\mathcal Q_』
+A 『$\mathcal Q_m$』 기록의 글자 '—'  /  C 행 『$\gamma_m$, $K_n(m)$, $\mathcal Q_m$, $\mathcal C_』 기록 ['[rae1f209]'] 글자 『$c_m=k(m+1)/(m+1-k)$($\lambda_1(m)=k/(m+1-k)$), $K_n(m)$, $\mathcal Q_』
+A 『$\mathrm{FL}^{(1)}_m$』 기록의 글자 '—'  /  C 행 『$\mathrm{OB}_m$, $\mathrm{FL}^{(1)}_m$, $\mathrm{P』 기록 ['[rae1f209]'] 글자 『$E_m$, $FL1_m$, $N^\prime_2$, $M_2$, $V_m$, $\delta_k$, $\bar\delta_k$』
+A 『$\pi_n(t_1,t_2)$』 기록 ['[rae1f209]']  /  C 행 『$\pi_n(t_1,t_2)$, $\pi_2(t)$』에만 있는 기록 ['[r2fe0259]']
+A 『$t_v$』 기록의 글자 '—'  /  C 행 『$c_m(\ell)$, $\mathrm{Bor}(n)$, $\mathrm{Ren}(r)$,』 기록 ['[r2ec875c]'] 글자 『$c_m(\ell)=b_{m,\ell}/p_m$, $\beta_n=u(n)/n$, $u(r)$, $\Psi(d)$, $Z=\l』
+A 『$P_t(k)$』 기록의 글자 '—'  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』 기록 ['[r33475a7]', '[rb6a2cd0]'] 글자 『$P_s$; $Q_s=\sum_{t=k+1}^sx_t$($P_s=Q_s-1/k$), $T(s)=\sum_{s'=s}^{2k+1』
+A 『$P^+_t(k)$』 기록의 글자 '—'  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』 기록 ['[r33475a7]', '[rb6a2cd0]'] 글자 『$P_s$; $Q_s=\sum_{t=k+1}^sx_t$($P_s=Q_s-1/k$), $T(s)=\sum_{s'=s}^{2k+1』
+A 『$\mathrm{flat}_k(t)$』 기록 ['[rb6a2cd0]']  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』에만 있는 기록 ['[r33475a7]']
+A 『$P^{\theta\dagger}(t^\dagger)$』 기록 ['[rb6a2cd0]']  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』에만 있는 기록 ['[r33475a7]']
+A 『$\varrho^\dagger(t^\dagger)$』 기록 ['[rb6a2cd0]']  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』에만 있는 기록 ['[r33475a7]']
+A 『$t^\dagger$』 기록 ['[rb6a2cd0]']  /  C 행 『$P_t(k)$, $P^+_t(k)$, $\mathrm{flat}_k(t)$, $P^\th』에만 있는 기록 ['[r33475a7]']
+A 『$\mathrm{PAIR}_n$』 기록 ['[rb6a2cd0]']  /  C 행 『$\mathrm{PAIR}_n$, $\mathrm{PAIR}_n/p_n$』에만 있는 기록 ['[r05cf8c9]', '[rc391829]']
+A 『$\mathcal O_n$』 기록 ['[r05cf8c9]']  /  C 행 『$\mathcal O_n$』에만 있는 기록 ['[r2e22726]']
+A 『$\mathsf{FS}(n)$』 기록의 글자 '—'  /  C 행 『$\mathrm{regen}_n$, $\mathsf{FS}(n)$』 기록 ['[r05cf8c9]', '[rb6a2cd0]'] 글자 『$\tilde\sigma_n=d_n-RL_n$; $(FS)_N$(누적판: $2k+1\le n\le N$ 모두)』
+A 『$\delta_t$』 기록의 글자 '—'  /  C 행 『$A_{n,c-1}$, $T_{c-1}(x)$, $\mathcal N_{c-1}(t)$, 』 기록 ['[r05cf8c9]'] 글자 『$\mathcal A_n(c)$, $T_c(z)$, $t_s(c)$, $F_c=\exp T_c$, $a$, $b$, $\del』
+A 『$\mathrm{LP}_k(n)$』 기록의 글자 '—'  /  C 행 『$\mathcal Y_k(n)$, $\mathcal Y^{\mathrm{LP}}_k(n)$』 기록 ['[rb6a2cd0]'] 글자 『$X_k(n)$, $Y^{LP}_k(n)$, $Y_k(n)$, $F_k(\nu)$, $F^+_k$, $F^{LP}_k$, $L』
+A 『$\mathsf h_N$』 기록의 글자 '—'  /  C 행 『$\mathcal Y_k(n)$, $\mathcal Y^{\mathrm{LP}}_k(n)$』 기록 ['[rb6a2cd0]'] 글자 『$X_k(n)$, $Y^{LP}_k(n)$, $Y_k(n)$, $F_k(\nu)$, $F^+_k$, $F^{LP}_k$, $L』
+A 『$\theta_t(k)$』 기록의 글자 '—'  /  C 행 『$\mathcal Y_k(n)$, $\mathcal Y^{\mathrm{LP}}_k(n)$』 기록 ['[rb6a2cd0]'] 글자 『$X_k(n)$, $Y^{LP}_k(n)$, $Y_k(n)$, $F_k(\nu)$, $F^+_k$, $F^{LP}_k$, $L』
+A 『$\mathfrak p_m$』 기록의 글자 '—'  /  C 행 『$\varkappa_m$, $\mathfrak f_m$, $\mathfrak T_m$, $』 기록 ['[r3d0856b]'] 글자 『$c_m$($2$: $m\le a$; $1+(t-m)/k$: $m>a$), $f_m$, $T_m$, $w_m$, $v_m$, 』
+A 『$\mu_n(k)$』 기록 ['[r207f124]', '[r39ba7c1]', '[r79ee9e0]']  /  C 행 『$\vartheta$, $\vartheta_{\mathrm{lb}}$, $\Pi^{\mat』에만 있는 기록 ['[r3d0856b]']
+A 『$n$』 기록의 글자 '—'  /  C 행 『$n$, $N$(10장 기록)』 기록 ['[r3d0856b]', '[re71a735]'] 글자 『$t$(행), $a$($=N$)』
+A 『$\mathrm{Bor}(m)$』 기록 ['[r051bfe1]', '[r2ec875c]', '[r4868e30]', '[r6b37c7e]', '[r79ee9e0]', '[r7e03176]', '[r8456f59]']  /  C 행 『$s_n(\ell+1)$, $\pi_n(m)$, $\mathrm{Bor}(m)$, $p_N』에만 있는 기록 ['[r39ea75d]']

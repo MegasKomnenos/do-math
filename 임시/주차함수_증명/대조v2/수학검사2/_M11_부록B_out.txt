@@ -1,0 +1,95 @@
+B 행: 85
+r81e7051 B시각=11-05 15:55 record.json mtime=11-05 15:44 exposition mtime=11-05 15:38 시각필드=-
+r15524fd B시각=11-05 15:55 record.json mtime=11-05 15:43 exposition mtime=11-05 15:43 시각필드=-
+rf09e7ef B시각=11-05 16:40 record.json mtime=11-05 16:27 exposition mtime=11-05 16:27 시각필드=-
+r42d9a17 B시각=11-05 16:52 record.json mtime=11-05 16:35 exposition mtime=11-05 16:39 시각필드=-
+r1aa0be6 B시각=11-05 17:57 record.json mtime=11-05 17:46 exposition mtime=11-05 17:46 시각필드=-
+r39ea75d B시각=11-05 19:11 record.json mtime=11-05 18:54 exposition mtime=11-05 18:54 시각필드=-
+ra88ba51 B시각=11-06 00:54 record.json mtime=11-06 00:31 exposition mtime=11-06 00:31 시각필드=-
+r39ba7c1 B시각=11-06 00:57 record.json mtime=11-06 00:34 exposition mtime=11-06 00:32 시각필드=-
+r60a6f55 B시각=11-06 01:51 record.json mtime=11-06 01:40 exposition mtime=11-06 01:41 시각필드=-
+r7c079be B시각=11-06 02:06 record.json mtime=11-06 01:52 exposition mtime=11-06 01:50 시각필드=-
+r6a8c8b6 B시각=11-06 02:58 record.json mtime=11-06 02:47 exposition mtime=11-06 02:49 시각필드=-
+r631b0f4 B시각=11-06 08:09 record.json mtime=11-06 07:00 exposition mtime=11-06 07:01 시각필드=-
+r4daca3d B시각=11-06 12:28 record.json mtime=11-06 12:15 exposition mtime=11-06 12:15 시각필드=-
+r9e782f5 B시각=11-06 13:15 record.json mtime=11-06 13:03 exposition mtime=11-06 13:05 시각필드=-
+ra7615a0 B시각=11-06 16:14 record.json mtime=11-06 15:58 exposition mtime=11-06 15:59 시각필드=-
+r7798355 B시각=11-06 18:09 record.json mtime=11-06 17:46 exposition mtime=11-06 17:44 시각필드=-
+rda45d0e B시각=11-06 21:52 record.json mtime=11-06 20:43 exposition mtime=11-06 20:49 시각필드=-
+rba2ecf4 B시각=11-06 23:22 record.json mtime=11-06 22:09 exposition mtime=11-06 22:10 시각필드=-
+rbeae3a3 B시각=11-07 03:51 record.json mtime=11-07 02:44 exposition mtime=11-07 02:44 시각필드=-
+r37c204b B시각=11-07 04:19 record.json mtime=11-07 03:17 exposition mtime=11-07 03:16 시각필드=-
+r6373c70 B시각=11-07 04:55 record.json mtime=11-07 04:20 exposition mtime=11-07 04:21 시각필드=-
+re79cb4d B시각=11-07 05:45 record.json mtime=11-07 05:02 exposition mtime=11-07 05:02 시각필드=-
+r8d6850a B시각=11-07 07:34 record.json mtime=11-07 06:48 exposition mtime=11-07 06:49 시각필드=-
+r708d99c B시각=11-07 08:11 record.json mtime=11-07 06:55 exposition mtime=11-07 06:56 시각필드=-
+r5ddf8a8 B시각=11-07 11:56 record.json mtime=11-07 11:26 exposition mtime=11-07 11:26 시각필드=-
+r39d72f6 B시각=11-07 11:58 record.json mtime=11-07 11:24 exposition mtime=11-07 11:24 시각필드=-
+rc9aee43 B시각=11-07 12:37 record.json mtime=11-07 11:41 exposition mtime=11-07 11:42 시각필드=-
+rce3dc75 B시각=11-07 12:50 record.json mtime=11-07 11:26 exposition mtime=11-07 11:28 시각필드=-
+r19de912 B시각=11-07 13:23 record.json mtime=11-07 12:14 exposition mtime=11-07 12:14 시각필드=-
+r0dc57fa B시각=11-07 14:40 record.json mtime=11-07 14:02 exposition mtime=11-07 14:01 시각필드=-
+r656206c B시각=11-07 14:51 record.json mtime=11-07 14:31 exposition mtime=11-07 14:31 시각필드=-
+rdc27681 B시각=11-07 15:21 record.json mtime=11-07 14:56 exposition mtime=11-07 14:55 시각필드=-
+r690be93 제목 차이:
+   B : Q_R·오른쪽 내부 R·오른쪽 벌크 증가 W의 전 크기 동치: 명시적 꼬리 오목성 $n\ge r^{3/2}+12r$와 임계 창의 명시적 증가 간격
+   기록: Q_R·오른쪽 내부 R·오른쪽 벌크 증가 W의 전 크기 동치: 명시적 꼬리 오목성 n≥r^{3/2}+12r와 임계 창의 명시적 증가 간격
+r690be93 B시각=11-07 15:29 record.json mtime=11-07 14:56 exposition mtime=11-07 14:56 시각필드=-
+r1892593 B시각=11-07 15:39 record.json mtime=11-07 15:13 exposition mtime=11-07 15:13 시각필드=-
+r13b0b8f 제목 차이:
+   B : 오른쪽 벌크 증가 W의 임계 가장자리: 첫·둘째 크기 보정 사슬 포락선에 의한 명시적 증가 띠(정리 A: r≥598, $0.73\le r^{3/2}/n\le 6/5$; peer 정리 A⁺: n≥20001에서 9/5까지), 정확한 잔여, 사슬 방법의 정량적 한계, 크기 방향 전파의 장애
+   기록: 오른쪽 벌크 증가 W의 임계 가장자리: 첫·둘째 크기 보정 사슬 포락선에 의한 명시적 증가 띠(정리 A: r≥598, 0.73≤r^{3/2}/n≤6/5; peer 정리 A⁺: n≥20001에서 9/5까지), 정확한 잔여, 사슬 방법의 정량적 한계, 크기 방향 전파의 장애
+r13b0b8f B시각=11-07 17:47 record.json mtime=11-07 17:20 exposition mtime=11-07 17:20 시각필드=-
+rb6423c6 B시각=11-07 17:59 record.json mtime=11-07 17:27 exposition mtime=11-07 17:28 시각필드=-
+r7c26b8b B시각=11-07 21:12 record.json mtime=11-07 20:31 exposition mtime=11-07 20:27 시각필드=-
+r15df76b B시각=11-08 01:14 record.json mtime=11-08 00:40 exposition mtime=11-08 00:39 시각필드=-
+r58b4caa B시각=11-08 02:03 record.json mtime=11-08 01:22 exposition mtime=11-08 01:23 시각필드=-
+rb7effe0 B시각=11-08 04:29 record.json mtime=11-08 03:43 exposition mtime=11-08 03:43 시각필드=-
+rad00a59 B시각=11-08 05:31 record.json mtime=11-08 04:32 exposition mtime=11-08 04:32 시각필드=-
+r23f10e9 B시각=11-08 07:03 record.json mtime=11-08 06:07 exposition mtime=11-08 06:12 시각필드=-
+r059f11e B시각=11-08 09:13 record.json mtime=11-08 08:20 exposition mtime=11-08 08:19 시각필드=-
+r59c82d7 B시각=11-08 10:59 record.json mtime=11-08 09:44 exposition mtime=11-08 09:43 시각필드=-
+r475ada3 B시각=11-08 15:30 record.json mtime=11-08 14:21 exposition mtime=11-08 14:22 시각필드=-
+ra4c01fc B시각=11-08 22:32 record.json mtime=11-08 19:44 exposition mtime=11-08 19:46 시각필드=-
+r89eb039 B시각=11-08 22:54 record.json mtime=11-08 20:51 exposition mtime=11-08 20:52 시각필드=-
+r8a9b11e B시각=11-09 01:16 record.json mtime=11-08 23:55 exposition mtime=11-08 23:54 시각필드=-
+rf451d83 B시각=11-09 02:14 record.json mtime=11-08 23:31 exposition mtime=11-08 23:32 시각필드=-
+r6b37c7e B시각=11-09 02:33 record.json mtime=11-09 01:41 exposition mtime=11-09 01:43 시각필드=-
+r10ff8c2 B시각=11-09 03:32 record.json mtime=11-09 02:54 exposition mtime=11-09 02:55 시각필드=-
+r5f5cf73 B시각=11-09 04:40 record.json mtime=11-09 04:03 exposition mtime=11-09 04:04 시각필드=-
+r3172894 B시각=11-09 08:07 record.json mtime=11-09 07:41 exposition mtime=11-09 07:41 시각필드=-
+r207f124 B시각=11-09 12:34 record.json mtime=11-09 11:46 exposition mtime=11-09 11:46 시각필드=-
+r88bed8a B시각=11-09 16:48 record.json mtime=11-09 16:04 exposition mtime=11-09 16:07 시각필드=-
+r79ee9e0 B시각=11-09 19:03 record.json mtime=11-09 18:30 exposition mtime=11-09 18:31 시각필드=-
+r5bbc534 B시각=11-09 19:22 record.json mtime=11-09 18:34 exposition mtime=11-09 18:34 시각필드=-
+r8456f59 B시각=11-09 19:42 record.json mtime=11-09 19:06 exposition mtime=11-09 19:06 시각필드=-
+r051bfe1 B시각=11-10 02:44 record.json mtime=11-10 02:22 exposition mtime=11-10 02:21 시각필드=-
+r05cf8c9 B시각=11-10 04:21 record.json mtime=11-10 03:47 exposition mtime=11-10 03:49 시각필드=-
+r29c10cd B시각=11-10 04:32 record.json mtime=11-10 03:45 exposition mtime=11-10 03:45 시각필드=-
+r6f5f48f B시각=11-10 07:41 record.json mtime=11-10 07:06 exposition mtime=11-10 07:07 시각필드=-
+r7e03176 B시각=11-10 09:08 record.json mtime=11-10 08:42 exposition mtime=11-10 08:43 시각필드=-
+rcb2e2d4 B시각=11-10 12:08 record.json mtime=11-10 11:38 exposition mtime=11-10 11:39 시각필드=-
+rc391829 B시각=11-10 14:02 record.json mtime=11-10 13:16 exposition mtime=11-10 13:16 시각필드=-
+raad7e6d B시각=11-10 16:29 record.json mtime=11-10 15:47 exposition mtime=11-10 15:45 시각필드=-
+r29b01e8 B시각=11-10 16:32 record.json mtime=11-10 15:56 exposition mtime=11-10 15:56 시각필드=-
+r9bf2dc6 B시각=11-10 21:24 record.json mtime=11-10 20:33 exposition mtime=11-10 20:35 시각필드=-
+r2ec875c B시각=11-10 21:38 record.json mtime=11-10 20:42 exposition mtime=11-10 20:42 시각필드=-
+r696d62c B시각=11-10 22:02 record.json mtime=11-10 20:26 exposition mtime=11-10 20:24 시각필드=-
+r2fe0259 B시각=11-10 22:17 record.json mtime=11-10 21:04 exposition mtime=11-10 21:04 시각필드=-
+r845b205 B시각=11-11 00:12 record.json mtime=11-10 23:11 exposition mtime=11-10 23:12 시각필드=-
+r030ffae B시각=11-11 01:25 record.json mtime=11-11 00:18 exposition mtime=11-11 00:18 시각필드=-
+r317d678 B시각=11-11 03:44 record.json mtime=11-11 02:56 exposition mtime=11-11 02:56 시각필드=-
+r98fb348 B시각=11-11 05:40 record.json mtime=11-11 04:54 exposition mtime=11-11 04:54 시각필드=-
+r77e234e B시각=11-11 08:50 record.json mtime=11-11 08:14 exposition mtime=11-11 08:16 시각필드=-
+r3d0856b B시각=11-11 10:15 record.json mtime=11-11 09:48 exposition mtime=11-11 09:48 시각필드=-
+r33475a7 B시각=11-11 10:59 record.json mtime=11-11 10:17 exposition mtime=11-11 10:20 시각필드=-
+r4868e30 B시각=11-11 13:26 record.json mtime=11-11 12:49 exposition mtime=11-11 12:50 시각필드=-
+rae1f209 B시각=11-11 13:42 record.json mtime=11-11 13:02 exposition mtime=11-11 13:02 시각필드=-
+rb6a2cd0 B시각=11-11 15:04 record.json mtime=11-11 14:22 exposition mtime=11-11 14:25 시각필드=-
+rb1d8cd5 B시각=11-11 15:59 record.json mtime=11-11 15:31 exposition mtime=11-11 15:31 시각필드=-
+r5909c9e B시각=11-11 16:14 record.json mtime=11-11 15:41 exposition mtime=11-11 15:42 시각필드=-
+re71a735 B시각=11-11 18:54 record.json mtime=11-11 17:48 exposition mtime=11-11 17:52 시각필드=-
+rfc69320 B시각=11-12 16:12 record.json mtime=11-12 15:47 exposition mtime=11-12 15:47 시각필드={'description': "2026-11-12 사용자 최우선 요청에 따라, 기록 r030ffaebcd164eb492cc4215ce1c2e56(둘째 층 띠 BVΘ)의 세 인증(정리 W·B′·B‴)이 쓰는 12001점 원천 봉투 표에서 증명이 비어 있던 단계를 손 증명으로 닫는다(attempt s6dd8de9…, peer s5dbbaa1d…). (1) 코드 E_envG_rigorous의 탈출 봉투 Q^env_G는 y∈[0.2,6.001](코드 문턱 0.2 이상), 모든 k≥6600에서 y에 비증가다. 분자와 분모를 공통 선도 꼴 2C₂y^(−1/2)로 나누면, 분모는 연속 꼴 1+y^(3/2)/(2C₂)처럼 증가한다(U′≥0.7202). 분자는 Borel 비의 일차 몫 (3/2)yk^(−1/3)이 크기 인자 1+yk^(−1/3)을 이겨 감소한다(k^(1/3)V′≤−0.343). (2) G_pieces의 여섯 조각에서 P,R₁,R₂,D₂,D₃는 실수 k≥6600에서 k에 감소하고 D₁은 증가한다. (3) 보조정리 H(ii): Bpart 논증은 완결적이다. Corr의 인자별 논증은 a(1−2/k)<3인 분할점에서 틀리며, 결론은 합친 로그 도함수로 선다. (4) 코드 봉투와 참 생존 확률 사이에 끼는 비증가 함수가 있어, 정확한 실수 값의 표는 공표 부등식 (H-i),(H-G) 위에서 모든 정수 k≥6600, 2≤c≤6k^(2/3)에 대해 Pr_(k+c)(M≤k)의 하계다. 모든 인증 호출은 [0,6) 안에 있다. (5) 정정: peer 정정판의 Jensen 봉투는 y<0.00568에서 미끄러지는 분할 때문에 거꾸로 오른다(마디 영역에서 184곳, 많아야 1.3·10^(−12)). 그래서 '둘 다 감소하므로'는 그곳에서 글자 그대로는 틀리다. 그래도 표의 마디값과 표 함수는 엄격 감소한다. (6) peer가 더한 것: 모든 실수 k에 걸친 참 봉투는 각 쪽이 큰 영역에서 닫힌 꼴이다. y≤2.1에서 유한 k의 Jensen 지수는 연속 극한 (4/3)C₂y^(3/2)를 넘지 못한다(Euler–Maclaurin 상수 ζ(1/2)가 Borel 비 보정을 이김). 2≤y≤6.001에서 탈출 하계는 k에 증가해 k=6600에서 가장 나쁘다. 그래서 닫힌 꼴 Q^cf=max(exp(−(4/3)C₂y^(3/2)), q_(6600,6600)(y))가 Q_c의 하계다. 이것은 분할도 정리 B·C·D도 쓰지 않는 두 번째 증명이다. 저장된 binary64 표의 12001개 값이 모두 Q^cf 이하임을 구간 산술로 확인했다(최소 여유 4.7·10^(−13), 마지막 분할점의 Corr 값). 그러므로 인증이 읽는 저장된 표 자체가 하계이고 감소한다. 세 인증 안의 binary64 산술(r030ffaeb 검토 §2.6 (a))은 남는다. 허용 오차 3.7·10^(−7)의 보조정리, 40자리 상수 재계산, 결론에 영향 없는 반올림 두 곳의 정정도 담았다. 노드 제안은 없다."}
+index.md 판 번호 후보: ['175', '341'] | 머리: # Research index /  / Research revision: 438 /  / [Frontier](frontier.md) · [Full glossary](glossary.md) · [Board](board.md) /  / Module summaries reflect the latest organization; newer reviewed records appear under [Unfiled records](#unfiled-records). /  / ## Shared context /  / ### 원천 봉투 표가 하계라는 성질의 손 증명: 탈출 봉투의 y-감소
+board.md 판 번호 후보: [] | 머리: # Research work and occupied sections /  / Research revision: 438 /  / Saved pipeline state, not process liveness. Sections and questions remain occupied through peer and review. /  / - p3f02720bae25417f8c71c101747a62fa · producer: s20c4d1ca929a4046a24bee2f0ae32c6e · explore · producing · question: q0 / - p1c484c
+index/ 파일 수 186 ['abel-tail-pair-mass-and-cauchy-bounds.md', 'active-capacity-clusters-and-moment-margins.md', 'actual-vacancy-blocks-and-stable-shifts.md', 'aggregation-levels-and-top-atoms.md', 'arithmetic-congruences-and-central-equalities.md'] ['vacancy-fugacity-and-unimodality-obstructions.md', 'weighted-column-single-crossing.md', 'weighted-first-layer-tails-and-attachments.md', 'weighted-shapes-and-log-coordinates.md', 'whole-row-unimodality-and-explanatory-principles.md']

@@ -1,0 +1,11 @@
+k=3 n=4: A ok=True  e_n ok=True (e=0)  J ok=True (J=18)  d_nk=-18  e-J=-18  d>=e-J:True
+k=3 n=5: A ok=True  e_n ok=True (e=32)  J ok=True (J=156)  d_nk=-124  e-J=-124  d>=e-J:True
+k=3 n=6: A ok=True  e_n ok=True (e=762)  J ok=True (J=1758)  d_nk=-906  e-J=-996  d>=e-J:True
+k=4 n=5: A ok=True  e_n ok=True (e=0)  J ok=True (J=128)  d_nk=-128  e-J=-128  d>=e-J:True
+k=4 n=6: A ok=True  e_n ok=True (e=250)  J ok=True (J=1392)  d_nk=-1142  e-J=-1142  d>=e-J:True
+k=4 n=7: A ok=True  e_n ok=True (e=7592)  J ok=True (J=18848)  d_nk=-11256  e-J=-11256  d>=e-J:True
+k=4 n=8: A ok=True
+k=9 n=17: A ok=True  e/J = 1.00688272  e-J>0: True
+k=9 n=18: A ok=True  e/J = 1.08422564  e-J>0: True
+k=8 n=15: e/J=0.92342792  e>J: False
+k=8 n=16: e/J=1.01609932  e>J: True

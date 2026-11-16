@@ -1,0 +1,12 @@
+6	IPF
+6	\bP_2
+6	\\mathfrak z
+6	poly
+6	\\epsilon_[a-z]
+6	\\mathsf c\b
+6	t_\{i
+6	\\omega\^
+6	\\beta[_^]
+6	P_\{d
+6	\bT_j
+6	\\mathcal J\b

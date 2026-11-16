@@ -1,0 +1,42 @@
+C1=0 C2=0 C3=0
+C at 1/3: 3 -216 34020
+logder C1: -(gamma - 2)/(gamma*(gamma - 1))
+logder C2: -(3*gamma**2 + 16*gamma - 25)/(gamma*(gamma - 1)*(gamma + 5))
+logder C3: -(5*gamma**3 - 12*gamma**2 - 35*gamma + 48)/(gamma*(gamma - 3)*(gamma - 1)*(gamma + 2))
+ups''''=-120/gamma**7
+C1'''=-60/gamma**7 + 192/gamma**8
+C2''=15/gamma**7 + 96/gamma**8 - 175/gamma**9
+C3'=25/(2*gamma**7) - 30/gamma**8 - 175/(2*gamma**9) + 120/gamma**10
+derivative formulas match: [True, True, True, True]
+sup at 1/3: [262440, 1128492, 2781864, 5194125] ; sum/24,/6,/2,/1 = 6784074
+m1-ups/g^2=0 ; m2-(C2-2/g^4)=0 ; m3-(C3+5(5-g^2)/(2g^7))=0
+max|m1| on [1/3,1] = 6.0
+max|m2| on [1/3,1] = 378.0000000000001
+max|m3| on [1/3,1] = 60750.00000000003
+residual coeffs x^0..x^3: [0, 0, 0, 0]
+max|x^4 coeff| = 468018.0000000003
+d/diota [iota log ups + (1-ups)^2/2] - log ups = 0
+d/diota [log ups - log gamma/2] - C1/ups = 0
+C1/ups at iota=2/9: 9/2 ; -1/(gamma ups) at 2/9: -9/2
+n(kappa) check: 0
+g_0 = 4
+g_1 = -2*(2*nu + 4*theta + 13)
+g_2 = 5*nu**2 + 16*nu*theta + 97*nu + 12*theta**2 + 168*theta + 506
+g_3 = -6*nu**3 - 26*nu**2*theta - 239*nu**2 - 36*nu*theta**2 - 762*nu*theta - 3187*nu - 16*theta**3 - 594*theta**2 - 5362*theta - 11016
+g_4 = 7*nu**4 + 38*nu**3*theta + 483*nu**3 + 75*nu**2*theta**2 + 2181*nu**2*theta + 11904*nu**2 + 64*nu*theta**3 + 3219*nu*theta**2 + 38055*nu*theta + 93889*nu + 20*theta**4 + 1552*theta**3 + 30012*theta**2 + 154730*theta + 218589
+nu=0: max|g3|=16988.0 max|g4|=404903.0
+nu=-1: max|g3|=13262.0 max|g4|=283322.0
+(4.9) check: 0
+(4.9) second form: 0
+M4/M0 nu=0 check: 0
+  with center: series 2136/k**3 + 35/k**2 + O(k**(-4), (k, oo))
+M4/M0 nu=-1 check: 0
+  with center: series 2935/(2*k**3) + 35/k**2 + O(k**(-4), (k, oo))
+nu=0: P k^2 coef=0, k coef=-20, const=2*(50*theta + 227)
+   y^2 vt: k^2=4 k=-16*theta - 26
+   kP+5y^2vt: k^2=0 k=4*(5*theta + 81)
+   100kP+499y^2vt: k^2=-4
+nu=-1: P k^2 coef=0, k coef=-20, const=2*(50*theta + 207)
+   y^2 vt: k^2=4 k=-16*theta - 22
+   kP+5y^2vt: k^2=0 k=4*(5*theta + 76)
+   100kP+499y^2vt: k^2=-4

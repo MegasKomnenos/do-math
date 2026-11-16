@@ -1,0 +1,24 @@
+n=10 row: 3628800, 98618763, 275075236, 371706836, 385131546, 359973796, 318092120, 259627152, 186093442, 100000000
+n=7 row: 5040, 42253, 62145, 57398, 46142, 32359, 16807
+smallest witness n=1..15: [0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7]
+all rows n<=80 unimodal: True
+rows with plateau (multiple witnesses) n<=80: []
+rows with adjacent equal terms n<=80: []
+n<=10: all witnesses < ceil(n/2): True
+n with d_{n,k_n}<0 (2<=n<=80): [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+2<=n<=15 right half (k_n<=j<=n-2) nonincreasing: True
+b_{n,k_n}<b_{n,k_n+1} holds for n in 5..80: first true n = 20; false set = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+Q_L(n) for 3<=n<=15: True
+Q(n) all l for 3<=n<=80: True
+log-concavity failures n<=80: [(80, 40)]
+b80,39 < b80,40 < b80,41: True ; b39*b41-b40^2 > 0: True
+separator 25928/25000: True
+ratios: 1.03711730688 1.03713726842
+b80,39 matches appendix: True
+cumulative log-concavity failures n<=80: []
+E omega_n n=1..5: ['0', '2/3', '9/16', '136/125', '1265/1296']
+E omega_n <= sqrt(n) for n=1..40: True
+Thm 3.6 rational: 7309649993107890414228499/15500000000000000000000000 ; equals text: True ; float 0.471590 ; < 0.4716: True
+9n^2-48n-32 at n=6: 4
+lambda bound: ceil(3n/4)/n <= 751/1000 for n in 1000..5000: True
+ceil(3n/4)<=n-1 for 4<=n<=200: True

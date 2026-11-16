@@ -1,0 +1,17 @@
+n=1: non-unimodal fibers = 0
+n=2: non-unimodal fibers = 0
+n=3: non-unimodal fibers = 0
+n=4: non-unimodal fibers = 0
+n=5: non-unimodal fibers = 0
+n=6: non-unimodal fibers = 0
+n=7: non-unimodal fibers = 30
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체18_L1_섬유_2_5_2_20.py", line 51, in <module>
+    r=bound(n,b)
+      ^^^^^^^^^^
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체18_L1_섬유_2_5_2_20.py", line 45, in bound
+    tot1+=base*Fr(b*(n-c+1)**(n-c-b),factorial(kap))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\fractions.py", line 277, in __new__
+    raise TypeError("both arguments should be "
+TypeError: both arguments should be Rational instances

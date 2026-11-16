@@ -1,0 +1,34 @@
+1 d_mid None sign None witness [0] ceil(n/2) 1 tail_nonincr_from_kn True logconcave True
+   row [1]
+2 d_mid -1 sign False witness [0] ceil(n/2) 1 tail_nonincr_from_kn True logconcave True
+   row [2, 1]
+3 d_mid -4 sign False witness [1] ceil(n/2) 2 tail_nonincr_from_kn True logconcave True
+   row [6, 7, 3]
+4 d_mid -17 sign False witness [1] ceil(n/2) 2 tail_nonincr_from_kn True logconcave True
+   row [24, 51, 34, 16]
+5 d_mid -124 sign False witness [1] ceil(n/2) 3 tail_nonincr_from_kn True logconcave True
+   row [120, 421, 377, 253, 125]
+6 d_mid -906 sign False witness [2] ceil(n/2) 3 tail_nonincr_from_kn True logconcave True
+   row [720, 3963, 4594, 3688, 2546, 1296]
+7 d_mid -11256 sign False witness [2] ceil(n/2) 4 tail_nonincr_from_kn True logconcave True
+   row [5040, 42253, 62145, 57398, 46142, 32359, 16807]
+8 d_mid -113460 sign False witness [3] ceil(n/2) 4 tail_nonincr_from_kn True logconcave True
+   row [40320, 505515, 929856, 979430, 865970, 702292, 497442, 262144]
+9 d_mid -2064668 sign False witness [3] ceil(n/2) 5 tail_nonincr_from_kn True logconcave True
+   row [362880, 6724381, 15298809, 18289811, 17520519, 15455851, 12587507, 8977273, 4782969]
+10 d_mid -25157750 sign False witness [4] ceil(n/2) 5 tail_nonincr_from_kn True logconcave True
+   row [3628800, 98618763, 275075236, 371706836, 385131546, 359973796, 318092120, 259627152, 186093442, 100000000]
+11 d_mid -618731328 sign False witness [4] ceil(n/2) 6 tail_nonincr_from_kn True logconcave True
+12 d_mid -7883666450 sign False witness [5] ceil(n/2) 6 tail_nonincr_from_kn True logconcave True
+13 d_mid -254602075936 sign False witness [6] ceil(n/2) 7 tail_nonincr_from_kn True logconcave True
+14 d_mid -2309417520844 sign False witness [6] ceil(n/2) 7 tail_nonincr_from_kn True logconcave True
+15 d_mid -108596809084112 sign False witness [7] ceil(n/2) 8 tail_nonincr_from_kn True logconcave True
+16 d_mid 1477396444365712 sign True witness [8] ceil(n/2) 8 tail_nonincr_from_kn True logconcave True
+17 d_mid 18882703175184212 sign True witness [9] ceil(n/2) 9 tail_nonincr_from_kn True logconcave True
+18 d_mid 7805992836270155382 sign True witness [9] ceil(n/2) 9 tail_nonincr_from_kn True logconcave True
+19 d_mid 285254817041448639288 sign True witness [10] ceil(n/2) 10 tail_nonincr_from_kn True logconcave True
+20 d_mid 25104856920493952569478 sign True witness [11] ceil(n/2) 10 tail_nonincr_from_kn False logconcave True
+21 d_mid 1130096940386197568273392 sign True witness [12] ceil(n/2) 11 tail_nonincr_from_kn False logconcave True
+22 d_mid 83555894621623173562013080 sign True witness [13] ceil(n/2) 11 tail_nonincr_from_kn False logconcave True
+23 d_mid 4327557913481909180415362768 sign True witness [14] ceil(n/2) 12 tail_nonincr_from_kn False logconcave True
+24 d_mid 311921460941358551182732138460 sign True witness [14] ceil(n/2) 12 tail_nonincr_from_kn False logconcave True

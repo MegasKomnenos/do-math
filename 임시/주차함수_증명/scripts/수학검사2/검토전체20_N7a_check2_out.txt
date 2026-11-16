@@ -1,0 +1,15 @@
+== A. hermite-nu (가)(나): nm, H0,H1,H2 ==
+nm identity: True
+H0 = 4 | claim 4
+H1 = -4*nu - 8*theta - 26 | claim -4*nu - 8*theta - 26
+H2 = 5*nu**2 + 16*nu*theta + 97*nu + 12*theta**2 + 168*theta + 506 | claim 5*nu**2 + 16*nu*theta + 97*nu + 12*theta**2 + 168*theta + 506
+H1 ok: True  H2 ok: True
+== B. hermite-nu (라)(마): U_i, V_i, 일반 y의 M2/M0 ==
+M2/M0 = U2 - V2/d : True
+M4/M0 = U4 - V4/d : True
+general y: M2/M0 = 1-2n/y+n(n+1)/y^2-n(n+1)/(y^2 d): True
+n(n+1)-d[(n-y)^2+n] with d=4-(26+4nu+8th)/k: k^2 coef = 0 , k coef = 20
+off=2: nu + 2 ; off=2-(3+nu)/k: (-k**2 - k*(nu**2 + 6*nu + 9) + nu**2 + 6*nu + 9)/k**2
+1-4q numerator: True
+== C. 조각 지수 공식 (7.6), X의 최저 차수, (7.7), Neumann 전개, bd 값, Green 원자 (k=2,3) ==
+k=2: brute-force K_n (n<=8) agrees with last-car recursion

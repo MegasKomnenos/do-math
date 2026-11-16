@@ -1,0 +1,628 @@
+## 원고_자료/README.md:528
+   「사슬의」 → 「연쇄의」
+## scripts/_gen_재실행표.py:50
+   「expect="488블록」 → 「expect="$k$-구간 488개」
+## scripts/_gen_재실행표.py:53
+   「time="블록」 → 「time="$k$-구간」
+## scripts/_gen_재실행표.py:233
+   「블록」 → 「구간」
+## 구조표_v2.md:3
+   「」 → 「결정 102(2026-11-14)로 이 표는 설계 기록으로 동결한다. 집필 뒤의 변경(뺌, 이름, 절 배치)은 `장부_v2.md` 4절과 `대조v2/라벨_번호_대응표_1114.md`가 정본이며, 이 표의 몇 행에는 그 뒤의 변경을 괄호로 적어 두었다.」
+## 구조표_v2.md:58
+   「경계(명제;」 → 「상계(명제;」
+## 구조표_v2.md:97
+   「칸」 → 「구획」
+## 장v2/부록A.md:11
+   「나무(블록)의」 → 「나무의」
+   「1.5」 → 「2.4」
+## 장v2/부록A.md:67
+   「크기열)」 → 「크기 수열)」
+## 장v2/부록A.md:293
+   「$\mathrm{BV}_n-(\Theta_n-\Theta^\circ_n)$」 → 「$\mathrm{BV}_n-(\Theta_n-\Theta^\circ_n)$(6.6의 국소 사슬 경로 집합 $\mathcal C_n$과 다른 양)」
+## 장v2/부록A.md:297
+   「상계」 → 「상계(7.2의 국소 미분 횟수 $\mathfrak d_k$와 다른 양)」
+## 장v2/부록A.md:321
+   「칸」 → 「구획」
+## 장v2/부록C.md:35 [delete] old 1 lines / new 0 lines
+   - | 인증 구간 | 창 | 5.2 |
+## 장v2/부록C.md:99 [delete] old 1 lines / new 0 lines
+   - | 안장점 | 임계점, 안장점 | 5.6 |
+## 장v2/부록C.md:186
+   「경계」 → 「상계」
+## 장v2/부록C.md:226 [delete] old 4 lines / new 0 lines
+   - | 기록 [r5f5cf73]의 Dawson 세 사실 | 보조정리 {{5:dawson-facts}} | Dawson 함수에 관한 네 사실 |
+   - | 기록 [ra4c01fc]의 bulk-arc-leading-identities | 보조정리 {{5:arc-leading}} | 호 위 선도 항등식 |
+   - | 기록 [r5f5cf73]의 보조정리 H($\eta$) | 보조정리 {{5:old-5-40}} | Gauss 계수의 균일 상하계 |
+   - | 기록 [r5f5cf73]의 보조정리 V($\eta$) | 보조정리 {{5:old-5-41}} | 두 보정의 균일 상하계 |
+## 장v2/부록C.md:495
+   「크기열;」 → 「크기 수열;」
+## 장v2/부록D_장5A.md:74
+   「임계점」 → 「정류점」
+## 장v2/부록D_장5B.md:117 [delete] old 48 lines / new 0 lines
+   - ### D.{{D:lemma-H-interval}} 두 항 부등식의 전 영역 구간 산술 덮개 (정리 {{5:old-5-39}}, 보조정리 {{5:old-5-40}})
+   - 
+   - **확인하는 진술.** 두 항 부등식의 증명은 아래 적는 함수가 매개변수 영역 전체에서 양이라는 사실과 그 함수에 드는 상하계들의 부호 조건으로 귀결되었다. D.{{D:lemma-H-interval}}에서는 그 영역을 상자로 덮어 둘을 확인한다. 곧 영역 $\{0<\varsigma\le1,\ 0<\mathfrak K\le\min(1,\gamma^\ast/\
+   - 
+   - **식.** $(5.55)$의 $F$. 아래 식의 보조 변수들은 상자의 기본 변수 둘의 거듭제곱으로 정해지며 그 관계식은 D.{{D:lemma-V-coefficients}}의 식 항목에 적는다. 보조정리 {{5:old-5-40}}의 정규화 구간은 차례로 $\tilde I^{\mathrm{lo}}_{2j}=1-\frac35(2j+5)\frac{\varepsi
+   - 
+   - **알고리즘.** $\varsigma$-격자의 구간은 $[0,10^{-3}]$ 하나와 $10^{-3}$부터 $1$까지를 기하 $40$등분한 구간들이고 여기에 분할점 $\sqrt{1/2}$를 더한다. $\mathfrak K$-격자는 각 $\varsigma$-띠에서 $[0,\min(1,0.58480/\varsigma_{\mathrm{lo}})]$(위 끝의 상수
+   - 
+   - **범위.** $k\ge25001$, $\hat x\ge10$, $\eta\le1$(그리고 $k\ge10001$ 판).
+   - 
+   - **산술 등급.** 방향 반올림 구간(mpmath `iv`, $53$비트와 $113$비트 재평가).
+   - 
+   - **결과.** $k\ge25001$에서는 $218$회 평가, 이분을 멈춘 상자 $193$개 모두 통과, 실패 $0$, 상자마다 구한 확인 대상 곱의 하계 가운데 최솟값 $0.0466028$(중앙 근처의 큰 상자). $k\ge10001$에서는 $437$회 평가, 이분을 멈춘 상자 $402$개 통과, 영역 밖으로 버린 상자 $5$개, 실패 $0$, 최솟값 $0
+   - 
+   - **독립 재계산.** 〔구현 같은 코드 재실행·다른 방법; 범위 전체; 산술 방향 반올림 구간·정확 정수·유리수·배정밀도 평가; 자료 기록〕 덮개와 감사를 재실행해 같은 값을 얻었고 인증 성분 $\mathcal M^{\mathrm{lo}}_0\le\mathcal M_0$, $\mathsf g^{\mathrm{lo}}\le\mathsf g_k(n)$, $[k
+   - 
+   - **자료.** `records/r5f5cf73…/evidence/producer/code/certify2.py`(SHA-256 `758c357c…`), `lemmaH_bounds.py`, `records/r5f5cf73…/evidence/producer/logs/certify_cover_full2.log`; `records/r5f5cf73…/evidence
+   - 
+   - **출처.** [r5f5cf73] §5, §7, §7.1, §8; `review/feedback.md` §2.4, §2.8.
+   - 
+   - ### D.{{D:lemma-V-coefficients}} 두 보정 상하계의 계수 생성 알고리즘 (보조정리 {{5:old-5-41}})
+   - 
+   - **확인하는 진술.** D.{{D:lemma-H-interval}}의 상자 평가에 드는 두 보정의 상하계는 보조정리 {{5:old-5-41}}의 항들로 이루어진다. D.{{D:lemma-V-coefficients}}에서는 그 항 $\mathrm{Main}_D$, $\mathrm{First}_D$, $\mathrm{Second}_D$, $\mathrm{Dg}
+   - 
+   - **식.** 상자의 기본 변수는 $\varsigma$, $\mathfrak K$이고 D.{{D:lemma-H-interval}}의 식에 나온 보조 변수들은 $\eta=\varsigma^2$, $\varepsilon=\varsigma^3\mathfrak K^3/(10\sqrt{10})$, $k^{-1/3}=\varsigma^2\mathfrak K^2/10$으
+   - 
+   - Dawson 가중 모멘트 $\mathfrak j_m(\eta)=(-2)^m\mathfrak F^{(m)}(\eta)$, $\mathfrak F(\sigma)=\sqrt{\pi/2}\sqrt\sigma/(\sigma+1)$는 기호 미분으로 얻고 $\mathcal Y_j(\eta)=4\sum_m\gamma_m(\eta)\mathfrak j_{m+1}(\eta)
+   - 
+   - $\mathrm{Rem}_D$의 세 부분은 $|\mathcal Q_3|(1+\epsilon_{\mathfrak f})$, $\epsilon_{\mathfrak f}(|\mathcal Q_1|+|\mathcal Q_2|)$, $2(2\pi)^{-1/2}|\epsilon_{\mathfrak f}-\frac{(n+1)\upsilon^4}{4k^2}|$에 무게 $
+   - 
+   - 꼬리의 단항식 $\upsilon^m\rho^p$ 계수 $c_{m,p}$는 보조정리의 증명에서 정확히 적분한 네 조각의 피적분함수 $\upsilon^4\rho^2Q_0(2(2\pi)^{-1/2}+\frac43\varepsilon\varrho^2+\varrho\psi_1+(2\pi)^{-1/2}\psi_1^2+2(2\pi)^{-1/2}\frac{(1+\eta)
+   - 
+   - $\mathrm{Err}_J$의 세 조각은 $\rho^5\upsilon^4|\mathrm{ph}_\rho|\varepsilon^2/4$, $\rho(1+\eta)\varepsilon^2\upsilon^5/5$, $\rho\varepsilon^2(|\mathrm{ph}_\rho|+(1+\eta)\varepsilon^2\upsilon^5/5)^3/6$에 $\u
+   - 
+   - **알고리즘.** sympy로 $(\varsigma,\mathfrak K)$의 정확한 기호식을 만들고(`Float` 상수 금지), 항별로 약분해 $\varsigma=0$에서 정칙한 꼴로 바꾼 뒤 상자마다 mpmath 구간 산술로 평가한다. 부호가 정해지지 않은 조각($\mathrm{First}_D$, $\mathrm{Second}_D$, $\mathrm{D
+   - 
+   - **범위.** D.{{D:lemma-H-interval}}과 같다.
+   - 
+   - **산술 등급.** 정확 정수·유리수(계수 생성). 상자 평가의 방향 반올림 구간은 D.{{D:lemma-H-interval}}의 것이다.
+   - 
+   - **결과.** 닫힌 꼴 조각 $\mathrm{Main}_D$, $\mathrm{First}_D$, $\mathrm{Second}_D$, $\mathrm{Dg}_D$, $\mathrm{Rem}_D$, $\mathrm{Main}_J$, $\mathrm{Err}_J$와 $\epsilon_{\mathfrak f}$ 교차항의 값이 $(\varsigma,\mathfr
+   - 
+   - **독립 재계산.** 〔구현 다른 방법; 범위 표본; 산술 배정밀도 평가; 자료 기록〕 $\mathrm{Main}$, $\mathrm{First}$, $\mathrm{Second}$, $\mathrm{Dg}$, $\mathrm{Rem}$의 기호식의 값을 독립 구적으로 $10^{-14}$ 안에서 재현했고 본문이 쓰는 상수 $\mathsf d_{\mathrm 
+   - 
+   - **자료.** `records/r5f5cf73…/evidence/producer/code/certify2.py`(함수 `int_poly`, `int_poly_rhoexp`, `J_m`, `D_j`, `C1_closed`, `regularise`, `IVEval`, `Xm_exp_dec`, `evaluate_box`), `closed_forms4.py`, `
+   - 
+   - **출처.** [r5f5cf73] §6.1에서 §6.7까지, §7, §9; `review/feedback.md` §2.5에서 §2.8까지.
+   - 
+## 장v2/부록D_장7A.md:21
+   「방향」 → 「정확」
+   「반올림 구간. $144$비트」 → 「정수·유리수($144$비트」
+   「구간이고,」 → 「구간; 1.5절의 등급 표대로 바깥쪽으로만 반올림하는 정수 구간은 이 등급에 든다).」
+## 장v2/부록D_장7A.md:77
+   「칸:」 → 「구획:」
+   「칸」 → 「구획」
+   「칸의」 → 「구획의」
+   「칸」 → 「구획」
+## 장v2/부록D_장7A.md:79
+   「칸}}\Bigl[\sum_{j=1}^{\mathfrak」 → 「구획}}\Bigl[\sum_{j=1}^{\mathfrak」
+## 장v2/부록D_장7A.md:81
+   「칸의」 → 「구획의」
+   「칸이」 → 「구획이」
+## 장v2/부록D_장7A.md:87
+   「칸」 → 「구획」
+## 장v2/부록D_장7A.md:96
+   「칸별」 → 「구획별」
+   「칸의」 → 「구획의」
+## 장v2/부록D_장7A.md:98
+   「임계점을」 → 「정류점을」
+## 장v2/부록D_장7A.md:104
+   「임계점」 → 「정류점」
+   「칸의」 → 「구획의」
+   「사슬을」 → 「연쇄를」
+## 장v2/부록D_장7A.md:133
+   「경계;」 → 「상하계;」
+## 장v2/부록D_장7A.md:137
+   「경계.」 → 「상하계.」
+## 장v2/부록D_장7A.md:139
+   「칸은」 → 「구획은」
+## 장v2/부록D_장7A.md:143
+   「칸은」 → 「구획은」
+## 장v2/부록D_장7A.md:177
+   「사슬(`restricted_moments_up_blocks`,」 → 「연쇄(`restricted_moments_up_blocks`,」
+   「사슬(`restricted_moment2_lo_blocks`,」 → 「연쇄(`restricted_moment2_lo_blocks`,」
+## 장v2/부록D_장7A.md:214
+   「사슬」 → 「연쇄」
+## 장v2/부록D_장7A.md:216
+   「사슬은」 → 「연쇄는」
+   「경계식」 → 「상하계 식」
+## 장v2/부록D_장7B.md:1
+   「사슬의」 → 「연쇄의」
+## 장v2/부록D_장8.md:5
+   「경계).」 → 「상하계).」
+## 장v2/부록D_장8.md:7
+   「경계를」 → 「상하계를」
+## 장v2/부록D_장8.md:29
+   「칸」 → 「구간」
+## 장v2/부록D_장8.md:31
+   「$400$칸으로」 → 「$400$개 구간으로」
+   「$6000$칸의」 → 「$6000$개 구간의」
+   「칸마다」 → 「구간마다」
+## 장v2/부록D_장8.md:59
+   「$6000$칸의」 → 「$6000$개 구간의」
+   「칸마다」 → 「구간마다」
+## 장v2/부록D_장9.md:29
+   「칸으로」 → 「구간으로」
+   「칸마다」 → 「구간마다」
+   「칸」 → 「구간」
+   「칸마다」 → 「구간마다」
+   「칸」 → 「구간」
+   「칸」 → 「구간」
+## 장v2/부록D_장9.md:32
+   「칸」 → 「구간」
+## 장v2/부록D_장9.md:33
+   「칸」 → 「구간」
+## 장v2/부록D_장9.md:41
+   「경계」 → 「상하계」
+   「경계를」 → 「상하계를」
+## 장v2/부록D_장9.md:53
+   「경계를」 → 「상하계를」
+## 원고_자료/빠른_확인.py:65
+   「칸」 → 「구간」
+## 원고_자료/빠른_확인.py:160
+   「dict(name="극영역-첫블록",」 → 「dict(name="극영역-첫구간",」
+## 원고_자료/빠른_확인.py:163
+   「488블록」 → 「$k$-구간 488개」
+   「블록(약」 → 「구간(약」
+## 원고_자료/빠른_확인.py:186
+   「블록」 → 「묶음」
+## 장v2/장1.md:210
+   「사슬을」 → 「연쇄를」
+## 장v2/장10.md:773 [insert] old 0 lines / new 4 lines
+   + **정리 {{10:old-8-37}} (주 정리의 둘째 증명) [증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{6:V-all}}·{{7:qstar-columns}}·{{7:old-6-13}}·{{5:old-5-1}}·{{5:old-5-18}}·{{5:old-5-11}}·{{4:old-4-8}}·{{4:
+   + 
+   + **증명.** 다섯 고리를 차례로 잇는다.
+   + 
+## 장v2/장10.md:787 [delete] old 3 lines / new 0 lines
+   - **정리 {{10:old-8-37}} (주 정리의 둘째 증명) [증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{6:V-all}}에 의존; r3d0856b, re71a735].** 모든 정수 $n\ge1$에서 길이 $n$의 주차함수를 최대 변위로 센 개수열 $b_{n,0},\dots,b_{n,n-1}$은
+   - 
+   - **증명.** 위에 적은 다섯 고리를 차례로 이으면 된다. ∎
+## 장v2/장11.md:29
+   「」 → 「(ㄴ) 둘째 프로그램(IEEE binary64의 방향 반올림 구간, 엄격 판정)이 첫째와 독립이고 모든 열에서 같은 판정을 냈다. 검토가 두 프로그램을 다시 빌드해 열 표본을 바이트 단위로 재현했다. (ㄹ) 첫 Python 정수 구간 프로그램($n\le2000$, $\mathrm{rc}=2718281828/10^9$, 정밀도 $2^{-96}$)과 독립 C 프로그램($n\le20000$, $\mathrm{rc}=87/32$)이 $n\le2000$의 $997{,}002$개 위치에서 바이트 단위로 같은 분류를 냈다. 검토가 C 프로그램을 다시 빌드해 $n\le20000$ 전체를 재실행했고 행별 자료가 바이트 단위로 같았다. 정리 {{5:old-5-2}}의 방법으로 $n\le20000$을 다시 계산한 결과도 $19{,}996$개 행의 (위치 수, 증가 수, 마지막 증가 위치)에서 불일치가 없다(D.{{D:c50}}). (ㅁ) 검토가 별도의 정확 정수 구현으로 같은 결과를 얻었고, $n\le6$은 모든 선호 목록의 전수 주차와 일치했다. (ㅂ) 검토가 같은 자료에서 재계산했다.」
+## 장v2/장11.md:30
+   「」 → 「검토가 소스를 줄 단위로 감사하고 표를 독립 계산하고(최대 오차 $0.994u$) 재빌드해 두 조각($k=22297$–$25270$, $32857$–$49999$)을 재실행했으며 행 파일이 바이트 단위로 같았다. $n=47277$ 등에서 $2^{256}$ 고정소수점 마지막 차 재귀로 참값을 계산해 구간 안에 있음을 확인했다. $n\le60$의 $169$개 표본에서 실제 상대 오차는 한계의 $2.2\%$ 이하다.」
+   「」 → 「$n\le300$의 $22{,}647$개 $Z$는 모두 마지막 차 재귀(정리 {{2:old-2-6}})의 정확 정수 값을 구간 안에 담는다. 넘는 수 재귀(D.{{D:exact-n20000}}(ㄹ)의 식)를 $2^{-192}$ 눈금의 정수 구간으로 따로 계산한 참조 구간(상대 폭 $5\times10^{-35}$ 이하)이, 최소 여유 자리와 최대 폭 자리를 지나는 열 $15$개의 $56{,}152$개 값에서 모두 이 프로그램의 구간 안에 든다.」
+## 장v2/장11.md:32
+   「」 → 「검토는 (A)를 잘리지 않은 전체 기울인 생일 합으로 따로 계산해(배정밀도; $r=171,1000,9999$는 $50$자리로 대조) $9{,}829$개 $r$ 전부에서 양수이고 최솟값이 $r=9999$의 $0.1654$임을 재현했고, (B)의 $\mathfrak L(10^4)$은 손으로 다시 계산했다. 창의 경계 $r=171,300,1000,2000$, $k=\mathfrak k_r$에서 실제 여유 $n^{2/3}(\beta-\mathrm{sd}_1/\mathrm{sd}_0)=1.929,1.944,1.965,1.973$을 배정밀도로 대조했다(증명이 아니라 진단).」
+## 장v2/장11.md:33
+   「」 → 「(ㄱ)은 60자리 계산으로 $m\le3000$ 전부와 $m\le10^7$의 $400$개 표본에서 계수 부등식을 직접 대조했다(최소 정규화 여유 $0.00049$ 이상). (ㄴ)의 핵 포함 구간은 실제 $\mathcal Z^{(2)}_j$, $\mathcal Y_j$ 계수와 $r\le20000$의 $3103$곳, $r\le1.05\times10^6$의 $1938$곳에서 대조해 위반이 $0$이었다. 실제 원 개수에서 (ㄴ)의 창 양 끝 $1144$곳($r=529,\dots,1100$)의 정규화 값이 $-0.057$ 이하였다. (ㄴ)이 증가를 예측하는 D.{{D:exact-n20000}}(ㄹ)의 $18719\le n\le20000$의 $6481$개 위치가 모두 인증된 증가 구간 안에 있다.」
+## 장v2/장11.md:36 [replace] old 7 lines / new 5 lines
+   - | 부록 D.{{D:window-mass-constant}} | 정리 {{5:old-5-32}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 코드 재실행; 범위 전체; 산술 방향 반올림 구간; 자료 기록·이 글〕 | 같은 격자로 다시 실행해 같은 값을 얻었다. 이 글을 쓰며 2026-11-13에 `ul_iv_fixed.py`를 $1600\times120
+   - | 부록 D.{{D:zeta-constants}} | 보조정리 {{5:zeta-constants}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 식의 새 구현; 범위 전체; 산술 방향 반올림 구간; 자료 이 글〕 | 이 글을 쓰며 2026-11-13에 `원고_자료/세션_재계산/zeta_constants/zeta_iv.py`(mpmath 구간 산술, 소수
+   - | 부록 D.{{D:band-check}} | 명제 {{5:band-inequality}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 코드 재실행·같은 식의 새 구현; 범위 전체; 산술 방향 반올림 구간; 자료 기록·이 글〕 | 이 글을 쓰며 기록의 `band_iv.py`를 인자 `0.71216 0 4000`(둘째 인자는 우변에 더하는 항의 계수이고 
+   - | 부록 D.{{D:induction-rows}} | 보조정리 {{5:old-5-38}} | 정확 정수·유리수 | 5.5 | 〔구현 인증서 판독; 범위 전체; 산술 정확 정수·유리수; 자료 이 글〕 | 기록 [r58b4caa]에서는 같은 자료를 다시 읽어 확인했다. 이 글을 쓰며 같은 행 자료(SHA-256 `d35451d1…`)를 새로 쓴 판독기로 읽었다
+   - | 부록 D.{{D:lemma-H-interval}} | 정리 {{5:old-5-39}}, 보조정리 {{5:old-5-40}} | 방향 반올림 구간 | 5.6 | 〔구현 같은 코드 재실행·다른 방법; 범위 전체; 산술 방향 반올림 구간·정확 정수·유리수·배정밀도 평가; 자료 기록〕 | 덮개와 감사를 재실행해 같은 값을 얻었고 인증 성분 $\mathcal M
+   - | 부록 D.{{D:lemma-V-coefficients}} | 보조정리 {{5:old-5-41}} | 정확 정수·유리수, 방향 반올림 구간 | 5.6 | 〔구현 다른 방법; 범위 표본; 산술 배정밀도 평가; 자료 기록〕 | $\mathrm{Main}$, $\mathrm{First}$, $\mathrm{Second}$, $\mathrm{Dg}$, $\mat
+   - | 부록 D.{{D:theorem-U-constant}} | 정리 {{6:theorem-U}} | 방향 반올림 구간 | 6.5 | 〔구현 같은 식의 새 구현; 범위 전체; 산술 배정밀도 평가·방향 반올림 구간; 자료 기록·이 글〕 | 기록에서는 이 계산을 검토 단계의 코드로 수행했고, 같은 기록의 단계별 값(§7 표의 S1·S2 열; 증명의 앞 단계까지만 
+   + | 부록 D.{{D:window-mass-constant}} | 정리 {{5:old-5-32}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 코드 재실행; 범위 전체; 산술 방향 반올림 구간; 자료 기록·이 글〕 | 같은 격자로 다시 실행해 같은 값을 얻었다. 더 성긴 격자 $800\times600$($\tilde\varphi$는 $3200$개 셀)의 
+   + | 부록 D.{{D:zeta-constants}} | 보조정리 {{5:zeta-constants}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 식의 새 구현; 범위 전체; 산술 방향 반올림 구간; 자료 이 글〕 | 이 글을 쓰며 2026-11-13에 `원고_자료/세션_재계산/zeta_constants/zeta_iv.py`(mpmath 구간 산술, 소수
+   + | 부록 D.{{D:band-check}} | 명제 {{5:band-inequality}} | 방향 반올림 구간 | 5.5 | 〔구현 같은 코드 재실행·같은 식의 새 구현; 범위 전체; 산술 방향 반올림 구간; 자료 기록·이 글〕 | 이 글을 쓰며 기록의 `band_iv.py`를 인자 `0.71216 0 4000`(둘째 인자는 우변에 더하는 항의 계수이고 
+   + | 부록 D.{{D:induction-rows}} | 보조정리 {{5:old-5-38}} | 정확 정수·유리수 | 5.5 | 〔구현 인증서 판독; 범위 전체; 산술 정확 정수·유리수; 자료 이 글〕 | 기록 [r58b4caa]에서는 같은 자료를 다시 읽어 확인했다. 이 글을 쓰며 같은 행 자료(SHA-256 `d35451d1…`)를 새로 쓴 판독기로 읽었다
+   + | 부록 D.{{D:theorem-U-constant}} | 정리 {{6:theorem-U}} | 방향 반올림 구간 | 6.5 | 〔구현 같은 식의 새 구현; 범위 전체; 산술 배정밀도 평가·방향 반올림 구간; 자료 기록·이 글〕 | 기록에서는 이 계산을 검토 단계의 코드로 수행했고, 같은 기록의 단계별 값(§7 표의 S1·S2 열; 증명의 앞 단계까지만 
+## 장v2/장11.md:44
+   「방향」 → 「정확」
+   「반올림 구간」 → 「정수·유리수」
+   「160비트」 → 「$160$비트」
+   「」 → 「기록 작성자의 검산은 무작위 합성곱 80개의 직접 합 대조, $k\le20$과 $k\in\{25,33,50\}$, $n\le100$의 정확한 개수 6969개가 세 정밀도·반지름의 구간에 드는지, $n\le6$ 전수 열거의 누적 개수 21개 일치다. 기록의 검토는 기록 작성자의 코드를 줄 단위로 읽어 반올림 방향과 누산 범위를 확인했다. 정수 부등식은 기록의 작성자와 검토가 각각 정확히 계산했다.」
+   「」 → 「연속한 열 열 개가 하나의 $\mathfrak x=e^{-1}(1+c/\bar k)$($\bar k$는 묶음의 가운데 열, $c=0.34+0.65\ln\bar k$, $2^{-40}$ 단위로 반올림)를 공유한다. 검산으로 $n\le7$ 전수 열거의 누적 개수와 $n\le120$의 정확한 개수가 구간에 들고, 작은 열에서 분할 정복과 직접 합의 끝점이 모두 같으며, 기록의 검토의 반지름과 범위로 돌린 $k=121,128,140,160,161$에서 판정과 가운데 용량의 최대 구간 폭이 기록과 같다($k=121$의 세 용량은 기록의 검토 프로그램과 모든 끝점이 같다). 모든 열에서 직접 차분과 띠 비교가 통과했고, 직접 차분의 최소 상대 여유는 $k=500$에서 $1.3778\times10^{-5}$로 가장 작고, 열별 최소 상대 여유는 $380$열 모두에서 기록의 값과 상대 $1.1\times10^{-35}$ 안에서 같다(최소가 되는 $n=2k+1$도 같다).」
+## 장v2/장11.md:47
+   「」 → 「층 A-int, 층 A″-1의 36구간, 층 A″-2의 72구간은 기록의 검토가 다시 실행했고, 그 재실행의 최대 $R_U$는 A-int $1.975861$, A″-1 $1.8697$, A″-2 $1.9969851$이다.」
+   「」 → 「중점–반지름 FFT의 격자값은 $k=600$의 실제 자료에서 상자형 구간 FFT의 상자 중심과 $2.2\times10^{-15}$ 이내로 맞았다(대조용).」
+## 장v2/장11.md:48
+   「」 → 「$\varsigma$-구간의 연쇄는 기록의 검토가 주요 부등식을 재유도하고 흡수된 꼬리와 전변동 상수를 보조정리와 도함수의 직접 적분으로 증명했으며, $k=10^7$의 참값과 $k=10^5$–$10^7$의 16개 점에서 상하계 식 20개를 대조했다. $2472$개 구간의 기록 값은 기록의 검토가 다시 돌린 값이다. 공표 정리 G′의 다른 방법(양의 재귀와 원 위 감김수)을 $k=2001$–$2900$의 표본 열에 재실행해 같은 결론을 얻었다.」
+   「」 → 「이 글을 쓰며 같은 식을 라이브러리 함수 없는 방향 반올림 구간 산술로 다시 구현해 $488$개 $k$-구간 전부(기록의 $k$-구간 입력 $490$줄 가운데 서로 다른 $488$개 $k$-구간)와 $2472$개 $\varsigma$-구간, [A9]의 $U(10.9,10^7)$, 기록의 검토가 한 보조 구간 검사(TV 배정 두 가지를 $\varsigma$와 $\varsigma+\vartheta$에서, $\mathcal T^{\mathrm L}$의 $\Lambda$-단조성)를 다시 계산했다(`원고_자료/세션_재계산/r89eb039_polar_iv/`). 모두 통과했다. 같은 $\vartheta$ 후보에서 $k$-구간의 $\eta$는 위의 binary64 재인증 값보다 상대 $1.3\times10^{-8}$ 넘게 작아진 곳이 없고(큰 $k$에서는 $\cos$의 구간이 좁아져 $\mathcal L$의 격자 하계가 최대 $3.5\%$ 높아진 후보가 있다), 같은 $\vartheta$를 고른 $484$개 $k$-구간에서 $V\sqrt k$와 $\psi_V$ 하계는 상대 $10^{-5}$ 안에서 같고(나머지 네 $k$-구간은 $\psi_V$ 하계가 상대 $10^{-5}$ 안팎 커져 다른 후보를 골랐다), $\varsigma$-구간의 값은 기록의 검토가 다시 돌린 값과 상대 $10^{-10}$ 안에서 같다. 상수 $\zeta(3/2)$·$\Gamma(1/3)$·$\Gamma(5/3)$·$1-\cos1$의 괄호는 mpmath `iv`(40자리)로 만들어 확인했다. 이 글을 쓰며 다시 인증한 $[9843156,10^7]$ $k$-구간의 상하계를 기록의 검토가 다른 다섯 $k$-구간에 쓴 방법 그대로 $k$-구간 안 세 $k$($9843156$, $9921578$, $10^7$)의 참값과 $135$개 항목 대조했다. $135$개 모두 상하계가 참값을 담았고, 가장 얇은 상대 여유는 $k=10^7$에서 $n\le k$ 부분의 2차 모멘트 상계가 남긴 $6.3\times10^{-7}$이다. 참값 계산의 오차(항별 $1.6\times10^{-14}$ 이하, 구적·보간 $1.3\times10^{-12}$ 이하)는 이 여유보다 다섯 자리 이상 작다.」
+## 장v2/장11.md:50
+   「」 → 「넷은 전수 대조(원 과정의 모든 선호 수열, $1\le n\le7$, $1\le k\le n+1$의 $35$개 경우에서 $A_{n,k-1}$과 세 모멘트 합이 재귀와 일치), 정확 유리수 항등식 검사($k=2,\dots,5$, $n\le12$–$13$에서 보조정리 {{7:variance-formula}}의 세 식 등), 정확 정수 열($k=40$, $n=81$–$90$; $k=501$, $n=1003$–$1012$; 인쇄된 $9$자리까지 일치, 예 $(501,1003)$에서 $13.33603429$), 그리고 합산 순서가 다른 numpy 구현으로 두 열($k=2000,840$)의 최솟값과 끝값이 인쇄된 자리까지 일치함을 본 것이다. 또 소스를 같은 컴파일러로 다시 빌드해 세 열($k=2000,840,1000$)의 요약 행을 바이트 단위로 재현했고, 오차 해석 문서와 소스를 줄 단위로 대조했다(묶음 합산의 반올림 수, $\mathfrak Z$ 항의 연산 수, $\mathfrak e^{(1)}$의 볼록성). 형식적 간극 하나: 모형은 모든 결과가 정규수라 가정하지만 코드는 $\hat{\mathfrak a}_n>10^{-290}$만 확인한다. 곱 $\hat{\mathfrak a}_{p-1}\hat{\mathfrak a}_{n-p}$는 인증 범위에서 정규수 하한보다 $10^{10}$배 이상 크고, 준정규수가 생기더라도 절대오차 $2^{-1075}$는 합의 상대 $10^{-20}$ 이하라 판정 여유에 흡수된다.」
+   「」 → 「같은 코드로 기록의 세 열($k=2000,840,1000$)을 양 끝 모두 계산하면 기록이 인쇄한 열별 최솟값과 끝 행의 $\mathfrak Z_n$, $k\mathfrak Z^{\mathrm H}_n$, $\mathfrak Z^\flat_n$이 모두 구간 안에 든다(인쇄된 마지막 자리의 반 단위까지). 작은 열($k=3,5,7,12$, $n\le240$; 블록 경로와 직접 경로 모두)에서는 (7.3)을 정확 유리수로 계산한 값이 모두 구간 안에 있다. (A5)의 끝 행 $n_{\mathrm M}(k)-1$은 저장된 열별 인증값에서 정확 유리수로 다시 구했고 $1160$열 모두 기록의 값과 같다. (ㄴ) 검토가 인증 파일에서 덮개(누락 $0$)를 확인하고 $n_{\mathrm M}(k)$와 $\mathrm Q_k'>0$을 독립 재계산해 같은 값을 얻었다.」
+## 장v2/장11.md:52
+   「」 → 「$2001\le k\le3130$이 모두 통과하고 $3131$–$3135$는 첫 층 쪽에서 실패한다. 원천 쪽 로그 여유와 최적 $\mathfrak l$이 $1135$열 모두에서 같고(차이 $0$; $50$자리 재평가와의 차이 $7\times10^{-12}$ 이하; 원천 쪽 최소 여유 $0.78546$), 첫 층 쪽 비는 $1.3\times10^{-7}$ 안에서 같으며, 보정 전 여유는 원 계산보다 $5\times10^{-6}$–$1.9\times10^{-5}$ 크다(보정량과 맞는다). $\beta$ 재귀로 얻은 차분과 직접 뺄셈의 차는 $\max\vert \Delta\vert $의 $1.1\times10^{-11}$ 이하다. 또 $k=7$에서 $\beta$ 재귀의 열이 정확한 정수와 상대 $2.7\cdot10^{-15}$로 일치하고, $112$열에서는 (7.22)을 둘러싸기 폭 상대 $4\times10^{-31}$ 이하의 엄밀 산술로 다시 판정해 부호가 모호한 $L$이 없음을 확인했다. 이 검토의 코드와 출력은 기록에 보존되어 있지 않고, 결과만 기록의 `review/feedback.md` §2.5에 적혀 있다.」
+   「$7.6\cdot10^{-12}$」 → 「$7.7\cdot10^{-12}$」
+   「」 → 「첫 층 쪽 여유의 하계는 기록의 값보다 $4.1\cdot10^{-6}$–$1.6\cdot10^{-5}$ 크고(기록이 사전 반올림 한계로 뺀 몫이다), $T/A$는 기록의 값과 $1.5\cdot10^{-13}$ 안에서 같으며 부호 변화의 수도 모든 열에서 같다. 같은 구간 코드가 작은 열($k=7,12,25$, $m\le30,40,60$)에서 정확한 정수로 만든 열과 수준 질량을 모두 담음을 확인했고, $k=2001,2500,3000,3129,3130$에서 원천 쪽 비를 $60$자리 점 평가로 다시 재어 구간의 하계가 그 아래($2.4\cdot10^{-13}$–$5.8\cdot10^{-13}$)에 있음을 확인했다. 실행 시간은 프로세스 둘로 $14$분이다.」
+## 장v2/장11.md:53
+   「」 → 「먼저 기록의 코드를 그대로 다시 돌려 같은 값을 얻었고(`원고_자료/세션_재계산/r030ffae_window/work/xKrig.npy`, `wKrig.npy`(격자 $0\le i\le12927$의 표), `NEW_cert_interval_0_16.out`, `NEW_cert_Cb_1_31.out`, `NEW_cert_Cb_31_1500.out`, `NEW_cert_Cb_1500_2250.out`, `NEW_cert_Cb_2250_3000.out`, `work/FIXED_cert_interval_result_0_16.json`, `work/FIXED_cert_Cb_result_*.json`; 코드는 기록 `records/r030ffae…/evidence/peer/rerun/work/`의 사본이고 `cert_Cb_range.py`에만 축소 실행 인자 `--quick`을 더했다; 표의 처음 $12927$개 값은 기록의 표와 비트 단위로 같다), 다음으로 위의 방향 반올림 구간 산술로 (가)·(나)를 다시 계산해 전부 통과와 위의 여유를 얻었다(`원고_자료/세션_재계산/window_mass_env/cert_Cb_iv_result_1_2280.json`, `cert_Cb_iv_result_2280_3000.json`, `cert_interval_iv_result.json`, `summarize_out.txt`). 구간 재계산의 $q$별·$J_i$별 최소 상대 여유는 기록의 배정밀도 값과 (나)에서 $1.4\cdot10^{-9}$ 안에서, (가)에서 $1.8\cdot10^{-5}$ 안에서(구간 쪽이 조금 크다; 차이는 허용 오차 $10^{-9}$와 $\Omega'$의 셀 안 최댓값에서 온다) 일치하고 최악의 셀 위치도 같다. 실행 시간은 (나) $21$분, (가) 두 조각 $86$분·$70$분(프로세스 둘, 다른 계산과 함께 돌림)이다.」
+## 장v2/장11.md:59
+   「칸」 → 「구간」
+## 장v2/장11.md:60
+   「」 → 「(가)·(나)의 구간값은 기록의 50자리 값과 표시된 열두 자리까지 같고, (다)의 점별 구간값은 기록의 30자리 값 $-5.8135403\times10^{-6}$, $3.8919631\times10^{-6}$, $5.236545\times10^{-5}$과 표시된 자리까지 같다. (다)·(라)의 구간 하계 최솟값 $4.594\times10^{-9}$, $3.1306\times10^{-7}$은 기록의 배정밀도 값 $4.605\times10^{-9}$, $3.1308\times10^{-7}$보다 각각 $1.1\times10^{-11}$, $1.5\times10^{-11}$ 작다. 누적합의 오차 한계로 넓힌 몫이다. 또 다섯 점의 $\mathcal F^+_k$와 네 점의 쌍대 하계를 numpy 없이 mpmath `iv`만으로 다시 계산해, numpy 구간 하계가 그 구간보다 $2.0\times10^{-11}$ 이내로 아래에 놓임을 확인했다.」
+## 장v2/장11.md:61
+   「」 → 「$100$개 평가점에서 $\Omega$의 구간값과 기록의 배정밀도 값의 차는 $1.4\times10^{-16}$ 이하다.」
+## 장v2/장11.md:62
+   「」 → 「그 코드와 기록의 `cf.py`는 상수를 아래로 반올림한 $0.708345$, $2.528570$으로 두어 $\mathfrak j_2=2.7171423\ldots$, $\mathfrak j_1=0.7998520\ldots$을 얻었다. 그 상수로 낸 $\mathrm{DDL}^\natural$은 결과 항에 적은 구간의 값보다 작지만 그 차가 $2.7\times10^{-6}$을 넘지 않으며, 넷째 자리는 같다. 기록에는 두 적분을 따로 적분한 또 하나의 계산이 있고, 그 계산도 $\mathrm{DDL}^\natural(6668,8065,9551,9705)=0.1324,0.1223,0.1140,0.1133$을 재현했다.」
+   「」 → 「같은 상수로 낸 두 적분의 소수 30자리 tanh-sinh 구적값(원 꼴과 치환 꼴)은 두 적분의 구간과의 거리가 $2\times10^{-21}$을 넘지 않는다.」
+## 장v2/장11.md:63
+   「」 → 「기록 안의 또 다른 독립 재계산에서는 본문의 식만으로 쓴 코드로 네 가족의 모든 값을 다시 계산해 넷째 자리까지 같은 값이 나왔고, 그에 앞서 사슬 재귀가 $2\le y\le12$에서 정확한 $A_{n,\ell}$과 일치하는지도 확인되었다.」
+   「」 → 「`recheck_1a.py`의 $\mathrm{Stays}^{\mathrm{up}}$ 값은 결과 항에 적은 해당 구간을 반올림한 값이다. $\mathrm{DDL}^\natural$을 거치는 나머지 값들은 `recheck_1a.py`가 $\mathfrak j_1$, $\mathfrak j_2$에 상수 $0.708345$, $2.528570$을 써서 $\mathrm{DDL}^\natural(9705)$가 $2.31\times10^{-6}$ 작게 나온 만큼 다르다. 그 상수로 구간 계산을 다시 하면 `recheck_1a.py`의 값들은 모두 그 구간을 출력의 마지막 자리로 반올림한 값과 같아진다. 이 밖에 각 가족에서 $\mathfrak o_F$의 증가와 $\mathrm{Stays}^{\mathrm{up}}_F$, $\mathfrak R^\sharp_F$, $\mathfrak R^{\sharp\prime}_F$의 감소 그리고 보조정리 {{10:old-8-32}}(ii)(iii)의 단조성을 표본에서 대조한다(단조성의 증명은 본문의 해석적 논증이다).」
+## 장v2/장11.md:94
+   「{{7:seed-transfer}}:」 → 「{{7:seed-transfer}}·보조정리 {{7:column-lemma}}:」
+   「정수·유리수; 보조정리 {{7:column-lemma}}: 방향 반올림 구간」 → 「정수·유리수」
+## 장v2/장11.md:155 [insert] old 0 lines / new 1 lines
+   + | OEIS Foundation, *The On-Line Encyclopedia of Integer Sequences*, 수열 A078434 | $\zeta(3/2)=2.6123753486\ldots$의 십진 전개 | 보조정리 {{6:lemma-Hprime}} |
+## 장v2/장2.md:316 [replace] old 9 lines / new 1 lines
+   - 이라 한다(정리 {{2:old-2-10}}). 정리 {{2:old-2-10}}의 증명에서 허용 숲의 지수 생성함수는 허용 나무의 지수 생성함수의 지수함수였다. 그러므로 임계점에서 값을 취하면 허용 숲의 생성함수 값은 나무 생존 확률을 Borel 질량으로 가중해 더한 합의 지수함수다.
+   - 
+   - **명제 {{2:old-2-23}} [증명됨; rfbd91ce].** 모든 $\ell\ge0$에 대해
+   - $$
+   - A_\ell(1/e)=\exp\Bigl(\sum_{t\ge1}\mathrm{Bor}(t)\,s^T_t(\ell+1)\Bigr),\qquad
+   - \Pr_{\mathrm B}(M\le\ell)=\exp\Bigl(-\sum_{t\ge1}\mathrm{Bor}(t)\bigl(1-s^T_t(\ell+1)\bigr)\Bigr).
+   - $$
+   - 
+   - **증명.** 허용 나무 생성함수 $T_\ell(x)$에 $x=1/e$를 넣으면 $\sum_t\mathcal N_\ell(t)e^{-t}/t!=\sum_tt^{t-1}s^T_t(\ell+1)e^{-t}/t!=\sum_t\mathrm{Bor}(t)s^T_t(\ell+1)$이고, $A_\ell=\exp(T_\ell)$이므로 첫 식이다. 둘째 식은 첫 식을 $e
+   + 이라 한다(정리 {{2:old-2-10}}).
+## 장v2/장2.md:921
+   「사슬이다.」 → 「연쇄다.」
+## 장v2/장3.md:273
+   「칸」 → 「구획」
+## 장v2/장5A.md:33
+   「경계;」 → 「상계;」
+## 장v2/장5A.md:808
+   「구간);」 → 「구간), 보조정리 {{5:kernel-bounds}}·{{5:kernel-sandwich}}에 의존;」
+## 장v2/장5B.md:94 [replace] old 26 lines / new 1 lines
+   - 앞 절에서 차분의 하계를 세 양으로 갈라 놓았으니, 이제 그 양들을 하나씩 잰다. 음의 쪽에서는 창 항 $\mathrm{WIN}_0$부터 막는다. 창 항을 막으려면 음의 부분 $(x_t(y))_-$의 크기를 알아야 하는데, 그 크기는 나무 하나의 가장 큰 나무 사슬을 고정하고 보면 드러난다. 사슬을 고정하면 둘째 차분에서 음수가 될 수 있는 항은 하나뿐이다
+   - 
+   - **보조정리 {{5:old-5-23}} (사슬별 둘째 차분) [증명됨; r58b4caa].** 크기 $t\le2y-1$의 뿌리 나무를 잡고, 뿌리에서 출발해 가장 큰 자식 쪽으로 내려가며 읽은 부분나무 크기의 수열을 $\mathcal C=(S_1>S_2>\cdots)$라 하자. $t<2y$이므로 부분나무 크기가 $y$를 넘는 꼭짓점은 모두 이 수열에 있다.
+   - $$
+   - \Pi(y+1)-2\Pi(y)+\Pi(y-1)=\frac{(y+1)^z-2y^z+(y-1)^z}{\prod_{i\le z}S_i}-\mathbf 1\{y\in\mathcal C\}\,\frac{(y-1)^z}{y\prod_{i\le z}S_i}.
+   - $$
+   - 첫 항은 $Y\mapsto Y^z$의 볼록성으로 음이 아니고, 둘째 항은 사슬이 크기 $y$를 지날 때 생기는 오목한 꺾임이다.
+   - 
+   - **증명.** $\Pi(y+1)=(y+1)^z/\prod_{i\le z}S_i$다. $y+1$보다 큰 원소는 $z$개 안에 있고, $S_z=y+1$이면 그 인자가 $(y+1)/S_z=1$이라 같은 값이기 때문이다. $\Pi(y)=y^z/\prod_{i\le z}S_i$이고, $\Pi(y-1)=(y-1)^z/\prod_{i\le z}S_i$에 $y$가 사슬 
+   - 
+   - **보조정리 {{5:old-5-24}} (방문 확률) [증명됨; r58b4caa].** 크기 $t$의 균등 뿌리 나무에서 가장 큰 나무 사슬이 크기 $s$($t/2<s<t$)를 방문할 확률, 곧 어떤 $i$에서 $S_i=s$일 확률은
+   - $$
+   - \frac{\mathrm{Ren}(t-s)\,\mathrm{Bor}(s)}{\mathrm{Bor}(t)}=\frac{(t-s)\,\mathrm{Bor}(t-s)\,\mathrm{Bor}(s)}{\mathrm{Bor}(t)}
+   - $$
+   - 이다.
+   - 
+   - **증명.** 사슬은 크기 $t$에서 출발한다. 목표 $s>t/2$이면 모든 중간 원소가 $s$보다 크므로 각 단계에서 가장 큰 나무가 유일하고, 하강량 $t-s$의 모든 합성, 곧 순서를 따지는 양의 정수 분할 $(\gamma_1,\dots,\gamma_j)$이 허용된다. 사슬의 한 전이, 곧 크기 $s'$의 나무에서 뿌리를 지운 숲의 가장 큰 나무가 크
+   - 
+   - **보조정리 {{5:old-5-25}} (창 경계) [증명됨; r58b4caa].** $t>y>t/2$이면 $(x_t(y))_-\le\mathrm{Ren}(t-y)\mathrm{Bor}(y)/(y\,\mathrm{Bor}(t))$다. 따라서
+   - $$
+   - \mathrm{WIN}_0\ \le\ \mathrm{WIN}^{\mathrm V}_0:=\frac1y\sum_{t=y+1}^{t_0-1}\bigl(\pi_n(t)-\pi_n(y)\bigr)\frac{\mathrm{Ren}(t-y)\,\mathrm{Bor}(y)}{\mathrm{Bor}(t)}.
+   - $$
+   - 
+   - **증명.** 보조정리 {{5:old-5-23}}에서 첫 항은 음이 아니고 $\prod_{i\le z}S_i\ge(y+1)^z\ge(y-1)^z$이므로 $\Pi(y+1)-2\Pi(y)+\Pi(y-1)\ge-\mathbf 1\{y\in\mathcal C\}/y$다. 정리 {{2:old-2-11}}에 따라 모양을 고정한 나무의 생존 확률은 $\prod_v\mi
+   - 
+   - Borel 질량의 상하계는 창 항의 닫힌 상계를 세우는 데에 쓰이고, 꼭대기 항의 하계를 세우는 뒤의 절들에서도 되풀이해 쓰인다.
+   + 앞 절에서 차분의 하계를 세 양으로 갈라 놓았으니, 이제 그 양들을 하나씩 잰다. 음의 쪽에서는 창 항 $\mathrm{WIN}_0$부터 막는다. 먼저 Borel 질량의 상하계와 세 제타 상수를 준비한다.
+## 장v2/장5B.md:203
+   「걸음열」 → 「걸음 수열」
+## 장v2/장5B.md:324
+   「사슬은」 → 「연쇄는」
+## 장v2/장5B.md:353
+   「걸음열의」 → 「걸음 수열의」
+   「걸음열」 → 「걸음 수열」
+## 장v2/장5B.md:436 [delete] old 205 lines / new 0 lines
+   - ### 5.6 $\mathsf X$의 증명
+   - 
+   - 앞 절에서 벌크의 비감소를 증명했지만, 같은 결론에 이르는 길이 하나 더 있다. 두 항 부등식 $\mathsf X$를 증명하면 $\mathsf W^\sharp$의 독립한 둘째 증명이 나온다. 주 정리에 이르는 두 길은 모두 앞 절의 정리 {{5:old-5-18}}을 쓰고 이 절의 결과는 쓰지 않으므로, 이 증명은 $\mathsf W^\sharp$에 이르는 
+   - 
+   - **정리 {{5:old-5-39}} (두 항 부등식) [증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{5:old-5-40}}·{{5:old-5-41}}에 의존; r5f5cf73].** 모든 정수 $k\ge25001$과 $k+1\le n\le2k-1$, $n+1-k\ge10k^{2/3}$인 모든 정수 $n$에서 $2E2_{n,k}>B_{n,k-1}$이
+   - 
+   - 이 절의 상하계는 두 변수, 곧 용량과 행 크기를 용량으로 나눈 비로 적히므로 좌표부터 정한다. 용량 $k$를 고정하면 $n+1-k=r+1$은 꼬리 좌표로 적은 위치이고, $\eta=(r+1)/k$, $\varepsilon:=k^{-1/2}$, 임계 창 좌표는 $\hat x=(r+1)k^{-2/3}=\eta k^{1/3}$이다. $n+1=(1+\eta)k$
+   - 
+   - 먼저 중앙 틈의 상쇄 분해, 곧 두 항의 차를 주부분과 두 보정으로 가르는 분해가 이 범위에서도 성립함을 본다. 보조정리 {{4:e-integral}}과 명제 {{4:old-4-6}}을 합친 4.3절의 상쇄 분해
+   - $$
+   - \frac{e_n-J_n(k-1)}{p_n}=\bigl(\mathcal A_{k,n}-\mathrm{Bor}(k)\,\mathcal I_k\,\mathcal M^{(k-1,n)}_0\bigr)+\mathsf b_D-\mathsf b_J,\qquad \mathcal A_{k,n}=(2\mathrm{Wi}_1+k\mathrm{Wi}_2)\mathcal M_0-
+   - $$
+   - 는 중앙 행뿐 아니라 모든 $k\ge2$, $k+1\le n\le2k-1$에서 성립한다. 여기서 $\mathrm{Wi}_j=\int_0^1e^{kv^2/2}v^2\,\mathrm{Bor}^{\mathrm{tail}}_k(1-v)(v^2/2)^j\,dv$($j=0,1,2$)는 4.3절의 $k$에만 의존하는 적분이고 $\mathrm{Wi}_j\ge0$이다. $
+   - $$
+   - \frac{k}{\mathrm{Bor}(k)}\bigl(k\mathrm{Wi}_2+\omega \mathrm{Wi}_1-\mathrm{Bor}(k)\mathcal I_k\bigr)\ \ge\ \mathrm{lb}(\omega,k):=\omega-\frac72-\Bigl(4\omega+\frac12\Bigr)\mathsf a_0k^{-1/3}-\frac{13
+   - $$
+   - 이다($\mathsf a_0<1.2879$, $\mathsf a_1<0.939$). $\mathcal M_2<0$, $\mathcal M_4>0$, $\mathcal M^{(k-1,n)}_0\le\mathcal M_0$이면 $(5.54)$의 첫 괄호는 $-\mathrm{Wi}_0\mathcal M_2\ge0$, $\frac k4\mathrm{Wi}_0\ma
+   - $$
+   - \mathcal A_{k,n}-\mathrm{Bor}(k)\mathcal I_k\mathcal M^{(k-1,n)}_0\ \ge\ \mathcal M_0\bigl[k\mathrm{Wi}_2+\mathsf g_k(n)\mathrm{Wi}_1-\mathrm{Bor}(k)\mathcal I_k\bigr]
+   - $$
+   - 이다. $\mathrm{lb}$에서 $\omega$의 계수 $1-4\mathsf a_0k^{-1/3}-6.5\mathsf a_1k^{-2/3}-12/k$는 $k=25001$에서 $0.816$, $k=10001$에서 $0.7465$로 양수이므로 $\mathsf g_k(n)$ 대신 그 하계를 넣어도 된다. 그러므로 $\mathcal M_0\ge\mathcal 
+   - $$
+   - k^{5/2}\,\frac{e_n-B_{n,k-1}}{p_n}\ \ge\ F:=\mathcal M^{\mathrm{lo}}_0\cdot(2\pi)^{-1/2}\Bigl(1-\frac1{12k}\Bigr)\cdot\mathrm{lb}(\mathsf g^{\mathrm{lo}},k)+[k^{5/2}\mathsf b_D]^{\mathrm{lo}}-[k^{5/2}
+   - $$
+   - 이고, 증명에서는 $\mathcal M_0$, $\mathsf g_k(n)$의 상하계(보조정리 {{5:old-5-40}})와 두 보정의 상하계(보조정리 {{5:old-5-41}})를 $\eta$에 균일하게 세운 뒤 $F>0$을 전 영역에서 확인한다.
+   - 
+   - 중앙 증명을 벌크로 옮길 때 어려운 것은 바로 이 균일성이다. 중앙 행에서는 계수들을 $k$ 하나의 함수로 다루면 되었지만, 여기서는 $\eta$가 $(0,1]$ 전체를 움직이고 상하계가 $k$와 $\eta$ 모두에 균일해야 하며, 특히 $\eta$가 작은 쪽에서 무너지지 않아야 한다. 먼저 떠오르는 길은 4.3절이 Gauss 계수를 다룬 Hermite 점
+   - $$
+   - \mathcal X_y'(\mathfrak Y)=(n+y+1)-y\mathfrak Y-\frac{n+1}{\mathfrak Y}=-\frac{(y\mathfrak Y-(n+1))(\mathfrak Y-1)}{\mathfrak Y}
+   - $$
+   - 다. 그러므로 $\mathfrak Y=1$은 $n$이 무엇이든 안장점이고, 다른 안장점은 $\mathfrak Y=(n+1)/y$, 곧 $y=k$에서 $1+\eta$다. $Q_y:=n+1-y$로 두면 수직선 $\mathfrak Y=1+\mathrm i\upsilon$에서
+   - $$
+   - \operatorname{Re}\mathcal X_y(1+\mathrm i\upsilon)=(n+1)-\frac{Q_y}2\upsilon^2+(n+1)\mathfrak f(\upsilon),\qquad \mathfrak f(\upsilon):=\frac{\upsilon^2-\log(1+\upsilon^2)}2\in\Bigl[\frac{\upsilon^4}4
+   - $$
+   - 이다. 실부는 $(n+y+1)-\frac y2(1-\upsilon^2)-\frac y2-\frac{n+1}2\log(1+\upsilon^2)$를 정리한 것이고, $\mathfrak f$의 범위는 $x-\log(1+x)\in[x^2/2-x^3/3,x^2/2]$($x=\upsilon^2$)에서 나온다. 핵은 폭 $Q_y^{-1/2}$의 Gauss 함수이고 그 
+   - 
+   - 이 방법이 닿는 범위는 두 안장점 사이의 거리에 따라 정해진다. 거리 $\eta$가 Gauss 폭 $(\eta k)^{-1/2}$와 같아지는 곳은 $\eta\asymp k^{-1/3}$, 곧 $\hat x\asymp1$이며 거기서 두 안장점이 합쳐지고 그 범위가 정리 {{5:old-5-13}}의 임계 창이 다루는 Airy 체제다. $\hat x\gg1$인 
+   - 
+   - 두 보정의 상하계를 구할 때에는 4.3절의 Dawson 함수 $\mathcal D(\varrho)=e^{-\varrho^2/2}\int_0^\varrho e^{u^2/2}du$에 관한 네 사실을 쓴다.
+   - 
+   - **보조정리 {{5:dawson-facts}} (Dawson 함수에 관한 네 사실; 기록 [r5f5cf73]의 Dawson 세 사실) [증명됨; r5f5cf73].** 모든 $\varrho>0$에서 다음이 성립한다.
+   - 
+   - (가) $0\le\mathcal D(\varrho)\le\varrho$이고 $\varrho\mathcal D(\varrho)\le\frac43(1+e^{-2})<1.514$다.
+   - 
+   - (나) $|1-\varrho\mathcal D(\varrho)|\le8/\varrho^2$다.
+   - 
+   - (다) $\sigma>0$에서 $\mathfrak F(\sigma):=\int_0^\infty\bigl(1-\varrho\mathcal D(\varrho)\bigr)e^{-\sigma\varrho^2/2}d\varrho=\sqrt{\frac\pi2}\,\frac{\sqrt\sigma}{\sigma+1}$이고, 정수 $m\ge0$에서 $\mathfrak j_
+   - 
+   - (라) $\mathsf d_{\mathrm I}:=\sup_{\varrho>0}\bigl[\tfrac23\varrho\mathcal D(\varrho)+2|1-\varrho\mathcal D(\varrho)|\bigr]\le2.04$다.
+   - 
+   - **증명.** (가) $\mathcal D\ge0$은 정의에서, $\mathcal D\le\varrho$는 $e^{u^2/2}\le e^{\varrho^2/2}$($u\le\varrho$)에서 나온다. $u=\varrho-v$로 바꾸면 $\varrho\mathcal D(\varrho)=\varrho\int_0^\varrho e^{-\varrho v+v^2/
+   - 
+   - 두 보정의 선도항은 각각 두 겹 적분이고, 그 값은 다음 항등식의 우변으로 닫힌 꼴이 된다.
+   - 
+   - **보조정리 {{5:arc-leading}} (호 위 선도 항등식; 기록 [ra4c01fc]의 bulk-arc-leading-identities) [증명됨; ra4c01fc].** $\varrho\ge0$에 대해 $\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\varrho):=2-\int_0^1\sigma^{-3/2}(e^{\sig
+   - 
+   - (가) $\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\varrho)=2e^{\varrho^2/2}\bigl(1-\varrho\mathcal D(\varrho)\bigr)$.
+   - 
+   - (나) 모든 $\eta>0$에서
+   - $$
+   - -\frac1{2\pi}(1+\eta)^{3/2}\int_{\mathbb R}\upsilon^4e^{-(1+\eta)\upsilon^2/2}\int_0^1\rho^2e^{(1-\rho^2)\upsilon^2/2}\,Q_0\,\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\rho\upsilon)\,d\rho\,d\upsilon=\mat
+   - $$
+   - 
+   - (다) 모든 $\eta>0$에서
+   - $$
+   - \frac1{2\pi}(1+\eta)^{3/2}\int_{\mathbb R}\upsilon^3e^{-\eta\upsilon^2/2}\int_0^1\rho\Bigl[\frac{((1+\eta)-\rho^3)\upsilon^3}3-\rho\upsilon\Bigr]d\rho\,d\upsilon=\mathcal Y_{\mathrm J}(\eta):=\frac3{2
+   - $$
+   - 
+   - **증명.** (가) 부분적분으로 $\int_0^1\sigma^{-3/2}(e^{\sigma\varrho^2/2}-1)d\sigma=\bigl[-2\sigma^{-1/2}(e^{\sigma\varrho^2/2}-1)\bigr]_0^1+\varrho^2\int_0^1\sigma^{-1/2}e^{\sigma\varrho^2/2}d\sigma$이고, 경계항은 $
+   - $$
+   - -\frac1{2\pi}(1+\eta)^{3/2}\cdot2\int_0^\infty\varrho^2\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}(\varrho)e^{-\varrho^2/2}K_\eta(\varrho)\,d\varrho,\qquad K_\eta(\varrho):=\int_\varrho^\infty\upsilon e^{-
+   - $$
+   - 이다. $s=\upsilon^2-\varrho^2$로 바꾸면 $K_\eta(\varrho)=\frac12e^{-\eta\varrho^2/2}\int_0^\infty e^{-\eta s/2}(s+s^2/4)\,ds=\frac12e^{-\eta\varrho^2/2}\Bigl[\frac4{\eta^2}+\frac4{\eta^3}\Bigr]=\frac{2(1+\e
+   - $$
+   - \sqrt{\frac\pi2}\,\mathfrak l^{-3/2}\Bigl[2-\int_0^1\sigma^{-3/2}\bigl((1-\sigma/\mathfrak l)^{-3/2}-1\bigr)d\sigma\Bigr]
+   - $$
+   - 이다. † 마지막 적분의 원시함수는 $P(\sigma):=2\sigma^{-1/2}\bigl[1-(1-2\sigma/\mathfrak l)(1-\sigma/\mathfrak l)^{-1/2}\bigr]$다. $u:=\sigma/\mathfrak l$로 두고 미분하면 $P'(\sigma)=-\sigma^{-3/2}[1-(1-2u)(1-u)^{-1/2}]-\f
+   - 
+   - $\eta=1$에서는 $\mathcal Y_{\mathrm D}(1)=0$이며, (나)의 항등식은 4.3절의 중앙 행 상쇄 항등식의 일반 $\eta$판이다.
+   - 
+   - Gauss 계수의 상하계에는 Gauss 모멘트와 그 꼬리가 쓰인다.
+   - 
+   - **보조정리 {{5:gauss-moments}} (Gauss 모멘트와 꼬리) [증명됨; 표준].** $\sigma>0$, 정수 $m\ge0$에 대해 $G_{2m}(\sigma):=2\int_0^\infty\upsilon^{2m}e^{-\sigma\upsilon^2/2}d\upsilon=(2m-1)!!\sqrt{2\pi}\,\sigma^{-m-1/2}$다($
+   - 
+   - **증명.** 모멘트 식은 $\int_{\mathbb R}e^{-\sigma\upsilon^2/2}d\upsilon=\sqrt{2\pi/\sigma}$를 $\sigma$로 $m$번 미분한 것이다. 꼬리는 $m\ge1$에서 부분적분으로 $\int_x^\infty\upsilon^{2m}e^{-\sigma\upsilon^2/2}d\upsilon=\frac{x^{
+   - 
+   - **보조정리 {{5:old-5-40}} (Gauss 계수의 균일 상하계; 기록 [r5f5cf73]의 보조정리 H($\eta$)) [표현과 명시적 구간은 증명됨, 마지막 문장의 전 영역 성립은 계산 증거(방향 반올림 구간); r5f5cf73].** $k+1\le n\le2k-1$, 실수 $y\in[k-1,k]$, $Q_y=n+1-y$, $\Upsilon:=\
+   - $$
+   - \mathcal M^{(y,n)}_{2j}=(-1)^j\frac{\mathfrak n_n}{2\pi}I_{2j}+\mathrm{arc}_{2j},\qquad I_{2j}:=2\int_0^\Upsilon\upsilon^{2j+1}e^{-Q_y\upsilon^2/2}e^{(n+1)\mathfrak f(\upsilon)}\sin\varphi(\upsilon)\,
+   - $$
+   - 이다(표현). 여기에 $Q_y>2\cdot6^{2/3}(n+1)^{1/3}$이고 $n+1>6\cdot60^{3/2}$이면($\hat x=(n+1-k)k^{-2/3}\ge10$, $k\ge10001$이면 둘 다 성립한다) $I_{2j}$는 아래 증명의 명시적 구간 $[I^{\mathrm{lo}}_{2j},I^{\mathrm{hi}}_{2j}]$ 안에 있고(명
+   - 
+   - **증명.** **표현.** $[\mathfrak Y^n]F(\mathfrak Y)=\frac1{2\pi\mathrm i}\oint F(\mathfrak Y)\mathfrak Y^{-n-1}d\mathfrak Y$이므로 $\mathcal M^{(y,n)}_{2j}=\frac{n!}{p_n}\frac1{2\pi\mathrm i}\oint(1-\mathfrak
+   - 
+   - **내부와 외부.** $\upsilon^\ast:=(6/(n+1))^{1/3}$으로 두면 $(n+1)\upsilon^{\ast3}/3=2$다. $\upsilon-\arctan\upsilon$의 교대급수에서 $0\le\upsilon\le1$일 때 $\varphi_{\mathrm{lo}}(\upsilon):=(n+1)(\upsilon^3/3-\upsilon^5
+   - $$
+   - \mathcal O_{2j}:=2\int_{\upsilon^\ast}^\infty\upsilon^{2j+1}e^{-(Q_y/2-(n+1)\upsilon^{\ast2})\upsilon^2}d\upsilon+2\int_{2\upsilon^\ast}^\infty\upsilon^{2j+1}e^{-3Q_y\upsilon^2/8}d\upsilon+2\int_{\ups
+   - $$
+   - 로 쓰면, 내부 상계의 적분을 $\infty$까지 늘리고 내부 하계의 양의 항은 $G_{2j+4}$에서 꼬리를 빼며 음의 항은 $\infty$까지 늘려
+   - $$
+   - I^{\mathrm{hi}}_{2j}=\frac{n+1}3\Bigl[G_{2j+4}+e^{\mathfrak c_{\mathrm H}}\frac{n+1}4G_{2j+8}\Bigr]+\mathcal O_{2j},\qquad
+   - I^{\mathrm{lo}}_{2j}=\frac{n+1}3\Bigl[G_{2j+4}-\mathrm{Gr}_{2j+4}(\upsilon^\ast)\Bigr]-\frac{n+1}5G_{2j+6}-\frac{(n+1)^3}{162}G_{2j+10}-\mathcal O_{2j}
+   - $$
+   - 를 얻는다. $\varphi_{\mathrm{hi}}^3/6=(n+1)^3\upsilon^9/162$다.
+   - 
+   - **정규화.** $\frac{n+1}3G_{2j+4}$로 나누면 $G_{2m+2}/G_{2m}=(2m+1)/Q_y$에서 세 보정항은 $\frac35(2j+5)\frac{1}{Q_y}$, $\frac{(n+1)^2}{54}\frac{(2j+5)(2j+7)(2j+9)}{Q_y^3}$, $e^{\mathfrak c_{\mathrm H}}\frac{n+1}4\fr
+   - $$
+   - \mathcal M_0\ \ge\ \mathsf n_k\sqrt{2\pi}\,(1+\eta)\eta^{-5/2}\bigl(\tilde I^{\mathrm{lo}}_0-\widetilde{\mathrm{arc}}_0\bigr),\qquad \mathsf g_k(n)\ \ge\ 2+\frac5\eta\,\frac{\tilde I^{\mathrm{lo}}_2-\
+   - $$
+   - 이다. 둘째 식은 $\mathcal M_2=-\frac{\mathfrak n_n}{2\pi}I_2+\mathrm{arc}_2$에서 $-k\mathcal M_2/\mathcal M_0\ge k\frac{\frac{n+1}3G_6(\tilde I^{\mathrm{lo}}_2-\widetilde{\mathrm{arc}}_2)}{\frac{n+1}3G_4(\til
+   - 
+   - **보조정리 {{5:old-5-41}} (두 보정의 균일 상하계; 기록 [r5f5cf73]의 보조정리 V($\eta$)) [증명됨, 계산 보조(정확 정수·유리수); r5f5cf73].** $k+1\le n\le2k-1$, 호 매개변수 $\theta_{\mathrm{arc}}:=\min(\eta/8,1/16)$, $\upsilon_{\mathrm L}:=\s
+   - $$
+   - k^{5/2}\mathsf b_D\ \ge\ \mathrm{Main}_D+\mathrm{First}_D+\mathrm{Second}_D+\mathrm{Dg}_D-\mathrm{Tail}_D-\mathrm{Rem}_D-\mathrm{Arc}_D,\qquad k^{5/2}\mathsf b_J\ \le\ \mathrm{Main}_J+\mathrm{Err}_J+\
+   - $$
+   - 이고 각 항은 아래 증명에 적힌 닫힌 꼴이다. 특히 $\mathrm{Main}_D=\sqrt{2\pi}\,\mathsf n_k(1+\eta)^{-3/2}\mathcal Y_{\mathrm D}(\eta)=4\mathsf n_k(1-\eta)(1+\eta)^{-1}\eta^{-7/2}\ge0$이고 $\mathrm{Main}_J=\frac32\sqrt{2\pi
+   - 
+   - **증명.** **첫째 단계: 수직선 표현.** 4.3절의 정의(보조정리 {{4:e-integral}}, 명제 {{4:old-4-6}})에 따라 두 보정은 Lagrange 형식 $[x^n]F(T(x))=\frac1{2\pi\mathrm i}\oint F(\mathfrak Y)(1-\mathfrak Y)e^{n\mathfrak Y}\mathfrak Y^{-n
+   - $$
+   - -e^{\mathfrak Y}\varkappa^4\int_0^1\rho^2\,\mathrm{Bor}^{\mathrm{tail}}_k(1-\rho \varkappa)\,e^{-k\mu \varkappa^2/2}\Bigl(-\mu \varkappa^2+\frac k4\mu^2\varkappa^4\Bigr)d\rho\quad(\mathsf b_D),\qquad 
+   - $$
+   - 이다. 윤곽을 수직선 $\mathfrak Y=1+\mathrm i\upsilon\varepsilon$, $|\upsilon|\le\upsilon_{\mathrm L}$과 호 $|\mathfrak Y|=\mathrm{rad}:=\sqrt{1+\theta_{\mathrm{arc}}}$, $\operatorname{Re}\mathfrak Y\le1$로 잡는다. 
+   - $$
+   - k^{5/2}\mathsf b_D^{\mathrm{vert}}=-2\mathsf n_k\int_0^{\upsilon_{\mathrm L}}\!\!\int_0^1\upsilon^4\rho^2Q_0\,e^{-\eta\upsilon^2/2}e^{(n+1)\mathfrak f(\xi)}\operatorname{Re}\bigl\{\mathrm{bt}(\varrho)
+   - $$
+   - 이다. $\mathsf b_J$에서는 $|1-\rho \varkappa|^{k-1}=(1+\xi_\rho^2)^{(k-1)/2}=e^{(k-1)\xi_\rho^2/2}\Theta_\rho$, $\Theta_\rho:=e^{-(k-1)\mathfrak f(\xi_\rho)}$이고, $|e^{k\rho \varkappa}|=1$, $e^{-(k-1)\mu \v
+   - $$
+   - k^{5/2}\mathsf b_J^{\mathrm{vert}}=2\mathfrak b^{\mathrm c}_k\int_0^{\upsilon_{\mathrm L}}\upsilon^3e^{-(\eta+1/k)\upsilon^2/2}e^{(n+1)\mathfrak f(\xi)}\int_0^1\rho\,\Theta_\rho\,\frac{\sin\Psi}{\vare
+   - $$
+   - 이다.
+   - 
+   - **둘째 단계: Borel 꼬리의 균일 전개.** $\phi:=-k\bigl(\log(1+\mathrm i\xi_\rho)-\mathrm i\xi_\rho\bigr)$, $\phi_0:=-\varrho^2/2$로 둔다. $\operatorname{Re}\phi=-\frac k2\log(1+\xi_\rho^2)=\phi_0+k\mathfrak f(\xi_\r
+   - $$
+   - \mathrm{Bor}^{\mathrm{sum}}_k(\phi)=1-(2\pi)^{-1/2}\varepsilon\,\mathrm{Bor}^{\mathrm{ld}}(\phi)+\tfrac23\phi\varepsilon^2+\epsilon_6,\qquad |\epsilon_6|\le(2\pi)^{-1/2}\varepsilon^3e^{-\operatorname{
+   - $$
+   - 이다(적분 변수만 $\sigma$로 적었다). 위의 상계를 넣으면 $\varepsilon^{-1}|\epsilon_6|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}P_6(\varrho)$, $P_6:=\frac59+\frac7{18}\varrho^2+\frac{13}{12}\cdot\frac{49}{144}\varrho^4
+   - $$
+   - (1+\xi_\rho^2)\sqrt k\,\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak S)=\varepsilon\varrho^2+\mathrm i\varrho+(1-\mathrm i\xi_\rho)\mathcal B,\qquad \mathcal B:=(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}(\phi
+   - $$
+   - 이다. $\mathrm{Bor}^{\mathrm{ld}}$의 도함수는 $(\mathrm{Bor}^{\mathrm{ld}})'(\phi)=\int_0^1\sigma^{-1/2}e^{-\phi\sigma}d\sigma$, $(\mathrm{Bor}^{\mathrm{ld}})''(\phi)=-\int_0^1\sigma^{1/2}e^{-\phi\sigma}d\si
+   - 
+   - 이제 $\sqrt k\,\mathrm{Bor}^{\mathrm{tail}}_k=(\varepsilon\varrho^2+\mathrm i\varrho+(1-\mathrm i\xi_\rho)\mathcal B)/(1+\xi_\rho^2)$의 실부와 허부를 가른다. $\operatorname{Re}\mathcal B=(2\pi)^{-1/2}\mathrm{Bor}
+   - $$
+   - \operatorname{Re}\sqrt k\,\mathrm{Bor}^{\mathrm{tail}}_k=(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}+\tfrac43\varepsilon\varrho^2+\epsilon_{\mathrm R},\qquad \epsilon_{\mathrm R}=\frac{\mathfr
+   - $$
+   - 이다. 다섯 조각을 $\varepsilon\varrho\le1/4$로 막는다.
+   - 
+   - - $(2\pi)^{-1/2}|\operatorname{Re}\mathrm{Bor}^{\mathrm{ld}}-\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}[\varrho^2+\mathfrak c_{\mathrm T}\varrho^4]$;
+   - - $\frac23\varepsilon(\operatorname{Re}\phi-\phi_0)\le\frac{\varepsilon^3\varrho^4}6\le\frac{\varepsilon^2\varrho^3}{24}$;
+   - - $\varepsilon^{-1}|\operatorname{Re}\epsilon_6|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}P_6$;
+   - - $\xi_\rho|\operatorname{Im}\mathcal B|\le\varepsilon\varrho\bigl[(2\pi)^{-1/2}e^{\varrho^2/2}\mathrm{Bor}^{\mathrm{ld}}_1\varepsilon\varrho^3/3+(2\pi)^{-1/2}e^{\varrho^2/2}\varepsilon^2\mathfrak c_{
+   - - $\xi_\rho^2|(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}+\frac43\varepsilon\varrho^2|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}\cdot2\varrho^2+\frac{\varepsilon^2\varrho^3}3$($|\mathrm{Bor}
+   - 
+   - 더하면
+   - $$
+   - |\epsilon_{\mathrm R}|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}P_{\mathrm R}(\varrho),\qquad P_{\mathrm R}:=\tfrac54P_6+\tfrac{13}3\varrho^2+\sqrt{2\pi}\Bigl(\tfrac1{24}+\tfrac1{18}+\tfrac13\Bigr)\
+   - $$
+   - 이다($e^{\varrho^2/2}\ge1$을 써서 $\varepsilon^2\varrho^3$ 항을 $(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}\sqrt{2\pi}\varrho^3$으로 올렸다). 허부는 $\operatorname{Im}\sqrt k\,\mathrm{Bor}^{\mathrm{tail}}_k=\varrho+\
+   - 
+   - - $(2\pi)^{-1/2}|\operatorname{Im}\mathcal R_{\mathrm{ld}}|$;
+   - - $\frac23\varepsilon\operatorname{Im}\phi\le\frac29\varepsilon^2\varrho^3$;
+   - - $\varepsilon^{-1}|\operatorname{Im}\epsilon_6|$;
+   - - $\xi_\rho(2\pi)^{-1/2}|\operatorname{Re}\mathrm{Bor}^{\mathrm{ld}}-\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}|$;
+   - - $\xi_\rho\frac23\varepsilon|\phi_0|=\frac13\varepsilon^2\varrho^3$;
+   - - $\xi_\rho\frac23\varepsilon(\operatorname{Re}\phi-\phi_0)\le\frac{\varepsilon^4\varrho^5}6\le\frac{\varepsilon^2\varrho^3}{96}$;
+   - - $\xi_\rho\varepsilon^{-1}|\operatorname{Re}\epsilon_6|$;
+   - - $\xi_\rho^2|\epsilon^{(1)}_{\mathrm I}|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}\mathsf d_{\mathrm I}\varrho^2/4$;
+   - - $\varrho\xi_\rho^2=\varepsilon^2\varrho^3$.
+   - 
+   - 그러므로
+   - $$
+   - |\epsilon^{(2)}_{\mathrm I}|\le(2\pi)^{-1/2}\varepsilon^2e^{\varrho^2/2}P_{\mathrm I}(\varrho),\qquad P_{\mathrm I}:=\tfrac54P_6+\tfrac{1+\mathsf d_{\mathrm I}}4\varrho^2+\sqrt{2\pi}\Bigl(\tfrac29+\tf
+   - $$
+   - 이다. 4.3절의 중앙 증명에서 같은 역할을 한 오차 다항식은 차수 $6$과 $7$이었는데, $(\mathrm{Bor}^{\mathrm{ld}})'(\phi_0)$, $(\mathrm{Bor}^{\mathrm{ld}})''(\phi_0)$의 $\varrho^{-2}$ 감쇠를 써서 차수를 $4$로 낮추어야 $\eta$에 대해 균일한 상하계가 나온다. 무게 $
+   - 
+   - **셋째 단계: $D$ 보정의 피적분함수.** $\psi_1:=(1+\eta)\varepsilon\upsilon^3/3$으로 두면 $\psi=(n+1)(\xi-\arctan\xi)\in[\psi_1-(1+\eta)\varepsilon^3\upsilon^5/5,\ \psi_1]$이다. 실부 $\mathcal Q:=\operatorname{Re}\{\sqrt 
+   - $$
+   - e^{-\varrho^2/2}\mathcal Q=\mathcal Q_0+\mathcal Q_1+\mathcal Q_2+\mathcal Q_3,\qquad \mathcal Q_0=2(2\pi)^{-1/2}(1-\varrho\mathcal D),\quad \mathcal Q_1=e^{-\varrho^2/2}\Bigl(\tfrac43\varepsilon\varr
+   - $$
+   - 이고($e^{-\varrho^2/2}(2\pi)^{-1/2}\mathrm{Bor}^{\mathrm{ld}}_{\mathrm R}=\mathcal Q_0$), 앞의 세 항을 뺀 나머지는
+   - $$
+   - |\mathcal Q_3|\le(2\pi)^{-1/2}\varepsilon^2P_{\mathrm R}+2(2\pi)^{-1/2}|1-\varrho\mathcal D|\gamma_3+\tfrac43\varepsilon\varrho^2e^{-\varrho^2/2}\gamma_3+\tfrac23\varepsilon\varrho^2e^{-\varrho^2/2}\p
+   - $$
+   - 로 막힌다. 여섯 조각은 차례로 $e^{-\varrho^2/2}\epsilon_{\mathrm R}\cos\psi$, $\mathcal Q_0$의 $\cos\psi-1+\psi_1^2/2$, $\frac43\varepsilon\varrho^2e^{-\varrho^2/2}$의 $\cos\psi-1$, 같은 항의 $\psi_1^2/2$, $\varrho e^{
+   - 
+   - **넷째 단계: $D$ 보정의 하계.** 첫째 단계의 적분을 $[0,\upsilon_{\mathrm L}]$에서 $[0,\infty)$로 늘린 네 조각의 정확한 적분과 나머지로 나눈다. $\mathcal Y_j(\eta):=\int_{\mathbb R}\int_0^1\upsilon^{4+j}\rho^2Q_0e^{-\eta\upsilon^2/2}\cdot2(
+   - 
+   - 나머지 $\mathrm{Rem}_D$는 $|\mathcal Q_3|(1+\epsilon_{\mathfrak f})$, $\epsilon_{\mathfrak f}(|\mathcal Q_1|+|\mathcal Q_2|)$, $2(2\pi)^{-1/2}|\epsilon_{\mathfrak f}-\frac{(n+1)\upsilon^4}{4k^2}|$에 무게 $\u
+   - 
+   - **다섯째 단계: 호.** 호 위에서 $\mathfrak d:=1-\operatorname{Re}\mathfrak Y\ge0$으로 두면 $|\varkappa|^2=\theta_{\mathrm{arc}}+2\mathfrak d\le\mathfrak M_{\mathrm{arc}}:=\theta_{\mathrm{arc}}+2+2\,\mathrm{rad}$, $-
+   - $$
+   - \mathrm{Arc}_D:=\mathsf n_k\cdot3\cdot2\pi\,\mathrm{rad}\,\bigl[k^4\mathfrak M_{\mathrm{arc}}^3+k^5\mathfrak M_{\mathrm{arc}}^4/4\bigr]e^{-\epsilon_{\mathrm{arc}}}\ \ge\ k^{5/2}|\mathsf b_D^{\mathrm{a
+   - $$
+   - 이다. $J$ 보정에서는 $|1-\rho \varkappa|^2=1-2\rho\mathfrak d+\rho^2|\varkappa|^2$에서 $(k-1)\log|1-\rho \varkappa|+k\rho\mathfrak d+(k-1)\mu(\mathfrak d-\mathfrak d^2+\theta_{\mathrm{arc}}/2)\le\rho\mathfrak 
+   - 
+   - **여섯째 단계: $J$ 보정의 상계.** $\upsilon\ge0$에서 무게 $\upsilon^3e^{-(\eta+1/k)\upsilon^2/2}e^{(n+1)\mathfrak f}\rho\Theta_\rho$가 음이 아니므로 모든 실수에서 성립하는 $\sin\Psi\le\Psi+|\Psi|^3/6$을 쓸 수 있다. $\Psi=\varepsilon\mat
+   - 
+   - $\mathrm{Rem}_D$, $\mathrm{Tail}_D$, $\mathrm{Err}_J$, $\mathrm{Tail}_J$, $\mathcal Y_j$, $\mathfrak C_{\mathrm I}(\eta)$의 단항식 계수는 위 단계의 규칙대로 기호 계산으로 생성되며, 그 알고리즘과 생성 규칙은 부록 D.{{D:lemma-V-coefficients
+   - 
+   - **정리 {{5:old-5-39}}의 증명.** 보조정리 {{5:old-5-40}}의 하계 $\mathcal M^{\mathrm{lo}}_0$, $\mathsf g^{\mathrm{lo}}$와 보조정리 {{5:old-5-41}}의 $[k^{5/2}\mathsf b_D]^{\mathrm{lo}}$, $[k^{5/2}\mathsf b_J]^{\mathrm{hi
+   - 
+   - 확인할 것은 이 영역 전체에서 $F\cdot\varsigma^7>0$과 부호 조건이다. $F\cdot\varsigma^7$의 다항 조각($\mathrm{Main}_D$, $\mathrm{First}_D$, $\mathrm{Second}_D$, $\mathrm{Dg}_D$, $\mathrm{Rem}_D$, $\mathrm{Main}_J$, $\mathrm{E
+   - 
+   - $k$의 하한을 $10001$로 내린 판은 같은 $F$를 영역 $\{0<\varsigma\le1,\ 0<\mathfrak K\le\min(1,(1000/10001)^{1/6}/\varsigma)\}$에서 확인한 것이고, 해석적 유도에는 $k$의 하한이 없으며 필요한 조건($\frac{Q_k}2>(n+1)\upsilon^{\ast2}$, $\xi\le1/4$
+   - 
+## 장v2/장6.md:5
+   「크기열인」 → 「크기 수열인」
+## 장v2/장6.md:544
+   「초과열이」 → 「초과 수열이」
+   「초과열에」 → 「초과 수열에」
+## 장v2/장6.md:964
+   「크기열」 → 「크기 수열」
+## 장v2/장6.md:996
+   「크기열의」 → 「크기 수열의」
+## 장v2/장7A.md:266
+   「최종」 → 「주차가」
+   「배치에서」 → 「끝나면」
+## 장v2/장7A.md:332
+   「보조(방향」 → 「보조(정확」
+   「반올림」 → 「정수·유리수),」
+   「구간);」 → 「작성자 판단;」
+## 장v2/장7A.md:713
+   「칸으로」 → 「구간으로」
+   「칸마다」 → 「구간마다」
+## 장v2/장7A.md:737
+   「방향」 → 「상계나」
+   「경계만으로」 → 「하계만으로」
+## 장v2/장7A.md:864
+   「구간);」 → 「구간), 작성자 판단;」
+## 장v2/장7A.md:874
+   「경계에서」 → 「상하계에서」
+   「한쪽」 → 「전체의」
+   「경계가」 → 「같은 쪽 상하계가」
+## 장v2/장7B.md:378
+   「경계식에」 → 「상하계 식에」
+## 장v2/장9.md:131
+   「크기열에서」 → 「크기 수열에서」
+## 장부_v2.md:123
+   「크기열)」 → 「크기 수열)」
+## 장부_v2.md:128
+   「$j$; 1.3 2.12 묶음)의」 → 「$j$)의」
+## 장부_v2.md:158
+   「칸」 → 「구획」
+## 장부_v2.md:161
+   「블록」 → 「토막」
+## 장부_v2.md:178
+   「$\mathrm{BV}_n-(\Theta_n-\Theta^\circ_n)$」 → 「$\mathrm{BV}_n-(\Theta_n-\Theta^\circ_n)$(6.6의 국소 사슬 경로 집합 $\mathcal C_n$과 다른 양)」
+## 장부_v2.md:209
+   「상계」 → 「상계(7.2의 국소 미분 횟수 $\mathfrak d_k$와 다른 양)」
+## 장부_v2.md:320 [replace] old 1 lines / new 2 lines
+   - | $\mathrm{regen}_n$ | regen·로마체 이름 | 숲–나무 재생 원천 | 9.4 | 9 | $\tilde\sigma_n$(7.3·2571) | $\tilde\sigma_n$ ([r05cf8c9], [rb6a2cd0]) |
+   + | $\mathrm{regen}_n$ | regen·로마체 이름 | 재생 원천 | 9.4 | 9 | $\tilde\sigma_n$(7.3·2571) | $\tilde\sigma_n$ ([r05cf8c9], [rb6a2cd0]) |
+   + | $\mathrm{rq}_r, \mathrm{rq}$ | rq·로마체 이름 | 사슬 가중치의 전개에 쓰는 꼬리 좌표와 행 크기의 비: 5.2.3절부터 $\mathrm{rq}_r:=(r+3)/n$, 5.4절부터 $\mathrm{rq}:=r/n$(첨자 유무로 두 정의를 가른다) | 5.2 | 5 | $\varrho_r$, $\varrho$ | — |
+## 장부_v2.md:370
+   「사슬」 → 「연쇄」
+## 장부_v2.md:374 [delete] old 1 lines / new 0 lines
+   - | $\mathfrak f_{r,j}(n)$, $\kappa_{r,j}(n)$, $K_r(n)$, $\mathfrak p_j(\mathfrak H,\mathfrak H')$(꼬리 결손의 셋째 차분 전개의 항·계수·총합·보조 다항식; 보조 다항식의 두 변수 $\mathfrak H,\mathfrak H'$는 1차 집필의 $z,w$ — 생성변수와 겹쳐 바꿈); 
+## 장부_v2.md:377
+   「`{{5:old-5-23}}`의」 → 「5.5절의 고정 사슬」
+   「`{{5:old-5-5}}`·`{{5:old-5-6}}`·`{{5:old-5-7}}`」 → 「`{{5:old-5-5}}`·`{{5:old-5-7}}`」
+## 장부_v2.md:383 [delete] old 1 lines / new 0 lines
+   - | $\mathfrak n_n/(2\pi)$(기록 [r5f5cf73] L79 $N_n=n!e^{n+1}/(2\pi p_n)$; $\mathfrak n_n=n!e^{n+1}/p_n$은 5A `{{5:hat-normalization}}`의 같은 양), $\mathsf n_k$(1.2; 기록 $N_k=N_nk^{-3/2}$); $n+1$(기록 L76 $N$); 
+## 장부_v2.md:389
+   「경계」 → 「상계」
+   「블록」 → 「토막」
+   「크기열」 → 「크기 수열」
+## 장부_v2.md:402
+   「블록」 → 「나무」
+## 장부_v2.md:438
+   「칸」 → 「구획」
+## 장부_v2.md:479
+   「상해,」 → 「상위해,」
+## 장부_v2.md:516
+   「」 → 「칸; 5.2의 $r$ 칸; 부동소수점의 이웃 수 사이도 한」
+## 장부_v2.md:535 [delete] old 1 lines / new 0 lines
+   - | 인증 구간 | 계산 인증이 덮는 좌표 범위($x\in[0.743,0.75]$, $1.4\le\hat x\le10$) | 5.2 | 창 |
+## 장부_v2.md:558
+   「「블록」」 → 「「블록」(행렬·코드의 블록은 그대로 「블록」)」
+## 장부_v2.md:561 [replace] old 2 lines / new 3 lines
+   - | 덮개 | 5.6 구간 산술의 덮개(상자들의 모임) | 5.6 | 덮개 |
+   - | 격자 | 계산 인증에서 상자·셀을 놓거나 값을 평가한 점들의 모임(5.4의 계산 격자; 7.3의 격자 판정; 8.2의 기하 격자 $J_i$) | 5.4 | 격자점, 노드 위치 |
+   + | 덮개 | 구간 산술의 덮개(상자들의 모임) | 부록 D | 덮개 |
+   + | 격자 | 계산 인증에서 상자·셀을 놓거나 값을 평가한 점들의 모임(5.4의 계산 격자; 7.3의 격자 판정; 8.2의 기하 격자 $J_i$) | 5.4 | 노드 위치 |
+   + | 격자점 | 격자를 이루는 점 하나(상자·셀의 끝점이나 값을 평가한 점) | 5.4 | 격자점 |
+## 장부_v2.md:607 [replace] old 2 lines / new 1 lines
+   - | 안장점 | 윤곽 적분의 정류점 | 5.4 | 임계점, 안장점 |
+   - | 경계 | 구간·절반·영역의 가장자리와 그 항(두 절반의 경계, 증가 경계·반감 경계, 경계 다항식·경계 응답·경계항). 상계·하계의 뜻으로는 쓰지 않는다(결정 95) | 1.5 | 경계(상계·하계 뜻) |
+   + | 경계 | 구간·절반·영역의 가장자리와 그 항(두 절반의 경계, 증가 경계·반감 경계, 경계 다항식·경계 응답·경계항). 상계·하계의 뜻으로는 쓰지 않는다(결정 95) | 1.4 | 경계(상계·하계 뜻) |
+## 장부_v2.md:661
+   「이름」 → 「이름(구획은 6.4에서 먼저)」
+   「」 → 「6.4,」
+## 장부_v2.md:702 [insert] old 0 lines / new 15 lines
+   + | 용량 가중 결과 순열 법칙 | 최대 변위가 열의 용량보다 작다는 조건 아래 결과 순열이 따르는 법칙(7장 모멘트 판정의 바탕) | 1.4, 7.1 | 같음 |
+   + | 창 항 | 5.5의 차분 하계에서 크기가 용량 바로 위인 나무들이 내는 음의 항을 모은 것($\mathrm{WIN}_0$) | 5.5 | 같음 |
+   + | 허용 숲, 허용 나무 | 최대 변위가 수준 $\ell$ 이하인 숲과 나무(정리 `{{2:old-2-10}}`의 증명) | 2.4 | 같음 |
+   + | 대각선 둘째 차분 | $y\,s_m(y)$를 결손 $d=m-y+1$을 고정한 대각선 방향으로 두 번 차분한 양 | 6.6 | 같음 |
+   + | 사슬 생존 곱 | 무거운 사슬의 걸음별 생존 인자의 곱 $\Pi_j(y)=\prod_{i\le j}y/(y+q_i)$ | 6.6 | 같음 |
+   + | 나무 함수 | 뿌리 라벨 나무의 지수 생성함수 $T(x)=\sum_{t\ge1}t^{t-1}x^t/t!$ | 2.5 | — |
+   + | 상쇄 분해, 중앙 상쇄 항등식 | 중앙 틈 증명에서 둘째 차분을 서로 상쇄하는 조각들로 가른 분해와 그 항등식 | 4.3 | — |
+   + | 원 비교 | 모멘트 판정을 거치지 않은 비교 $b_{n,k-1}<b_{n,k}$ 자체 | 7.4 | — |
+   + | Green 응답 | 2.7의 재귀에서 무거운 자리가 들어 있지 않은 항 하나하나가 내는 몫(그 몫 하나의 꼴) | 2.7 | 같음 |
+   + | 꼭대기 보정 | 5.5 기저 항등식의 보정항 $\mathrm{top}$ | 5.5 | 같음 |
+   + | 중복 몫 | 한 나무 재귀의 $\mathrm{dup}_m$($e^{\mathcal B_k}-1-\mathcal B_k$에서 오는 몫) | 8.1 | 같음 |
+   + | 기울임 증분 | 기울임 함수 $g$의 두 값의 차 $\mathrm{inc}^\pm_q$ | 10.5 | 같음 |
+   + | 용량 구간 | 자리에서 자기 용량만큼 왼쪽으로 뻗은 구간 | 2.5 | 같음 |
+   + | 오차 예산 | 수치 계산에서 허용하는 오차의 총량(예: 실수축 나머지의 $e^{-800}$, FFT 오차 예산 $\mathfrak e$) | 5.4 | 같음 |
+   + | 보조 뿌리 | 숲의 모든 뿌리를 매다는 가상의 뿌리(숲을 크기 $n+1$의 나무로 보기 위한 것) | 2.11 | 같음 |
+## 장부_v2.md:804
+   「경계」 → 「상계」
+## 장부_v2.md:1158 [insert] old 0 lines / new 9 lines
+   + | 5.3 | 정리 | 마지막 102항 |  | 뺌 | (5:old-5-3) |
+   + | 5.6 | 정리 | 꼬리 오목성 TC |  | 뺌 | (5:old-5-6) |
+   + | 6.17 | 명제 | 원천 쪽 SRC⁺(`{{7:src-plus}}`로 대체) |  | 뺌 | (7:old-6-17) |
+   + | 7.47 | 명제 | 조각남 확률의 점근 꼴 | 기록 [r5909c9e]의 명제 A | 뺌 | — |
+   + | 7.48 | 명제 | 창×창 쌍 대 덮인 문턱의 극한 | 기록 [r5909c9e]의 명제 B | 뺌 | — |
+   + | 7.49 | 명제 | $PAIR/\Theta$의 극한 | 기록 [r5909c9e]의 명제 C | 뺌 | — |
+   + | 8.7 | 명제 | 피벗 | 기록 [r3d0856b]의 명제 5 | 뺌 | (10:old-8-7) |
+   + | 8.27 | 명제 | 머묾 질량의 사슬 표현 | 기록 [re71a735]의 명제 D | 뺌 | (10:old-8-27) |
+   + | 8.29 | 보조정리 | 창 맨 앞의 하계 | 기록 [re71a735]의 보조정리 F | 뺌 | (10:old-8-29) |
+## 장부_v2.md:1178
+   「$\mathsf X$; $\eta$;」 → 「」
+   「인증 구간;」 → 「」
+   「덮개 칸;」 → 「」
+   「안장점;」 → 「」
+   「잔여, 두 항 부등식;」 → 「잔여;」
+   「확률, 멈춤」 → 「」
+   「Gauss 체제, Airy 체제,」 → 「」
+## 장부_v2.md:1182
+   「전환 구간;」 → 「」
+   「확인, 둘째 큰 나무」 → 「확인」
+## 장부_v2.md:1292
+   「크기열;」 → 「크기 수열;」

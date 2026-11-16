@@ -1,0 +1,8 @@
+bulk k0=6668 eps0=562  (a) min margin 2.681725 at q0=2; (b) edge margin 2.025920 (xi=1.5874)
+   s_2(y)=0.99994483  s_3(k0)=0.99984907  e_low_R(q0=2)=0.503009
+2 k0=8065 eps0=638  (a) min margin 1.363140 at q0=2; (b) edge margin 0.997074 (xi=1.5874)
+   s_2(y)=0.99995439  s_3(k0)=0.99987521  e_low_R(q0=2)=0.503044
+1b k0=9551 eps0=714  (a) min margin 0.726756 at q0=2; (b) edge margin 0.634381 (xi=1.5874); m0>N: (a) min 3.164349 at q0=714, (b) edge 0.337258
+   s_2(y)=0.99996148  s_3(k0)=0.99989463  e_low_R(q0=2)=0.503071
+1a k0=9705 eps0=722  (a) min margin 0.235472 at q0=2; (b) edge margin 2.877022 (xi=1.3000); m0>N: (a) min 3.232079 at q0=722, (b) edge 0.394751
+   s_2(y)=0.99996210  s_3(k0)=0.99989630  e_low_R(q0=2)=0.503073

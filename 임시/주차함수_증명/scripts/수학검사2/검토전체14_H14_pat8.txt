@@ -1,0 +1,14 @@
+ALL	0\.3989
+ALL	\\beta\(m\)
+ALL	\bG_n\b|\bG_N\b
+ALL	\\sigma_m\(\\ell\)
+ALL	블록
+ALL	동반 숲|무거운 동반|가벼운 동반
+ALL	선호 목록
+ALL	멈춤 확률|멈출 확률
+ALL	포착된 창 질량
+ALL	수준 확률
+ALL	체류
+ALL	두 이웃 수준의 질량
+ALL	나무 차분|나무 행 차분
+ALL	환경이 조각나

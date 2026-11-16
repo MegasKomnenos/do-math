@@ -1,0 +1,5 @@
+beta=0.5: Re err=1.333e-5 bound=1.95e-5 ok=True; Im err=0.001815 bound=0.002878 ok=True
+beta=2.0: Re err=0.0008718 bound=0.003612 ok=True; Im err=0.04768 bound=0.1645 ok=True
+beta=6.0: Re err=1.574e+5 bound=3.403e+6 ok=True; Im err=6.51e+5 bound=2.519e+7 ok=True
+int F0 = -4.40624e-18 (claimed 0); int F1 = 53.053824 vs 46*sqrt2-12 = 53.053824
+16<=n<=60: n with b(n,k_n)>=b(n,k_n+1): [16, 17, 18, 19]

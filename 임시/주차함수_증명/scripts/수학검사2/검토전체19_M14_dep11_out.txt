@@ -1,0 +1,21 @@
+11.2 rows 43 (incl header), 11.4 rows 27
+11.2 header: 부록 D 항목 | 확인하는 진술 | 산술 등급 | 놓인 곳(장·절) | 재계산 | 독립 재계산
+11.4 header: 문헌 | 이 글이 쓰는 결과 | 쓰인 자리
+11.4 columns: ['문헌', '이 글이 쓰는 결과', '쓰인 자리']
+== 부록 D 열 비교(의존지도 vs 11.2 현행)
+== 문헌 열 비교(의존지도가 '—'인데 11.4가 라벨을 드는 경우, 또는 반대)
+  {{2:old-2-11}}: 지도 '—' / 11.4=['Knuth, *The Art of Computer Programming*']
+== 문헌 열의 저자명이 11.4 첫 열에 있는가
+  {{2:old-2-3}}: '§3의 식' not in 11.4 first col
+  {{2:old-2-4}}: '§3의 식' not in 11.4 first col
+  {{4:e-integral}}: '$\\pi\\cot\\pi z$의 전개에서 $\\coth$의 전개 $\\sigma\\coth\\sigma=1+\\sum_{i\\ge1}2\\sigma^2/' not in 11.4 first col
+  {{4:gauss-coeff}}: '$\\pi\\cot\\pi z$의 전개에서 $\\coth$의 전개 $\\sigma\\coth\\sigma=1+\\sum_{i\\ge1}2\\sigma^2/' not in 11.4 first col
+  {{4:correction-contour}}: '$\\pi\\cot\\pi z$의 전개에서 $\\coth$의 전개 $\\sigma\\coth\\sigma=1+\\sum_{i\\ge1}2\\sigma^2/' not in 11.4 first col
+  {{6:geometric-mean}}: '$\\pi\\cot\\pi z$의 전개에서 $\\coth$의 전개 $\\sigma\\coth\\sigma=1+\\sum_{i\\ge1}2\\sigma^2/' not in 11.4 first col
+  {{7:old-6-6}}: 'Bernoulli 좌표의 진술이고, 본문이 쓰는 실수 좌표로의 확장은 7.2절 정리 {{7:old-6-6}}의 증명 앞 문단이 유도한다))' not in 11.4 first col
+  {{7:lemma-P-prime}}: '$\\pi\\cot\\pi z$의 전개에서 $\\coth$의 전개 $\\sigma\\coth\\sigma=1+\\sum_{i\\ge1}2\\sigma^2/' not in 11.4 first col
+== 1.1절 뺌 라벨 49개 가운데 장 파일(장·부록)에 나타나는 것
+== 장·부록 파일이 인용하는 라벨 가운데 머리가 없는 것(D: 제외)
+== 2.1절 주장 검산: 입력 열 라벨(중복 제외)=381 (지도 주장 381); 머리 없는 것=[]
+머리 선언 그래프 순환 성분: 0 (지도 주장 0); 본문 포함 SCC(크기2+): 17 (지도 주장 17)
+자기 인용 라벨: []

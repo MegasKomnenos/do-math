@@ -1,0 +1,144 @@
+record missing: []
+article missing: []
+=== ul_iv.py vs ul_iv_fixed.py diff:
+@@ -115 +115 @@
+-    pref = SQ2PI_INV * iv.exp(-iv.mpf(dlo) * Za / 2)                  # exp(-(zeta-H0)_+ zeta/2) decreasing in zeta
++    pref = SQ2PI_INV                  # tail factor exp(-varsigma_z z) = exp(-(zeta-h) zeta h/2), h = l^{-1/3} <= H0, replaced by its trivial upper bound 1 (record review, feedback section 3.3); the constant 1/sqrt(2 pi) is kept
+outputs_fixed: ul_iv_fixed_1600x1200.txt
+=== 원고_자료\세션_재계산\r8a9b11e/outputs_fixed\ul_iv_fixed_1600x1200.txt 
+ L0=25000 H0=0.0342 N1=1600 N2=1200 DNU=0.1 NQ=6400
+  int psi~ >= 0.76429913,  max psi~ = 0.590156 (peak cell 210, zeta~0.538)
+  positive part >= 0.74411578
+  sum_z h qbar <= 0.93354745;  neg1 <= 2.045e-5;  negative part <= 0.031947769
+  ==> s0_cert = 0.71216801   (interval arithmetic, dps=40);  time 316s
+exit=0 elapsed=316s
+
+outputs_fixed: ul_iv_fixed_800x600.txt
+=== 원고_자료\세션_재계산\r8a9b11e/outputs_fixed\ul_iv_fixed_800x600.txt 
+ L0=25000 H0=0.0342 N1=800 N2=600 DNU=0.1 NQ=3200
+  int psi~ >= 0.75837437,  max psi~ = 0.586085 (peak cell 105, zeta~0.538)
+  positive part >= 0.73833024
+  sum_z h qbar <= 0.93774132;  neg1 <= 2.045e-5;  negative part <= 0.0320912
+  ==> s0_cert = 0.70623905   (interval arithmetic, dps=40);  time 73s
+
+feedback.md 0.71216801 -> and_iv: 1.080748.    - envelope_iv: 같은 네 수.    - c3_iv: 1.3352092(2000칸), 1.3350964(4000칸).    - cemaj_iv: C_E≤7.546633.    - ul_iv 1600×1200: 0.71427542.     수정판은 다음과 같다.    - ul_iv_fixed 1600×1200: 0.71216801.    - c3_iv_fixed 2000칸: 1.5033946.    - band_iv(s₀=0.71216, C_E=7.72): 1.072666. 6. **코드 감사.** 검토자 세션의 두 하위 작업으로 ul_iv.py와 cemaj_iv.py·c3_
+feedback.md 0.70624 -> 유한다. - 유한 ℓ의 S_rig를 계산한 m2.py는 `exp(-a*z)`를 바르게 쓴다. 생산자의 유한 ℓ 수치는 영향이 없다.  **수정과 영향.** 이 한 줄만 1로 바꾸어 같은 코드로 다시 인증했다(work/auditUL/ul_iv_fixed.py).  | 격자 | 원래 | 수정 | |---|---|---| | 800×600 | 0.70834 | 0.70624 | | 1600×1200 | 0.71427542 | **0.71216801** |  차이가 작은 이유는 결함이 G_min이 이미 작은 큰 ζ에서만 작용하기 때문이다. 창 질량의 참값은 Λ_w(25000)=0.8544이고 극한은 F_L(6)=0.8975다.
+feedback.md 1.3558 -> not found
+feedback.md band_iv -> v²여야 하고, c3_iv.py에서는 0.75h³/(pq²) 대신 0.75/(pq²)여야 한다. 고쳐 다시 인증하면 C_III≤1.50339, **C_E≤7.7148**이다. 적힌 7.5467(쓰인 값 7.55)은 인증되지 않는다.  **두 결함을 모두 고친 값**(s₀=0.71216, C_E=7.72)으로 다시 계산한 결과는 다음과 같다.  - 띠 검사(band_iv.py, 구간 산술)의 최소 비는 1.0727이다(원래 1.0807). - 오른쪽 부분의 여유는 Ψ≥0.1116이다(원래 0.1155). - 검토자의 직접 평가로는 n=50001 중앙에서 1.0744이다.  결론은 바뀌지 않는다. 두 수정은 새 착상이 아니
+=== 원고_자료\세션_재계산\band_check/band_read_out_CE0.txt 
+ cells: 4000, tile [1/2, 2/3] contiguously: yes
+cells with ratio lower bound < 1.3558: 0
+minimum ratio lower bound: 1.3558739652 at cell i=0, [1/2, 12001/24000]
+margin over threshold: 0.0000739652
+second smallest: 1.3560396997 at i=1; largest: 2.2480127320 at i=3999
+band_iv.py printed minimum: 1.355874; independent minimum rounded to 6 places agrees: True
+
+=== 원고_자료\세션_재계산\band_check/band_iv_out_CE0.txt 
+ s0=0.71216 CE=0.0 NSUB=4000: certified min ratio = 1.355874
+  worst cell (i, la, lb, H, w, top, Kt, Wt, E+): (0, 0.5, 0.5000416666666667, 1.9570106198050503, 0.9885536169418088, 0.007137543258748978, 0.4999889445552375, 0.01687367305105114, 0.0)
+
+=== 원고_자료\세션_재계산\theorem_U_constant/theorem_U_iv_out.txt 
+ 75254374]   quad check (not certified): 3.9278617757525427
+I_X(0.1) in [2.1463907493454886, 2.1463907493454886]   quad check (not certified): 2.1463907493454886
+I_X(0.5) in [3.2289116268243523, 3.22891162682435265]   quad check (not certified): 3.2289116268243523
+I_X(0.5007) in [3.23214491400351276, 3.23214491400351314]   quad check (not certified): 3.23214491400351276
+cells: 16000 (+ first cell [0,1e-9]); Mg=8000, Mu=8000, K=60
+  [I] first-cell parts: J0 <= 0.00028546, Y0 <= 0.00138139  (34.9s)
+  [X] first-cell parts: J0 <= 0.000779962, Y0 <= 0.00218242  (35.3s)
+J_I(1) <= 8.1309087594   claim <= 8.133   ok: True   margin 0.0020912
+Y_I(1) <= 10.2993860316   claim <= 10.301   ok: True   margin 0.001614
+J_X(G*) <= 17.9485460744   claim <= 17.951   ok: True   margin 0.0024539
+Y_X(G*) <= 23.4600153359   claim <= 23.462   ok: True   margin 0.0019847
+C_I = 3c(J_I + c Y_I) <= 14.64888444   (claim 14.653, ok: True)
+C_X = 1.5 G* c* c (J_X + c Y_X) <= 35.9472161   (claim 35.952, ok: True)
+C_I + C_X <= 50.59610054   (<= 50.62: True, margin 0.023899)
+with the stated four values: 3c(8.133 + c 10.301) in [14.65215791, 14.65215791] (<= 14.653: True), 1.5 G* c* c (17.951 + c 23.462) in [35.95148865, 35.95148865] (<= 35.952: True), 14.653 + 35.952 = 50.605 <= 50.62
+side check: Gamma_0.55(3132/3130) in [2.732219778, 2.732219778] <= 2.7323: True
+side check: 1.498 + 6260/6261 >= 2.4978: True; big root chi in [5.2728779, 5.2728779]; c(0.55, 2.4978) in [0.8050686533, 0.8050686533] <= 0.8051: True
+
+=== 원고_자료\세션_재계산\theorem_U_constant/theorem_U_iv_out_32000.txt 
+ 413429352   claim <= 23.462   ok: True   margin 0.020657
+C_I = 3c(J_I + c Y_I) <= 14.64041188   (claim 14.653, ok: True)
+C_X = 1.5 G* c* c (J_X + c Y_X) <= 35.92759825   (claim 35.952, ok: True)
+C_I + C_X <= 50.56801013   (<= 50.62: True, margin 0.05199)
+with the stated four values: 3c(8.133 + c 10.301) in [14.65215791, 14.65215791] (<= 14.653: True), 1.5 G* c* c (17.951 + c 23.462) in [35.95148865, 35.95148865] (<= 35.952: True), 14.653 + 35.952 = 50.605 <= 50.62
+side check: Gamma_0.55(3132/3130) in [2.732219778, 2.732219778] <= 2.7323: True
+side check: 1.498 + 6260/6261 >= 2.4978: True; big root chi in [5.2728779, 5.2728779]; c(0.55, 2.4978) in [0.8050686533, 0.8050686533] <= 0.8051: True
+
+=== C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r845b2055d18c40c6894cca76b1dff184\review\evidence\rv_constU_out.txt 
+ k_d lower bound: 2.497840 ; c(0.55,2.4978)=0.805069 ; c(0.55,kmin)=0.805057 ; T_b=2.732220
+I: true J=8.1250 Y=10.2786 | reviewer upper sum J<=8.1346 Y<=10.3073
+X: true J=17.9336 Y=23.4221 | reviewer upper sum J<=17.9560 Y<=23.4743
+C from true integrals = 50.538 ; from reviewer upper sums = 50.620 ; from candidate's numbers = 50.604
+bounds at t=3130: 0.9033 (true), 0.9048 (upper), 0.9045 (candidate)
+
+=== 원고_자료\세션_재계산\theorem_D_base/thmD_base_iv_out.txt 
+ integer (6.45) vs capacity recursion, m<=30, all 2d<=m+1: pairs=240, mismatches=0
+pairs (m,d) checked: 16229 (4<=m<=700, 8d^3<=m^2); max interval width of q: 5.32e-30
+min q: (m,d)=(689, 39)  q in [0.85613376342948715147, 0.85613376342948715147]
+max q: (m,d)=(4, 1)  q in [1.3917602961710311605, 1.3917602961710311605]
+lower end of min q - 1/2 = 0.35613376 ; 3/2 - upper end of max q = 0.1082397
+all q in [1/2, 3/2]: True
+all q in [0.856, 1.392]: True
+(m,d)=(3,1): q in [1.5290335285082129449, 1.5290335285082129449]  (> 3/2: True)
+m=700: largest d with 8d^3<=m^2 = 39
+
+=== C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r5bbc534e59964320bfca440a19bf3be8\evidence\peer\verify_DR_thmD.out 
+ DR vs capacity recursion, L<=30, all 2d<=L+1: mismatches = 0
+DR vs brute force L=1: True
+DR vs brute force L=2: True
+DR vs brute force L=3: True
+DR vs brute force L=4: True
+DR vs brute force L=5: True
+DR vs brute force L=6: True
+L<=700, d^3<=L^2/8: min q = 0.85613376 at (689, 39) ; max q = 1.5290335 at (3, 1) ; max q (L>=4) = 1.3917603 at (4, 1)
+violations of [1/2,3/2]: [(3, 1, 1.5290335285082128)]
+
+=== 원고_자료\세션_재계산\prop_W_thirteen/iv13_out.txt 
+ 500363113269713730990058075938, 14.7548789026305500363113269713730990058075938], [14.7548789026305500363113269713730990058103489, 14.7548789026305500363113269713730990058103489]]  L-R > 0: True
+d=13  L in [[65.51967124374029850094311759075983116191013, 65.51967124374029850094311759075983116191013], [65.5196712437402985009431175907598311621628613, 65.5196712437402985009431175907598311621628613]]  R in [[15.8478218353281123992718338413418101460733994, 15.8478218353281123992718338413418101460733994], [15.8478218353281123992718338413418101460765218, 15.8478218353281123992718338413418101460765218]]  L-R > 0: True
+d=14  L in [[-24.1603652263241484608748172169507509994073578, -24.1603652263241484608748172169507509994073578], [-24.1603652263241484608748172169507509991373614, -24.1603652263241484608748172169507509991373614]]  R in [[16.9571275787933368163783816847437142320236299, 16.9571275787933368163783816847437142320236299], [16.9571275787933368163783816847437142320269359, 16.9571275787933368163783816847437142320269359]]  L-R > 0: False
+min over d<=13 of lower end of (L-R): [49.6718494084121861016712837494180210158330572, 49.6718494084121861016712837494180210158330572]
+all 13 pass: True
+
+=== C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r29c10cde89dc4f1fb7d87b4c47427be3\evidence\peer\data\near_window_thresholds.out 
+ =d<=30  (and V_k<0 since b_(k,k)=0);  0.041 k^(2/3) = 19.0
+k=30000: V_(k+d)<0 certified for 1<=d<=65  (and V_k<0 since b_(k,k)=0);  0.041 k^(2/3) = 39.6
+k=100000: V_(k+d)<0 certified for 1<=d<=146  (and V_k<0 since b_(k,k)=0);  0.041 k^(2/3) = 88.3
+k=1000000: V_(k+d)<0 certified for 1<=d<=686  (and V_k<0 since b_(k,k)=0);  0.041 k^(2/3) = 410.0
+check monotonicity: d-test at k=3131 passes for d<=13; at k=3132..3200 d_1 = [13]
+   F(d_1+1=14)/(B k^-1.5) = 0.4345;  loss/(B k^-1.5) = 0.1734
+true sizes at k=3131: d_0 = 4  (Theorem D range d <= L^(2/3)/2 = 109)
+   F(d_1+1=14)/(B k^-1.5) = 0.4345;  loss/(B k^-1.5) = 0.2617
+c_W=0.5: d_0 = 7  (Theorem D range d <= L^(2/3)/2 = 109)
+   F(d_1+1=14)/(B k^-1.5) = 0.4345;  loss/(B k^-1.5) = 0.5235
+c_W=1.0: d_0 = 20  (Theorem D range d <= L^(2/3)/2 = 109)
+
+=== C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r051bfe18ee7448c2aa4d067eab9e8c6c\evidence\peer\peer_lemmaS.log 
+ nalytic monotonicity): True
+   exact (C2) value at x*, k=2: 0.888889
+   exact (C2) value at x*, k=3: 0.850342
+   exact (C2) value at x*, k=5: 0.816746
+   exact (C2) value at x*, k=10: 0.783242
+   exact (C2) value at x*, k=20: 0.754646
+   exact (C2) value at x*, k=30: 0.739190
+   exact (C2) value at x*, k=42: 0.727143
+   exact (C2) value at x*, k=43: 0.726329
+   exact (C2) value at x*, k=60: 0.715263
+(C2) EXACT at x* for 2<=k<=60: failures none ; max value 0.888889 at k=2
+   rewriting check k=3: lhs-rhs = 0.0
+   rewriting check k=10: lhs-rhs = 0.0
+   rewriting check k=50: lhs-rhs = -1.3805e-30
+
+=== C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r051bfe18ee7448c2aa4d067eab9e8c6c\evidence\producer\check3.log 
+ _k=2.559823 rho_{2k}=2.496261 rho_{10k-1}=2.494864
+   node-form (2k+3)A_{N+1} <= 2ek(N+1)A_N with e>2.718281828, k=3, N<15: violations []
+   node-form (2k+3)A_{N+1} <= 2ek(N+1)A_N with e>2.718281828, k=4, N<21: violations []
+   node-form (2k+3)A_{N+1} <= 2ek(N+1)A_N with e>2.718281828, k=6, N<34: violations []
+   node-form (2k+3)A_{N+1} <= 2ek(N+1)A_N with e>2.718281828, k=10, N<68: violations []
+
+r8a9b11e missing heads: [] | 부록 A: False
+r845b205 missing heads: [] | 부록 A: True
+r5bbc534 missing heads: [] | 부록 A: False
+r29c10cd missing heads: [] | 부록 A: False
+r051bfe1 missing heads: [] | 부록 A: False

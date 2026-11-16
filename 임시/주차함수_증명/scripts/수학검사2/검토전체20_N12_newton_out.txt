@@ -1,0 +1,3 @@
+polynomials checked: 91  failures: []  max degree over r+d+1: 0
+sd_d(y)>0 samples: True
+elapsed 0.5s

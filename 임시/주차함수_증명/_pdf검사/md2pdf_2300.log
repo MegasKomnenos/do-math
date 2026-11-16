@@ -1,0 +1,26 @@
+Markdown 해석 6.0초, 제목 153개
+수식 34748개 렌더링 42.9초 (오류 0개, 경고 종류 1개)
+  [수식 경고 ×2] unknownSymbol: Unrecognized Unicode character "ㄱ" (12593)
+브라우저: playwright chromium 151.0.7922.34
+  part000.html: 맞춤 1.1초, 인쇄 4.5초
+  part002.html: 맞춤 0.9초, 인쇄 3.2초
+  part001.html: 맞춤 5.4초, 인쇄 10.4초
+  part003.html: 맞춤 2.8초, 인쇄 6.9초
+  part005.html: 맞춤 7.4초, 인쇄 12.9초
+  part004.html: 맞춤 11.4초, 인쇄 22.2초
+  part007.html: 맞춤 4.9초, 인쇄 11.2초
+  part006.html: 맞춤 14.3초, 인쇄 23.0초
+  part008.html: 맞춤 5.4초, 인쇄 11.4초
+  part010.html: 맞춤 1.7초, 인쇄 5.1초
+  part011.html: 맞춤 1.4초, 인쇄 3.2초
+  part009.html: 맞춤 5.3초, 인쇄 8.8초
+  part012.html: 맞춤 0.7초, 인쇄 1.8초
+  part013.html: 맞춤 3.9초, 인쇄 5.1초
+  part014.html: 맞춤 20.5초, 인쇄 25.8초
+본문 15조각 인쇄 181초 (동시 2)
+  front.html: 맞춤 0.0초, 인쇄 0.8초
+  front.html: 맞춤 0.0초, 인쇄 0.8초
+제목·차례 4쪽, 제목 153개의 쪽 확정
+책갈피 153개
+PDF: 임시\주차함수_증명\원고.pdf (645쪽, 12.7 MB)
+exit 0

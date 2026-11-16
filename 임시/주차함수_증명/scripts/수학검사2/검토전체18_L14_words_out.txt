@@ -1,0 +1,28 @@
+L544 「꼬리 띠」 claimed 5.4: earliest 장5A:357 (sec 5.2.3)
+L546 「오른쪽 부분」 claimed 5.5: earliest 장2:90 (sec 2.3)
+L549 「비 전파」 claimed 7.2: earliest 장5A:9 (sec 5)
+L556 「상자 여유」 claimed 1.5, 5.1, 9.4: NOT FOUND outside ch1
+L556 「점별 여유」 claimed 1.5, 5.1, 9.4: NOT FOUND outside ch1
+L561 「토막」 claimed 7.5: earliest 장5A:27 (sec 5.1)
+L562 「조각」 claimed 7.2: earliest 장2:861 (sec 2.12)
+L565 「소인 구간」 claimed 7.2: earliest 장3:103 (sec 3.2)
+L570 「격자」 claimed 5.4: earliest 장4:261 (sec 4.3)
+L575 「로그 도함수의 다섯 몫: 간격 몫」 claimed 6.4: NOT FOUND outside ch1
+L604 「사다리」 claimed 6.5: earliest 장4:266 (sec 4.3)
+L611 「가족」 claimed 10.6: earliest 장10:417 (sec 10.5)
+L611 「가족의 첫 열」 claimed 10.6: earliest 장10:417 (sec 10.5)
+L632 「되먹임」 claimed 8.4: earliest 장8:583 (sec 8.3)
+L633 「흡수」 claimed 5.5: earliest 장4:495 (sec 4.3)
+L646 「상단·하단」 claimed 5.1: NOT FOUND outside ch1
+L656 「횡단」 claimed 4.1: earliest 장3:5 (sec 3)
+L656 「왼쪽 내부」 claimed 4.1: earliest 장3:5 (sec 3)
+L674 「첫 층 상속」 claimed 7.5: earliest 장2:225 (sec 2.5)
+L675 「분할 무게」 claimed 7.7: earliest 장6:119 (sec 6.2)
+L676 「띠 정리」 claimed 8.1–8.4, 11.3: earliest 장2:9 (sec 2)
+L676 「공유 입력」 claimed 8.1–8.4, 11.3: earliest 장4:13 (sec 4)
+L678 「짝 없는」 claimed 9.2, 9.3, 9.5: earliest 장6:163 (sec 6.2)
+L678 「병합」 claimed 9.2, 9.3, 9.5: earliest 장7A:93 (sec 7.2)
+L679 「재생」 claimed 9.4: earliest 장7A:416 (sec 7.2)
+L683 「둘째 꼴」 claimed 10.5: earliest 장7A:362 (sec 7.2)
+L683 「검사」 claimed 10.5: earliest 장7B:205 (sec 7.4)
+L683 「고리」 claimed 10.5: earliest 장2:164 (sec 2.4)

@@ -1,0 +1,9 @@
+rows computed in 23.8 s
+all rows n<=300 unimodal: True
+chain strict-increase breaks at: [5, 7, 9, 11] (claim {5,7,9,11})
+middle increase n>=16: True ; n in 2..15 with d_{n,k_n}>=0: []
+fourth-piece structure 5..300: True
+right-half adjacent pairs strict: True
+witness offset range 50..300: min 0.934004 (n=241) max 1.986243 (n=51)
+S_{n,k}>0 for all right positions with r<=170 (count 22052): True
+moving-tail (아) for D<=6: True

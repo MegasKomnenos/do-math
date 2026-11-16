@@ -1,0 +1,326 @@
+
+######## 5:old-5-7 [장5A.md:670] 본문 6줄
+  전: 증명됨, 계산 보조(정확 정수·유리수); r690be93
+  후: 증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{5:kernel-bounds}}에 의존; r690be93
+  더함: ['5:kernel-bounds'] 뺌: []
+  - 5:kernel-bounds (더함, X; 보조정리): 본문 인용 1줄
+      …_j(r)]$을, 짝수 $j$의 항(부호 $-$)에는 하계 $en^{1-j}[\Delta^2\mathrm{Ch}_j(r)+\frac1n\Delta^2\mathcal U_j(r)]$을 넣는다. 두 차분은 이렇게 감싼다. 보조정리 {{5:marked-recursion}}의 재귀에 보조정리 {{5:kernel-bounds}}(K1)의 $C$ 하계와 보조정리 {{5:kernel-C-bound}}의 $C$ 상계를 넣으면 $\mathcal Z^{(2)}_j$와 $\mathcal Y_j$를 양쪽에서 감싸는 L…
+  ! 본문이 부르는 X형인데 선언 없음: ['5:sign-sandwich']
+      … Laurent 다항식이 나온다($\mathcal Y_j$의 재귀에 드는 $zC'$의 상하계는 $C$의 상하계에 $z\frac d{dz}$를 적용한 것이며, 이 연산은 계수에 음이 아닌 수 $m$을 곱하므로 $\preceq$를 보존한다). 그 계수 $[z^{r+2}]w^i$를 보조정리 {{5:sign-sandwich}}(다)의 유한 곱으로 적어 $r\in[\mathrm S_-^2,\mathrm S_+^2]$에서 감싸면, $\Delta^2\mathrm{Ch}_j(…
+
+######## 5:old-5-12 [장5A.md:808] 본문 16줄
+  전: 증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간); r13b0b8f
+  후: 증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간), 보조정리 {{5:kernel-bounds}}·{{5:kernel-sandwich}}에 의존; r13b0b8f
+  더함: ['5:kernel-bounds', '5:kernel-sandwich'] 뺌: []
+  - 5:kernel-bounds (더함, X; 보조정리): 본문 인용 1줄
+      …-chain-rec}}의 생성함수 $\mathcal Z^{(2)}_j$, $\mathcal Y_j$, $\mathcal O_j$의 $z^{r+2}$ 계수다. 보조정리 {{5:marked-chain-rec}}(다)에 따라 재귀의 $C$를 $C_-$(하계; 네 (A⁺) 조각에서는 보조정리 {{5:kernel-bounds}}의 (K1))와 $C_+$(상계)로 바꾸면 $w$의 Laurent 다항식이 되어 세 차분을 양쪽에서 감싼다. 그 각 단항식의 계수는 보조정리 {{5:kernel-sandwich}}(…
+  - 5:kernel-sandwich (더함, X; 보조정리): 본문 인용 1줄
+      …arked-chain-rec}}(다)에 따라 재귀의 $C$를 $C_-$(하계; 네 (A⁺) 조각에서는 보조정리 {{5:kernel-bounds}}의 (K1))와 $C_+$(상계)로 바꾸면 $w$의 Laurent 다항식이 되어 세 차분을 양쪽에서 감싼다. 그 각 단항식의 계수는 보조정리 {{5:kernel-sandwich}}(다)에 따라 $r$의 유리함수 또는 $\mathrm{cb}_{r+2}$ 곱 유리함수다. $\mathfrak s\mathrm{cb}_{r+2}$는 보조정리 {{5:kernel-s…
+
+######## 5:old-5-11 [장5A.md:696] 본문 10줄
+  전: 증명됨, 정리 {{5:old-5-7}}·{{4:old-4-5}}·{{5:old-5-1}}·{{4:old-4-8}}·{{4:old-4-9}}에 의존; r690be93
+  후: 증명됨, 정리 {{5:old-5-7}}·{{4:old-4-5}}·{{5:old-5-1}}·{{4:old-4-8}}·{{4:old-4-9}}·명제 {{5:old-5-10}}에 의존; r690be93
+  더함: ['5:old-5-10'] 뺌: []
+  - 4:old-4-5 (기존, X; 정리): 본문 인용 1줄
+      …)$의 위반 쌍이 된다. 그러므로 그런 위치마다 $b_{n,\ell}\le b_{n,\ell+1}$이다. 한가운데보다 앞선 위치가 남는다. $\mathsf W(n)$의 위치 가운데 $k_n$보다 작은 것은 $n$이 홀수일 때의 $\ell=(n-1)/2=k_n-1$뿐이고, 거기서는 정리 {{4:old-4-5}}의 한가운데 증가 $b_{n,k_n-1}<b_{n,k_n}$이 바로 결론이다. 그러므로 $\mathsf W(n)$이다.…
+  - 4:old-4-8 (기존, X; 정리): 본문 인용 1줄
+      …(다) 오른쪽 절반의 결과를 앞 장이 왼쪽 절반에 대해 세운 명제와 묶는다. $n\ge20001\ge16$에서 정리 {{4:old-4-8}}에 따라 $\mathsf P(n)\Leftrightarrow\mathsf P_L(n)\wedge\mathsf P_R(n)$과 $\mathsf P_L(n)\Leftrightarrow\mathsf…
+  - 4:old-4-9 (기존, X; 정리): 본문 인용 1줄
+      …(라) $\mathsf P$를 가정하자. 보조정리 {{4:old-4-2}}에서 모든 $n$에 $\mathsf P_L(n)$과 $\mathsf P_R(n)$이 성립한다. 정리 {{4:old-4-9}}에 따라 $\mathsf Q_L$이 성립한다. $\mathsf Q_R(n)$은 $n\le20000$에서 정리 {{5:old-5-1}}로, $n\ge20001$에서 (나)로 성립한다. $\mat…
+  - 5:old-5-1 (기존, X; 정리): 본문 인용 2줄
+      …$이 닫힌다. 명제 {{5:old-5-10}}의 증명은 $n\ge20001$인 행마다 $\mathsf W(n)$만으로 $\mathsf Q_R(n)$을 얻으므로 이 고리는 행별로도 성립한다. $n\le20000$에서는 $\mathsf Q_R(n)$과 $\mathsf P_R(n)$이 정리 {{5:old-5-1}}과 명제 {{5:old-5-9}}로 참이고 $\mathsf W$는 그 범위를 말하지 않으므로 명제로서도 $\mathsf W\Leftrightarrow\mathsf Q_R\Leftrightarr…
+      …f P$를 가정하자. 보조정리 {{4:old-4-2}}에서 모든 $n$에 $\mathsf P_L(n)$과 $\mathsf P_R(n)$이 성립한다. 정리 {{4:old-4-9}}에 따라 $\mathsf Q_L$이 성립한다. $\mathsf Q_R(n)$은 $n\le20000$에서 정리 {{5:old-5-1}}로, $n\ge20001$에서 (나)로 성립한다. $\mathsf Q\Leftrightarrow\mathsf Q_L\wedge\mathsf Q_R$이므로 $\mathsf Q$다. 역방향 $\m…
+  - 5:old-5-10 (더함, X; 명제): 본문 인용 1줄
+      …(나) (가)와 명제 {{5:old-5-9}}·{{5:old-5-10}}을 합치면 각 $n\ge20001$에서 함의의 고리 $\mathsf W(n)\Rightarrow\mathsf Q_R(n)\Rightarrow\mathsf P_R(n)\Rightarrow\ma…
+  - 5:old-5-7 (기존, X; 정리): 본문 인용 1줄
+      …\frac{149}{200},\frac34]$이고, $(\frac{149}{200})^3>(\frac{16}{25})^2$와 $(\frac34)^3<(\frac{13}{20})^2$에서 $\frac{16}{25}<r_0(n)^{3/2}/n<\frac{13}{20}$이다. 그러므로 정리 {{5:old-5-7}}에 따라 진입 위치에서 엄격 증가 $b_{n,n-r_0(n)-1}<b_{n,n-r_0(n)}$이 성립한다. 다음으로 진입 위치가 벌크 증가의 범위 밖, 곧 두 꼬리 정리가 덮는 끝 쪽에 있음을…
+
+######## 5:old-5-15 [장5A.md:962] 본문 2줄
+  전: 증명됨, 정리 {{5:old-5-2}}·{{5:old-5-12}}·{{5:old-5-13}}에 의존; ra4c01fc
+  후: 증명됨, 정리 {{5:old-5-2}}·{{5:old-5-13}}·보조정리 {{5:cover-edge}}에 의존; ra4c01fc
+  더함: ['5:cover-edge'] 뺌: ['5:old-5-12']
+  - 5:cover-edge (더함, X; 보조정리): 본문 인용 1줄
+      …(나)에 따라 $\mathsf W(n)$이 성립한다. $n\ge50001$에서 $r=n-\ell-1$, $k=\ell+1$로 두면 세 경우다. $\hat x>10$이면 $\mathsf W^\sharp$의 위치다. $\hat x\le10$이고 $100r^3\le324n^2$이면 보조정리 {{5:cover-edge}}(나)에 따라 행은 엄격히 증가한다. $\hat x\le10$이고 $100r^3>324n^2$이면 $x^{3/2}>\frac95$이므로 $\hat x=\frac{r+1}{(n-r)^{2/…
+  - 5:old-5-13 (기존, X; 정리): 본문 인용 1줄
+      …^{3/2}>\frac95$이므로 $\hat x=\frac{r+1}{(n-r)^{2/3}}>\frac r{n^{2/3}}=(x^{3/2})^{2/3}>\bigl(\frac95\bigr)^{2/3}>1.4$이다. 또 $k\ge\frac{n+1}2\ge25001\ge10001$이므로 정리 {{5:old-5-13}}에 따라 행은 엄격히 증가한다. 거꾸로 $\mathsf W^\sharp$의 위치는 $\mathsf W$의 범위 안에 있다. $n\ge50001$에서 $\mathfrak m(n)\ge171$이…
+  - 5:old-5-2 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** 벌크 증가의 위치를 세 결과가 덮는 부분과 남는 부분으로 가른다. $\mathsf W$의 위치 $(n,\ell)$을 본다. $20001\le n\le50000$이면 정리 {{5:old-5-2}}(나)에 따라 $\mathsf W(n)$이 성립한다. $n\ge50001$에서 $r=n-\ell-1$, $k=\ell+1$로 두면 세 경우다. $\hat x>10$이면 $\mathsf W^\s…
+  - (뺌) 5:old-5-12: 본문 인용 0줄
+
+######## 5:kernel-sandwich [장5A.md:768] 본문 14줄
+  전: 증명됨, 보조정리 {{5:kernel-bounds}}에 의존; r13b0b8f
+  후: 증명됨, 보조정리 {{5:kernel-bounds}}·{{5:sign-sandwich}}에 의존; r13b0b8f
+  더함: ['5:sign-sandwich'] 뺌: []
+  - 5:kernel-bounds (기존, X; 보조정리): 본문 인용 0줄
+  - 5:sign-sandwich (더함, X; 보조정리): 본문 인용 2줄
+      …(다) Laurent 단항식 $w^i$의 계수 $[z^{r+2}]w^i$는 보조정리 {{5:sign-sandwich}}(다)의 유한 곱이므로 $i$가 짝수이면 $r$의 유리함수이고 $i$가 홀수이면 $\mathrm{cb}_{r+2}$에 $r$의 유리함수를 곱한 것이다.…
+      …(다) 보조정리 {{5:sign-sandwich}}(다)의 네 경우에서 짝수 $i$는 이항계수 또는 $0$이고, 홀수 $i$는 $\mathrm{cb}_N$에 $N$의 유리식을 곱한 것이다. ∎…
+
+######## 5:old-5-18 [장5B.md:9] 본문 20줄 (미룬 증명 ['장5B.md:434'])
+  전: 증명됨, 정리 {{5:old-5-2}}·{{5:old-5-11}}·{{5:old-5-32}}·명제 {{5:band-inequality}}·보조정리 {{5:old-5-15}}·{{5:old-5-38}}·{{5:right-part}}·따름정리 {{6:cor-L}}에 의존; r8a9b11e
+  후: 증명됨, 정리 {{5:old-5-2}}·{{5:old-5-11}}·{{5:old-5-32}}·명제 {{5:band-inequality}}·보조정리 {{5:old-5-15}}·{{5:old-5-38}}·{{5:right-part}}에 의존; r8a9b11e
+  더함: [] 뺌: ['6:cor-L']
+  - 5:band-inequality (기존, X; 명제): 본문 인용 1줄
+      …old-5-30}}에서 $(5.51)$로의 환원이 나오며, 따름정리 {{5:old-5-34}}, 정리 {{5:old-5-32}}, 보조정리 {{5:old-5-26}}을 넣으면 $(5.51)$이 더 강한 판정식 $(5.53)$으로 환원된다. $(5.53)$은 $y\le2n/3$이면 명제 {{5:band-inequality}}에서, $y>2n/3$이면 보조정리 {{5:right-part}}에서 나온다. 그러므로 $c_n(y)-c_n(y-1)\ge0$, 곧 $b_{n,y-1}\le b_{n,y}$다. …
+  - 5:old-5-11 (기존, X; 정리): 본문 인용 1줄
+      …3$이면 보조정리 {{5:right-part}}에서 나온다. 그러므로 $c_n(y)-c_n(y-1)\ge0$, 곧 $b_{n,y-1}\le b_{n,y}$다. $\mathsf W$는 보조정리 {{5:old-5-15}}에 따라, $\mathsf Q_R$과 $\mathsf P_R$은 정리 {{5:old-5-11}}에 따라 성립한다. ∎…
+  - 5:old-5-15 (기존, X; 보조정리): 본문 인용 1줄
+      …**정리 {{5:old-5-18}}의 증명.** $n\ge50001$에 대한 강한 귀납으로 $\mathsf W^\sharp(n)$을 보인다. $50001\le n'<n$에서 $\mathsf W^\sharp(n')$을 가정하면 보조정리 {{5:old-5-15}}의 $n'$별 동치로 $\mathsf W(n')$이고, $20001\le n'\le50000$에서는 정리 {{5:old-5-2}}에 따라 $\mathsf W(n')$이 성립한다. $n=500…
+  - 5:old-5-2 (기존, X; 정리): 본문 인용 1줄
+      …한 귀납으로 $\mathsf W^\sharp(n)$을 보인다. $50001\le n'<n$에서 $\mathsf W^\sharp(n')$을 가정하면 보조정리 {{5:old-5-15}}의 $n'$별 동치로 $\mathsf W(n')$이고, $20001\le n'\le50000$에서는 정리 {{5:old-5-2}}에 따라 $\mathsf W(n')$이 성립한다. $n=50001$에서는 귀납 가설이 비어 있고 바닥은 정리 {{5:old-5-2}}다. $\mathsf W^\sharp(n)$의 위치 $y=\…
+  - 5:old-5-32 (기존, X; 정리): 본문 인용 1줄
+      …old-5-38}}에 따라 $\mathrm{IH}(n,y)$가 성립한다. 명제 {{5:old-5-22}}와 따름정리 {{6:cor-L}}에서 $(5.50)$이 나오고, 보조정리 {{5:old-5-30}}에서 $(5.51)$로의 환원이 나오며, 따름정리 {{5:old-5-34}}, 정리 {{5:old-5-32}}, 보조정리 {{5:old-5-26}}을 넣으면 $(5.51)$이 더 강한 판정식 $(5.53)$으로 환원된다. $(5.53)$은 $y\le2n/3$이면 명제 {{5:band-inequali…
+  - 5:old-5-38 (기존, X; 보조정리): 본문 인용 1줄
+      …\le n^{2/3}$과 $n-\ell>10(\ell+1)^{2/3}\ge10((n+1)/2)^{2/3}>6n^{2/3}+2>\mathfrak m(n)+2$에서 $y\le n-1-\mathfrak m(n)$이며, 5.5.2절에서 본 대로 $t_0(y)\le n$이다. 그러므로 보조정리 {{5:old-5-38}}에 따라 $\mathrm{IH}(n,y)$가 성립한다. 명제 {{5:old-5-22}}와 따름정리 {{6:cor-L}}에서 $(5.50)$이 나오고, 보조정리 {{5:old-5-30}}에서 …
+  - 5:right-part (기존, X; 보조정리): 본문 인용 1줄
+      …:old-5-34}}, 정리 {{5:old-5-32}}, 보조정리 {{5:old-5-26}}을 넣으면 $(5.51)$이 더 강한 판정식 $(5.53)$으로 환원된다. $(5.53)$은 $y\le2n/3$이면 명제 {{5:band-inequality}}에서, $y>2n/3$이면 보조정리 {{5:right-part}}에서 나온다. 그러므로 $c_n(y)-c_n(y-1)\ge0$, 곧 $b_{n,y-1}\le b_{n,y}$다. $\mathsf W$는 보조정리 {{5:old-5-15}}에 따라, $\m…
+  - (뺌) 6:cor-L: 본문 인용 1줄 —  m(n)$이며, 5.5.2절에서 본 대로 $t_0(y)\le n$이다. 그러므로 보조정리 {{5:old-5-38}}에 따라 $\mathrm{IH}(n,y)$가 성립한다. 명제 {{5:old-5-22}}와 따름정리 {{6:cor-L}}에서 $(5.50)$이 나오고, 보조정리 {{5:old-5-30}}에서 $(5.51)$로의 환원이 나오며, 따름정리 {{5:
+
+######## 7:green-atom [장7B.md:156] 본문 14줄
+  전: 증명됨; r475ada3
+  후: 증명됨; r8d6850a, r475ada3
+  더함: [] 뺌: []
+
+######## 7:vertical-nu [장7B.md:336] 본문 16줄
+  전: 증명됨; r475ada3
+  후: 증명됨, (마)는 보조정리 {{4:two-corrections}}에 의존; r475ada3
+  더함: ['4:two-corrections'] 뺌: []
+  - 4:two-corrections (더함, X; 보조정리): 본문 인용 1줄
+      …(마) 호 위에서 피적분함수의 지수 상계는 $n$에 대해 증가하는 양을 빼는 꼴이므로, 보조정리 {{4:two-corrections}}의 증명이 $n\ge2k-1$에서 얻은 호 상계가 모든 $\nu\ge1$에서 그대로 쓰인다.…
+
+######## 7:theorem-C-moment [장7B.md:90] 본문 4줄
+  전: 증명됨, 계산 보조(방향 반올림 구간, 정확 정수·유리수), 정리 {{7:theorem-G-prime}}에 의존; r10ff8c2, rb7effe0
+  후: 증명됨, 계산 보조(방향 반올림 구간, 정확 정수·유리수); r10ff8c2, rb7effe0
+  더함: [] 뺌: ['7:theorem-G-prime']
+  - (뺌) 7:theorem-G-prime: 본문 인용 1줄 — $841\le k\le2000$인 열마다 정리 {{7:theorem-G-prime}}의 조건 (a′)(b′)(c′)를 만족하는 열별 인증서가 있다(부록 D.{{D:column-certific
+
+######## 7:hazard-floor [장7B.md:621] 본문 14줄
+  전: 증명됨; r79ee9e0
+  후: 증명됨, 작성자 판단; r79ee9e0
+  더함: [] 뺌: []
+
+######## 7:integer-strips [장7B.md:382] 본문 9줄
+  전: 증명됨, 계산 보조(방향 반올림 구간); r475ada3, r6b37c7e
+  후: 계산 증거(방향 반올림 구간); r475ada3, r6b37c7e
+  더함: [] 뺌: []
+
+######## 9:old-7-25 [장9.md:696] 본문 10줄
+  전: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·{{6:old-7-21}}에 의존; rb6a2cd0
+  후: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·{{6:old-7-21}}·따름정리 {{6:increment-bounds}}에 의존; rb6a2cd0
+  더함: ['6:increment-bounds'] 뺌: []
+  - 6:increment-bounds (더함, X; 따름정리): 본문 인용 0줄
+  - 6:old-6-19 (기존, X; 정리): 본문 인용 0줄
+  - 6:old-7-21 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** (9.2)의 둘째 합에서 증분은 $\mathfrak w_n(t)-\mathfrak w_n(t-1)=\mathfrak w_n(t-1)\varrho_t\ge\mathfrak w_n(k+1)\varrho_{\min}(n)$이고(정리 {{6:old-7-21}}로 $\mathfrak w_n(t-1)\ge\mathfrak w_n(k+1)$), 정리 {{9:old-7-23}}으로 $\mathrm{flat}_k(t)\ge0$이다. 그러므로 (9.3)을 …
+  - 9:old-7-23 (기존, X; 정리): 본문 인용 2줄
+      …_n(t)-\mathfrak w_n(t-1)=\mathfrak w_n(t-1)\varrho_t\ge\mathfrak w_n(k+1)\varrho_{\min}(n)$이고(정리 {{6:old-7-21}}로 $\mathfrak w_n(t-1)\ge\mathfrak w_n(k+1)$), 정리 {{9:old-7-23}}으로 $\mathrm{flat}_k(t)\ge0$이다. 그러므로 (9.3)을 써서…
+      …이다. $\varrho_{\min}\le\varrho^{\mathrm H}\le0.307/k$라 $(k+1)\varrho_{\min}\le0.31$이고 $\varphi^\flat_k$의 계수가 양이다. 정리 {{9:old-7-23}}(a)의 $\varphi^\flat_k\ge-\hat\Upsilon_k$와 $\mathcal V_k(k)\ge\mathsf v(k)$를 넣으면 주장이다. ∎…
+
+######## 9:old-7-28 [장9.md:729] 본문 16줄
+  전: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}에 의존; rb6a2cd0
+  후: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}·{{9:old-7-25}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0
+  더함: ['9:old-7-22', '9:old-7-25', '9:old-7-26'] 뺌: []
+  - 8:old-6-29 (기존, X; 정리): 본문 인용 1줄
+      …(2) $\nu_1(k)\le\nu<\nu_0(k)$. 이때 $103\le\nu<\nu_0\le3.6k^{2/3}$(보조정리 {{9:old-7-26}}(ii))이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이다. $\mathcal Y_k<0$이므로 정리 {{9:old-7-25}}와 보조정리 {{9:old-7-22}}로 $\…
+  - 8:old-6-33 (기존, X; 정리): 본문 인용 1줄
+      …(1) $\nu_0(k)\le\nu\le\lfloor0.48k\rfloor$. 보조정리 {{9:old-7-26}}(iii)으로 $\mathcal Y_k\ge0$이라 정리 {{9:old-7-25}}로 $\mathrm{FL}_n\ge0$이고, 정리 {{8:old-6-33}}으로 $\mathrm{BV}_n\ge\Theta_n$이다. 명제 {{9:old-7-18}}로 $\mathsf{FS}(n)$이다. $k\ge10^5$이고 $\lfloor0.48k\rfloor<…
+  - 9:old-7-22 (더함, X; 보조정리): 본문 인용 1줄
+      …\le\nu<\nu_0\le3.6k^{2/3}$(보조정리 {{9:old-7-26}}(ii))이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이다. $\mathcal Y_k<0$이므로 정리 {{9:old-7-25}}와 보조정리 {{9:old-7-22}}로 $\mathrm{FL}_n\ge(\mathfrak w_n(k+1)/k)\mathcal Y_k\ge(1-1/k)^{-\nu}(\mathfrak w_n(k)/k)\mathcal Y_k=(1-…
+  - 9:old-7-25 (더함, X; 정리): 본문 인용 2줄
+      …(1) $\nu_0(k)\le\nu\le\lfloor0.48k\rfloor$. 보조정리 {{9:old-7-26}}(iii)으로 $\mathcal Y_k\ge0$이라 정리 {{9:old-7-25}}로 $\mathrm{FL}_n\ge0$이고, 정리 {{8:old-6-33}}으로 $\mathrm{BV}_n\ge\Theta_n$이다. 명제 {{9:old-7-18}}로 $\mathsf{FS}…
+      …nu<\nu_0(k)$. 이때 $103\le\nu<\nu_0\le3.6k^{2/3}$(보조정리 {{9:old-7-26}}(ii))이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이다. $\mathcal Y_k<0$이므로 정리 {{9:old-7-25}}와 보조정리 {{9:old-7-22}}로 $\mathrm{FL}_n\ge(\mathfrak w_n(k+1)/k)\mathcal Y_k\ge(1-1/k)^{-\nu}(\mathfrak w_n(…
+  - 9:old-7-26 (더함, X; 보조정리): 본문 인용 3줄
+      …(1) $\nu_0(k)\le\nu\le\lfloor0.48k\rfloor$. 보조정리 {{9:old-7-26}}(iii)으로 $\mathcal Y_k\ge0$이라 정리 {{9:old-7-25}}로 $\mathrm{FL}_n\ge0$이고, 정리 {{8:old-6-33}}으로 $\mathrm{BV}_n\…
+      …(2) $\nu_1(k)\le\nu<\nu_0(k)$. 이때 $103\le\nu<\nu_0\le3.6k^{2/3}$(보조정리 {{9:old-7-26}}(ii))이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이다. $\mathcal Y_k<0$이므로 정리 {{9:old-7-25}…
+      …이다. $\mathcal F_k$는 $[103,\nu_0]$에서 $\nu$에 증가한다. 보조정리 {{9:old-7-26}}(i)로 이 구간에서 $\varrho_{\min}=\varrho^{\mathrm L}$이고 $d\varrho^{\mathrm L}/d\nu=\frac32(1-1.2/k)/(k+\nu)^2$이…
+
+######## 9:old-7-30 [장9.md:763] 본문 13줄
+  전: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}에 의존; rb6a2cd0
+  후: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·따름정리 {{6:increment-bounds}}에 의존; rb6a2cd0
+  더함: ['6:increment-bounds'] 뺌: []
+  - 6:increment-bounds (더함, X; 따름정리): 본문 인용 1줄
+      …athsf v(k)$, $\varphi^\flat_k<0$으로 $\sum_{t\ge k+2}\mathrm{flat}_k(t)=\mathcal V_k(k)-(k+1)\varphi^\flat_k/k\ge\mathsf v(k)$다. 무거운 환경의 $t$($\le k+\nu$)에서는 따름정리 {{6:increment-bounds}}로 $\varrho_t\ge\varrho^{\mathrm H}(n)$이고, 가벼운 환경의 $t$($\ge k+\nu+1$)에서는 6.2절의 제한 성장비가 $\mathfrak r…
+  - 6:old-6-19 (기존, X; 정리): 본문 인용 0줄
+  - 9:old-7-23 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** $\varphi^\flat_k\ge0$이면 (9.2)와 정리 {{9:old-7-23}}으로 $\mathrm{FL}_n\ge0$이다. $\varphi^\flat_k<0$이라 하자. (9.2)에서 $\mathfrak w_n(t-1)\ge\mathfrak w_n(k+1)$과 $\m…
+
+######## 9:old-7-31 [장9.md:780] 본문 2줄
+  전: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}에 의존; rb6a2cd0
+  후: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-30}}·보조정리 {{9:old-7-22}}에 의존; rb6a2cd0
+  더함: ['9:old-7-22', '9:old-7-28', '9:old-7-30'] 뺌: ['8:old-6-33']
+  - 8:old-6-29 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** 둘째 문장: $\nu<\nu_0\le3.6k^{2/3}$이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이고, 정리 {{9:old-7-30}}과 보조정리 {{9:old-7-22}}로 $\mathrm{FL}_n\ge(1-1/…
+  - 9:old-7-22 (더함, X; 보조정리): 본문 인용 1줄
+      …**증명.** 둘째 문장: $\nu<\nu_0\le3.6k^{2/3}$이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이고, 정리 {{9:old-7-30}}과 보조정리 {{9:old-7-22}}로 $\mathrm{FL}_n\ge(1-1/k)^{-\nu}\min(0,\mathcal Y^\dagger_k)\Theta_n$이다. 합하면 명제 {{9:old-7-18}}로 $\mathrm{…
+  - 9:old-7-28 (더함, X; 정리): 본문 인용 1줄
+      …in(0,\mathcal Y^\dagger_k)\Theta_n$이다. 합하면 명제 {{9:old-7-18}}로 $\mathrm{regen}_n\ge\Theta_n(1-1/k)^{-\nu}\mathcal F^+_k(\nu)\ge0$이다. 첫 문장: $\nu\ge\nu_1(k)$이면 정리 {{9:old-7-28}}이다. $k\ge38887$이면 $\nu_1(k)=103$이다. 남은 것은 $9467\le k\le38886$과 $103\le\nu<\nu_1(k)$이고, 그 모든 $(k,\nu)$에서 $\…
+  - 9:old-7-30 (더함, X; 정리): 본문 인용 1줄
+      …**증명.** 둘째 문장: $\nu<\nu_0\le3.6k^{2/3}$이므로 정리 {{8:old-6-29}}로 $\mathrm{BV}_n-\Theta_n\ge\Theta_n/20$이고, 정리 {{9:old-7-30}}과 보조정리 {{9:old-7-22}}로 $\mathrm{FL}_n\ge(1-1/k)^{-\nu}\min(0,\mathcal Y^\dagger_k)\Theta_n$이다. 합하면 명제 {{9:…
+  - (뺌) 8:old-6-33: 본문 인용 0줄
+
+######## 9:old-7-32 [장9.md:790] 본문 6줄
+  전: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}에 의존; rb6a2cd0
+  후: 증명됨, 정리 {{9:old-7-23}}·{{6:old-6-19}}·보조정리 {{6:old-7-24}}에 의존; rb6a2cd0
+  더함: ['6:old-7-24'] 뺌: []
+  - 6:old-6-19 (기존, X; 정리): 본문 인용 0줄
+  - 6:old-7-24 (더함, X; 보조정리): 본문 인용 0줄
+  - 9:old-7-23 (기존, X; 정리): 본문 인용 0줄
+  ! 본문이 부르는 X형인데 선언 없음: ['9:old-7-30']
+      …**증명.** 정리 {{9:old-7-30}}의 증명에서 마지막 부등식만 바꾼다. 평평한 핵심이 음일 때의 실제 꼬리 $(\mathrm{flat}_k(t))_t$는 이 다면체의 한 점이고 $\varr…
+
+######## 9:old-7-33 [장9.md:800] 본문 2줄
+  전: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}에 의존; rb6a2cd0
+  후: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-32}}·보조정리 {{9:old-7-22}}에 의존; rb6a2cd0
+  더함: ['9:old-7-22', '9:old-7-28', '9:old-7-31', '9:old-7-32'] 뺌: ['8:old-6-33']
+  - 8:old-6-29 (기존, X; 정리): 본문 인용 1줄
+      …명.** $\nu\ge\nu_1(k)$이면 정리 {{9:old-7-28}}, $k\ge9467$이면 정리 {{9:old-7-31}}이다. 남는 것은 $6668\le k\le9466$, $103\le\nu<\nu_1(k)$다. 정리 {{9:old-7-31}}의 둘째 문장과 같은 셈(정리 {{8:old-6-29}}의 여유 $1/20$, 보조정리 {{9:old-7-22}}, 정리 {{9:old-7-32}})으로 $\mathcal F^{\mathrm{LP}}_k(\nu):=\min(0,\mathcal Y…
+  - 9:old-7-22 (더함, X; 보조정리): 본문 인용 1줄
+      …ld-7-28}}, $k\ge9467$이면 정리 {{9:old-7-31}}이다. 남는 것은 $6668\le k\le9466$, $103\le\nu<\nu_1(k)$다. 정리 {{9:old-7-31}}의 둘째 문장과 같은 셈(정리 {{8:old-6-29}}의 여유 $1/20$, 보조정리 {{9:old-7-22}}, 정리 {{9:old-7-32}})으로 $\mathcal F^{\mathrm{LP}}_k(\nu):=\min(0,\mathcal Y^{\mathrm{LP}}_k(2k+\nu))+\frac1…
+  - 9:old-7-28 (더함, X; 정리): 본문 인용 1줄
+      …**증명.** $\nu\ge\nu_1(k)$이면 정리 {{9:old-7-28}}, $k\ge9467$이면 정리 {{9:old-7-31}}이다. 남는 것은 $6668\le k\le9466$, $103\le\nu<\nu_1(k)$다. 정리 {{9:old-7-31}}의 둘째…
+  - 9:old-7-31 (더함, X; 정리): 본문 인용 1줄
+      …**증명.** $\nu\ge\nu_1(k)$이면 정리 {{9:old-7-28}}, $k\ge9467$이면 정리 {{9:old-7-31}}이다. 남는 것은 $6668\le k\le9466$, $103\le\nu<\nu_1(k)$다. 정리 {{9:old-7-31}}의 둘째 문장과 같은 셈(정리 {{8:old-6-29}}의 여유 …
+  - 9:old-7-32 (더함, X; 정리): 본문 인용 1줄
+      …7$이면 정리 {{9:old-7-31}}이다. 남는 것은 $6668\le k\le9466$, $103\le\nu<\nu_1(k)$다. 정리 {{9:old-7-31}}의 둘째 문장과 같은 셈(정리 {{8:old-6-29}}의 여유 $1/20$, 보조정리 {{9:old-7-22}}, 정리 {{9:old-7-32}})으로 $\mathcal F^{\mathrm{LP}}_k(\nu):=\min(0,\mathcal Y^{\mathrm{LP}}_k(2k+\nu))+\frac1{20}(1-1/k)^\nu\ge0…
+  - (뺌) 8:old-6-33: 본문 인용 0줄
+
+######## 9:old-7-39 [장9.md:885] 본문 10줄
+  전: 증명됨; r5909c9e
+  후: 증명됨, 보조정리 {{9:psi-low}}에 의존; r5909c9e
+  더함: ['9:psi-low'] 뺌: []
+  - 9:psi-low (더함, X; 보조정리): 본문 인용 0줄
+
+######## 9:old-7-35 [장9.md:822] 본문 16줄 (미룬 증명 ['장9.md:942'])
+  전: 증명됨, 정리 {{8:old-6-28}}·보조정리 {{9:old-7-37}}·{{9:old-7-42}}·{{9:pair-one-variable}}에 의존; r5909c9e
+  후: 증명됨, 정리 {{8:old-6-28}}·보조정리 {{9:old-7-37}}·{{9:old-7-39}}·{{9:old-7-42}}·{{9:pair-one-variable}}에 의존; r5909c9e
+  더함: ['9:old-7-39'] 뺌: []
+  - 8:old-6-28 (기존, X; 정리): 본문 인용 2줄
+      …IR}_n$을 통째로 아래에서 막는 것이지만, $\mathrm{PAIR}_n$의 주된 몫은 창 나무 하나와 첫 층 끝에 닿는 거대 나무 하나의 쌍이고, 거대 나무의 수준 질량을 아래에서 막으려면 첫 층 끝의 생존을 다루어야 한다. 창×창 쌍만 세면 두 나무가 모두 착지 창에 있어 정리 {{8:old-6-28}} 하나로 수준 질량이 막히고, 그 쌍만으로도 오른쪽을 넘는다는 것이 이 증명의 내용이다.…
+      …증명에 쓰는 입력은 정리 {{8:old-6-28}}과 Robbins 부등식, Borel 질량의 초등 합뿐이다. 정리 {{8:old-6-28}}에 따르면 모든 정수 $k'\ge6600$과 $1\le q\le\lfloor6k'^{2/3}\rfl…
+  - 9:old-7-37 (기존, X; 보조정리): 본문 인용 0줄
+  - 9:old-7-39 (더함, X; 보조정리): 본문 인용 0줄
+  - 9:old-7-42 (기존, X; 보조정리): 본문 인용 0줄
+  - 9:pair-one-variable (기존, X; 보조정리): 본문 인용 1줄
+      …**정리 {{9:old-7-35}}의 증명.** (9.5)와 보조정리 {{9:pair-one-variable}}(가)로 모든 $k\ge6668$, $0.48k<\nu\le k-1$에서 $\mathrm{PAIR}_n/(\binom nkk^{k-2}A^\diamond_N)\ge\mathf…
+
+######## 9:old-7-45 [장9.md:952] 본문 2줄
+  전: 증명됨, 정리 {{9:old-7-33}}·{{5:old-5-1}}·{{4:old-4-5}}·{{7:old-6-13}}에 의존; rb6a2cd0
+  후: 증명됨, 정리 {{9:old-7-33}}·{{5:old-5-1}}·{{4:old-4-5}}·{{7:old-6-13}}·따름정리 {{9:old-7-27}}·보조정리 {{9:old-7-26}}에 의존; rb6a2cd0
+  더함: ['9:old-7-26', '9:old-7-27'] 뺌: []
+  - 4:old-4-5 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** $n\le20000$인 위치는 따름정리 {{9:old-7-34}}의 증명 첫 경우와 같이 정리 {{5:old-5-1}}·{{4:old-4-5}}로 성립한다. $n\ge20001$이면 $3k-1\ge n$에서 $k\ge6668$이다. 그 열에서 $n$에 대해 귀납한다. $n-2k\le102$와 $103\le n-2k\le\lfloor0…
+  - 5:old-5-1 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** $n\le20000$인 위치는 따름정리 {{9:old-7-34}}의 증명 첫 경우와 같이 정리 {{5:old-5-1}}·{{4:old-4-5}}로 성립한다. $n\ge20001$이면 $3k-1\ge n$에서 $k\ge6668$이다. 그 열에서 $n$에 대해 귀납한다. $n-2k\le102$와 $103\le n…
+  - 7:old-6-13 (기존, X; 정리): 본문 인용 1줄
+      …ld-4-5}}로 성립한다. $n\ge20001$이면 $3k-1\ge n$에서 $k\ge6668$이다. 그 열에서 $n$에 대해 귀납한다. $n-2k\le102$와 $103\le n-2k\le\lfloor0.48k\rfloor$는 따름정리 {{9:old-7-34}}의 증명과 같다(정리 {{7:old-6-13}}, 정리 {{9:old-7-33}}). 남은 $n$은 $n-2k>0.48k$, $20001\le n\le3k-1$이고 $n\ge2k+103$이다. 이것은 정확히 $\mathsf B^+$의 위…
+  - 9:old-7-26 (더함, X; 보조정리): 본문 인용 1줄
+      …+$의 위치 집합이다. 그곳에서 명제 {{9:old-7-18}}의 마지막 주장으로 $\mathrm{regen}_n=\mathrm{FL}_n+(\mathrm{BV}_n+\mathrm{PAIR}_n-\Theta_n)$이고, $\nu>0.48k\ge0.112k\ge\nu_0(k)$(보조정리 {{9:old-7-26}}(ii))이므로 따름정리 {{9:old-7-27}}로 $\mathrm{FL}_n\ge0$, $\mathsf B^+$로 $\mathrm{BV}_n+\mathrm{PAIR}_n-\Theta_n\…
+  - 9:old-7-27 (더함, X; 따름정리): 본문 인용 1줄
+      …-7-18}}의 마지막 주장으로 $\mathrm{regen}_n=\mathrm{FL}_n+(\mathrm{BV}_n+\mathrm{PAIR}_n-\Theta_n)$이고, $\nu>0.48k\ge0.112k\ge\nu_0(k)$(보조정리 {{9:old-7-26}}(ii))이므로 따름정리 {{9:old-7-27}}로 $\mathrm{FL}_n\ge0$, $\mathsf B^+$로 $\mathrm{BV}_n+\mathrm{PAIR}_n-\Theta_n\ge0$이라 $\mathsf{FS}(n)$이다. 귀…
+  - 9:old-7-33 (기존, X; 정리): 본문 인용 1줄
+      …ge20001$이면 $3k-1\ge n$에서 $k\ge6668$이다. 그 열에서 $n$에 대해 귀납한다. $n-2k\le102$와 $103\le n-2k\le\lfloor0.48k\rfloor$는 따름정리 {{9:old-7-34}}의 증명과 같다(정리 {{7:old-6-13}}, 정리 {{9:old-7-33}}). 남은 $n$은 $n-2k>0.48k$, $20001\le n\le3k-1$이고 $n\ge2k+103$이다. 이것은 정확히 $\mathsf B^+$의 위치 집합이다. 그곳에서 명제 {{9…
+  ! 본문이 부르는 X형인데 선언 없음: ['9:old-7-34']
+      …**증명.** $n\le20000$인 위치는 따름정리 {{9:old-7-34}}의 증명 첫 경우와 같이 정리 {{5:old-5-1}}·{{4:old-4-5}}로 성립한다. $n\ge20001$이면 $3k-1\ge n$에서 $k\ge6…
+
+######## 9:old-7-44 [장9.md:948] 본문 2줄
+  전: 증명됨, 정리 {{9:old-7-16}}·{{9:old-7-35}}에 의존; rae1f209, r5909c9e
+  후: 증명됨, 정리 {{9:old-7-35}}·따름정리 {{9:old-7-17}}에 의존; rae1f209, r5909c9e
+  더함: ['9:old-7-17'] 뺌: ['9:old-7-16']
+  - 9:old-7-17 (더함, X; 따름정리): 본문 인용 1줄
+      …**증명.** 정리 {{9:old-7-35}}에 따라 그 위치에서 쌍 부등식 $(\mathrm P\Diamond)$이 성립하므로, 따름정리 {{9:old-7-17}}에서 $\mathsf B^+$가 나온다. ∎…
+  - 9:old-7-35 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** 정리 {{9:old-7-35}}에 따라 그 위치에서 쌍 부등식 $(\mathrm P\Diamond)$이 성립하므로, 따름정리 {{9:old-7-17}}에서 $\mathsf B^+$가 나온다. ∎…
+  - (뺌) 9:old-7-16: 본문 인용 0줄
+
+######## 10:old-8-37 [장10.md:773] 본문 12줄
+  전: 증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{6:V-all}}에 의존; r3d0856b, re71a735
+  후: 증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{6:V-all}}·{{7:qstar-columns}}·{{7:old-6-13}}·{{5:old-5-1}}·{{5:old-5-18}}·{{5:old-5-11}}·{{4:old-4-8}}·{{4:old-4-5}}·명제 {{7:old-6-20}}·{{7:src-plus}}·{{7:old-6-9}}·따름정리 {{7:qstar-implies-wlflat}}에 의존; r3d0856b, re71a735
+  더함: ['4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-11', '5:old-5-18', '7:old-6-13', '7:old-6-20', '7:old-6-9', '7:qstar-columns', '7:qstar-implies-wlflat', '7:src-plus'] 뺌: []
+  - 10:old-8-10 (기존, X; 정리): 본문 인용 1줄
+      …첫째 고리는 $\mathsf{FLQ}$ ∧ 둘째 층 띠 ⇒ $\mathsf Q^\star_2$다. 이 함의는 정리 {{10:old-8-10}}에서 증명했고, 두 전제는 정리 {{10:old-8-36}}과 정리 {{8:old-6-33}}에서 나온다.…
+  - 10:old-8-36 (기존, X; 정리): 본문 인용 1줄
+      …첫째 고리는 $\mathsf{FLQ}$ ∧ 둘째 층 띠 ⇒ $\mathsf Q^\star_2$다. 이 함의는 정리 {{10:old-8-10}}에서 증명했고, 두 전제는 정리 {{10:old-8-36}}과 정리 {{8:old-6-33}}에서 나온다.…
+  - 4:old-4-5 (더함, X; 정리): 본문 인용 1줄
+      …$과 명제 {{7:old-6-9}}의 $\mathsf W_L\Leftrightarrow\mathsf P_L$, 정리 {{4:old-4-8}}의 $\mathsf P_L\Leftrightarrow\mathsf P_X$에서 왼쪽 두 위치쌍이 나오고, 중앙 틈 $\mathsf P_C$는 정리 {{4:old-4-5}}에서, 오른쪽 내부 $\mathsf P_R$은 정리 {{5:old-5-18}}과 정리 {{5:old-5-11}}에서 나온다. 보조정리 {{4:old-4-2}}로 넷의 연언이 모든 $n$에서의 …
+  - 4:old-4-8 (더함, X; 정리): 본문 인용 1줄
+      …오는 첨자 쌍이 없다는 네 진술이다. 따름정리 {{7:flat-threshold}}(라)의 $\mathsf W_L^\flat\Leftrightarrow\mathsf W_L$과 명제 {{7:old-6-9}}의 $\mathsf W_L\Leftrightarrow\mathsf P_L$, 정리 {{4:old-4-8}}의 $\mathsf P_L\Leftrightarrow\mathsf P_X$에서 왼쪽 두 위치쌍이 나오고, 중앙 틈 $\mathsf P_C$는 정리 {{4:old-4-5}}에서, 오른쪽 내부 $…
+  - 5:old-5-1 (더함, X; 정리): 본문 인용 1줄
+      …넷째 고리는 $\mathsf Q^\star$ ⇒ $\mathsf W_L^\flat$, 곧 따름정리 {{7:qstar-implies-wlflat}}이다. 명제 {{7:old-6-15}}에 $\mathcal Z$로 $n\le20000$(정리 {{5:old-5-1}})과 중앙 띠 $n-2k\le102$(정리 {{7:old-6-13}})를 넣으면 $\mathsf W_L^\flat$의 잔여 $\mathcal W^{(>102)}$의 모든 위치에서 $b_{n,k…
+  - 5:old-5-11 (더함, X; 정리): 본문 인용 1줄
+      … 정리 {{4:old-4-8}}의 $\mathsf P_L\Leftrightarrow\mathsf P_X$에서 왼쪽 두 위치쌍이 나오고, 중앙 틈 $\mathsf P_C$는 정리 {{4:old-4-5}}에서, 오른쪽 내부 $\mathsf P_R$은 정리 {{5:old-5-18}}과 정리 {{5:old-5-11}}에서 나온다. 보조정리 {{4:old-4-2}}로 넷의 연언이 모든 $n$에서의 $\mathsf P(n)$이다. 이 고리는 정리 {{9:old-7-46}}의 증명 마지막 고리와 같다. ∎…
+  - 5:old-5-18 (더함, X; 정리): 본문 인용 1줄
+      …tarrow\mathsf P_L$, 정리 {{4:old-4-8}}의 $\mathsf P_L\Leftrightarrow\mathsf P_X$에서 왼쪽 두 위치쌍이 나오고, 중앙 틈 $\mathsf P_C$는 정리 {{4:old-4-5}}에서, 오른쪽 내부 $\mathsf P_R$은 정리 {{5:old-5-18}}과 정리 {{5:old-5-11}}에서 나온다. 보조정리 {{4:old-4-2}}로 넷의 연언이 모든 $n$에서의 $\mathsf P(n)$이다. 이 고리는 정리 {{9:old-7-46}}의…
+  - 6:V-all (기존, X; 정리): 본문 인용 1줄
+      …둘째 고리는 원천 쪽 ∧ $\mathsf V$ ∧ $\mathsf Q^\star_2$ ⇒ 열 $3131$ 이상의 $\mathsf Q^\star$다. (V)는 정리 {{6:V-all}}으로 모든 $m\in[k,2k]$에서 성립한다. 열 $3131$ 이상의 $\mathsf Q^\star$는 「모든 $k\ge3131$과 $\max(2k+103,20001)\le n\le\lceil2…
+  - 7:old-6-13 (더함, X; 정리): 본문 인용 1줄
+      …athsf Q^\star$ ⇒ $\mathsf W_L^\flat$, 곧 따름정리 {{7:qstar-implies-wlflat}}이다. 명제 {{7:old-6-15}}에 $\mathcal Z$로 $n\le20000$(정리 {{5:old-5-1}})과 중앙 띠 $n-2k\le102$(정리 {{7:old-6-13}})를 넣으면 $\mathsf W_L^\flat$의 잔여 $\mathcal W^{(>102)}$의 모든 위치에서 $b_{n,k-1}\le b_{n,k}$이고, $\mathsf W_L^\flat…
+  - 7:old-6-20 (더함, X; 명제): 본문 인용 1줄
+      …다. 열 $3131$ 이상의 $\mathsf Q^\star$는 「모든 $k\ge3131$과 $\max(2k+103,20001)\le n\le\lceil2k^{3/2}\rceil-1$에서 $(\star)(n)\ge0$」이다. 그 범위의 $n$을 둘로 나눈다. $n\ge3k+1$이면 명제 {{7:old-6-20}}에 따라, 명제 {{7:src-plus}}와 (V) 위에서 $(\star)(n)>0$이다. $n\le3k$이면 $n\ge20001$에서 $k\ge6667$이므로 $(k,n)$은 $\maths…
+  - 7:old-6-9 (더함, X; 명제): 본문 인용 1줄
+      …\mathsf P_L$ ⇒ $\mathsf P_X$와 네 위치쌍 명제, 곧 지정된 범위에 감소 뒤 증가가 오는 첨자 쌍이 없다는 네 진술이다. 따름정리 {{7:flat-threshold}}(라)의 $\mathsf W_L^\flat\Leftrightarrow\mathsf W_L$과 명제 {{7:old-6-9}}의 $\mathsf W_L\Leftrightarrow\mathsf P_L$, 정리 {{4:old-4-8}}의 $\mathsf P_L\Leftrightarrow\mathsf P_X$에서 왼쪽 두…
+  - 7:qstar-columns (더함, X; 정리): 본문 인용 1줄
+      …셋째 고리는 열 $2001$에서 $3130$까지의 $\mathsf Q^\star$ ∧ 열 $3131$ 이상의 $\mathsf Q^\star$ ⇒ 한 걸음 판정 $\mathsf Q^\star$다. 열 $2001\le k\le3130$의 $\mathsf Q^\star$는 정리 {{7:qstar-columns}}이고, 두 열 범위를 합치면 명제 $\mathsf Q^\star$, 곧 모든 $k\ge2001$에서의 판정이다.…
+  - 7:qstar-implies-wlflat (더함, X; 따름정리): 본문 인용 1줄
+      …넷째 고리는 $\mathsf Q^\star$ ⇒ $\mathsf W_L^\flat$, 곧 따름정리 {{7:qstar-implies-wlflat}}이다. 명제 {{7:old-6-15}}에 $\mathcal Z$로 $n\le20000$(정리 {{5:old-5-1}})과 중앙 띠 $n-2k\le102$(정리 {{7:o…
+  - 7:src-plus (더함, X; 명제): 본문 인용 1줄
+      …f Q^\star$는 「모든 $k\ge3131$과 $\max(2k+103,20001)\le n\le\lceil2k^{3/2}\rceil-1$에서 $(\star)(n)\ge0$」이다. 그 범위의 $n$을 둘로 나눈다. $n\ge3k+1$이면 명제 {{7:old-6-20}}에 따라, 명제 {{7:src-plus}}와 (V) 위에서 $(\star)(n)>0$이다. $n\le3k$이면 $n\ge20001$에서 $k\ge6667$이므로 $(k,n)$은 $\mathsf Q^\star_2$의 범위에 있다. $…
+  - 8:old-6-33 (기존, X; 정리): 본문 인용 1줄
+      …첫째 고리는 $\mathsf{FLQ}$ ∧ 둘째 층 띠 ⇒ $\mathsf Q^\star_2$다. 이 함의는 정리 {{10:old-8-10}}에서 증명했고, 두 전제는 정리 {{10:old-8-36}}과 정리 {{8:old-6-33}}에서 나온다.…
+  ! 본문이 부르는 X형인데 선언 없음: ['9:old-7-46']
+      …hsf P_C$는 정리 {{4:old-4-5}}에서, 오른쪽 내부 $\mathsf P_R$은 정리 {{5:old-5-18}}과 정리 {{5:old-5-11}}에서 나온다. 보조정리 {{4:old-4-2}}로 넷의 연언이 모든 $n$에서의 $\mathsf P(n)$이다. 이 고리는 정리 {{9:old-7-46}}의 증명 마지막 고리와 같다. ∎…
+
+######## 10:old-8-8 [장10.md:147] 본문 32줄
+  전: 증명됨, 보조정리 {{10:old-8-4}}에 의존; r3d0856b
+  후: 증명됨; r3d0856b
+  더함: [] 뺌: ['10:old-8-4']
+  - (뺌) 10:old-8-4: 본문 인용 2줄 — 이고, 보조정리 {{10:old-8-4}}로 $\sum_{m\ge N+2}c_m(k)=s_{N+2}(k+1)-s_{2k+1}(k+1)+\sum_{m\ge N+2
+
+######## 10:old-8-10 [장10.md:208] 본문 18줄
+  전: 증명됨, 정리 {{8:old-6-33}}·보조정리 {{10:old-8-2}}·{{10:old-8-3}}·명제 {{10:old-8-6}}에 의존; r3d0856b
+  후: 증명됨, 정리 {{8:old-6-33}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b
+  더함: [] 뺌: ['10:old-8-2', '10:old-8-6']
+  - 10:old-8-3 (기존, X; 보조정리): 본문 인용 1줄
+      …이다. 보조정리 {{10:old-8-3}}(c)로 $w_m-w_{m-1}\ge0$이다. $\mathfrak T_{k+1}\ge\mathfrak T_k$이므로 앞의 두 항의 합은 $w_k\mathfrak T_k+(w_{k+1}-w_k…
+  - 8:old-6-33 (기존, X; 정리): 본문 인용 1줄
+      …$\nu\le0.48k$이면 위의 표에서 $k\ge6668$이고, $n=2k+\nu$는 정리 {{8:old-6-33}}의 범위 $k\ge6668$, $103\le\nu\le0.48k$에 있다. 그 정리로 $\mathrm{BV}_n\ge\Theta_n$, 곧 2.10절의 기호로…
+  - (뺌) 10:old-8-2: 본문 인용 2줄 — **증명.** $(k,n)$을 $\mathsf Q^\star_2$의 범위에서 잡는다. 보조정리 {{10:old-8-2}}와 명제 {{10:old-8-6}}의 Abel 합으로
+  - (뺌) 10:old-8-6: 본문 인용 1줄 — **증명.** $(k,n)$을 $\mathsf Q^\star_2$의 범위에서 잡는다. 보조정리 {{10:old-8-2}}와 명제 {{10:old-8-6}}의 Abel 합으로
+
+######## 10:old-8-14 [장10.md:265] 본문 26줄
+  전: 증명됨, 따름정리 {{6:old-8-11}}·{{6:DD-lower-bound}}·보조정리 {{10:old-8-3}}·명제 {{10:old-8-8}}에 의존; r3d0856b
+  후: 증명됨, 따름정리 {{6:old-8-11}}·{{6:DD-lower-bound}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b
+  더함: [] 뺌: ['10:old-8-8']
+  - 10:old-8-3 (기존, X; 보조정리): 본문 인용 2줄
+      …보조정리 {{10:old-8-3}}(e)의 $\mathfrak u_n/w_k=e^{g(N)-g(k)}\,s_N(k+1)/s_{N-1}(k)$는 $1$ 이상이다. $g$가 증가하고 $N\ge k$이며, $s_N(k+1)-s_{…
+      …보조정리 {{10:old-8-3}}(a)(e)로 $w_{k+1}/w_k=e^{g(k+1)}/\mathfrak r_{N-2}=\frac{e^{g(k+1)}}{e^{g(N-1)}}\cdot\frac{s_{N-2}(k)}{s_{N…
+  - 6:DD-lower-bound (기존, X; 따름정리): 본문 인용 1줄
+      …(3) 대각선 몫. $\mathrm{DD}_m=\mathrm{DD}(m-1,k-1)$의 결손은 $d=m-k+1\in[2,k+1]$이고 용량 $y:=k-1\ge6666$이다. 따름정리 {{6:DD-lower-bound}}(가)에 따르면 $d\le y+2$에서 $\mathrm{DD}(y+d-1,y)\ge-\Delta^2_y\mathfrak X^1_d(y)$이고, (나)에 따르면 모든 정수 $y\ge…
+  - 6:old-8-11 (기존, X; 따름정리): 본문 인용 1줄
+      …(2) 경계항. (SM)으로 $\varsigma_{2k}(k)=s_{2k+1}(k+1)-s_{2k}(k)\le s_{2k}(k+1)-s_{2k}(k)=c_{2k}(k)$다. 따름정리 {{6:old-8-11}}로 $k\,c_{2k}(k-1)\le\mathsf u(k)$와 $(k-1)c_{2k}(k)\le\mathsf u(k)$이므로 $(k+\nu)[\varsigma_{2k}(k)+c_{2k}(k-…
+  - (뺌) 10:old-8-8: 본문 인용 1줄 — **증명.** 명제 {{10:old-8-8}}(가)의 $m_0=k$에서 출발해 빼는 양에는 상계를, 더하는 양에는 하계를 넣는다.
+  ! 본문이 부르는 X형인데 선언 없음: ['7:old-6-21']
+      … E_m[\Pi]$이고, 문턱 $k+1$의 사슬은 같은 사슬에서 크기 $k+1$인 항만 빠진 것이므로 $s_m(k+1)=\mathbb E_m\prod_{S_i>k+1}\frac{k+1}{S_i}=\mathbb E_m\bigl[\Pi\,(1+\tfrac1k)^{L}\bigr]$다. 정리 {{7:old-6-21}}의 증명이 $m=2k-1$에서 쓴 식과 같다. $S_i>k$인 항들은 서로 다른 정수 크기 $k+1,\dots,m$만 가지므로 $L\le m-k$다.…
+
+######## 10:reduction-ga [장10.md:547] 본문 20줄
+  전: 증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{10:old-8-8}}·{{10:old-8-14}}·{{10:old-8-23}}·{{10:old-8-33}}에 의존; re71a735
+  후: 증명됨, 정리 {{4:old-4-5}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{10:old-8-14}}·{{10:old-8-23}}에 의존; re71a735
+  더함: [] 뺌: ['10:old-8-33', '10:old-8-8', '5:old-5-1']
+  - 10:old-8-14 (기존, X; 명제): 본문 인용 1줄
+      …(ii) 명제 {{10:old-8-8}}(가)에서 출발한다. $2s_{N+1}(k+1)+s_{N+2}(k+1)\le3s_{N+1}(k+1)\le3s^{\mathrm{up}}_\circ$다. 명제 {{10:old-8-14}}의 증명 (2)로 $\mathrm{Bd}^{\mathrm S}\ge-\mathrm{Bd}^{\mathrm T}(k,\nu)$다. $\sum_{m>m_0}\omega_m\mathrm{DD}_…
+  - 10:old-8-23 (기존, X; 명제): 본문 인용 1줄
+      …rm S}\ge-\mathrm{Bd}^{\mathrm T}(k,\nu)$다. $\sum_{m>m_0}\omega_m\mathrm{DD}_m\ge-\mathrm{DDL}_2(k)\ge-\mathrm{DDL}^\natural(k)$은 정리 {{10:old-8-22}}의 부분합 진술과 명제 {{10:old-8-23}}이다. 머묾의 부분합은 음 아닌 항들의 합이므로 전체 $\mathrm{Stays}\le\mathrm{Stays}^{\mathrm{up}}_\circ$ 이하다. 선도 몫에서는 $\varsig…
+  - 4:old-4-5 (기존, X; 정리): 본문 인용 1줄
+      …**증명.** (i) 먼저 어느 행의 증가가 이미 알려져 있는지를 모은다. 행 $i$의 증가 $b_{i,k-1}\le b_{i,k}$는 세 곳에서 온다. $i=2k$에서는 정리 {{4:old-4-5}}의 가운데 증가, 곧 한가운데 위치의 증가에서 나온다. $20001\le i\le2k-1$에서는 정리 {{5:old-5-18}}의 $\mathsf W$에 따라 $\ell=k-1$에서 $i-k\…
+  - 5:old-5-18 (기존, X; 정리): 본문 인용 1줄
+      …i) 먼저 어느 행의 증가가 이미 알려져 있는지를 모은다. 행 $i$의 증가 $b_{i,k-1}\le b_{i,k}$는 세 곳에서 온다. $i=2k$에서는 정리 {{4:old-4-5}}의 가운데 증가, 곧 한가운데 위치의 증가에서 나온다. $20001\le i\le2k-1$에서는 정리 {{5:old-5-18}}의 $\mathsf W$에 따라 $\ell=k-1$에서 $i-k\ge\mathfrak m(i)+1$일 때 성립한다(경계에 든 양은 5장에서 꼬리 정리가 닿는 끝으로 정한 꼬리 좌표다). $i…
+  - 5:witness-position-bound (기존, X; 명제): 본문 인용 1줄
+      …0001\le i\le2k-1$에서는 정리 {{5:old-5-18}}의 $\mathsf W$에 따라 $\ell=k-1$에서 $i-k\ge\mathfrak m(i)+1$일 때 성립한다(경계에 든 양은 5장에서 꼬리 정리가 닿는 끝으로 정한 꼬리 좌표다). $i\le20000$에서는 명제 {{5:witness-position-bound}}의 증인 위치 상계, 곧 단봉을 세우는 첨자가 놓일 수 있는 자리의 상계에 따라 $i-k\ge0.99+0.59963(i+1)^{2/3}+1.24847(i+1)^{1/…
+  - (뺌) 10:old-8-33: 본문 인용 0줄
+  - (뺌) 10:old-8-8: 본문 인용 2줄 — (ii) 명제 {{10:old-8-8}}(가)에서 출발한다. $2s_{N+1}(k+1)+s_{N+2}(k+1)\le3s_{N+1}(k+1)\le3s^{\mat
+  - (뺌) 5:old-5-1: 본문 인용 0줄
+
+######## 이전 사본: †가 있는 증명인데 머리에 표지 없던 것
+33 ['2:old-2-14', '2:old-2-26', '2:J-egf', '2:chain-expansion', '2:moving-tail', '2:chain-normalization', '3:old-3-3', '5:old-5-30', '5:borel-gf', '5:bt-tail', '5:stop-lower', '5:rig-int', '5:scaled-integrand', '5:hover-tail', '5:right-part', '5:dawson-facts', '5:arc-leading', '6:old-7-13', '6:increment-bounds', '6:old-8-12', '6:prop-W', '6:small-k-bulk', '7:column-lemma', '7:riccati', '7:pole-monotone', '7:fourier-lemmas', '7:polar-N', '7:polar-W', '7:blocked-majorant', '7:hazard-floor', '9:old-7-16', '10:old-8-28', '10:old-8-34']
+오늘 더한 표지: 34 ['2:old-2-14', '2:old-2-26', '2:J-egf', '2:chain-expansion', '2:moving-tail', '2:chain-normalization', '3:old-3-3', '5:old-5-30', '5:borel-gf', '5:bt-tail', '5:stop-lower', '5:rig-int', '5:scaled-integrand', '5:hover-tail', '5:right-part', '6:old-7-13', '6:increment-bounds', '6:old-8-12', '6:prop-W', '6:small-k-bulk', '7:column-lemma', '7:riccati', '7:pole-monotone', '7:fourier-lemmas', '7:transfer-F', '7:polar-N', '7:polar-W', '7:blocked-majorant', '7:hazard-floor', '7:old-6-20', '7:old-6-21', '9:old-7-16', '10:old-8-28', '10:old-8-34']
+후보인데 표지 없음: ['5:dawson-facts', '5:arc-leading']
+표지 더했는데 후보 아님: ['7:old-6-20', '7:old-6-21', '7:transfer-F']

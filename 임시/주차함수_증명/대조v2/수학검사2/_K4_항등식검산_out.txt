@@ -1,0 +1,2 @@
+brute force n<=7 OK
+violations: [] count 0

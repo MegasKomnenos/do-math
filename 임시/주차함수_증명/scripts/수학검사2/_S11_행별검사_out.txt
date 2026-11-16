@@ -1,0 +1,424 @@
+
+### 행: 중앙 틈: 정리 {{4:old-4-5}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['4:gauss-coeff-numeric']
+  표 열에 적힌 것: ['4:gauss-coeff', '4:gauss-coeff-numeric', '4:gauss-contraction', '4:old-4-5', '4:two-corrections']
+  열에 있으나 폐포 계산 진술 아님: ['4:gauss-coeff', '4:gauss-contraction', '4:old-4-5', '4:two-corrections'] | 폐포에 있으나 열에 없음: []
+     4:gauss-coeff :: rce3dc75
+     4:gauss-coeff-numeric :: 증명됨, 계산 보조(정확 정수·유리수); rce3dc75
+     4:gauss-contraction :: rce3dc75
+     4:old-4-5 :: 의 증명.
+     4:two-corrections :: rce3dc75
+
+### 행: $n\le20000$의 단봉성: 정리 {{5:old-5-1}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['5:old-5-1']
+  표 열에 적힌 것: ['5:old-5-1', '7:column-lemma']
+  열에 있으나 폐포 계산 진술 아님: ['7:column-lemma'] | 폐포에 있으나 열에 없음: []
+     5:old-5-1 :: 계산 증거(정확 정수·유리수), 정리 {{4:old-4-5}}·보조정리 {{7:column-lemma}}에 의존; r15df76b, rc9aee43, rce3dc75, r19de912, r6373c70
+     7:column-lemma :: rc9aee43
+
+### 행: 위치쌍 분할과 횡단: 보조정리 {{4:old-4-2}}, 정리 {{4:old-4-8}}(가)
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['4:old-4-9', '5:band-inequality', '5:old-5-2']
+  표 열에 적힌 것: ['4:old-4-9', '5:band-inequality', '5:old-5-12', '5:old-5-13', '5:old-5-2', '5:old-5-32', '5:old-5-4', '5:old-5-5', '5:old-5-7']
+  열에 있으나 폐포 계산 진술 아님: ['5:old-5-12', '5:old-5-13', '5:old-5-32', '5:old-5-4', '5:old-5-5', '5:old-5-7'] | 폐포에 있으나 열에 없음: []
+     4:old-4-9 :: 증명됨, 계산 보조(정확 정수·유리수), 정리 {{4:old-4-8}}에 의존; rdc27681, rbeae3a3
+     5:band-inequality :: 증명됨, 계산 보조(방향 반올림 구간), 정리 {{5:old-5-32}}에 의존; r8a9b11e
+     5:old-5-12 :: r13b0b8f
+     5:old-5-13 :: ra4c01fc
+     5:old-5-2 :: 계산 증거(방향 반올림 구간); r59c82d7
+     5:old-5-32 :: r8a9b11e
+     5:old-5-4 :: r708d99c
+     5:old-5-5 :: r0dc57fa
+     5:old-5-7 :: r690be93
+
+### 행: 기저량의 날카로운 하계: 따름정리 {{6:cor-L}}과 그 증명이 거쳐 부르는 보조정리 {{6:pair-rearrange}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 왼쪽 잔여 증가와 왼쪽 내부의 동치: 명제 {{7:old-6-9}}, 따름정리 {{7:flat-threshold}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['7:column-lemma', '7:seed-transfer']
+  열에 있으나 폐포 계산 진술 아님: ['7:column-lemma', '7:seed-transfer'] | 폐포에 있으나 열에 없음: []
+     7:column-lemma :: rc9aee43
+     7:seed-transfer :: r9e782f5
+
+### 행: 중앙 띠: 정리 {{7:old-6-13}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['7:analytic-transfer', '7:hermite-nu', '7:integer-strips', '7:pair-check-10000', '7:pair-reach-table']
+  열에 있으나 폐포 계산 진술 아님: ['7:analytic-transfer', '7:hermite-nu', '7:integer-strips', '7:pair-check-10000', '7:pair-reach-table'] | 폐포에 있으나 열에 없음: []
+     7:analytic-transfer :: r475ada3
+     7:hermite-nu :: r475ada3
+     7:integer-strips :: r475ada3
+     7:pair-check-10000 :: r475ada3
+     7:pair-reach-table :: r6b37c7e
+
+### 행: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['7:cor-S-prime', '7:polar-W', '7:qstar-implies-wlflat', '7:self-consistent-S', '7:theorem-C-moment']
+  열에 있으나 폐포 계산 진술 아님: ['7:cor-S-prime', '7:polar-W', '7:qstar-implies-wlflat', '7:self-consistent-S', '7:theorem-C-moment'] | 폐포에 있으나 열에 없음: []
+     7:cor-S-prime :: rad00a59
+     7:polar-W :: r89eb039
+     7:qstar-implies-wlflat :: r3172894
+     7:self-consistent-S :: rad00a59
+     7:theorem-C-moment :: r10ff8c2
+
+### 행: 흡수 귀납: 명제 {{7:old-6-15}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 한 걸음 항등식: 정리 {{7:old-6-14}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 세 제타 상수: 보조정리 {{2:zeta-constants}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['2:zeta-constants']
+  표 열에 적힌 것: ['2:zeta-constants']
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+     2:zeta-constants :: 계산 증거(방향 반올림 구간); 표준
+
+### 행: 판정 $\mathsf V$와 V-핵심, 작은 행의 증인 위치 상계: 정리 {{6:V-all}}, 정리 {{6:old-6-19}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['5:witness-position-bound', '6:theorem-D', '6:theorem-U', '6:v-negative']
+  열에 있으나 폐포 계산 진술 아님: ['5:witness-position-bound', '6:theorem-D', '6:theorem-U', '6:v-negative'] | 폐포에 있으나 열에 없음: []
+     5:witness-position-bound :: r19de912
+     6:theorem-D :: r5bbc534
+     6:theorem-U :: 의 증명.
+     6:v-negative :: r29c10cd
+
+### 행: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 원천 쪽: 명제 {{7:src-plus}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['6:tilt-sum']
+  표 열에 적힌 것: ['6:old-7-24', '6:tilt-sum', '7:old-6-12', '7:polar-PD', '7:src-plus', '7:theorem-W']
+  열에 있으나 폐포 계산 진술 아님: ['6:old-7-24', '7:old-6-12', '7:polar-PD', '7:src-plus', '7:theorem-W'] | 폐포에 있으나 열에 없음: []
+     6:old-7-24 :: r051bfe1
+     6:tilt-sum :: 증명됨, 계산 보조(정확 정수·유리수); r051bfe1
+     7:old-6-12 :: rf451d83
+     7:polar-PD :: r207f124
+     7:src-plus :: r79ee9e0
+     7:theorem-W :: r79ee9e0
+
+### 행: 셋째 층부터의 전파와 행 $n=3k$의 문턱 단위: 명제 {{7:old-6-20}}, 보조정리 {{7:threshold-uni
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 열 $2001$–$3130$의 한 걸음 판정: 정리 {{7:qstar-columns}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['7:qstar-columns']
+  열에 있으나 폐포 계산 진술 아님: ['7:qstar-columns'] | 폐포에 있으나 열에 없음: []
+     7:qstar-columns :: r207f124
+
+### 행: 한 나무 재귀와 용량 이동 비: 보조정리 {{8:old-6-23}}, 보조정리 {{8:old-6-30}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:ta
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['8:closed-form-envelope', '8:old-6-28', '8:old-6-33', '8:table-tolerance']
+  열에 있으나 폐포 계산 진술 아님: ['8:closed-form-envelope', '8:old-6-28', '8:old-6-33', '8:table-tolerance'] | 폐포에 있으나 열에 없음: []
+     8:closed-form-envelope :: rfc69320
+     8:old-6-28 :: r030ffae
+     8:old-6-33 :: r030ffae
+     8:table-tolerance :: rfc69320
+
+### 행: 위험률의 하계: 보조정리 {{6:old-7-24}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 다섯 몫 분해: 정리 {{2:old-2-40}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}},
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 표시 나무 무게의 증가와 제한 성장비: 정리 {{6:old-7-21}}, 보조정리 {{6:old-7-20}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 머리 합 여유: 정리 {{9:H-star-plus}}, 정리 {{9:head-sum-2}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['9:H-star-plus', '9:head-sum-2']
+  열에 있으나 폐포 계산 진술 아님: ['9:H-star-plus', '9:head-sum-2'] | 폐포에 있으나 열에 없음: []
+     9:H-star-plus :: r33475a7
+     9:head-sum-2 :: r2ec875c
+
+### 행: 해석적 행 정리: 정리 {{9:old-7-16}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['9:old-7-16']
+  열에 있으나 폐포 계산 진술 아님: ['9:old-7-16'] | 폐포에 있으나 열에 없음: []
+     9:old-7-16 :: rae1f209
+
+### 행: 쌍 부등식: 정리 {{9:old-7-35}}, 보조정리 {{9:pair-one-variable}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['9:pair-one-variable']
+  표 열에 적힌 것: ['9:pair-one-variable']
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+     9:pair-one-variable :: 증명됨, 계산 보조(방향 반올림 구간); r5909c9e
+
+### 행: 띠 앞부분의 비교: 정리 {{8:old-6-29}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['8:old-6-29']
+  열에 있으나 폐포 계산 진술 아님: ['8:old-6-29'] | 폐포에 있으나 열에 없음: []
+     8:old-6-29 :: r030ffae
+
+### 행: 띠의 닫힘: 보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}, 정리 {{9:old-7-31}}, 정리 {
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['9:old-7-26', '9:old-7-28', '9:old-7-31', '9:old-7-33']
+  열에 있으나 폐포 계산 진술 아님: ['9:old-7-26', '9:old-7-28', '9:old-7-31', '9:old-7-33'] | 폐포에 있으나 열에 없음: []
+     9:old-7-26 :: rb6a2cd0
+     9:old-7-28 :: rb6a2cd0
+     9:old-7-31 :: rb6a2cd0
+     9:old-7-33 :: rb6a2cd0
+
+### 행: 주 정리와 둘째 층 비교의 동치, 둘째 층의 한 걸음 항등식과 행 $n=3k$: 정리 {{7:old-6-22}}, 정리 {{7
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 첫째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-34}}, 보조정리 {{2:b-top}}, 명제 {{2:old-
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+### 행: 대각선 손실의 닫힌 꼴: 명제 {{10:old-8-23}}
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: ['10:old-8-23']
+  열에 있으나 폐포 계산 진술 아님: ['10:old-8-23'] | 폐포에 있으나 열에 없음: []
+     10:old-8-23 :: re71a735
+
+### 행: 네 가족의 검사: 명제 {{10:check-na}}, 명제 {{10:check-ga}}, 정리 {{10:old-8-36}}
+  폐포 안 계산 진술(앞 행에 없던 것): ['10:check-ga', '10:check-na']
+  표 열에 적힌 것: ['10:check-ga', '10:check-na']
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+     10:check-ga :: 증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 명제 {{10:reduction-ga}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735
+     10:check-na :: 증명됨, 계산 보조(방향 반올림 구간), 명제 {{10:reduction-na}}·{{10:old-8-23}}·{{10:old-8-33}}·{{10:old-8-35}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735
+
+### 행: 둘째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-46}}과 그 증명이 부르는 명제 {{2:old-2-44}}, 
+  폐포 안 계산 진술(앞 행에 없던 것): []
+  표 열에 적힌 것: []
+  열에 있으나 폐포 계산 진술 아님: [] | 폐포에 있으나 열에 없음: []
+
+
+===== 확인용 머리·인용 목록
+
+-- 5:old-5-18 | 정리 5.5.9 장5B 
+   머리: 의 증명. 
+   인용: ['2:old-2-10', '2:old-2-13', '2:old-2-24', '2:old-2-25', '4:old-4-8', '5:band-inequality', '5:cover-edge', '5:old-5-1', '5:old-5-11', '5:old-5-12', '5:old-5-13', '5:old-5-15', '5:old-5-2', '5:old-5-22', '5:old-5-26', '5:old-5-30', '5:old-5-32', '5:old-5-34', '5:old-5-38', '5:old-5-4', '5:old-5-5', '5:right-part', '6:cor-L']
+
+-- 5:old-5-11 | 정리 5.3 장5A 
+   머리: ($\mathsf P_R\Rightarrow\mathsf W$, 그리고 세 동치) [증명됨, 정리 {{5:old-5-7}}·{{4:old-4-5}}·{{5:old-5-1}}·{{4:old-4-8}}·{{4:old-4-9}}·명제 {{5:old-5-10}}에 의존; r690be93]. 
+   인용: ['4:old-4-2', '4:old-4-4', '4:old-4-5', '4:old-4-8', '4:old-4-9', '5:old-5-1', '5:old-5-10', '5:old-5-7', '5:old-5-9']
+
+-- 5:old-5-1 | 정리 5.1 장5A 
+   머리: (모든 $n\le20000$의 단봉성) [계산 증거(정확 정수·유리수), 정리 {{4:old-4-5}}·보조정리 {{7:column-lemma}}에 의존; r15df76b, rc9aee43, rce3dc75, r19de912, r6373c70]. 
+   인용: ['2:old-2-6', '4:old-4-3', '4:old-4-5', '7:band-propagation', '7:column-lemma', '7:old-6-7']
+
+-- 6:cor-L | 따름정리 6.4 장6 
+   머리: (기저량의 날카로운 하계; 기록 [r696d62c]의 따름정리 L) [증명됨; r696d62c]. 
+   인용: ['6:diag-first-layer', '6:pair-rearrange']
+
+-- 6:old-6-19 | 정리 6.5 장6 
+   머리: (V-핵심) [증명됨, 정리 {{6:theorem-U}}·따름정리 {{6:old-8-11}}에 의존; r845b205, r317d678]. 
+   인용: ['2:old-2-31', '6:old-7-13', '6:old-8-11', '6:theorem-U', '6:tilt-split']
+
+-- 6:V-all | 정리 6.6 장6 
+   머리: ((V)의 모든 절단점) [증명됨, 정리 {{6:old-6-19}}·명제 {{6:v-negative}}·{{6:critical-front}}·{{6:far-window}}·{{6:small-k-bulk}}·{{6:first-layer-end}}·{{6:above-window}}에 의존; r29c10cd, r9bf2dc6, r845b205, r317d678]. 
+   인용: ['6:above-window', '6:critical-front', '6:far-window', '6:first-layer-end', '6:old-6-18', '6:old-6-19', '6:small-k-bulk', '6:v-negative']
+
+-- 6:D-bound | 정리 6.4 장6 
+   머리: (평평한 핵심의 하계와 $\Upsilon_k$의 상계; 기록 [r696d62c]의 p-lemmaD-sharp, 기록 [r29b01e8]의 p-ups-bound) [증명됨, (나)는 따름정리 {{6:old-8-11}}에 의존; r696d62c, r29b01e8]. 
+   인용: ['6:cor-L', '6:old-8-11', '6:pair-rearrange']
+
+-- 6:old-8-11 | 따름정리 6.4 장6 
+   머리: (중앙 행 수준 질량의 상계; 기록 [r7e03176]의 따름정리 E) [증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}에 의존; r7e03176, r317d678]. 
+   인용: ['4:old-4-5', '5:old-5-1', '5:old-5-18', '5:old-5-5', '5:old-5-8', '5:witness-position-bound', '6:old-7-13']
+
+-- 6:critical-front | 명제 6.6 장6 
+   머리: (임계 창 앞쪽 조각; 기록 [r7e03176]의 따름정리 W′) [증명됨, 명제 {{6:prop-W}}·따름정리 {{6:old-8-11}}에 의존; r29c10cd, r7e03176]. 
+   인용: ['6:old-8-11', '6:prop-W']
+
+-- 6:far-window | 명제 6.6 장6 
+   머리: (먼 창; 기록 [r9bf2dc6]의 N2) [증명됨, 명제 {{6:prop-R}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6]. 
+   인용: ['6:lemma-Hprime', '6:lemma-M', '6:prop-R']
+
+-- 6:prop-R | 명제 6.6 장6 
+   머리: (환원; 기록 [r9bf2dc6]의 명제 R) [증명됨, 명제 {{6:prop-W}}·따름정리 {{6:old-8-11}}에 의존; r9bf2dc6]. 
+   인용: ['6:old-8-11', '6:path-shift', '6:prop-W']
+
+-- 6:small-k-bulk | 명제 6.6 장6 
+   머리: (작은 $k$의 벌크; 기록 [r9bf2dc6]의 N3) [증명됨, (가)는 작성자 판단, 정리 {{5:old-5-1}}·명제 {{5:witness-position-bound}}·{{6:prop-R}}·{{6:first-layer-end}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6]. 
+   인용: ['5:old-5-1', '5:witness-position-bound', '6:first-layer-end', '6:lemma-Hprime', '6:lemma-M', '6:prop-R']
+
+-- 6:above-window | 명제 6.6 장6 
+   머리: (창 위쪽; 기록 [r29c10cd]의 명제 E (나)) [증명됨, $\hat x>10$의 경우는 작성자 판단, 정리 {{5:old-5-1}}·{{5:old-5-13}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{6:first-layer-end}}에 의존; r29c10cd]. 
+   인용: ['5:old-5-1', '5:old-5-13', '5:old-5-18', '5:old-5-8', '5:witness-position-bound', '6:first-layer-end']
+
+-- 6:old-7-24 | 보조정리 6.2 장6 
+   머리: (위험률의 하계; 기록 [r051bfe1]의 (Hz)) [증명됨, 보조정리 {{6:tilt-sum}}에 의존; r051bfe1]. 
+   인용: ['2:old-2-26', '6:tilt-sum']
+
+-- 6:lemma-Hprime | 보조정리 6.6 장6 
+   머리: (닫힌 꼴; 기록 [r9bf2dc6]의 보조정리 H′) [증명됨, 보조정리 {{2:zeta-constants}}에 의존; r9bf2dc6]. 
+   인용: ['2:moving-tail', '2:old-2-37', '2:zeta-constants']
+
+-- 8:old-6-33 | 정리 8.4 장8 
+   머리: (둘째 층 띠; 기록 [r030ffae]의 정리 B‴) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}·{{8:hazard-H1}}에 의존; r030ffae]. 
+   인용: ['8:explicit-bounds', '8:hazard-H1', '8:old-6-23', '8:old-6-28', '8:old-6-29', '8:old-6-30', '8:old-6-31', '8:old-6-32', '8:table-tolerance']
+
+-- 8:old-6-29 | 정리 8.4 장8 
+   머리: (띠 앞부분의 비교; 기록 [r030ffae]의 정리 B′) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}에 의존; r030ffae]. 
+   인용: ['2:old-2-31', '8:explicit-bounds', '8:old-6-23', '8:old-6-28', '8:prop-U-apriori', '8:table-tolerance']
+
+-- 8:old-6-28 | 정리 8.2 장8 
+   머리: (창의 수준 질량 하계; 기록 [r030ffae]의 정리 W) [증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{8:table-tolerance}}에 의존; r030ffae, rfc69320]. 
+   인용: ['8:cell-bound', '8:reduction-J', '8:table-tolerance']
+
+-- 8:hazard-H1 | 보조정리 8.4 장8 
+   머리: (첫 층 위험률 합의 명시 하계; 기록 [r5bbc534]의 정리 H1(a)에 해당) [증명됨, 작성자 판단, 보조정리 {{6:old-7-24}}에 의존; r5bbc534]. 
+   인용: ['6:old-7-24', '8:explicit-bounds']
+
+-- 8:closed-form-envelope | 정리 8.2 장8 
+   머리: (참 봉투의 닫힌 꼴; 기록 [rfc69320]의 보조정리 8.1, 명제 W\*·G\*, 정리 CF) [증명됨, (라)는 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:pieces-k-monotone}}·{{8:jensen-H-ii}}에 의존; rfc69320]. 
+   인용: ['2:zeta-constants', '8:escape-y-monotone', '8:jensen-H-ii', '8:pieces-k-monotone']
+
+-- 8:table-tolerance | 보조정리 8.2 장8 
+   머리: (저장된 표의 하계 성질과 허용 오차; 기록 [rfc69320]의 §8.4와 보조정리 8.2·8.3) [증명됨, (가)는 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:closed-form-envelope}}·{{8:table-lower-bound}}·{{8:jensen-H-ii}}에 의존; rfc69320]. 
+   인용: ['2:zeta-constants', '8:closed-form-envelope', '8:escape-y-monotone', '8:jensen-H-ii', '8:table-lower-bound']
+
+-- 7:old-6-9 | 명제 7.2 장7A 
+   머리: (왼쪽 잔여 증가와 왼쪽 내부의 동치) [증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{7:seed-transfer}}·보조정리 {{7:column-lemma}}에 의존; rb6423c6]. 
+   인용: ['4:old-4-5', '5:old-5-1', '7:column-lemma', '7:old-6-8', '7:seed-transfer']
+
+-- 7:flat-threshold | 따름정리 7.2 장7A 
+   머리: (문턱 자리 평균의 상계가 주는 증가 경계; 기록 [r7c26b8b]의 따름정리 3, 기록 [rb6423c6]의 명제 P8) [증명됨; r7c26b8b, rb6423c6]. 
+   인용: ['7:old-6-10', '7:old-6-2', '7:old-6-6']
+
+-- 7:old-6-14 | 정리 7.5 장7B 
+   머리: (한 걸음 항등식) [증명됨; r3172894]. 
+   인용: ['2:old-2-6']
+
+-- 7:old-6-15 | 명제 7.5 장7B 
+   머리: (흡수 귀납) [증명됨; r3172894]. 
+   인용: []
+
+-- 7:old-6-21 | 정리 7.7 장7B 
+   머리: (둘째 층의 한 걸음 항등식; 기록 [r317d678]의 정리 R과 정리 T) [증명됨, 둘째 주장은 정리 {{6:old-6-19}}·{{6:V-all}}·{{6:old-7-21}}에 의존; r317d678]. 
+   인용: ['6:V-all', '6:old-6-19', '6:old-7-21', '7:old-6-20', '7:threshold-unit-ratio']
+
+-- 7:column-lemma | 보조정리 7.2 장7A 
+   머리: (열 인증; 기록 [rc9aee43]의 보조정리 4.1·4.2) [증명됨, (다)는 계산 보조(정확 정수·유리수), 작성자 판단; rc9aee43]. 
+   인용: ['7:band-propagation', '7:old-6-7']
+
+-- 2:old-2-46 | 보조정리 2.11 장2 
+   머리: (갱신 다리; 기록 [re71a735]의 보조정리 B) [증명됨; re71a735]. 
+   인용: ['2:old-2-44', '2:old-2-45']
+
+-- 2:old-2-38 | 정리 2.9 장2 
+   머리: (문턱 부분나무로 잰 나무 곡률; 기록 [r4868e30]의 c-threshold-subtree, 정리 T) [증명됨; r4868e30]. 
+   인용: ['2:old-2-26', '2:old-2-35', '2:old-2-36', '2:old-2-37']
+
+-- 2:old-2-39 | 따름정리 2.9 장2 
+   머리: (머리 합의 안쪽 층) [증명됨; r4868e30, r2ec875c]. 
+   인용: ['2:old-2-37', '2:old-2-38']
+
+-- 6:old-8-13 | 정리 6.3 장6 
+   머리: 의 증명. 
+   인용: ['5:old-5-18', '6:cor-L', '6:diag-first-layer', '6:lemma-omega', '6:lemma-phi', '6:old-7-13', '6:same-kernel']
+
+-- 9:H-star-plus | 정리 9.1 장9 
+   머리: (머리 합 여유 정리; 기록 [r33475a7]의 정리 H*₊) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{9:head-sum-1}}·{{9:head-sum-2}}에 의존; r33475a7]. 
+   인용: ['2:b-top', '9:head-sum-1', '9:head-sum-2', '9:prop-H']
+
+-- 9:head-sum-2 | 정리 9.1 장9 
+   머리: (증가 시작점의 두 상계; 기록 [r2ec875c]의 정리 2) [증명됨, 계산 보조(정확 정수·유리수), 정리 {{5:old-5-18}}·{{4:old-4-5}}·{{5:old-5-1}}에 의존; r2ec875c]. 
+   인용: ['4:old-4-5', '5:old-5-1', '5:old-5-18']
+
+-- 9:old-7-17 | 따름정리 9.3 장9 
+   머리: ($\mathsf B^+$의 남은 내용) [증명됨, 정리 {{9:old-7-16}}에 의존; rae1f209]. 
+   인용: ['9:old-7-16']
+
+-- 9:old-7-44 | 따름정리 9.6 장9 
+   머리: ($\mathsf B^+$의 성립) [증명됨, 정리 {{9:old-7-35}}·따름정리 {{9:old-7-17}}에 의존; rae1f209, r5909c9e]. 
+   인용: ['9:old-7-17', '9:old-7-35']
+
+-- 9:old-7-35 | 정리 9.5 장9 
+   머리: 의 증명. 
+   인용: ['2:old-2-41', '2:zeta-constants', '8:old-6-28', '9:old-7-37', '9:old-7-39', '9:old-7-42', '9:pair-one-variable']
+
+-- 9:old-7-23 | 정리 9.4 장9 
+   머리: (꼬리는 핵심 한 자리를 빼고 모두 양이다; 기록 [rb6a2cd0]의 정리 10) [증명됨, 정리 {{9:H-star-plus}}·{{6:D-bound}}에 의존; rb6a2cd0]. 
+   인용: ['6:D-bound', '9:H-star-plus']
+
+-- 10:old-8-36 | 정리 10.6 장10 
+   머리: (명제 FLQ의 증명; 기록 [re71a735]의 정리 FLQ) [증명됨, 보조정리 {{10:row-3k}}·명제 {{10:check-na}}·{{10:check-ga}}에 의존; re71a735]. 
+   인용: ['10:check-ga', '10:check-na', '10:families', '10:row-3k']
+
+-- 10:old-8-10 | 정리 10.3 장10 
+   머리: (FLQ ∧ 띠 ⇒ $\mathsf Q^\star_2$; 기록 [r3d0856b]의 관계 q-flq-relation) [증명됨, 정리 {{8:old-6-33}}·보조정리 {{10:old-8-3}}에 의존; r3d0856b]. 
+   인용: ['10:old-8-2', '10:old-8-3', '10:old-8-6', '8:old-6-33']
+
+-- 7:theorem-W | 정리 7.6 장7B 
+   머리: (꼭대기 뿌리의 무게; 기록 [r79ee9e0]의 정리 W와 명제 W′) [증명됨, 보조정리 {{6:old-7-24}}에 의존; r79ee9e0]. 
+   인용: ['2:old-2-32', '6:old-7-24', '7:explicit-bounds', '7:top-roots']
+
+-- 7:src-plus | 명제 7.6 장7B 
+   머리: (원천 쪽 $\mathsf{SRC}^+$; 기록 [r79ee9e0]의 명제 SRC⁺) [증명됨, 정리 {{7:theorem-W}}·{{7:polar-PD}}에 의존; r79ee9e0, r207f124]. 
+   인용: ['7:fold-A', '7:fold-DIP', '7:fold-L1', '7:old-6-16', '7:polar-PD', '7:theorem-W']
+
+-- 7:old-6-20 | 명제 7.7 장7B 
+   머리: (셋째 층부터의 전파; 기록 [r317d678]의 명제 P) [증명됨, 명제 {{7:src-plus}}·정리 {{6:V-all}}·{{6:old-7-21}}에 의존; r317d678]. 
+   인용: ['6:V-all', '6:old-7-21', '7:old-6-15', '7:src-plus']
+
+-- 6:tilt-sum | 보조정리 6.2 장6 
+   머리: (기울인 Borel 질량의 합) [증명됨, 계산 보조(정확 정수·유리수); r051bfe1]. 
+   인용: ['2:old-2-26', '2:old-2-37']
+
+===== 누가 인용하는가
+6:insertion <- []
+6:log-derivative <- []
+6:trapezoid <- []
+6:cor-L <- ['5:old-5-18', '6:D-bound', '6:old-8-13']
+6:D-bound <- ['1:main-theorem', '9:old-7-23', '9:old-7-26']
+6:increment-bounds <- ['1:main-theorem', '9:old-7-25', '9:old-7-30']
+6:old-8-11 <- ['10:old-8-14', '6:D-bound', '6:critical-front', '6:old-6-19', '6:old-8-12', '6:prop-R']
+6:old-8-12 <- ['10:bulk-majorants', '10:old-8-33', '1:main-theorem']
+6:old-8-13 <- ['10:old-8-14', '1:main-theorem']
+6:DD-lower-bound <- ['10:old-8-14', '1:main-theorem']
+2:old-2-46 <- ['10:families', '10:old-8-31', '1:main-theorem']
+2:old-2-44 <- ['1:main-theorem', '2:old-2-46']
+9:old-7-2 <- []
+9:old-7-17 <- ['9:old-7-44']
+9:theorem-A-plus <- ['9:prop-H']
+9:prop-6 <- ['9:head-sum-1']
+9:chain-moments <- ['9:prop-6']
+9:psi-two-sided <- ['9:head-sum-1']
+9:chain-rep <- ['9:chain-bounds']
+9:chain-bounds <- ['9:prop-6']
+9:centroid-stop <- ['9:old-7-16']
+9:old-7-3 <- ['9:old-7-16']
+9:old-7-7 <- ['9:old-7-39']
+9:head-sum-1 <- ['9:H-star-plus']
+9:regeneration-S <- ['9:old-7-18']
+10:old-8-23 <- ['10:bulk-majorants', '10:check-na', '10:old-8-35', '10:reduction-ga', '10:reduction-na']
+2:zeta-constants <- ['6:lemma-Hprime', '8:closed-form-envelope', '8:jensen-H-ii', '8:pieces-k-monotone', '8:table-tolerance', '9:old-7-35', '9:psi-low', '9:psi-two-sided']
+8:old-6-29 <- ['1:main-theorem', '8:old-6-33', '9:old-7-28', '9:old-7-31', '9:old-7-33']
+2:old-2-40 <- ['1:main-theorem', '2:old-2-41', '9:old-7-18']
+7:old-6-14 <- ['10:old-8-1', '10:old-8-2', '1:main-theorem']
+5:witness-position-bound <- ['10:old-8-9', '10:reduction-ga', '6:above-window', '6:old-8-11', '6:old-8-12', '6:small-k-bulk']

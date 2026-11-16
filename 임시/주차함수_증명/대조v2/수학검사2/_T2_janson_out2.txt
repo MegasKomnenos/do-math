@@ -1,0 +1,49 @@
+1.7) for arbitrary real s → ∞ follows easily from
+Theorem 1.6 and Stirling’s formula; see Theorem 5.7 and (7.8 ).)
+Remark 1.10. Theorem 1.9 also follows from any of the last two formulas
+in Theorem 1.8 and the asymptotic formula for U in [1, (13.5.2)]. Indeed,
+MOMENTS OF GAMMA TYPE 5
+this gives an asymptotic expansion with further terms, cf. R emark 6.3; in
+this case, by [1, (13.5.2)], the complete asymptotic expans ion can be written
+fA(x) ∼ 2 · 31/6 Γ(2/3)x1/3e−3x2/2 2F0 ( 1 6, − 1 6 ; ; − 2 3x−2 ) , x → ∞,
+where the hypergeometric series 2F0 is divergent and the asymptotic expan-
+sion is interpreted in the usual way: if we truncate the serie s after any ﬁxed
+number of terms, the error is of the order of the ﬁrst omitted t erm. (For
+the general deﬁnition of the (generalized) hypergeometric series pFq, see e.g.
+[13, Section 5.5].)
+Theorem 1.9 may be compared with similar results for several other Brow-
+nian areas in Janson and Louchard [18], see also Janson [17] a nd Remark 1.7.
+In these results for other Brownian areas, the exponent of x is always an
+integer (0, 1 or 2), while here the exponent is 1 /3, which is related to the
+powers1/6 in (1.7).
+Another example with moments of Gamma type comes from Peters son
+[24]. He studied the maximum displacement in hashing with li near probing,
+and found for dense tables, after suitable normalization, c onvergence to a
+limit distribution given by a random variable M with the distribution [24,
+Theorem 5.1]
+P(M ≤ x) = 1 −ψ(x3/2), x> 0, (1.8)
+where ψ(s) := Ee−sA is the Laplace transform of A. Equivalently,
+P(M>x ) = ψ(x3/2) = Ee−x3/2A,
+=========
+anche uni-
+forme d’une fonction monog` ene (cinqui` eme note).Acta Math. 29 (1905),
+no. 1, 101–181.
+[24] N. Petersson, The maximum displacement for linear prob ing hashing
+I. Tech. report 2008:8, Uppsala. In The Maximum Displacement for
+Linear Probing Hashing , Ph. D. thesis, Uppsala, 2009.
+[25] R. N. Pillai, On Mittag-Leﬄer functions and related dis tributions. Ann.
+Inst. Statist. Math. 42 (1990), no. 1, 157–161.
+[26] H. Pollard, The completely monotonic character of the M ittag-Leﬄer
+function 
+=========
+arXiv:1002.4135v1  [math.PR]  22 Feb 2010
+MOMENTS OF GAMMA TYPE AND THE BROWNIAN
+SUPREMUM PROCESS AREA
+SV ANTE JANSON
+Abstract. We study positive random variables whose moments can be
+expressed by products and quotients of Gamma functions; thi s includes
+many standard distributions. General results are given on e xistence,
+series expansion and asymptotics of density functions. It i s shown that
+the integral of the supremum process of Brownian motion has m oments
+of this type, as well as a related random variable occuring in the study
+of hashing with linear displacement, and the general result 

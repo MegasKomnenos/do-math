@@ -1,0 +1,407 @@
+
+### 행136 Konheim, Weiss, *An occupancy discipline | 결과: 주차함수의 개수 $(n+1)^{n-1}$
+   본문 언급 자리:
+     장v2\장1.md §1.1 1:old-1-1 행[13, 15]
+     장v2\장11.md §11.4 (산문) 행[136]
+     장v2\장2.md §2.1 2:old-2-4 행[48]
+   열 라벨 명제 1:old-1-2: <<< 그 진술 블록에 언급 없음
+   열 절 1.1: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['1:old-1-1', '2:old-2-4'] 산문 절 ['11.4'] D []
+
+### 행137 Foata, Riordan, *Mappings of acyclic and | 결과: Pollak의 논법(주차함수의 개수의 증명)
+   본문 언급 자리:
+     장v2\장1.md §1.1 1:old-1-1 행[15]
+     장v2\장11.md §11.4 (산문) 행[137]
+   열 라벨 명제 1:old-1-2(증명): <<< 그 진술 블록에 언급 없음
+   열에 없는 본문 자리: 라벨 ['1:old-1-1'] 산문 절 ['11.4'] D []
+
+### 행138 Celano 외, *Statistics on ℓ-interval park | 결과: Conjecture 6.5(문제 $\mathsf P$); §3의 식 (3)·(4)(결과 순열을 거쳐 세기).
+   본문 언급 자리:
+     장v2\장1.md §1.3 1:old-1-4 행[87]
+     장v2\장11.md §11.4 (산문) 행[138]
+     장v2\장2.md §2.1 2:old-2-4 행[48]
+   열 라벨 정리 2:old-2-3: <<< 그 진술 블록에 언급 없음
+   열 라벨 따름정리 2:old-2-4: OK
+   열 절 1.3: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['1:old-1-4'] 산문 절 ['11.4'] D []
+
+### 행139 Aguilar-Fraga 외, *Interval and $\ell$-in | 결과: Theorem 3.7(마지막 차 재귀)
+   본문 언급 자리:
+     장v2\장1.md §1.5 (산문) 행[216]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[139]
+     장v2\장2.md §2.3 (산문) 행[70]
+   열 라벨 정리 2:old-2-6: <<< 그 진술 블록에 언급 없음
+   열 절 2.3: OK(산문)
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['1.5', '11.3', '11.4'] D []
+
+### 행140 Stanley, *Enumerative Combinatorics*, vo | 결과: Corollary 5.1.6(지수 공식)
+   본문 언급 자리:
+     장v2\부록D_장5A.md §D:exact-n20000 (산문) 행[5]
+     장v2\장1.md §1.4 1:main-theorem 행[127]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[140]
+     장v2\장2.md §None (산문) 행[5]
+     장v2\장2.md §2.4 2:old-2-10 행[131, 145]
+     장v2\장2.md §2.9 (산문) 행[575]
+     장v2\장2.md §2.10 (산문) 행[691, 693, 695]
+     장v2\장5A.md §5.2 5:green-connection 행[85]
+     장v2\장5A.md §5.2 5:source-rep 행[154]
+     장v2\장5A.md §5.2 5:marked-riccati 행[240]
+     장v2\장5A.md §5.2 5:response-kernel 행[270]
+     장v2\장7A.md §7.2 7:old-6-10 행[374]
+     장v2\장7B.md §7.4 7:blocked-majorant 행[107, 109]
+     장v2\장7B.md §7.4 7:block-exponential 행[121, 141]
+     장v2\장7B.md §7.4 7:green-atom 행[162]
+     장v2\장8.md §8.1 8:old-6-23 행[38]
+     장v2\장8.md §8.3 8:old-6-30 행[567]
+     장v2\장9.md §9.2 9:old-7-1 행[330]
+     장v2\장9.md §9.2 9:old-7-7 행[431]
+     장v2\장9.md §9.3 9:old-7-10 행[491]
+   열 라벨 정리 2:old-2-10(증명): OK
+   열에 없는 본문 자리: 라벨 ['1:main-theorem', '5:green-connection', '5:marked-riccati', '5:response-kernel', '5:source-rep', '7:block-exponential', '7:blocked-majorant', '7:green-atom', '7:old-6-10', '8:old-6-23', '8:old-6-30', '9:old-7-1', '9:old-7-10', '9:old-7-7'] 산문 절 ['11.3', '11.4', '2.10', '2.9'] D ['D:exact-n20000']
+
+### 행141 Stanley, 같은 책 | 결과: Proposition 5.3.2(Cayley 공식)
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[141]
+     장v2\장2.md §None (산문) 행[5]
+     장v2\장2.md §2.4 2:old-2-10 행[145]
+     장v2\장2.md §2.5 2:old-2-21 행[174]
+     장v2\장2.md §2.12 2:chain-expansion 행[833]
+     장v2\장5B.md §5.5 5:old-5-28 행[185]
+     장v2\장5B.md §5.5 5:stop-lower 행[270]
+     장v2\장6.md §6.4 6:chain-count 행[544]
+     장v2\장6.md §6.4 6:split-mass 행[578]
+     장v2\장6.md §6.5 6:lemma-O 행[826]
+   열 라벨 정리 2:chain-expansion: OK
+   열 라벨 보조정리 5:stop-lower: OK
+   열 라벨 명제 6:chain-count: OK
+   열 라벨 보조정리 6:split-mass: OK
+   열 라벨 보조정리 6:lemma-O: OK
+   열 절 2.4: OK(진술 안에서만)
+   열 절 2.5: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['2:old-2-10', '2:old-2-21', '5:old-5-28'] 산문 절 ['11.3', '11.4'] D []
+
+### 행142 Stanley, 같은 책 | 결과: Theorem 5.4.2(Lagrange 역변환)
+   본문 언급 자리:
+     장v2\부록D_장10.md §D:M-natural-integrals (산문) 행[12]
+     장v2\부록D_장7A.md §D:polar-blocks-488 (산문) 행[195]
+     장v2\부록D_장9.md §D:band-LP (산문) 행[43]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[142, 150, 155]
+     장v2\장2.md §None (산문) 행[5]
+     장v2\장2.md §2.5 2:old-2-21 행[176]
+     장v2\장4.md §4.3 4:e-integral 행[169]
+     장v2\장4.md §4.3 4:old-4-6 행[179, 188, 190, 194]
+     장v2\장4.md §4.3 4:correction-contour 행[451]
+     장v2\장5A.md §5.2 5:inverse-renewal 행[310]
+     장v2\장5A.md §5.2 5:renewal-fkg 행[335]
+     장v2\장5A.md §5.4 5:cover-edge 행[841]
+     장v2\장5A.md §5.4 5:hat-normalization 행[935]
+     장v2\장5B.md §5.6 5:old-5-39 행[467, 487]
+     장v2\장5B.md §5.6 5:old-5-41 행[578]
+     장v2\장7A.md §7.2 7:prime-decomposition 행[274]
+   열 라벨 보조정리 4:e-integral: OK
+   열 라벨 명제 4:old-4-6: OK
+   열 라벨 보조정리 4:correction-contour: OK
+   열 라벨 보조정리 5:inverse-renewal: OK
+   열 라벨 보조정리 5:hat-normalization: OK
+   열 라벨 보조정리 5:old-5-41: OK
+   열 라벨 보조정리 7:prime-decomposition: OK
+   열 절 2.5: OK(진술 안에서만)
+   열 절 4.3: OK(진술 안에서만)
+   열 절 5.2: OK(진술 안에서만)
+   열 절 5.4: OK(진술 안에서만)
+   열 절 5.6: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['2:old-2-21', '5:cover-edge', '5:old-5-39', '5:renewal-fkg'] 산문 절 ['11.3', '11.4'] D ['D:M-natural-integrals', 'D:band-LP', 'D:polar-blocks-488']
+
+### 행143 Knuth, *The Art of Computer Programming* | 결과: §5.1.4, 연습문제 20(뿌리 숲의 갈고리 길이 공식)
+   본문 언급 자리:
+     장v2\부록D_장5B.md §D:zeta-constants (산문) 행[46]
+     장v2\장11.md §11.4 (산문) 행[143, 149, 154]
+     장v2\장2.md §2.4 2:old-2-11 행[162]
+     장v2\장4.md §4.3 4:borel-tail-arc 행[418]
+     장v2\장5A.md §5.4 5:cut-rep 행[857]
+   열 라벨 정리 2:old-2-11: OK
+   열에 없는 본문 자리: 라벨 ['4:borel-tail-arc', '5:cut-rep'] 산문 절 ['11.4'] D ['D:zeta-constants']
+
+### 행144 Flajolet, Sedgewick, *Analytic Combinato | 결과: §II.5(나무 함수의 임계값 $T(1/e)=1$)
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[144]
+     장v2\장2.md §2.5 2:old-2-21 행[174]
+   열 절 2.5: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['2:old-2-21'] 산문 절 ['11.4'] D []
+
+### 행145 Robbins, *A remark on Stirling's formula | 결과: 식 (1)–(2): 모든 정수 $m\ge1$에서 $\frac1{12m+1}<\log m!-(m+\frac12
+   본문 언급 자리:
+     장v2\부록D_장7A.md §D:polar-blocks-488 (산문) 행[135]
+     장v2\장10.md §10.5 10:old-8-23 행[470]
+     장v2\장10.md §10.5 10:old-8-25 행[508]
+     장v2\장10.md §10.6 10:old-8-31 행[656]
+     장v2\장10.md §10.6 10:old-8-35 행[741]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[145]
+     장v2\장2.md §None (산문) 행[5]
+     장v2\장2.md §2.9 2:old-2-37 행[629, 635]
+     장v2\장2.md §2.9 2:old-2-38 행[663]
+     장v2\장3.md §3.4 3:old-3-6 행[197]
+     장v2\장4.md §4.3 4:borel-tail-arc 행[416, 418, 420]
+     장v2\장4.md §4.3 4:two-corrections 행[475]
+     장v2\장4.md §4.3 4:old-4-5(증명) 행[543]
+     장v2\장5A.md §5.2 5:old-5-5 행[470]
+     장v2\장5A.md §5.2 5:kernel-C-bound 행[483]
+     장v2\장5A.md §5.2 5:sign-sandwich 행[621]
+     장v2\장5A.md §5.4 5:cut-rep 행[903]
+     장v2\장5A.md §5.4 5:hat-normalization 행[933]
+     장v2\장5A.md §5.4 5:old-5-13 행[947]
+     장v2\장5B.md §5.5 5:stirling-bor 행[127]
+     장v2\장5B.md §5.5 5:bt-tail 행[266]
+     장v2\장6.md §6.1 6:old-7-13 행[66]
+     장v2\장6.md §6.3 6:lemma-omega 행[381, 391]
+     장v2\장6.md §6.5 6:lemma-O 행[826]
+     장v2\장6.md §6.5 6:lemma-E 행[862]
+     장v2\장6.md §6.6 6:theorem-D 행[1029]
+     장v2\장6.md §6.6 6:prop-W 행[1081]
+     장v2\장6.md §6.6 6:prop-R 행[1095]
+     장v2\장6.md §6.6 6:lemma-Hprime 행[1141]
+     장v2\장7B.md §7.4 7:vertical-nu 행[346, 352]
+     장v2\장7B.md §7.4 7:analytic-transfer 행[376]
+     장v2\장7B.md §7.6 7:hazard-floor 행[635]
+     장v2\장7B.md §7.6 7:explicit-bounds 행[666]
+     장v2\장8.md §8.2 (산문) 행[106]
+     장v2\장8.md §8.2 8:explicit-bounds 행[120]
+     장v2\장9.md §9.1 9:theorem-A-plus 행[87]
+     장v2\장9.md §9.1 9:psi-two-sided 행[191]
+     장v2\장9.md §9.3 9:old-7-16 행[563, 610]
+     장v2\장9.md §9.5 9:old-7-35 행[830]
+     장v2\장9.md §9.5 9:old-7-40 행[903]
+   열 라벨 보조정리 2:old-2-37: OK
+   열 라벨 정리 2:old-2-38: OK
+   열 라벨 정리 3:old-3-6: OK
+   열 라벨 정리 4:old-4-5: OK
+   열 라벨 보조정리 4:borel-tail-arc: OK
+   열 라벨 보조정리 4:two-corrections: OK
+   열 라벨 보조정리 5:kernel-C-bound: OK
+   열 라벨 보조정리 5:sign-sandwich: OK
+   열 라벨 보조정리 5:cut-rep: OK
+   열 라벨 보조정리 5:hat-normalization: OK
+   열 라벨 정리 5:old-5-13: OK
+   열 라벨 보조정리 5:stirling-bor: OK
+   열 라벨 보조정리 5:bt-tail: OK
+   열 라벨 정리 6:old-7-13: OK
+   열 라벨 보조정리 6:lemma-omega: OK
+   열 라벨 보조정리 6:lemma-O: OK
+   열 라벨 보조정리 6:lemma-E: OK
+   열 라벨 정리 6:theorem-D: OK
+   열 라벨 명제 6:prop-W: OK
+   열 라벨 명제 6:prop-R: OK
+   열 라벨 보조정리 6:lemma-Hprime: OK
+   열 라벨 보조정리 7:vertical-nu: OK
+   열 라벨 명제 7:analytic-transfer: OK
+   열 라벨 보조정리 7:hazard-floor: OK
+   열 라벨 보조정리 7:explicit-bounds: OK
+   열 라벨 보조정리 8:explicit-bounds: OK
+   열 라벨 정리 9:theorem-A-plus: OK
+   열 라벨 보조정리 9:psi-two-sided: OK
+   열 라벨 정리 9:old-7-16: OK
+   열 라벨 보조정리 9:old-7-40: OK
+   열 라벨 명제 10:old-8-23: OK
+   열 라벨 정리 10:old-8-25: OK
+   열 라벨 보조정리 10:old-8-31: OK
+   열 라벨 명제 10:old-8-35: OK
+   열 절 5.2: OK(진술 안에서만)
+   열 절 6.6: OK(진술 안에서만)
+   열 절 7.4: OK(진술 안에서만)
+   열 절 8.2: OK(산문)
+   열 절 9.5: OK(진술 안에서만)
+   열 D D:polar-blocks-488: OK
+   열에 없는 본문 자리: 라벨 ['5:old-5-5', '9:old-7-35'] 산문 절 ['11.3', '11.4'] D []
+
+### 행146 Petersson, *The Maximum Displacement for | 결과: Theorem 2.1(원 위의 선형 탐사에서 최대 변위의 극한 법칙), Corollary 2.11
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[146]
+     장v2\장3.md §None (산문) 행[7]
+     장v2\장3.md §3.1 (산문) 행[19]
+     장v2\장3.md §3.1 3:old-3-1 행[31]
+   열 라벨 명제 3:old-3-1(증명): OK
+   열 절 3.1: OK(산문)
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.4'] D []
+
+### 행147 Janson, *Moments of Gamma type and the B | 결과: 식 (1.9), Theorem 1.12, Theorem 1.13, Theorem 1.14
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[147]
+     장v2\장3.md §None (산문) 행[7]
+     장v2\장3.md §3.1 3:old-3-1 행[35, 41]
+     장v2\장3.md §3.2 3:old-3-3 행[67]
+     장v2\장3.md §3.3 3:old-3-4 행[153]
+   열 라벨 정리 3:old-3-3(증명): OK
+   열 라벨 정리 3:old-3-4(증명): OK
+   열 절 3.1: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['3:old-3-1'] 산문 절 ['11.4'] D []
+
+### 행148 Ibragimov, *On the composition of unimod | 결과: 로그오목 함수와 단봉 함수의 합성곱이 단봉이라는 정리의 한 방향
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[148]
+     장v2\장3.md §3.2 3:old-3-3 행[101]
+   열 라벨 정리 3:old-3-3(증명): OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.4'] D []
+
+### 행149 Graham, Knuth, Patashnik, *Concrete Math | 결과: §9.5(Euler–Maclaurin 공식)
+   본문 언급 자리:
+     장v2\부록D_장5B.md §D:zeta-constants (산문) 행[46]
+     장v2\부록D_장5B.md §D:induction-rows (산문) 행[113, 115]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[132, 149]
+     장v2\장4.md §4.3 4:borel-tail-arc 행[418]
+     장v2\장5B.md §5.5 5:stirling-bor 행[129]
+     장v2\장8.md §8.2 (산문) 행[106]
+     장v2\장8.md §8.2 8:closed-form-envelope 행[451]
+   열 라벨 보조정리 4:borel-tail-arc: OK
+   열 절 8.2: OK(산문)
+   열 D D:zeta-constants: OK
+   열에 없는 본문 자리: 라벨 ['5:stirling-bor', '8:closed-form-envelope'] 산문 절 ['11.3', '11.4'] D ['D:induction-rows']
+
+### 행150 Ahlfors, *Complex Analysis*, 3판, McGraw- | 결과: Chapter 4 §2(Cauchy의 적분 공식과 적분 정리)
+   본문 언급 자리:
+     장v2\부록D_장4.md §D:central-gap-rational-audit (산문) 행[25]
+     장v2\부록D_장7B.md §D:band102-integer (산문) 행[5, 7]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[150]
+     장v2\장4.md §4.3 4:e-integral 행[173]
+     장v2\장4.md §4.3 4:gauss-coeff 행[298, 306]
+     장v2\장5A.md §5.2 5:response-kernel 행[282]
+     장v2\장5A.md §5.2 5:suff-cond 행[380]
+     장v2\장7A.md §7.3 7:pole-unique 행[619]
+     장v2\장7A.md §7.3 7:lemma-P-pole 행[786]
+     장v2\장7A.md §7.3 7:lemma-P-prime 행[804]
+     장v2\장7B.md §7.4 7:hermite-nu 행[306, 324]
+   열 라벨 보조정리 4:correction-contour: <<< 그 진술 블록에 언급 없음
+   열 절 4.3: OK(진술 안에서만)
+   열 절 7.3: OK(진술 안에서만)
+   열 절 7.4: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['4:e-integral', '4:gauss-coeff', '5:response-kernel', '5:suff-cond', '7:hermite-nu', '7:lemma-P-pole', '7:lemma-P-prime', '7:pole-unique'] 산문 절 ['11.3', '11.4'] D ['D:band102-integer', 'D:central-gap-rational-audit']
+
+### 행151 Fortuin, Kasteleyn, Ginibre, *Correlatio | 결과: FKG 부등식
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[151]
+     장v2\장5A.md §5.2 5:renewal-fkg 행[314, 318]
+   열 라벨 보조정리 5:renewal-fkg: OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.3', '11.4'] D []
+
+### 행152 Jensen, *Sur les fonctions convexes et l | 결과: Jensen 부등식
+   본문 언급 자리:
+     장v2\부록D_장8.md §D:stored-table-check (산문) 행[93, 97]
+     장v2\장10.md §10.6 10:old-8-30 행[631]
+     장v2\장10.md §10.6 10:old-8-31 행[652]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[152]
+     장v2\장5A.md §5.2 5:suff-cond 행[386]
+     장v2\장5B.md §5.5 5:old-5-31 행[228]
+     장v2\장6.md §6.6 6:lemma-H 행[1131]
+     장v2\장7A.md §7.2 7:old-6-7 행[165, 212]
+     장v2\장7A.md §7.2 7:old-6-8 행[226]
+     장v2\장7A.md §7.2 7:flat-threshold 행[412]
+     장v2\장8.md §8.2 (산문) 행[102]
+     장v2\장8.md §8.2 8:explicit-bounds 행[130]
+     장v2\장8.md §8.2 8:jensen-lower 행[132, 139]
+     장v2\장8.md §8.2 8:prop-U-apriori 행[188]
+     장v2\장8.md §8.2 8:envelope-H 행[194, 222]
+     장v2\장8.md §8.2 8:escape-y-monotone 행[360, 362]
+     장v2\장8.md §8.2 8:jensen-H-ii 행[364]
+     장v2\장8.md §8.2 8:table-lower-bound 행[392, 398]
+     장v2\장8.md §8.2 8:envelope-code-monotone 행[422]
+     장v2\장8.md §8.2 8:closed-form-envelope 행[449, 451]
+     장v2\장8.md §8.2 8:table-tolerance 행[457]
+     장v2\장9.md §9.1 9:chain-bounds 행[152, 159]
+   열 라벨 정리 5:suff-cond: OK
+   열 라벨 정리 5:old-5-31: OK
+   열 라벨 보조정리 6:lemma-H: OK
+   열 라벨 명제 7:old-6-7: OK
+   열 라벨 정리 7:old-6-8: OK
+   열 라벨 따름정리 7:flat-threshold: OK
+   열 라벨 보조정리 8:jensen-lower: OK
+   열 라벨 보조정리 8:envelope-H: OK
+   열 라벨 정리 8:jensen-H-ii: OK
+   열 라벨 정리 8:table-lower-bound: OK
+   열 라벨 정리 8:closed-form-envelope: OK
+   열 라벨 보조정리 8:table-tolerance: OK
+   열 라벨 보조정리 9:chain-bounds: OK
+   열 라벨 보조정리 10:old-8-30: OK
+   열 라벨 보조정리 10:old-8-31: OK
+   열 절 8.2: OK(산문)
+   열에 없는 본문 자리: 라벨 ['8:envelope-code-monotone', '8:escape-y-monotone', '8:explicit-bounds', '8:prop-U-apriori'] 산문 절 ['11.3', '11.4'] D ['D:stored-table-check']
+
+### 행153 Wallis, *Arithmetica Infinitorum*, Oxfor | 결과: Wallis 공식 $\prod_{N\ge1}\frac{(2N)^2}{(2N-1)(2N+1)}=\frac\pi
+   본문 언급 자리:
+     장v2\부록D_장5A.md §D:band-A-certification (산문) 행[114, 124]
+     장v2\장11.md §11.2 (산문) 행[34]
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[132, 153]
+     장v2\장5A.md §5.4 5:kernel-sandwich 행[768, 780]
+     장v2\장5A.md §5.4 5:old-5-12 행[824]
+   열 라벨 보조정리 5:kernel-sandwich: OK
+   열 라벨 정리 5:old-5-12: OK
+   열 D D:band-A-certification: OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.2', '11.3', '11.4'] D []
+
+### 행154 Corless, Gonnet, Hare, Jeffrey, Knuth, * | 결과: 나무 함수 $T$(Lambert W 함수의 한 가지)의 해석적 연장 영역, 증가 차수, 치역
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[154]
+     장v2\장5A.md §5.4 5:cut-rep 행[857, 897]
+   열 라벨 보조정리 5:cut-rep: OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.3', '11.4'] D []
+
+### 행155 Tanner, *A problem of interference betwe | 결과: Borel–Tanner 공식의 출처(공식은 2.5절에서 Lagrange 역변환으로 유도한다)
+   본문 언급 자리:
+     장v2\장10.md §10.5 10:old-8-19 행[426]
+     장v2\장11.md §11.4 (산문) 행[155]
+     장v2\장2.md §2.5 2:old-2-21 행[176]
+     장v2\장5B.md §5.5 5:old-5-24 행[110]
+     장v2\장5B.md §5.5 5:old-5-31 행[234]
+     장v2\장5B.md §5.5 5:bt-tail 행[252]
+     장v2\장6.md §6.5 6:lemma-O 행[826]
+   열 라벨 보조정리 6:lemma-O: OK
+   열에 없는 본문 자리: 라벨 ['10:old-8-19', '2:old-2-21', '5:bt-tail', '5:old-5-24', '5:old-5-31'] 산문 절 ['11.4'] D []
+
+### 행156 Grimmett, *Percolation*, 2nd ed., Spring | 결과: Theorem 2.4(곱측도 위의 Harris 부등식)
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[156]
+     장v2\장7A.md §7.2 7:old-6-6 행[87]
+   열 라벨 정리 7:old-6-6(증명): OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.4'] D []
+
+### 행157 Harris, *A lower bound for the critical  | 결과: Lemma 4.1(유한 개의 Bernoulli 좌표에 대한 Harris 부등식)
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[156, 157]
+     장v2\장7A.md §7.2 7:old-6-6 행[87, 93]
+   열 라벨 정리 7:old-6-6(증명): OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.3', '11.4'] D []
+
+### 행158 Comtet, *Advanced Combinatorics*, Reidel | 결과: §3.4 Theorem A(Faà di Bruno 공식)
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[158]
+     장v2\장7A.md §7.3 7:fourier-lemmas 행[709]
+   열 라벨 보조정리 7:fourier-lemmas: OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.3', '11.4'] D []
+
+### 행159 Apostol, *Introduction to Analytic Numbe | 결과: Theorem 3.1(Euler 합 공식)
+   본문 언급 자리:
+     장v2\장11.md §11.3 (산문) 행[83]
+     장v2\장11.md §11.4 (산문) 행[159, 160]
+     장v2\장4.md §4.3 4:borel-tail-arc 행[418]
+     장v2\장8.md §8.2 8:explicit-bounds 행[122]
+   열 라벨 보조정리 8:explicit-bounds: OK
+   열 절 8.2: OK(진술 안에서만)
+   열에 없는 본문 자리: 라벨 ['4:borel-tail-arc'] 산문 절 ['11.3', '11.4'] D []
+
+### 행160 Titchmarsh, *The Theory of the Riemann Z | 결과: §2.1(Euler 합 공식으로 적은 제타 함수의 식)
+   본문 언급 자리:
+     장v2\장11.md §11.4 (산문) 행[160]
+     장v2\장8.md §8.2 8:explicit-bounds 행[122]
+   열 라벨 보조정리 8:explicit-bounds: OK
+   열에 없는 본문 자리: 라벨 [] 산문 절 ['11.4'] D []

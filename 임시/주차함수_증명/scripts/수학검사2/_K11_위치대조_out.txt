@@ -1,0 +1,312 @@
+
+=== 21 fiber-enumeration
+ TBL: 정리 {{2:old-2-5}}
+ D  : 정리 {{2:old-2-5}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(Python 임의 정밀도 정수).
+ loc TBL=2.2
+   2:old-2-5 -> 장2.md L58 sec 2.2 정리  (비단봉 섬유) [앞 두 문장은 증명됨, 마지막 문장은 계산 증거(정확 정수·유리수); r81e7051, r15524fd].
+
+=== 22 fiber-nonunimodal-bound
+ TBL: 명제 {{2:old-2-20}}
+ D  : 명제 {{2:old-2-20}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $n=17$에서 정확 유리수, $n=100,1000,10^4$에서 배정밀도 평가다.
+ loc TBL=2.5
+   2:old-2-20 -> 장2.md L285 sec 2.5 명제  (섬유는 거의 모두 단봉이 아니다; 기록 [r88bed8a]의 명제 F) [진술은 증명됨, 유한 $n$의 상계값은 계산 증거(방향 반올림 구간); r88bed8a].
+
+=== 23 zeta-constants
+ TBL: 보조정리 {{2:zeta-constants}}
+ D  : 보조정리 {{2:zeta-constants}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+ loc TBL=2.9
+   2:zeta-constants -> 장2.md L633 sec 2.9 보조정리  (세 제타 상수의 구간) [계산 증거(방향 반올림 구간); 표준].
+
+=== 24 logconcavity-failure-n80
+ TBL: 정리 {{3:old-3-4}}
+ D  : 정리 {{3:old-3-4}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=3.3
+   3:old-3-4 -> 장3.md L135 sec 3.3 정리  (로그오목성의 실패) [$n\le80$의 진술은 계산 증거(정확 정수·유리수), $n\ge n_0$의 진술은 증명됨, 문헌 인용, 시작점 비명시, 명제 {{3:old-3-1}}에 의존; r81e7051, r15524fd].
+
+=== 25 cumulative-logconcavity
+ TBL: 정리 {{3:old-3-5}}
+ D  : 정리 {{3:old-3-5}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(주 계산과 첫째 확인 계산); 둘째 확인 계산은 binary64 사전 오차 해석.
+ loc TBL=3.3
+   3:old-3-5 -> 장3.md L177 sec 3.3 정리  (누적 로그오목성의 실패) [계산 증거(정확 정수·유리수); r059f11e].
+
+=== 26 central-gap-integer
+ TBL: 정리 {{4:old-4-5}}
+ D  : 정리 {{4:old-4-5}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(방향을 정한 반올림의 고정소수점 정수 산술; 판정은 정수 비교).
+ loc TBL=4.3
+   4:old-4-5 -> 장4.md L71 sec 4.3 정리  (중앙 틈; 기록 [rce3dc75]의 정리 8.1) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:gauss-contraction}}·{{4:gauss-coeff}}·{{4:two-corrections}}·따름정리 {{4:gauss-coeff-numeric}}에 의존; rce3dc75].
+
+=== 27 central-gap-rational-audit
+ TBL: 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, 보조정리 {{4:gauss-coeff}}, 보조정리 {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}}
+ D  : 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, {{4:gauss-coeff}}, {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}}  **DIFF**
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(기호 계산 포함). 주 감사에는 수치 구적이 쓰이지 않는다.
+ loc TBL=4.3
+   4:old-4-5 -> 장4.md L71 sec 4.3 정리  (중앙 틈; 기록 [rce3dc75]의 정리 8.1) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:gauss-contraction}}·{{4:gauss-coeff}}·{{4:two-corrections}}·따름정리 {{4:gauss-coeff-numeric}}에 의존; rce3dc75].
+   4:gauss-contraction -> 장4.md L215 sec 4.3 보조정리  (Hermite 비의 수축 부등식과 Hermite 수의 하계; 기록 [rce3dc75]의 보조정리 H의 수축 오차 (H3)과 $M_0$ 하계의 전반부) [증명됨, 계산 보조(정확 정수·유리수), 작성자 판단; rce3dc75].
+   4:gauss-coeff -> 장4.md L276 sec 4.3 보조정리  (Gauss형 계수의 상하계; 기록 [rce3dc75]의 보조정리 H) [증명됨, 계산 보조(정확 정수·유리수), 작성자 판단, 보조정리 {{4:gauss-contraction}}에 의존; rce3dc75].
+   4:two-corrections -> 장4.md L467 sec 4.3 보조정리  (두 보정의 수직선 적분; 기록 [rce3dc75]의 보조정리 V) [증명됨, 계산 보조(정확 정수·유리수), 작성자 판단; rce3dc75].
+   4:gauss-coeff-numeric -> 장4.md L394 sec 4.3 따름정리  (실수 비교의 수치 귀결) [증명됨, 계산 보조(정확 정수·유리수); rce3dc75].
+
+=== 28 crossing-small-n
+ TBL: 정리 {{4:old-4-8}}(나)
+ D  : 정리 {{4:old-4-8}}(나)  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=4.4
+   4:old-4-8 -> 장4.md L563 sec 4.4 정리  (횡단과 왼쪽의 동치; 기록 [rce3dc75]의 명제 8.4와 기록 [r656206c]의 따름정리 C) [증명됨, (나)는 계산 보조(정확 정수·유리수), 정리 {{4:old-4-5}}·{{5:old-5-1}}에 의존; rce3dc75, r656206c, re79cb4d].
+
+=== 29 QL-small-n
+ TBL: 정리 {{4:old-4-9}}
+ D  : 정리 {{4:old-4-9}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=4.4
+   4:old-4-9 -> 장4.md L575 sec 4.4 정리  (감소 뒤의 로그오목성과 왼쪽의 동치) [증명됨, 계산 보조(정확 정수·유리수), 정리 {{4:old-4-8}}에 의존; rdc27681, rbeae3a3].
+
+=== 30 exact-n20000
+ TBL: 정리 {{5:old-5-1}}, 명제 {{5:witness-position-bound}}
+ D  : 정리 {{5:old-5-1}}, 명제 {{5:witness-position-bound}}  OK
+ grade TBL=정확 정수·유리수, 방향 반올림 구간 | D=정확 정수·유리수((ㄱ)–(ㅁ)의 주 계산; 정수 구간)와 방향 반올림 구간((ㄴ)의 독립 프로그램은 IEEE binary64의 방향 반올림 구간; (ㅂ)는 mpmath `iv`, 소수 $30$자리 — 이 글의 재계산). 정리 {{5:old-5-1}}의 결론은 (ㄱ)(ㄴ 첫째 프로그램)
+ loc TBL=5.1
+   5:old-5-1 -> 장5A.md L19 sec 5.1 정리  (모든 $n\le20000$의 단봉성) [계산 증거(정확 정수·유리수), 정리 {{4:old-4-5}}·보조정리 {{7:column-lemma}}에 의존; r15df76b, rc9aee43, rce3dc75, r19de912, r6373c70].
+   5:witness-position-bound -> 장5A.md L44 sec 5.1 명제  (작은 행의 증인 위치 상계; 기록 [r19de912]의 mode-formula-crosscheck) [계산 증거(정확 정수·유리수, 방향 반올림 구간), 정리 {{5:old-5-1}}·{{5:old-5-2}}에 의존; r19de912].
+
+=== 31 c50
+ TBL: 정리 {{5:old-5-2}}
+ D  : 정리 {{5:old-5-2}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(IEEE binary64의 아래·위 반올림 두 패스, 표는 mpmath `iv` 소수 $40$자리의 바깥 반올림; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다.
+ loc TBL=5.1
+   5:old-5-2 -> 장5A.md L31 sec 5.1 정리  ($n\le50000$의 오른쪽 절반 인증) [계산 증거(방향 반올림 구간); r59c82d7].
+
+=== 32 newton-m170
+ TBL: 정리 {{5:old-5-4}}
+ D  : 정리 {{5:old-5-4}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=5.2
+   5:old-5-4 -> 장5A.md L186 sec 5.2 정리  (Newton 인증, 꼬리 좌표 170까지; 기록 [r708d99c]의 명제 D2) [증명됨, 계산 보조(정확 정수·유리수); r708d99c].
+
+=== 33 tail-T1-partAB
+ TBL: 정리 {{5:old-5-5}}
+ D  : 정리 {{5:old-5-5}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(30자리).
+ loc TBL=5.2
+   5:old-5-5 -> 장5A.md L339 sec 5.2 정리  (명시적 꼬리 T1; 기록 [r0dc57fa]의 정리 T1) [증명됨, 계산 보조(방향 반올림 구간); r0dc57fa].
+
+=== 34 bernstein-signs
+ TBL: 정리 {{5:old-5-7}}
+ D  : 정리 {{5:old-5-7}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(Python 정수와 분수).
+ loc TBL=5.2
+   5:old-5-7 -> 장5A.md L472 sec 5.2 정리  (진입 증가 EI; 기록 [r690be93]의 정리 EI) [증명됨, 계산 보조(정확 정수·유리수); r690be93].
+
+=== 35 band-A-certification
+ TBL: 정리 {{5:old-5-12}}
+ D  : 정리 {{5:old-5-12}}  OK
+ grade TBL=정확 정수·유리수, 방향 반올림 구간 | D=Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간(mpmath).
+ loc TBL=5.4
+   5:old-5-12 -> 장5A.md L602 sec 5.4 정리  (꼬리 띠 A·A⁺; 기록 [r13b0b8f]의 정리 A·A⁺) [증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간); r13b0b8f].
+
+=== 36 critical-window-rig
+ TBL: 정리 {{5:old-5-13}}
+ D  : 정리 {{5:old-5-13}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath.iv, 30자리). 급수는 명시적 꼬리와 함께 자른다. 상자 자료는 상자별 캐시(JSON, 17자리 십진 문자열)에 저장해 재사용하며, 읽을 때 양 끝을 상대 $2^{-48}$ 바깥으로 넓혀 둘러싸기를 유지한다.
+ loc TBL=5.4
+   5:old-5-13 -> 장5A.md L738 sec 5.4 정리  (임계 창의 증가; 기록 [ra4c01fc]의 정리 D) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; ra4c01fc].
+
+=== 37 window-mass-constant
+ TBL: 정리 {{5:old-5-32}}
+ D  : 정리 {{5:old-5-32}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath 구간 산술 `iv`, 소수 $40$자리).
+ loc TBL=5.5
+   5:old-5-32 -> 장5B.md L343 sec 5.5 정리  (가중 창 질량의 균일 상수; 기록 [r8a9b11e]의 정리 U-L) [증명됨, 계산 보조(방향 반올림 구간); r8a9b11e].
+
+=== 38 band-check
+ TBL: 명제 {{5:band-inequality}}
+ D  : 명제 {{5:band-inequality}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+ loc TBL=5.5
+   5:band-inequality -> 장5B.md L408 sec 5.5 명제  (조립 범위의 판정식) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{5:old-5-32}}에 의존; r8a9b11e].
+
+=== 39 theorem-U-constant
+ TBL: 정리 {{6:theorem-U}}
+ D  : 정리 {{6:theorem-U}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+ loc TBL=6.5
+   6:theorem-U -> 장6.md L786 sec 6.5 정리  (기울임 곡률의 상계; 기록 [r845b205]의 정리 U) [증명됨, 계산 보조(방향 반올림 구간); r845b205].
+
+=== 40 theorem-D-base
+ TBL: 정리 {{6:theorem-D}}
+ D  : 정리 {{6:theorem-D}}  OK
+ grade TBL=정확 정수·유리수, 방향 반올림 구간 | D=정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi$와 비를 40자리로 평가한다.
+ loc TBL=6.6
+   6:theorem-D -> 장6.md L996 sec 6.6 정리  (결손 갱신 항등식과 임계 창 수준 질량의 상하계; 기록 [r5bbc534]의 정리 DR·보조정리 K·정리 D) [증명됨, (나)는 계산 보조(정확 정수·유리수, 방향 반올림 구간); r5bbc534].
+
+=== 41 prop-W-thirteen
+ TBL: 명제 {{6:v-negative}}
+ D  : 명제 {{6:v-negative}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 40자리 평가다.
+ loc TBL=6.6
+   6:v-negative -> 장6.md L1213 sec 6.6 명제  (핵심 근처 항의 음성; 기록 [r29c10cd]의 명제 W (가)) [증명됨, 계산 보조(방향 반올림 구간); r29c10cd].
+
+=== 42 tilt-sum-small-k
+ TBL: 보조정리 {{6:tilt-sum}}
+ D  : 보조정리 {{6:tilt-sum}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=6.2
+   6:tilt-sum -> 장6.md L199 sec 6.2 보조정리  (기울인 Borel 질량의 합; 기록 [r051bfe1]의 보조정리 S) [증명됨, 계산 보조(정확 정수·유리수); r051bfe1].
+
+=== 43 column-certification-k500
+ TBL: 보조정리 {{7:column-lemma}}
+ D  : 보조정리 {{7:column-lemma}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수($144$비트 고정소수점 정수 구간; 1.5절의 등급 표대로 바깥쪽으로만 반올림하는 정수 구간은 이 등급에 든다). 기록의 둘째 작성자의 재계산과 이 글의 재계산은 모두 $160$비트다.
+ loc TBL=7.2
+   7:column-lemma -> 장7A.md L332 sec 7.2 보조정리  (열 인증; 기록 [rc9aee43]의 보조정리 4.1·4.2) [증명됨, (다)는 계산 보조(정확 정수·유리수), (가)는 작성자 판단; rc9aee43].
+
+=== 44 seed-certificates-k120
+ TBL: 정리 {{7:seed-transfer}}
+ D  : 정리 {{7:seed-transfer}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수.
+ loc TBL=7.2
+   7:seed-transfer -> 장7A.md L288 sec 7.2 정리  (유한 전파 정리와 그 설정; 기록 [r9e782f5]의 positive-tail-system, finite-seed-transfer, certified-left-prefix) [증명됨, (라)는 계산 보조(정확 정수·유리수); r9e782f5].
+
+=== 45 self-consistent-constants
+ TBL: 정리 {{7:self-consistent-S}}, 따름정리 {{7:cor-S-prime}}
+ D  : 정리 {{7:self-consistent-S}}, 따름정리 {{7:cor-S-prime}}  OK
+ grade TBL=정확 정수·유리수, 방향 반올림 구간 | D=정확 정수·유리수(세 범위의 상수, 따름정리의 세 값)와 방향 반올림 구간($e^{-i}$).
+ loc TBL=7.2
+   7:self-consistent-S -> 장7A.md L476 sec 7.2 정리  (골격 값의 자기일관 상계; 기록 [rad00a59]의 정리 S) [증명됨, (다)는 계산 보조(정확 정수·유리수, 방향 반올림 구간); rad00a59].
+   7:cor-S-prime -> 장7A.md L545 sec 7.2 따름정리  (자기일관 상계가 주는 모멘트 판정의 경계; 기록 [rad00a59]의 따름정리 S′) [증명됨, 계산 보조(정확 정수·유리수), 정리 {{7:self-consistent-S}}에 의존; rad00a59].
+
+=== 46 xcert-partAB
+ TBL: 정리 {{7:old-6-12}}, 정리 {{7:polar-PD}}
+ D  : 정리 {{7:old-6-12}}, 정리 {{7:polar-PD}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 음이 아닌 항 $n$개의 내적과 합(BLAS 포함)
+ loc TBL=7.3·7.5
+   7:old-6-12 -> 장7A.md L729 sec 7.3 정리  (유한 크기 전달; 기록 [rf451d83]의 $\mathsf X'$) [증명됨, 계산 보조(방향 반올림 구간); rf451d83].
+   7:polar-PD -> 장7B.md L515 sec 7.5 정리  (전달 범위의 원천; 기록 [r207f124]의 정리 PD) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-12}}에 의존; r207f124].
+
+=== 47 polar-blocks-488
+ TBL: 명제 {{7:polar-W}}
+ D  : 명제 {{7:polar-W}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(binary64 위의 바깥 밀기 구간 산술; 초월함수를 정확 반올림 사칙연산·제곱근만으로 구현해 라이브러리 함수의 오차 가정이 없고, 모든 단계를 구간으로 평가함; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다(라이브러리 함수의 오차를 $4$ u
+ loc TBL=7.3
+   7:polar-W -> 장7A.md L855 sec 7.3 명제  (극 영역의 왼쪽 증가; 기록 [r89eb039]의 주정리와 §7) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; r89eb039].
+
+=== 48 band102-integer
+ TBL: 명제 {{7:pair-check-10000}}, 명제 {{7:pair-reach-table}}, 명제 {{7:analytic-transfer}}, 명제 {{7:integer-strips}}, 보조정리 {{7:hermite-nu}}
+ D  : 명제 {{7:pair-check-10000}}·{{7:pair-reach-table}}·{{7:analytic-transfer}}·{{7:integer-strips}}, 보조정리 {{7:hermite-nu}}  **DIFF**
+ grade TBL=정확 정수·유리수, 방향 반올림 구간 | D=(ㄱ)(ㄴ)(ㄷ)(ㄹ) 정확 정수·유리수. (ㅁ) 방향 반올림 구간(부동소수점 모형 없음; 포함구간의 상대 폭 약 $2\times10^{-15}$).
+ loc TBL=7.4
+   7:pair-check-10000 -> 장7B.md L207 sec 7.4 명제  (껍질 $50$까지의 쌍별 판정; 기록 [r475ada3] §3.6) [첫 문장은 계산 증거(정확 정수·유리수), 둘째 문장은 증명됨; r475ada3].
+   7:pair-reach-table -> 장7B.md L261 sec 7.4 명제  (꼬리 삼중과 쌍별로 닿은 껍질; 기록 [r6b37c7e] §3.6) [(가)와 (나)의 첫 주장은 계산 증거(정확 정수·유리수), (나)의 둘째 주장은 증명됨; r6b37c7e].
+   7:analytic-transfer -> 장7B.md L324 sec 7.4 명제  (중앙 틈 연쇄의 $\nu$-이전; 기록 [r475ada3]의 정리 C·C′·C″, 기록 [r6b37c7e]의 정리 4.A의 감사 부분) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{7:hermite-nu}}·{{7:vertical-nu}}·따름정리 {{4:gauss-coeff-numeric}}에 의존; r475ada3, r6b37c7e].
+   7:integer-strips -> 장7B.md L352 sec 7.4 명제  (유한 위치의 구간 인증; 기록 [r475ada3]의 명제 F1·F2, 기록 [r6b37c7e]의 정리 4.B의 인증 부분) [계산 증거(방향 반올림 구간); r475ada3, r6b37c7e].
+   7:hermite-nu -> 장7B.md L272 sec 7.4 보조정리  (Hermite 계수의 $\nu$-일반 상하계; 기록 [r475ada3]의 보조정리 H′) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:gauss-contraction}}에 의존; r475ada3].
+
+=== 49 moment-certification
+ TBL: 정리 {{7:theorem-C-moment}}, 따름정리 {{7:qstar-implies-wlflat}}
+ D  : 정리 {{7:theorem-C-moment}}, 따름정리 {{7:qstar-implies-wlflat}}  OK
+ grade TBL=방향 반올림 구간, 정확 정수·유리수 | D=(ㄱ) 방향 반올림 구간(binary64 끝점 구간; 정확히 반올림되는 원소별 곱·덧셈만 쓰고(BLAS·행렬곱·융합 곱셈-덧셈 없음), 짝지은 합 나무의 반올림 횟수를 세어 끝에서 $(1\pm\mathsf p)^r$로 넓힘 — 부록 D.{{D:column-certificates-841-
+ loc TBL=7.4·7.5
+   7:theorem-C-moment -> 장7B.md L65 sec 7.4 정리  (모멘트 판정의 큰 $n$ 쪽 경계; 기록 [r10ff8c2]의 정리 C와 정리 D) [증명됨, 계산 보조(방향 반올림 구간, 정확 정수·유리수); r10ff8c2, rb7effe0].
+   7:qstar-implies-wlflat -> 장7B.md L415 sec 7.5 따름정리  (한 걸음 판정에서 왼쪽 잔여 증가로; 기록 [r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여)) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-13}}·{{7:theorem-C-moment}}·{{5:old-5-1}}·{{4:old-4-5}}·따름정리 {{7:cor-S-prime}}·명제 {{7:polar-W}}에 의존; r3172894, r6b37c7e, r10ff8c2].
+
+=== 50 column-certificates-841-2000
+ TBL: 정리 {{7:theorem-C-moment}}, 따름정리 {{7:qstar-implies-wlflat}}
+ D  : 정리 {{7:theorem-C-moment}}; 따름정리 {{7:qstar-implies-wlflat}}의 열 $841\le k\le2000$ 부분  **DIFF**
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 재귀의 내적(음이 아닌 항 $k-1$개)은 깊이 $
+ loc TBL=7.4·7.5
+   7:theorem-C-moment -> 장7B.md L65 sec 7.4 정리  (모멘트 판정의 큰 $n$ 쪽 경계; 기록 [r10ff8c2]의 정리 C와 정리 D) [증명됨, 계산 보조(방향 반올림 구간, 정확 정수·유리수); r10ff8c2, rb7effe0].
+   7:qstar-implies-wlflat -> 장7B.md L415 sec 7.5 따름정리  (한 걸음 판정에서 왼쪽 잔여 증가로; 기록 [r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여)) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-13}}·{{7:theorem-C-moment}}·{{5:old-5-1}}·{{4:old-4-5}}·따름정리 {{7:cor-S-prime}}·명제 {{7:polar-W}}에 의존; r3172894, r6b37c7e, r10ff8c2].
+
+=== 51 Q-fin-1130
+ TBL: 정리 {{7:qstar-columns}}
+ D  : 정리 {{7:qstar-columns}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(binary64 numpy 위의 바깥 반올림 구간과 mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다. numpy에서는 사칙연산만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 민다. 음 아닌 항 $n$
+ loc TBL=7.5
+   7:qstar-columns -> 장7B.md L546 sec 7.5 정리  (열 2001–3130의 한 걸음 판정; 기록 [r207f124]의 정리 Q-fin) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{7:old-6-12}}에 의존; r207f124].
+
+=== 52 window-mass-env
+ TBL: 정리 {{8:old-6-28}}
+ D  : 정리 {{8:old-6-28}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(numpy 벡터 위의 바깥 반올림 구간과 mpmath `iv`; 이 글의 재계산). numpy에서는 $+$, $-$, $\times$, $\div$, $\sqrt{\ }$만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 밀며, 초등함수($\exp$)와 정확 표 $\
+ loc TBL=8.2
+   8:old-6-28 -> 장8.md L543 sec 8.2 정리  (창의 수준 질량 하계; 기록 [r030ffae]의 정리 W) [증명됨, 계산 보조(방향 반올림 구간), 보조정리 {{8:table-tolerance}}에 의존; r030ffae, rfc69320].
+
+=== 53 bprime-boxes
+ TBL: 정리 {{8:old-6-29}}
+ D  : 정리 {{8:old-6-29}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 
+ loc TBL=8.4
+   8:old-6-29 -> 장8.md L631 sec 8.4 정리  (띠 앞부분의 비교; 기록 [r030ffae]의 정리 B′) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}에 의존; r030ffae].
+
+=== 54 band-boxes
+ TBL: 정리 {{8:old-6-33}}
+ D  : 정리 {{8:old-6-33}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 
+ loc TBL=8.4
+   8:old-6-33 -> 장8.md L679 sec 8.4 정리  (둘째 층 띠; 기록 [r030ffae]의 정리 B‴) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}·{{8:hazard-H1}}에 의존; r030ffae].
+
+=== 55 stored-table-check
+ TBL: 보조정리 {{8:table-tolerance}}, 정리 {{8:closed-form-envelope}}
+ D  : 보조정리 {{8:table-tolerance}}, 정리 {{8:closed-form-envelope}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`; 이 글의 재계산은 소수 $40$자리, 기록의 계산은 소수 $30$자리).
+ loc TBL=8.2
+   8:table-tolerance -> 장8.md L453 sec 8.2 보조정리  (저장된 표의 하계 성질과 허용 오차; 기록 [rfc69320]의 §8.4와 보조정리 8.2·8.3) [증명됨, (가)는 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:closed-form-envelope}}·{{8:table-lower-bound}}·{{8:jensen-H-ii}}에 의존; rfc69320].
+   8:closed-form-envelope -> 장8.md L424 sec 8.2 정리  (참 봉투의 닫힌 꼴; 기록 [rfc69320]의 보조정리 8.1, 명제 W\*·G\*, 정리 CF) [증명됨, (라)는 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·정리 {{8:pieces-k-monotone}}·{{8:jensen-H-ii}}에 의존; rfc69320].
+
+=== 56 m1-column-reading
+ TBL: 정리 {{9:head-sum-2}}
+ D  : 정리 {{9:head-sum-2}}  OK
+ grade TBL=정확 정수·유리수 | D=정확 정수·유리수(인증 파일의 정수 구간 산술 결과를 정수 비교로 읽는다).
+ loc TBL=9.1
+   9:head-sum-2 -> 장9.md L257 sec 9.1 정리  (증가 시작점의 두 상계; 기록 [r2ec875c]의 정리 2) [증명됨, 계산 보조(정확 정수·유리수), 정리 {{5:old-5-18}}·{{4:old-4-5}}·{{5:old-5-1}}에 의존; r2ec875c].
+
+=== 57 H-star-plus-interval
+ TBL: 정리 {{9:H-star-plus}}
+ D  : 정리 {{9:H-star-plus}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리). $\upsilon_1$과 $\upsilon_2$는 $3132^{-1/3}$, $19404^{-1/3}$을 담는 구간의 위 끝이다.
+ loc TBL=9.1
+   9:H-star-plus -> 장9.md L267 sec 9.1 정리  (머리 합 여유 정리; 기록 [r33475a7]의 정리 H*₊) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{9:head-sum-1}}·{{9:head-sum-2}}에 의존; r33475a7].
+
+=== 58 AR-integrals
+ TBL: 정리 {{9:old-7-16}}
+ D  : 정리 {{9:old-7-16}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+ loc TBL=9.3
+   9:old-7-16 -> 장9.md L512 sec 9.3 정리  (해석적 행 정리; 기록 [rae1f209]의 정리 AR) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 정리 {{8:old-6-33}}에 의존; rae1f209].
+
+=== 59 band-LP
+ TBL: 보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}, 정리 {{9:old-7-31}}, 정리 {{9:old-7-33}}
+ D  : 보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-33}}  **DIFF**
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(이 글의 재계산). 닫힌 꼴의 스칼라($\mathsf v(k)$, $\hat\Upsilon_k$, $\varrho^{\mathrm H}$, $\varrho^{\mathrm L}$, $\mathcal Y_k$, $\mathcal F_k$, $\mu$, $(1-1/k)^\
+ loc TBL=9.4
+   9:old-7-26 -> 장9.md L665 sec 9.4 보조정리  ($\mathcal Y_k$의 모양과 $\nu_0(k)$; 기록 [rb6a2cd0]의 보조정리 4.1) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{6:old-6-19}}·{{6:D-bound}}에 의존; rb6a2cd0].
+   9:old-7-28 -> 장9.md L684 sec 9.4 정리  (띠 안쪽에서 앞쪽으로; 기록 [rb6a2cd0]의 정리 P) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{8:old-6-33}}·{{9:old-7-25}}·{{6:old-6-19}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0].
+   9:old-7-31 -> 장9.md L735 sec 9.4 정리  (앞쪽 띠의 첫 단계; 기록 [rb6a2cd0]의 정리 P⁺) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-30}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0].
+   9:old-7-33 -> 장9.md L755 sec 9.4 정리  (띠 전체의 FS; 기록 [rb6a2cd0]의 정리 P⁺⁺) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-29}}·{{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-32}}·보조정리 {{9:old-7-22}}·{{9:old-7-26}}에 의존; rb6a2cd0].
+
+=== 60 pair-one-variable
+ TBL: 보조정리 {{9:pair-one-variable}}
+ D  : 보조정리 {{9:pair-one-variable}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다(40자리 mpmath로 재평가).
+ loc TBL=9.5
+   9:pair-one-variable -> 장9.md L887 sec 9.5 보조정리  (쌍 비의 $k$-단조성과 한 변수 하계) [증명됨, 계산 보조(방향 반올림 구간); r5909c9e].
+
+=== 61 M-natural-integrals
+ TBL: 명제 {{10:old-8-23}}
+ D  : 명제 {{10:old-8-23}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 30자리 평가다.
+ loc TBL=10.5
+   10:old-8-23 -> 장10.md L419 sec 10.5 명제  (대각선 손실의 닫힌 꼴; 기록 [re71a735]의 명제 M♮) [증명됨, 계산 보조(방향 반올림 구간); re71a735].
+
+=== 62 four-families
+ TBL: 명제 {{10:check-na}}, 명제 {{10:check-ga}}
+ D  : 명제 {{10:check-na}}, 명제 {{10:check-ga}}  OK
+ grade TBL=방향 반올림 구간 | D=방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+ loc TBL=10.6
+   10:check-na -> 장10.md L715 sec 10.6 명제  ((나)의 가족 검사) [증명됨, 계산 보조(방향 반올림 구간), 명제 {{10:reduction-na}}·{{10:old-8-23}}·{{10:old-8-33}}·{{10:old-8-35}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735].
+   10:check-ga -> 장10.md L730 sec 10.6 명제  ((가)의 가족 검사) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 명제 {{10:reduction-ga}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735].

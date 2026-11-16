@@ -1,0 +1,196 @@
+### s^F:  장6:107 [6.1] $k\ge3999$와 $1\le\nu\le k+2$에서 $s_{k+\nu}(k+1)=\Pr_{k+\nu}(M\le k)\le s^{\mathrm F}(k,\nu)$,
+### n_X:  장7A:715 [7.3] 정리를 적기 전에 기호 셋을 둔다. 아래의 유한 크기 전달 정리(정리 {{7:old-6-12}})의 시작 행을 $n_{\mathrm X}(k):=\lceil k^{4/3}\rceil$로 적는다. $\varsigma_k:=k\log(e\rho_k)$로 두면 $\rho_k=e^{-1+\varsigma_k/k}$, $\mathfrak m_\Pi=ke^{-1+\varsigma_k/k}$이고, 보조정리 {{7:prime-decomposition}
+### n_PD:  장7B:528 [7.5] 정리 {{7:polar-PD}}가 덮는 범위 $n\ge n_{\mathrm{PD}}(k):=\lceil(k+1)^{4/3}\rceil+k+1$을 전달 범위라 한다. 이 정리는 $k$에 균일하고, 각 열을 계산하지 않고 7.3절의 인증서와 Borel 질량만 쓴다.
+### m_fb:  장8:629 [8.4] 폭은 $q_{\mathrm{fb}}:=\lfloor(3(k-1)/4-q_{\max}-3)/8\rfloor$, 되먹임 시작은 $m_{\mathrm{fb}}:=\lceil5k/4\rceil+q_{\max}$, 되먹임 인자는 1.5절의 비 $\lambda=k/n$의 함수 $\mathrm{fb}(\lambda):=\sum_{i<8}(\lambda\,\mathrm{Bor}_\le(q_{\mathrm{fb}}))^i$이고, 수준 $k-1$의 항에서는 용량 $k-1
+### q_fb:  장8:629 [8.4] 먹임 폭이라 한다. 첫 조립의 되먹임 폭은 $q^\circ_{\mathrm{fb}}:=300$이고, 띠 정리의 되먹임 폭은 $q_{\mathrm{fb}}:=\lfloor(3(k-1)/4-q_{\max}-3)/8\rfloor$, 되먹임 시작은 $m_{\mathrm{fb}}:=\lceil5k/4\rceil+q_{\max}$, 되먹임 인자는 1.5절의 비 $\lambda=k/n$의 함수 $\mathrm{fb}(\lambda):=\sum_{i<8}(\lambd
+### Psi^lb:  장9:853 [9.5] \Psi(d)\ \ge\ \Psi^{\mathrm{lb}}(d):=0.3989\bigl(2\sqrt d-1.678\bigr)
+### u(k):  장6:453 [6.4] k\,c_{2k}(k-1)\le\mathsf u(k),\qquad (k-1)\,c_{2k}(k)\le\mathsf u(k),\qquad \mathsf u(k):=\frac3{0.35}\Bigl(1.35+\frac1k\Bigr)\Bigl(0.65-\frac1k\Bigr)^{-3/2}k^{-1/2}
+### Upsilon_k:  장6:499 [6.4] \Upsilon_k:=\frac{k(k-1)\,b_{2k,k-1}}{(2k+1)\,p_{2k}}=\frac{k-1}{2k+1}\cdot k\,c_{2k}(k-1)
+### d_k frak:  장7A:328 [7.2] $k\ge2$에서는 (다)의 가정이 각 $2\le k\le120$마다 어떤 절단점 $\mathfrak k_k$와 미분 횟수 $\mathfrak d_k$에서 성립하고, $\max(16,2k-1)\le n<\mathfrak k_k$의 $d_{n,k}>0$은 정리 {{2:old-2-6}}으로 정확히 계산한 $A_{n,k-2},A_{n,k-1},A_{n,k}$의 정수 비교로 확인된다. 두 가지 모두 부록 D.{{D:seed-certificates-k120}
+### l_m(t):  장5A:768 [5.4.2] i\cot\varphi}/\sin\varphi$로 바꾸면 $\log\mathrm{et}(\varphi)=\sum_{m\ge1}\mathfrak l_m\varphi^{2m}$, $\mathfrak l_m=(2+\frac1m)\zeta(2m)\pi^{-2m}$($\mathfrak l_1=\frac12$, $\mathfrak l_2=\frac1{36}$, $\mathfrak l_3=\frac1{405}$; 수렴반경 $\pi$)이다. $\varphi=\ma
+### Pcor:  장9:441 [9.3] (2)}_m=\Theta_m+k\,\mathrm{BV}_m+k\,\mathrm{FL}^{(1)}_m+\mathrm{OB}_m+\mathrm{Pcor}_m,
+### gamma_m:  장9:358 [9.2] K_n(m):=\binom n{m+1}p_{n-1-m},\qquad \gamma_m:=\frac{k(m+1)}{m+1-k}=k\Bigl(1+\frac{k}{m+1-k}\Bigr)
+### K_n(m):  장9:358 [9.2] K_n(m):=\binom n{m+1}p_{n-1-m},\qquad \gamma_m:=\frac{k(m+1)}{m+1-k}=k\Bigl(1+\frac{k}{m+1-k}\Bigr)
+### pi_2:  장9:297 [9.1] \pi_2(t):=[t\ \text{짝수}]\cdot\frac{2\binom{t}{t/2}}{2^t}
+### P^+_t:  장9:25 [9.1] P^+_t(k):=P_t(k)+\frac1k=\sum_{t'=k+1}^{t}x_{t'}(k)
+### m_1(k):  장9:29 [9.1]  $m$부터 $2k$까지의 모든 행 $m'$에서 $b_{m',k}\ge b_{m',k-1}$이 성립하는 가장 작은 $m$을 $m_1(k)$라 하고, 그런 $m$이 없으면 $m_1(k):=2k+1$로 둔다. 이 값을 열 $k$의 증가 시작점이라 부른다. $b_{k,k}=0<b_{k,k-1}$이므로 늘 $m_1(k)\ge k+1$이다.
+### z_m(d):  장5B:151 [5.5.4] c_{m+1}(w+1)\ \ge\ \bigl(1-\mathfrak z_m(d)\bigr)c_m(w),\qquad \mathfrak z_m(d)=\frac{e^{(d-1)/w}}{w+1}+\frac{3d}{2(w+1)(m+1)}.
+### t_0(y):  장5B:56 [5.5.2] **정의 {{5:old-5-21}} (이음 행) [r58b4caa].** $t_0(y)=\min\{t\ge y+2:\ y\le(t-1)-\lfloor\frac34(t-1)^{2/3}\rfloor\}$로 두고, 이 $t_0(y)$를 이음 행이라 부른다. 이 값은 나무 크기로 적은 것이고, 그에 대응하는 행 지표는 하나 작다. 귀납 가정 $\mathrm{IH}(n,y)$는 모든 $m\in[t
+### Lambda_w:  장5B:226 [5.5.6] \Lambda_{\mathrm w}(Y):=\sum_{r=1}^{q_{\max}(Y)}\frac{Y}{Y+r+1}\,\mathrm{Lc}(Y,r)
+### Lc:  장5B:215 [5.5.6] c_{Y+r}(Y)\ \ge\ \mathrm{Lc}(Y,r):=\frac1Y\sum_{z=1}^r\sum_{D=z}^r z\,\mathrm{Bor}^{*z}(D)\,\frac{\mathrm{Bor}(Y+r+1-D)}{\mathrm{Bor}(Y+r+1)}\,\pi^0_{Y+r-D}(Y)\exp\Bigl(-\frac{z(r+1)-D(z+1)/2}{Y}\Bi
+### q_max:  장5B:211 [5.5.6]  들어오는 한 걸음으로 나누어 얻는다. 그 범위는 열 $Y$에 대해 용량 바로 위의 행, 곧 숲 크기 $Y+1,\dots,Y+q_{\max}(Y)$이고 폭은 $q_{\max}(Y):=\lfloor6Y^{2/3}\rfloor$이다. 이 범위를 착지 창이라 부른다. 사슬의 크기, 곧 뿌리를 포함한 나무 크기로 옮기면 $Y+2,\dots,Y+q_{\max}(Y)+1$이다. 정의 {{5:old-5-21}}의 꼬리 창이 용량 $y$ 바로 위의 나무 
+### m(n):  장5A:11 [5.] }, 정의 {{5:old-5-8}}의 명제 $\mathsf W$와 5.2절에서 정리 {{5:old-5-5}} 뒤에 정의하는 $\mathfrak m(n)$을, 9장과 10장에서는 명제 $\mathsf W$와 $\mathfrak m(n)$을(10장은 명제 {{5:witness-position-bound}}도) 더 끌어 쓴다.
+### r_0(n):  장5A:598 [5.3] 에는 진입 증가 정리로 증명된 엄격 증가가 하나 있고, 증명은 이 사실에 기댄다. $n\ge20001$이라 하고 진입 지표 $r_0(n):=\lfloor\frac34n^{2/3}\rfloor$을 둔다. 위치 $n-r_0(n)-1$을 진입 위치라 부른다. 먼저 진입 위치가 진입 증가 정리의 창 안에 있음을 확인한다. $n\ge20001>27.14^3$이므로 $n^{2/3}>736.5$이고 $r_0(n)\ge552\ge529$다. 또 $r_
+### rq:  장5A:533 [5.2.4] in-normalization}}(나)의 가중치 비교 $1\le W_n(\gamma)\le(1-r/n)^{-j-2}\le(1-\mathrm{rq}_r)^{-j-2}$($\mathrm{rq}_r:=(r+3)/n$)는 오차가 $\mathrm{rq}_r$의 일차인데, 둘째 차분의 부호 여유도 이 창에서 같은 차수여서 그 비교로는 부호가 정해지지 않는다. 그래서 가중치의 일차항을 정확히 남기고 나머지를 $\mathrm{rq}_r^2$ 차수로 막아야 한다
+### varkappa:  장10:51 [10.1] 이제 $1/p$ 장부의 항을 첫 층의 크기 $m$마다 정한다. 장부 계수를 $\varkappa_m:=2$($k\le m\le N$), $\varkappa_m:=1+(n-m)/k$($N<m\le2k$)로 두고
+### f_m frak:  장10:53 [10.1] \mathfrak f_m:=\varkappa_m\,k\,\frac{d_{m,k}}{p_m}+\bigl(2-\mathbf 1\{m>N\}\bigr)c^{(2)}_m
+### omega_m:  장10:141 [10.2] 다음으로 머묾 질량에 실을 무게를 둔다. 꺾인 무게 $\omega_m:=2$($k<m\le N+1$), $\omega_m:=2-(m-N)/k$($N+2\le m\le2k$)는 $m\le2k$에서 $m-N\le k-\nu<k$라 $1<\omega_m\le2$다. 크기 $N$ 뒤의 두 수준의 머묾 질량을 이 $2$ 이하의 무게로 더한 것이 문턱 뒤 머묾 질량이다.
+### vartheta_lb:  장10:247 [10.4] 이다. 띠 인자의 하계는 $\vartheta_{\mathrm{lb}}:=2(1+\frac1k)^{1-\nu}-1$이고, 벌크 상수는
+### r_*:  장10:249 [10.4] \mathsf r_\ast:=\min_{j_0\ge0}\Bigl[\Bigl(1+\frac1k\Bigr)^{\min(j_0,\nu-1)}+\mathbf 1\{j_0<\nu-1\}\frac{\Pi^{\mathrm{up}}_{j_0+1}}{\pi^{\mathrm{two}}_N}\Bigr]
+### d^star:  장10:504 [10.5] ys}=\sum_{y}\sum_{d\in I_y}\omega_y(d)\,\varsigma_{y+d-1}(y)$이고, 나눔점 $d^\star:=\lfloor0.6y\rfloor$에 대해 가중 무게 $\omega^\sharp_y(d):=\omega_y(d)(d-1)/(y+2-d)$는 $d\le d^\star$에서 증가하며
+### h_y:  장10:325 [10.5] 조정리 {{10:old-8-16}} (h-변환; 기록 [re71a735]의 보조정리 1) [증명됨; re71a735].** $\mathfrak h_y(q):=\mathrm{Bor}(y+q)/\mathrm{Bor}(y_0+q)$로 두면 $\Pr^y(q\to q')=\Pr^{y_0}(q\to q')\,\mathfrak h_y(q')/\mathfrak h_y(q)$이고, $(\Pr^{y_0}\mathfrak h)(q):=\sum_{q'<q}\Pr^{y_0
+### k_d:  장10:363 [10.5] ho)-g'(y_0-1+d+\rho)]\,d\rho$는 $g'$의 차라 음이 아니되 각 계수보다 작다. 따라서 아래 정리의 $\mathfrak k_d(q):=e^{\mathrm{inc}^-_q}+e^{-\mathrm{inc}^+_q}-2$도 음이 아니다($e^{\mathrm{inc}^-_q}+e^{-\mathrm{inc}^+_q}-2\ge e^{\mathrm{inc}^+_q}+e^{-\mathrm{inc}^+_q}-2\ge0$). 그래서 나머지의 부
+### inc:  장10:329 [10.5] hfrak h_y(q)=e^{g(y_0+q)-1}$이고 $\mathfrak h_y(q)/\mathfrak h_y(d)=e^{-\mathrm{inc}^+_q}$, $\mathrm{inc}^+_q:=g(y_0+d)-g(y_0+q)\ge0$이다. $y=y_0-1$이면 $\mathfrak h_y(q)=e^{1-g(y_0-1+q)}$이고 $\mathfrak h_y(q)/\mathfrak h_y(d)=e^{\mathrm{inc}^-_q}$, $\mathrm{
+### s^up:  장10:462 [10.5] 1a735]의 정리 S′) [증명됨; re71a735].** 상위해 상수 $\mathsf m_{\mathrm S}$에 대해 $\mathfrak s^{\mathrm{up}}_d(y):=\min(1,\,\mathsf m_{\mathrm S}(y+d)/d^{3/2})$로 두자. (i) $y\ge1000$, $\mathsf m_{\mathrm S}=1.2$인 경우와 (ii) $y\ge6666$, $\mathsf m_{\mathrm S}=1.15$인 경우 모두, 모든 $1\le 
+### m_S:  장10:462 [10.5] -8-25}} (첫 층 생존의 상계; 기록 [re71a735]의 정리 S′) [증명됨; re71a735].** 상위해 상수 $\mathsf m_{\mathrm S}$에 대해 $\mathfrak s^{\mathrm{up}}_d(y):=\min(1,\,\mathsf m_{\mathrm S}(y+d)/d^{3/2})$로 두자. (i) $y\ge1000$, $\mathsf m_{\mathrm S}=1.2$인 경우와 (ii) $y\ge6666$, $\mathsf m_{\m
+### f_1:  장10:584 [10.6] thrm{Ren}(q_0-q')\mathrm{Ren}(q'-q)/\mathrm{Ren}(q_0-q)$다. 이 절에서는 상수 $\mathsf f_1:=4/(3\sqrt{2\pi})=0.53192\ldots$를 쓴다.
+### Q(y,xi):  장10:630 [10.6] k\,c_{k+q_0}(k)\ \ge\ \mathfrak Q(y,\xi):=\frac k{k+1}\Bigl(1-\frac{q_0}{2k}\Bigr)\frac{2(2\pi)^{-1/2}e^{-1/12}y}{\mathfrak c_{\mathrm R}q_0}\Bigl\{e^{-q_0/y}\mathfrak s^{\mathrm{low}}_{q_0}(y)\Bigl[e^{-\m
+### Bor_le:  장6:1022 [6.6] si(j)\le0.7979\int_1^{d-1}\sqrt\sigma\,d\sigma\le0.532(d-1)^{3/2}$다. $\mathrm{Bor}_\le(d):=\sum_{j\le d}\mathrm{Bor}(j)=1-\mathrm{Bor}_>(d)$로 두면 $\mathrm{Tm}(d):=\sum_{j<d}\mathrm{Bor}(j)(d-j)\Psi(d-j)\le0.7979\,d^{3/2}\,\mathrm{Bor}_\le(d)$이고, $\mathcal Y
+### Ren:  장2:605 [2.9] \mathrm{Ren}(j):=\frac{j^je^{-j}}{j!},\qquad \mathrm{Ren}(0):=1,\qquad \Psi(q):=\sum_{j=1}^q\mathrm{Ren}(j)\quad(\Psi(0)=0)
+### nf:  장2:875 [2.12] \mathrm{nf}(n,d):=e^d\,\frac{n!}{(n-d)!}\,\frac{(n-d)^{n-d-2}}{n^{n-2}}
+### W_n(gamma):  장2:835 [2.12] gamma_1,\dots,\gamma_j\ge1\\ \gamma_1+\dots+\gamma_j\le r+1}}\mathcal W_n(\gamma)\,\Delta^2_r\Bigl[\prod_{i=1}^j\frac{(d-(n+1-\mathfrak t_i))_+}{\mathfrak t_i}\Bigr]
+### theta_t(k):  장2:597 [2.9] \theta_t(k):=\mathbb E^T_t[H_k(\tau)]=\binom tk\frac{k^{k-1}(t-k)^{t-k}}{t^{t-1}}
+### Bd^V:  장6:901 [6.5] \mathrm{Bd}^{\mathrm V}_k:=2-2\,s_{2k+1}(k+1)-(k-1)\,\varsigma_{2k}(k)-(k-1)\,c_{2k}(k-1)
+### cl:  장7B:378 [7.5] 크기 $m$의 정규화 수준 질량을 $\mathrm{cl}^+_m:=c_m(k)/s_m(k)=b_{m,k}/A_{m,k-1}$, $\mathrm{cl}^-_m:=c_m(k-1)/s_m(k)=b_{m,k-1}/A_{m,k-1}$로 둔다. 둘은 수준 $k$와 $k-1$의 질량을 생존 확률 $s_m(k)$로 정규화한 양이다. $\mathrm{cl}^-_m$은 조건부확
+### Pi^up:  장7B:702 [7.7]  $k+1,k+2,\dots$ 이상이므로 $\Pi\,(1+1/k)^j\le\prod_{i=1}^j\frac{k+1}{k+i}=\Pi^{\mathrm{up}}_j$이고, $\Pi^{\mathrm{up}}_j$는 $j$에 대해 비증가다. $j_0:=\lfloor0.3k\rfloor$로 나누면 $L\le j_0$인 부분에서 $(1+1/k)^L\le(1+1/k)^{j_0}\le e^{0.3}$이고 $L>j_0$인 부분에서 $\Pi(1+1/k)^L\le\Pi^{\m
+### u_n frak:  장7B:678 [7.7] sum_{m=2k+1}^{n-1}(k+n-m)\binom{n-1}mp_{n-1-m}\,d_{m,k}$로 두고, 문턱 단위를 $\mathfrak u_n:=w_{n-k}\,s_{n-k}(k+1)$로 둔다. 크기 $2k$를 넘는 토막을 깊은 자식이라 한다. 이차 몫과 깊은 자식 몫은
+### DDL:  장10:245 [10.4] \mathrm{DDL}(k):=\frac{2\cdot50.62}{\sqrt{k-1}}
+### PM_y:  장10:295 [10.4] c_{y+d}(y)\le\mathrm{PM}_y(d):=16.54\Bigl(y+1+\frac{d-1}3\Bigr)(d-1)^{-5/2}
+### nu_min:  장10:195 [10.3] ge\max(2k+103,20001)$은 정의 {{10:old-8-1}}의 것과 같고, 그 안에서 $\nu$의 실제 하한은 $\nu_{\min}(k):=\max(103,20001-2k)$다. 하한 $20001$ 때문에 작은 열에서는 둘째 층 띠의 왼쪽 끝이 범위 밖에 놓이는데, 열에 따라 어디까지가 범위에 드는지를 아래 표에 적는다.
+### pi^two:  장10:249 [10.4] in(j_0,\nu-1)}+\mathbf 1\{j_0<\nu-1\}\frac{\Pi^{\mathrm{up}}_{j_0+1}}{\pi^{\mathrm{two}}_N}\Bigr]
+### Stays adm:  장10:253 [10.4] \mathrm{Stays}^{\mathrm{adm}}(k,\nu):=4-3s^{\mathrm F}(k,\nu)-\mathrm{Bd}^{\mathrm T}(k,\nu)-\mathrm{DDL}(k)+\vartheta_{\mathrm{lb}}\Bigl(1+\frac1{k-1}\Bigr)^{-(\nu-1)},
+### varsigma_m:  장6:290 [6.3] \varsigma_m(\ell):=s_{m+1}(\ell+1)-s_m(\ell)
+### DD(m,y):  장6:741 [6.5] \mathrm{DD}(m,y):=(y+2)\,s_{m+2}(y+2)-2(y+1)\,s_{m+1}(y+1)+y\,s_m(y)
+### x_t(y):  장2:573 [2.9] x_t(y):=\Pr^T_t(M^T_t=y)-\Pr^T_t(M^T_t=y-1)=s^T_t(y+1)-2s^T_t(y)+s^T_t(y-1)=\frac{\mathcal N_y(t)-2\mathcal N_{y-1}(t)+\mathcal N_{y-2}(t)}{t^{t-1}}
+### P_t(k):  장2:669 [2.9] P_t(k):=\sum_{t'=k}^{t}x_{t'}(k)=-\frac1k+\sum_{t'=k+1}^{t}\frac{(k+1)b_{t'-1,k}-(k-1)b_{t'-1,k-1}}{t'^{\,t'-1}}
+### Pi(sasl):  장2:579 [2.9] \Pi:=\prod_{v:\,t_v>k}\frac k{t_v}\in(0,1]
+### Psi(q):  장2:605 [2.9] mathrm{Ren}(j):=\frac{j^je^{-j}}{j!},\qquad \mathrm{Ren}(0):=1,\qquad \Psi(q):=\sum_{j=1}^q\mathrm{Ren}(j)\quad(\Psi(0)=0)
+### c_Psi:  장8:116 [8.2] 계를 $\Psi^{\mathrm{low}}_{(\varrho)}:=(2\pi)^{-1/2}\bigl(2\sqrt\varrho-\mathsf c_\Psi+\tfrac1{2\sqrt\varrho}-\tfrac1{24}\varrho^{-3/2}\bigr)$($\varrho\ge1$), $\Psi^{\mathrm{low}}_{(\varrho)}:=0$($0\le\varrho<1$), $\mathsf c_\Psi:=-\mathsf z_{1/2}+\mathsf 
+### j_inf:  장8:222 [8.2] $\mathsf j_\infty(\xi):=\tfrac43(2\pi)^{-1/2}\xi^{3/2}$는 $\xi$를 고정하고 $k\to\infty$로 보낼 때 $\mathrm{Bp}(\xi k^{2/3},k)$의 극한이다. $\Lambda(\mathfrak q)=\tfrac43\mathfrak q^{3/2}+O(\mathfrak q)$
+### km_N:  장8:141 [8.2] ]의 정리 G) [증명됨; r8456f59].** 정수 $y\ge1$과 $y+1\le N\le2y+1$에 대해 사슬 질량을 $\mathrm{km}_N:=\sum_{m=y+1}^N\pi_N(m)\,y/m$으로 두면
+### c_0 frak:  장5B:129 [5.5.3] 1e].** $(n+1)/2\le y\le n-1$, $t_0(y)\le n$, $\varrho_0=t_0(y)-1-y$, $\mathfrak c_0=\frac32\frac{2y+2\varrho_0-n}{y(n-y-\varrho_0)}$, $\epsilon_0=\frac32\frac{\varrho_0(2y+2\varrho_0-2-n)}{(y+\varrho_0-1)(n-y-\varrho_0+1)}$로 두면
+### fb(lambda):  장8:629 [8.4] {fb}}:=\lceil5k/4\rceil+q_{\max}$, 되먹임 인자는 1.5절의 비 $\lambda=k/n$의 함수 $\mathrm{fb}(\lambda):=\sum_{i<8}(\lambda\,\mathrm{Bor}_\le(q_{\mathrm{fb}}))^i$이고, 수준 $k-1$의 항에서는 용량 $k-1$의 비 $(k-1)/n$을 넣는다. 두 조립 모두 $(k,\nu)$를 상자로 나누어 각 상자의 최악 모서리에서 명시 함수를 평가하는 계산으로 끝난다. 
+### R^low:  장8:682 [8.4] {Bor}_\le(\nu-1)\,e^{-\frac1{12(n+1)}}\,\frac kn\Bigl[e^{-\frac5{12k}}\mathfrak R^{\mathrm{low}}_k\,\mathrm{fb}\Bigl(\frac kn\Bigr)+\mathrm{LOW}_k+\mathfrak c_0(N)\Bigl(e^{-\frac5{12(k-1)}}\mathfrak R^{\mathrm{low}}_{k-1}\,\mathrm{fb}\Bigl(\frac{k-1}n\Bigr)+\mathrm{LO
+### tail_s:  장5B:44 [5.5.2] -\pi_n(s)]$로 적을 수 있다. 이것을 보조정리 {{5:old-5-19}}에 넣고 합의 순서를 바꾸면, 곡률 꼬리합 $\mathrm{tail}_s(y)=\sum_{t=s+1}^nx_t(y)$와 기저량 $P_n(y)=\sum_{t=y}^nx_t(y)$에 대해
+### top:  장5B:177 [5.5.4] P_n(y)\ \ge\ -\frac{1+\mathrm{top}}{y},\qquad \mathrm{top}:=\frac{y(y-1)\,c_{n-1}(y-1)}{n}
+### WIN_0:  장5B:84 [5.5.2] \mathrm{WIN}_0:=\sum_{t=y+1}^{t_0-1}\bigl(\pi_n(t)-\pi_n(y)\bigr)(x_t(y))_-
+### POS_0:  장5B:88 [5.5.2] \mathrm{POS}_0:=\sum_{m=t_0-1}^{n-1}\bigl(\pi_n(m+1)-\pi_n(t_0-1)\bigr)\frac{c^{(2)}_m(y)}{m+1}\ \ge0
+### Xi_{n,k}:  장2:421 [2.7] {n,k-1}=J_n(k-1)$이다. 행의 한가운데 $n\in\{2k-1,2k\}$에서는 $B_{n,k-1}=J_n(k-1)-\Xi_{n,k}$, $\Xi_{n,k}:=\mathbf 1_{n=2k}\binom{2k-1}{k-1}p_{k-1}^2$다.
+### J_n(z):  장2:413 [2.7] J_n(z):=\sum_{\sigma\in\mathfrak S_n}H_k(\sigma)\,k^{H_k(\sigma)-1}\,z^{Z_k(\sigma)}\prod_{i:\,h_i<k}h_i
+### Gr(x):  장2:429 [2.7] 닫힌 꼴에 들어가는 보조 급수부터 둔다. 나무 함수 $T(x)$로 $\mathrm{Gr}(x):=T(x)-T(x)^2/2$를 두면, $T=xe^T$를 미분한 $T'=e^T+TT'$에서 $T'(1-T)=e^T$이므로 $(\mathrm{Gr})'=T'(1-T)=e^{T}$다. 매개변수 $z$와 정수 $i\ge0$, $n\ge0$에 대해
+### e_n:  장2:403 [2.7] e_n:=\mathcal K''_{n,k}(k)=2E2_{n,k}
+### v_k frak:  장2:227 [2.5] b^\sigma_k-b^\sigma_{k-1}=A^\sigma_{k-1}\cdot\mathfrak v_k(Z_k(\sigma),H_k(\sigma)),\qquad \mathfrak v_k(Z,H):=\Bigl(1+\frac1k\Bigr)^{Z}+\Bigl(1-\frac1k\Bigr)^{Z+H}-2
+### Bor^tail:  장4:88 [4.3] \mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)=1-\sum_{j=1}^{k}\mathrm{Bor}(j;\mathfrak Z)
+### g_k sf:  장4:332 [4.3] al I_k\,\mathcal M^{(k-1,n)}_0\ \ge\ \mathcal M_0\bigl[k\mathrm{Wi}_2+\mathsf g_k\mathrm{Wi}_1-\mathrm{Bor}(k)\,\mathcal I_k\bigr],\qquad \mathsf g_k:=2-\frac{k\mathcal M_2}{\mathcal M_0} \tag{4.10}
+### n_k sf:  장4:439 [4.3] 이며, $n!/p_n=2\pi k^{3/2}e^{-(n+1)}\mathsf n_k$, $\mathsf n_k=\frac{n!}{p_n}\frac{e^{n+1}}{2\pi k^{3/2}}$다.
+### a_j sf:  장4:340 [4.3] {{4:old-4-7}} (실수 비교; 기록 [rce3dc75]의 정리 1) [증명됨; rce3dc75].** 적분 상수를 $\mathsf a_j=\int_0^\infty w^je^{-w^3/3}\,dw$ $(j\ge0)$로 두면, 모든 정수 $k\ge1$과 실수 $\omega\ge0$에서
+### M_r:  장4:157 [4.3] l M^{(y,n)}_r=\frac{n!}{p_n}[x^n]\,e^{T}e^{-y(1-T)^2/2}(1-T)^r,\qquad \mathcal M_r=\mathcal M^{(k,n)}_r
+### A_{k,n}:  장4:152 [4.3] \mathcal A_{k,n}=\frac{n!}{p_n}[x^n]\,\Phi^{\mathrm{aux}}(T(x)),\qquad
+### I_k:  장4:182 [4.3] \mathcal I_k=\int_0^1\frac{v}{1-v}\,e^{-v^2/2}\,e^{-k\eta(v)}\,dv,\quad \eta(v)=-\log(1-v)-v-\frac{v^2}2
+### Gamma_d:  장4:53 [4.2] 를 꼬리 좌표 $r=n-k$로 적는다. 아래 재귀의 계수에는 이항계수와 길이별 주차함수의 수가 들어간다. 경계 응답 다항식 $\Gamma_d(\ell;n)$은 $\Gamma_0(\ell;n)=1$과
+### S_{n,k}:  장4:63 [4.2] \mathcal S_{n,k}=\Gamma^+d_{n,k}-\Gamma^-d_{n,k+1}
+### A^c:  장5A:17 [5.1] 면 $A^{c}_{n,n-r-1}$이고, 행의 항은 이웃한 두 넘는 수의 차 $b_{n,\ell}=A^c_{n,\ell-1}-A^c_{n,\ell}$이다.
+### a_n frak:  장5A:17 [5.1] 등급이다. 두 결과의 계산에서는 두 양, 곧 열의 지수 생성함수 계수와 넘는 수를 쓴다. 열 $k$의 지수 생성함수 계수를 $\mathfrak a_n:=A_{n,k-1}/n!$로 적고, 최대 변위가 $\ell$을 넘는 길이 $n$ 주차함수의 수를 넘는 수 $A^{c}_{n,\ell}:=p_n-A_{n,\ell}$로 적는다. 넘는 수를 꼬리 좌표 $r=n-\ell-1$로 적으면 $A^{c}_{n,n-r-1}$이고, 행의 항은 이웃한 두 넘는 수의 차 
+### b^circ:  장5A:81 [5.2.1] b^\circ_{n,\ell}:=b_{n,\ell}-B_{n,\ell}=\sum_{m=\ell+1}^{n-1}A_{m,\ell}\,\Gamma_{n-m-1}(\ell;n)
+### G_d:  장5A:146 [5.2.1] (\mathrm G)_d:\qquad \frac{p_k}{p_{k-1}}\,\Gamma_{r-1}(k+2;n)\,\mathrm{sd}_d(k)\ \ge\ \Gamma_r(k-1;n)\,\mathrm{sd}_d(k+1)\qquad(1\le d\le r-1)
+### x_hat:  장1:133 [1.4] 봉우리 둘레의 임계 창에서는 꼬리 정리가 닿는 곳에 이어서 $\hat x=(r+1)/k^{2/3}$이 $10$이 되는 곳까지 엄격 증가를 얻는다. 여기에 쓰는 도구는 사슬 전개(2.12절; 5.2.3절)로 얻는 꼬리 띠 부등식(정리 {{5:old-5-12}})과 두 항 비교 $e_n>B_{n,k-1}$(정리 {{5:old-5-13}})이다. 사슬 전개란 큰 나무 안에서 부분
+### zeta coord:  장1:232 [1.5] 중앙 행 둘레에서 $|\nu|$가 $k^{2/3}$ 규모인 범위, 곧 $\zeta:=\nu/k^{2/3}=(n-2k)/k^{2/3}$가 유계인 위치들을 중앙 창이라 하고, $\zeta$를 중앙 창의 좌표로 쓴다. 오른쪽 절반에서 꼬리 좌표 $r$이 $n^{2/3}$ 규모인 범위를 임계 창이라 하고, 좌표
+### lambda:  장1:224 [1.5]  적을 수도 있다. 분포·수열·합의 끝 쪽 부분을 꼬리라 하며, 꼬리 좌표라는 이름은 거기서 왔다. 위치를 비로 적을 때는 $\lambda:=k/n$, 곧 행의 크기에 대한 $k$의 비율을 쓴다.
+### k_n:  장1:230 [1.5] 1\}$인 두 행을 중앙 행이라 하는데, 이 둘은 오른쪽 절반의 마지막 행과 왼쪽 절반의 첫 행이다. 행 $n$을 고정하면 $k_n:=\lceil n/2\rceil$인 위치 $(n,k_n)$, 곧 비교 $b_{n,k_n-1}\le b_{n,k_n}$을 그 행의 한가운데라 하며, 이것은 $n\in\{2k-1,2k\}$인 위치이고 1.4절의 가운데 비교와 같다. 두 방식이 함께 가리키는 위치는 $n=2k$뿐이다.
+### hz:  장6:135 [6.2] 를 크기 $N$에서의 제한 성장비라 하고, $\mathrm{hz}_k(N):=1-s_{N+1}(k)/s_N(k)$를 크기 방향 생존 위험률, 짧게 위험률이라 하며, $\mathrm{dec}_N:=k(1-\log\mathfrak r_N)$을 감소율이라 한다. 위험률은 용량 $k$ 아래의 생존 확률이 크기 $N$에서 크기 $N+1$로 넘어갈 때 줄어드는 비율이다. $p_{N
+### dec:  장6:135 [6.2]  $\mathrm{hz}_k(N):=1-s_{N+1}(k)/s_N(k)$를 크기 방향 생존 위험률, 짧게 위험률이라 하며, $\mathrm{dec}_N:=k(1-\log\mathfrak r_N)$을 감소율이라 한다. 위험률은 용량 $k$ 아래의 생존 확률이 크기 $N$에서 크기 $N+1$로 넘어갈 때 줄어드는 비율이다. $p_{N+1}/((N+1)p_N)=((N+2)/(N+1))^N=e^{g(N+1)}$이므로 정의에서 바로
+### r_N frak:  장6:133 [6.2] \mathfrak r_N:=\frac{A_{N+1,k-1}}{(N+1)A_{N,k-1}}
+### x_k sf:  장6:143 [6.2] .** 모든 $k\ge2$와 $N\ge0$에서 $\mathfrak r_N\le((k+1)/k)^{k-1}=e^{g(k)}=1/\mathsf x_k$이고, 등호는 $N=k-1$에서만 성립한다. 여기서 $\mathsf x_k:=(k/(k+1))^{k-1}$은 임계 기울임이다.
+### varrho_t:  장6:250 [6.2] \varrho_t:=\frac{\mathfrak w_n(t)}{\mathfrak w_n(t-1)}-1
+### w_n frak:  장6:9 [6.] 손실 $\Theta_n=\mathfrak w_n(k)/k$는 첫 층의 양이다. 둘 다 6.2절에서 정의하는 표시 나무 무게 $\mathfrak w_n(t)$, 곧 숲에서 나무 하나를 표시하고 나머지를 용량 아래에서 센 수로 적힌다. 그래서 9장이 그 두 몫을 잴 때 이 장의 추정이 입력이 된다.
+### kappa_N:  장6:227 [6.2] \kappa_N:=1-\mathsf x_k\mathfrak O(N)\qquad(N\ge k)
+### epsilon_N:  장6:231 [6.2] ) [증명됨, 보조정리 {{6:tilt-sum}}에 의존; r051bfe1].** $k\ge2$와 모든 $N\ge k$에서 $\epsilon_N:=g(N+1)-g(k)$로 두면 $0\le\epsilon_N\le1-g(k)\le3/(2k)$이고
+### s_d frak:  장6:294 [6.3] \mathfrak s_d(y):=s_{y+d-1}(y)=\Pr_{y+d-1}(M\le y-1)
+### D_k:  장6:708 [6.4] D_k:=\sum_{t=k}^{2k+1}x_t(k)=P_{2k+1}(k)
+### varphi^flat:  장6:495 [6.4] \varphi^\flat_k:=k\sum_{t=k+1}^{2k+1}x_t(k)
+### Pi_j(y):  장6:749 [6.5] }$를 보행이 $d-1$ 아래에 머무는 마지막 걸음, $q_j:=d-R_j$를 $j$번째 걸음 뒤의 초과($q_0=d$), $\Pi_j(y)=\prod_{i=1}^{j}y/(y+q_i)$를 사슬 생존 곱이라 한다. 실수 $t>0$으로 연장한 기울임 인자를
+### psi(y):  장6:753 [6.5] $t>0$에 대해 $\mathcal R_j(t)\ge1$이다. 사슬을 고정한 채 용량만 움직여 본 생존 확률에 용량을 곱한 $\psi(y):=y\prod_{i}y/(y+q_i)$를 얼린 볼록성의 함수라 한다. 사슬을 얼려 둔 채 이 함수의 볼록성만 쓴다는 뜻이다.
+### U_k(m):  장6:13 [6.] 만 무게(각 항에 앞의 장에서 정의한 임계 볼츠만 법칙이 그 크기의 주차함수 하나에 주는 확률을 곱해 재는 무게)의 꼬리합 $\mathcal U_k(m)$이 $k+14\le m\le2k$에서 양이라는 것을 다섯 조각으로 보이고, 핵심 근처 항이 음이라는 것과 합쳐 $\mathcal V_k(m)$이 모든 절단점 $k\le m\le2k$에서 양이라는 판정 (V)에 이른다(6.6).
+### V_k(m):  장6:13 [6.] 아래에서 막는다(6.4). V-핵심 정리는 확률 무게(각 항을 그 크기의 주차함수 수로 나누어 재는 무게)의 첫 층 꼬리합 $\mathcal V_k(m)$이 핵심 절단점 $m=k$에서 양임을 보인다(6.5). 끝으로 볼츠만 무게(각 항에 앞의 장에서 정의한 임계 볼츠만 법칙이 그 크기의 주차함수 하나에 주는 확률을 곱해 재는 무게)의 꼬리합 $\mathcal U_k(m)$이 $k+14\le m\le2k$에서 양이라는 것을 다섯 조각으로 보이고, 핵심 근
+### b_m frak:  장6:716 [6.5] thfrak p_m:=\frac{\delta_{m+1}}{p_m}=(k+1)c_m(k)-(k-1)c_m(k-1),\qquad \mathfrak b_m:=\frac{\delta_{m+1}e^{-m}}{m!}
+### p_m frak:  장6:716 [6.5] \mathfrak p_m:=\frac{\delta_{m+1}}{p_m}=(k+1)c_m(k)-(k-1)c_m(k-1),\qquad \mathfrak b_m:=\frac{\delta_{m+1}e^{-m}}{m!}
+### X_d frak:  장6:745 [6.5] \mathfrak X_d(y):=y\,\Pr_{y+d-1}(M\ge y)=y\bigl(1-\mathfrak s_d(y)\bigr)
+### v(k):  장6:905 [6.5] igl[(k+1)c_m(k)-(k-1)c_m(k-1)\bigr]>0.082$다. 더 정확히 $\mathcal V_k(k)\ge\mathsf v(k)$,
+### s_B:  장6:1036 [6.6] 다음 명제가 (6.43)의 가운데 합의 음의 몫과 $E_3$를 $k$에 균일한 상수로 누른다. Borel 상수를 $\mathsf s_{\mathrm B}:=e/\sqrt{2\pi}$로 적으면 Stirling 하계에서 $e\,\mathrm{Bor}(n)\le\mathsf s_{\mathrm B}\,n^{-3/2}$이고, 아래의 모든 손실은 $\mathsf s_{\mathrm B}k^{-3/2}$의 상수 배로 잰다.
+### bar A_n:  장7A:49 [7.1] \bar A_n(y):=\sum_{\sigma\in\mathfrak S_n}\prod_{i=1}^n\min(h_i,y)
+### mu_n(k):  장7A:21 [7.1] \mu_n(k):=\frac{d_{n,k}}{A_{n,k-1}}
+### T_k(sigma):  장7A:39 [7.1] \mathcal T_k(\sigma):=Z_k(\sigma)\bigl(Z_k(\sigma)-1\bigr)-kH_k(\sigma),\qquad \mathcal T_{n,k}:=\sum_{\alpha\in\mathrm{PF}_n,\ M(\alpha)\le k-1}\mathcal T_k(\sigma(\alpha))=A_{n,k-1}\,\math
+### t_k sf:  장7A:69 [7.1] \mathsf t_k:=\min\bigl\{j\ge0:\ (k+1)^jk^{j+1}+(k-1)^{2j+1}\ge2k^{2j+1}\bigr\}
+### n^sharp:  장7A:220 [7.2] n^\sharp_k:=k+(k+1)\mathsf t_k
+### n^flat:  장7A:410 [7.2] n$에 대해 볼록하고 $\varphi_k(2k+1)<0$, $\varphi_k(n^\sharp_k)\ge0$이다. 그러므로 $n^\flat_k:=\min\{n\ge2k+1:\varphi_k(n)\ge0\}$이 있고 $2k+1<n^\flat_k\le n^\sharp_k$이며, 모든 $n\ge n^\flat_k$에서 $b_{n,k-1}\le b_{n,k}$다. (라) 명제 $\mathsf W_L^\flat$를 「모든 $k\ge501$과 $\max
+### n^circ:  장7A:7 [7.] e16$의 열 $k\le2000$ 전체(7.2절·7.4절), 열 $k\ge2001$에서는 극 영역과 그 위쪽, 곧 $n\ge n^\circ_k=\lceil2k^{3/2}\rceil$인 위치 전체(7.2절·7.3절), 그리고 중앙 띠(7.4절)이고, 셋째 층 이후의 비교는 둘째 층의 비교로 환원한다. 그러면 남는 자리는 둘째 층의 실질 잔여 $\mathcal R_2$ 하나로 좁혀진다. 이 자리들을 닫는 판정, 곧 극 영역과 열 $501\le k
+### C_k(x):  장7A:248 [7.2] C_k(x):=\sum_{n\ge1}C_{n,k}\frac{x^n}{n!}
+### rho_k:  장3:149 [3.3] \frac{T_k}{\gamma_k}=1+\rho_k+\rho_k\rho_{k+1}+\dots+\rho_k\rho_{k+1}\cdots\rho_{j_1-1}
+### a^circ:  없음
+### a^rho:  장7A:360 [7.2] '}$이다. (나) 모든 $m\ge0$에서 $\mathfrak a_m\le\rho_k^{-m}$이다. 곧 극 정규화 갱신열 $\mathfrak a^\rho_m:=\mathfrak a_m\rho_k^m$은 $0<\mathfrak a^\rho_m\le1$을 만족한다.
+### P_k(n) frak:  장7A:356 [7.2] \mathfrak P_k(n):=\frac{\mathbb E^{\sigma}_{n,k}[kH_k]}{n}
+### pr:  장7A:870 [7.3] rm U},\vartheta)$의 명시적 함수로 만든다. 그 바탕은 소인 질량의 $n>k$ 부분에 대한 정확한 적분식이다. $\mathrm{pr}_{n,k}:=C_{n,k}e^{-n}/n!$으로 두면 $x=e^{-1+\varsigma/k}$에서 $C_k(x)=\sum_n\mathrm{pr}_{n,k}e^{\varsigma n/k}$이고, 이것을 7.2절의 두 부분 $\mathcal C_k(x)=\sum_{n\le k}\mathrm{pr}_{n,k}e^{\v
+### J^G:  장7B:132 [7.4] J^{\mathrm G}_n(z):=n!\,[x^n]\;e^{T(x)}\hat{\mathrm{gr}}(z;x)=p_{k-1}\,n!\,[x^n]\;e^{T(x)}e^{z\mathrm{Gr}(x)}\int_0^xe^{-z\mathrm{Gr}(\mathrm s)}\frac{\mathrm s^{k-1}}{(k-1)!}\,d\mathrm
+### P^(k)_m:  장7B:7 [7.4] \mathcal P^{(k)}_m(j):=\frac{\min(j,k)\binom{m-1}{j-1}A_{j-1,k-1}A_{m-j,k-1}}{A_{m,k-1}}=\Pr_m\bigl(\mathrm{pos}_m=j\ \big|\ M\le k-1\bigr)
+### chi_m:  장7B:380 [7.5] \chi_m(j):=\frac1k\Bigl[-\mathbf 1\{j=k\}\bigl(1-\mathrm{cl}^-_{m-k}\bigr)+\mathbf 1\{j>k\}\bigl(\mathrm{cl}^+_{j-1}+\mathrm{cl}^-_{j-1}+\mathrm{cl}^+_{m-j}+\mathrm{cl}^-_{m-j}\bi
+### W^(>102):  장7B:411 [7.5] \mathcal W^{(>102)}:=\{(k,n):\ k\ge2001,\ \max(2k+103,20001)\le n\le\lceil2k^{3/2}\rceil-1\}
+### Z cal:  장5A:463 [5.2.3] \mathcal Z^{(\iota)}_j(z):=(1-z)^\iota\sum_{d\ge0}\mathrm{Ch}_j(d)z^d,\qquad
+### src:  장7B:382 [7.5] 로 두고, 크기 $m$의 토막이 내는 토막 원천을 $\mathrm{src}_k(m):=\sum_{j=1}^m\mathcal P^{(k)}_m(j)\chi_m(j)$로 둔다.
+### inh:  장7B:401 [7.5] \mathrm{inh}_k(m):=\sum_{j=1}^m\mathcal P^{(k)}_m(j)\bigl[\mu_{j-1}(k)\mathbf 1\{k\le j-1\le2k\}+\mu_{m-j}(k)\mathbf 1\{k\le m-j\le2k\}\bigr]
+### star(n):  장1:139 [1.4]  넘으면 더 작은 행의 왼쪽 비교여서 귀납으로 처리한다. 원천과 크기 $2k$ 이하인 자식의 상속을 합한 양이 한 걸음 양 $(\star)(n)$이다. 열 $k$에서 둘째 층의 첫 행부터 행 $n$까지 한 걸음 양이 모두 음이 아니면 행 $n$의 비교가 따르고, 비교가 이미 알려진 행은 건너뛰어도 된다. 이 논법이 흡수 귀납이다(명제 {{7:old-6-15}}).
+### w_m:  장7B:653 [7.7] w_m:=\frac{\binom{n-1}mp_mA_{n-1-m,k-1}}{A_{n,k-1}}\qquad(k\le m\le2k)
+### R_2:  장1:147 [1.4] \mathcal R_2=\{(n,k):\ k\ge6668,\ \max(2k+103,20001)\le n\le3k-1\}
+### Left_n:  장7B:657 [7.7]  이 무게와 6.5절의 확률 무게 $\mathfrak p_m=\delta_{m+1}/p_m$으로 적힌다. 그 몫을 왼쪽 항 $\mathrm{Left}_n:=\sum_{m=k}^{2k}w_m\mathfrak p_m$으로 둔다. 6.5절의 판정 $\mathsf V$는 「모든 $L\in[k,2k]$에서 $\mathcal V_k(L)=\sum_{m=L}^{2k}\mathfrak p_m\ge0$」이고, 정리 {{6:V-all}}이 모든 $k\ge3131$에서 $
+### Quad:  장7B:680 [7.7] \mathrm{Quad}_n:=\sum_{j>k}\mathcal P^{(k)}_n(j)\Bigl[\bigl(1+\tfrac1k\bigr)\mathrm{cl}^+_{j-1}\mathrm{cl}^+_{n-j}+\bigl(1-\tfrac1k\bigr)\mathrm{cl}^-_{j-1}\mathrm{cl}^-_{n-j}\Bigr],\qq
+### s^low:  장8:66 [8.1] ($\mathfrak D_0=0$)를 부족량이라 하고, 원천에 쓰는 생존 $s_{k+q}(k+1)$을 아래에서 막는 수열을 $s^{\mathrm{low}}_q$로 적는다. 뒤의 것은 $s^{\mathrm{low}}_q\le s_{k+q}(k+1)$을 만족하는 임의의 수열이고, $s^{\mathrm{low}}_0=1$로 둔다.
+### Omega(xi):  장8:473 [8.2] \mathrm{Bor}_\le(q)\,(1-\Omega(\xi))+\sum_{j=1}^{q-1}\mathrm{Bor}(j)\Psi(q-j)\bigl[\Omega(\xi(1-j/q))-\Omega(\xi)\bigr]\ \ge\ \xi^{3/2}q^{-1/2}\Psi(q)\Omega(\xi)+\sum_{j=1}^q\mathrm{Bor}(j)\bigl[1-\hat{\ma
+### xi:=:  장5A:734 [5.4.2] sum_{j\le k}\mathrm{Bor}(j;\mathrm{pt}')$, $V(x)=(1-x)^2/2$를 그대로 쓰며, $\xi:=\mathrm{pt}' e^{1-\mathrm{pt}'}$로 두면 $\mathrm{Bor}(j;\mathrm{pt}')=\mathrm{Bor}(j)\,\xi^j/\mathrm{pt}'$이므로 $\mathrm{Bor}^{\mathrm{tail}}_k(\mathrm{pt}')=1-\frac1{\mathrm{
+### D^src:  장8:70 [8.1] \mathfrak D_q\le\mathfrak D^{\mathrm{src}}_q+\frac k{k+q}\sum_{j=1}^{q-1}\mathrm{Bor}(j)\mathfrak D_{q-j},\qquad
+### D_q:  장8:66 [8.1] 창의 수준 질량이 $k=\infty$의 극한값 $\Psi(q)$에서 모자라는 양 $\mathfrak D_q:=\Psi(q)-\mathfrak R_q$($\mathfrak D_0=0$)를 부족량이라 하고, 원천에 쓰는 생존 $s_{k+q}(k+1)$을 아래에서 막는 수열을 $s^{\mathrm{low}}_q$로 적는다. 뒤의 것은 $s^{\mathrm{low}}_q\le s_{k+q}(k+1)$을 만족하는 임
+### E_q:  장8:82 [8.1] thfrak J\le k+1$에 대해, $\mathfrak E_0\ge0$이고 $1\le q\le\mathfrak J$에서 $\mathfrak E_q\ge\mathfrak D^{\mathrm{src}}_q+\frac k{k+q}\sum_{j=1}^{q-1}\mathrm{Bor}(j)\mathfrak E_{q-j}$이면 모든 $0\le q\le\mathfrak J$에서 $\mathfrak D_q\le\mathfrak E_q$다.
+### R_q:  장8:49 [8.1] 과 $q$의 창 좌표를 $\xi_q:=q/k^{2/3}$으로 적고, 착지 창의 수준 질량을 $1\le q\le k+1$에서 $\mathfrak R_q:=k\,c_{k+q}(k)$로 두면($\mathfrak R_0:=0$) 보조정리 {{8:old-6-23}}은
+### dup:  장8:44 [8.1] m_{t=k+1}^m\pi_m(t)\,s_{m-t}(k)\,\frac{s_{t-1}(k+1)+k\,c_{t-1}(k)}{t}+\mathrm{dup}_m
+### Flow:  장8:90 [8.1] \mathrm{Bor}_{\le}(q)\,(1-\Omega_q)+\mathrm{Flow}_q\ \ge\ \frac qk\Psi(q)\Omega_q+\sum_{j=1}^q\mathrm{Bor}(j)\bigl(1-s^{\mathrm{low}}_{q-j}\bigr),\qquad
+### s^env:  장8:283 [8.2] 두 봉투를 합친 봉투는 $s^{\mathrm{env}}(\xi):=\max(s^{\mathrm{env}}_{\mathrm W}(\xi),s^{\mathrm{env}}_{\mathrm G}(\xi))$이고, 그 값을 점에 둔 표가 증명에 쓰인다. 점 $\xi_i:=0.0005\,i$($0\le i\le12000$)에 값 $s^{\mathrm{env}}(\xi_{i+1
+### s^cf:  장8:426 [8.2] s^{\mathrm{cf}}(\xi):=\max\Bigl(e^{-\mathsf j_\infty(\xi)}\ \ (\xi\le2.1),\ \ q_{6600,6600}(\xi)\ \ (\xi\ge2)\Bigr)
+### Psi^low:  장8:116 [8.2] (라) 실수 인수의 갱신함수 하계를 $\Psi^{\mathrm{low}}_{(\varrho)}:=(2\pi)^{-1/2}\bigl(2\sqrt\varrho-\mathsf c_\Psi+\tfrac1{2\sqrt\varrho}-\tfrac1{24}\varrho^{-3/2}\bigr)$($\varrho\ge1$), $\Psi^{\mathrm{low}}_{(\varrho)}:=0$
+### B_N frak:  장8:175 [8.2] ) [증명됨; r8456f59, r030ffae].** (가) 정수 $y\ge1$과 $y+1\le N\le2y+1$에 대해 $\mathfrak B_N:=\sum_{m=y+1}^N\theta_{N+1}(m)\frac{m-y}m$으로 두면 $s_N(y)\le1/(1+\mathfrak B_N)$이다. (나) $y=k$, $N=k+\nu$($1\le\nu\le k+1$)에서
+### Lip:  장8:549 [8.2] 격 $0.001$의 $\xi$ 격자에서 평가하고, 셀마다 Lipschitz 하계 $\Phi\ge\min(\text{양 끝})-\mathrm{Lip}\cdot0.001$로 셀 안을 덮는다. 여기서 $\Phi$는 그 조건의 좌변에서 우변을 뺀 함수이고, $\mathrm{Lip}$은 그 셀 위에서 $|\Phi'|$을 위에서 막는 명시 상수, 곧 $\Phi$의 Lipschitz 상수의 상계이며, 그 식은 부록 D.{{D:window-mass-env}}에 
+### LB^mono:  장8:705 [8.4]  $\mathfrak h'$도 수준 $k-1$의 위험률 합의 하계다. 경우 (iii)에서 (8.30)은 아래 (8.31)의 $\mathrm{LB}^{\mathrm{mono}}(k,\nu)$와 같다.
+### A^(t)_N:  장9:326 [9.2] d-7-1}} (짝 없는 문턱 손실) [rae1f209].** 정수 $N\ge0$과 나무 크기의 문턱 $t\ge1$에 대해 $A^{(t)}_N$을 $\{1,\dots,N\}$ 위의 뿌리 숲 가운데 최대 국소 역전 수 $M(F)$가 $k-1$ 이하이고 모든 나무의 크기가 $t$ 이하인 것의 수라 한다. 2.4절의 허용 나무 생성함수 $T_{k-1}(x)=\sum_{t'}\mathcal N_{k-1}(t')x^{t'}/t'!$과 지수 공식 $A_
+### Theta^circ:  장9:332 [9.2] \Theta^\circ_n:=\binom nk k^{k-2}A^\circ_{n-k}
+### C_n cal:  장6:959 [6.6] 나무 사슬을 이루고, 그 크기 수열 $S_1>\dots>S_L\ge k$($S_0:=n$) 가운데 비지 않은 것들의 집합을 $\mathcal C_n$이라 하자. 경로 가중치와 이동 인자를
+### Q_m cal:  장9:392 [9.2] \mathcal Q_m:=\frac{b^{(2)}_m}{\gamma_m\Theta_m}
+### J_1:  장9:553 [9.3] \mathfrak f(k+q)$ 이하이므로, 합의 각 항은 그 구간 위의 적분 이상이다. 그래서 $\mathcal H_k\ge\mathcal J_1(k)+\mathcal J_3(k)$,
+### L_*:  장9:560 [9.3] \mathrm{land}_m\ \ge\ \mathsf L_\ast(k):=\mathcal J_1(k)+\mathcal J_2(k)+\mathcal J_3(k)+\mathcal J_4(k)\ \ge\ \mathsf L_\ast(6668)\ \ge\ 1.206
+### FL^(1):  장9:441 [9.3] b^{(2)}_m=\Theta_m+k\,\mathrm{BV}_m+k\,\mathrm{FL}^{(1)}_m+\mathrm{OB}_m+\mathrm{Pcor}_m,
+### land:  장9:460 [9.3] \mathrm{land}_m:=\frac{\mathrm{FL}^{(1)}_m}{\Theta_m}=\sum_{t=k+1}^{\min(m,2k+1)}\mathfrak l_m(t)\,c^{(2)}_{t-1}\,\frac{s_{m-t}(k)}{s_{m-k}(k)},\qquad
+### OB:  장9:441 [9.3] b^{(2)}_m=\Theta_m+k\,\mathrm{BV}_m+k\,\mathrm{FL}^{(1)}_m+\mathrm{OB}_m+\mathrm{Pcor}_m,
+### V_m frak:  장9:483 [9.3] 이고, $\mathfrak V_m:=\sum_{t\ge k}\binom mt\,b^T_{t,k-1}A_{m-t,k-1}$에 대해 $\mathrm{Pcor}^-_m\le(\mathfrak d_k/2)\mathfrak V_m$이다. 따라서 $\mathrm{Pcor}_m\ge-(\mathfrak d_k/2)\mathfrak V_m$이다.
+### t^dagger:  장9:735 [9.4] 으로 자라는 곳까지 퍼져야 한다. 이 퍼짐을 하계로 적은 것이 다음 정리다. 거기서 꼬리를 가르는 나무 크기를 자르는 크기 $t^\dagger$라 한다.
+### P^theta:  장9:725 [9.4] 이다($\theta_k(k)=1$). 문턱 부분나무 머리 합을 $P^\theta_t(k):=\sum_{t'=k+1}^{t-1}\theta_{t'}(k)$로 적는다.
+### nu_0(k):  장9:684 [9.4] **보조정리 {{9:old-7-26}} ($\mathcal Y_k$의 모양과 $\nu_0(k)$; 기록 [rb6a2cd0]의 보조정리 4.1) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{6:old-6-19}}·{{6:D-bound}}에 의존; rb6a2cd0].** $\nu_0(k):=\min\{\nu\ge1:\mathcal Y_k(2k+\nu)\ge0\}$으로 두자. $k\ge6668
+### nu_1(k):  장9:705 [9.4] \nu):=\mathcal Y_k(2k+\nu)+\frac1{20}\Bigl(1-\frac1k\Bigr)^\nu,\qquad \nu_1(k):=\min\{\nu\ge103:\mathcal F_k(\nu)\ge0\}
+### varrho^dagger:  장9:739 [9.4] \varrho^\dagger(t^\dagger):=g(t^\dagger-1)-g(n-t^\dagger+1),\qquad P^{\theta\dagger}(t^\dagger):=\sum_{t=k+\nu+1}^{t^\dagger-1}P^\theta_t(k),
+### F_k(nu):  장9:705 [9.4] \mathcal F_k(\nu):=\mathcal Y_k(2k+\nu)+\frac1{20}\Bigl(1-\frac1k\Bigr)^\nu,\qquad \nu_1(k):=\min\{\nu\ge103:\mathcal F_k(\nu)\ge0\}
+### O_n cal:  장9:604 [9.4] (나) 모든 $n\ge0$에서 교차항 $\mathcal O_n:=d_{n,k}-\sum_{t=k}^{n}\binom nt\,\delta_t\,A_{n-t,k-1}$은 음이 아니다.
+### Y_k(n):  장9:672 [9.4] \mathcal Y_k(n):=k\,\varrho_{\min}(n)\,\mathsf v(k)-\hat\Upsilon_k\bigl(1-(k+1)\varrho_{\min}(n)\bigr)
+### FS(n):  장9:598 [9.4] 행 $n$으로 올라오는 몫이고, 그 핵은 음이 아니다. 행 $n$에서 $\mathrm{regen}_n\ge0$이라는 진술을 $\mathsf{FS}(n)$이라 적는다. 핵이 음이 아니므로, $\mathsf{FS}(n)$이 성립하고 $2k+1\le m<n$에서 $d_{m,k}\ge0$이면 $d_{n,k}\ge0$이다. 이것이 띠에서 $\mathsf{LRP}_2$를 닫는 길이다.
+### h_N sf:  장9:762 [9.4] {\mathrm{lb}}_t:=\max\{0,\exp([\mathsf h_{n-t}-k(1-g(t-1))]/k)-1\}$, $\mathsf h_N:=\frac32-\frac{47}{24k}+\bigl(1-\frac3{2k}\bigr)\frac{0.307\,k}{N+1}$으로 둔다. 이 값이 증분의 하계인 것은 $\mathfrak r_N=e^{g(N+1)}(1-\mathrm{hz}_k(N))$과 $-\log(1-\varsigma)\ge\varsig
+### flat_k:  장9:635 [9.4] \mathrm{flat}_k(t):=\sum_{t'=t}^{2k+1}x_{t'}(k)\quad(k\le t\le2k+1),\qquad \mathrm{flat}_k(2k+2):=0
+### LP_k:  장9:766 [9.4] \mathrm{LP}_k(n):=\min\Bigl\{\sum_{t=k+2}^{2k+1}\varrho^{\mathrm{lb}}_tz_t:\ 0\le z_t\le\frac{P^\theta_t(k)}k,\ \sum_tz_t\ge\mathsf v(k)\Bigr\},\qquad \mathcal Y^{\mathrm{LP}}_k(n):=k
+### regen:  장9:596 [9.4] \mathrm{regen}_n:=d_{n,k}-k\sum_{m=2k+1}^{n-1}\binom n{m+1}A_{n-m-1,k-1}\,d_{m,k}
+### A^diamond,up:  장9:879 [9.5] 그러므로 보조정리 {{9:old-7-7}}에 따라 $A^\diamond_N/p_N\le A^{\diamond,\mathrm{up}}:=\pi^{0,\mathrm{up}}+\mathrm{merge}^{\mathrm{up}}$이다.
+### merge:  장9:871 [9.5] old-7-40}} (덮개 몫의 상계; 기록 [r5909c9e]의 보조정리 6) [증명됨; r5909c9e].** 덮개 몫 $\mathrm{merge}:=\sum_{t=k+1}^{k+103}\pi_N(t)\frac kt s_{t-1}(k)$은
+### T_m frak:  장10:57 [10.1] \mathfrak T_m:=\sum_{i=m}^{2k}\mathfrak f_i\qquad(k\le m\le2k),\qquad\mathfrak T_{2k+1}:=0
+### m_0:  장8:657 [8.4] e2k+1-(i+1)q^\circ_{\mathrm{fb}}$), $\mathfrak m_8\ge0$이므로 $\mathfrak m_0\ge\mathfrak L_k\,\mathrm{fb}^\circ(k/n)$이다. $c_m(k-1)$에는 같은 논증을 $k-1$, $\nu+2$로 쓴다. 환경 생존은 $s_{m-(k-1)-q}(k-1)\ge s_{(k-2)+(\nu+2-q)}(k-1)\ge\hat{\mathcal T}((\nu+2-q)_+
+### m^flat:  장10:158 [10.2] (나) $N<m_0\le2k$이면 $m^\flat:=3k+\nu-m_0$에 대해
+### Bd^S:  장10:145 [10.2] 머묾 꼴의 중앙 경계항은 $\mathrm{Bd}^{\mathrm S}:=-(k+\nu)\bigl[\varsigma_{2k}(k)+c_{2k}(k-1)\bigr]-s_{2k}(k-1)$이다.
+### Stays:  장10:143 [10.2] \mathrm{Stays}:=2\,\varsigma_{N+1}(k)+\sum_{m=N+2}^{2k}\Bigl(2-\frac{m-N}{k}\Bigr)\bigl[\varsigma_m(k)+\varsigma_{m-1}(k-1)\bigr].
+### bar nu:  장10:580 [10.6] 668$이다. 표의 뒤 두 열은 아래에서 그 가족에 쓰는 상계이고, $\mathrm{Stays}^{\mathrm{up}}(k;\bar\nu)$는 명제 {{10:old-8-33}}의 $\nu$에 무관한 머묾 상계다.
+### vartheta:  장4:286 [4.3] {n-1}\bigr)=\frac{e^{-y/2}\,\mathrm{He}_{n-1}\,\vartheta}{p_n},\qquad \vartheta:=\frac{\mathrm{He}_n}{\mathrm{He}_{n-1}}-n=\mathfrak N\,\upsilon_n-n
+### vartheta_0:  장6:638 [6.4] $이고 $\mathfrak M=\vartheta_{j-1}$이다. $1<y<2$이면 $d\le y$에서 $d=j=1$이고, $\vartheta_0=0$과 (6.35)에서 $\mathfrak M-\mathfrak L^\sharp_1\ge y/(y-1)-y/(2(y+1))>1-1/2=1/2$이다. $y\ge2$이면 보조정리 {{6:geometric-mean}}과 (6.35)에서
+### s^W_q:  장10:307 [10.4]  yt\Bigr)\ \le\ 1-\sum_{r=0}^{q-1}\mathrm{Bor}(r+1)\,\frac{q-r}{m-r}=:s^{\mathrm W}_q(m,y)
+### Bd^T:  장10:244 [10.4] \mathrm{Bd}^{\mathrm T}(k,\nu):=(k+\nu)\,\mathsf u(k)\Bigl[\frac1{k-1}+\frac1k\Bigr]+3(k+1)(k-1)^{-3/2},\qquad
+### y_0:  장10:323 [10.5] 첫째 갈래에서는 먼저 용량을 하나 바꾸면 사슬의 법칙이 어떻게 달라지는지를 정확히 적는다. 기준 용량 $y_0:=k$를 고정하고 그 사슬 법칙 $\Pr^{y_0}$를 얼린 법칙이라 부른다. 아래에서 용량 $y$는 $y_0-1$, $y_0$, $y_0+1$ 가운데 하나다. 두 용량의 사슬 법칙은 Borel 질량의 비로만 다르고, 2.6절의 $g(x)=(x-1)\log(1+1/x)$에 대해 $\mathrm{Bor}(m
+### G_y(q):  장10:343 [10.5] \mathcal G_y(q):=\mathbb E^{y_0}[\Pi_j(y);\ q_j=q]
+### A_j frak:  장10:367 [10.5] \mathfrak A_j:=\sum_{i\le j}\frac{q_i}{y_0+1+q_i}
+### H_d frak:  장10:406 [10.5] \mathrm{DD}_m\ \ge\ \mathrm{Res}_d\ \ge\ -\mathfrak H_d,\qquad
+### s^fr:  장10:333 [10.5] \mathfrak s^{\mathrm{fr}}_d(y):=\mathbb E^{y_0}[\Pi_L(y)]
+### DDL_2:  장10:411 [10.5] thrm{DD}_m\ \ge\ -\sum_{m=m_0}^{2k}\omega_m\,(\mathrm{DD}_m)^-\ \ge\ -\mathrm{DDL}_2(k),\qquad \mathrm{DDL}_2(k):=2\sum_{d=2}^{k+1}\mathfrak H_d
+### Res_d:  장10:335 [10.5] 째 차분 $\Delta^2_y[y\,\mathfrak s^{\mathrm{fr}}_d(y)]$가 얼린 볼록 몫이고, 나머지 $\mathrm{Res}_d:=\mathrm{DD}_m-\Delta^2_y[y\,\mathfrak s^{\mathrm{fr}}_d(y)]$가 기울임 나머지다.
+### tr_y:  장10:347 [10.5] ].** $y_0\ge2$, $2\le d\le y_0+1$, $y\in\{y_0-1,y_0,y_0+1\}$에서 기울임 비 $\mathrm{tr}_y(q):=\mathfrak h_y(q)/\mathfrak h_y(d)-1$로 두면
+### k_0:  장10:417 [10.5] 대각선 손실의 명시 상계는 얻었지만 아직 균일하지는 않다. 10.6절에서는 $\mathrm{DDL}_2(k)$ 대신 한 열 $k_0$에서의 값 하나를 모든 $k\ge k_0$에서 쓰려 하므로, $\mathrm{DDL}_2$를 $k$에 대해 감소하는 닫힌 꼴로 눌러야 한다. 아래 명제에서 그 닫힌 꼴이 나온다. 결손에 대한 합을 착지 창과 먼 결손 영역으로 가르는 나눔점을 정수로 자르지 않은 $k$의 함수 $d^\natural:=2k
+### k^ast:  장10:755 [10.6] (b) $q_0>\epsilon_0$이면 $k^\ast:=\min\{k'\ge k_0:\ q_0\le\xi_{\mathrm{cap}}(k'+1)^{2/3}\}$로 둔다. $m_0\le N$에서 $\xi_{\mathrm{cap}}$은 $\min(\bar\nu/k^{2/3},2^{2/3})$, 곧 1a에서 $1.3$, 나머지에서 $2^{2/3}$이고($m_0\
+### s^low_d:  장10:588 [10.6] \mathfrak s_d(y)\ \ge\ \mathfrak s^{\mathrm{low}}_d(y):=\exp\Bigl(-\mathsf f_1\Bigl(\frac{y+d-1}y\Bigr)^{3/2}\frac{d^{3/2}}y\Bigr).
+### Stays^up:  장10:259 [10.4] 로 둔다. 허용 상계는 머묾 질량 자체의 상계가 아니다. 머묾 질량 자체의 상계는 10.6절에서 $\mathrm{Stays}^{\mathrm{up}}$로 적는다. 머묾 질량을 수준 질량의 결손 가중합으로 바꾼 꼴을 방문 질량이라 부르고

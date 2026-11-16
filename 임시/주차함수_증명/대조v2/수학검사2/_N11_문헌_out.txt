@@ -1,0 +1,267 @@
+
+===== Konheim 3
+   장1 1.1 정의 old-1-1 @ 13
+   장2 2.1 따름정리 old-2-4 @ 50
+
+===== Foata 1
+   장1 1.1 정의 old-1-1 @ 15
+
+===== Pollak 1
+   장1 1.1 정의 old-1-1 @ 15
+
+===== Celano 2
+   장1 1.3 정의 old-1-4 @ 87
+   장2 2.1 따름정리 old-2-4 @ 50
+
+===== Aguilar 1
+   장2 2.3 None @ 72
+
+===== Stanley 5
+   장2 2.4 정리 old-2-10 @ 133
+   장2 2.5 정의 old-2-21 @ 176
+   장7A 7.2 보조정리 prime-decomposition @ 274
+
+===== Knuth 4
+   장2 2.4 정리 old-2-11 @ 164
+   장4 4.3 보조정리 borel-tail-arc @ 418
+   장5A 5.4 보조정리 cut-rep @ 650
+   부록D_장2 None D.zeta-constants @ 58
+
+===== Flajolet 1
+   장2 2.5 정의 old-2-21 @ 176
+
+===== Tanner 6
+   장2 2.5 정의 old-2-21 @ 178
+   장5B 5.5 정리 old-5-31 @ 228
+   장5B 5.5 보조정리 bt-tail @ 246
+   장6 6.5 보조정리 lemma-O @ 824
+   장10 10.5 정리 old-8-19 @ 390
+
+===== Robbins 48
+   장2 None None @ 5
+   장2 2.9 보조정리 old-2-37 @ 623
+   장2 2.9 정리 old-2-38 @ 663
+   장3 None None @ 7
+   장3 3.4 정리 old-3-6 @ 197
+   장4 4.3 보조정리 borel-tail-arc @ 416
+   장4 4.3 보조정리 two-corrections @ 475
+   장5A 5.2 정리 old-5-5 @ 372
+   장5A 5.2 보조정리 kernel-C-bound @ 384
+   장5A 5.2 보조정리 laurent-coeff @ 427
+   장5A 5.4 보조정리 cut-rep @ 696
+   장5A 5.4 보조정리 hat-normalization @ 726
+   장5A 5.4 정리 old-5-13 @ 740
+   장5B 5.5 보조정리 stirling-bor @ 127
+   장5B 5.5 보조정리 bt-tail @ 260
+   장6 6.1 정리 old-7-13 @ 66
+   장6 6.3 보조정리 lemma-omega @ 387
+   장6 6.5 보조정리 lemma-O @ 824
+   장6 6.5 보조정리 lemma-E @ 860
+   장6 6.6 정리 theorem-D @ 1013
+   장6 6.6 명제 prop-W @ 1065
+   장6 6.6 명제 prop-R @ 1079
+   장6 6.6 보조정리 lemma-Hprime @ 1125
+   장7B 7.4 보조정리 vertical-nu @ 316
+   장7B 7.4 명제 analytic-transfer @ 346
+   장7B 7.6 보조정리 explicit-bounds @ 592
+   장8 8.2 None @ 106
+   장8 8.2 보조정리 explicit-bounds @ 120
+   장9 9.1 정리 theorem-A-plus @ 87
+   장9 9.1 명제 prop-6 @ 169
+   장9 9.1 보조정리 psi-two-sided @ 191
+   장9 9.1 보조정리 centroid-stop @ 310
+   장9 9.3 정리 old-7-16 @ 518
+   장9 9.5 정리 old-7-35 @ 785
+   장9 9.5 보조정리 old-7-40 @ 858
+   장10 10.5 명제 old-8-23 @ 430
+   장10 10.5 정리 old-8-25 @ 468
+   장10 10.6 보조정리 old-8-31 @ 610
+   장10 10.6 명제 old-8-35 @ 695
+   부록D_장7A None D.polar-blocks-488 @ 135
+
+===== Petersson 3
+   장3 None None @ 7
+   장3 3.1 None @ 19
+   장3 3.1 명제 old-3-1 @ 31
+
+===== Janson 6
+   장3 None None @ 7
+   장3 3.1 명제 old-3-1 @ 35
+   장3 3.1 명제 old-3-2 @ 53
+   장3 3.2 정리 old-3-3 @ 67
+   장3 3.3 정리 old-3-4 @ 153
+
+===== Ibragimov 1
+   장3 3.2 정리 old-3-3 @ 101
+
+===== Ahlfors 1
+   장4 4.3 보조정리 e-integral @ 173
+
+===== Graham 2
+   장4 4.3 보조정리 borel-tail-arc @ 418
+   부록D_장2 None D.zeta-constants @ 58
+
+===== Fortuin 1
+   장5A 5.2 보조정리 renewal-fkg @ 216
+
+===== FKG 1
+   장5A 5.2 보조정리 renewal-fkg @ 216
+
+===== Grimmett 1
+   장7A 7.2 정리 old-6-6 @ 87
+
+===== Jensen 29
+   장5A 5.2 정리 suff-cond @ 288
+   장5B 5.5 정리 old-5-31 @ 222
+   장6 6.6 보조정리 lemma-H @ 1115
+   장7A 7.2 명제 old-6-7 @ 165
+   장7A 7.2 정리 old-6-8 @ 226
+   장7A 7.2 따름정리 flat-threshold @ 412
+   장8 8.2 None @ 102
+   장8 8.2 보조정리 explicit-bounds @ 130
+   장8 8.2 보조정리 jensen-lower @ 132
+   장8 8.2 명제 prop-U-apriori @ 188
+   장8 8.2 보조정리 envelope-H @ 194
+   장8 8.2 정리 escape-y-monotone @ 360
+   장8 8.2 정리 jensen-H-ii @ 364
+   장8 8.2 정리 table-lower-bound @ 392
+   장8 8.2 명제 envelope-code-monotone @ 422
+   장8 8.2 정리 closed-form-envelope @ 449
+   장8 8.2 보조정리 table-tolerance @ 457
+   장9 9.1 보조정리 chain-bounds @ 152
+   장10 10.6 보조정리 old-8-30 @ 585
+   장10 10.6 보조정리 old-8-31 @ 606
+   부록D_장8 None D.stored-table-check @ 87
+
+===== Wallis 4
+   장5A 5.4 보조정리 kernel-sandwich @ 570
+   부록D_장5A None D.band-A-certification @ 114
+
+===== Corless 1
+   장5A 5.4 보조정리 cut-rep @ 650
+
+===== Lambert 2
+   장5A 5.4 보조정리 cut-rep @ 650
+
+===== Harris 2
+   장7A 7.2 정리 old-6-6 @ 87
+
+===== Comtet 1
+   장7A 7.3 보조정리 fourier-lemmas @ 709
+
+===== Faà 1
+   장7A 7.3 보조정리 fourier-lemmas @ 709
+
+===== Apostol 1
+   장8 8.2 보조정리 explicit-bounds @ 122
+
+===== Titchmarsh 1
+   장8 8.2 보조정리 explicit-bounds @ 122
+
+===== Euler 8
+   장2 2.9 보조정리 old-2-37 @ 631
+   장4 4.3 보조정리 borel-tail-arc @ 418
+   장8 8.2 None @ 106
+   장8 8.2 보조정리 explicit-bounds @ 122
+   장8 8.2 정리 closed-form-envelope @ 451
+   부록D_장2 None D.zeta-constants @ 58
+
+===== Cauchy 13
+   장1 1.5 None @ 194
+   장4 4.3 보조정리 e-integral @ 173
+   장4 4.3 보조정리 gauss-coeff @ 298
+   장5A 5.2 정리 suff-cond @ 282
+   장7A 7.3 보조정리 pole-unique @ 619
+   장7A 7.3 보조정리 lemma-P-pole @ 777
+   장7A 7.3 보조정리 lemma-P-prime @ 795
+   장7B 7.4 보조정리 hermite-nu @ 276
+   부록D_장4 None D.central-gap-rational-audit @ 34
+   부록D_장7B None D.band102-integer @ 5
+
+===== 편각 원리 1
+   장7A 7.3 보조정리 lemma-P-prime @ 793
+
+===== Cayley 공식 9
+   장2 None None @ 5
+   장2 2.4 정리 old-2-10 @ 147
+   장2 2.5 정의 old-2-21 @ 176
+   장2 2.12 정리 chain-expansion @ 841
+   장5A None None @ 9
+   장5B 5.5 정리 old-5-28 @ 179
+   장5B 5.5 보조정리 stop-lower @ 264
+   장6 6.4 명제 chain-count @ 550
+   장6 6.4 보조정리 split-mass @ 584
+
+===== 지수 공식 26
+   장1 1.4 정리 main-theorem @ 127
+   장2 None None @ 5
+   장2 2.4 정리 old-2-10 @ 133
+   장2 2.9 None @ 569
+   장2 2.10 None @ 691
+   장5A 5.1 정리 old-5-1 @ 21
+   장5A 5.2 보조정리 green-connection @ 78
+   장5A 5.2 정리 source-rep @ 136
+   장7A 7.2 정리 old-6-10 @ 374
+   장7B 7.4 보조정리 blocked-majorant @ 82
+   장7B 7.4 명제 block-exponential @ 95
+   장7B 7.4 보조정리 green-atom @ 136
+   장8 8.1 보조정리 old-6-23 @ 38
+   장8 8.3 보조정리 old-6-30 @ 567
+   장9 9.2 정의 old-7-1 @ 326
+   장9 9.2 보조정리 old-7-7 @ 417
+   장9 9.3 보조정리 old-7-10 @ 468
+   부록D_장5A None D.exact-n20000 @ 5
+   부록D_장8 None D.window-mass-env @ 15
+   부록D_장8 None D.bprime-boxes @ 39
+   부록D_장8 None D.band-boxes @ 73
+
+===== Lagrange 역변환 3
+   장2 None None @ 5
+   장2 2.5 정의 old-2-21 @ 178
+   장7A 7.2 보조정리 prime-decomposition @ 274
+
+===== 표준 50
+   장1 1.1 명제 old-1-2 @ 17
+   장1 1.5 None @ 194
+   장2 None None @ 5
+   장2 2.3 명제 old-2-7 @ 105
+   장2 2.9 보조정리 zeta-constants @ 633
+   장3 3.1 None @ 23
+   장5A 5.2 보조정리 green-connection @ 78
+   장5A 5.2 정리 source-rep @ 136
+   장5A 5.2 정리 old-5-4 @ 196
+   장5A 5.2 보조정리 inverse-renewal @ 212
+   장5A 5.2 보조정리 renewal-fkg @ 220
+   장5A 5.2 정리 suff-cond @ 282
+   장5A 5.4 보조정리 kernel-sandwich @ 582
+   장5A 5.4 보조정리 cut-rep @ 650
+   장5B 5.5 보조정리 stirling-bor @ 121
+   장5B 5.5 정리 old-5-31 @ 222
+   장6 6.1 정리 old-7-13 @ 66
+   장6 6.3 보조정리 lemma-omega @ 387
+   장6 6.4 명제 chain-count @ 550
+   장6 6.4 보조정리 split-mass @ 584
+   장6 6.4 보조정리 geometric-mean @ 620
+   장6 6.6 정리 theorem-D @ 1013
+   장6 6.6 보조정리 lemma-H @ 1115
+   장6 6.6 보조정리 lemma-Hprime @ 1125
+   장7A 7.2 정리 old-6-6 @ 87
+   장7A 7.2 명제 old-6-7 @ 212
+   장7A 7.2 정리 old-6-8 @ 226
+   장7A 7.2 정리 old-6-10 @ 374
+   장7A 7.2 따름정리 flat-threshold @ 412
+   장7A 7.3 명제 riccati @ 575
+   장7A 7.3 보조정리 fourier-lemmas @ 709
+   장7A 7.3 보조정리 lemma-P-prime @ 793
+   장7B 7.4 명제 block-exponential @ 115
+   장8 8.1 보조정리 old-6-23 @ 38
+   장8 8.2 보조정리 explicit-bounds @ 108
+   장8 8.2 보조정리 jensen-lower @ 139
+   장9 9.1 보조정리 chain-bounds @ 159
+   장9 9.1 명제 prop-6 @ 169
+   장10 10.6 보조정리 old-8-30 @ 585
+   장10 10.6 보조정리 old-8-31 @ 606
+   부록D_장7A None D.xcert-partAB @ 108
+   부록D_장7A None D.polar-blocks-488 @ 150
+   부록D_장7B None D.column-certificates-841-2000 @ 55
+   부록D_장9 None D.band-LP @ 71

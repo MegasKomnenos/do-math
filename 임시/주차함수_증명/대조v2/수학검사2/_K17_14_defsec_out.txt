@@ -1,0 +1,32 @@
+먼저 나옴	$c^{(2)}_m$	장부=2.10	첫 출현=2.5(장2:271)
+먼저 나옴	$m_1(k)$	장부=9.1	첫 출현=4.3(장4:243)
+먼저 나옴	$m_0$	장부=10.2	첫 출현=8.4(장8:657)
+먼저 나옴	$s^{\mathrm F}(k,\nu)$	장부=6.1	첫 출현=4.3(장4:268)
+먼저 나옴	$t_0(y)$	장부=5.5	첫 출현=2.3(장2:115)
+먼저 나옴	$A^{(t)}_N, A^\circ_N, A^\diamond_N$	장부=9.2	첫 출현=2.2(장2:66)
+장에 없음	$P^{\theta}_t(k)$	9.4
+장에 없음	$\beta_i$	2.11
+장에 없음	$\Gamma^{\pm}$	4.2
+먼저 나옴	$\Omega(\xi), \Omega_q$	장부=8.1	첫 출현=5.4(장5A:702)
+먼저 나옴	$\Phi, \Phi^{\mathrm{aux}}$	장부=4.3	첫 출현=2.7(장2:455)
+먼저 나옴	$\pi_n(t_1,t_2)$	장부=9.2	첫 출현=2.5(장2:186)
+먼저 나옴	$\psi(y)$	장부=6.5	첫 출현=2.12(장2:917)
+먼저 나옴	$\vartheta, \vartheta_0$	장부=10.3($\vartheta$), 10.6($\vartheta_0$)	첫 출현=2.12(장2:917)
+먼저 나옴	$\xi$	장부=8.1	첫 출현=2.12(장2:863)
+먼저 나옴	$\mathcal C_n$	장부=9.2	첫 출현=6.6(장6:956)
+먼저 나옴	$\mathcal G_y(q), \mathcal G^y(q)$	장부=10.5($\mathcal G_y$), 10.6($\mathcal G^y$)	첫 출현=7.2(장7A:280)
+먼저 나옴	$\mathcal J_1(k),\dots,\mathcal J_4(k)$	장부=9.3	첫 출현=1.1(장1:9)
+먼저 나옴	$\mathcal Y_k(n), \mathcal Y^{\mathrm{LP}}_k(n), \mathcal Y^\dagger_k(n)$	장부=9.4	첫 출현=7.3(장7A:639)
+먼저 나옴	$\mathcal Z$	장부=7.5	첫 출현=5.2(장5A:365)
+장에 없음	$\mathfrak a^\circ_n$	7.2
+먼저 나옴	$\mathfrak B_N, \mathfrak B^{\mathrm{low}}(k,\nu)$	장부=8.2	첫 출현=4.3(장4:268)
+먼저 나옴	$\mathfrak d_k, \bar{\mathfrak d}_k$	장부=9.3	첫 출현=7.2(장7A:328)
+먼저 나옴	$\mathfrak g(\theta)$	장부=5.5	첫 출현=4.3(장4:292)
+먼저 나옴	$\mathfrak l_m(t)$	장부=9.3	첫 출현=5.4(장5A:670)
+먼저 나옴	$\mathfrak m(n)$	장부=5.2	첫 출현=4.3(장4:243)
+먼저 나옴	$\mathfrak P_k(\infty)$	장부=7.3	첫 출현=7.2(장7A:356)
+먼저 나옴	$\mathfrak Q(y,\xi)$	장부=10.6	첫 출현=3.2(장3:103)
+먼저 나옴	$\mathrm{Bd}^{\mathrm T}(k,\nu)$	장부=10.4	첫 출현=4.3(장4:268)
+장에 없음	$\mathrm{inc}^{\pm}_q$	10.5
+먼저 나옴	$\mathrm{Stays}^{\mathrm{adm}}(k,\nu), \mathrm{Stays}^{\mathrm{adm}}_{\mathrm{new}}$	장부=10.4($\mathrm{Stays}^{\mathrm{adm}}$), 10.6($\mathrm{Stays}^{\mathrm{adm}}_{\mathrm{new}}$)	첫 출현=4.3(장4:268)
+먼저 나옴	$\mathrm{Stays}^{\mathrm{up}}(k;\bar\nu), \mathrm{Stays}^{\mathrm{up}}_F, \mathrm{Stays}^{\mathrm{up}}_\circ$	장부=10.6	첫 출현=10.4(장10:259)

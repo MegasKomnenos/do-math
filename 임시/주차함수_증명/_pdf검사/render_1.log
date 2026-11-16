@@ -1,0 +1,9 @@
+Markdown 해석 1.8초, 제목 160개
+수식 34348개 렌더링 10.7초 (오류 0개, 경고 종류 2개)
+  [수식 경고 ×1] unknownSymbol: Unrecognized Unicode character "ㄴ" (12596)
+  [수식 경고 ×2] unknownSymbol: Unrecognized Unicode character "ㄱ" (12593)
+브라우저: msedge 157.0.4341.46
+1차 인쇄(tagged, 책갈피 수집) 739초
+차례 쪽 번호: 책갈피 162개와 제목 160개가 어긋나 글자 대조로 대신한다
+차례 쪽 번호: 제목 160개 중 154개 확정
+exit 1

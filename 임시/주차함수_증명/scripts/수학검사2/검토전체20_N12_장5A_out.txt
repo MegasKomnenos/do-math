@@ -1,0 +1,13 @@
+table built 39s
+non-unimodal rows n<=300: []
+left chain b0<...<b_{kn-1} broken for n in: [5, 7, 9, 11]
+(ㄹ) violations n<=300: []
+b_{n,1}>=(n-1)n!/2 for 4<=n<=300: True  b_{n,1}>n! fails: [1, 2]
+(ㅂ) 50<=n<=300: min lower end [0.9340043690276367272, 0.9340043690276367272] at n= 241 ; max upper end [1.9862427812174674457, 1.9862427812174674457] at n= 51  all in [0.85,1.99]: True
+(ㅂ) n=51 value: [1.9862427812174567876, 1.9862427812174674457]
+(ㄹ) positions 5..20000: 99970002
+(ㄱ) direct comparisons k=2..120: 1175466
+column cert k=161..500 direct 19982310 ratio 10103865  ; k=121..160 direct 386260 ratio 198790
+row cert 501<=k<=4999, n<=10000: count 20245500
+(ㄴ) count: 74995000
+elapsed 40s

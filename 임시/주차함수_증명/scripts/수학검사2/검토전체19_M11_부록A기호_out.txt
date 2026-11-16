@@ -1,0 +1,37 @@
+부록 A 행 수 305
+* $s^{T}_t(y)$ | 절 2.6 | [('s^{T}_t(y', [], False)]
+* $M^{T}_t$ | 절 2.9 | [('M^{T}_t', [], False)]
+* $\Pr^{T}_t, \mathbb E^{T}_t$ | 절 2.9 | [('\\Pr^{T}_t', [], False), ('\\mathbb E^{T}_t', [], False)]
+* $b^{T}_{t,\ell}$ | 절 2.10 | [('b^{T}_{t', [], False)]
+* $\beta_i$ | 절 2.11 | [('\\beta_i', [], False)]
+* $\mathrm{tilt}_q(q^\prime)$ | 절 2.11 | [('\\mathrm{tilt}_q(q^\\prime', [], False)]
+* $\Pr^y(q\to q^\prime)$ | 절 2.11 | [('\\Pr^y(q\\to q^\\prime', [], False)]
+* $\Gamma^{\pm}$ | 절 4.2 | [('\\Gamma^{\\pm}', [], False)]
+* $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$ | 절 5.5 | [('\\mathrm{POS}^\\prime_0', [], False), ('\\mathrm{POS}^{\\prime-}_0', [], False)]
+* $\mathrm{Bor}_{>}(q)$ | 절 6.1 | [('\\mathrm{Bor}_{>}(q', [], False)]
+* $\mathsf v(k), \mathsf v^\prime_k$ | 절 6.5 | [('\\mathsf v^\\prime_k', [], False)]
+* $\mathrm{Bor}_\le(q)$ | 절 6.6 | [('\\mathrm{Bor}_\\le(q', ['8.1', '8.2', '8.4'], True)]
+* $\mathfrak a^\circ_n$ | 절 7.2 | [('\\mathfrak a^\\circ_n', [], False)]
+* $\mathrm{Pcor}_m, \mathrm{Pcor}^{\pm}_m$ | 절 9.3 | [('\\mathrm{Pcor}^{\\pm}_m', [], False)]
+* $P^{\theta}_t(k)$ | 절 9.4 | [('P^{\\theta}_t(k', [], False)]
+* $\mathrm{inc}^{\pm}_q$ | 절 10.5 | [('\\mathrm{inc}^{\\pm}_q', [], False)]
+
+=== 장부 1.2 전역 기호 vs 부록 A
+장부 1.2 행 수 291
+-- 장부 1.2에 있으나 부록 A에 없는 기호(핵):
+-- 부록 A에 있으나 장부 1.2에 없는 기호(핵):
+    $n$ | 절 1.1
+    $m$ | 절 1.5
+    $t$ | 절 2.4
+    $N:=n-k$ | 절 1.5
+    $k$ | 절 1.5
+    $Y$ | 절 2.6
+    $i$, $j$ | 절 1.1
+    $i$, $j$ | 절 1.1
+    $u$, $v$ | 절 2.4
+    $u$, $v$ | 절 2.4
+    $r:=n-\ell-1$ | 절 1.5
+-- 정의 절이 다른 기호:
+    $s^{\mathrm W}_q(m,y)$ | 부록A 10.4 | 장부 5.5
+    $A^{c}_{n,\ell}$ | 부록A 5.1 | 장부 2.7
+    $\mathrm{pr}_{n,k}, \mathrm{pr}^\circ_n$ | 부록A 7.3 | 장부 7.1

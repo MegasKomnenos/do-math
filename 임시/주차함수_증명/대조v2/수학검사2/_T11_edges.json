@@ -1,0 +1,1646 @@
+{
+"1:old-1-1": [],
+"1:old-1-2": [],
+"1:old-1-3": [
+"1:old-1-2"
+],
+"1:old-1-4": [],
+"1:main-theorem": [
+"10:old-8-10",
+"10:old-8-36",
+"10:old-8-37",
+"2:b-top",
+"2:old-2-10",
+"2:old-2-13",
+"2:old-2-20",
+"2:old-2-28",
+"2:old-2-3",
+"2:old-2-34",
+"2:old-2-38",
+"2:old-2-39",
+"2:old-2-40",
+"2:old-2-41",
+"2:old-2-44",
+"2:old-2-46",
+"2:old-2-5",
+"2:old-2-6",
+"3:old-3-1",
+"3:old-3-3",
+"3:old-3-4",
+"3:old-3-5",
+"3:old-3-6",
+"3:peak-asymptotics",
+"4:old-4-2",
+"4:old-4-5",
+"4:old-4-8",
+"4:old-4-9",
+"5:old-5-1",
+"5:old-5-11",
+"5:old-5-12",
+"5:old-5-13",
+"5:old-5-18",
+"5:old-5-2",
+"5:old-5-32",
+"5:old-5-4",
+"5:old-5-5",
+"6:D-bound",
+"6:DD-lower-bound",
+"6:V-all",
+"6:increment-bounds",
+"6:old-8-12",
+"6:old-8-13",
+"7:old-6-13",
+"7:old-6-14",
+"7:old-6-15",
+"7:old-6-20",
+"7:old-6-21",
+"7:old-6-22",
+"7:old-6-4",
+"7:old-6-9",
+"7:polar-W",
+"7:qstar-columns",
+"7:qstar-implies-wlflat",
+"7:src-plus",
+"8:old-6-29",
+"8:old-6-33",
+"9:old-7-16",
+"9:old-7-27",
+"9:old-7-35",
+"9:old-7-44",
+"9:old-7-45",
+"9:old-7-46"
+],
+"2:old-2-1": [],
+"2:old-2-2": [],
+"2:old-2-3": [],
+"2:old-2-4": [
+"2:old-2-3"
+],
+"2:old-2-5": [
+"2:old-2-3"
+],
+"2:old-2-6": [],
+"2:old-2-7": [
+"2:old-2-6"
+],
+"2:old-2-8": [
+"2:old-2-6"
+],
+"2:old-2-9": [],
+"2:old-2-10": [
+"2:old-2-6"
+],
+"2:old-2-11": [
+"2:old-2-10"
+],
+"2:old-2-21": [
+"2:old-2-20"
+],
+"2:old-2-12": [
+"2:old-2-10"
+],
+"2:old-2-13": [
+"2:old-2-10"
+],
+"2:old-2-14": [
+"2:old-2-3"
+],
+"2:old-2-15": [],
+"2:old-2-16": [
+"2:old-2-14",
+"2:old-2-15"
+],
+"2:old-2-17": [],
+"2:old-2-18": [],
+"2:old-2-19": [
+"2:old-2-18"
+],
+"2:old-2-20": [
+"2:old-2-14",
+"2:old-2-16",
+"2:old-2-17",
+"2:old-2-18",
+"2:old-2-19"
+],
+"2:old-2-22": [
+"2:old-2-10"
+],
+"2:old-2-24": [
+"2:old-2-13",
+"2:old-2-4"
+],
+"2:old-2-25": [],
+"2:old-2-26": [],
+"2:old-2-27": [
+"2:old-2-3"
+],
+"2:old-2-28": [
+"2:old-2-3"
+],
+"2:old-2-29": [],
+"2:old-2-30": [
+"2:old-2-15"
+],
+"2:J-egf": [
+"2:old-2-17"
+],
+"2:old-2-31": [
+"2:old-2-33",
+"2:old-2-6",
+"2:old-2-7"
+],
+"2:old-2-32": [
+"2:old-2-26",
+"2:old-2-7"
+],
+"2:old-2-33": [
+"2:old-2-32"
+],
+"2:ratio-e": [
+"2:old-2-26",
+"2:old-2-31"
+],
+"2:old-2-34": [
+"2:old-2-31"
+],
+"2:old-2-35": [
+"2:old-2-14"
+],
+"2:old-2-36": [],
+"2:old-2-37": [],
+"2:zeta-constants": [],
+"2:old-2-38": [
+"2:old-2-26",
+"2:old-2-35",
+"2:old-2-36",
+"2:old-2-37"
+],
+"2:old-2-39": [
+"2:old-2-37",
+"2:old-2-38"
+],
+"2:b-top": [
+"2:old-2-6"
+],
+"2:old-2-40": [],
+"2:old-2-41": [
+"2:old-2-40"
+],
+"2:old-2-43": [],
+"2:old-2-44": [
+"2:old-2-37"
+],
+"2:old-2-45": [
+"2:old-2-12",
+"2:old-2-37"
+],
+"2:old-2-46": [
+"2:old-2-44",
+"2:old-2-45"
+],
+"2:chain-expansion": [
+"2:old-2-11"
+],
+"2:convex-bonferroni": [],
+"2:moving-tail": [
+"2:chain-expansion",
+"2:convex-bonferroni",
+"2:old-2-37"
+],
+"2:chain-normalization": [
+"2:chain-expansion",
+"2:moving-tail"
+],
+"3:old-3-1": [],
+"3:old-3-2": [],
+"3:old-3-3": [
+"3:old-3-2"
+],
+"3:old-3-4": [
+"3:old-3-1"
+],
+"3:old-3-5": [
+"2:old-2-12",
+"2:old-2-13",
+"3:old-3-1"
+],
+"3:old-3-6": [
+"2:old-2-10",
+"2:old-2-12",
+"2:old-2-13"
+],
+"3:peak-asymptotics": [
+"1:main-theorem",
+"3:old-3-1",
+"3:old-3-3"
+],
+"4:old-4-1": [],
+"4:old-4-2": [],
+"4:old-4-3": [],
+"4:old-4-4": [],
+"4:old-4-5": [
+"2:J-egf",
+"2:old-2-28",
+"2:old-2-30",
+"4:e-integral",
+"4:gauss-coeff",
+"4:gauss-coeff-numeric",
+"4:gauss-contraction",
+"4:old-4-7",
+"4:two-corrections"
+],
+"4:e-integral": [
+"2:old-2-4",
+"2:old-2-6"
+],
+"4:old-4-6": [
+"2:J-egf"
+],
+"4:gauss-contraction": [],
+"4:gauss-coeff": [
+"4:gauss-contraction"
+],
+"4:old-4-7": [
+"4:e-integral"
+],
+"4:gauss-coeff-numeric": [
+"4:old-4-7"
+],
+"4:borel-tail-arc": [],
+"4:correction-contour": [],
+"4:two-corrections": [
+"4:borel-tail-arc",
+"4:correction-contour"
+],
+"4:old-4-8": [
+"3:old-3-6",
+"4:old-4-2",
+"4:old-4-5",
+"5:old-5-1"
+],
+"4:old-4-9": [
+"4:old-4-4",
+"4:old-4-8"
+],
+"5:old-5-1": [
+"2:old-2-6",
+"4:old-4-3",
+"4:old-4-5",
+"7:band-propagation",
+"7:column-lemma",
+"7:old-6-7"
+],
+"5:old-5-2": [
+"2:old-2-13",
+"4:old-4-4",
+"5:old-5-1"
+],
+"5:witness-position-bound": [
+"5:old-5-1",
+"5:old-5-2"
+],
+"5:green-connection": [
+"2:J-egf",
+"2:old-2-10",
+"2:old-2-30",
+"2:old-2-4",
+"2:old-2-6",
+"2:old-2-8"
+],
+"5:source-rep": [
+"2:old-2-17",
+"2:old-2-28",
+"2:old-2-3",
+"2:old-2-30",
+"2:old-2-4",
+"5:green-connection"
+],
+"5:SR-implies-QR": [
+"5:source-rep"
+],
+"5:cayley-ratio": [
+"2:old-2-26"
+],
+"5:old-5-4": [
+"5:SR-implies-QR",
+"5:cayley-ratio",
+"5:source-rep"
+],
+"5:marked-riccati": [],
+"5:response-kernel": [
+"2:old-2-8",
+"5:green-connection",
+"5:marked-riccati"
+],
+"5:fixed-size-response": [
+"5:response-kernel"
+],
+"5:inverse-renewal": [
+"5:fixed-size-response"
+],
+"5:renewal-fkg": [
+"5:inverse-renewal"
+],
+"5:suff-cond": [
+"5:cayley-ratio",
+"5:inverse-renewal",
+"5:renewal-fkg",
+"5:source-rep"
+],
+"5:lemma-L": [
+"5:suff-cond"
+],
+"5:old-5-5": [
+"5:SR-implies-QR",
+"5:lemma-L",
+"5:old-5-4",
+"5:suff-cond"
+],
+"5:kernel-C-bound": [],
+"5:kernel-bounds": [
+"5:kernel-C-bound"
+],
+"5:nf-ratio": [
+"2:moving-tail"
+],
+"5:marked-recursion": [],
+"5:laurent-coeff": [],
+"5:kernel-crude": [],
+"5:first-moment-weight": [
+"5:marked-recursion",
+"5:nf-ratio"
+],
+"5:parity-tail": [
+"2:chain-normalization",
+"5:first-moment-weight",
+"5:kernel-crude",
+"5:marked-recursion"
+],
+"5:old-5-7": [
+"2:chain-normalization",
+"5:kernel-C-bound",
+"5:kernel-bounds",
+"5:laurent-coeff",
+"5:marked-recursion",
+"5:parity-tail"
+],
+"5:old-5-8": [
+"5:old-5-4",
+"5:old-5-5"
+],
+"5:old-5-9": [],
+"5:old-5-10": [
+"5:SR-implies-QR",
+"5:old-5-1",
+"5:old-5-4",
+"5:old-5-5"
+],
+"5:old-5-11": [
+"4:old-4-2",
+"4:old-4-4",
+"4:old-4-5",
+"4:old-4-8",
+"4:old-4-9",
+"5:old-5-1",
+"5:old-5-10",
+"5:old-5-7",
+"5:old-5-9"
+],
+"5:weight-envelope": [
+"2:chain-normalization",
+"2:moving-tail",
+"5:marked-recursion"
+],
+"5:marked-chain-rec": [
+"5:marked-recursion"
+],
+"5:kernel-sandwich": [
+"5:kernel-C-bound",
+"5:kernel-bounds",
+"5:laurent-coeff"
+],
+"5:omitted-tail": [
+"2:chain-normalization",
+"5:kernel-crude",
+"5:parity-tail",
+"5:weight-envelope"
+],
+"5:old-5-12": [
+"2:chain-normalization",
+"5:kernel-bounds",
+"5:kernel-sandwich",
+"5:marked-chain-rec",
+"5:marked-recursion",
+"5:omitted-tail",
+"5:weight-envelope"
+],
+"5:cover-edge": [
+"5:old-5-12"
+],
+"5:unit-circle": [],
+"5:cut-rep": [],
+"5:hat-normalization": [
+"2:J-egf",
+"4:e-integral",
+"4:old-4-6",
+"5:cut-rep"
+],
+"5:old-5-13": [
+"5:cut-rep",
+"5:hat-normalization",
+"5:unit-circle"
+],
+"5:old-5-14": [],
+"5:old-5-15": [
+"5:cover-edge",
+"5:old-5-13",
+"5:old-5-2"
+],
+"5:old-5-18": [
+"2:old-2-10",
+"2:old-2-13",
+"2:old-2-24",
+"2:old-2-25",
+"5:band-inequality",
+"5:old-5-11",
+"5:old-5-15",
+"5:old-5-2",
+"5:old-5-22",
+"5:old-5-26",
+"5:old-5-30",
+"5:old-5-32",
+"5:old-5-34",
+"5:old-5-38",
+"5:right-part",
+"6:cor-L"
+],
+"5:old-5-19": [
+"2:old-2-13"
+],
+"5:old-5-20": [
+"2:old-2-26"
+],
+"5:old-5-21": [
+"5:old-5-11",
+"5:old-5-14",
+"5:old-5-38"
+],
+"5:old-5-22": [
+"5:old-5-20"
+],
+"5:old-5-23": [],
+"5:old-5-24": [
+"2:old-2-37"
+],
+"5:old-5-25": [
+"2:old-2-11",
+"5:old-5-23",
+"5:old-5-24"
+],
+"5:stirling-bor": [],
+"5:old-5-26": [
+"2:old-2-26",
+"5:old-5-20",
+"5:stirling-bor"
+],
+"5:old-5-27": [],
+"5:old-5-28": [
+"2:old-2-13",
+"2:old-2-26"
+],
+"5:old-5-30": [
+"2:old-2-26",
+"5:stirling-bor"
+],
+"5:old-5-31": [
+"5:old-5-28"
+],
+"5:borel-gf": [],
+"5:bt-tail": [],
+"5:stop-lower": [
+"2:old-2-26",
+"5:stirling-bor"
+],
+"5:rig-int": [
+"5:borel-gf",
+"5:bt-tail",
+"5:old-5-31",
+"5:stirling-bor",
+"5:stop-lower"
+],
+"5:scaled-integrand": [
+"5:borel-gf",
+"5:bt-tail"
+],
+"5:riemann-unimodal": [],
+"5:old-5-32": [
+"5:riemann-unimodal",
+"5:rig-int",
+"5:scaled-integrand"
+],
+"5:old-5-33": [
+"5:old-5-28",
+"5:old-5-31",
+"5:stirling-bor"
+],
+"5:old-5-34": [
+"5:old-5-33"
+],
+"5:hover-tail": [
+"5:stirling-bor"
+],
+"5:band-inequality": [
+"5:hover-tail",
+"5:old-5-30",
+"5:old-5-32",
+"5:old-5-34",
+"5:stirling-bor"
+],
+"5:right-part": [
+"5:hover-tail",
+"5:old-5-30",
+"5:old-5-32",
+"5:old-5-34"
+],
+"5:old-5-38": [
+"5:old-5-11",
+"5:old-5-21",
+"5:old-5-5",
+"5:old-5-7"
+],
+"6:old-7-13": [
+"2:old-2-32",
+"2:old-2-6"
+],
+"6:old-7-19": [],
+"6:old-7-20": [
+"2:old-2-6",
+"6:cayley-propagation",
+"6:tilt-interval",
+"6:tilt-sum"
+],
+"6:difference-identity": [],
+"6:cayley-propagation": [],
+"6:tilt-interval": [],
+"6:tilt-sum": [
+"2:old-2-26",
+"2:old-2-37"
+],
+"6:old-7-21": [
+"2:old-2-26",
+"6:old-7-20"
+],
+"6:old-7-24": [
+"2:old-2-26",
+"6:tilt-sum"
+],
+"6:lemma-ell": [
+"2:old-2-26"
+],
+"6:increment-bounds": [
+"6:lemma-ell",
+"6:old-7-21",
+"6:old-7-24"
+],
+"6:old-8-13": [
+"6:lemma-omega",
+"6:lemma-phi",
+"6:same-kernel"
+],
+"6:chain-recursion": [
+"2:old-2-13"
+],
+"6:same-kernel": [
+"2:old-2-26"
+],
+"6:stay-margin-identity": [],
+"6:lemma-omega": [
+"2:old-2-26",
+"2:old-2-37",
+"6:same-kernel",
+"6:stay-margin-identity"
+],
+"6:lemma-phi": [
+"6:lemma-omega"
+],
+"6:old-8-11": [
+"4:old-4-5",
+"5:old-5-1",
+"5:old-5-18",
+"5:old-5-5",
+"5:old-5-8",
+"5:witness-position-bound",
+"6:old-7-13"
+],
+"6:old-8-12": [
+"4:old-4-5",
+"5:old-5-1",
+"5:old-5-18",
+"5:witness-position-bound",
+"6:old-7-13",
+"6:old-8-11"
+],
+"6:pair-rearrange": [],
+"6:diag-first-layer": [
+"2:old-2-10",
+"2:old-2-11",
+"6:classes-increase"
+],
+"6:chain-count": [],
+"6:class-polynomial": [
+"6:chain-count"
+],
+"6:log-derivative": [],
+"6:split-mass": [],
+"6:insertion": [],
+"6:concave-split": [
+"6:split-mass"
+],
+"6:highest-long-cell": [
+"6:concave-split"
+],
+"6:geometric-mean": [],
+"6:trapezoid": [],
+"6:pointwise": [
+"6:concave-split",
+"6:geometric-mean",
+"6:highest-long-cell"
+],
+"6:survival-factor": [
+"2:old-2-26"
+],
+"6:classes-increase": [
+"6:class-polynomial",
+"6:pointwise",
+"6:survival-factor"
+],
+"6:cor-L": [
+"6:diag-first-layer",
+"6:pair-rearrange"
+],
+"6:D-bound": [
+"6:cor-L",
+"6:old-8-11",
+"6:pair-rearrange"
+],
+"6:old-6-18": [
+"2:old-2-26"
+],
+"6:tilt-split": [
+"2:old-2-45"
+],
+"6:theorem-U": [
+"2:old-2-37",
+"6:lemma-A",
+"6:lemma-B",
+"6:lemma-E",
+"6:lemma-F",
+"6:lemma-N",
+"6:lemma-O"
+],
+"6:lemma-B": [
+"6:lemma-ell"
+],
+"6:lemma-A": [],
+"6:lemma-O": [
+"2:old-2-37"
+],
+"6:lemma-F": [],
+"6:lemma-E": [],
+"6:lemma-N": [],
+"6:old-6-19": [
+"2:old-2-31",
+"6:old-7-13",
+"6:old-8-11",
+"6:theorem-U",
+"6:tilt-split"
+],
+"6:DD-lower-bound": [
+"6:theorem-U",
+"6:tilt-split"
+],
+"6:path-shift": [
+"2:old-2-45",
+"6:lemma-ell",
+"6:survival-factor"
+],
+"6:theorem-D": [
+"2:old-2-37",
+"2:old-2-7"
+],
+"6:prop-W": [
+"5:old-5-28",
+"6:lemma-ell",
+"6:theorem-D"
+],
+"6:prop-R": [
+"6:old-8-11",
+"6:path-shift",
+"6:prop-W"
+],
+"6:pair-formula": [
+"2:chain-expansion"
+],
+"6:lemma-H": [
+"2:chain-expansion",
+"6:pair-formula"
+],
+"6:lemma-Hprime": [
+"2:moving-tail",
+"2:old-2-37",
+"2:zeta-constants"
+],
+"6:lemma-M": [],
+"6:critical-front": [
+"6:old-8-11",
+"6:prop-W"
+],
+"6:far-window": [
+"6:lemma-Hprime",
+"6:lemma-M",
+"6:prop-R"
+],
+"6:first-layer-end": [
+"4:old-4-5"
+],
+"6:small-k-bulk": [
+"5:old-5-1",
+"5:witness-position-bound",
+"6:first-layer-end",
+"6:lemma-Hprime",
+"6:lemma-M",
+"6:prop-R"
+],
+"6:above-window": [
+"5:old-5-1",
+"5:old-5-13",
+"5:old-5-18",
+"5:old-5-8",
+"5:witness-position-bound",
+"6:first-layer-end"
+],
+"6:v-negative": [
+"2:moving-tail"
+],
+"6:V-all": [
+"6:above-window",
+"6:critical-front",
+"6:far-window",
+"6:first-layer-end",
+"6:old-6-18",
+"6:old-6-19",
+"6:small-k-bulk",
+"6:v-negative"
+],
+"7:old-6-1": [
+"2:old-2-3"
+],
+"7:old-6-2": [
+"2:old-2-14",
+"2:old-2-4"
+],
+"7:old-6-3": [],
+"7:old-6-4": [
+"7:old-6-2",
+"7:old-6-3"
+],
+"7:old-6-5": [],
+"7:old-6-6": [
+"2:old-2-3"
+],
+"7:factorial-moment": [
+"7:old-6-6"
+],
+"7:old-6-7": [
+"2:old-2-4"
+],
+"7:old-6-8": [
+"7:old-6-6",
+"7:old-6-7"
+],
+"7:band-propagation": [
+"2:old-2-6"
+],
+"7:prime-decomposition": [
+"2:old-2-8"
+],
+"7:seed-transfer": [
+"2:old-2-6",
+"7:prime-decomposition"
+],
+"7:column-lemma": [
+"7:band-propagation",
+"7:old-6-7"
+],
+"7:old-6-9": [
+"4:old-4-5",
+"5:old-5-1",
+"7:column-lemma",
+"7:old-6-8",
+"7:seed-transfer"
+],
+"7:supermultiplicative": [
+"2:old-2-4",
+"7:prime-decomposition"
+],
+"7:old-6-10": [
+"2:old-2-15",
+"7:level-chain",
+"7:old-6-6",
+"7:supermultiplicative"
+],
+"7:flat-threshold": [
+"7:old-6-10",
+"7:old-6-2",
+"7:old-6-6"
+],
+"7:level-chain": [
+"2:old-2-6",
+"7:old-6-10"
+],
+"7:lemma-R-sc": [
+"7:level-chain"
+],
+"7:self-consistent-S": [
+"2:ratio-e",
+"7:lemma-R-sc",
+"7:level-chain",
+"7:old-6-10",
+"7:supermultiplicative"
+],
+"7:cor-S-prime": [
+"7:factorial-moment",
+"7:old-6-4",
+"7:self-consistent-S"
+],
+"7:riccati": [
+"2:old-2-8"
+],
+"7:pole-unique": [
+"7:prime-decomposition"
+],
+"7:pole-monotone": [
+"7:prime-decomposition"
+],
+"7:old-6-11": [
+"2:old-2-8",
+"7:pole-unique",
+"7:riccati",
+"7:supermultiplicative"
+],
+"7:fourier-lemmas": [],
+"7:X-cert": [
+"7:fourier-lemmas",
+"7:old-6-11",
+"7:supermultiplicative"
+],
+"7:old-6-12": [
+"7:X-cert",
+"7:pole-monotone"
+],
+"7:transfer-F": [
+"7:old-6-11"
+],
+"7:lemma-P-pole": [
+"7:fourier-lemmas"
+],
+"7:lemma-P-prime": [
+"7:fourier-lemmas"
+],
+"7:polar-R": [
+"7:flat-threshold",
+"7:lemma-P-pole",
+"7:old-6-11",
+"7:supermultiplicative"
+],
+"7:theorem-G-prime": [
+"7:lemma-P-prime",
+"7:polar-R"
+],
+"7:polar-N": [],
+"7:polar-W": [
+"7:old-6-11",
+"7:polar-N",
+"7:polar-R",
+"7:seed-transfer",
+"7:transfer-F"
+],
+"7:moment-recursion": [
+"2:old-2-3",
+"2:old-2-6"
+],
+"7:variance-formula": [
+"7:moment-recursion"
+],
+"7:theorem-C-moment": [
+"7:factorial-moment",
+"7:theorem-G-prime"
+],
+"7:blocked-majorant": [
+"2:old-2-29",
+"2:old-2-30"
+],
+"7:block-exponential": [
+"4:e-integral"
+],
+"7:green-atom": [
+"2:J-egf",
+"7:block-exponential"
+],
+"7:pair-terms": [],
+"7:heavy-block": [
+"6:chain-recursion"
+],
+"7:pair-criterion": [
+"7:heavy-block"
+],
+"7:pair-check-10000": [
+"7:pair-criterion",
+"7:pair-terms"
+],
+"7:kernel-bound": [],
+"7:tail-bound": [
+"7:kernel-bound"
+],
+"7:pair-criterion-sharp": [
+"7:heavy-block",
+"7:pair-criterion",
+"7:pair-terms",
+"7:tail-bound"
+],
+"7:pair-reach-table": [
+"7:pair-criterion-sharp",
+"7:tail-bound"
+],
+"7:hermite-nu": [
+"4:gauss-contraction",
+"7:analytic-transfer"
+],
+"7:vertical-nu": [
+"4:correction-contour",
+"4:two-corrections",
+"7:analytic-transfer"
+],
+"7:analytic-transfer": [
+"4:correction-contour",
+"4:gauss-coeff-numeric",
+"4:old-4-6",
+"4:old-4-7",
+"7:green-atom",
+"7:hermite-nu",
+"7:vertical-nu"
+],
+"7:integer-strips": [
+"2:old-2-6"
+],
+"7:old-6-13": [
+"4:old-4-5",
+"7:analytic-transfer",
+"7:integer-strips",
+"7:pair-check-10000",
+"7:pair-reach-table"
+],
+"7:old-6-14": [
+"2:old-2-6"
+],
+"7:old-6-15": [],
+"7:qstar-implies-wlflat": [
+"4:old-4-5",
+"5:old-5-1",
+"7:cor-S-prime",
+"7:old-6-13",
+"7:old-6-15",
+"7:old-6-4",
+"7:polar-N",
+"7:polar-W",
+"7:theorem-C-moment"
+],
+"7:fold-A": [],
+"7:fold-R": [],
+"7:fold-T": [
+"2:old-2-26",
+"2:old-2-31"
+],
+"7:fold-L1": [
+"7:fold-A",
+"7:fold-R",
+"7:fold-T"
+],
+"7:fold-DIP": [
+"2:old-2-31"
+],
+"7:borel-monotone": [
+"2:old-2-26"
+],
+"7:polar-PD": [
+"7:borel-monotone",
+"7:old-6-12"
+],
+"7:prop-PF": [
+"7:X-cert"
+],
+"7:qstar-columns": [
+"7:fold-DIP",
+"7:old-6-12",
+"7:polar-PD",
+"7:prop-PF"
+],
+"7:root-symmetry": [],
+"7:old-6-16": [
+"2:old-2-31",
+"7:root-symmetry"
+],
+"7:explicit-bounds": [],
+"7:top-roots": [
+"2:old-2-31",
+"7:old-6-16",
+"7:root-symmetry"
+],
+"7:theorem-W": [
+"2:old-2-32",
+"6:old-7-24",
+"7:explicit-bounds",
+"7:top-roots"
+],
+"7:src-plus": [
+"7:fold-A",
+"7:fold-DIP",
+"7:fold-L1",
+"7:old-6-16",
+"7:polar-PD",
+"7:theorem-W"
+],
+"7:old-6-20": [
+"6:V-all",
+"6:old-7-21",
+"7:old-6-15",
+"7:src-plus"
+],
+"7:threshold-unit-ratio": [
+"2:old-2-13",
+"2:old-2-26",
+"2:old-2-31"
+],
+"7:old-6-21": [
+"6:V-all",
+"6:old-6-19",
+"6:old-7-21",
+"7:old-6-20",
+"7:threshold-unit-ratio"
+],
+"7:old-6-22": [
+"4:old-4-2",
+"4:old-4-5",
+"4:old-4-8",
+"5:old-5-1",
+"5:old-5-18",
+"7:flat-threshold",
+"7:old-6-13",
+"7:old-6-15",
+"7:old-6-20",
+"7:old-6-21",
+"7:old-6-9",
+"7:qstar-columns",
+"7:qstar-implies-wlflat"
+],
+"8:old-6-23": [],
+"8:old-6-24": [
+"2:old-2-26"
+],
+"8:old-6-25": [
+"2:old-2-37"
+],
+"8:old-6-26": [],
+"8:old-6-27": [
+"8:old-6-26"
+],
+"8:explicit-bounds": [
+"2:old-2-26",
+"2:old-2-37"
+],
+"8:jensen-lower": [
+"2:chain-expansion",
+"2:old-2-12",
+"2:old-2-13",
+"2:old-2-37"
+],
+"8:escape-lower": [
+"2:old-2-13",
+"2:old-2-31"
+],
+"8:lowest-violation": [
+"2:old-2-13",
+"2:old-2-37"
+],
+"8:prop-U-apriori": [
+"2:old-2-31",
+"8:explicit-bounds"
+],
+"8:envelope-H": [
+"8:explicit-bounds",
+"8:jensen-lower"
+],
+"8:envelope-HG": [
+"2:old-2-37",
+"8:escape-lower",
+"8:explicit-bounds"
+],
+"8:pieces-k-monotone": [
+"2:zeta-constants",
+"8:explicit-bounds"
+],
+"8:escape-y-monotone": [
+"8:explicit-bounds"
+],
+"8:jensen-H-ii": [
+"2:zeta-constants"
+],
+"8:table-lower-bound": [
+"8:escape-y-monotone",
+"8:jensen-H-ii",
+"8:pieces-k-monotone"
+],
+"8:envelope-code-monotone": [
+"8:escape-y-monotone",
+"8:jensen-H-ii",
+"8:table-lower-bound"
+],
+"8:closed-form-envelope": [
+"2:zeta-constants",
+"8:escape-y-monotone",
+"8:jensen-H-ii",
+"8:pieces-k-monotone"
+],
+"8:table-tolerance": [
+"2:zeta-constants",
+"8:closed-form-envelope",
+"8:escape-y-monotone",
+"8:jensen-H-ii",
+"8:table-lower-bound"
+],
+"8:large-q-bounds": [
+"8:explicit-bounds"
+],
+"8:cell-bound": [],
+"8:reduction-J": [
+"8:large-q-bounds",
+"8:old-6-24",
+"8:old-6-25",
+"8:old-6-26",
+"8:old-6-27",
+"8:old-6-28"
+],
+"8:old-6-28": [
+"8:cell-bound",
+"8:reduction-J",
+"8:table-tolerance"
+],
+"8:old-6-30": [
+"2:old-2-10",
+"2:old-2-15",
+"2:old-2-4",
+"7:old-6-1",
+"8:explicit-bounds"
+],
+"8:old-6-31": [
+"2:old-2-26"
+],
+"8:old-6-32": [
+"2:old-2-31",
+"8:old-6-31"
+],
+"8:old-6-29": [
+"2:old-2-31",
+"8:explicit-bounds",
+"8:old-6-23",
+"8:old-6-28",
+"8:prop-U-apriori",
+"8:table-tolerance"
+],
+"8:hazard-H1": [
+"6:old-7-24",
+"8:explicit-bounds"
+],
+"8:old-6-33": [
+"8:explicit-bounds",
+"8:hazard-H1",
+"8:old-6-23",
+"8:old-6-28",
+"8:old-6-29",
+"8:old-6-30",
+"8:old-6-31",
+"8:old-6-32",
+"8:table-tolerance"
+],
+"9:F5-upper": [],
+"9:theorem-A-plus": [
+"2:old-2-13",
+"2:old-2-26",
+"2:old-2-37",
+"9:F5-upper"
+],
+"9:prop-H": [
+"9:theorem-A-plus"
+],
+"9:chain-rep": [
+"2:old-2-11"
+],
+"9:chain-moments": [
+"2:chain-expansion",
+"2:old-2-37"
+],
+"9:chain-bounds": [
+"2:old-2-11",
+"9:chain-rep"
+],
+"9:prop-6": [
+"2:old-2-37",
+"9:chain-bounds",
+"9:chain-moments"
+],
+"9:psi-two-sided": [
+"2:old-2-37",
+"2:zeta-constants"
+],
+"9:head-sum-1": [
+"9:prop-6",
+"9:prop-H",
+"9:psi-two-sided"
+],
+"9:head-sum-2": [
+"4:old-4-5",
+"5:old-5-1",
+"5:old-5-18"
+],
+"9:H-star-plus": [
+"2:b-top",
+"9:head-sum-1",
+"9:head-sum-2",
+"9:prop-H"
+],
+"9:centroid-stop": [
+"2:old-2-10"
+],
+"9:old-7-1": [
+"2:old-2-10",
+"9:centroid-stop"
+],
+"9:old-7-3": [
+"2:old-2-10",
+"9:old-7-1"
+],
+"9:old-7-4": [],
+"9:old-7-5": [
+"9:old-7-4"
+],
+"9:old-7-6": [
+"2:old-2-41",
+"9:old-7-44",
+"9:old-7-5"
+],
+"9:old-7-7": [
+"2:old-2-10"
+],
+"9:old-7-8": [],
+"9:old-7-10": [
+"9:old-7-8"
+],
+"9:old-7-11": [
+"9:old-7-10",
+"9:old-7-8"
+],
+"9:old-7-12": [
+"2:b-top",
+"2:old-2-13",
+"8:old-6-23"
+],
+"9:old-7-16": [
+"2:old-2-31",
+"2:old-2-34",
+"6:old-7-13",
+"8:old-6-33",
+"9:centroid-stop",
+"9:old-7-11",
+"9:old-7-12",
+"9:old-7-3"
+],
+"9:old-7-17": [
+"9:old-7-16"
+],
+"9:regeneration-S": [
+"2:b-top"
+],
+"9:old-7-18": [
+"2:old-2-40",
+"9:regeneration-S"
+],
+"9:old-7-22": [
+"2:old-2-31",
+"6:old-7-21",
+"8:old-6-30"
+],
+"9:old-7-23": [
+"6:D-bound",
+"9:H-star-plus"
+],
+"9:old-7-25": [
+"6:increment-bounds",
+"6:old-6-19",
+"6:old-7-21",
+"9:old-7-23"
+],
+"9:old-7-26": [
+"6:D-bound",
+"6:old-6-19"
+],
+"9:old-7-27": [
+"6:old-7-21",
+"9:old-7-18",
+"9:old-7-25",
+"9:old-7-26"
+],
+"9:old-7-28": [
+"8:old-6-29",
+"8:old-6-33",
+"9:old-7-18",
+"9:old-7-22",
+"9:old-7-25",
+"9:old-7-26"
+],
+"9:old-7-29": [
+"2:old-2-39"
+],
+"9:old-7-30": [
+"6:increment-bounds",
+"6:old-6-19",
+"6:old-7-21",
+"9:old-7-23",
+"9:old-7-29"
+],
+"9:old-7-31": [
+"8:old-6-29",
+"9:old-7-18",
+"9:old-7-22",
+"9:old-7-26",
+"9:old-7-28",
+"9:old-7-30"
+],
+"9:old-7-32": [
+"6:old-6-19",
+"6:old-7-21",
+"6:old-7-24",
+"9:old-7-23",
+"9:old-7-30"
+],
+"9:old-7-33": [
+"8:old-6-29",
+"9:old-7-22",
+"9:old-7-26",
+"9:old-7-28",
+"9:old-7-31",
+"9:old-7-32"
+],
+"9:old-7-34": [
+"4:old-4-5",
+"5:old-5-1",
+"7:old-6-13",
+"9:old-7-33"
+],
+"9:old-7-35": [
+"2:old-2-41",
+"2:zeta-constants",
+"8:old-6-28",
+"9:old-7-37",
+"9:old-7-39",
+"9:old-7-42",
+"9:pair-one-variable"
+],
+"9:old-7-36": [],
+"9:old-7-37": [
+"8:old-6-28"
+],
+"9:old-7-38": [],
+"9:psi-low": [
+"2:zeta-constants"
+],
+"9:old-7-39": [
+"9:old-7-7",
+"9:psi-low"
+],
+"9:old-7-40": [],
+"9:old-7-41": [],
+"9:old-7-42": [
+"9:psi-low"
+],
+"9:pair-one-variable": [
+"9:old-7-38",
+"9:old-7-42"
+],
+"9:old-7-44": [
+"9:old-7-17",
+"9:old-7-35"
+],
+"9:old-7-45": [
+"4:old-4-5",
+"5:old-5-1",
+"7:old-6-13",
+"9:old-7-18",
+"9:old-7-26",
+"9:old-7-27",
+"9:old-7-33",
+"9:old-7-34"
+],
+"9:old-7-46": [
+"4:old-4-2",
+"4:old-4-5",
+"4:old-4-8",
+"5:old-5-1",
+"5:old-5-18",
+"6:V-all",
+"7:flat-threshold",
+"7:old-6-15",
+"7:old-6-20",
+"7:old-6-21",
+"7:old-6-22",
+"7:old-6-9",
+"7:qstar-columns",
+"7:qstar-implies-wlflat",
+"9:old-7-44",
+"9:old-7-45",
+"9:old-7-6"
+],
+"10:old-8-1": [
+"7:old-6-14",
+"7:old-6-15",
+"7:old-6-21"
+],
+"10:old-8-2": [
+"7:old-6-14"
+],
+"10:old-8-3": [
+"2:old-2-26",
+"6:old-7-20"
+],
+"10:old-8-4": [],
+"10:old-8-6": [],
+"10:old-8-8": [
+"10:old-8-4"
+],
+"10:old-8-9": [
+"10:old-8-1",
+"10:reduction-ga",
+"10:row-3k",
+"4:old-4-5",
+"5:old-5-1",
+"5:old-5-18",
+"5:witness-position-bound",
+"7:old-6-21"
+],
+"10:old-8-10": [
+"10:old-8-2",
+"10:old-8-3",
+"10:old-8-6",
+"8:old-6-33"
+],
+"10:row-3k": [
+"10:old-8-3",
+"6:V-all",
+"6:old-6-19",
+"7:threshold-unit-ratio"
+],
+"10:old-8-14": [
+"10:old-8-3",
+"10:old-8-8",
+"2:old-2-13",
+"2:old-2-31",
+"6:DD-lower-bound",
+"6:old-7-13",
+"6:old-8-11",
+"6:old-8-13"
+],
+"10:old-8-15": [
+"2:old-2-13",
+"2:old-2-26"
+],
+"10:old-8-16": [],
+"10:old-8-17": [],
+"10:old-8-18": [
+"10:old-8-16"
+],
+"10:old-8-19": [
+"10:old-8-18"
+],
+"10:old-8-20": [],
+"10:old-8-21": [],
+"10:old-8-22": [
+"10:old-8-17",
+"10:old-8-19",
+"10:old-8-20"
+],
+"10:old-8-23": [
+"10:old-8-21",
+"2:old-2-26"
+],
+"10:old-8-24": [],
+"10:old-8-25": [
+"10:old-8-24"
+],
+"10:old-8-28": [
+"2:old-2-45"
+],
+"10:reduction-na": [
+"10:old-8-14",
+"10:old-8-15",
+"10:old-8-22",
+"10:old-8-23",
+"10:old-8-25",
+"2:old-2-31"
+],
+"10:reduction-ga": [
+"10:old-8-14",
+"10:old-8-22",
+"10:old-8-23",
+"10:old-8-8",
+"4:old-4-5",
+"5:old-5-1",
+"5:old-5-18",
+"5:witness-position-bound"
+],
+"10:families": [
+"10:old-8-33",
+"2:old-2-46"
+],
+"10:old-8-30": [
+"2:old-2-37",
+"2:old-2-45"
+],
+"10:old-8-31": [
+"10:old-8-28",
+"2:old-2-31",
+"2:old-2-46"
+],
+"10:old-8-32": [
+"10:old-8-30",
+"10:old-8-31"
+],
+"10:old-8-33": [
+"10:old-8-25",
+"6:old-8-12"
+],
+"10:old-8-34": [
+"10:old-8-25",
+"2:old-2-37"
+],
+"10:old-8-35": [
+"10:old-8-14",
+"10:old-8-23",
+"10:old-8-34"
+],
+"10:bulk-majorants": [
+"10:old-8-23",
+"10:old-8-33",
+"10:old-8-35",
+"10:reduction-ga",
+"6:old-8-12"
+],
+"10:check-na": [
+"10:bulk-majorants",
+"10:old-8-23",
+"10:old-8-33",
+"10:old-8-35",
+"10:reduction-na"
+],
+"10:check-ga": [
+"10:bulk-majorants",
+"10:old-8-30",
+"10:old-8-31",
+"10:old-8-32",
+"10:reduction-ga"
+],
+"10:old-8-36": [
+"10:check-ga",
+"10:check-na",
+"10:families",
+"10:row-3k"
+],
+"10:old-8-37": [
+"10:old-8-10",
+"10:old-8-36",
+"4:old-4-2",
+"4:old-4-5",
+"4:old-4-8",
+"5:old-5-1",
+"5:old-5-11",
+"5:old-5-18",
+"6:V-all",
+"7:flat-threshold",
+"7:old-6-13",
+"7:old-6-15",
+"7:old-6-20",
+"7:old-6-9",
+"7:qstar-columns",
+"7:qstar-implies-wlflat",
+"7:src-plus",
+"8:old-6-33"
+]
+}

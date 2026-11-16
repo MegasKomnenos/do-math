@@ -1,0 +1,177 @@
+===== fiber-enumeration ( 부록D_장2.md )
+  진술  D: 정리 {{2:old-2-5}}
+        T: 정리 {{2:old-2-5}}   SAME
+  등급  D: 정확 정수·유리수(Python 임의 정밀도 정수).
+        T: 정확 정수·유리수
+  절    T: 2.2  실제: ['2.2'] 
+  괄호   SAME
+  본문   SAME
+===== fiber-nonunimodal-bound ( 부록D_장2.md )
+  진술  D: 명제 {{2:old-2-20}}
+        T: 명제 {{2:old-2-20}}   SAME
+  등급  D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $n=17$에서 정확 유리수, $n=100,1000,10^4$에서 배정밀도 평가다.
+        T: 방향 반올림 구간
+  절    T: 2.5  실제: ['2.5'] 
+  괄호   SAME
+  본문   SAME
+===== zeta-constants ( 부록D_장2.md )
+  진술  D: 보조정리 {{2:zeta-constants}}
+        T: 보조정리 {{2:zeta-constants}}   SAME
+  등급  D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+        T: 방향 반올림 구간
+  절    T: 2.9  실제: ['2.9'] 
+  괄호   SAME
+  본문   SAME
+===== logconcavity-failure-n80 ( 부록D_장3.md )
+  진술  D: 정리 {{3:old-3-4}}
+        T: 정리 {{3:old-3-4}}   SAME
+  등급  D: 정확 정수·유리수.
+        T: 정확 정수·유리수
+  절    T: 3.3  실제: ['3.3'] 
+  괄호   SAME
+  본문   SAME
+===== cumulative-logconcavity ( 부록D_장3.md )
+  진술  D: 정리 {{3:old-3-5}}
+        T: 정리 {{3:old-3-5}}   SAME
+  등급  D: 정확 정수·유리수(주 계산과 첫째 확인 계산); 둘째 확인 계산은 binary64 사전 오차 해석.
+        T: 정확 정수·유리수
+  절    T: 3.3  실제: ['3.3'] 
+  괄호   SAME
+  본문   SAME
+===== central-gap-integer ( 부록D_장4.md )
+  진술  D: 정리 {{4:old-4-5}}
+        T: 정리 {{4:old-4-5}}   SAME
+  등급  D: 정확 정수·유리수(방향을 정한 반올림의 고정소수점 정수 산술; 판정은 정수 비교).
+        T: 정확 정수·유리수
+  절    T: 4.3  실제: ['4.3'] 
+  괄호   SAME
+  본문   SAME
+===== central-gap-rational-audit ( 부록D_장4.md )
+  진술  D: 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, {{4:gauss-coeff}}, {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}}
+        T: 정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}, 보조정리 {{4:gauss-coeff}}, 보조정리 {{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}}   <<DIFF
+  등급  D: 정확 정수·유리수(기호 계산 포함). 주 감사에는 수치 구적이 쓰이지 않는다.
+        T: 정확 정수·유리수
+  절    T: 4.3  실제: ['4.3'] 
+  괄호   SAME
+  본문   SAME
+===== crossing-small-n ( 부록D_장4.md )
+  진술  D: 정리 {{4:old-4-8}}(나)
+        T: 정리 {{4:old-4-8}}(나)   SAME
+  등급  D: 정확 정수·유리수.
+        T: 정확 정수·유리수
+  절    T: 4.4  실제: ['4.4'] 
+  괄호   SAME
+  본문   SAME
+===== QL-small-n ( 부록D_장4.md )
+  진술  D: 정리 {{4:old-4-9}}
+        T: 정리 {{4:old-4-9}}   SAME
+  등급  D: 정확 정수·유리수.
+        T: 정확 정수·유리수
+  절    T: 4.4  실제: ['4.4'] 
+  괄호   SAME
+  본문   SAME
+===== exact-n20000 ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-1}}, 명제 {{5:witness-position-bound}}
+        T: 정리 {{5:old-5-1}}, 명제 {{5:witness-position-bound}}   SAME
+  등급  D: 정확 정수·유리수((ㄱ)–(ㅁ)의 주 계산; 정수 구간)와 방향 반올림 구간((ㄴ)의 독립 프로그램은 IEEE binary64의 방향 반올림 구간; (ㅂ)는 mpmath `iv`, 소수 $30$자리 — 이 글의 재계
+        T: 정확 정수·유리수, 방향 반올림 구간
+  절    T: 5.1  실제: ['5.1'] 
+  괄호   SAME
+  본문   SAME
+===== c50 ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-2}}
+        T: 정리 {{5:old-5-2}}   SAME
+  등급  D: 방향 반올림 구간(IEEE binary64의 아래·위 반올림 두 패스, 표는 mpmath `iv` 소수 $40$자리의 바깥 반올림; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다.
+        T: 방향 반올림 구간
+  절    T: 5.1  실제: ['5.1'] 
+  괄호   SAME
+  본문   SAME
+===== newton-m170 ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-4}}
+        T: 정리 {{5:old-5-4}}   SAME
+  등급  D: 정확 정수·유리수.
+        T: 정확 정수·유리수
+  절    T: 5.2  실제: ['5.2'] 
+  괄호   SAME
+  본문   SAME
+===== tail-T1-partAB ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-5}}
+        T: 정리 {{5:old-5-5}}   SAME
+  등급  D: 방향 반올림 구간(30자리).
+        T: 방향 반올림 구간
+  절    T: 5.2  실제: ['5.2'] 
+  괄호   SAME
+  본문   SAME
+===== bernstein-signs ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-7}}
+        T: 정리 {{5:old-5-7}}   SAME
+  등급  D: 정확 정수·유리수(Python 정수와 분수).
+        T: 정확 정수·유리수
+  절    T: 5.2  실제: ['5.2'] 
+  괄호   SAME
+  본문   SAME
+===== band-A-certification ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-12}}
+        T: 정리 {{5:old-5-12}}   SAME
+  등급  D: Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간(mpmath).
+        T: 정확 정수·유리수, 방향 반올림 구간
+  절    T: 5.4  실제: ['5.4'] 
+  괄호   SAME
+  본문   SAME
+===== critical-window-rig ( 부록D_장5A.md )
+  진술  D: 정리 {{5:old-5-13}}
+        T: 정리 {{5:old-5-13}}   SAME
+  등급  D: 방향 반올림 구간(mpmath.iv, 30자리). 급수는 명시적 꼬리와 함께 자른다. 상자 자료는 상자별 캐시(JSON, 17자리 십진 문자열)에 저장해 재사용하며, 읽을 때 양 끝을 상대 $2^{-48}$ 바깥으로
+        T: 방향 반올림 구간
+  절    T: 5.4  실제: ['5.4'] 
+  괄호   SAME
+  본문   SAME
+===== window-mass-constant ( 부록D_장5B.md )
+  진술  D: 정리 {{5:old-5-32}}
+        T: 정리 {{5:old-5-32}}   SAME
+  등급  D: 방향 반올림 구간(mpmath 구간 산술 `iv`, 소수 $25$에서 $40$자리).
+        T: 방향 반올림 구간
+  절    T: 5.5  실제: ['5.5'] 
+  괄호   SAME
+  본문   SAME
+===== band-check ( 부록D_장5B.md )
+  진술  D: 명제 {{5:band-inequality}}
+        T: 명제 {{5:band-inequality}}   SAME
+  등급  D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+        T: 방향 반올림 구간
+  절    T: 5.5  실제: ['5.5'] 
+  괄호   SAME
+  본문   SAME
+===== theorem-U-constant ( 부록D_장6.md )
+  진술  D: 정리 {{6:theorem-U}}
+        T: 정리 {{6:theorem-U}}   SAME
+  등급  D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+        T: 방향 반올림 구간
+  절    T: 6.5  실제: ['6.5'] 
+  괄호   SAME
+  본문   SAME
+===== theorem-D-base ( 부록D_장6.md )
+  진술  D: 정리 {{6:theorem-D}}
+        T: 정리 {{6:theorem-D}}   SAME
+  등급  D: 정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi$와 비를 40자리로 평가한다.
+        T: 정확 정수·유리수, 방향 반올림 구간
+  절    T: 6.6  실제: ['6.6'] 
+  괄호   SAME
+  본문   SAME
+===== prop-W-thirteen ( 부록D_장6.md )
+  진술  D: 명제 {{6:v-negative}}
+        T: 명제 {{6:v-negative}}   SAME
+  등급  D: 방향 반올림 구간(mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 40자리 평가다.
+        T: 방향 반올림 구간
+  절    T: 6.6  실제: ['6.6'] 
+  괄호   SAME
+  본문   SAME
+===== tilt-sum-small-k ( 부록D_장6.md )
+  진술  D: 보조정리 {{6:tilt-sum}}
+        T: 보조정리 {{6:tilt-sum}}   SAME
+  등급  D: 정확 정수·유리수.
+        T: 정확 정수·유리수
+  절    T: 6.2  실제: ['6.2'] 
+  괄호   SAME
+  본문   SAME
+표에만 있는 항목(내 범위 밖 포함): ['column-certification-k500', 'seed-certificates-k120', 'self-consistent-constants', 'xcert-partAB', 'polar-blocks-488', 'band102-integer', 'moment-certification', 'column-certificates-841-2000', 'Q-fin-1130', 'window-mass-env', 'bprime-boxes', 'band-boxes', 'stored-table-check', 'm1-column-reading', 'H-star-plus-interval', 'AR-integrals', 'band-LP', 'pair-one-variable', 'M-natural-integrals', 'four-families']

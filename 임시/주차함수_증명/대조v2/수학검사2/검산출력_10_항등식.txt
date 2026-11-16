@@ -1,0 +1,5 @@
+k=3: 모든 항등식(old-8-2, old-8-3(a)(d)(e), old-8-4(i)-(iii), old-8-5, old-8-6, old-8-8(가)(나)(다), V-core-identity, Stem 식, old-8-15) 성립: True
+k=4: 모든 항등식(old-8-2, old-8-3(a)(d)(e), old-8-4(i)-(iii), old-8-5, old-8-6, old-8-8(가)(나)(다), V-core-identity, Stem 식, old-8-15) 성립: True
+k=5: 모든 항등식(old-8-2, old-8-3(a)(d)(e), old-8-4(i)-(iii), old-8-5, old-8-6, old-8-8(가)(나)(다), V-core-identity, Stem 식, old-8-15) 성립: True
+k=6: 모든 항등식(old-8-2, old-8-3(a)(d)(e), old-8-4(i)-(iii), old-8-5, old-8-6, old-8-8(가)(나)(다), V-core-identity, Stem 식, old-8-15) 성립: True
+k=7: 모든 항등식(old-8-2, old-8-3(a)(d)(e), old-8-4(i)-(iii), old-8-5, old-8-6, old-8-8(가)(나)(다), V-core-identity, Stem 식, old-8-15) 성립: True

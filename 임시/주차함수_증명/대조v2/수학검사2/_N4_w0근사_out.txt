@@ -1,0 +1,9 @@
+int g over [0,4.1] ~ 0.76383, max g ~ 0.5903 at theta~0.537
+int rho over [0,12] ~ 0.90924, max rho ~ 0.5859; O(25000)=2.04e-05
+float approx of (5.3) bound ~ 0.71184  (certified w0 = 0.71216 should be <= this and near)
+g(4.0)=4.891e-04
+g(4.2)=0.000e+00
+g(4.24)=0.000e+00
+g(4.25)=0.000e+00
+g(4.3)=0.000e+00
+g(6.0)=0.000e+00

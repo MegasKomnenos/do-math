@@ -1,0 +1,22 @@
+g_0 = 4
+g_1 = -4*nu - 8*theta - 26
+g_2 = 5*nu**2 + 16*nu*theta + 97*nu + 12*theta**2 + 168*theta + 506
+g_3 = -6*nu**3 - 26*nu**2*theta - 239*nu**2 - 36*nu*theta**2 - 762*nu*theta - 3187*nu - 16*theta**3 - 594*theta**2 - 5362*theta - 11016
+g_4 = 7*nu**4 + 38*nu**3*theta + 483*nu**3 + 75*nu**2*theta**2 + 2181*nu**2*theta + 11904*nu**2 + 64*nu*theta**3 + 3219*nu*theta**2 + 38055*nu*theta + 93889*nu + 20*theta**4 + 1552*theta**3 + 30012*theta**2 + 154730*theta + 218589
+max|g_3| nu=-1: 13262.0
+max|g_3| nu=0: 16988.0
+max|g_4| nu=-1: 283322.0
+max|g_4| nu=0: 404903.0
+(4.9) check: 0
+M4/M0 nu=0 diff: 0
+M4/M0 nu=0 with center: 2136/k**3 + 35/k**2 + O(k**(-4), (k, oo))
+M4/M0 nu=-1 diff: 0
+M4/M0 nu=-1 with center: 2935/(2*k**3) + 35/k**2 + O(k**(-4), (k, oo))
+nu=0: P*k^2 coeffs (k^4,k^3,k^2..): [-20, 2*(50*theta + 227), 2*(8*theta**3 + 167*theta**2 + 674*theta + 506), 2*theta**2*(6*theta**2 + 84*theta + 253)]
+  kP+5y^2vt *k^2 coeffs: [4*(5*theta + 81), 2*(8*theta**3 + 247*theta**2 + 1224*theta + 1771), 4*theta*(3*theta + 23)*(theta**2 - 7*theta - 55), 10*theta**2*(6*theta**2 + 84*theta + 253)]
+  100kP+499y^2vt *k^2 coeffs: [-4, 2*(1008*theta + 16213), 2*(800*theta**3 + 24684*theta**2 + 122290*theta + 176847), 2*theta*(600*theta**3 + 416*theta**2 - 65019*theta - 252494), 998*theta**2*(6*theta**2 + 84*theta + 253)]
+  y^2 vt *k^2 coeffs: [4, -2*(8*theta + 13), 2*(16*theta**2 + 110*theta + 253), -2*theta*(16*theta**2 + 181*theta + 506), 2*theta**2*(6*theta**2 + 84*theta + 253)]
+nu=-1: P*k^2 coeffs (k^4,k^3,k^2..): [-20, 2*(50*theta + 207), 2*theta*(8*theta**2 + 149*theta + 436), 2*theta*(theta - 2)*(6*theta**2 + 76*theta + 207)]
+  kP+5y^2vt *k^2 coeffs: [4*(5*theta + 76), 2*(8*theta**3 + 229*theta**2 + 926*theta + 1035), 4*theta*(3*theta**3 - 8*theta**2 - 380*theta - 1242), 10*theta**2*(6*theta**2 + 76*theta + 207)]
+  100kP+499y^2vt *k^2 coeffs: [-4, 14*(144*theta + 2173), 2*(800*theta**3 + 22884*theta**2 + 92502*theta + 103293), 6*theta*(200*theta**3 - 528*theta**2 - 25279*theta - 82662), 998*theta**2*(6*theta**2 + 76*theta + 207)]
+  y^2 vt *k^2 coeffs: [4, -2*(8*theta + 11), 2*(16*theta**2 + 98*theta + 207), -2*theta*(16*theta**2 + 163*theta + 414), 2*theta**2*(6*theta**2 + 76*theta + 207)]

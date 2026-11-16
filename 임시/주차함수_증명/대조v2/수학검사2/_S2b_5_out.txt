@@ -1,0 +1,37 @@
+k=3 n=4: e_n/n!=0.0 [x^n]Phi(T)=-1.24077252379e-32 diff=1.24e-32
+   J_n(k-1)/p_n=0.144 vs Bor I M0+bJ=0.144
+   (4.3) A=0.0316189988506 direct=0.0316189988506
+k=3 n=5: e_n/n!=0.266666666667 [x^n]Phi(T)=0.266666666667 diff=0.0
+   J_n(k-1)/p_n=0.12037037037 vs Bor I M0+bJ=0.12037037037
+   (4.3) A=0.0437749023699 direct=0.0437749023699
+k=3 n=6: e_n/n!=1.05833333333 [x^n]Phi(T)=1.05833333333 diff=1.97e-31
+   J_n(k-1)/p_n=0.104599274112 vs Bor I M0+bJ=0.104599274112
+   (4.3) A=0.0503010272308 direct=0.0503010272308
+k=3 n=7: e_n/n!=2.95119047619 [x^n]Phi(T)=2.95119047619 diff=0.0
+k=4 n=7: e_n/n!=1.50634920635 [x^n]Phi(T)=1.50634920635 diff=1.97e-31
+   J_n(k-1)/p_n=0.0718994140625 vs Bor I M0+bJ=0.0718994140625
+   (4.3) A=0.0357203669324 direct=0.0357203669324
+k=4 n=8: e_n/n!=4.52743055556 [x^n]Phi(T)=4.52743055556 diff=7.89e-31
+   J_n(k-1)/p_n=0.0638130834634 vs Bor I M0+bJ=0.0638130834634
+   (4.3) A=0.0378906223937 direct=0.0378906223937
+k=4 n=9: e_n/n!=11.7641148589 [x^n]Phi(T)=11.7641148589 diff=1.58e-30
+4-7 k=5 omega=0: kR/Bor=-1.4673746 >= bound -3.876584 ? True
+4-7 k=5 omega=6.99: kR/Bor=0.052146667 >= bound -49.3102 ? True
+4-7 k=5 omega=10: kR/Bor=0.70647557 >= bound -68.874604 ? True
+4-7 k=20 omega=0: kR/Bor=-1.9011755 >= bound -3.7372331 ? True
+4-7 k=20 omega=6.99: kR/Bor=0.83298516 >= bound -19.99697 ? True
+4-7 k=20 omega=10: kR/Bor=2.0103562 >= bound -26.998659 ? True
+4-7 k=100 omega=0: kR/Bor=-2.3355971 >= bound -3.6387347 ? True
+4-7 k=100 omega=6.99: kR/Bor=1.6089073 >= bound -7.2256187 ? True
+4-7 k=100 omega=10: kR/Bor=3.3074708 >= bound -8.7701854 ? True
+4-7 k=400 omega=0: kR/Bor=2.1002467e+55 >= bound -3.5873974 ? True
+4-7 k=400 omega=6.99: kR/Bor=2.1740984e+55 >= bound -2.480139 ? True
+4-7 k=400 omega=10: kR/Bor=2.2059e+55 >= bound -2.0033367 ? True
+tail k=10: 2c eps - tail = 0.00679923 in [0,0.0070087]? ; sum jBor - (2c sqrt k - 2/3) = 0.0830383 in [0,0.0841044]?
+   Robbins ratio max=0.99552 min diff=0.000105
+tail k=100: 2c eps - tail = 0.000220965 in [0,0.000221635]? ; sum jBor - (2c sqrt k - 2/3) = 0.026562 in [0,0.0265962]?
+   Robbins ratio max=0.99958 min diff=3.32e-7
+tail k=1000: 2c eps - tail = 7.00658e-6 in [0,7.0087e-6]? ; sum jBor - (2c sqrt k - 2/3) = 0.00840936 in [0,0.00841044]?
+   Robbins ratio max=0.99996 min diff=1.05e-9
+tail k=5000: 2c eps - tail = 6.26839e-7 in [0,6.26877e-7]? ; sum jBor - (2c sqrt k - 2/3) = 0.00376117 in [0,0.00376126]?
+   Robbins ratio max=0.99999 min diff=1.88e-11

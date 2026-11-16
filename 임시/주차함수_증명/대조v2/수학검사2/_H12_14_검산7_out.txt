@@ -1,0 +1,379 @@
+record paths checked: 133 missing: ['r13b0b8f*/evidence/producer/code/cert_critical_strip.py', 'r13b0b8f*/evidence/producer/certificate-run.log', 'r13b0b8f*/evidence/producer/verification.json']
+article paths checked: 69 missing: []
+probe files: 28  recert_first files: 5  r19de912 copy: True
+===  원고_자료\세션_재계산\left_columns_k2_120/summary.json 
+ {
+ "columns": {
+  "k_min": 2,
+  "k_max": 120,
+  "present": 119,
+  "missing": []
+ },
+ "nmax": 10000,
+ "bits": 144,
+ "den_bits": 40,
+ "arithmetic": "integer intervals (record positive_columns.column, unchanged); per-column dyadic radius; exact-rational rescaling to the plus column radius before comparison; direct comparison 2k+1 <= n <= 10000, no band propagation",
+ "total_comparisons": 1175466,
+ "total_failures": 0,
+ "min_relative_margin": {
+  "value": 0.00012608030755515982,
+  "fraction": [
+   "859014321762591987414021361666621658294",
+   "6813231490467100996148564360971120560057273"
+  ],
+  "k": 6,
+  "n": 13
+ },
+ "wall_seconds_per_process": {
+  "run_k2_70.log": 329.6,
+  "run_k71_120.log": 286.1
+ },
+ "wall_seconds_sum": 615.7,
+ "python": "3.12.10",
+ "gmpy2": false,
+ "table": [
+  {
+   "k": 2,
+   "start": 12,
+   "nmax": 10000,
+   "comparisons": 9989,
+   "failures": 0,
+   "worst_n": 12,
+   "min_relative_margin": 0.43295589725022293,
+   "min_relative_margin_fraction": [
+    "7688636470318021047529691006817379129898870",
+    "17758474983595022112341660542844891253502350"
+   ],
+   "radius_plus": 652980437571,
+   "radius_mid": 762885508170,
+   "radius_minus": 1100611139404,
+   "plus_column_lo_bits_min": 144,
+   "plus_column_hi_bits_max": 158,
+   "plus_column_max_width": "18161693867",
+   "column_seconds": 3.875,
+   "compare_seconds": 0.094
+  },
+  {
+   "k": 3,
+   "start": 12,
+   "nmax": 10000,
+   "comparisons": 9989,
+   "failures": 0,
+   "worst_n": 12,
+   "min_relative_margin": 0.12437713110416582,
+   "min_relative_margin_fraction": [
+    "2491334513327635210033945400504718224555459",
+    "20030487045413060664275749959350591394719027"
+   ],
+   "radius_plus": 597678299114,
+   "radius_mid": 652980437571,
+   "radius_minus": 762885508170,
+   "plus_column_lo_bits_min": 143,
+   "plus_
+===  원고_자료\세션_재계산\left_columns_k2_120/exact_check.json 
+ {
+ "nmax": 300,
+ "cmax": 121,
+ "bits": 144,
+ "den_bits": 40,
+ "enclosure_checks": 36421,
+ "enclosure_failures": [],
+ "enclosure_failure_count": 0,
+ "rescaled_enclosure_checks": 71638,
+ "rescaled_failures": [],
+ "rescaled_failure_count": 0,
+ "sign_checks": 21166,
+ "sign_disagreements": [],
+ "sign_disagreement_count": 0,
+ "exact_nonpositive_count": 0,
+ "exact_nonpositive": [],
+ "nmin": 12,
+ "below_nmin": [
+  {
+   "k": 2,
+   "n": 5,
+   "exact_d": "-44",
+   "exact_sign": "negative",
+   "interval": "negative"
+  },
+  {
+   "k": 2,
+   "n": 6,
+   "exact_d": "631",
+   "exact_sign": "positive",
+   "interval": "positive"
+  },
+  {
+   "k": 2,
+   "n": 7,
+   "exact_d": "19892",
+   "exact_sign": "positive",
+
+===  원고_자료\세션_재계산\left_columns_k2_120/indep/indep_margin.json 
+ {
+ "program": "indep_lastcar.column_lastcar (record rc9aee43, peer)",
+ "bits": 160,
+ "nmax": 10000,
+ "results": [
+  {
+   "k": 2,
+   "radius": [
+    652980437571,
+    1099511627776
+   ],
+   "start": 5,
+   "comparisons": 9996,
+   "direct_failures": 1,
+   "worst_n": 5,
+   "minimum_relative_margin_interval_lower": [
+    "-39588810847845662009438486430882500807603963190",
+    "1907460886305290987727490709851611402548190953604"
+   ],
+   "minimum_relative_margin_float": -0.020754716981132074,
+   "max_interval_width_plus_column": 88782505,
+   "seconds": 61.1
+  },
+  {
+   "k": 3,
+   "radius": [
+    597678299114,
+    1099511627776
+   ],
+   "start": 7,
+   "comparisons": 9994,
+   "direct_failures": 1,
+   "worst_n": 7,
+   "minimum_relative_margin_interval_lower": [
+    "-19304636479015354131291923966489489963923636711",
+    "1760902489697923618205194762399364146161523975410"
+   ],
+   "minimum_relative
+===  원고_자료\세션_재계산\witness_offset_iv/witness_offset_iv.json 
+ {
+ "input": {
+  "file": "../../../r19de912/evidence__peer__cert__v2run20000-rows.tsv",
+  "sha256": "d35451d1431a6167228c41a5fb688d097de76cc043470b10a95487c88b838f48",
+  "rows_total": 19996,
+  "column": "mode_ell_mid"
+ },
+ "arithmetic": {
+  "library": "mpmath 1.3.0 iv (directed-rounding intervals)",
+  "iv.dps": 30,
+  "iv.prec_bits": 103,
+  "constants": {
+   "c1": "0.59963",
+   "c2": "1.24847",
+   "exponents": "iv.mpf(2)/3, iv.mpf(1)/3 (intervals)"
+  },
+  "formula": "v_n = (n+1-l*_n) - c1*(n+1)^(2/3) - c2*(n+1)^(1/3)"
+ },
+ "claim": {
+  "interval": [
+   "17/20",
+   "199/100"
+  ],
+  "n_range": [
+   50,
+   20000
+  ]
+ },
+ "ranges": [
+  {
+   "n_range": [
+    50,
+    900
+   ],
+   "count": 851,
+   "lower_end": {
+    "rational": "564091696809223860608097349741/633825300114114700748351602688",
+    "decimal15_floor": "0.889979773145161",
+    "float": 0.8899797731451617,
+    "at_n": 714
+   },
+   "upper_end": {
+    "rational": "629465463452326365828412516123/316912650057057350374175801344",
+    "decimal15_ceil": "1.986242781217464",
+    "float": 1.9862427812174637,
+    "at_n": 51
+   },
+   "within_claim": true,
+   "margin_lower": {
+    "rational": "126700958561131824859992437281/3169126500570573503741758013440",
+    "float": 0.03997977314516174
+   },
+   "margin_upper": {
+    "rational": "29767754030444035404933213789/7922816251426433759354395033600",
+    "float": 0.003757218782536401
+   }
+  },
+  {
+   "n_range": [
+    901,
+    20000
+   ],
+   "count": 19100,
+   "lower_end": {
+    "rational": 
+===  원고_자료\세션_재계산\c50_iv/runs/c50_summary.json 
+ {"N":50000,"NLO":20001,"CMIN":10000,"CMAX":49999,"BLOCK":64,"threads":2,"TN":50100,
+ "pairs":524985000,"inc":504674626,"dec":20310374,"undecided_pairs":0,
+ "triples":524955000,"trip_inc":504674626,"trip_lc":20280374,"undecided_triples":0,"q_clamped":0,
+ "min_safety_pair":416.34,"at_pair":[24434,23892],"relwidth_at_min_pair":2.171e-13,"relgap_mid_at_min_pair":8.975e-11,
+ "min_certified_relgap_pair":8.953e-11,"at_relgap":[24434,23892],
+ "min_safety_lc":2.12711e+06,"at_lc":[49964,49104],"relwidth_at_min_lc":2.352e-13,"certified_relmargin_at_min_lc":9.915e-07,
+ "max_relwidth_all":2.245e-12,"max_relwidth_checked":2.245e-12,"at_max_relwidth":[43574,21840],
+ "seconds":3982.6}
+
+===  원고_자료\세션_재계산\c50_iv/runs/c50_post.json 
+ {
+ "rows": 30000,
+ "qr_ok": 30000,
+ "shape_ok": 30000,
+ "W_rows": 30000,
+ "W_ok": 30000,
+ "bad": [],
+ "total_positions": 524955000,
+ "total_pairs": 524985000,
+ "inc": 504674626,
+ "dec": 20310374,
+ "trip_inc": 504674626,
+ "trip_lc": 20280374,
+ "undecided_pairs": 0,
+ "undecided_triples": 0,
+ "W_min_slack_lastI_minus_bound": [
+  122,
+  20001,
+  19524,
+  19402
+ ],
+ "mode_residual_ranges": {
+  "20001-50000": [
+   0.8438539825258573,
+   1.8487003854412762
+  ]
+ },
+ "compare_old": {
+  "file": "ext50000_rows.tsv",
+  "rows_compared": 30000,
+  "mismatches": 0,
+  "first": []
+ }
+}
+
+===  원고_자료\세션_재계산\c50_iv/runs/c20_post.json 
+ {
+ "rows": 19996,
+ "qr_ok": 19996,
+ "shape_ok": 19996,
+ "W_rows": 0,
+ "W_ok": 0,
+ "bad": [],
+ "total_positions": 99970002,
+ "total_pairs": 99989998,
+ "inc": 94192042,
+ "dec": 5797956,
+ "trip_inc": 94192042,
+ "trip_lc": 5777960,
+ "undecided_pairs": 0,
+ "undecided_triples": 0,
+ "W_min_slack_lastI_minus_bound": null,
+ "mode_residual_ranges": {
+  "50-900": [
+   0.8899797731451713,
+   1.9862427812174657
+  ],
+  "901-20000": [
+   0.8508268752649641,
+   1.8758327927914031
+  ]
+ },
+ "compare_old": {
+  "file": "full20000_rows.tsv",
+  "rows_compared": 19996,
+  "mismatches": 0,
+  "first": []
+ },
+ "compare_exact_rows": {
+  "file": "v2run20000-rows.tsv",
+  "rows_compared": 19996,
+  "mismatches": 0,
+  "first": [],
+  "min_relLC_rows": 19996,
+  "min_relLC_same_position": 19996,
+  "min_relLC_outside_enclosure_plus_print_rounding": 0,
+  "min_relLC_outside_first": [],
+  "min_relLC_max_rel_deviation_from_our_midpoint": 4.935273144470029e-07
+ }
+}
+
+===  원고_자료\세션_재계산\c50_iv/runs/t300_exact_check.txt 
+ {
+ "N0": 300,
+ "prefix": "t300",
+ "dump_records": 22647,
+ "records_checked": 22647,
+ "outside": 0,
+ "outside_first": [],
+ "max_rel_width": 4.6281897671656406e-14,
+ "max_rel_dev_of_midpoint_from_exact": 6.716855319673619e-16,
+ "rows_compared": 296,
+ "row_mismatches": 0,
+ "row_mismatch_first": [],
+ "exact_totals": {
+  "inc": 15758,
+  "dec": 6590,
+  "tI": 15758,
+  "tL": 6294
+ }
+}
+
+===  원고_자료\세션_재계산\newton_r61_169/newton_cert_out.txt 
+ conds=97.3
+r=166 polynomials=165 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=99.5
+r=167 polynomials=166 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=103.8
+r=168 polynomials=167 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=106.1
+r=169 polynomials=168 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=108.8
+r=170 polynomials=169 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=106.2
+summary: r=2..170 all present; 14365 polynomials; failures 0; nonzero differences beyond order r+d+3: 0; max nonzero order = r+d+1 for every r; two processes (even r: 2124 s, odd r: 2079 s wall)
+
+===  원고_자료\세션_재계산\critical_window_rerun/summary_out.txt 
+ critical-window rerun summary (2026-11-16T10:18:07)
+boxes done: 44/44; cells used: 1892
+
+| box | u interval | min margin (cell) | record min margin (cell) | new - record | first cell [1.4,1.6] margin | recert | secs (build) |
+|---|---|---|---|---|---|---|---|
+| A00 | [4.4914e-02, 4.6414e-02] | 0.001827 ([9.8,10.0]) | 0.001787 ([9.8,10.0]) | +3.96e-05 | 0.24393 | - | 2085 (528) |
+| A01 | [4.3414e-02, 4.4914e-02] | 0.001843 ([9.8,10.0]) | 0.001802 ([9.8,10.0]) | +4.10e-05 | 0.24543 | - | 2092 (527) |
+| A02 | [4.1914e-02, 4.3414e-02] | 0.001858 ([9.8,10.0]) | 0.001815 ([9.8,10.0]) | +4.27e-05 | 0.24686 | - | 1893 (486) |
+| A03 | [4.0414e-02, 4.1914e-02] | 0.001874 ([9.8,10.0]) | 0.001829 ([9.8,10.0]) | +4.47e-05 | 0.24821 | - | 1909 (485) |
+| A04 | [3.8914e-02, 4.0414e-02] | 0.001889 ([9.8,10.0]) | 0.001842 ([9.8,10.0]) | +4.69e-05 | 0.24948 | - | 2276 (618) |
+| A05 | [3.7414e-02, 3.8914e-02] | 0.001905 ([9.8,10.0]) | 0.001856 ([9.8,10.0]) | +4.94e-05 | 0.25068 | - | 2273 (608) |
+| A06 | [3.5914e-02, 3.7414e-02] | 0.001921 ([9.8,10.0]) | 0.001869 ([9.8,10.0]) | +5.24e-05 | 0.25175 | - | 2033 (448) |
+| A07 | [3.4414e-02, 3.5914e-02] | 0.001937 ([9.8,10.0]) | 0.001881 ([9.8,10.0]) | +5.57e-05 | 0.25277 | - | 2045 (450) |
+| A08 | [3.2914e-02, 3.4414e-02] | 0.001953 ([9.8,10.0]) | 0.001893 ([9.8,10.0]) | +5.97e-05 | 0.25364 | - | 1970 (475) |
+| A09 | [3.1414e-02, 3.2914e-02] | 0.001969 ([9.8,10.0]) | 0.001905 ([9.8,10.0]) | +6.43e-05 | 0.25443 | - | 1965 (463) |
+| A10 | [2.9914e-02, 3.1414e-02] | 0.001985 ([9.8,10.0]) | 0.001916 ([9.8,10.0]) | +6.96e-05 | 0.25505 | - | 1976 (599) |
+| A11 | [2.8414e-02, 2.9914e-02] | 0.002001 ([9.8,10.0]) | 0.001925 ([9.8,10.0]) | +7.60e-05 | 0.25554 | - | 1965 (588) |
+| A12 | [2.6914e-02, 2.8414e-02] | 0.002017 ([9.8,10.0]) | 0.001934 ([9.8,10.0]) | +8.37e-05 | 0.25586 | - | 2194 (458) |
+| A13 | [2.5414e-02, 2.6914e-02] | 0.002034 ([9.8,10.0]) | 0.001941 ([9.8,10.0]) | +9.28e-05 | 0.25599 | - | 2192 (458) |
+| A14 | [2.3914e-02, 2.5414e-02] | 0.002050 ([9.8,10.0]) | 0.001947 ([9.8,10.0]) | +1.03e-04 | 0.25591 | - | 1520 (388) |
+| A15 | [2.2414e-02, 2.3914e-02] | 0.002066 ([9.8,10.0]) | 0.001948 ([9.8,10.0]) | +1.17e-04 | 0.25560 | - | 1519 (382) |
+| A16 | [2.0914e-02, 2.2414e-02] | 0.002082 ([9.8,10.0]) | 0.001947 ([9.8,10.0]) | +1.34e-04 | 0.25499 | - | 1344 (321) |
+| A17 | [1.9414e-02, 2.0914e-02] | 0.002098 ([9.8,10.0]) | 0.001942 ([9.8,10.0]) | +1.56e-04 | 0.25405 | - | 1346 (324) |
+| A18 | [1.7914e-02, 1.9414e-02] | 0.002113 
+===  원고_자료\세션_재계산\critical_window_rerun/verify_exact_cover_out.txt 
+ )
+  G03  min margin 0.0028180  at cell 42 (xhat [9.8,10.0])
+  G04  min margin 0.0028374  at cell 42 (xhat [9.8,10.0])
+  G05  min margin 0.0028537  at cell 42 (xhat [9.8,10.0])
+  G06  min margin 0.0028672  at cell 42 (xhat [9.8,10.0])
+  G07  min margin 0.0028785  at cell 42 (xhat [9.8,10.0])
+  G08  min margin 0.0028876  at cell 42 (xhat [9.8,10.0])
+  G09  min margin 0.0028951  at cell 42 (xhat [9.8,10.0])
+  G10  min margin 0.0029010  at cell 42 (xhat [9.8,10.0])
+  G11  min margin 0.0029057  at cell 42 (xhat [9.8,10.0])
+  G12  min margin 0.0029435  at cell 42 (xhat [9.8,10.0])
+  G13  min margin 0.0018681  at cell 42 (xhat [9.8,10.0])
+overall minimum margin 0.0018271  box A00  cell 42
+ALL CHECKS PASSED: u-boxes tile [0, u_top] exactly with u_top >= 10001^(-1/3); in every box the outward cells cover [1.4, 10] exactly, each Taylor region contains its cell, and every exact margin is positive.
+

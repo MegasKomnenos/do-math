@@ -1,0 +1,19 @@
+FAIL x_k(k) k=2
+FAIL x_k(k) k=3
+FAIL x_k(k) k=4
+FAIL x_k(k) k=5
+FAIL x_k(k) k=6
+FAIL x_k(k) k=7
+FAIL x_k(k) k=8
+FAIL x_k(k) k=9
+FAIL x_k(k) k=10
+FAIL x_k(k) k=11
+FAIL x_k(k) k=12
+FAIL x_k(k) k=13
+FAIL x_k(k) k=14
+FAIL x_k(k) k=15
+FAIL x_k(k) k=16
+FAIL x_k(k) k=17
+FAIL x_k(k) k=18
+FAIL x_k(k) k=19
+SOME FAIL

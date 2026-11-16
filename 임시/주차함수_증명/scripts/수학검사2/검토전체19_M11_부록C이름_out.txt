@@ -1,0 +1,290 @@
+행 수 287
+2:old-2-13 | OK
+2:old-2-14 | 기록이름: 부록C=「기록 [r88bed8a]의 식 (1.1)」, 머리=「기록 [r88bed8a]의 식 (1.1」
+2:old-2-15 | OK
+2:old-2-16 | OK
+2:old-2-17 | OK
+2:old-2-18 | OK
+2:old-2-19 | OK
+2:old-2-20 | OK
+2:J-egf | 이름: 부록C=「$J_n(z)$의 지수 생성함수 표현」, 머리=「$J_n(z」; 머리에 기록 이름 없음(부록C=「기록 [rba2ecf4]의 green-reconstruction, 기록 [r37c204b]의 보조정리 3.3」); 머리 이름=「$J_n(z」
+2:old-2-31 | 이름: 부록C=「크기 단조성과 대각선 단조성」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r79ee9e0]의 보조정리 Sh」); 머리 이름=「」
+2:old-2-32 | 기록이름: 부록C=「기록 [r79ee9e0]의 보조정리 Πβ(i)와 Πn」, 머리=「기록 [r79ee9e0]의 보조정리 Πβ(i」
+2:old-2-33 | OK
+2:ratio-e | 기록이름: 부록C=「기록 [r60a6f55]의 식 (8)」, 머리=「기록 [r60a6f55]의 식 (8」
+2:old-2-34 | OK
+2:old-2-38 | OK
+2:old-2-41 | OK
+2:old-2-45 | OK
+2:old-2-46 | OK
+2:chain-expansion | 기록이름: 부록C=「기록 [r42d9a17]의 식 (7)–(11)」, 머리=「기록 [r42d9a17]의 식 (7」
+2:convex-bonferroni | OK
+2:moving-tail | OK
+2:chain-normalization | OK
+4:old-4-2 | OK
+4:old-4-5 | 이름: 부록C=「중앙 틈」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [rce3dc75]의 정리 8.1」); 머리 이름=「」
+4:old-4-6 | OK
+4:gauss-contraction | 기록이름: 부록C=「기록 [rce3dc75]의 보조정리 H의 수축 오차 (H3)과 $M_0$ 하계의 전반부」, 머리=「기록 [rce3dc75]의 보조정리 H의 수축 오차 (H3」
+4:gauss-coeff | OK
+4:old-4-7 | OK
+4:borel-tail-arc | 기록이름: 부록C=「기록 [rce3dc75]의 보조정리 V의 (V6)과 §7.1의 꼬리 상계」, 머리=「기록 [rce3dc75]의 보조정리 V의 (V6」
+4:two-corrections | OK
+4:old-4-8 | OK
+5:witness-position-bound | OK
+5:green-connection | OK
+5:source-rep | OK
+5:SR-implies-QR | OK
+5:cayley-ratio | OK
+5:old-5-4 | OK
+5:inverse-renewal | OK
+5:renewal-fkg | OK
+5:suff-cond | 기록이름: 부록C=「기록 [r5ddf8a8]의 endpoint-comparison, colored-count-mean, doubly-marked-curvature, boundary-gain-lemma, 정리 2와 기록 [r0dc57fa]의 (10.1)」, 머리=「기록 [r5ddf8a8]의 endpoint-comparison, colored-count-mean, doubly-marked-curvature, boundary-gain-lemma, 정리 2와 기록 [r0dc57fa]의 (10.1」
+5:lemma-L | OK
+5:old-5-5 | OK
+5:kernel-C-bound | OK
+5:kernel-bounds | 이름: 부록C=「갱신 방문 핵의 좁은 계수 하계 (K1)」, 머리=「갱신 방문 핵의 좁은 계수 하계 (K1」; 머리에 기록 이름 없음(부록C=「기록 [r690be93]의 kernel-bounds」); 머리 이름=「갱신 방문 핵의 좁은 계수 하계 (K1」
+5:nf-ratio | OK
+5:marked-recursion | 기록이름: 부록C=「기록 [r1aa0be6]의 renewal-bounds, 기록 [r690be93]의 (7.2)」, 머리=「기록 [r1aa0be6]의 renewal-bounds, 기록 [r690be93]의 (7.2」
+5:laurent-coeff | OK
+5:kernel-crude | OK
+5:first-moment-weight | 기록이름: 부록C=「기록 [r690be93]의 first-moment-weight, (7.1)」, 머리=「기록 [r690be93]의 first-moment-weight, (7.1」
+5:parity-tail | OK
+5:old-5-7 | OK
+5:weight-envelope | 기록이름: 부록C=「기록 [r13b0b8f]의 (3.1)–(3.5)」, 머리=「기록 [r13b0b8f]의 (3.1」
+5:marked-chain-rec | 기록이름: 부록C=「기록 [r13b0b8f]의 (4.1)(4.2)」, 머리=「기록 [r13b0b8f]의 (4.1」
+5:kernel-sandwich | 기록이름: 부록C=「기록 [r13b0b8f]의 식 (5.1)」, 머리=「기록 [r13b0b8f]의 식 (5.1」
+5:omitted-tail | OK
+5:old-5-12 | OK
+5:cover-edge | 기록이름: 부록C=「기록 [r13b0b8f] §9.1의 (E)와 따름 W⁺」, 머리=「기록 [r13b0b8f] §9.1의 (E」
+5:unit-circle | OK
+5:cut-rep | 기록이름: 부록C=「기록 [ra4c01fc]의 보조정리 S, 따름정리 S′, 명제 H, 식 (5.1)」, 머리=「기록 [ra4c01fc]의 보조정리 S, 따름정리 S′, 명제 H, 식 (5.1」
+5:hat-normalization | 기록이름: 부록C=「기록 [ra4c01fc]의 (6.1)」, 머리=「기록 [ra4c01fc]의 (6.1」
+5:old-5-13 | OK
+5:old-5-15 | OK
+5:old-5-22 | 기록이름: 부록C=「기록 [r58b4caa]의 이름 (★′)」, 머리=「기록 [r58b4caa]의 이름 (★′」
+5:old-5-26 | OK
+5:old-5-28 | OK
+5:old-5-30 | OK
+5:old-5-31 | OK
+5:borel-gf | 기록이름: 부록C=「기록 [r8a9b11e]의 보조정리 B는 (나)(다)에 해당」, 머리=「기록 [r8a9b11e]의 보조정리 B는 (나」
+5:riemann-unimodal | OK
+5:old-5-32 | OK
+5:old-5-33 | OK
+5:old-5-34 | OK
+5:hover-tail | OK
+6:old-7-13 | OK
+6:old-7-19 | 기록이름: 부록C=「기록 [rb6a2cd0]의 식 (2.1)」, 머리=「기록 [rb6a2cd0]의 식 (2.1」
+6:old-7-20 | 이름: 부록C=「제한 성장비의 상계」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r051bfe1]의 c-sharp」); 머리 이름=「」
+6:difference-identity | OK
+6:cayley-propagation | OK
+6:tilt-interval | OK
+6:tilt-sum | OK
+6:old-7-21 | OK
+6:old-7-24 | 기록이름: 부록C=「기록 [r051bfe1]의 (Hz)」, 머리=「기록 [r051bfe1]의 (Hz」
+6:lemma-ell | OK
+6:old-8-13 | 이름: 부록C=「머묾 법칙」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r98fb348]의 정리 S」); 머리 이름=「」
+6:chain-recursion | OK
+6:same-kernel | OK
+6:stay-margin-identity | OK
+6:lemma-omega | OK
+6:lemma-phi | OK
+6:old-8-11 | OK
+6:old-8-12 | OK
+6:pair-rearrange | 기록이름: 부록C=「기록 [r29b01e8]의 식 (4.1)」, 머리=「기록 [r29b01e8]의 식 (4.1」
+6:diag-first-layer | 이름: 부록C=「첫 층의 대각선 하계」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r696d62c]의 정리 P6」); 머리 이름=「」
+6:chain-count | OK
+6:class-polynomial | OK
+6:log-derivative | OK
+6:split-mass | OK
+6:insertion | OK
+6:concave-split | OK
+6:highest-long-cell | OK
+6:geometric-mean | OK
+6:pointwise | OK
+6:survival-factor | OK
+6:classes-increase | OK
+6:cor-L | OK
+6:D-bound | OK
+6:tilt-split | 기록이름: 부록C=「기록 [r845b205]의 식 (C)와 정리 S」, 머리=「기록 [r845b205]의 식 (C」
+6:theorem-U | 이름: 부록C=「기울임 곡률의 상계」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r845b205]의 정리 U」); 머리 이름=「」
+6:lemma-B | OK
+6:lemma-A | OK
+6:lemma-O | OK
+6:lemma-F | OK
+6:lemma-E | OK
+6:lemma-N | OK
+6:path-shift | OK
+6:theorem-D | OK
+6:prop-W | 기록이름: 부록C=「기록 [r29c10cd]의 명제 W (나)(다)(라)」, 머리=「기록 [r29c10cd]의 명제 W (나」
+6:prop-R | OK
+6:pair-formula | OK
+6:lemma-H | OK
+6:lemma-Hprime | OK
+6:lemma-M | OK
+6:critical-front | OK
+6:far-window | OK
+6:first-layer-end | 기록이름: 부록C=「기록 [r29c10cd]의 명제 E (가)」, 머리=「기록 [r29c10cd]의 명제 E (가」
+6:small-k-bulk | OK
+6:above-window | 기록이름: 부록C=「기록 [r29c10cd]의 명제 E (나)」, 머리=「기록 [r29c10cd]의 명제 E (나」
+6:v-negative | 기록이름: 부록C=「기록 [r29c10cd]의 명제 W (가)」, 머리=「기록 [r29c10cd]의 명제 W (가」
+7:old-6-6 | OK
+7:factorial-moment | OK
+7:old-6-7 | OK
+7:old-6-8 | OK
+7:band-propagation | OK
+7:prime-decomposition | OK
+7:seed-transfer | OK
+7:column-lemma | OK
+7:supermultiplicative | OK
+7:old-6-10 | OK
+7:flat-threshold | OK
+7:level-chain | 기록이름: 부록C=「기록 [rb7effe0]의 명제 2.1, 기록 [rad00a59]의 식 (2.1)·(2.2)」, 머리=「기록 [rb7effe0]의 명제 2.1, 기록 [rad00a59]의 식 (2.1」
+7:lemma-R-sc | OK
+7:self-consistent-S | OK
+7:cor-S-prime | OK
+7:riccati | OK
+7:pole-unique | OK
+7:pole-monotone | OK
+7:old-6-11 | OK
+7:fourier-lemmas | OK
+7:X-cert | OK
+7:old-6-12 | OK
+7:transfer-F | OK
+7:lemma-P-pole | OK
+7:lemma-P-prime | OK
+7:polar-R | OK
+7:theorem-G-prime | OK
+7:polar-N | OK
+7:polar-W | OK
+7:moment-recursion | OK
+7:variance-formula | OK
+7:theorem-C-moment | OK
+7:block-exponential | 기록이름: 부록C=「기록 [r475ada3]의 정리 B(I)–(III)」, 머리=「기록 [r475ada3]의 정리 B(I」
+7:green-atom | OK
+7:pair-terms | OK
+7:heavy-block | 기록이름: 부록C=「기록 [r475ada3]의 보조정리 3.2, 기록 [r6b37c7e]의 식 (3.13)」, 머리=「기록 [r475ada3]의 보조정리 3.2, 기록 [r6b37c7e]의 식 (3.13」
+7:pair-criterion | OK
+7:pair-check-10000 | OK
+7:kernel-bound | OK
+7:tail-bound | OK
+7:pair-criterion-sharp | OK
+7:pair-reach-table | OK
+7:hermite-nu | OK
+7:vertical-nu | OK
+7:analytic-transfer | OK
+7:integer-strips | OK
+7:qstar-implies-wlflat | 기록이름: 부록C=「기록 [r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여)」, 머리=「기록 [r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여」
+7:fold-A | OK
+7:fold-R | OK
+7:fold-T | OK
+7:fold-L1 | OK
+7:fold-DIP | OK
+7:borel-monotone | OK
+7:polar-PD | OK
+7:prop-PF | OK
+7:qstar-columns | OK
+7:root-symmetry | OK
+7:old-6-16 | OK
+7:explicit-bounds | OK
+7:top-roots | OK
+7:theorem-W | OK
+7:src-plus | OK
+7:old-6-20 | OK
+7:threshold-unit-ratio | 기록이름: 부록C=「기록 [r317d678]의 식 (9.1)과 정리 T의 셋째 단계」, 머리=「기록 [r317d678]의 식 (9.1」
+7:old-6-21 | OK
+8:old-6-23 | 기록이름: 부록C=「기록 [r030ffae]의 사실 (E1)」, 머리=「기록 [r030ffae]의 사실 (E1」
+8:old-6-24 | OK
+8:old-6-25 | OK
+8:old-6-26 | OK
+8:old-6-27 | OK
+8:jensen-lower | OK
+8:escape-lower | OK
+8:lowest-violation | 기록이름: 부록C=「기록 [r8456f59] §4.7의 항등식 (V)」, 머리=「기록 [r8456f59] §4.7의 항등식 (V」
+8:prop-U-apriori | OK
+8:envelope-H | OK
+8:envelope-HG | OK
+8:pieces-k-monotone | OK
+8:escape-y-monotone | OK
+8:jensen-H-ii | OK
+8:table-lower-bound | OK
+8:envelope-code-monotone | OK
+8:closed-form-envelope | OK
+8:table-tolerance | OK
+8:large-q-bounds | 기록이름: 부록C=「기록 [r030ffae] §3.6의 보조정리 K(i)」, 머리=「기록 [r030ffae] §3.6의 보조정리 K(i」
+8:cell-bound | OK
+8:reduction-J | OK
+8:old-6-28 | OK
+8:old-6-30 | OK
+8:old-6-31 | OK
+8:old-6-32 | OK
+8:old-6-29 | OK
+8:hazard-H1 | 기록이름: 부록C=「기록 [r5bbc534]의 정리 H1(a)에 해당」, 머리=「기록 [r5bbc534]의 정리 H1(a」
+8:old-6-33 | OK
+9:theorem-A-plus | OK
+9:prop-H | OK
+9:prop-6 | OK
+9:head-sum-1 | OK
+9:head-sum-2 | OK
+9:H-star-plus | OK
+9:centroid-stop | OK
+9:old-7-3 | OK
+9:old-7-4 | OK
+9:old-7-5 | OK
+9:old-7-6 | OK
+9:old-7-7 | OK
+9:old-7-8 | 기록이름: 부록C=「기록 [r77e234e]의 (OB)」, 머리=「기록 [r77e234e]의 (OB」
+9:old-7-10 | OK
+9:old-7-11 | OK
+9:old-7-12 | OK
+9:old-7-16 | OK
+9:regeneration-S | 기록이름: 부록C=「기록 [r05cf8c9]의 보조정리 1·명제 4와 기록 [r2e22726]의 항등식 (3.1)」, 머리=「기록 [r05cf8c9]의 보조정리 1·명제 4와 기록 [r2e22726]의 항등식 (3.1」
+9:old-7-18 | OK
+9:old-7-22 | OK
+9:old-7-23 | OK
+9:old-7-25 | OK
+9:old-7-26 | 이름: 부록C=「$\mathcal Y_k$의 모양과 $\nu_0(k)$」, 머리=「$\mathcal Y_k$의 모양과 $\nu_0(k」; 머리에 기록 이름 없음(부록C=「기록 [rb6a2cd0]의 보조정리 4.1」); 머리 이름=「$\mathcal Y_k$의 모양과 $\nu_0(k」
+9:old-7-27 | OK
+9:old-7-28 | OK
+9:old-7-29 | OK
+9:old-7-30 | OK
+9:old-7-31 | OK
+9:old-7-32 | OK
+9:old-7-33 | OK
+9:old-7-34 | OK
+9:old-7-35 | 이름: 부록C=「쌍 부등식」, 머리=「」; 머리에 기록 이름 없음(부록C=「기록 [r5909c9e]의 정리 P◇」); 머리 이름=「」
+9:old-7-36 | OK
+9:old-7-37 | OK
+9:old-7-38 | OK
+9:old-7-39 | OK
+9:old-7-40 | OK
+9:old-7-41 | OK
+9:old-7-42 | OK
+9:old-7-45 | OK
+10:old-8-2 | OK
+10:old-8-3 | OK
+10:old-8-4 | 기록이름: 부록C=「기록 [r3d0856b]의 보조정리 3(i)」, 머리=「기록 [r3d0856b]의 보조정리 3(i」
+10:old-8-6 | OK
+10:old-8-8 | OK
+10:old-8-10 | OK
+10:old-8-14 | 이름: 부록C=「(나)의 머묾 질량 환원」, 머리=「(나」; 머리에 기록 이름 없음(부록C=「기록 [r3d0856b]의 명제 T」); 머리 이름=「(나」
+10:old-8-15 | OK
+10:old-8-16 | OK
+10:old-8-17 | OK
+10:old-8-18 | OK
+10:old-8-19 | OK
+10:old-8-20 | OK
+10:old-8-21 | OK
+10:old-8-22 | OK
+10:old-8-23 | OK
+10:old-8-24 | OK
+10:old-8-25 | OK
+10:old-8-28 | OK
+10:old-8-30 | OK
+10:old-8-31 | OK
+10:old-8-32 | OK
+10:old-8-33 | OK
+10:old-8-34 | OK
+10:old-8-35 | OK
+10:old-8-36 | OK
+
+=== 머리에 「기록 [」이 든 진술 가운데 부록 C 표에 없는 것

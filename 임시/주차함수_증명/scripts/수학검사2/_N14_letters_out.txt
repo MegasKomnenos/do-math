@@ -1,0 +1,144 @@
+=== 1.1 변수 글자: 장별 맨 글자 출현 수(수식 안, 글꼴 없는 이탤릭) ===
+n {'1': 384, '2': 1114, '3': 477, '4': 741, '5': 1737, '6': 301, '7': 2299, '8': 189, '9': 609, '10': 292, '11': 114}
+m {'1': 18, '2': 642, '3': 21, '5': 703, '6': 935, '7': 1112, '8': 354, '9': 679, '10': 699, '11': 32}
+t {'2': 444, '3': 15, '5': 398, '6': 378, '7': 229, '8': 245, '9': 851, '10': 13}
+N {'1': 4, '4': 8, '6': 309, '7': 46, '8': 377, '9': 317, '10': 264, '11': 4}
+k {'1': 240, '2': 1105, '3': 37, '4': 928, '5': 865, '6': 1796, '7': 4398, '8': 1556, '9': 2334, '10': 1869, '11': 139}
+y {'1': 12, '2': 268, '3': 7, '4': 128, '5': 851, '6': 1257, '7': 393, '8': 123, '9': 4, '10': 728, '11': 3}
+Y {'1': 5, '2': 58, '5': 323, '6': 37, '9': 18}
+i {'1': 33, '2': 600, '3': 125, '4': 93, '5': 625, '6': 331, '7': 417, '8': 276, '9': 236, '10': 133, '11': 27}
+j {'1': 26, '2': 476, '3': 86, '4': 367, '5': 1061, '6': 559, '7': 1056, '8': 371, '9': 240, '10': 268, '11': 13}
+u {'2': 47, '3': 15, '5': 64, '6': 5, '9': 8}
+v {'2': 196, '4': 160, '5': 62, '6': 33, '7': 109, '8': 9, '9': 24}
+r {'1': 10, '2': 279, '4': 3, '5': 738, '6': 68, '7': 7, '8': 108, '9': 1, '10': 16, '11': 21}
+d {'1': 17, '2': 159, '3': 10, '4': 60, '5': 638, '6': 996, '7': 117, '8': 46, '9': 252, '10': 475, '11': 9}
+q {'1': 3, '2': 340, '4': 5, '5': 117, '6': 879, '7': 332, '8': 803, '9': 198, '10': 892, '11': 8}
+l {}
+o {'1': 2, '3': 3}
+O {}
+X {'1': 2, '3': 59, '4': 22, '5': 1, '7': 1, '8': 1, '9': 2, '10': 2}
+P {'2': 7, '5': 17, '6': 15, '9': 37}
+Q {'2': 14, '7': 38}
+W {'2': 6, '5': 39, '6': 7}
+x {'1': 11, '2': 242, '3': 74, '4': 132, '5': 328, '6': 17, '7': 294, '8': 10, '9': 46, '10': 37, '11': 6}
+f {'2': 8, '3': 31, '4': 34, '5': 15, '6': 3, '7': 6, '8': 1, '9': 8}
+g {'2': 29, '3': 75, '4': 17, '5': 34, '6': 105, '7': 54, '8': 21, '9': 40, '10': 71}
+w {'1': 4, '2': 33, '3': 63, '4': 56, '5': 127, '6': 88, '7': 46, '8': 11, '9': 197, '10': 100, '11': 4}
+z {'1': 7, '2': 97, '3': 106, '4': 125, '5': 577, '6': 32, '7': 578, '8': 22, '9': 7, '10': 78, '11': 4}
+
+=== 그리스 글자 장별 ===
+nu {'1': 26, '4': 66, '6': 38, '7': 296, '8': 148, '9': 203, '10': 302, '11': 11}
+zeta {'1': 3, '5': 3, '8': 2}
+lambda {'1': 3, '3': 14, '5': 69, '8': 5}
+xi {'2': 3, '3': 33, '5': 63, '6': 82, '7': 202, '8': 704, '9': 165, '10': 90, '11': 6}
+vartheta {'2': 1, '3': 3, '4': 25, '5': 107, '6': 10, '7': 8, '8': 15, '10': 36, '11': 3}
+theta {'2': 29, '3': 7, '4': 49, '5': 164, '6': 16, '7': 204, '8': 11, '9': 20, '10': 138}
+varpi {}
+tau {'2': 64, '3': 3, '4': 3, '5': 7, '6': 39, '7': 52, '8': 12}
+sigma {'2': 174, '3': 35, '4': 4, '5': 20, '6': 293, '7': 204, '8': 3, '10': 15, '11': 7}
+psi {'2': 9, '3': 4, '4': 5, '5': 37, '6': 8, '7': 29, '9': 3, '10': 15, '11': 6}
+Psi {'2': 19, '5': 29, '6': 38, '7': 52, '8': 102, '9': 40, '10': 1, '11': 1}
+Pi {'2': 21, '5': 19, '6': 45, '7': 72, '10': 40}
+Omega {'5': 14, '6': 7, '7': 60, '8': 73, '9': 13, '11': 9}
+Phi {'2': 14, '3': 4, '4': 10, '5': 5, '6': 9, '7': 3, '8': 10, '9': 22}
+chi {'2': 14, '4': 21, '5': 138, '6': 45, '7': 7, '8': 2, '9': 22, '10': 1}
+kappa {'2': 13, '3': 31, '4': 57, '5': 42, '6': 14, '7': 3, '8': 2, '10': 3, '11': 1}
+varkappa {'2': 9, '4': 32, '5': 8, '6': 16, '7': 77, '8': 9, '9': 9, '10': 3}
+varrho {'2': 77, '3': 91, '5': 14, '6': 27, '7': 63, '8': 59, '9': 81, '10': 79, '11': 2}
+rho {'1': 6, '3': 13, '4': 87, '5': 103, '6': 67, '7': 240, '8': 18, '9': 12, '10': 115, '11': 1}
+mu {'2': 8, '3': 5, '4': 23, '5': 36, '6': 32, '7': 51, '8': 18, '9': 16, '10': 6, '11': 1}
+eta {'2': 22, '3': 11, '4': 7, '6': 10, '7': 14, '8': 9, '9': 14, '11': 2}
+iota {'2': 35, '3': 15, '4': 37, '5': 35, '6': 5, '7': 53, '8': 18, '9': 13, '10': 16}
+upsilon {'2': 18, '3': 15, '4': 145, '5': 10, '6': 12, '7': 55, '8': 8, '9': 135, '10': 31, '11': 2}
+omega {'2': 27, '3': 9, '4': 40, '5': 6, '6': 53, '7': 38, '8': 5, '9': 19, '10': 38, '11': 1}
+gamma {'2': 207, '3': 25, '4': 81, '5': 190, '6': 58, '9': 13, '10': 4}
+beta {'1': 17, '2': 4, '3': 31, '4': 77, '5': 24, '6': 6, '7': 40, '8': 14, '9': 33, '10': 32, '11': 2}
+epsilon {'3': 23, '4': 8, '5': 19, '6': 6, '7': 2, '8': 22, '9': 18, '10': 27}
+varepsilon {'4': 62, '5': 4, '6': 23, '7': 89, '8': 47}
+phi {'2': 20, '3': 10, '4': 62, '5': 18, '6': 26, '7': 94, '8': 10, '9': 7, '10': 14}
+varphi {'2': 4, '5': 107, '6': 9, '7': 17, '8': 13, '9': 18, '10': 9, '11': 1}
+Gamma {'3': 21, '4': 10, '5': 89, '6': 32, '7': 12, '9': 6, '11': 2}
+Lambda {'3': 7, '5': 9, '6': 56, '7': 75, '8': 21, '11': 1}
+Xi {'2': 2, '4': 1, '5': 5, '6': 6, '7': 31, '9': 3, '11': 2}
+Theta {'1': 10, '2': 7, '4': 12, '5': 12, '6': 1, '7': 2, '8': 24, '9': 109, '10': 4, '11': 2}
+Upsilon {'4': 32, '5': 18, '6': 14, '7': 7, '8': 5, '9': 30, '11': 3}
+Delta {'2': 17, '5': 42, '6': 22, '7': 9, '10': 7, '11': 1}
+Sigma {'6': 28}
+
+=== 6절·1.3 선언 점검 ===
+\mathscr: {}
+\mathbf 인수: {}
+\varpi: {}
+맨 l: {} | 맨 o: {'1': 2, '3': 3} | 맨 O: {}
+맨 X: {'1': 2, '3': 59, '4': 22, '5': 1, '7': 1, '8': 1, '9': 2, '10': 2} | 맨 P: {'2': 7, '5': 17, '6': 15, '9': 37} | 맨 Q: {'2': 14, '7': 38} | 맨 W: {'2': 6, '5': 39, '6': 7}
+5장 대문자 N: 0 | 4장 이탤릭 m: 0 | 11장 맨 t: 0 | 7·8장 맨 u: 0 0
+theta': {}
+o(·)/O(·): {'1': [2772, 4321], '3': [13698, 13755, 15272], '5': [38156, 61070, 61768, 115332, 119895], '6': [11283, 11311, 11468, 11485, 12386], '10': [37566, 37779, 37960, 38115, 38179]}
+
+=== 산세리프 글자 장별(명제 이름·명명 상수) ===
+1 ['B', 'FLQ', 'LH', 'LRP', 'P', 'Q', 'V', 'W']
+2 ['P', 'z']
+3 ['P']
+4 ['LH', 'P', 'Q', 'a', 'b', 'g', 'n']
+5 ['LH', 'P', 'Q', 'W', 'o', 'w']
+6 ['C', 'E', 'V', 'W', 'c', 'm', 's', 'u', 'v', 'x', 'z']
+7 ['B', 'FLQ', 'LH', 'LRP', 'P', 'Q', 'SRC', 'V', 'W', 'X', 'a', 'b', 'g', 'n', 'r', 't', 'v', 'x', 'y']
+8 ['K', 'c', 'j', 'r', 'z']
+9 ['B', 'FS', 'H', 'L', 'LRP', 'P', 'Q', 'V', 'W', 'h', 'u', 'v', 'x', 'z']
+10 ['FLQ', 'LRP', 'P', 'Q', 'SRC', 'V', 'W', 'f', 'm', 'r', 'u', 'v']
+11 ['B', 'FLQ', 'L', 'LRP', 'P', 'Q', 'V', 'W', 'p', 'v', 'z']
+
+=== 필기체·프락투어 글자 장별 ===
+1 cal: R | frak: 
+2 cal: BEFGHJKLMNPQRUVWY | frak: BRSZbcejnopqtuv
+3 cal: BIJ | frak: 
+4 cal: ABCDEFHIKMPQRSTW | frak: CEFGJLMNSTUWYZcefgilmnpqstuxy
+5 cal: ABCDEFGHIKLMNOPQRSTUVWXYZ | frak: ABCDFGJLMOPQSTVWXYZabcdfghjklmnopqrstuyz
+6 cal: ABCDEFGHIJKLMNOPQRSTUVWXYZ | frak: ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuwxyz
+7 cal: ABCDEFGHIJKLMNOPQRSTUVWXYZ | frak: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+8 cal: ABFGHJLMNST | frak: BDEJLRSTZabcdefghiklmnopqrstuvwxyz
+9 cal: ABCDEFGHIJLNOQRSVWY | frak: DFIKPSVacdefgijlmnpqrtuvwxyz
+10 cal: EFIPRVWZ | frak: AHMQRTWXabcdefghijklmnopqrstuvxyz
+11 cal: FIJLRTYZ | frak: ABGLNPRTZabehjklox
+
+=== 라틴 대문자(맨) 장별 ===
+1 ABCEJLMNRXY
+2 ABCDEFGHIJKLMPQRSTUVWYZ
+3 ABCEFGHIJKLMRSTUVXZ
+4 ABCDEFHIJKLMNRTUVX
+5 ABCDEFGHIJKLMPRSTUVWXYZ
+6 ABCDEFGHIJKLMNPRSTUVWYZ
+7 ABCDEFGHIJKLMNQRSTUVXZ
+8 ABCDEFGHIJKLMNRSTUVXZ
+9 ABCDEFGHIKLMNPRSTUXYZ
+10 ABCDFGILMNRSX
+11 ABCFGJKLNRSTUZ
+
+=== 그리스(소·대) 장별 ===
+1 Theta alpha beta ell lambda nu rho zeta
+2 Delta Phi Pi Psi Theta Xi alpha beta chi delta ell eta gamma iota kappa mu omega phi pi psi sigma tau theta upsilon varkappa varphi varrho varsigma vartheta xi
+3 Gamma Lambda Phi beta ell epsilon eta gamma iota kappa lambda mu omega phi pi psi rho sigma tau theta upsilon varrho varsigma vartheta xi
+4 Gamma Phi Theta Upsilon Xi beta chi ell epsilon eta gamma iota kappa mu nu omega phi pi psi rho sigma tau theta upsilon varepsilon varkappa vartheta
+5 Delta Gamma Lambda Omega Phi Pi Psi Theta Upsilon Xi beta chi ell epsilon gamma iota kappa lambda mu omega phi pi psi rho sigma tau theta upsilon varepsilon varkappa varphi varrho varsigma vartheta xi zeta
+6 Delta Gamma Lambda Omega Phi Pi Psi Sigma Theta Upsilon Xi beta chi delta ell epsilon eta gamma iota kappa mu nu omega phi pi psi rho sigma tau theta upsilon varepsilon varkappa varphi varrho varsigma vartheta xi
+7 Delta Gamma Lambda Omega Phi Pi Psi Theta Upsilon Xi alpha beta chi delta ell epsilon eta iota kappa mu nu omega phi pi psi rho sigma tau theta upsilon varepsilon varkappa varphi varrho vartheta xi
+8 Lambda Omega Phi Psi Theta Upsilon beta chi ell epsilon eta iota kappa lambda mu nu omega phi pi rho sigma tau theta upsilon varepsilon varkappa varphi varrho varsigma vartheta xi zeta
+9 Gamma Omega Phi Psi Theta Upsilon Xi beta chi delta ell epsilon eta gamma iota mu nu omega phi pi psi rho theta upsilon varkappa varphi varrho varsigma xi
+10 Delta Pi Psi Theta beta chi ell epsilon gamma iota kappa mu nu omega phi pi psi rho sigma theta upsilon varkappa varphi varrho varsigma vartheta xi
+11 Delta Gamma Lambda Omega Psi Theta Upsilon Xi beta ell eta kappa mu nu omega pi psi rho sigma upsilon varphi varrho vartheta xi
+
+=== 5절 여유 글자 vs 1.2 전역(같은 장에 쓰이는 같은 바탕 글자·글자체) ===
+
+=== 5절 「처음 정의하는 전역 기호」 vs 1.2 정의 절 ===
+장 3: 5절 기호 $\ell_n$(행 $n$의 임의의 증인 — 1.2의 가장 작은 증인 $\ell^\ast_ 가 1.2에 없음(철자 다름?)
+장 3: 5절 기호 따름정리 `{{3:peak-asymptotics}}`의 진술과 증명) 가 1.2에 없음(철자 다름?)
+장 4: 5절 기호 n)$ 가 1.2에 없음(철자 다름?)
+장 6: 5절 기호 $\varrho_t, \varrho^{\mathrm H}, \varrho^{\mathrm  가 1.2에 없음(철자 다름?)
+장 7: 5절 기호 $\tilde{\mathfrak a}_n$ 가 1.2에 없음(철자 다름?)
+장 7: 5절 기호 $\mathrm{KD}^\prime_n$ 가 1.2에 없음(철자 다름?)
+장 8: 5절 기호 $\mathrm{fb}(\lambda)$ 가 1.2에 없음(철자 다름?)
+장 9: 5절 기호 $\varrho^{\mathrm{lb}}_t$ 가 1.2에 없음(철자 다름?)
+장 10: 5절 기호 \bar\nu), \mathrm{Stays}^{\mathrm{up}}_F, \mathrm{ 가 1.2에 없음(철자 다름?)
+1.2 $\varrho_t, \varrho^{\mathrm H}, \varrho^{\mathrm  (정의 절 6.2($\varrho_t$·$\varrho^{\mathrm H}$·$\varrho^{\mathrm L}$·$\varrho_{\min}$), 9.4($\varrho^{\mathrm{lb}}_t$)) 가 5절 장 9의 목록에 없음
+1.2 $\mathfrak a_n$ (정의 절 5.1, 7.5) 가 5절 장 7의 목록에 없음
+1.2 $\mathrm{KD}_n$ (정의 절 2.10($\mathrm{KD}_n$), 7.7($\mathrm{KD}^\prime_n$)) 가 5절 장 7의 목록에 없음

@@ -1,0 +1,6 @@
+7A	\\mathfrak X_[^i1 ]|\\mathfrak X_\{[^i]
+7A	\\mathrm\{lg\}
+7A	\\mathcal G_k\(
+7A	\\mathcal G_[a-z]\b
+7B	\\mathfrak t\b
+7A	\\mathsf a_

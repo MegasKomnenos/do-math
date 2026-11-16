@@ -1,0 +1,169 @@
+==== 부록A: 생성본 365행 / 현재 367행
+--- replace 생성 9-9 / 현재 9-9
+  G| | $n$ | 행의 크기(주차함수의 「길이」 $n$, 숲의 「크기」 $n$; 낱말은 대상마다 그렇게 쓴다); 7–10장에서는 둘째 층 행 $n=2k+\nu$ | 1.5 | — |
+  C| | $n$ | 행의 크기(주차함수의 「길이」 $n$, 숲의 「크기」 $n$; 낱말은 대상마다 그렇게 쓴다); 7–10장에서는 둘째 층 행 $n=2k+\nu$ | 1.1 | — |
+--- replace 생성 11-11 / 현재 11-11
+  G| | $t$ | 나무의 크기 변수 | 1.5 | — |
+  C| | $t$ | 나무(블록)의 크기 변수 | 1.5 | — |
+--- replace 생성 14-14 / 현재 14-14
+  G| | $\ell=k-1$ | 수준(최대 변위의 값) | 1.5 | — |
+  C| | $\ell=k-1$ | 수준(최대 변위의 값) | 1.3 | — |
+--- replace 생성 16-16 / 현재 16-16
+  G| | $Y$ | 수준 변수 $Y\in\{y-1,y,y+1\}$ | 1.5 | — |
+  C| | $Y$ | 수준 변수 $Y\in\{y-1,y,y+1\}$ | 1.5, 5.5 | — |
+--- replace 생성 19-20 / 현재 19-20
+  G| | $r:=n-\ell-1$ | 꼬리 좌표(오른쪽 끝에서 잰 위치; 위치 $\ell$은 끝에서 $r+1$번째 칸); $n-k$와 같은 수 | 1.5 | — |
+  G| | $\nu:=n-2k$ | 중앙 행 $n=2k$에서 아래로 잰 행의 위치(둘째 층 안에서는 $1\le\nu\le k$; 중앙 창에서는 음수도 된다) | 1.5 | — |
+  C| | $r:=n-\ell-1$ | 꼬리 좌표(오른쪽 끝에서 잰 위치; 위치 $\ell$은 끝에서 $r+1$번째 칸; 4·5장); 같은 수 $n-k$를 6장부터 10장은 크기 $n$의 숲에서 문턱 나무를 덜어 낸 나머지, 곧 1.4절의 환경의 크기로 쓰고 $N$으로 적는다 | 1.5 | — |
+  C| | $\nu:=n-2k$ | 중앙 행에서 아래로 잰 행의 위치(둘째 층의 행을 세는 좌표; 중앙 창에서는 음수도 된다) | 1.5 | — |
+--- replace 생성 22-22 / 현재 22-22
+  G| | $q$ | 초과(크기−용량) 변수: 무거운 사슬 $i$째 꼭짓점의 초과 $q_i:=S_i-y$, 사슬이 지나는 초과 수준 $q_0>q_1>\dots>q_J$, 착지 창 안의 크기 $k+q$; 둘째 초과 변수는 $q^\prime$ | 1.5 | — |
+  C| | $q$ | 초과(크기−용량) 변수: 무거운 사슬 $i$째 꼭짓점의 초과 $q_i:=S_i-y$, 사슬이 지나는 초과 수준 $q_0>q_1>\dots>q_L$, 착지 창 안의 크기 $k+q$; 둘째 초과 변수는 $q^\prime$ | 1.5 | — |
+--- replace 생성 62-62 / 현재 62-62
+  G| | $\tau$ | 뿌리 라벨 나무(변수); 블록 나무의 모양 | 2.4 | — |
+  C| | $\tau$ | 뿌리 라벨 나무(변수); 토막 나무의 모양 | 2.4 | — |
+--- replace 생성 70-70 / 현재 70-70
+  G| | $\pi^0_n(y)$ | 쪼개짐 확률 $\Pr_n(G\le y)$(크기 $y$를 넘는 나무가 없을 확률; 3절 낱말 「쪼개짐」); 상계는 $\pi^{0,\mathrm{up}}$ | 2.5 | $P_0(N)$ ([rae1f209], [r5909c9e]; 인수 $k$ 고정); $P^{up}_0$ ([r5909c9e]); $q_F=\pi^0_F(F/2)$ ([r2fe0259]); $\mathcal N(j,y)$ ([r29c10cd]); $\mathcal N(L,c)$ ([r696d62c]); $q_N=\pi^0_N(k)$ ([r8456f59]); [r030ffae] 보고서 L260(보조정리 H-G)의 $q_N=1-\sum_j\mathrm{Bor}(j)\rho_j$는 $\pi^0_N(k+1)$(보고서 L25·exposition L42의 $q_N$은 $s_N(k+1)$); L226의 「모든 나무 크기 $<k$」 확률은 $\pi^0_{N^\prime}(k-1)$(글자 없음) |
+  C| | $\pi^0_n(y)$ | 쪼개짐 확률 $\Pr_n(G\le y)$(크기 $y$를 넘는 나무가 없을 확률; 2.5절 낱말 「쪼개짐」); 상계는 $\pi^{0,\mathrm{up}}$ | 2.5 | $P_0(N)$ ([rae1f209], [r5909c9e]; 인수 $k$ 고정); $P^{up}_0$ ([r5909c9e]); $q_F=\pi^0_F(F/2)$ ([r2fe0259]); $\mathcal N(j,y)$ ([r29c10cd]); $\mathcal N(L,c)$ ([r696d62c]); $q_N=\pi^0_N(k)$ ([r8456f59]); [r030ffae] 보고서 L260(보조정리 H-G)의 $q_N=1-\sum_j\mathrm{Bor}(j)\rho_j$는 $\pi^0_N(k+1)$(보고서 L25·exposition L42의 $q_N$은 $s_N(k+1)$); L226의 「모든 나무 크기 $<k$」 확률은 $\pi^0_{N^\prime}(k-1)$(글자 없음) |
+--- replace 생성 95-95 / 현재 95-95
+  G| | $\theta_t(k)$ | 크기 $t$ 균등 나무의 문턱 부분나무 기대 수 $\mathbb E^T_t[H_k]=\binom tk\frac{k^{k-1}(t-k)^{t-k}}{t^{t-1}}$ | 2.9 | — |
+  C| | $\theta_t(k)$ | 크기 $t$ 균등 나무의 문턱 부분나무 기대 수 $\mathbb E^T_t[H_k]=\binom tk\frac{k^{k-1}(t-k)^{t-k}}{t^{t-1}}$; 8.2절 보조정리 `{{8:jensen-lower}}`는 크기 $N$ 숲에서 부분나무 크기가 $m$인 꼭짓점의 기대 수를, 숲을 보조 뿌리에 매단 크기 $N+1$의 나무로 보아 이 기호의 $\theta_{N+1}(m)=(N+1-m)\pi_N(m)$으로 적는다 | 2.9 | — |
+--- replace 생성 115-115 / 현재 115-115
+  G| | $W_n(\gamma)$ | 간격 수열 $\gamma$(지정 사슬 크기 $\mathfrak t_1>\dots>\mathfrak t_j$, 길이 $j$; 1.3 2.12 묶음)의 사슬 가중치 $\mathrm{nf}(n,\,n-\mathfrak t_j)\prod_{i<j}n/\mathfrak t_i$ | 2.12 | $W_n(g)=\mathcal R(n,d_k-1)\prod_{i<k}n/s_i$ ([r1aa0be6]; $k$는 사슬 길이, $d_k=n+1-s_k$); [r42d9a17] |
+  C| | $W_n(\gamma)$ | 간격 수열 $\gamma$(지정 사슬 크기 $\mathfrak t_1>\dots>\mathfrak t_j$, 길이 $j$)의 사슬 가중치 $\mathrm{nf}(n,\,n-\mathfrak t_j)\prod_{i<j}n/\mathfrak t_i$ | 2.12 | $W_n(g)=\mathcal R(n,d_k-1)\prod_{i<k}n/s_i$ ([r1aa0be6]; $k$는 사슬 길이, $d_k=n+1-s_k$); [r42d9a17] |
+--- replace 생성 133-133 / 현재 133-133
+  G| | $\Gamma_d(\ell;n)$ | 경계 응답 다항식(첫 인수는 다항식 변수; 5장은 실수 $y$에서 평가한 값을 $\Gamma_d(y; n)$으로 적는다) | 4.2 | 「경계 응답」 |
+  C| | $\Gamma_d(\ell;n)$ | 경계 응답 다항식 | 4.2 | 「경계 응답」 |
+--- replace 생성 143-143 / 현재 143-143
+  G| | $\mathsf a_j$ | 적분 상수 $\int_0^\infty y^je^{-y^3/3}\,dy$ | 4.3 | $C_0$, $I$ ([rce3dc75], [r5f5cf73], [ra4c01fc]); $M_m$ ([ra4c01fc]); $C_A$ ([rb7effe0]) |
+  C| | $\mathsf a_j$ | 적분 상수 $\int_0^\infty w^je^{-w^3/3}\,dw$ | 4.3 | $C_0$, $I$ ([rce3dc75], [r5f5cf73], [ra4c01fc]); $M_m$ ([ra4c01fc]); $C_A$ ([rb7effe0]) |
+--- replace 생성 148-148 / 현재 148-148
+  G| | $\mathrm{He}_j$ | Hermite 수(중앙 틈의 두 보정) | 4.3 | — |
+  C| | $\mathrm{He}_j$ | Hermite 수(중앙 틈의 Gauss형 계수) | 4.3 | — |
+--- replace 생성 155-155 / 현재 155-155
+  G| | $\mathfrak a_n$ | 지수 생성함수 계수 $A_{n,k-1}/n!$; 볼츠만판 $\tilde{\mathfrak a}_n=e^{-n}\mathfrak a_n$ | 5.1 | $a_m$ ([rb7effe0], [rad00a59], [r207f124]); $f_n$ ([r60a6f55]); $\tilde a_m$ ([r207f124]) |
+  C| | $\mathfrak a_n$ | 지수 생성함수 계수 $A_{n,k-1}/n!$; 볼츠만판 $\tilde{\mathfrak a}_n=e^{-n}\mathfrak a_n$ | 5.1, 7.5 | $a_m$ ([rb7effe0], [rad00a59], [r207f124]); $f_n$ ([r60a6f55]); $\tilde a_m$ ([r207f124]) |
+--- insert 생성 159-158 / 현재 159-159
+  C| | $\mathrm{rq}_r, \mathrm{rq}$ | 사슬 가중치의 전개에 쓰는 꼬리 좌표와 행 크기의 비: 5.2.3절부터 $\mathrm{rq}_r:=(r+3)/n$, 5.4절부터 $\mathrm{rq}:=r/n$(첨자 유무로 두 정의를 가른다) | 5.2, 5.4 | — |
+--- replace 생성 160-160 / 현재 161-161
+  G| | $\mathsf W, \mathsf W^\sharp$ | 오른쪽 벌크 증가 명제; 임계 창 잔여 명제 | 5.3 | — |
+  C| | $\mathsf W, \mathsf W^\sharp$ | 오른쪽 벌크 증가 명제; 임계 창 잔여 명제 | 5.3, 5.4 | — |
+--- replace 생성 165-165 / 현재 166-166
+  G| | $\mathfrak g(\theta)$ | 정리 `{{5:old-5-32}}`의 피적분함수(인수 $\theta$는 5.5.6–5.5.7의 국소 척도 변수 $z/Y^{1/3}$) | 5.5 | $g$ ([r8a9b11e]) |
+  C| | $\mathfrak g(\theta)$ | 정리 `{{5:old-5-32}}`의 피적분함수(인수 $\theta$는 5.5.6의 국소 척도 변수 $z/Y^{1/3}$) | 5.5 | $g$ ([r8a9b11e]) |
+--- replace 생성 171-171 / 현재 172-172
+  G| | $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$ | 환원 (R₀)의 꼭대기(원천) 항; 흡수 뒤의 원천 항과 그 하계 | 5.5 | $\mathrm{POS}_\alpha$ ([r58b4caa]; 기울임 매개변수 $\alpha=0$); (R₀), $\mathrm{POS}_0$, $\mathrm{POS}^\prime_0$, $\mathrm{POS}^{\prime-}_0$, (CF₀′) ([r8a9b11e] L238·250·254) |
+  C| | $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$ | 환원 $(5.50)$의 꼭대기(원천) 항; 흡수 뒤의 원천 항과 그 하계 | 5.5 | $\mathrm{POS}_\alpha$ ([r58b4caa]; 기울임 매개변수 $\alpha=0$); (R₀), $\mathrm{POS}_0$, $\mathrm{POS}^\prime_0$, $\mathrm{POS}^{\prime-}_0$, (CF₀′) ([r8a9b11e] L238·250·254) |
+--- replace 생성 174-174 / 현재 175-175
+  G| | $\mathrm{WIN}_0, \mathrm{WIN}^{\mathrm V}_0$ | 환원 (R₀)의 창 항(꼬리 창의 음의 질량); 그 방문 확률 상계 | 5.5 | $\mathrm{WIN}_\alpha$, $\mathrm{WIN}^V_\alpha$ ([r58b4caa]; $\alpha=0$) |
+  C| | $\mathrm{WIN}_0, \mathrm{WIN}^{\mathrm V}_0$ | 환원 $(5.50)$의 창 항(꼬리 창의 음의 질량); 그 방문 확률 상계 | 5.5 | $\mathrm{WIN}_\alpha$, $\mathrm{WIN}^V_\alpha$ ([r58b4caa]; $\alpha=0$) |
+--- replace 생성 204-204 / 현재 205-205
+  G| | $\mathsf x_k$ | 임계 기울임 $(k/(k+1))^{k-1}$(정리 `{{7:old-6-10}}`의 상수) | 6.5 | $x^*$ ([r051bfe1], [rcb2e2d4]); $c_k$ ([rad00a59]); $\rho_k$ ([rbeae3a3]) |
+  C| | $\mathsf x_k$ | 임계 기울임 $(k/(k+1))^{k-1}$(정리 `{{7:old-6-10}}`의 상수) | 6.2 | $x^*$ ([r051bfe1], [rcb2e2d4]); $c_k$ ([rad00a59]); $\rho_k$ ([rbeae3a3]) |
+--- replace 생성 241-241 / 현재 242-242
+  G| | $n_{\mathrm{PD}}(k)$ | 전달 범위의 시작 $\lceil(k+1)^{4/3}\rceil+k+1$(행 크기의 특정값) | 7.6 | $t_{PD}(k)$ ([r79ee9e0] L269) |
+  C| | $n_{\mathrm{PD}}(k)$ | 전달 범위의 시작 $\lceil(k+1)^{4/3}\rceil+k+1$(행 크기의 특정값) | 7.5 | $t_{PD}(k)$ ([r79ee9e0] L269) |
+--- replace 생성 248-249 / 현재 249-250
+  G| | $\mathrm{Quad}_n, \mathrm{Stem}_n$ | 장부의 이차 몫; 깊은 자식 몫 | 7.7 | — |
+  G| | $\mathcal R_2$ | 실질 잔여 $\{(k,n):k\ge6668,\max(2k+103,20001)\le n\le3k-1\}$ | 7.8 | — |
+  C| | $\mathrm{Quad}_n, \mathrm{Stem}_n$ | 둘째 층 한 걸음 항등식의 이차 몫; 깊은 자식 몫 | 7.7 | — |
+  C| | $\mathcal R_2$ | 실질 잔여 $\{(n,k):k\ge6668,\max(2k+103,20001)\le n\le3k-1\}$ | 7.7 | — |
+--- replace 생성 256-256 / 현재 257-257
+  G| | $\xi$ | 창 좌표 $q/k^{2/3}$(초과를 $k^{2/3}$ 눈금으로 잰 것; $\xi_c=c/k^{2/3}$); 10장에서 시작 초과 $\delta$의 것은 $\xi=\delta/y^{2/3}$ | 8.1 | $y$ ([r5909c9e]); $x_b$, $x$, $y$ ([r030ffae]); $y$ ([rfc69320]); $x$ ([re71a735] §4) |
+  C| | $\xi$ | 창 좌표 $q/k^{2/3}$(초과를 $k^{2/3}$ 눈금으로 잰 것; $\xi_c=c/k^{2/3}$); 10장에서 시작 초과 $q_0$의 것은 $\xi=q_0/y^{2/3}$ | 8.1 | $y$ ([r5909c9e]); $x_b$, $x$, $y$ ([r030ffae]); $y$ ([rfc69320]); $x$ ([re71a735] §4) |
+--- replace 생성 262-262 / 현재 263-263
+  G| | $\tilde s^{\mathrm{env}}(\xi), \tilde s^{\mathrm{env}}_{\mathrm W}, \tilde s^{\mathrm{env}}_{\mathrm G}$ | 참 봉투(모든 $k\ge6600$에 걸친 하한으로 정의한 봉투 $\max(\tilde s^{\mathrm{env}}_{\mathrm W},\tilde s^{\mathrm{env}}_{\mathrm G})$; Jensen 쪽 $e^{-E^\ast}$, 탈출 쪽 $\max(0,\inf_{k}q_{k,k}(\xi))$ — $E^\ast$, $q_{k,k^\prime}$는 8.2 국소) | 8.2 | $\tilde Q$, $\tilde Q_W$, $\tilde Q_G$ ([rfc69320]) |
+  C| | $\tilde s^{\mathrm{env}}(\xi), \tilde s^{\mathrm{env}}_{\mathrm W}, \tilde s^{\mathrm{env}}_{\mathrm G}$ | 참 봉투(모든 $k\ge6600$에 걸친 하한으로 정의한 봉투 $\max(\tilde s^{\mathrm{env}}_{\mathrm W},\tilde s^{\mathrm{env}}_{\mathrm G})$; Jensen 쪽 $e^{-\mathcal J^\ast}$, 탈출 쪽 $\max(0,\inf_{k}q_{k,k}(\xi))$ — $\mathcal J^\ast$, $q_{k,k^\prime}$는 8.2 국소) | 8.2 | $\tilde Q$, $\tilde Q_W$, $\tilde Q_G$ ([rfc69320]) |
+--- replace 생성 265-265 / 현재 266-266
+  G| | $\Omega(\xi), \Omega_c$ | 모양 함수(상위해를 $\mathfrak E_q=\Psi(q)(1-\Omega(\xi_q))$ 꼴로 잡는 감소 함수)와 그 값 $\Omega(\xi_c)$ | 8.2 | $W$, $W_c$ ([r030ffae], [r5909c9e]) |
+  C| | $\Omega(\xi), \Omega_c$ | 모양 함수(상위해를 $\mathfrak E_q=\Psi(q)(1-\Omega(\xi_q))$ 꼴로 잡는 감소 함수)와 그 값 $\Omega(\xi_c)$ | 8.1 | $W$, $W_c$ ([r030ffae], [r5909c9e]) |
+--- replace 생성 270-271 / 현재 271-272
+  G| | $\mathrm{Bor}_{\le}(q)$ | $\sum_{m\le q}\mathrm{Bor}(m)$ | 8.2 | $S_0(b)$ ([r030ffae]); $S_0(\nu)$ ([r5909c9e]); $\beta(m)$ ([r29c10cd]) |
+  G| | $\mathrm{km}_N$ | 명제 U의 사슬 질량 $\sum_{m=k+1}^N\pi_N(m)\,k/m$ | 8.2 | $\kappa_N$ ([r8456f59], [r030ffae]; 6.2의 (Hz) 상수 $\kappa_N$과 다른 양) |
+  C| | $\mathrm{Bor}_{\le}(q)$ | $\sum_{m\le q}\mathrm{Bor}(m)$ | 8.1 | $S_0(b)$ ([r030ffae]); $S_0(\nu)$ ([r5909c9e]); $\beta(m)$ ([r29c10cd]) |
+  C| | $\mathrm{km}_N$ | 정리 `{{8:escape-lower}}`의 사슬 질량 $\sum_{m=k+1}^N\pi_N(m)\,k/m$ | 8.2 | $\kappa_N$ ([r8456f59], [r030ffae]; 6.2의 (Hz) 상수 $\kappa_N$과 다른 양) |
+--- replace 생성 275-275 / 현재 276-276
+  G| | $q_{\mathrm{fb}}, q^\circ_{\mathrm{fb}}$ | 되먹임 폭 $\lfloor(3(k-1)/4-q_{\max}-3)/8\rfloor$(정리 B″·B‴; 초과 변수의 특정값)와 정리 B′의 고정값 $300$ | 8.4 | $G$ ([r030ffae]; 두 정의 L241·L191) |
+  C| | $q_{\mathrm{fb}}, q^\circ_{\mathrm{fb}}$ | 되먹임 폭 $\lfloor(3(k-1)/4-q_{\max}-3)/8\rfloor$(정리 B‴; 초과 변수의 특정값)와 정리 B′의 고정값 $300$ | 8.4 | $G$ ([r030ffae]; 두 정의 L241·L191) |
+--- replace 생성 277-277 / 현재 278-278
+  G| | $\mathrm{dup}_m$ | 한 나무 재귀의 중복 몫 | 8.4 | $\mathrm{rem}_L$ ([r030ffae]) |
+  C| | $\mathrm{dup}_m$ | 한 나무 재귀의 중복 몫 | 8.1 | $\mathrm{rem}_L$ ([r030ffae]) |
+--- replace 생성 289-289 / 현재 290-290
+  G| | $A^{(t)}_N, A^\circ_N, A^\diamond_N$ | 최대 변위 $\le k-1$이고 모든 나무의 크기가 $t$ 이하인 크기 $N$ 숲의 수(생존 숲의 수; 윗첨자는 나무 크기의 문턱값); $A^\circ_N=A^{(k+1)}_N$(짝 없는 문턱 손실의 것), $A^\diamond_N=A^{(k+103)}_N$(덮인 문턱의 것) | 9.2 | — |
+  C| | $A^{(t)}_N, A^\circ_N, A^\diamond_N$ | 최대 변위 $\le k-1$이고 모든 나무의 크기가 $t$ 이하인 크기 $N$ 숲의 수(생존 숲의 수; 윗첨자는 나무 크기의 문턱); $A^\circ_N=A^{(k+1)}_N$(짝 없는 문턱 손실의 것), $A^\diamond_N=A^{(k+103)}_N$(덮인 문턱의 것) | 9.2 | — |
+--- replace 생성 311-311 / 현재 312-312
+  G| | $\nu_0(k), \nu_1(k)$ | $\mathcal Y_k\ge0$이 되는 최소 $\nu$; 띠 전체 정리의 시작 위치, 곧 $\mathcal F_k\ge0$이 되는 $103$ 이상의 최소 $\nu$(둘 다 둘째 층 위치의 특정값) | 9.4 | — |
+  C| | $\nu_0(k), \nu_1(k)$ | $\mathcal Y_k\ge0$이 되는 최소 $\nu$; 띠 안쪽 정리의 시작 위치, 곧 $\mathcal F_k\ge0$이 되는 $103$ 이상의 최소 $\nu$(둘 다 둘째 층 위치의 특정값) | 9.4 | — |
+--- insert 생성 320-319 / 현재 321-321
+  C| | $\mathcal O_n$ | 재생 항등식의 교차항 $d_{n,k}-\sum_{t=k}^{n}\binom nt\,\delta_t\,A_{n-t,k-1}$(명제 `{{9:regeneration-S}}`(나); 모든 $n\ge0$에서 음이 아니고 $2k+1\le n\le3k-1$에서 $\mathrm{PAIR}_n$과 같다) | 9.4 | $\mathcal X_n$ ([r05cf8c9]) |
+--- replace 생성 334-334 / 현재 336-336
+  G| | $\mathrm{Stays}, \mathrm{Stays}^{\mathrm{vis}}, \mathrm{Stays}_{\mathrm{PM}}, \mathrm{Stays}_X$ | 문턱 뒤 머묾 질량 $2\varsigma_{N+1}(k)+\sum_{m=N+2}^{2k}\omega_m[\varsigma_m(k)+\varsigma_{m-1}(k-1)]$; 그 방문 질량 읽기; 정리 `{{6:old-8-12}}`(벌크 점질량의 상계)를 넣은 것; 명제 X의 명시 상계 | 10.2 | `Stays` ([r3d0856b]); `Stays_θ` ([r3d0856b])는 $\mathrm{Stays}^{\mathrm{vis}}$ |
+  C| | $\mathrm{Stays}, \mathrm{Stays}^{\mathrm{vis}}, \mathrm{Stays}_{\mathrm{PM}}, \mathrm{Stays}_X$ | 문턱 뒤 머묾 질량 $2\varsigma_{N+1}(k)+\sum_{m=N+2}^{2k}\omega_m[\varsigma_m(k)+\varsigma_{m-1}(k-1)]$; 그 방문 질량 읽기; 정리 `{{6:old-8-12}}`(벌크 수준 질량의 상계)를 넣은 것; 명제 X의 명시 상계 | 10.2 | `Stays` ([r3d0856b]); `Stays_θ` ([r3d0856b])는 $\mathrm{Stays}^{\mathrm{vis}}$ |
+--- replace 생성 346-346 / 현재 348-348
+  G| | $k_0, k^\ast$ | 가족이 비지 않는 가장 작은 $k$(가족 시작점); 단계 (b)의 최소 열(용량의 특정값) | 10.5 | — |
+  C| | $k_0, k^\ast$ | 가족이 비지 않는 가장 작은 $k$(가족 시작점); 단계 (b)의 최소 열(용량의 특정값) | 10.6 | — |
+--- replace 생성 358-358 / 현재 360-360
+  G| | $\mathrm{PM}_y(d)$ | 점질량 읽기 상계 $16.54(y+1+\frac{d-1}3)(d-1)^{-5/2}$ | 10.5 | $PM_c(d)$ ([re71a735]); $16.54(k+a/3)a^{-5/2}$ ([r7e03176]; $k=y+1$, $a=d-1$) |
+  C| | $\mathrm{PM}_y(d)$ | 점질량 읽기 상계 $16.54(y+1+\frac{d-1}3)(d-1)^{-5/2}$ | 10.4 | $PM_c(d)$ ([re71a735]); $16.54(k+a/3)a^{-5/2}$ ([r7e03176]; $k=y+1$, $a=d-1$) |
+==== 부록C: 생성본 626행 / 현재 640행
+--- replace 생성 72-72 / 현재 72-72
+  G| | 초과 | 초과, 초과 수준; 열 질량의 초과는 「넘침」 | 2.11 |
+  C| | 초과 | 초과, 초과 수준; 열 질량의 초과는 「넘침」 | 1.5, 2.11 |
+--- replace 생성 86-86 / 현재 86-86
+  G| | 연쇄 | 사슬(둘째·셋째 뜻) | 4.3 |
+  C| | 연쇄 | 사슬(둘째·셋째 뜻) | 2.11, 4.3 |
+--- replace 생성 90-90 / 현재 90-90
+  G| | 문턱 | 문턱(첫째 뜻) | 2.5 |
+  C| | 문턱 | 문턱(첫째 뜻) | 1.5, 2.5 |
+--- replace 생성 94-94 / 현재 94-94
+  G| | 무거운, 가벼운 | 무거운, 가벼운; 「무거운 자리·가벼운 자리」는 「무거운 환경·가벼운 환경」 | 1.5 |
+  C| | 무거운, 가벼운 | 무거운, 가벼운; 「무거운 자리·가벼운 자리」는 「무거운 환경·가벼운 환경」 | 2.5 |
+--- replace 생성 101-102 / 현재 101-102
+  G| | 안장점 | 임계점, 안장점 | 5.4 |
+  G| | 경계 | 경계(상계·하계 뜻) | 1.5 |
+  C| | 안장점 | 임계점, 안장점 | 5.6 |
+  C| | 경계 | 경계(상계·하계 뜻) | 1.4 |
+--- replace 생성 116-116 / 현재 116-116
+  G| | 상위해 | 상위해, 상해, supersolution | 8.1 |
+  C| | 상위해 | 상위해, 상해, supersolution | 6.1, 8.1 |
+--- replace 생성 120-120 / 현재 120-120
+  G| | 포락선 | 포락선 | 5.4 |
+  C| | 포락선 | 포락선 | 5.2, 5.4 |
+--- replace 생성 126-126 / 현재 126-126
+  G| | 함의, 동치 | 관계 | 4.1 |
+  C| | 함의, 동치 | 관계 | 1.4 |
+--- replace 생성 133-134 / 현재 133-135
+  G| | 방문 확률 | 방문 확률, 멈춤 확률(쓰지 않음) | 2.11, 5.5 |
+  G| | 모멘트 판정, 볼록–꺾임 분해, 무거운 자리, 문턱 자리, 골격 값, 마지막 이탈 분해, 자기일관 상계 | 같음; 「골격 수준」은 「골격 값」 | 7.1 |
+  C| | 방문 확률 | 방문 확률, 멈춤 확률 | 2.11, 5.5 |
+  C| | 모멘트 판정, 볼록–꺾임 분해, 무거운 자리, 문턱 자리, 골격 값, 마지막 이탈 분해, 자기일관 상계 | 같음; 「골격 수준」은 「골격 값」 | 7.1, 7.2 |
+  C| | 분할 무게, 문턱 단위, 생존비, 둘째 층 한 칸 비교, 실질 잔여, 몫의 집계 | 같음; 「몫의 집계」는 「장부」 | 7.7 |
+--- replace 생성 137-138 / 현재 138-152
+  G| | 구획, 구획 하계, 거대 나무, 창×창 쌍, 쌍의 무게, $k$-단조성, 한 변수 확인 | 칸, 칸 하계, 거대 블록 | 9.5 |
+  G| | 감사 | audit, 감사 | 7.4 |
+  C| | 구획, 구획 하계, 거대 나무, 창×창 쌍, 쌍의 무게, $k$-단조성, 한 변수 확인 | 칸, 칸 하계, 거대 블록 | 6.4, 9.5 |
+  C| | 나무 함수 | — | 2.5 |
+  C| | 중앙 틈 | — | 4.1 |
+  C| | 상쇄 분해, 중앙 상쇄 항등식 | — | 4.3 |
+  C| | Green 표현 | — | 4.3 |
+  C| | 두 나무 꼴 | — | 6.2 |
+  C| | 무게 증분, 감소율, 제한 성장비 | 같음 | 6.2 |
+  C| | 평평한 핵심 | 평평한 핵, flat-core | 6.4 |
+  C| | V-핵심 | — | 6.5 |
+  C| | 바닥 | 바닥 | 6.6 |
+  C| | 원 비교 | — | 7.4 |
+  C| | 껍질 | — | 7.4 |
+  C| | 감사 | 감사 | 7.4 |
+  C| | 착지 환경 | — | 8(도입) |
+  C| | 성장률 | 성장률 | 10.1 |
+--- replace 생성 210-211 / 현재 224-225
+  G| | 기록 [r23f10e9]의 정리 A | 정리 {{5:old-5-28}} | 크기 방향 하계 |
+  G| | 기록 [r8a9b11e]의 정리 W | 정리 {{5:old-5-31}} | 착지 창 열 값의 하계 |
+  C| | 기록 [r23f10e9]의 정리 A로, 정리 {{5:old-5-12}}의 띠 A와 무관하다 | 정리 {{5:old-5-28}} | 크기 방향 하계 |
+  C| | 기록 [r8a9b11e]의 정리 W로, 명제 $W$와 다른 결과다 | 정리 {{5:old-5-31}} | 착지 창 열 값의 하계 |
+--- replace 생성 213-213 / 현재 227-227
+  G| | 기록 [r8a9b11e]의 정리 T | 정리 {{5:old-5-33}} | 꼭대기 행 하계 |
+  C| | 기록 [r8a9b11e]의 정리 T로, 7.4절·7.6절·7.7절·9.1절에서 정리 T 또는 보조정리 T라 부른 기록의 결과들과 다르다 | 정리 {{5:old-5-33}} | 꼭대기 행 하계 |
+
+본문에 바탕 토큰 없는 1.2 행: 0
+

@@ -1,0 +1,25 @@
+OK cut-rep (가) k^{k-1}/k! 적분 표현 (k<=5)
+OK cut-rep (가) (phi cot phi + i phi)e^{-(...)} = ct(phi)
+OK cut-rep (다) Borel 꼬리 절단 표현 (k=3,4,6; ag=0.5,0.9,2.0)
+OK cut-rep (라) 𝔍 표현, Bt 식, ph·L̂·lg 급수, et-xi 분해 (k=4,7)
+OK Bor(k) = e^{-rb_k}/(sqrt(2pi) k^{3/2})
+OK unit-circle (가)(나) 수치 표본
+ n=6 k=4: e_n/p_n=0.0148747545665 vs 0.0148747545665;  B/p_n=0.0828226334265 vs 0.0828226334265
+OK hat-normalization e_n 식 (n=6,k=4)
+OK hat-normalization B_{n,k-1} 식 (n=6,k=4)
+OK Omega_e 급수=닫힌 꼴, Omega_e' 식, |e^{Omega_e}| 식 (n=6,k=4)
+OK e_n > B_{n,k-1} <=> Upsilon_e > Upsilon_B (n=6,k=4) 250 1392
+ n=7 k=4: e_n/p_n=0.0289611816406 vs 0.0289611816406;  B/p_n=0.0718994140625 vs 0.0718994140625
+OK hat-normalization e_n 식 (n=7,k=4)
+OK hat-normalization B_{n,k-1} 식 (n=7,k=4)
+OK Omega_e 급수=닫힌 꼴, Omega_e' 식, |e^{Omega_e}| 식 (n=7,k=4)
+OK e_n > B_{n,k-1} <=> Upsilon_e > Upsilon_B (n=7,k=4) 7592 18848
+OK Ŵr_0 = ku^2 2^{-j} int_0^{1/ku} s^{2+2j} Bor^tail(1-ku s) e^{s^2/(2ku)}/Bor(k) ds 0.5784591097
+OK   코드 꼴 (1-ku s)^{-1}e^{-kappa_rho}Shat 와 점별 일치 (Shat = ku^2 S_k/Bor(k))
+OK Ŵr_1 = ku^2 2^{-j} int_0^{1/ku} s^{2+2j} Bor^tail(1-ku s) e^{s^2/(2ku)}/Bor(k) ds 0.217385018
+OK Ŵr_2 = ku^2 2^{-j} int_0^{1/ku} s^{2+2j} Bor^tail(1-ku s) e^{s^2/(2ku)}/Bor(k) ds 0.1148756822
+OK 𝔍̂ = 𝔍_k/ku^2 = int_0^{1/ku} s e^{ku s} e^{-(1-ku^3) kappa_rho(s)} ds
+OK S_k/Bor(k), e^{rb_k}, Bor(k+j)/Bor(k) 둘러싸기 (k=5,20,100)
+OK Gamma(a,x) <= x^{a-1}e^{-x} (a<=1); <= x^{a-1}e^{-x}(1+(a-1)/x) (1<a<=2)
+OK -log(1-v)-v-v^2/2 >= v^3/3; e^q <= (1-q/16)^{-16} (0<=q<16)
+ALL OK

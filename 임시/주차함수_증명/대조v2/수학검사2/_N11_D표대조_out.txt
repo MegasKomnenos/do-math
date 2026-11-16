@@ -1,0 +1,267 @@
+부록 D 항목 수: 42  11.2 행 수: 42
+순서 비교 (D 순서 vs 표 순서):
+  순서 다름: M-natural-integrals | fiber-enumeration
+  순서 다름: four-families | fiber-nonunimodal-bound
+  순서 다름: fiber-enumeration | zeta-constants
+  순서 다름: fiber-nonunimodal-bound | logconcavity-failure-n80
+  순서 다름: zeta-constants | cumulative-logconcavity
+  순서 다름: logconcavity-failure-n80 | central-gap-integer
+  순서 다름: cumulative-logconcavity | central-gap-rational-audit
+  순서 다름: central-gap-integer | crossing-small-n
+  순서 다름: central-gap-rational-audit | QL-small-n
+  순서 다름: crossing-small-n | exact-n20000
+  순서 다름: QL-small-n | c50
+  순서 다름: exact-n20000 | newton-m170
+  순서 다름: c50 | tail-T1-partAB
+  순서 다름: newton-m170 | bernstein-signs
+  순서 다름: tail-T1-partAB | band-A-certification
+  순서 다름: bernstein-signs | critical-window-rig
+  순서 다름: band-A-certification | window-mass-constant
+  순서 다름: critical-window-rig | band-check
+  순서 다름: window-mass-constant | theorem-U-constant
+  순서 다름: band-check | theorem-D-base
+  순서 다름: theorem-U-constant | prop-W-thirteen
+  순서 다름: theorem-D-base | tilt-sum-small-k
+  순서 다름: prop-W-thirteen | column-certification-k500
+  순서 다름: tilt-sum-small-k | seed-certificates-k120
+  순서 다름: column-certification-k500 | self-consistent-constants
+  순서 다름: seed-certificates-k120 | xcert-partAB
+  순서 다름: self-consistent-constants | polar-blocks-488
+  순서 다름: xcert-partAB | band102-integer
+  순서 다름: polar-blocks-488 | moment-certification
+  순서 다름: band102-integer | column-certificates-841-2000
+  순서 다름: moment-certification | Q-fin-1130
+  순서 다름: column-certificates-841-2000 | window-mass-env
+  순서 다름: Q-fin-1130 | bprime-boxes
+  순서 다름: window-mass-env | band-boxes
+  순서 다름: bprime-boxes | stored-table-check
+  순서 다름: band-boxes | m1-column-reading
+  순서 다름: stored-table-check | H-star-plus-interval
+  순서 다름: m1-column-reading | AR-integrals
+  순서 다름: H-star-plus-interval | band-LP
+  순서 다름: AR-integrals | pair-one-variable
+  순서 다름: band-LP | M-natural-integrals
+  순서 다름: pair-one-variable | four-families
+  D에만: set()  표에만: set()
+
+== fiber-enumeration ( 부록D_장2.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(Python 임의 정밀도 정수).
+  [재계산] 같음
+  [놓인 곳] 표: 2.2  확인하는 진술 D: $n\le6$에서는 모든 결과 순열 $\sigma\in\mathfrak S_n$의 섬유 행 $(b^\sigma_0,\dots,b^\sigma_{n-1})$이 단봉이다.
+
+== fiber-nonunimodal-bound ( 부록D_장2.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $n=17$에서 정확 유리수, $n=100,1000,10^4$에서 배정밀도 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 2.5  확인하는 진술 D: 균등 주차함수의 결과 순열의 섬유가 단봉일 확률의 명시적 상계는 $n=17$에서 $0.740$, $n=100$에서 $0.317$, $n=1000$에서 $0.0658$, $n=10^
+
+== zeta-constants ( 부록D_장2.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+  [재계산] 같음
+  [놓인 곳] 표: 2.9  확인하는 진술 D: 보조정리 {{2:zeta-constants}}가 진술하는 세 구간 $\mathsf z_{1/2}\in[-1.46036,-1.46035]$, $\mathsf z_{-1/2}\in[-
+
+== logconcavity-failure-n80 ( 부록D_장3.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 3.3  확인하는 진술 D: $1\le n\le79$인 모든 $n$과 $1\le\ell\le n-2$인 모든 $\ell$에서 $b_{n,\ell}^2\ge b_{n,\ell-1}b_{n,\ell+1}$이다. 
+
+== cumulative-logconcavity ( 부록D_장3.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(주 계산과 첫째 확인 계산); 둘째 확인 계산은 binary64 사전 오차 해석.
+  [재계산] 같음
+  [놓인 곳] 표: 3.3  확인하는 진술 D: $n\le779$인 모든 $n$과 $1\le\ell\le n-2$인 모든 $\ell$에서 $A_{n,\ell}^2\ge A_{n,\ell-1}A_{n,\ell+1}$이다. $n=7
+
+== central-gap-integer ( 부록D_장4.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(방향을 정한 반올림의 고정소수점 정수 산술; 판정은 정수 비교).
+  [재계산] 같음
+  [놓인 곳] 표: 4.3  확인하는 진술 D: (ㄱ) 모든 $16\le n\le20000$, $k=k_n=\lceil n/2\rceil$에서 $e_n>J_n(k-1)$이다. (ㄴ) $2\le n\le15$에서 $d_{n,k_n
+
+== central-gap-rational-audit ( 부록D_장4.md )
+  [진술] D머리: [('정리', '4', 'old-4-5'), ('보조정리', '4', 'gauss-contraction'), ('따름정리', '4', 'gauss-coeff-numeric')] 
+          표: [('정리', '4', 'old-4-5'), ('보조정리', '4', 'gauss-contraction'), ('보조정리', '4', 'gauss-coeff'), ('보조정리', '4', 'two-corrections'), ('따름정리', '4', 'gauss-coeff-numeric')]
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(기호 계산 포함). 주 감사에는 수치 구적이 쓰이지 않는다.
+  [재계산] 같음
+  [놓인 곳] 표: 4.3  확인하는 진술 D: 다음 유리수 비교와 기호 항등식을 확인한다. (ㄱ) $1.287899<\mathsf a_0<1.2879$, $0.938892<\mathsf a_1<0.939$. (ㄴ) 보조정리 {
+
+== crossing-small-n ( 부록D_장4.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 4.4  확인하는 진술 D: 모든 $20\le n\le1000$에서 $b_{n,k_n}<b_{n,k_n+1}$이다. $5\le n\le19$에서는 거짓이다.
+
+== QL-small-n ( 부록D_장4.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 4.4  확인하는 진술 D: 모든 $3\le n\le15$에서 $\mathsf Q_L(n)$이 성립한다. 곧 $2\ell\le n-2$, $b_{n,\ell}>b_{n,\ell+1}$인 모든 위치에서 $b_{
+
+== exact-n20000 ( 부록D_장5A.md )
+  [등급] 표: 정확 정수·유리수, 방향 반올림 구간  || D줄: 정확 정수·유리수((ㄱ)–(ㅁ)의 주 계산; 정수 구간)와 방향 반올림 구간((ㄴ)의 독립 프로그램은 IEEE binary64의 방향 반올림 구간; (ㅂ)는 mpmath `iv`, 소수 $30$자리 — 이 글의 재계산). 정리 {{5:old-5-1}}의 결론은 (ㄱ)(ㄴ 첫째 프로그램)
+  [재계산] 같음
+  [놓인 곳] 표: 5.1  확인하는 진술 D: (ㄱ) $12\le n\le10000$에서 $b_{n,1}<b_{n,2}<\dots<b_{n,k_n-1}$. (ㄴ) $10001\le n\le20000$에서 $b_{n,1}\le 
+
+== c50 ( 부록D_장5A.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(IEEE binary64의 아래·위 반올림 두 패스, 표는 mpmath `iv` 소수 $40$자리의 바깥 반올림; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다.
+  [재계산] 같음
+  [놓인 곳] 표: 5.1  확인하는 진술 D: $20001\le n\le50000$, $(n-1)/2\le\ell\le n-3$의 모든 위치에서 $b_{n,\ell}<b_{n,\ell+1}$ 또는 $b_{n,\ell+1}^2>
+
+== newton-m170 ( 부록D_장5A.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 5.2  확인하는 진술 D: 모든 $2\le r\le170$, $1\le d\le r-1$에서 정리 {{5:old-5-4}}의 증명에 적은 정수값 다항식 $\mathrm{Nw}_{r,d}(\mathrm{nv}
+
+== tail-T1-partAB ( 부록D_장5A.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(30자리).
+  [재계산] 같음
+  [놓인 곳] 표: 5.2  확인하는 진술 D: (A) $171\le r\le9999$의 모든 정수 $r$에서 $\mathfrak k_r=\lceil r^{3/2}+8r\rceil$, $\rho_r=\mathfrak k_r/(\
+
+== bernstein-signs ( 부록D_장5A.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(Python 정수와 분수).
+  [재계산] 같음
+  [놓인 곳] 표: 5.2  확인하는 진술 D: 정리 {{5:old-5-7}}의 증명에서 각 $r$ 칸의 상계 다항식 $\mathrm{Pol}_{\mathrm E}(x^{3/2})$를 $x^{3/2}=\frac{16}{25}+\
+
+== band-A-certification ( 부록D_장5A.md )
+  [등급] 표: 정확 정수·유리수, 방향 반올림 구간  || D줄: Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간(mpmath).
+  [재계산] 같음
+  [놓인 곳] 표: 5.4  확인하는 진술 D: 좌표 $(\mathfrak s^{-1},x^{3/2})$의 각 직사각형에서 정리 {{5:old-5-12}}의 증명의 상계 다항식 $\mathrm{Pol}_{\mathrm A}(x^
+
+== critical-window-rig ( 부록D_장5A.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath.iv, 30자리). 급수는 명시적 꼬리와 함께 자른다. 상자 자료는 상자별 캐시(JSON, 17자리 십진 문자열)에 저장해 재사용하며, 읽을 때 양 끝을 상대 $2^{-48}$ 바깥으로 넓혀 둘러싸기를 유지한다.
+  [재계산] 같음
+  [놓인 곳] 표: 5.4  확인하는 진술 D: $\mathrm{ku}$의 상자 $44$개와 $\hat x\in[1.4,10]$의 셀마다 $\inf(\Upsilon_e-\Upsilon_B)>0$. 보조정리 {{5:cut-rep}
+
+== window-mass-constant ( 부록D_장5B.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath 구간 산술 `iv`, 소수 $40$자리).
+  [재계산] 같음
+  [놓인 곳] 표: 5.5  확인하는 진술 D: 정리의 증명에서 가중 창 질량의 하계는 두 함수의 적분으로 적혔고 이 항목에서는 그 두 함수를 단봉 계단 함수로 바꾸어 그 하계를 수치로 확인한다. 그러기 위해 $\mathfrak
+
+== band-check ( 부록D_장5B.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+  [재계산] 같음
+  [놓인 곳] 표: 5.5  확인하는 진술 D: 조립 범위의 판정식은 그 범위의 모든 위치에서 성립해야 하고 이 항목에서는 그 범위를 셀로 잘라 셀마다 좌변의 하계를 잰다. 곧 $\lambda\in[1/2,2/3]$의 $4000
+
+== theorem-U-constant ( 부록D_장6.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 6.5  확인하는 진술 D: 정리 {{6:theorem-U}}의 증명 끝에 쓰인 네 부등식 $\mathcal J_{\mathrm I}(1)\le8.133$, $\mathcal Y_{\mathrm I}(1)\l
+
+== theorem-D-base ( 부록D_장6.md )
+  [등급] 표: 정확 정수·유리수, 방향 반올림 구간  || D줄: 정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi$와 비를 40자리로 평가한다.
+  [재계산] 같음
+  [놓인 곳] 표: 6.6  확인하는 진술 D: 정리 {{6:theorem-D}}(나)의 기저, 곧 모든 정수 $4\le m\le700$과 $1\le d\le\lfloor m^{2/3}/2\rfloor$에서 $\Psi(d)/(2
+
+== prop-W-thirteen ( 부록D_장6.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 40자리 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 6.6  확인하는 진술 D: 부등식 (6.50)을 $k=3131$, $1\le d\le13$에서 확인한다. 이 부등식은 명제의 증명이 핵심 근처 항, 곧 첫 층 꼬리합에서 가장 아래 절단점 바로 위에 놓인 열
+
+== tilt-sum-small-k ( 부록D_장6.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 6.2  확인하는 진술 D: 보조정리 {{6:tilt-sum}}의 $2\le k\le42$ 부분, 곧 $\mathfrak q=e\,\mathsf x_k=e(k/(k+1))^{k-1}$에 대해 $\sum_{n=
+
+== column-certification-k500 ( 부록D_장7A.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수($144$비트 고정소수점 정수 구간; 1.5절의 등급 표대로 바깥쪽으로만 반올림하는 정수 구간은 이 등급에 든다). 기록의 둘째 작성자의 재계산과 이 글의 재계산은 모두 $160$비트다.
+  [재계산] 같음
+  [놓인 곳] 표: 7.2  확인하는 진술 D: $121\le k\le500$인 각 열에서 $B=\lceil k^2/4\rceil$로 두면 다음 둘이 성립한다. 첫째, $2k+1\le n\le2B$인 모든 $n$에서 $d_{n,
+
+== seed-certificates-k120 ( 부록D_장7A.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수.
+  [재계산] 같음
+  [놓인 곳] 표: 7.2  확인하는 진술 D: 각 $2\le k\le120$에 대해 어떤 절단점 $\mathfrak k_k$와 미분 횟수 $\mathfrak d_k\ge\mathfrak k_k$에서 정리 {{7:seed-tra
+
+== self-consistent-constants ( 부록D_장7A.md )
+  [등급] 표: 정확 정수·유리수, 방향 반올림 구간  || D줄: 정확 정수·유리수(세 범위의 상수, 따름정리의 세 값)와 방향 반올림 구간($e^{-i}$).
+  [재계산] 같음
+  [놓인 곳] 표: 7.2  확인하는 진술 D: (1) 정리 {{7:self-consistent-S}}(다)의 표. 세 범위 $(\mathfrak L,\mathcal J^{\mathrm S},k^{\mathrm S}_0)=(26
+
+== xcert-partAB ( 부록D_장7A.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 음이 아닌 항 $n$개의 내적과 합(BLAS 포함)
+  [재계산] 같음
+  [놓인 곳] 표: 7.3·7.5  확인하는 진술 D: 모든 정수 $k\ge501$에서 정리 {{7:X-cert}}의 조건 $R_U\le2-2/(n_{\mathrm X}(k)+1)$이 그 $k$를 덮는 어느 한 범위의 입력으로 성립한다
+
+== polar-blocks-488 ( 부록D_장7A.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(binary64 위의 바깥 밀기 구간 산술; 초월함수를 정확 반올림 사칙연산·제곱근만으로 구현해 라이브러리 함수의 오차 가정이 없고, 모든 단계를 구간으로 평가함; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다(라이브러리 함수의 오차를 $4$ u
+  [재계산] 같음
+  [놓인 곳] 표: 7.3  확인하는 진술 D: 명제 {{7:polar-W}}의 증명이 쓰는 입력: 모든 정수 $k\ge2001$에서 명제 {{7:polar-R}}의 조건 (a)–(d)가 $n_1=n^\circ_k=\lceil2
+
+== band102-integer ( 부록D_장7B.md )
+  [진술] D머리: [('명제', '7', 'pair-check-10000'), ('보조정리', '7', 'hermite-nu')] 
+          표: [('명제', '7', 'pair-check-10000'), ('명제', '7', 'pair-reach-table'), ('명제', '7', 'analytic-transfer'), ('명제', '7', 'integer-strips'), ('보조정리', '7', 'hermite-nu')]
+  [등급] 표: 정확 정수·유리수, 방향 반올림 구간  || D줄: (ㄱ)(ㄴ)(ㄷ)(ㄹ) 정확 정수·유리수. (ㅁ) 방향 반올림 구간(부동소수점 모형 없음; 포함구간의 상대 폭 약 $2\times10^{-15}$).
+  [재계산] 같음
+  [놓인 곳] 표: 7.4  확인하는 진술 D: (ㄱ) 명제 {{7:pair-check-10000}}: $k=10000$에서 $q+q'+j\le50$인 모든 $(q,q',j)$($1\le q,q'$, $j\ge0$)에 대해 (7
+
+== moment-certification ( 부록D_장7B.md )
+  [등급] 표: 방향 반올림 구간, 정확 정수·유리수  || D줄: (ㄱ) 방향 반올림 구간(binary64 끝점 구간; 정확히 반올림되는 원소별 곱·덧셈만 쓰고(BLAS·행렬곱·융합 곱셈-덧셈 없음), 짝지은 합 나무의 반올림 횟수를 세어 끝에서 $(1\pm\mathsf p)^r$로 넓힘 — 부록 D.{{D:column-certificates-841-
+  [재계산] 같음
+  [놓인 곳] 표: 7.4·7.5  확인하는 진술 D: (ㄱ) 다음 위치 전부에서 $\mathbb E^\sigma_{n,k}[\mathcal T_k]>0$이다(기록의 계산은 이것을 아래 「식」 줄의 판정식으로 확인한다). 첫째 범위 $
+
+== column-certificates-841-2000 ( 부록D_장7B.md )
+  [진술] D머리: [('정리', '7', 'theorem-G-prime'), ('정리', '7', 'theorem-C-moment'), ('따름정리', '7', 'qstar-implies-wlflat')] 
+          표: [('정리', '7', 'theorem-C-moment'), ('따름정리', '7', 'qstar-implies-wlflat')]
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 재귀의 내적(음이 아닌 항 $k-1$개)은 깊이 $
+  [재계산] 다름 @ 721
+     D : ... ew/evidence/check/fullprec.out`); 여섯 자리 저장값은 괄호가 아니다) 원 위의 $|1-\Omega^{\mathrm{pr}}|$의 참 최솟값($0.10725$, $0.12352$, $0.16107$)이 인증 하계 $\mathfrak b_0$($0.100402$, $0.119278$, $0.157250$) 이상이고 감김수가 $1$임을 확인했다. (ㄹ) 코드가 식 (1)–(5)를 그대로 구현함을 줄 단위로 감사했다($\mathrm{lp}$ 
+     표: ... ew/evidence/check/fullprec.out`); 여섯 자리 저장값은 괄호가 아니다) 원 위의 $\vert 1-\Omega^{\mathrm{pr}}\vert $의 참 최솟값($0.10725$, $0.12352$, $0.16107$)이 인증 하계 $\mathfrak b_0$($0.100402$, $0.119278$, $0.157250$) 이상이고 감김수가 $1$임을 확인했다. (ㄹ) 코드가 식 (1)–(5)를 그대로 구현함을 줄 단위로 감사했다($\ma
+  [놓인 곳] 표: 7.4·7.5  확인하는 진술 D: $841\le k\le2000$인 모든 정수 $k$에서 정리 {{7:theorem-G-prime}}의 (a′)(b′)(c′)를 만족하는 성분 $(\mathrm{lp}_{\mathr
+
+== Q-fin-1130 ( 부록D_장7B.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(binary64 numpy 위의 바깥 반올림 구간과 mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다. numpy에서는 사칙연산만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 민다. 음 아닌 항 $n$
+  [재계산] 다름 @ 435
+     D : ... mes10^{-5}$ 크다(보정량과 맞는다). $\beta$ 재귀로 얻은 차분과 직접 뺄셈의 차는 $\max|\Delta|$의 $1.1\times10^{-11}$ 이하다. 또 $k=7$에서 $\beta$ 재귀의 열이 정확한 정수와 상대 $2.7\cdot10^{-15}$로 일치하고, $112$열에서는 (7.21)을 둘러싸기 폭 상대 $4\times10^{-31}$ 이하의 엄밀 산술로 다시 판정해 부호가 모호한 $m$이 없음을 확인했다. 이 검토의 코드와 출력은 기
+     표: ... mes10^{-5}$ 크다(보정량과 맞는다). $\beta$ 재귀로 얻은 차분과 직접 뺄셈의 차는 $\max\vert \Delta\vert $의 $1.1\times10^{-11}$ 이하다. 또 $k=7$에서 $\beta$ 재귀의 열이 정확한 정수와 상대 $2.7\cdot10^{-15}$로 일치하고, $112$열에서는 (7.21)을 둘러싸기 폭 상대 $4\times10^{-31}$ 이하의 엄밀 산술로 다시 판정해 부호가 모호한 $m$이 없음을 확인했다. 이 검토의
+  [놓인 곳] 표: 7.5  확인하는 진술 D: $2001\le k\le3130$의 모든 열에서 $n=20001$일 때 (ㄱ) 어떤 $\mathfrak l\in[1,k-2]$에 대해
+
+== window-mass-env ( 부록D_장8.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(numpy 벡터 위의 바깥 반올림 구간과 mpmath `iv`; 이 글의 재계산). numpy에서는 $+$, $-$, $\times$, $\div$, $\sqrt{\ }$만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 밀며, 초등함수($\exp$)와 정확 표 $\
+  [재계산] 같음
+  [놓인 곳] 표: 8.2  확인하는 진술 D: 정리 {{8:old-6-28}}의 증명이 명제 {{8:reduction-J}}에 넣는 두 조건. (가) $1\le q\le2999$의 각 $q$와 $\xi\in(0,\min(6,q
+
+== bprime-boxes ( 부록D_장8.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 
+  [재계산] 같음
+  [놓인 곳] 표: 8.4  확인하는 진술 D: 모든 정수 $k\ge6668$과 $103\le\nu\le3.6k^{2/3}$에서 (8.28)의 $\mathrm{LB}^{\mathrm U}(k,\nu)\ge1.05$.
+
+== band-boxes ( 부록D_장8.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 
+  [재계산] 같음
+  [놓인 곳] 표: 8.4  확인하는 진술 D: (8.30)의 $\mathrm{LB}^{\mathrm{low}}(k,\nu)$에 대해 모든 정수 $k\ge6668$, $103\le\nu\le0.48k$에서 $\mathrm{LB}
+
+== stored-table-check ( 부록D_장8.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`; 이 글의 재계산은 소수 $40$자리, 기록의 계산은 소수 $30$자리).
+  [재계산] 같음
+  [놓인 곳] 표: 8.2  확인하는 진술 D: 보조정리 {{8:table-tolerance}}(가)와 정리 {{8:closed-form-envelope}}(라)의 이음새 부등식. 저장된 binary64 값 $z_i$($0\le
+
+== m1-column-reading ( 부록D_장9.md )
+  [등급] 표: 정확 정수·유리수  || D줄: 정확 정수·유리수(인증 파일의 정수 구간 산술 결과를 정수 비교로 읽는다).
+  [재계산] 같음
+  [놓인 곳] 표: 9.1  확인하는 진술 D: $3132\le k\le19403$인 모든 정수 $k$와 $k+\lfloor0.75k^{2/3}\rfloor\le m\le\min(2k-1,20000)$인 모든 정수 $m$에서 $
+
+== H-star-plus-interval ( 부록D_장9.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리). $\upsilon_1$과 $\upsilon_2$는 $3132^{-1/3}$, $19404^{-1/3}$을 담는 구간의 위 끝이다.
+  [재계산] 같음
+  [놓인 곳] 표: 9.1  확인하는 진술 D: 정리 {{9:H-star-plus}} 증명의 세 영역 A, B, C 전체에서 $\mathcal G(\xi,\upsilon)\le\mathcal L(\xi,\upsilon)$이고, 
+
+== AR-integrals ( 부록D_장9.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 9.3  확인하는 진술 D: $\mathsf L_\ast(6668)=\mathcal J_1(6668)+\mathcal J_2(6668)+\mathcal J_3(6668)+\mathcal J_4(6668)\ge
+
+== band-LP ( 부록D_장9.md )
+  [진술] D머리: [('보조정리', '9', 'old-7-26'), ('정리', '9', 'old-7-28')] 
+          표: [('보조정리', '9', 'old-7-26'), ('정리', '9', 'old-7-28'), ('정리', '9', 'old-7-31'), ('정리', '9', 'old-7-33')]
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(이 글의 재계산). 닫힌 꼴의 스칼라($\mathsf v(k)$, $\hat\Upsilon_k$, $\varrho^{\mathrm H}$, $\varrho^{\mathrm L}$, $\mathcal Y_k$, $\mathcal F_k$, $\mu$, $(1-1/k)^\
+  [재계산] 같음
+  [놓인 곳] 표: 9.4  확인하는 진술 D: (가) 보조정리 {{9:old-7-26}}의 세 경계값: $k=6668$에서 $k\mu(k)/(1-\mu(k))<741.8\le0.1113k$, $k^{1/3}\mu(k)/(1-\
+
+== pair-one-variable ( 부록D_장9.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다(40자리 mpmath로 재평가).
+  [재계산] 같음
+  [놓인 곳] 표: 9.5  확인하는 진술 D: $\mathfrak j\in[0.48,1]$에서 $\mathfrak F(6668,\mathfrak j)\ge1.149$이다.
+
+== M-natural-integrals ( 부록D_장10.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 30자리 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 10.5  확인하는 진술 D: $\mathfrak q(\rho)=1+0.7501\,\rho/(1+\rho)$에 대해
+
+== four-families ( 부록D_장10.md )
+  [등급] 표: 방향 반올림 구간  || D줄: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  [재계산] 같음
+  [놓인 곳] 표: 10.6  확인하는 진술 D: (나) 네 가족 $F\in\{\text{벌크},2,1b,1a\}$의 첫 열 $k_0\in\{6668,8065,9551,9705\}$(이 순서대로 가족과 첫 열이 하나씩 대응한다)에

@@ -1,0 +1,31 @@
+(가) q computed: 2999 (min 1, max 2999); missing in 1..2999: [] ...
+(가) all cells positive: True; worst rel margin 0.033500 at q=2999, xi=0.9189 (cellmin 0.023670, rhs 0.706556)
+   q in [1,10): min rel margin 8.560727 (856.073%) at q=9, xi=0.0256
+   q in [10,50): min rel margin 0.624610 (62.461%) at q=49, xi=0.1393
+   q in [50,200): min rel margin 0.073620 (7.362%) at q=199, xi=0.5639
+   q in [200,500): min rel margin 0.036503 (3.650%) at q=499, xi=0.9189
+   q in [500,1000): min rel margin 0.035172 (3.517%) at q=999, xi=0.9189
+   q in [1000,2000): min rel margin 0.034085 (3.408%) at q=1999, xi=0.9189
+   q in [2000,3000): min rel margin 0.033500 (3.350%) at q=2999, xi=0.9189
+(가) min first-cell margin 0.014694; max cell correction 2.361e-03; max interval width of Phi 1.51e-12
+(가) total compute time 9370s = 2.60h (sum over q)
+(가) vs record (binary64, 2999 q): rel margin difference (iv - record) in [2.67e-09, 1.80e-05]; same worst xi for 2999/2999
+(나) intervals:
+   i= 0 J_i=      3000: min rel 0.011251 (1.125%) at xi=0.912; first cell 0.03936; record 0.011251; 86.2s
+   i= 1 J_i=      6000: min rel 0.015552 (1.555%) at xi=0.912; first cell 0.03953; record 0.015552; 87.9s
+   i= 2 J_i=     12000: min rel 0.018286 (1.829%) at xi=0.912; first cell 0.03965; record 0.018286; 88.8s
+   i= 3 J_i=     24000: min rel 0.019936 (1.994%) at xi=0.912; first cell 0.03974; record 0.019936; 89.8s
+   i= 4 J_i=     48000: min rel 0.020883 (2.088%) at xi=0.912; first cell 0.03980; record 0.020883; 87.5s
+   i= 5 J_i=     96000: min rel 0.021410 (2.141%) at xi=0.912; first cell 0.03984; record 0.021410; 76.7s
+   i= 6 J_i=    192000: min rel 0.021688 (2.169%) at xi=0.912; first cell 0.03987; record 0.021688; 70.4s
+   i= 7 J_i=    384000: min rel 0.021833 (2.183%) at xi=0.912; first cell 0.03989; record 0.021833; 70.7s
+   i= 8 J_i=    768000: min rel 0.021923 (2.192%) at xi=0.912; first cell 0.03991; record 0.021923; 68.7s
+   i= 9 J_i=   1536000: min rel 0.021954 (2.195%) at xi=0.912; first cell 0.03992; record 0.021954; 71.0s
+   i=10 J_i=   3072000: min rel 0.021969 (2.197%) at xi=0.912; first cell 0.03993; record 0.021969; 70.7s
+   i=11 J_i=   6144000: min rel 0.021960 (2.196%) at xi=0.912; first cell 0.03993; record 0.021960; 68.7s
+   i=12 J_i=  12288000: min rel 0.021958 (2.196%) at xi=0.912; first cell 0.03993; record 0.021958; 71.1s
+   i=13 J_i=  24576000: min rel 0.021943 (2.194%) at xi=0.912; first cell 0.03994; record 0.021943; 69.8s
+   i=14 J_i=  49152000: min rel 0.021940 (2.194%) at xi=0.912; first cell 0.03994; record 0.021940; 70.0s
+   i=15 J_i=  98304000: min rel 0.021914 (2.191%) at xi=0.912; first cell 0.03994; record 0.021914; 71.2s
+   i=16 J_i= 196608000: min rel 0.021837 (2.184%) at xi=0.912; first cell 0.03994; record 0.021837; 52.1s
+(나) all positive: True; total time 1271s

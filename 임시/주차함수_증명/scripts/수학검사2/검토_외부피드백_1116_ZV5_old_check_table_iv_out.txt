@@ -1,0 +1,6 @@
+points 12001; violations of z_i <= s^cf(xi_(i+1)) (lower end of iv): 0
+smallest margin s^cf.lo - z_i = 4.7447408e-13 at i=0 (xi_(i+1)=0.0005)
+points using Jensen component only or both (xi<=2.1): 4199; escape only: 7802
+strictly decreasing: True; minimal decrease 6.643869e-06 at i=11999
+z_0 = np.float64(0.9999940529368222), z_12000 = np.float64(0.03753311926058344)
+time 13.8s

@@ -1,0 +1,48 @@
+3-6 rational: 7309649993107890414228499/15500000000000000000000000
+  == 7309649993107890414228499/15500000000000000000000000 ? True
+  float: 0.47159032213599295 < 0.4716: True
+E_omega 1 0 <= sqrt n: True
+E_omega 2 2/3 <= sqrt n: True
+E_omega 3 9/16 <= sqrt n: True
+E_omega 4 136/125 <= sqrt n: True
+E_omega 5 1265/1296 <= sqrt n: True
+E_omega <= sqrt(2/pi)sqrt((n+1)(n+2)/n) <= sqrt n for 6<=n<60: ok
+(3/4)^{3/2} = 0.649519052838329  2^-3/3^-1.5 = 0.649519052838329
+LC failure at (80, 40)
+first failure: (80, 40)
+b_80_39<b_80_40<b_80_41: True
+ratios: 1.037117306883737 1.037137268421777
+b_80_39 = 84023389540434452566263924886618364534909977983982121246715289307110432842993124383028872316744611198639623256560041269276054594442852268387046143312
+1 witness [0] ceil(n/2)= 1 all < : True
+2 witness [0] ceil(n/2)= 1 all < : True
+3 witness [1] ceil(n/2)= 2 all < : True
+4 witness [1] ceil(n/2)= 2 all < : True
+5 witness [1] ceil(n/2)= 3 all < : True
+6 witness [2] ceil(n/2)= 3 all < : True
+7 witness [2] ceil(n/2)= 4 all < : True
+8 witness [3] ceil(n/2)= 4 all < : True
+9 witness [3] ceil(n/2)= 5 all < : True
+10 witness [4] ceil(n/2)= 5 all < : True
+==== 4장 ====
+d_{n,k_n}<0 and right half nonincreasing for 2<=n<=15; d_{n,k_n}>0 for 16<=n<=80: ok
+(나) rational: 495594511/240250000 ==495594511/240250000: True 2.062828349635796
+(다) value: 1.680919551923166 >=1.6809: True
+a0 = 1.2878993168540693  a1 = 0.9388929401017447
+k=50 nu=0: (4.9) ok, M4/M0 formula ok; theta=3.612730, center=3.682400, k^2*M4/M0=18.031
+k=50 nu=-1: (4.9) ok, M4/M0 formula ok; theta=3.669471, center=3.725600, k^2*M4/M0=18.352
+k=200 nu=0: (4.9) ok, M4/M0 formula ok; theta=3.881092, center=3.882650, k^2*M4/M0=28.614
+k=200 nu=-1: (4.9) ok, M4/M0 formula ok; theta=3.899100, center=3.900350, k^2*M4/M0=28.843
+k=1000 nu=0: (4.9) ok, M4/M0 formula ok; theta=3.974492, center=3.974506, k^2*M4/M0=33.512
+k=1000 nu=-1: (4.9) ok, M4/M0 formula ok; theta=3.978403, center=3.978414, k^2*M4/M0=33.576
+11/2*39/100*2-7/2 = 79/100
+5.642*1.6809*0.39893-0.0163-3.554 = 0.21300762755400005
+Bor(k)k^{3/2} lower at k=1e4: 0.39893895588242934 >=0.39893
+46sqrt2-12 = 53.05382386916237 ; -5000/173-0.02 -> 24.13208976511613
+(나) -1.63 check: -1.6291390447421026
+(나) bJ: 3.553726467 <3.554
+(가) bJ: 3.461963333333333 <3.47
+sqrt2/pi = 0.4501581580785531
+S + (2pi)^{-1/2}zeta(1/2) = -0.6666666661797347  (expect -2/3 = -0.6666666666666666 )
+scipy unavailable: No module named 'scipy'
+b_{n,k_n}<b_{n,k_n+1} true for 20<=n<=80: True ; true-cases in 5..19: []
+Q_L(n) for 3<=n<=15: True

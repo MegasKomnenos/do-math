@@ -1,0 +1,9 @@
+recursion vs brute force: compared 14 (n,k) pairs, mismatches 0  t=1.7s
+e_n > J_n(k-1) failures in 16..400: []
+min ratio e_n/J_n(k-1) over 16<=n<=400: n=17 ratio=1.00688272
+ratio n=17: 1.00688272 ; n=16: 1.01609932 ; n=15: 0.923428 n=14: 0.936807
+d_{n,k_n}<0 exactly for n in: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]  right half non-increasing fails: []
+d>0 for all 16<=n<=60: True
+e_n-J_n(k-1) <= d_{n,k_n} violations n<=60: []
+s = 2918732888/2^30 = 2.718281827867031
+elapsed 52.9s

@@ -1,0 +1,111 @@
+[1] Q_R positions 5..20000: 99970002 (D: 99,970,002)
+[1] pairs 5..20000: 99989998 (D: 99,989,998)
+[1] Q_R positions 20001..50000: 524955000 (D: 524,955,000)
+[1] pairs 20001..50000: 524985000 (D: 524,985,000)
+[1] Q_R positions 5..2000: 997002 (D: 997,002)
+[1] (L) comparisons 10001..20000, 1<=l<=k_n-1: 74995000 (D: 74,995,000)
+[1] row cert 501..4999: 20245500 (D: 20,245,500)
+[1] left columns total: 1175466 (D: 1,175,466)
+[1] newton polys: 14365 780 (D: 14,365 ; 780)
+[1] band-A cells: (A) 21*235= 4935  82*235= 19270  A+ 70*150= 10500  86*150= 12900  40*150= 6000
+[1] 1/sqrt(598)= 0.040893041005476534  1/sqrt(833)= 0.03464794643376185  1/sqrt(966)= 0.03217447260438934  1/sqrt(2164)= 0.02149667901961739
+[1] critical window: 10001^(-1/3)= 0.04641434124298832  0.0015/1.25^12= 0.00010307921510400001  (1.0307e-4)^-3= 913278369752.7173
+[1] 44*43 = 1892
+[1] log et(1/2) = 0.126775645  (D: 0.126775...)
+[1] 166 k^(-1/6) e^(-0.1267k) at k=10001: exponent = -1263.5498  (D: <= -1263)
+[1] pi/0.019 = 165.34698176788385
+[2] tilt-sum max over 2..60: 0.8888888888888888  at k= 2  k=2 value = 8/9
+[2] k=3 sum=0.850342
+[2] k=10 sum=0.783242
+[2] k=20 sum=0.754646
+[2] k=42 sum=0.727143
+[2] k=43 sum=0.726329
+[2] all <1 for 2..60: True
+[2] B_2(42)= 1.002291  B_2(43)= 0.9985532  (D: 1.00229, 0.998553)
+[3] d= 1 L=2183.002 R=2 L>R=True
+[3] d= 2 L=1726.37 R=3.5481 L>R=True
+[3] d= 3 L=1422.531 R=4.881 L>R=True
+[3] d= 4 L=1193.394 R=6.0962 L>R=True
+[3] d= 5 L=1007.306 R=7.2413 L>R=True
+[3] d= 6 L=848.6859 R=8.3439 L>R=True
+[3] d= 7 L=708.8569 R=9.4214 L>R=True
+[3] d= 8 L=582.5545 R=10.486 L>R=True
+[3] d= 9 L=466.3748 R=11.546 L>R=True
+[3] d=10 L=358.0064 R=12.607 L>R=True
+[3] d=11 L=255.8175 R=13.676 L>R=True
+[3] d=12 L=158.6186 R=14.755 L>R=True
+[3] d=13 L=65.51967 R=15.848 L>R=True
+[3] d=14 L=-24.16037 R=16.957 L>R=False
+[4] row n=4: [24, 51, 34, 16]
+[4] q(4,1)= 1.39176029617  q(3,1)= 1.52903352851
+[4] m in 4..150: min q= 0.92637162 at (149, 14)  max q= 1.3917603 at (4, 1)  all in [0.856,1.392]: True
+[5] D items parsed: 22  table rows: 42
+[5] grade fiber-enumeration | D: 정확 정수·유리수(Python 임의 정밀도 정수). | 11.2: 정확 정수·유리수
+[5] grade fiber-nonunimodal-bound | D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $n=17$에서 정확 유리수, $n=100,1000,10^4$에서  | 11.2: 방향 반올림 구간
+[5] grade zeta-constants | D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리). | 11.2: 방향 반올림 구간
+[5] grade logconcavity-failure-n80 | D: 정확 정수·유리수. | 11.2: 정확 정수·유리수
+[5] grade cumulative-logconcavity | D: 정확 정수·유리수(주 계산과 첫째 확인 계산); 둘째 확인 계산은 binary64 사전 오차 해석. | 11.2: 정확 정수·유리수
+[5] grade central-gap-integer | D: 정확 정수·유리수(방향을 정한 반올림의 고정소수점 정수 산술; 판정은 정수 비교). | 11.2: 정확 정수·유리수
+[5] TEXT DIFF central-gap-rational-audit at char 260 
+   D : py`: 합 $4749.0$, $5456.77$; $J$ $1652.1$, $1649.56$). 이 구적은 이 문단 머리의 꺾쇠 괄호에 적힌 스물다섯 자리 정밀도의 수치 평가이고, 정확 유리수 감사의 상계를 다른 방법으로 대조한 것이다. 
+   11: py`: 합 $4749.0$, $5456.77$; $J$ $1652.1$, $1649.56$). 이 구적은 「재계산」 열의 꺾쇠 괄호에 적힌 스물다섯 자리 정밀도의 수치 평가이고, 정확 유리수 감사의 상계를 다른 방법으로 대조한 것이다.
+[5] grade central-gap-rational-audit | D: 정확 정수·유리수(기호 계산 포함). 주 감사에는 수치 구적이 쓰이지 않는다. | 11.2: 정확 정수·유리수
+[5] grade crossing-small-n | D: 정확 정수·유리수. | 11.2: 정확 정수·유리수
+[5] grade QL-small-n | D: 정확 정수·유리수. | 11.2: 정확 정수·유리수
+[5] grade exact-n20000 | D: 정확 정수·유리수((ㄱ)–(ㅁ); 정수 구간, 부동소수 없음)와 방향 반올림 구간((ㅂ); mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 정리 { | 11.2: 정확 정수·유리수, 방향 반올림 구간
+[5] grade c50 | D: 방향 반올림 구간(IEEE binary64의 아래·위 반올림 두 패스, 표는 mpmath `iv` 소수 $40$자리의 바깥 반올림; 이 글의 재계산). 기록의 계 | 11.2: 방향 반올림 구간
+[5] grade newton-m170 | D: 정확 정수·유리수. | 11.2: 정확 정수·유리수
+[5] grade tail-T1-partAB | D: 방향 반올림 구간(30자리). | 11.2: 방향 반올림 구간
+[5] grade bernstein-signs | D: 정확 정수·유리수(Python 정수와 분수). | 11.2: 정확 정수·유리수
+[5] grade band-A-certification | D: Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간 | 11.2: 정확 정수·유리수, 방향 반올림 구간
+[5] grade critical-window-rig | D: 방향 반올림 구간(mpmath.iv, 30자리). 급수는 명시적 꼬리와 함께 자른다. 상자 자료는 상자별 캐시(JSON, 17자리 십진 문자열)에 저장해 재사용하 | 11.2: 방향 반올림 구간
+[5] grade window-mass-constant | D: 방향 반올림 구간(mpmath 구간 산술 `iv`, 소수 $25$에서 $40$자리). | 11.2: 방향 반올림 구간
+[5] grade band-check | D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리). | 11.2: 방향 반올림 구간
+[5] grade theorem-U-constant | D: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다. | 11.2: 방향 반올림 구간
+[5] grade theorem-D-base | D: 정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi | 11.2: 정확 정수·유리수, 방향 반올림 구간
+[5] grade prop-W-thirteen | D: 방향 반올림 구간(mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 40자리 평가다. | 11.2: 방향 반올림 구간
+[5] grade tilt-sum-small-k | D: 정확 정수·유리수. | 11.2: 정확 정수·유리수
+[6] paths checked: 337  missing: 43
+[6] MISSING fiber-enumeration | --fiber-max | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r81e7051b155a41b3b4daad1893bb328a\evidence\producer\work\--fiber-max
+[6] MISSING fiber-enumeration | fiber_nonunimodal | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r81e7051b155a41b3b4daad1893bb328a\evidence\producer\output\fiber_nonunimodal
+[6] MISSING fiber-enumeration | fiber_nonlogconcave | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r81e7051b155a41b3b4daad1893bb328a\evidence\producer\output\fiber_nonlogconcave
+[6] MISSING zeta-constants | zeta32 | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r8a9b11e78fec43758f25737fc14c961e\evidence\peer\zeta32
+[6] MISSING zeta-constants | ZM12_ABS | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r8a9b11e78fec43758f25737fc14c961e\evidence\peer\ZM12_ABS
+[6] MISSING zeta-constants | ZETA32 | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r8a9b11e78fec43758f25737fc14c961e\evidence\peer\ZETA32
+[6] MISSING zeta-constants | ZETA12 | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r8a9b11e78fec43758f25737fc14c961e\evidence\peer\ZETA12
+[6] MISSING zeta-constants | ZETAm12 | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r8a9b11e78fec43758f25737fc14c961e\evidence\peer\ZETAm12
+[6] MISSING exact-n20000 | records/ | record dir not found
+[6] MISSING exact-n20000 | leftcert_build1.c | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\leftcert_build1.c
+[6] MISSING exact-n20000 | leftcert_build2.c | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\leftcert_build2.c
+[6] MISSING exact-n20000 | left20000_k2876-5250.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\left20000_k2876-5250.tsv
+[6] MISSING exact-n20000 | left20000_k5251-7625.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\left20000_k5251-7625.tsv
+[6] MISSING exact-n20000 | left20000_k7626-9999.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\left20000_k7626-9999.tsv
+[6] MISSING exact-n20000 | small20000_k251-500.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\small20000_k251-500.tsv
+[6] MISSING exact-n20000 | center20000_k5001-8000_center.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\center20000_k5001-8000_center.tsv
+[6] MISSING exact-n20000 | center20000_k8001-10000_center.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\center20000_k8001-10000_center.tsv
+[6] MISSING exact-n20000 | pv_k2502-5001.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\pv_k2502-5001.tsv
+[6] MISSING exact-n20000 | pv_k5002-7501.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\pv_k5002-7501.tsv
+[6] MISSING exact-n20000 | pv_k7502-10000.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\pv_k7502-10000.tsv
+[6] MISSING exact-n20000 | coverage_producer.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\coverage_producer.json
+[6] MISSING exact-n20000 | out_8_10000.txt | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\out_8_10000.txt
+[6] MISSING exact-n20000 | icert_summary.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\icert_summary.json
+[6] MISSING exact-n20000 | gen_s.py | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\gen_s.py
+[6] MISSING exact-n20000 | v2run20000-rows.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\v2run20000-rows.tsv
+[6] MISSING exact-n20000 | v2run20000-summary.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\v2run20000-summary.json
+[6] MISSING exact-n20000 | v2run20000.log | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\v2run20000.log
+[6] MISSING exact-n20000 | class-hashes.txt | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\class-hashes.txt
+[6] MISSING exact-n20000 | right-half-certificate-2000.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\right-half-certificate-2000.json
+[6] MISSING exact-n20000 | mode_offset.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\mode_offset.json
+[6] MISSING exact-n20000 | v2run20000-rows.tsv | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\left_columns_k2_120\code\v2run20000-rows.tsv
+[6] MISSING exact-n20000 | code/summarize.py | C:\code\summarize.py
+[6] MISSING exact-n20000 | witness_offset_iv.json | C:\math\임시\주차함수_증명\원고_자료\r19de912\witness_offset_iv.json
+[6] MISSING exact-n20000 | logs/ | C:\logs\
+[6] MISSING exact-n20000 | README_run.md | C:\math\임시\주차함수_증명\원고_자료\r19de912\README_run.md
+[6] MISSING newton-m170 | gam | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r708d99cec0604c698f2362e68068ad8d\evidence\peer\gam
+[6] MISSING newton-m170 | gammas | C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261105-150803\knowledge\records\r708d99cec0604c698f2362e68068ad8d\evidence\peer\gammas
+[6] MISSING critical-window-rig | cert/A00.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\cert\A00.json
+[6] MISSING critical-window-rig | G13.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\G13.json
+[6] MISSING critical-window-rig | cert/*_recert_first.json | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\cert\*_recert_first.json
+[6] MISSING critical-window-rig | summary_out.txt | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\summary_out.txt
+[6] MISSING critical-window-rig | verify_exact_cover_out.txt | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\critical_window_rerun\verify_exact_cover_out.txt
+[6] MISSING window-mass-constant | ul_iv.py | C:\math\임시\주차함수_증명\원고_자료\세션_재계산\r8a9b11e\ul_iv.py

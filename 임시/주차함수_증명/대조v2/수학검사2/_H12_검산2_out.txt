@@ -1,0 +1,9 @@
+time 26.7 s
+779 575 sign 1 rel 1.1349e-08 digits 2250
+779 576 sign 1 rel 1.0269e-08 digits 2250
+779 577 sign 1 rel 1.2734e-08 digits 2250
+779 578 sign 1 rel 1.8767e-08 digits 2250
+780 575 sign -1 rel -1.7174e-09 digits 2253
+780 576 sign -1 rel -5.5553e-09 digits 2253
+780 577 sign -1 rel -5.8810e-09 digits 2253
+780 578 sign -1 rel -2.6723e-09 digits 2253

@@ -1,0 +1,2 @@
+TA monotone decreasing: False rest increasing: True
+grid max of sum: 1.3349832482607646  rigorous partition sup bound: 1.3354703374530108  TA(0+)~ 0.9772063877302879

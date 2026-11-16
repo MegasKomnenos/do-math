@@ -53,6 +53,54 @@ def read(path):
     return text
 
 
+# 라벨 뒤의 조사. 라벨은 조립 때 번호가 되므로 장 파일의 조사는 번호의 받침과 맞을 수 없다.
+# 번호를 넣은 자리에 표식을 남겨 두고, 바로 뒤의 조사를 번호 끝 숫자의 읽기(일·이·삼·사·오·육·칠·팔·구,
+# 끝이 0이면 십)에 따라 고른다. 받침이 ㄹ이면 「로」, 다른 받침이면 「으로」. 지정사 꼴(이다·이라·이고·이며·이면·이나)은
+# 받침이 있으면 「이」를 두고 없으면 뺀다. 다른 글자(의·에·에서 등)는 건드리지 않는다.
+MARK = "\u0001"
+_FINAL = {"0": "ㅂ", "1": "ㄹ", "2": "", "3": "ㅁ", "4": "", "5": "", "6": "ㄱ", "7": "ㄹ", "8": "ㄹ", "9": ""}
+_PART_RE = re.compile(
+    r"(\d)" + MARK + r"(으로|이다|이라|이고|이며|이면|이나|을|를|이|가|은|는|과|와|로|다|라|고|며|면|나)?"
+    r"(?=$|[^가-힣]|도|만|는|부터|써|의|까지|서)", re.M)
+_PAIRS = {"을": ("을", "를"), "를": ("을", "를"), "이": ("이", "가"), "가": ("이", "가"),
+          "은": ("은", "는"), "는": ("은", "는"), "과": ("과", "와"), "와": ("과", "와")}
+_COPULA = {"이다": "다", "다": "다", "이라": "라", "라": "라", "이고": "고", "고": "고",
+           "이며": "며", "며": "며", "이면": "면", "면": "면", "이나": "나", "나": "나"}
+
+
+def particle_for(last_digit, particle):
+    """번호의 끝 숫자와 적힌 조사에서 맞는 조사를 돌려준다."""
+    final = _FINAL[last_digit]
+    if particle in _PAIRS:
+        a, b = _PAIRS[particle]
+        return a if final else b
+    if particle in ("로", "으로"):
+        return "으로" if final and final != "ㄹ" else "로"
+    if particle in _COPULA:
+        base = _COPULA[particle]
+        return ("이" + base) if final else base
+    return particle
+
+
+def fix_particles(text):
+    """표식 뒤의 조사를 맞추고 표식을 지운다. (고친 글, 고친 수)"""
+    count = 0
+
+    def fix(m):
+        nonlocal count
+        digit, particle = m.group(1), m.group(2)
+        if not particle:
+            return digit
+        new = particle_for(digit, particle)
+        if new != particle:
+            count += 1
+        return digit + new
+
+    text = _PART_RE.sub(fix, text)
+    text = text.replace(MARK, "")
+    return text, count
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(ROOT, "원고.md"))
@@ -131,7 +179,7 @@ def main():
             key = f"{m.group(1)}:{m.group(2)}"
             used.add(key)
             if key in numbers:
-                return numbers[key]
+                return numbers[key] + MARK
             problems.append(f"정의되지 않은 라벨 참조 {key}")
             return m.group(0)
 
@@ -139,12 +187,15 @@ def main():
             name = m.group(1)
             d_used.add(name)
             if name in d_numbers:
-                return d_numbers[name]
+                return d_numbers[name] + MARK
             problems.append(f"정의되지 않은 부록 D 라벨 참조 {name}")
             return m.group(0)
 
         out = LABEL_RE.sub(sub, out)
         out = D_LABEL_RE.sub(dsub, out)
+        out, fixed = fix_particles(out)
+        if fixed:
+            print(f"라벨 뒤 조사 {fixed}개를 번호의 받침에 맞춤")
         unused = sorted(set(numbers) - used)
         print(f"라벨 {len(numbers)}개 해소, 참조된 라벨 {len(used)}개; 부록 D 항목 {len(d_numbers)}개, 참조된 항목 {len(d_used)}개")
         if unused:

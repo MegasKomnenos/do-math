@@ -1,0 +1,15 @@
+k=3: four recurrences hold for k<n<=2k: True; initial values: True
+  n=4: 2*E2=0  K''(k)=0  equal=True
+  n=5: 2*E2=32  K''(k)=32  equal=True
+  n=6: 2*E2=762  K''(k)=762  equal=True
+k=4: four recurrences hold for k<n<=2k: True; initial values: True
+  n=5: 2*E2=0  K''(k)=0  equal=True
+  n=6: 2*E2=250  K''(k)=250  equal=True
+  n=7: 2*E2=7592  K''(k)=7592  equal=True
+(2) n in [2,200] with d_(n,k_n)<0: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+(2) right half nonincreasing for 2<=n<=15: True
+(3) deficit recurrence equals p_n-A_(n,l) for n<=60 (all l, n<=2l+4): True
+(3) n in [5,200] where b_(n,k_n)<b_(n,k_n+1) is FALSE: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+(4) Q_L(n) for 3<=n<=15: True; strict: True
+(5) S/2^30 = 2.718281827867031; a_0=3^(-2/3)Gamma(1/3)=1.2878993168540693; a_1=3^(-1/3)Gamma(2/3)=0.9388929401017447
+(5) 495594511/240250000=2.062828349635796; 5.642*1.6809*0.39893-0.0163-3.554=0.21300762755400005; 30000^5 e^(-30000/520)=0.002138727208899161

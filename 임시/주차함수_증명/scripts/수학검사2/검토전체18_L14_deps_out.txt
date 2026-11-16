@@ -1,0 +1,8 @@
+2:J-egf 의존지도 L45 기록 ['rba2ecf4'] vs head bracket ['r37c204b', 'rba2ecf4'] (장2:439)
+4:e-integral 의존지도 L80 기록 ['r37c204b'] vs head bracket ['r37c204b', 'ra7615a0'] (장4:85)
+5:old-5-1 의존지도 L91 기록 ['r15df76b', 'r19de912', 'rc9aee43', 'rce3dc75'] vs head bracket ['r15df76b', 'r19de912', 'r6373c70', 'rc9aee43', 'rce3dc75'] (장5A:19)
+5:suff-cond 의존지도 L101 기록 ['r5ddf8a8'] vs head bracket ['r0dc57fa', 'r5ddf8a8'] (장5A:243)
+6:D-bound 의존지도 L190 기록 ['r696d62c'] vs head bracket ['r29b01e8', 'r696d62c'] (장6:694)
+6:critical-front 의존지도 L210 기록 ['r7e03176'] vs head bracket ['r29c10cd', 'r7e03176'] (장6:1165)
+7:hermite-nu 의존지도 L266 declared inputs ['4:gauss-coeff', '4:gauss-contraction'] vs head-line labels ['4:gauss-coeff', '4:gauss-contraction', 'D:band102-integer'] (장7B:272)
+mismatches 7

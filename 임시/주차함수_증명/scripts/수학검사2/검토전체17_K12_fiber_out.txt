@@ -1,0 +1,22 @@
+n=1: distinct cap multisets 1, nonunimodal fibers 0
+  direct: parking functions 1 (expected 1), permutations seen 1
+  rows differing from product formula: 0
+n=2: distinct cap multisets 2, nonunimodal fibers 0
+  direct: parking functions 3 (expected 3), permutations seen 2
+  rows differing from product formula: 0
+n=3: distinct cap multisets 4, nonunimodal fibers 0
+  direct: parking functions 16 (expected 16), permutations seen 6
+  rows differing from product formula: 0
+n=4: distinct cap multisets 9, nonunimodal fibers 0
+  direct: parking functions 125 (expected 125), permutations seen 24
+  rows differing from product formula: 0
+n=5: distinct cap multisets 19, nonunimodal fibers 0
+  direct: parking functions 1296 (expected 1296), permutations seen 120
+  rows differing from product formula: 0
+n=6: distinct cap multisets 44, nonunimodal fibers 0
+  direct: parking functions 16807 (expected 16807), permutations seen 720
+  rows differing from product formula: 0
+n=7: distinct cap multisets 96, nonunimodal fibers 30
+  lex-first: ((1, 2, 3, 5, 4, 6, 7), [1, 2, 3, 4, 1, 6, 7], (1, 31, 130, 222, 216, 264, 144))
+  direct: parking functions 262144 (expected 262144), permutations seen 5040
+  rows differing from product formula: 0

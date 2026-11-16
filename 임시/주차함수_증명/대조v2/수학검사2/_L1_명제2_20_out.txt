@@ -1,0 +1,5 @@
+n=17 exact b=3: 0.7395086876618862
+n=17: best b=3 bound=0.739509 first_fail_b=5
+n=100: best b=4 bound=0.316848 first_fail_b=9
+n=1000: best b=6 bound=0.065733 first_fail_b=24
+n=10000: best b=8 bound=0.011422 first_fail_b=72

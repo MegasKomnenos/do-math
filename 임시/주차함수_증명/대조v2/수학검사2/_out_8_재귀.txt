@@ -1,0 +1,66 @@
+== 1. pi_n(m) 두 꼴, theta_{N+1}(m)=(N+1-m)pi_N(m)=Bor(m)Ren(N+1-m)/Bor(N+1), Theta_n/p_n ==
+OK   pi_n(m)=C(n,m)m^{m-1}p_{n-m}/p_n = Bor(m)Bor(n+1-m)/Bor(n+1) (n<30)
+OK   theta_{N+1}(m) = (N+1-m)pi_N(m) = Bor(m)Ren(N+1-m)/Bor(N+1) = 2.9절 정의 (N<30)
+== 2. 생존 재귀와 8.1절 (8.2)(8.4), 8.2절 (8.8)(8.9)(8.10)(8.11), 8.3절 ==
+OK   (8.2) c_m(k) one-block equality k=6, k+1<=m<=2k+1
+OK   (8.2) level k-1 equality k=6, k<=m<=2k-1
+OK   (8.4) R_q = k c_{k+q}(k) k=6, 1<=q<=k+1
+OK   (8.5) R_q >= k/(k+q) sum Bor(j)[s+R] k=6
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=6, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=6
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=7, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=7
+OK   (8.9) s_N(y) >= pi0/(1-km) >= pi0/(1-y/N+(y/N)pi0), y=6
+OK   (8.10) 1-s_N(y) = sum theta_{N+1}(m)(m-y)/m s_{m-1}(y), y=6
+OK   (8.11)(가) s_N <= 1/(1+B_N), y=6
+OK   (8.11)(나) B_N >= B^low(k,nu), k=6, 1<=nu<=k+1
+OK   old-6-30 (가) s_N(k-1)/s_N(k) >= (1-1/k)^{N-k+1}, k=6
+OK   old-6-30 (나) >= 1-max 1/(k pi0_N'(k-1)), k=6
+OK   old-6-30 (다) >= 1-e^{7/6}N^{3/2}/(4C2 k(2k-1-N)), and two-tree bound, k=6
+OK   old-6-31 (다)(라) pi_m(t) incr in t on [m/2,m], decr in m, m<18
+OK   old-6-31 (마) pi0_N(j)-pi0_{N+1}(j) <= pi_N(j), N/2<j<=N, N<18
+OK   old-6-32 eps_cap >= eps_size/2 and eps_cap=(s_{t-1}(k+1)+k c_{t-1}(k))/t, k=6
+OK   (8.2) c_m(k) one-block equality k=9, k+1<=m<=2k+1
+OK   (8.2) level k-1 equality k=9, k<=m<=2k-1
+OK   (8.4) R_q = k c_{k+q}(k) k=9, 1<=q<=k+1
+OK   (8.5) R_q >= k/(k+q) sum Bor(j)[s+R] k=9
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=9, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=9
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=10, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=10
+OK   (8.9) s_N(y) >= pi0/(1-km) >= pi0/(1-y/N+(y/N)pi0), y=9
+OK   (8.10) 1-s_N(y) = sum theta_{N+1}(m)(m-y)/m s_{m-1}(y), y=9
+OK   (8.11)(가) s_N <= 1/(1+B_N), y=9
+OK   (8.11)(나) B_N >= B^low(k,nu), k=9, 1<=nu<=k+1
+OK   old-6-30 (가) s_N(k-1)/s_N(k) >= (1-1/k)^{N-k+1}, k=9
+OK   old-6-30 (나) >= 1-max 1/(k pi0_N'(k-1)), k=9
+OK   old-6-30 (다) >= 1-e^{7/6}N^{3/2}/(4C2 k(2k-1-N)), and two-tree bound, k=9
+OK   old-6-31 (다)(라) pi_m(t) incr in t on [m/2,m], decr in m, m<27
+OK   old-6-31 (마) pi0_N(j)-pi0_{N+1}(j) <= pi_N(j), N/2<j<=N, N<27
+OK   old-6-32 eps_cap >= eps_size/2 and eps_cap=(s_{t-1}(k+1)+k c_{t-1}(k))/t, k=9
+OK   (8.2) c_m(k) one-block equality k=13, k+1<=m<=2k+1
+OK   (8.2) level k-1 equality k=13, k<=m<=2k-1
+OK   (8.4) R_q = k c_{k+q}(k) k=13, 1<=q<=k+1
+OK   (8.5) R_q >= k/(k+q) sum Bor(j)[s+R] k=13
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=13, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=13
+OK   (8.8) E_N[A] = sum_j j theta_{N+1}(y+j), y=14, y<=N<=2y+1
+OK   (8.8) Jensen s_N(y) >= exp(-E[A]/y), y=14
+OK   (8.9) s_N(y) >= pi0/(1-km) >= pi0/(1-y/N+(y/N)pi0), y=13
+OK   (8.10) 1-s_N(y) = sum theta_{N+1}(m)(m-y)/m s_{m-1}(y), y=13
+OK   (8.11)(가) s_N <= 1/(1+B_N), y=13
+OK   (8.11)(나) B_N >= B^low(k,nu), k=13, 1<=nu<=k+1
+OK   old-6-30 (가) s_N(k-1)/s_N(k) >= (1-1/k)^{N-k+1}, k=13
+OK   old-6-30 (나) >= 1-max 1/(k pi0_N'(k-1)), k=13
+OK   old-6-30 (다) >= 1-e^{7/6}N^{3/2}/(4C2 k(2k-1-N)), and two-tree bound, k=13
+OK   old-6-31 (다)(라) pi_m(t) incr in t on [m/2,m], decr in m, m<39
+OK   old-6-31 (마) pi0_N(j)-pi0_{N+1}(j) <= pi_N(j), N/2<j<=N, N<39
+OK   old-6-32 eps_cap >= eps_size/2 and eps_cap=(s_{t-1}(k+1)+k c_{t-1}(k))/t, k=13
+== 3. 보조정리 explicit-bounds ==
+OK   (가) Robbins bounds on Bor, Ren (m<400)
+OK   (나) Euler-Maclaurin bounds (r<3000)
+OK   (다)(라) Psi, Bor_<=, Bor_> bounds, Psi^low, derivative (q<3000)
+OK   (마) 1-g(i) bounds, harmonic bounds, Bor ratio bounds
+== 4. (8.12) J(q,k) <= Bp(q,k)+Cr(q,k) at k=6600 ==
+OK   J(q,6600) <= Bp+Cr for sampled q in [2,2125]  min (Bp+Cr)/J = 1.0
+FAIL 수: 0 []

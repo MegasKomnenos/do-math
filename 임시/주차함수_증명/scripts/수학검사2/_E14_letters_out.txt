@@ -1,0 +1,224 @@
+== 1.1: 4장에는 이탤릭 m이 나오지 않는다 [장4, m]: 0 hits
+== 1.1: 7장에 맨 글자 u 없음 [장7A, u]: 0 hits
+== 1.1: 7장에 맨 글자 u 없음 [장7B, u]: 0 hits
+== 1.1: 8장에 맨 글자 u 없음 [장8, u]: 0 hits
+== 1.1: 11장에 맨 글자 t 없음 [장11, t]: 0 hits
+== 6절: 5장에 대문자 N 없음 [장5A, N]: 0 hits
+== 6절: 5장에 대문자 N 없음 [장5B, N]: 0 hits
+== 6절: 5A 국소 X 없음 [장5A, X]: 0 hits
+== 6절: 5B 국소 X [장5B, X]: 1 hits
+    (464, '\\mathsf P_X')
+== 6절: 장6 국소 X 없음 [장6, X]: 0 hits
+== 1.3 7.3: 7A 이탤릭 G [장7A, G]: 33 hits
+    (805, 'G>0')
+    (805, '\\psi_G(n):=\\mathfrak v_k\\bigl(\\mathfrak m^\\sharp,Gn/k\\bigr)')
+    (814, '\\Gamma:=\\Bigl(1+\\frac1{n_1}\\Bigr)\\frac{1+\\varepsilon_{n_1+1-\\mathrm{sep}}+\\mathf')
+    (819, '\\psi_G(n_1)\\ge0')
+    (821, '\\mathfrak P_k(n)\\le\\Gamma\\,\\mathfrak P_k(\\infty)\\le G')
+    (829, '\\mathfrak P_k(n)\\le\\Gamma\\,\\mathfrak P_k(\\infty)\\le G')
+    (831, '\\mu_n(k)\\ge\\mathfrak v_k(\\mathfrak m^\\sharp,nG/k)=\\psi_G(n)')
+    (833, '\\psi_G(n)=(1+1/k)^{(n-k)/(k+1)}+(1-1/k)^{(n-k)/(k+1)+Gn/k}-2')
+== 1.3 7.3: 7B 이탤릭 G [장7B, G]: 0 hits
+== 1.3 5.2: 1.2 사슬 길이 L은 5장이 쓰지 않는다 [장5A, L]: 15 hits
+    (282, 'L_1,L_2,L_3')
+    (282, 'L_1+L_2+L_3=d-2')
+    (282, '\\sqrt{\\pi L_1/2},\\sqrt{\\pi L_2/2},\\sqrt{\\pi L_3/2}')
+    (282, '\\sqrt{L_1}+\\sqrt{L_2}+\\sqrt{L_3}\\le\\sqrt{3(L_1+L_2+L_3)}')
+    (506, '\\mathsf P(n)\\Leftrightarrow\\mathsf P_L(n)\\wedge\\mathsf P_R(n)')
+    (506, '\\mathsf P_L(n)\\Rightarrow\\mathsf{LH}^+(n)')
+    (508, '\\mathsf P_L(n)')
+    (508, '\\mathsf Q_L')
+== 1.3 5.5: L은 5.5절이 쓰지 않는다 [장5B, L]: 2 hits
+    (464, '\\mathsf P_L')
+    (464, '\\mathsf P_L')
+== 1.3: 1.2 밀도 f는 5장에 나오지 않는다 [장5A, f]: 1 hits
+    (148, "f(y+2)-3f(y+1)+3f(y)-f(y-1)=\\int_0^1\\!\\int_0^1\\!\\int_0^1f'''(y-1+\\varsigma_1+\\va")
+== (같음) [장5B, f]: 8 hits
+    (260, '\\frac{z}{\\sqrt{2\\pi}}e^{-\\varsigma z}e^{z^3/(3\\mathfrak W_0^2)}f(\\mathfrak W)')
+    (260, 'f(u):=u^{-3/2}e^{-z^2/(2u)-\\varsigma u}')
+    (260, 'f')
+    (260, 'f')
+    (260, '\\sum_{u\\ge\\mathfrak W_0}f(u)\\le f(\\mathfrak W_0)+\\int_{\\mathfrak W_0}^\\infty f')
+    (321, 'f(\\theta):=\\mathfrak c_3\\theta^{3/2}-\\theta-\\log(\\sqrt2(1+6\\mathfrak h_0)\\theta/')
+    (321, 'f(12)\\ge0.556\\cdot41.5-12-\\log(36.8)>7')
+    (321, "f'(\\theta)=1.5\\mathfrak c_3\\sqrt\\theta-1-1/\\theta>0")
+== 1.3 6.5: 밀도 f는 6장에 나오지 않는다 [장6, f]: 1 hits
+    (740, '\\Delta^2_yf(y):=f(y+2)-2f(y+1)+f(y)')
+== 1.3 9.1: 밀도 f는 9장에 나오지 않는다 [장9, f]: 5 hits
+    (304, 'f(v)')
+    (304, 'f(v)>t/2')
+    (304, 'f(u)<f(v)')
+    (304, 'f')
+    (304, 'f\\le t/2')
+== 1.3 4.3: 1.2 g(x)는 4장에 나오지 않음 [장4, g]: 11 hits
+    (99, '\\mathcal W(g)=g')
+    (99, 'g\\le k')
+    (99, '\\mathcal W(g)=y')
+    (99, 'g>k')
+    (169, 'g')
+    (169, 'g(T(x))')
+    (170, '[x^n]\\,g(T(x))=\\frac1{2\\pi\\mathrm i}\\oint g(T(x))\\,\\frac{dx}{x^{n+1}}=\\frac1{2\\p')
+    (173, 'g(\\mathfrak Y)=e^{\\mathfrak Y}e^{-y(1-\\mathfrak Y)^2/2}(1-\\mathfrak Y)^r')
+== 1.3 6.5: 6장에 전역 τ 없음(국소만) [장6, \tau]: 18 hits
+    (848, '\\Lambda_0,\\tau\\ge0')
+    (848, "\\mathcal F(\\Lambda_0+\\tau)-\\mathcal F(\\Lambda_0)\\le\\mathcal F(\\tau)\\,\\mathcal F'")
+    (850, '\\mathfrak l(\\Lambda_0+\\tau)=\\mathfrak l(\\Lambda_0)+\\mathfrak l(\\tau)+1.5\\Lambda_')
+    (851, '\\mathcal F_{\\mathrm I}(\\Lambda_0+\\tau)-\\mathcal F_{\\mathrm I}(\\Lambda_0)=e^{1.5\\')
+    (854, 'e^{1.5\\tau}-1\\le1.5\\tau e^{1.5\\tau}')
+    (854, '\\tau e^{1.5\\tau}\\le\\mathcal F_{\\mathrm I}(\\tau)')
+    (854, 'e^{1.5\\tau}\\mathfrak l(\\tau)=\\mathcal F_{\\mathrm I}(\\tau)')
+    (854, 'e^{1.5\\Lambda_0}\\mathcal F_{\\mathrm I}(\\tau)\\bigl(1+1.5\\mathfrak l(\\Lambda_0)+1.')
+== 1.3: 1.2 ξ는 5장에서 쓰이지 않음 [장5A, \xi]: 18 hits
+    (636, "\\xi:=\\mathrm{pt}' e^{1-\\mathrm{pt}'}")
+    (636, "\\mathrm{Bor}(j;\\mathrm{pt}')=\\mathrm{Bor}(j)\\,\\xi^j/\\mathrm{pt}'")
+    (636, "\\mathrm{Bor}^{\\mathrm{tail}}_k(\\mathrm{pt}')=1-\\frac1{\\mathrm{pt}'}\\sum_{j\\le k}")
+    (646, "|\\xi|=e^{1-\\cos\\mathrm{ag}'}\\ge1")
+    (648, '|\\xi|>1')
+    (648, '\\sum_{j\\le k}\\mathrm{Bor}(j)\\xi^j')
+    (664, "\\xi=\\mathrm{pt}' e^{1-\\mathrm{pt}'}")
+    (665, "\\mathrm{Bor}^{\\mathrm{tail}}_k(\\mathrm{pt}')=\\frac{\\xi^{k+1}}{\\pi\\mathrm{pt}'}\\i")
+== (같음) [장5B, \xi]: 25 hits
+    (274, '\\xi_1:=e^{-\\varsigma_z}')
+    (274, '\\xi_2:=e^{-z/Y}')
+    (274, '\\exp(-[z(j+1)+zD-D(z+1)/2]/Y)=\\xi_2^{\\,j+1}\\xi_1^{\\,D}')
+    (274, '\\mathrm{tgf}^-_z(\\mathfrak S_{\\mathrm{cut}}):=(T(\\xi_1/e)^z-\\mathcal T_z(\\mathfr')
+    (274, '\\mathfrak q_z:=zT(\\xi_1/e)^z/(1-T(\\xi_1/e))')
+    (277, '\\Lambda_{\\mathrm w}(Y)\\ \\ge\\ \\mathfrak o_{\\mathrm{rig}}(Y):=\\frac1Y\\sum_{z=1}^{q')
+    (281, '\\mathfrak o_{\\mathrm{rig}}(Y)\\ \\ge\\ \\mathfrak o_{\\mathrm{int}}(Y):=\\frac1Y\\sum_{')
+    (287, '\\Lambda_{\\mathrm w}(Y)\\ \\ge\\ \\frac1Y\\sum_{z=1}^{q_{\\max}}z\\sum_{j=0}^{q_{\\max}-z')
+== 1.3 6.3: 1.2 ξ는 6장에 나오지 않음 [장6, \xi]: 49 hits
+    (533, '\\xi:=|\\mathcal Q|=L-1')
+    (541, '\\mathrm{Gs}_\\xi(y):=\\sum_{i=0}^{\\xi}(1-1/y)^i')
+    (541, 'y^{\\xi+1}-(y-1)^{\\xi+1}=y^\\xi\\mathrm{Gs}_\\xi(y)')
+    (556, '\\mathcal K_{d,j}(y):=\\prod_{r=d-j+1}^{d-1}(y+r)\\cdot\\sum_C\\mathrm{Wc}(C),\\qquad ')
+    (561, 'y^L-(y-1)^L=y^\\xi\\mathrm{Gs}_\\xi(y)')
+    (561, 'y^\\xi/\\prod_{q\\in\\mathcal Q}(y+q)=\\prod_{q\\in\\mathcal Q}y/(y+q)')
+    (564, "y^2\\bigl(\\log\\tilde{\\mathcal G}_j\\bigr)'(y)=\\frac y{y-1}+\\frac{2(d-j)\\,y}{y+d-j}")
+    (567, "\\vartheta_\\xi(y):=\\frac{y^2\\mathrm{Gs}_\\xi'(y)}{\\mathrm{Gs}_\\xi(y)},\\qquad \\math")
+== 1.3 7.1: 1.2 ξ는 7장에서 쓰이지 않음 [장7A, \xi]: 115 hits
+    (33, '0\\le\\xi\\le1')
+    (33, '(1+\\xi)^Z+(1-\\xi)^{Z+H}-2\\ge Z(Z-1)\\xi^2-H\\xi')
+    (35, '(1+\\xi)^Z+(1-\\xi)^Z-2=2\\sum_{j\\ge1}\\binom Z{2j}\\xi^{2j}\\ge2\\binom Z2\\xi^2=Z(Z-1)')
+    (35, '(1-\\xi)^Z-(1-\\xi)^{Z+H}=(1-\\xi)^Z\\bigl[1-(1-\\xi)^H\\bigr]')
+    (35, '(1-\\xi)^Z\\le1')
+    (35, '(1-\\xi)^H\\ge1-H\\xi')
+    (35, 'H\\xi')
+    (37, '\\xi=1/k')
+== (같음) [장7B, \xi]: 0 hits
+== 1.3 10.6: 1.2 숲 F는 10장에 나오지 않음 [장10, F]: 45 hits
+    (576, '\\mathfrak o_F(k)')
+    (576, '\\mathrm{Stays}^{\\mathrm{up}}_F(k)')
+    (576, '\\mathfrak R^\\sharp_F(k)')
+    (576, '\\mathfrak R^{\\sharp\\prime}_F(k)')
+    (576, '\\mathfrak o_F(k_0)\\ge\\mathrm{Stays}^{\\mathrm{up}}_F(k_0)')
+    (684, '\\mathfrak o_F(k)')
+    (686, '\\mathrm{Stays}^{\\mathrm{adm}}_{\\mathrm{new}}(k,\\nu)\\ge\\mathfrak o_F(k)')
+    (686, '\\mathfrak o_F(k)')
+== 1.3 7.3: 7장 여유 그리스 γ·ς는 이제 7장이 쓰지 않는다 [장7A, \gamma]: 0 hits
+== (같음) [장7B, \gamma]: 0 hits
+== (같음) [장7A, \varsigma]: 0 hits
+== (같음) [장7B, \varsigma]: 0 hits
+== 6절: 4.3 Euler–Maclaurin 상한 N(허용) [장4, N]: 4 hits
+    (418, "\\sum_{j=1}^{N}f(j)=\\int_1^Nf(w)\\,dw+\\frac{f(1)+f(N)}2+\\int_1^N(\\{w\\}-\\tfrac12)f'")
+    (418, '\\sum_{j\\le N}j^{-1/2}=2\\sqrt N+\\mathfrak M+(N^{-1/2}\\text{ 차수의 항})')
+    (418, '\\int_1^Nf=2\\sqrt N-2')
+    (418, 'N\\to\\infty')
+== 1.3 7.3: 2차 V를 ψ_G로 바꿈 [장7A, V]: 0 hits
+== 1.2 V(x) 7장 씀 [장7B, V]: 6 hits
+    (103, '\\mathcal S^{\\mathrm G}(z;x)=\\int_0^{T(x)}e^{z(V(\\mathrm w)-V(T(x)))}(1-\\mathrm w')
+    (106, 'V(\\mathrm w)=(1-\\mathrm w)^2/2')
+    (117, '\\mathrm{Gr}=\\mathrm w-\\mathrm w^2/2=\\tfrac12-V(\\mathrm w)')
+    (117, '(V(\\mathrm w)-V(T))')
+    (117, '(V(\\mathrm w)-V(T))^2')
+    (117, '\\partial_z^2\\mathcal G_\\ast|_{z=k}=e^{T}\\int_0^{T}(1-\\mathrm w)^2\\mathrm{Bor}^{\\')
+== 1.3 6.5: 6장 T는 실수 용량 연장(국소) [장6, T]: 104 hits
+    (746, 'T>0')
+    (747, '\\mathcal R_j(T):=\\prod_{i=q_j}^{d-1}e^{1-g(T+i)}')
+    (750, 'T>0')
+    (750, '\\mathcal R_j(T)\\ge1')
+    (758, 'T>0')
+    (758, '\\mathfrak X^0_d(T):=\\mathbb E\\bigl[\\sum_{j=1}^{L}q_j\\Pi_j(T)\\bigr]=T\\bigl(1-\\mat')
+    (760, '\\mathfrak X^1_d(T):=\\mathbb E\\bigl[\\sum_{j=1}^{L}(\\mathcal R_j(T)-1)\\,q_j\\,\\Pi_j')
+    (770, '\\Pi_j(T)=\\Pi_{j-1}(T)\\,T/(T+q_j)')
+== 1.1 m 쓰이는 장에 10 포함 [장10, m]: 333 hits
+    (19, 'k\\le m\\le2k')
+    (27, '2k<m<n')
+    (27, 'd_{m,k}')
+    (27, 'd_{m,k}')
+    (27, '2k<m<n')
+    (29, 'm')
+    (29, '\\mathrm{cl}^\\pm_m=c_m(k\\text{ 또는 }k-1)/s_m(k)')
+    (29, 's_m(k)=A_{m,k-1}/p_m')
+== 1.1 u 2장 [장2, u]: 21 hits
+    (176, "[x^m]\\phi(T(x))=\\frac1m[u^{m-1}]\\phi'(u)e^{mu}")
+    (177, '\\mathrm{Bor}^{*j}(m)=e^{-m}[x^m]T(x)^j=e^{-m}\\,\\frac jm\\,[u^{m-1}]u^{j-1}e^{mu}=')
+    (180, '[x^m]e^{\\upsilon T(x)}=\\frac1m[u^{m-1}]\\upsilon e^{(\\upsilon+m)u}=\\frac{\\upsilon')
+    (237, 'u')
+    (237, '\\cosh u-1=\\sum_{i\\ge1}u^{2i}/(2i)!\\le\\sum_{i\\ge1}u^{2i}/(2(2i-2)!)=(u^2/2)\\cosh ')
+    (362, 'u>0')
+    (362, '\\log(1+u)\\ge\\dfrac{2u}{2+u}')
+    (366, 'u>0')
+== 1.1 u 6장 [장6, u]: 4 hits
+    (1093, 'u')
+    (1093, "t_u=t'")
+    (1093, '(v,u)')
+    (1115, 'Z^2=Z+\\#\\{(v,u):v\\ne u\\ \\text{무거움}\\}')
+== 1.1 u 9장 [장9, u]: 8 hits
+    (304, 'u')
+    (304, 'C\\setminus\\{u\\}')
+    (304, 'f(u)<f(v)')
+    (304, 'v\\ne u')
+    (304, 'u')
+    (304, 'u')
+    (304, 'u')
+    (304, 'u')
+== 1.1: 5장의 맨 u는 생성함수·적분의 임시 변수 [장5A, u]: 4 hits
+    (212, '[x^j]\\,e^{-T(x)}=\\frac1j[u^{j-1}]\\bigl(-e^{-u}\\bigr)e^{ju}=-\\frac{(j-1)^{j-1}}{j')
+    (237, "[x^d]\\Phi(T(x))=\\frac1d[u^{d-1}]\\Phi'(u)e^{du}")
+    (237, '\\Phi(u)=u^je^u')
+    (413, '\\sum_d(d-\\gamma)\\mathrm{Ch}_{j-1}(d-\\gamma)z^d=z^\\gamma\\sum_uu\\,\\mathrm{Ch}_{j-1')
+== (같음) [장5B, u]: 21 hits
+    (165, '1-e^{-u}\\le u')
+    (238, '0\\le u<1')
+    (238, '\\log(1-u)\\ge-u-\\dfrac{u^2}{2(1-u)}')
+    (240, 'u\\mapsto-u-\\log(1-u)')
+    (240, 'u/(1-u)\\ge0')
+    (240, 'u_0:=\\sqrt{2\\varsigma}-\\frac23\\varsigma')
+    (240, '\\mathfrak X(\\varsigma):=\\varsigma-(-u_0-\\log(1-u_0))')
+    (240, 'u_0/\\sqrt{2\\varsigma}=1-\\sqrt{2\\varsigma}/3')
+== 0절 R1: 8.2의 합 지표 r [장8, r]: 50 hits
+    (54, '\\Psi(q)=\\sum_{r=1}^q\\mathrm{Ren}(r)')
+    (108, 'm,r,q\\ge1')
+    (110, '(2\\pi)^{-1/2}r^{-1/2}e^{-1/(12r)}\\le\\mathrm{Ren}(r)\\le(2\\pi)^{-1/2}r^{-1/2}e^{-1')
+    (112, '\\sum_{j=1}^rj^{-1/2}\\le2\\sqrt r+\\mathsf z_{1/2}+\\tfrac12r^{-1/2}')
+    (112, '\\sum_{j=1}^rj^{-1/2}\\ge2\\sqrt r+\\mathsf z_{1/2}+\\tfrac12r^{-1/2}-\\tfrac1{24}r^{-')
+    (112, '\\sum_{j=1}^rj^{1/2}\\ge\\tfrac23r^{3/2}+\\tfrac12r^{1/2}+\\mathsf z_{-1/2}')
+    (112, '\\sum_{j=1}^rj^{1/2}\\le\\tfrac23r^{3/2}+\\tfrac12r^{1/2}+\\mathsf z_{-1/2}+\\tfrac1{2')
+    (116, 'r\\ge1')
+== 1.1 r 쓰이는 장(1,2,4,5,9,11) — 3장 없음 [장3, r]: 0 hits
+== 1.1 r — 6장 없음 [장6, r]: 31 hits
+    (556, '\\mathcal K_{d,j}(y):=\\prod_{r=d-j+1}^{d-1}(y+r)\\cdot\\sum_C\\mathrm{Wc}(C),\\qquad ')
+    (561, '(t-1)_{j-1}=\\prod_{\\mathfrak y=1}^{j-1}(t-\\mathfrak y)=\\prod_{r=d-j+1}^{d-1}(y+r')
+    (561, '(t-1)_j\\prod\\mathfrak c\\,\\mathrm{Br}_w=\\prod_{r=d-j+1}^{d-1}(y+r)\\cdot\\prod\\math')
+    (561, '\\prod_{r=d-j+1}^{d-1}(y+r)\\,\\mathrm{Wc}(C)')
+    (564, "y^2\\bigl(\\log\\tilde{\\mathcal G}_j\\bigr)'(y)=\\frac y{y-1}+\\frac{2(d-j)\\,y}{y+d-j}")
+    (572, '\\log\\tilde{\\mathcal G}_j=\\log(y-1)+\\log y+(y+d-j-2)\\log(y+d-j)+\\sum_{r=d-j+1}^{d')
+    (572, '\\sum_{r=d-j+1}^{d-1}\\frac1{y+r}=\\sum_{r=1}^{j-1}\\frac1{y+d-j+r}')
+    (572, '-\\Bigl[\\log\\Bigl(1+\\frac j{y+d-j}\\Bigr)-\\sum_{r=1}^{j}\\frac1{y+d-j+r}\\Bigr]-\\fra')
+== 1.1 r — 7장 없음(7.4 국소 지표 r 허용) [장7A, r]: 0 hits
+== (같음) [장7B, r]: 13 hits
+    (115, '(i_{r-1},i_r]')
+    (115, '\\sigma_{i_{r-1}}>\\sigma_{i_r}')
+    (115, '(i_{r-1},i_r)')
+    (115, '\\sigma_{i_r}')
+    (270, '\\mathcal M^{(y,n)}_r')
+    (280, '\\mathcal M_r/\\mathcal M_0=\\mathrm U_r-\\mathrm V_r/\\mathfrak d')
+    (280, 'r=2,4')
+    (302, '(1-\\mathfrak Y)^{r+1}\\exp(\\mathfrak N\\mathfrak Y-y\\mathfrak Y^2/2)')
+== 1.1 r — 10장 없음 [장10, r]: 6 hits
+    (306, '\\Pr_{m}(M\\le y-1)\\ \\le\\ 1-\\sum_{t=y+1}^{m}\\pi_{m}(t)\\Bigl(1-\\frac yt\\Bigr)\\ \\le\\')
+    (309, 's_N(k+1)\\le s^{\\mathrm W}_{\\nu-1}(N,k+1)=1-\\sum_{r=0}^{\\nu-2}\\mathrm{Bor}(r+1)\\f')
+    (311, 'r=m-t')
+    (311, '\\pi_{m}(m-r)=\\mathrm{Bor}(m-r)\\mathrm{Bor}(r+1)/\\mathrm{Bor}(m+1)\\ge\\mathrm{Bor}')
+    (311, '1-y/t=(m-y-r)/(m-r)')
+    (678, 'N-r\\le k+\\nu')

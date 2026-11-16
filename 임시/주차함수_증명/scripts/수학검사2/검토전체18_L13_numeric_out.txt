@@ -1,0 +1,38 @@
+[col-lemma] LHS 104857600000000000000000000000000000000000000000 1.048576e+47
+[col-lemma] RHS 54761894386648683794568871846731106252899205833 5.476189e+46 LHS>RHS: True
+[col-lemma] 17^21=6.90919e+25 <6.95e25: True ; 123^10=7.92595e+20 <7.93e20: True
+[self-consistent] L=267/100 j*=82 (appendix 82) k_R=429 (appendix 429) k0>=kR: True
+[self-consistent] L=27/10 j*=220 (appendix 220) k_R=1855 (appendix 1855) k0>=kR: True
+[self-consistent] L=271/100 j*=490 (appendix 490) k_R=6098 (appendix 6098) k0>=kR: True
+[cor-S-prime] k0=501 value=3.247339e-04 (>3.247e-04: True) vertex=0.05245 <= y=13/100: True
+[cor-S-prime] k0=1855 value=7.801802e-05 (>7.801e-05: True) vertex=0.03097 <= y=2/25: True
+[cor-S-prime] k0=6098 value=2.275125e-04 (>2.275e-04: True) vertex=0.02135 <= y=11/200: True
+[AR] J3=0.1702502369 J4=0.1702497499
+[AR] band req (1+d/2)/(1-d/2)=1.084495 ; bulk req=1.0786422
+[AR] J1=0.43269372 J2=0.43284397 L*=1.2060377
+[band-LP] 0.1113*6668 = 742.1483999999999
+[H*+] limit = 0.82149
+[M-nat] 3*sqrt2*0.16696 = 0.708351289121436 ; 2.5-ln2-ln0.485917 = 2.52857027099959
+[M-nat] j2=2.717199867930191 j1=0.7998716895841891
+[M-nat] DDL(6667)=0.132374162
+[M-nat] DDL(6668)=0.132365937
+[M-nat] DDL(8065)=0.1223300121
+[M-nat] DDL(9551)=0.1140391118
+[M-nat] DDL(9705)=0.1132841417
+[M-nat] DDL(9949)=0.1121218619
+[M-nat] decrease cond j1+j2(ln6667/2-1)=10.045042702
+[xcert] n_X(501)=ceil(k^{4/3})=3980
+[xcert] n_X(2002)=ceil(k^{4/3})=25233
+[xcert] n_X(2001)=ceil(k^{4/3})=25216
+[moment] first-range positions sum_{k=501}^{840}(floor(13k^2/100)-2k) = 19840702 (appendix 19,840,702)
+[moment] n_M(841)/841^1.5 = 0.8408298823239986  n_M(2000)/2000^1.5 = 0.8165225826638232
+[four] eps0(6668)=562
+[four] eps0(8065)=638
+[four] eps0(9551)=714
+[four] eps0(9705)=722
+[tail] (K1,M,tf)=(10000.0,120,0.54) kebar=0.01797 min rel margin=0.0001985 at q=120  all>=0: True
+[tail] (K1,M,tf)=(20000.0,250,0.593) kebar=0.01883 min rel margin=0.0001 at q=250  all>=0: True
+[tail] (K1,M,tf)=(100000.0,300,0.522) kebar=0.004492 min rel margin=8.696e-5 at q=300  all>=0: True
+[tail] (K1,M,tf)=(100000.0,450,0.548) kebar=0.006753 min rel margin=2.057e-6 at q=450  all>=0: True
+[tail] (K1,M,tf)=(1000000.0,700,0.519) kebar=0.001049 min rel margin=8.279e-5 at q=700  all>=0: True
+[polar-PD] 2e^{-5.3146*0.6996}=0.0485604 ; 0.0821e^{-3/25233}=0.0820902 ; 0.7*2001/2002=0.6996503496503496 ; 0.3^1.5/2=0.0821583836257749

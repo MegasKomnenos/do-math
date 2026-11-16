@@ -1,0 +1,19 @@
+== 1. 모멘트 재귀 (7.2)(7.3), 전분산 (7.4), mom_k 전수 대조 (n<=7) ==
+k=2: (7.2) True, (7.3) True, (7.4)+mom+mom_k True
+k=3: (7.2) True, (7.3) True, (7.4)+mom+mom_k True
+== 2. 한 걸음 항등식 (7.13), fold-A, fold-R, fold-T, fold-L1, fold-DIP (mpmath) ==
+k=3, n<=15: (7.13) True; fold-A True; fold-R True; fold-T True; fold-L1 True; fold-DIP True
+k=4, n<=18: (7.13) True; fold-A True; fold-R True; fold-T True; fold-L1 True; fold-DIP True
+k=6, n<=24: (7.13) True; fold-A True; fold-R True; fold-T True; fold-L1 True; fold-DIP True
+== 3. heavy-block (7.10), (라) pi^sharp 상계; ex_t >= q ==
+k=6: (7.10) True; (라) True
+== 4. kernel-bound 수치 (m<=80) ==
+kernel-bound holds: True; max ratio pi/bound = 1.000000
+== 5. pair-check-10000: 개수와 최솟값 ==
+cases (q<=q') = 10725; min = 0.04926 at (1, 33, 16); ordered pairs = 20825
+== 6. 꼬리 삼중 (7.12) float 점검, ke-bar ==
+(10000,120,0.54): ke-bar=0.0180, min rel margin=0.000198, tf*M^1.5=710
+(20000,250,0.593): ke-bar=0.0188, min rel margin=0.0001, tf*M^1.5=2344
+(100000,300,0.522): ke-bar=0.0045, min rel margin=8.7e-5, tf*M^1.5=2712
+(100000,450,0.548): ke-bar=0.0068, min rel margin=2.06e-6, tf*M^1.5=5231
+(1000000,700,0.519): ke-bar=0.0010, min rel margin=8.28e-5, tf*M^1.5=9612

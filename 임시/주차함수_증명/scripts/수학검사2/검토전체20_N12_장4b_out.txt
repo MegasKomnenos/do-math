@@ -1,0 +1,7 @@
+A^c recursion vs full table: compared 2788 values, mismatches 0
+b_{n,kn}<b_{n,kn+1} false for n in: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+holds for all 20<=n<=200: True
+Q_L violations 3<=n<=15 (strict): []
+decreasing levels with 2l<=n-2 in 3<=n<=15: 10 [(4, 1), (5, 1), (6, 2), (7, 2), (8, 3), (9, 3), (10, 4), (11, 4), (12, 5), (14, 6)]
+adjacent ties n<=60: []
+elapsed 1.0s

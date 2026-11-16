@@ -1,0 +1,44 @@
+{
+ "program": "indep_lastcar.column_lastcar (record rc9aee43, peer)",
+ "bits": 160,
+ "nmax": 10000,
+ "results": [
+  {
+   "k": 2,
+   "radius": [
+    652980437571,
+    1099511627776
+   ],
+   "start": 12,
+   "comparisons": 9989,
+   "direct_failures": 0,
+   "worst_n": 12,
+   "minimum_relative_margin_interval_lower": [
+    "503882479718761827370905829822783758657053512920",
+    "1163819416524883369154423065335882793189528939199"
+   ],
+   "minimum_relative_margin_float": 0.43295589725022293,
+   "max_interval_width_plus_column": 88782505,
+   "seconds": 40.7
+  },
+  {
+   "k": 3,
+   "radius": [
+    597678299114,
+    1099511627776
+   ],
+   "start": 12,
+   "comparisons": 9989,
+   "direct_failures": 0,
+   "worst_n": 12,
+   "minimum_relative_margin_interval_lower": [
+    "163272098665439901124784645767477213564467706395",
+    "1312717999008190343693975549336000357644304973914"
+   ],
+   "minimum_relative_margin_float": 0.12437713110416582,
+   "max_interval_width_plus_column": 106351781,
+   "seconds": 39.7
+  }
+ ],
+ "success": true
+}

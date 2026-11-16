@@ -1,0 +1,31 @@
+k=3 e-integral (4.1):
+   n=5  [Y^n]Phi(1-Y)e^{nY} = 4/15 ; e_n/n! = 4/15 ; e_n=32 ; match=True
+   n=6  [Y^n]Phi(1-Y)e^{nY} = 127/120 ; e_n/n! = 127/120 ; e_n=762 ; match=True
+   n=7  [Y^n]Phi(1-Y)e^{nY} = 2479/840 ; e_n/n! = 2479/840 ; e_n=14874 ; match=True
+k=3 명제 4.6 Lagrange 계수 vs J_n(k-1)/n!:
+   n=3  coef=1/2 ; J_n(k-1)/n!=1/2 ; J_n=3 ; match=True
+   n=4  coef=3/4 ; J_n(k-1)/n!=3/4 ; J_n=18 ; match=True
+   n=5  coef=13/10 ; J_n(k-1)/n!=13/10 ; J_n=156 ; match=True
+   n=6  coef=293/120 ; J_n(k-1)/n!=293/120 ; J_n=1758 ; match=True
+k=4 e-integral (4.1):
+   n=6  [Y^n]Phi(1-Y)e^{nY} = 25/72 ; e_n/n! = 25/72 ; e_n=250 ; match=True
+   n=7  [Y^n]Phi(1-Y)e^{nY} = 949/630 ; e_n/n! = 949/630 ; e_n=7592 ; match=True
+   n=8  [Y^n]Phi(1-Y)e^{nY} = 13039/2880 ; e_n/n! = 13039/2880 ; e_n=182546 ; match=True
+   n=9  [Y^n]Phi(1-Y)e^{nY} = 2134481/181440 ; e_n/n! = 2134481/181440 ; e_n=4268962 ; match=True
+k=4 명제 4.6 Lagrange 계수 vs J_n(k-1)/n!:
+   n=4  coef=2/3 ; J_n(k-1)/n!=2/3 ; J_n=16 ; match=True
+   n=5  coef=16/15 ; J_n(k-1)/n!=16/15 ; J_n=128 ; match=True
+   n=6  coef=29/15 ; J_n(k-1)/n!=29/15 ; J_n=1392 ; match=True
+   n=7  coef=1178/315 ; J_n(k-1)/n!=1178/315 ; J_n=18848 ; match=True
+   n=8  coef=4769/630 ; J_n(k-1)/n!=4769/630 ; J_n=305216 ; match=True
+k=5 e-integral (4.1):
+   n=7  [Y^n]Phi(1-Y)e^{nY} = 18/35 ; e_n/n! = 18/35 ; e_n=2592 ; match=True
+   n=8  [Y^n]Phi(1-Y)e^{nY} = 47911/20160 ; e_n/n! = 47911/20160 ; e_n=95822 ; match=True
+   n=9  [Y^n]Phi(1-Y)e^{nY} = 39157/5184 ; e_n/n! = 39157/5184 ; e_n=2740990 ; match=True
+k=5 명제 4.6 Lagrange 계수 vs J_n(k-1)/n!:
+   n=5  coef=25/24 ; J_n(k-1)/n!=25/24 ; J_n=125 ; match=True
+   n=6  coef=125/72 ; J_n(k-1)/n!=125/72 ; J_n=1250 ; match=True
+   n=7  coef=3275/1008 ; J_n(k-1)/n!=3275/1008 ; J_n=16375 ; match=True
+   n=8  coef=4325/672 ; J_n(k-1)/n!=4325/672 ; J_n=259500 ; match=True
+   n=9  coef=53425/4032 ; J_n(k-1)/n!=53425/4032 ; J_n=4808250 ; match=True
+done

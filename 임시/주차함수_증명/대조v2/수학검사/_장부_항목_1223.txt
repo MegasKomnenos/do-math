@@ -1,0 +1,1 @@
+- 2026-11-14 12:2x **knowledge.7z 묶기 완료**: `zenodo_v4/knowledge.7z` 347.6MB(파일 36,393개, 원 크기 762MB; 7z -mx=5; `7z t` Everything is Ok; 12:22). 남은 묶음(원고_자료.7z·원고.md·원고.pdf·SHA256SUMS)은 D.5 적용 뒤 `묶기.py --bundle --copy --sums`.

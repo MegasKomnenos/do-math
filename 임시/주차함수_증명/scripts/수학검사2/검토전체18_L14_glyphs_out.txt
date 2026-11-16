@@ -1,0 +1,147 @@
+L49 $a_i$ | claimed ['1', '2', '7'] | first-use 장2:82 sec 2.3 vs defsec 1.1
+L50 $b_{n,\ell}$ | claimed ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'] | claimed-but-not-found: 7,8,9,10 ; first-use 장2:3 sec 2 vs defsec 1.3
+L53 $b^{T}_{t,\ell}$ | claimed ['2', '9'] | TOKENS NOT FOUND
+L54 $c_m(Y)$ | claimed ['1', '2', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 6,7,8,9,10
+L55 $c^{(2)}_m$ | claimed ['2', '5', '9', '10'] | claimed-but-not-found: 2,9 ; first-use 장5B:54 sec 5.5.2 vs defsec 2.10
+L56 $d_i$ | claimed ['1', '2', '7'] | found-but-not-claimed: 5(장5A:360) ; claimed-but-not-found: 7 ; first-use 장2:82 sec 2.3 vs defsec 1.2
+L57 $d_{n,k}$ | claimed ['1', '2', '4', '5', '6', '7', '9', '10'] | first-use 장2:376 sec 2.7 vs defsec 1.5
+L60 $\ell^\ast$ | claimed ['1', '3', '4', '5', '6'] | first-use 장3:251 sec 3.4 vs defsec 1.3
+L62 $f$ | claimed ['3', '8'] | found-but-not-claimed: 2(장2:853),4(장4:346),5(장5A:148),6(장6:565),7(장7A:55),9(장9:304),10(장10:53) ; first-use 장2:853 sec 2.12 vs defsec 3.1
+L63 $g(x)$ | claimed ['2', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 5,6,8,9
+L65 $k_n$ | claimed ['1', '4', '5', '6', '7'] | first-use 장4:17 sec 4.1 vs defsec 1.5
+L69 $m_0$ | claimed ['10'] | found-but-not-claimed: 8(장8:657),9(장9:259) ; first-use 장8:657 sec 8.4 vs defsec 10.2
+L71 $n^\sharp_k, n^\flat_k, n^\circ_k$ | claimed ['7', '11'] | first-use 장7A:7 sec 7 vs defsec 7.2
+L72 $n_{\mathrm X}(k)$ | claimed ['7', '11'] | claimed-but-not-found: 11
+L73 $n_{\mathrm{PD}}(k)$ | claimed ['7'] | first-use 장7B:556 sec 7.6 vs defsec 7.5
+L74 $p_n$ | claimed ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'] | claimed-but-not-found: 10 ; first-use 장2:5 sec 2 vs defsec 1.1
+L75 $q_{\max}(Y)$ | claimed ['5', '8'] | claimed-but-not-found: 8
+L78 $s^{T}_t(y)$ | claimed ['2', '5', '8'] | TOKENS NOT FOUND
+L79 $s_m(y)$ | claimed ['1', '2', '3', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 3,5,8,9,10 ; first-use 장2:485 sec 2.8 vs defsec 2.6
+L81 $s^{\mathrm{low}}_q$ | claimed ['8'] | found-but-not-claimed: 10(장10:631)
+L83 $s^{\mathrm{cf}}(\xi)$ | claimed ['8', '11'] | claimed-but-not-found: 11
+L85 $s^{\mathrm W}_q(m,y)$ | claimed ['10'] | TOKENS NOT FOUND
+L90 $x, \hat x$ | claimed ['1', '3', '5', '6', '11'] | found-but-not-claimed: 2(장2:109),4(장4:13),7(장7A:5),8(장8:38),9(장9:23),10(장10:88) ; first-use 장2:109 sec 2.3 vs defsec 1.5
+L91 $x_t(y)$ | claimed ['2', '5', '6', '9'] | claimed-but-not-found: 9
+L92 $x_\ast$ | claimed ['1', '3'] | first-use 장3:267 sec 3.4 vs defsec 3.2
+L94 $A_{n,\ell}$ | claimed ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'] | claimed-but-not-found: 4,6,7,8,9,10 ; first-use 장2:45 sec 2.1 vs defsec 1.3
+L95 $A^\sigma_\ell$ | claimed ['2', '7'] | claimed-but-not-found: 7
+L96 $A_\ell(x)$ | claimed ['2', '7', '8', '9'] | claimed-but-not-found: 7,9
+L97 $A^{c}_{n,\ell}$ | claimed ['5'] | TOKENS NOT FOUND
+L101 $B_{n,\ell}$ | claimed ['1', '2', '4', '5', '7', '11'] | claimed-but-not-found: 1,4,5,7,11
+L103 $D_k$ | claimed ['6', '9'] | found-but-not-claimed: 7(장7B:628) ; claimed-but-not-found: 6 ; first-use 장7B:628 sec 7.6 vs defsec 6.4
+L104 $E_{n,k}, E2_{n,k}$ | claimed ['1', '2', '4', '5', '7'] | claimed-but-not-found: 4,7
+L105 $F$ | claimed ['2', '5', '6', '9'] | found-but-not-claimed: 4(장4:13),7(장7A:93),8(장8:82),10(장10:242),11(장11:39)
+L106 $G$ | claimed ['2', '3', '5', '6', '8', '9', '10'] | found-but-not-claimed: 4(장4:428),7(장7A:280),11(장11:27)
+L107 $H_k(\sigma), H_k(F)$ | claimed ['2', '5', '6', '7', '8', '9'] | claimed-but-not-found: 6,8,9
+L109 $J_n(z)$ | claimed ['1', '2', '4', '5', '7'] | claimed-but-not-found: 1,4
+L112 $L$ | claimed ['2', '3', '6', '7', '9', '10'] | found-but-not-claimed: 4(장4:567),5(장5A:9),8(장8:222),11(장11:33) ; first-use 장2:158 sec 2.4 vs defsec 2.5
+L113 $M(\alpha), M_n, M$ | claimed ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] | found-but-not-claimed: 11(장11:49) ; first-use 장2:31 sec 2.1 vs defsec 1.2
+L115 $M^{\#}(\alpha)$ | claimed ['2'] | TOKENS NOT FOUND
+L116 $M^{T}_t$ | claimed ['2'] | TOKENS NOT FOUND
+L117 $P_t(k)$ | claimed ['2', '5', '6', '9'] | claimed-but-not-found: 5,6
+L120 $P^{\theta}_t(k)$ | claimed ['9'] | TOKENS NOT FOUND
+L121 $Q_\ell(x)$ | claimed ['2', '7'] | claimed-but-not-found: 7
+L123 $S_1>S_2>\cdots$ | claimed ['2', '3', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 6,7,9,10
+L124 $T_\ell(x)$ | claimed ['2', '8', '9'] | claimed-but-not-found: 9
+L125 $T(x)$ | claimed ['2', '4', '5', '7', '11'] | claimed-but-not-found: 11
+L127 $V(x)$ | claimed ['4', '5', '7'] | claimed-but-not-found: 7
+L129 $X_n, X$ | claimed ['3', '8'] | found-but-not-claimed: 5(장5A:212),6(장6:385),7(장7A:284),10(장10:277),11(장11:46)
+L130 $Z_k(\sigma), Z_k(F)$ | claimed ['2', '5', '6', '7', '8', '9'] | claimed-but-not-found: 6,8,9
+L131 $\alpha$ | claimed ['1', '2', '7'] | first-use 장2:15 sec 2.1 vs defsec 1.1
+L132 $\beta_i$ | claimed ['2', '5', '6'] | TOKENS NOT FOUND
+L133 $\chi_m(j)$ | claimed ['7', '10'] | claimed-but-not-found: 10
+L134 $\delta_t$ | claimed ['2', '6', '7', '9'] | claimed-but-not-found: 7
+L136 $\Gamma^{\pm}$ | claimed ['4', '5'] | TOKENS NOT FOUND
+L139 $\kappa_N$ | claimed ['6', '7', '8'] | claimed-but-not-found: 8
+L140 $\lambda$ | claimed ['1', '3', '5', '8'] | first-use 장3:231 sec 3.4 vs defsec 1.5
+L142 $\mu_n(k)$ | claimed ['7', '10'] | claimed-but-not-found: 10
+L143 $\nu_0(k), \nu_1(k)$ | claimed ['9', '11'] | claimed-but-not-found: 11
+L144 $\nu_{\min}(k), \bar\nu$ | claimed ['10'] | first-use 장10:572 sec 10.6 vs defsec 10.3
+L145 $\Omega(\xi), \Omega_q$ | claimed ['8', '9', '11'] | claimed-but-not-found: 9,11
+L147 $\Phi, \Phi^{\mathrm{aux}}$ | claimed ['4', '5', '7'] | found-but-not-claimed: 2(장2:455),3(장3:63),6(장6:961),8(장8:505),9(장9:222) ; first-use 장2:455 sec 2.7 vs defsec 4.3
+L148 $\pi^0_n(y)$ | claimed ['2', '5', '6', '8', '9', '10'] | claimed-but-not-found: 6,8,9,10
+L149 $\pi_n(m)$ | claimed ['2', '3', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 3,5,6,7,9,10
+L150 $\Pi$ | claimed ['2', '5', '7', '10'] | found-but-not-claimed: 6(장6:746)
+L154 $\pi_n(t_1,t_2)$ | claimed ['9'] | first-use 장9:797 sec 9.5 vs defsec 9.2
+L156 $\Psi(q)$ | claimed ['2', '6', '8', '9', '10', '11'] | claimed-but-not-found: 6,10
+L157 $\psi(y)$ | claimed ['6', '10'] | claimed-but-not-found: 6 ; first-use 장10:337 sec 10.5 vs defsec 6.5
+L158 $\Psi^{\mathrm{low}}_{(\varrho)}$ | claimed ['8'] | TOKENS NOT FOUND
+L159 $\Psi^{\mathrm{lb}}(d)$ | claimed ['9'] | TOKENS NOT FOUND
+L161 $\sigma, \sigma_i$ | claimed ['2', '4', '5', '7', '8', '11'] | found-but-not-claimed: 3(장3:35),6(장6:66),10(장10:448)
+L162 $\tau$ | claimed ['2', '5', '7'] | found-but-not-claimed: 3(장3:87),4(장4:420),6(장6:848),8(장8:480)
+L163 $\theta_t(k)$ | claimed ['2', '6', '8', '9'] | claimed-but-not-found: 8
+L164 $\Theta_n$ | claimed ['1', '2', '6', '7', '8', '9', '10', '11'] | claimed-but-not-found: 11
+L171 $\varsigma_m(\ell)$ | claimed ['6', '10'] | first-use 장6:910 sec 6.5 vs defsec 6.3
+L172 $\vartheta, \vartheta_0$ | claimed ['10'] | found-but-not-claimed: 3(장3:23),4(장4:286),5(장5A:175),6(장6:565),7(장7A:809),8(장8:306),11(장11:47) ; first-use 장3:23 sec 3.1 vs defsec 10.3
+L175 $\xi$ | claimed ['8', '9', '10', '11'] | found-but-not-claimed: 2(장2:863),3(장3:103),5(장5A:636),6(장6:541),7(장7A:33) ; first-use 장2:863 sec 2.12 vs defsec 8.1
+L176 $\zeta$ | claimed ['1', '8'] | found-but-not-claimed: 5(장5A:696) ; first-use 장5A:696 sec 5.4.2 vs defsec 1.5
+L178 $\mathcal B_\ell(x)$ | claimed ['2', '8', '9'] | TOKENS NOT FOUND
+L179 $\mathcal C_n$ | claimed ['9'] | found-but-not-claimed: 6(장6:956) ; first-use 장6:956 sec 6.6 vs defsec 9.2
+L184 $\mathcal I_k$ | claimed ['4', '5', '7'] | first-use 장4:13 sec 4 vs defsec 4.3
+L185 $\mathcal J_1(k),\dots,\mathcal J_4(k)$ | claimed ['9'] | found-but-not-claimed: 1(장1:9),2(장2:15),3(장3:11),4(장4:45),5(장5A:21),6(장6:33),7(장7A:77),8(장8:270),10(장10:105),11(장11:32) ; first-use 장2:15 sec 2.1 vs defsec 9.3
+L186 $\mathcal K_{n,k}(y)$ | claimed ['2', '4', '5', '7'] | claimed-but-not-found: 2 ; first-use 장4:99 sec 4.3 vs defsec 2.7
+L188 $\mathcal N_\ell(t)$ | claimed ['2', '8', '9'] | claimed-but-not-found: 8
+L191 $\mathcal P^{(k)}_m(j)$ | claimed ['7', '10'] | claimed-but-not-found: 10
+L193 $\mathcal R_2$ | claimed ['1', '7', '9', '10', '11'] | first-use 장7A:7 sec 7 vs defsec 7.7
+L195 $\mathcal T_k(\sigma), \mathcal T_{n,k}$ | claimed ['7', '11'] | claimed-but-not-found: 11
+L196 $\mathcal U_k(m)$ | claimed ['6'] | first-use 장6:13 sec 6 vs defsec 6.5
+L197 $\mathcal V_k(m)$ | claimed ['6', '7', '9', '10'] | claimed-but-not-found: 9 ; first-use 장6:13 sec 6 vs defsec 6.5
+L199 $\mathcal Y_k(n), \mathcal Y^{\mathrm{LP}}_k(n), \mathcal Y^ | claimed ['9', '11'] | claimed-but-not-found: 11
+L200 $\mathcal Z$ | claimed ['7', '10'] | found-but-not-claimed: 5(장5A:365),6(장6:800),11(장11:34) ; first-use 장5A:365 sec 5.2.3 vs defsec 7.5
+L201 $\mathfrak a_n$ | claimed ['5', '6', '7'] | claimed-but-not-found: 6
+L202 $\mathfrak a^\circ_n$ | claimed ['7'] | TOKENS NOT FOUND
+L203 $\mathfrak a^\rho_m$ | claimed ['7', '11'] | claimed-but-not-found: 11
+L210 $\mathfrak d_k, \bar{\mathfrak d}_k$ | claimed ['9'] | found-but-not-claimed: 7(장7A:328) ; first-use 장7A:328 sec 7.2 vs defsec 9.3
+L218 $\mathfrak m(n)$ | claimed ['5', '6', '9', '10'] | claimed-but-not-found: 10 ; first-use 장5A:11 sec 5 vs defsec 5.2
+L219 $\mathfrak p_m$ | claimed ['6', '7', '9', '10'] | claimed-but-not-found: 9
+L223 $\mathfrak r_N$ | claimed ['6', '7', '9', '10'] | claimed-but-not-found: 7,10
+L224 $\mathfrak R_q$ | claimed ['8', '11'] | claimed-but-not-found: 11
+L225 $\mathfrak R^{\mathrm{low}}_k$ | claimed ['8'] | TOKENS NOT FOUND
+L226 $\mathfrak S_n$ | claimed ['2', '4', '7'] | claimed-but-not-found: 4
+L227 $\mathfrak s_d(y)$ | claimed ['6', '7', '10'] | first-use 장6:7 sec 6 vs defsec 6.3
+L229 $\mathfrak s^{\mathrm{up}}_d(y)$ | claimed ['10'] | first-use 장10:659 sec 10.6 vs defsec 10.5
+L230 $\mathfrak s^{\mathrm{low}}_d(y)$ | claimed ['10'] | TOKENS NOT FOUND
+L232 $\mathfrak u_n$ | claimed ['7', '10'] | claimed-but-not-found: 7 ; first-use 장10:41 sec 10.1 vs defsec 7.7
+L235 $\mathfrak w_n(t)$ | claimed ['6', '7', '9'] | claimed-but-not-found: 7 ; first-use 장6:9 sec 6 vs defsec 6.2
+L237 $\mathfrak z_m(d)$ | claimed ['5', '6'] | claimed-but-not-found: 6
+L238 $\mathsf a_j$ | claimed ['4', '7'] | claimed-but-not-found: 7
+L240 $\mathsf B^+$ | claimed ['1', '7', '9', '11'] | first-use 장7B:756 sec 7.8 vs defsec 9.2
+L243 $\mathsf{FLQ}$ | claimed ['1', '7', '10', '11'] | first-use 장7B:756 sec 7.8 vs defsec 10.3
+L249 $\mathsf L_\ast(k)$ | claimed ['9', '11'] | claimed-but-not-found: 11
+L251 $\mathsf{LRP}_2$ | claimed ['1', '7', '9', '10', '11'] | first-use 장7A:9 sec 7 vs defsec 7.7
+L254 $\mathsf P, \mathsf P(n)$ | claimed ['1', '2', '4', '5', '7', '9', '10', '11'] | found-but-not-claimed: 3(장3:5) ; first-use 장2:3 sec 2 vs defsec 1.3
+L255 $\mathsf P_L, \mathsf P_X, \mathsf P_C, \mathsf P_R$ | claimed ['1', '3', '4', '5', '7', '9', '10'] | first-use 장3:5 sec 3 vs defsec 4.1
+L256 $\mathsf Q, \mathsf Q_L, \mathsf Q_R, \mathsf Q(n,\ell)$ | claimed ['1', '4', '5'] | found-but-not-claimed: 7(장7B:413),9(장9:9),10(장10:13),11(장11:70)
+L258 $\mathsf r_\ast$ | claimed ['10'] | first-use 장10:695 sec 10.6 vs defsec 10.4
+L261 $\mathsf t_k$ | claimed ['7'] | first-use 장7A:218 sec 7.2 vs defsec 7.1
+L262 $\mathsf u(k)$ | claimed ['6', '9', '10'] | claimed-but-not-found: 9
+L263 $\mathsf V$ | claimed ['1', '6', '7', '9', '10', '11'] | first-use 장6:7 sec 6 vs defsec 6.5
+L264 $\mathsf v(k), \mathsf v^\prime_k$ | claimed ['6', '7', '9', '10', '11'] | claimed-but-not-found: 11
+L265 $\mathsf W, \mathsf W^\sharp$ | claimed ['1', '5', '6', '9', '10'] | found-but-not-claimed: 7(장7A:348),11(장11:70) ; first-use 장5A:11 sec 5 vs defsec 5.3
+L273 $\mathrm{Bor}(m)$ | claimed ['2', '4', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 4,10
+L274 $\mathrm{Bor}^{*j}(m)$ | claimed ['2', '5', '6', '8', '10'] | claimed-but-not-found: 5,6,8,10
+L275 $\mathrm{Bor}^{\mathrm{tail}}_k(\mathfrak Z)$ | claimed ['4', '5', '7'] | claimed-but-not-found: 5,7
+L276 $\mathrm{Bor}_{>}(q)$ | claimed ['6', '8'] | TOKENS NOT FOUND
+L277 $\mathrm{Bor}_{\le}(q)$ | claimed ['6', '8', '9', '11'] | claimed-but-not-found: 6,9,11 ; first-use 장8:90 sec 8.1 vs defsec 6.6
+L279 $\mathrm{cl}^+_m, \mathrm{cl}^-_m$ | claimed ['7', '9', '10'] | claimed-but-not-found: 9
+L281 $\mathrm{DD}(m,y)$ | claimed ['6', '10'] | TOKENS NOT FOUND
+L283 $\mathrm{DDL}_2(k), \mathrm{DDL}^\natural(k)$ | claimed ['10', '11'] | claimed-but-not-found: 11
+L286 $\mathrm{fb}(\lambda), \mathrm{fb}^\circ(\lambda)$ | claimed ['8'] | TOKENS NOT FOUND
+L291 $\mathrm{Gr}(x)$ | claimed ['2', '4', '5', '7'] | claimed-but-not-found: 2,5,7 ; first-use 장4:83 sec 4.3 vs defsec 2.7
+L293 $\mathrm{hz}_k(N)$ | claimed ['6', '7', '8', '9'] | claimed-but-not-found: 8
+L295 $\mathrm{inc}^{\pm}_q$ | claimed ['10'] | TOKENS NOT FOUND
+L297 $\mathrm{KD}_n$ | claimed ['1', '2', '7', '8', '9', '10'] | claimed-but-not-found: 7,10
+L301 $\mathrm{Lc}(Y,q)$ | claimed ['5'] | TOKENS NOT FOUND
+L311 $\mathrm{PF}_n$ | claimed ['1', '2', '3', '7'] | first-use 장2:41 sec 2.1 vs defsec 1.1
+L312 $\mathrm{PM}_y(d)$ | claimed ['10', '11'] | first-use 장10:498 sec 10.5 vs defsec 10.4
+L313 $\mathrm{pos}_i$ | claimed ['1', '2', '7'] | claimed-but-not-found: 7 ; first-use 장2:82 sec 2.3 vs defsec 1.2
+L316 $\mathrm{Quad}_n, \mathrm{Stem}_n$ | claimed ['7', '10'] | claimed-but-not-found: 7 ; first-use 장10:43 sec 10.1 vs defsec 7.7
+L317 $\mathrm{rb}_m$ | claimed ['2', '3', '5', '6', '9'] | claimed-but-not-found: 6
+L320 $\mathrm{Ren}(j)$ | claimed ['2', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 5
+L322 $\mathrm{src}_k(m)$ | claimed ['7', '10'] | claimed-but-not-found: 10
+L327 $\mathrm{tilt}_q(q^\prime)$ | claimed ['2', '6', '10'] | TOKENS NOT FOUND
+L328 $\mathrm{top}, \mathrm{top}_\pi$ | claimed ['5'] | found-but-not-claimed: 9(장9:283),11(장11:36)
+L331 $\Pr_n, \mathbb E_n$ | claimed ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] | claimed-but-not-found: 1,5,7,8,9,10
+L333 $\Pr^{T}_t, \mathbb E^{T}_t$ | claimed ['2', '5'] | TOKENS NOT FOUND
+L334 $\Pr^y(q\to q^\prime)$ | claimed ['2', '10'] | TOKENS NOT FOUND
+L336 $\Pr^{\sigma}_{n,k}, \mathbb E^{\sigma}_{n,k}$ | claimed ['7', '8', '11'] | claimed-but-not-found: 8,11

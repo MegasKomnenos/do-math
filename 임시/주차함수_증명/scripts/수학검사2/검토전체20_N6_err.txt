@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체20_N6_numerics.py", line 36, in <module>
+    fall = a0(kap)*L**(-(kap+1))
+           ^^^^^^^
+  File "C:\math\임시\주차함수_증명\scripts\수학검사2\검토전체20_N6_numerics.py", line 19, in a0
+    return Fr((m+1)**(m-1), factorial(m))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\fractions.py", line 277, in __new__
+    raise TypeError("both arguments should be "
+TypeError: both arguments should be Rational instances
