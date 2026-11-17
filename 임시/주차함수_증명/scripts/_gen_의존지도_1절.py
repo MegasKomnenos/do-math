@@ -355,7 +355,7 @@ sec21.append("### 2.1 라벨 닫힘")
 sec21.append("")
 sec21.append("1절의 「입력: 이 글의 다른 진술」 열에 적힌 라벨 %d개(중복 제외)는 모두 장 파일의 진술 %d개 안에 있다(생성기가 집합 포함을 확인; 빠진 라벨 0, 정의되지 않은 라벨의 인용 0). "
              "머리가 선언한 의존(「…에 의존」)만으로 만든 그래프는 비순환이다(순환 %d개). 본문 인용까지 더한 그래프에는 서로 인용하는 묶음(크기 2 이상의 강결합 성분)이 %d개 있다 — 비교·구별 문장이나 뒤 진술을 미리 가리키는 문장이 만드는 것이며 증명의 순환이 아니다. "
-             "11-12 판의 2.1절(등록부 322개 기준, 상신 11의 `{{9:old-7-23}}`)은 집필로 해소되었다." % (len(all_inputs), len(cur), len(head_cycles), len(all_sccs)))
+             "11-12 판의 2.1절(등록부 322개 기준, 상신 11의 `(9:old-7-23)`)은 집필로 해소되었다." % (len(all_inputs), len(cur), len(head_cycles), len(all_sccs)))
 if head_cycles:
     sec21.append("")
     sec21.append("머리 선언 그래프의 순환: " + "; ".join(" → ".join(lab_tag(x) for x in c) for c in head_cycles))

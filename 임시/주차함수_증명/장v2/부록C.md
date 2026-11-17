@@ -1,6 +1,6 @@
 ## 부록 C. 용어 대응표
 
-이 글의 용어가 연구 기록의 용어와 다른 자리, 영어를 함께 적은 낱말, 기록이 결과에 붙인 이름과 이 글의 번호, 그리고 기록의 글자와 이 글의 글자의 대응을 적는다. 본문은 이 글의 용어와 번호만 쓴다.
+이 글의 용어가 연구 기록의 용어와 다른 자리, 기록이 결과에 붙인 이름과 이 글의 번호, 기록의 글자와 이 글의 글자의 대응, 그리고 영어를 함께 적은 낱말을 적는다. 본문은 이 글의 용어와 번호만 쓴다.
 
 ### 낱말: 이 글의 용어와 기록의 용어
 
@@ -31,7 +31,7 @@
 | 중앙 띠 | 띠(중앙 행 바로 아래 $1\le\nu\le102$의 뜻), 중앙 띠 | 1.5 |
 | 둘째 층 띠 | 띠(둘째 층의 $103\le\nu\le0.48k$의 뜻), BVΘ의 띠 | 1.5 |
 | 꼬리 띠 | 띠 A·A⁺ | 5.4 |
-| 조립 범위 | 띠 | 5.5 |
+| 가운데 쪽 범위 | 중앙 쪽 띠, 띠 | 5.5 |
 | 오른쪽 범위 | 오른쪽 부분 | 5.5 |
 | 비 비교 | 띠 비교, 띠 $[N,2N]$ | 부록 D |
 | 직접 비교 | 직접 차분 | 부록 D |
@@ -91,7 +91,7 @@
 | 기저량 | 기저량 $D2S_n(y)$ | 5.5 |
 | 쪼개짐 확률 | 멈춤 확률(무거운 사슬이 더 내려가지 않고 멈출 확률의 뜻) | 2.5 |
 | 분할 무게, 문턱 단위 | 같음; 「장부」(뿌리 종류별 등식)는 「몫의 집계」 | 7.7 |
-| 기록의 첫째 작성자, 기록의 둘째 작성자, 기록의 검토 | —(새 낱말; 기록 폴더의 producer·peer·review) | 10.1 |
+| 기록의 첫째 작성자, 기록의 둘째 작성자, 기록의 검토 | 생산자, peer, review(기록 폴더의 이름은 producer·peer·review) | 10.1 |
 | 구획 | 칸 | 6.4 |
 | 자유 비 | 성장률(9.1 자리; 기록 [r3d0856b]) | 2.6 |
 | 뿌리 무게 비 | —(기록 [r79ee9e0]은 글자 $r^{\mathrm H}(a)$·$r(a)$로만 적고 낱말이 없음) | 7.6 |
@@ -130,6 +130,8 @@
 | 기록 [rce3dc75]의 보조정리 V와 기록 [r475ada3]의 보조정리 V′ | 보조정리 {{4:vertical-nu}} | 수직선 윤곽의 $\nu$-일반 상하계 |
 | 기록 [rce3dc75]의 정리 8.1의 해석적 부분, 기록 [r475ada3]의 정리 C·C′·C″, 기록 [r6b37c7e]의 정리 4.A의 감사 부분 | 명제 {{4:analytic-transfer}} | 중앙 틈 연쇄의 $\nu$-이전 |
 | 기록 [rce3dc75]의 명제 8.4 | 정리 {{4:old-4-8}} | 왼쪽 내부에서 횡단으로 |
+| 기록 [r15df76b]의 따름정리 C, 기록 [r19de912]의 명제 3.1 | 정리 {{5:old-5-1}} | 모든 $n\le20000$의 단봉성 |
+| 기록 [r59c82d7]의 정리 C50, 따름정리 C50′, 정리 C20 | 정리 {{5:old-5-2}} | $n\le50000$의 오른쪽 절반 인증 |
 | 기록 [r19de912]의 mode-formula-crosscheck | 명제 {{5:witness-position-bound}} | 작은 행의 증인 꼬리 좌표 상계 |
 | 기록 [rda45d0e]의 exact-green-connection, 정리 G | 보조정리 {{5:green-connection}} | 경계 응답 다항식의 Green 연결 |
 | 기록 [r708d99c]의 명제 C1, positive-source-representation, source-comparison-implies-S | 정리 {{5:source-rep}} | 양의 원천 표현과 원천별 비교 |
@@ -138,11 +140,15 @@
 | 기록 [rbeae3a3]의 renewal-fkg, 보조정리 6.1 | 보조정리 {{5:renewal-fkg}} | 타일 측도의 양의 연관 |
 | 기록 [r5ddf8a8]의 endpoint-comparison, colored-count-mean, doubly-marked-curvature, boundary-gain-lemma, 정리 2와 기록 [r0dc57fa]의 (10.1) | 정리 {{5:suff-cond}} | 원천별 비교 항의 충분조건 |
 | 기록 [r708d99c]의 명제 D2와 기록 [r0dc57fa]의 정리 T1 | 정리 {{5:old-5-5}} | 명시적 꼬리 정리 |
+| 기록 [r2ec875c]의 보조정리 M0 | 보조정리 {{5:tail-cells}} | 꼬리 칸 수의 성질과 덮는 범위 |
 | 기록 [r7798355]의 matched-third-kernels | 보조정리 {{5:kernel-C-bound}} | 갱신 방문 핵의 상하계 |
 | 기록 [r690be93]의 kernel-bounds | 보조정리 {{5:kernel-bounds}} | 갱신 방문 핵의 좁은 계수 하계 |
 | 기록 [r1aa0be6]의 renewal-bounds, 기록 [r690be93]의 (7.1)(7.2), 기록 [r13b0b8f]의 (4.1)(4.2) | 보조정리 {{5:marked-recursion}} | 차수 둘까지의 표시 사슬 합 |
 | 기록 [r690be93] §6의 계수 감싸기 | 보조정리 {{5:laurent-coeff}} | Laurent 단항식의 계수 |
 | 기록 [r13b0b8f] §6 | 보조정리 {{5:kernel-crude}} | 갱신 방문 핵의 거친 한 항 상계 |
+| 기록 [r0dc57fa]의 명제 R | 명제 {{5:old-5-9}} | $\mathsf Q_R\Rightarrow\mathsf P_R$ |
+| 기록 [r0dc57fa]의 명제 W1 | 명제 {{5:old-5-10}} | $\mathsf W\Rightarrow\mathsf Q_R$ |
+| 기록 [r690be93]의 정리 RW, 따름정리 LW | 정리 {{5:old-5-11}} | $\mathsf P_R\Rightarrow\mathsf W$, 그리고 세 동치 |
 | 기록 [r13b0b8f]의 (3.1)–(3.5) | 보조정리 {{5:weight-envelope}} | 사슬 가중치의 계수별 포락선 |
 | 기록 [r13b0b8f]의 식 (5.1) | 보조정리 {{5:kernel-sandwich}} | 갱신 방문 핵의 대수적 포락선과 Wallis 상하계 |
 | 기록 [r13b0b8f] §6 | 보조정리 {{5:omitted-tail}} | 생략한 사슬 길이의 꼬리 |
@@ -153,7 +159,11 @@
 | 기록 [ra4c01fc]의 (6.1) | 보조정리 {{5:hat-normalization}} | 두 정규화 범함수 |
 | 기록 [ra4c01fc]의 정리 D | 정리 {{5:old-5-13}} | 임계 창의 증가 |
 | 기록 [ra4c01fc]의 보조정리 R♯ | 보조정리 {{5:old-5-15}} | $\mathsf W^\sharp\Leftrightarrow\mathsf W$ |
-| 기록 [r58b4caa]의 이름 (★′) | 명제 {{5:old-5-22}} | Abel 환원 |
+| 기록 [r8a9b11e] §5.3의 정리 W♯·W | 정리 {{5:old-5-18}} | $\mathsf W^\sharp$와 $\mathsf W$ |
+| 기록 [r58b4caa]의 보조정리 2.1과 식 (2.1) | 보조정리 {{5:old-5-19}} | 열 재귀 |
+| 기록 [r58b4caa]의 보조정리 3.1 | 보조정리 {{5:old-5-20}} | 핵의 단조성 |
+| 기록 [r58b4caa]의 명제 4.1의 (★′) | 명제 {{5:old-5-22}} | Abel 환원 |
+| 기록 [r58b4caa]의 보조정리 4.3 | 보조정리 {{5:old-5-25}} | 창 항의 항별 상계 |
 | 기록 [r8a9b11e]의 보조정리 WIN | 보조정리 {{5:old-5-26}} | 창 항의 닫힌 꼴 상계 |
 | 기록 [r8a9b11e]의 보조정리 A | 보조정리 {{5:old-5-30}} | 흡수 |
 | 기록 [r8a9b11e]의 정리 T | 정리 {{5:old-5-33}} | 꼭대기 행 하계 |
@@ -225,6 +235,9 @@
 | 기록 [r475ada3]의 보조정리 3.2 | 보조정리 {{7:heavy-block}} | 무거운 조각의 모멘트와 조각 차이 |
 | 기록 [r475ada3]의 보조정리 P | 보조정리 {{7:pair-criterion}} | 쌍별 판정 |
 | 기록 [r475ada3]의 명제 F1·F2, 기록 [r6b37c7e]의 정리 4.B의 인증 부분 | 명제 {{7:integer-strips}} | 유한 위치의 구간 인증 |
+| 기록 [r475ada3]의 정리 S·따름정리 S2, 기록 [r6b37c7e]의 정리 4.B | 정리 {{7:old-6-13}} | 중앙 띠 |
+| 기록 [r6b37c7e]의 정리 3.5, 기록 [r3172894]의 정리 1 | 정리 {{7:old-6-14}} | 한 걸음 항등식 |
+| 기록 [r3172894]의 명제 A | 명제 {{7:old-6-15}} | 흡수 귀납 |
 | 기록 [r3172894]의 rel-qstar-wlflat | 따름정리 {{7:qstar-implies-wlflat}} | 한 걸음 판정에서 왼쪽 잔여 증가로 |
 | 기록 [r79ee9e0]의 보조정리 r | 보조정리 {{7:root-symmetry}} | 뿌리 무게 비의 대칭 |
 | 기록 [r79ee9e0] §4.3의 보조정리 Πβ′ | 보조정리 {{7:explicit-bounds}} | 마지막 차 자리 법칙의 명시 상계 |
@@ -234,7 +247,7 @@
 | 기록 [r317d678]의 명제 P | 명제 {{7:old-6-20}} | 셋째 층부터의 전파 |
 | 기록 [r317d678]의 식 (9.1) | 보조정리 {{7:threshold-unit-ratio}} | 문턱 단위와 분할 무게의 비 |
 | 기록 [r317d678]의 정리 R과 정리 T | 정리 {{7:old-6-21}} | 둘째 층의 한 걸음 항등식 |
-| 기록 [r030ffae]의 사실 (E1) | 보조정리 {{8:old-6-23}} | 둘째 층의 한 나무 하계 |
+| 기록 [r6f5f48f]의 보조정리 2, 기록 [r030ffae]의 사실 (E1) | 보조정리 {{8:old-6-23}} | 둘째 층의 한 나무 하계 |
 | 기록 [r030ffae]의 보조정리 D1 | 보조정리 {{8:old-6-24}} | 재귀 계수의 Borel 하계 |
 | 기록 [r030ffae]의 보조정리 E | 보조정리 {{8:old-6-25}} | 부족량 부등식 |
 | 기록 [r030ffae]의 보조정리 F | 보조정리 {{8:old-6-26}} | 비교 원리 |
@@ -354,7 +367,7 @@
 | $e^{g(m)-1}$, $1-g(m)$, $e^{g(m+1)}$(글자 없음) | [r98fb348]; [r030ffae]; [r13b0b8f]; [r3d0856b] | $r_n=\mathrm{Bor}(n+1)/\mathrm{Bor}(n)$, $\ell(n)=1-g(n)$; $\beta(m)$; $\kappa_n=e^{1-g(n)}$; $h(x)=(1+\frac1{x+1})^x=e^{g(x+1)}$(성장률) | 이웃비·자유 비는 $g$로 풀어 적음 |
 | $\pi_n(m)$ | [r98fb348]; [r5bbc534]; [r6b37c7e]; [r8a9b11e], [r23f10e9], [r58b4caa]; [r207f124]; [r13b0b8f]; [r8456f59], [r39ea75d] | $\beta_c(d,a)=\mathrm{Bor}(d-a)\mathrm{Bor}(c+a)/\mathrm{Bor}(c+d)$, $K_c(d,a)=\beta_{c+1}(d,a)$, $v^0_c(d)$; $\gamma_L(j)$, $\gamma_N(t)$; $w_{m,s}$; $\pi_F(t)$, $\pi_n(t)$; $G_N(s)$; $\pi_n(s)$; $\pi_N(m)$ | 좌표 $(c+d-1,c+a)$, $(c+d,c+1+a)$, $v^0_c(d)=\pi_{c+d}(c+1)/(c+1)$; 없음($\gamma_L(j)$의 출처는 [r5bbc534]); $w_{m,s}=\pi_m(m-s)$; $F\to n$, $t\to m$; 없음 |
 | $\pi^0_n(y)$ | [r29c10cd]; [r696d62c]; [rb1d8cd5]; [r8a9b11e], [r23f10e9]; [r030ffae]; [r8456f59]; [rae1f209]; [r39ea75d] | $\mathcal N(j,y)$; $\mathcal N(L,c)$; $\mathrm{stop}_N(h)$; $\mathcal N(F,Y)$; $\pi^0_{N^\prime}(k-1)$은 L226의 문장(글자 없음), 보고서 L260(보조정리 H-G)의 $q_N=1-\sum_j\mathrm{Bor}(j)\rho_j$(인수 $k+1$; 보고서 L25·exposition L42의 $q_N$은 $s_N(k+1)$); $q_N=c_N$(인수 $k$); $P_0(N)$(인수 $k$); $f_N(y)=p_N\pi^0_N(y)$ | 글자; $\mathrm{stop}_N(h)=\pi^0_{N-h-1}(x-1)$; 인수 고정값 명시; 개수판은 $p_N$배 |
-| $\pi^0_N(s)-\pi^0_{N+1}(s)$(글자 없음) | [r5bbc534] | $D_N(s)$ (L60) | 글자 없이 풀어 적음 |
+| $\pi^0_N(s)-\pi^0_{N+1}(s)$(글자 없음) | [r5bbc534]; [r030ffae] | $D_N(s)$ (L60); $D_N(j)$ (L317) | 글자 없이 풀어 적음(8.3절); [r030ffae] L233의 $D_N$은 다른 양 |
 | $\mathrm{Bor}(N+1-r)/\mathrm{Bor}(N+1)$($\mathrm{tilt}$ 꼴; 글자 없음) | [r030ffae]; [r5bbc534] | $\rho_h$, $\rho_j$; $\omega_N(r)$ | 글자 없이 풀어 적음(용량+초과 $=N+1$로 읽으면 $\mathrm{tilt}$) |
 | $\mathrm{tilt}_q(q^\prime)$ | [re71a735]; [r845b205] | $\tau_d(b)$; $r_j(t)=\prod_{i=a_j}^{d-1}\rho(t+i)$ | 첨자·인수 글자 $d,b\to q,q^\prime$; 실수 연장(정수 $y$에서 $\mathrm{Bor}(y+a_j)/\mathrm{Bor}(y+d)$) |
 | $g(x)$ | [rb6a2cd0], [rcb2e2d4]; [r207f124], [r23f10e9], [r58b4caa]; [r5bbc534] | $g(j)$, $g(n)$; $f(x)$; $\mathfrak f(q)$ | 없음; 글자 |
@@ -412,7 +425,7 @@
 | $Q_{k-1}(x)$, $Q_\ell(x)$ | [rb7effe0]; [r7c079be], [r89eb039], [rf451d83]; [rbeae3a3]; [rf09e7ef] | $\Pi_k(x)=\sum_{m<k}(k-m)m^{m-2}x^m/m!$; $Q_k(x)$; $Q_k(x)$; $H_\ell=Q^\prime_\ell$ | 첨자 용량→수준 한 칸; 도함수 |
 | $\mathfrak a^\rho_m$ | [rb7effe0], [r89eb039]; [rf451d83]; [r207f124] | $f(l)=a_l\rho_k^l$; $u_l$; $u^{(y)}_l$(용량 $y$) | 글자; 지표 $l\to m$; 용량 첨자 추가 |
 | $\mathrm{pr}_{n,k}$, $\mathrm{pr}^\circ_n$ | [r7c079be], [rb7effe0]; [rf451d83]; [r89eb039]; [rb7effe0], [r89eb039] | $d_{n,k}=C_{n,k}e^{-n}/n!$($D_n(u)=d_{n,k}e^{un/k}$ §6.4 L452); $d_n=c_{n,k-1}e^{-n}/n!$; $d_{N,k}$; $d_n$, $d_m=(m-1)^{m-1}e^{-m}/m!$(무제한판) | 글자 |
-| $\mathcal W$ | [r6b37c7e] | $\mathcal W^{(>102)}$ | 꼬리표 $(>102)$를 뗌 |
+| $\mathcal W$ | [r6b37c7e]; [r89eb039] | $\mathcal W^{(>102)}$; $\mathcal W$(넓은 판 — $n\ge\max(2k+41,20001)$) | 꼬리표 $(>102)$를 뗌; 범위가 다른 같은 이름 — 이 글은 그 넓은 판을 쓰지 않는다 |
 | $J^{\mathrm G}_n(z)$ | [r475ada3] | $J^G_n(c)=n![z^n]P\hat g_c$ | 변수 글자 $c\to z$ |
 | $\mathrm{src}_k(m)$, $\chi_m(j)$, $\mathrm{inh}_k(n)$, $\mathrm{inh}^{\mathrm{lin}}_k(n)$ | [r79ee9e0]; [r207f124] | $\mathrm{src}_k(t)$, $\varphi_t(j)$, $\mathrm{FL}_k(t)$, $\mathrm{FLlin}_k(t)$; $\hat\sigma_n$ | 없음·글자; [r10ff8c2]의 $\mathrm{src}_m$과 [r23f10e9]·[r58b4caa]의 $\mathrm{src}_m$은 다른 양 |
 | $\mathrm{cl}^+_m$, $\mathrm{cl}^-_m$ | [r207f124]; [r79ee9e0], [r3d0856b] | $\beta^+_m=b_{m,k}/A_{m,k-1}$, $\beta^-_m=b_{m,k-1}/A_{m,k-1}$($\beta_m=\beta^++\beta^-$, $R_m=1-\beta^-_m$); $g^+(m)$, $g^-(m)$ | 글자(새 전역 글자; $\beta_m$·$R_m$은 풀어 적음) |
@@ -447,7 +460,8 @@
 | $b^T_{t,k}/p_{t-1}$, $b^T_{t,k-1}/p_{t-1}$(글자 없음) | [rae1f209] | $\tilde u_s=u_s/p_{s-1}=q_{s-1}+kr_{s-1}$, $\tilde v_s=v_s/p_{s-1}$ | 글자 없이 풀어 적음($u_s=b^T_{s,k}$, $v_s=b^T_{s,k-1}$); $s\to t$ |
 | $\mathfrak m(n)$ | [r2ec875c], [r23f10e9] | $\mathfrak m(n)=\max(\{170\}\cup\{m\ge171:m^{3/2}+9m\le n\})$ | 없음; [r33475a7]에는 없음 |
 | $c_m(\ell)$, $\mathrm{Bor}(n)$, $\mathrm{Ren}(r)$, $\Psi(d)$, $Z_y(F)$, $t_v$ | [r2ec875c] | $c_m(\ell)=b_{m,\ell}/p_m$, $\beta_n=u(n)/n$, $u(r)$, $\Psi(d)$, $Z=\lvert\{w:s_w\ge v+1\}\rvert$, $s_w$ | 없음; 꼭짓점 지표 $w\to v$($s_w=t_v$), 문턱 $v$는 용량 변수 $y$의 자리(보조정리 {{2:level-mass-jensen}}(가)); 숲 크기 $L\to m$ |
-| 교차항(정리 {{2:tree-expansion}}(가)의 두 합; 글자 없음) | [r2e22726]; [r05cf8c9], [rb6a2cd0] | 항등식 (3.1)의 두 나머지(글자 없음); $\mathcal X_n$ | 글자 없이 풀어 적음; $\mathcal X_n$은 $2k+1\le n\le3k-1$에서 이 두 합의 값(범위 명시) |
+| 교차항(정리 {{2:tree-expansion}}(가)의 두 합; 글자 없음) | [r2e22726]; [r05cf8c9], [rb6a2cd0] | 항등식 (3.1)의 두 나머지(글자 없음); $\mathcal X_n$ | 글자 없이 풀어 적음; $\mathcal X_n$은 모든 $n$에서 이 두 합의 $x^n/n!$ 계수다([rb6a2cd0]는 같은 글자를 둘째 층 $2k+1\le n\le3k+1$의 분해에 쓴다) |
+| $\delta_t$, $C_{n,k}$, $A_\ell(x)$, $\rho_k$, $A_{t,k-1}$, $d_{n,k}$, $b_{n,\ell}$ | [r2e22726] §1–3 | $\delta_s$, $c_{j,k-1}$, $F_{k-1}(z)$, $\rho_k$, $A_{t,k-1}$, $d_{n,k}$, $b_{n,\ell}$ | $s\to t$; 소문자→대문자·첨자 수준→용량($c_{j,\ell}=C_{j,\ell+1}$); 글자($F_\ell\to A_\ell$, 변수 $z\to x$); 없음; 없음; 없음; 없음; 기록의 $\lambda_k(m)=\sum_{s=k}^{\min(m,2k+1)}\binom ms\delta_sA_{m-s,k-1}$에는 이 글의 글자가 없다 |
 | $A_{n,c-1}$, $T_{c-1}(x)$, $\mathcal N_{c-1}(t)$, $A_{c-1}(x)$, $\mathcal B_k(x)$, $\mathcal B_{k-1}(x)$, $\delta_t$ | [r05cf8c9] | $\mathcal A_n(c)$, $T_c(z)$, $t_s(c)$, $F_c=\exp T_c$, $a$, $b$, $\delta_s$ | 첨자 용량→수준; $s\to t$ |
 | $\theta_t(k)$ | [rb6a2cd0]; [r8a9b11e], [r58b4caa], [r23f10e9]; [r8456f59], [r030ffae], [r9bf2dc6], [rae1f209] | $\theta_N(k)$; $\mathcal V^{tr}_t(y)$, $\mathcal V_m(s)$; $\zeta_N(m)=(N+1-m)\pi_N(m)$ | $N\to t$; $\mathcal V^{tr}_t(y)=\theta_t(y)$이고 숲 판 $\mathcal V_m(s)=\theta_{m+1}(s)$; $\zeta_N(m)=\theta_{N+1}(m)$(크기 $N$ 숲에서 부분나무 크기가 $m$인 꼭짓점의 기대 수) |
 | $\mathfrak r_N$, $\mathrm{hz}_k(N)$, $s_N(k)$, $\mathsf u(k)$, $g(x)$ | [rb6a2cd0] | $r_N$, $h_k(N)$, $\mathfrak s_N$, $\tilde g(k)$, $g(j)$ | 없음 |
@@ -459,14 +473,14 @@
 | $c_N(k-1)$ | [r77e234e] | $f_N=\Pr_N(M=k-1)$ | 없음 |
 | $\mathsf z_{1/2}, \mathsf z_{-1/2}, \mathsf z_{3/2}$ | [r8a9b11e], [r030ffae], [rfc69320] | $\zeta(\frac12)$, $\zeta(-\frac12)$, $\zeta(\frac32)$ | 없음 |
 | $s_n(\ell+1)$, $\pi_n(m)$, $\mathrm{Bor}(m)$, $p_N\pi^0_N(y)$ | [r39ea75d] | $\alpha_{n,\ell}=A_{n,\ell}/p_n$, $\pi_N(m)$, $\tau_m$, $f_N(y)$ | 인수 수준→용량 $+1$; 없음; 개수판은 $p_N$배 |
-| $A_{n,\ell}$, $p_n$, $A^c_{n,\ell}$, $A^c_{n,n-r-1}$, $A_\ell(x)$, $Q_\ell(x)$, $Q^\prime_\ell(x)$, $A^\sigma_\ell$, $h_i$, $\mathsf Q$, $\mathsf P$ | [r15524fd] §1–2·§5–6 | $A_{n,\ell}$, $p_n$, $D_{n,\ell}=p_n-A_{n,\ell}$, $D_{n,n-r}$, $F_\ell(x)$, $Q_\ell(x)$, $Q_\ell^\prime$($H_\ell=1/F_\ell$), $C_{\sigma,\ell}=\prod_i\min(\ell+1,t_i)$, $t_i$(선호 용량 — [r631b0f4]의 $t_i=i-h_i$와 다른 뜻), $Q$, $P$ | 없음; 없음; 글자(첨자 같음); 글자, 기록 $r$은 이 글의 $r+1$; 글자($F\to A$); 없음; 없음(기록의 역수 생성함수 $H_\ell=1/F_\ell$은 이 글이 쓰지 않는다); 글자; 글자; 산세리프 이름 |
+| $A_{n,\ell}$, $p_n$, $A^c_{n,\ell}$, $A^c_{n,n-r-1}$, $A_\ell(x)$, $Q_\ell(x)$, $Q^\prime_\ell(x)$, $A^\sigma_\ell$, $h_i$, $\mathsf Q(n,\ell)$, $\mathsf P$ | [r15524fd] §1–2·§5–6 | $A_{n,\ell}$, $p_n$, $D_{n,\ell}=p_n-A_{n,\ell}$, $D_{n,n-r}$, $F_\ell(x)$, $Q_\ell(x)$, $Q_\ell^\prime$($H_\ell=1/F_\ell$), $C_{\sigma,\ell}=\prod_i\min(\ell+1,t_i)$, $t_i$(선호 용량 — [r631b0f4]의 $t_i=i-h_i$와 다른 뜻), $Q$, $P$ | 없음; 없음; 글자(첨자 같음); 글자, 기록 $r$은 이 글의 $r+1$; 글자($F\to A$); 없음; 없음(기록의 역수 생성함수 $H_\ell=1/F_\ell$은 이 글이 쓰지 않는다); 글자; 글자; 산세리프 이름 — 기록의 $Q$는 모든 위치에 걸친 명제이고 이 글은 위치별 명제 $\mathsf Q(n,\ell)$만 둔다 |
 | $E_{n,k}$, $B_{n,\ell}$, $M^{\#}$, $d_{n,k}$, $h_i$, $i-h_i$ | [r631b0f4] §1–2 | $E_{n,k}$, $B_{n,m}$(첨자 수준), $K_M$, $b_{n,k}-b_{n,k-1}$(글자 없음), $h_i$, $t_i$ | 없음; 없음(첨자 $m\to\ell$); 글자; 이 글의 글자로 적음; 없음; $i-h_i$로 풀어 적음 |
-| $\Theta_n$, $\mathrm{BV}_n$, $b^{(2)}_m$, $\delta_t$, $\mathcal U_k(m)$, $\mathfrak b_m$, $s_N(k)$, $\pi_n(m)$, $d_{m,k}$ | [r6f5f48f] §2–3 | $\Theta_n$, $BV_n$(이탤릭), $b^+_m+b^-_m$, $\delta_s$, $U_k(L)$, $V_m$, $s_N$, $\varpi_m(s)$, $d_m$ | $\Theta_n$은 없음, $\mathrm{BV}_n$은 로마체 이름(글자체); 글자(두 수준 개수); $s\to t$; $L\to m$; 글자체; 용량 인수 명시; $\varpi$를 쓰지 않음($m$은 숲 크기); 둘째 첨자 $k$ 명시 |
+| $\Theta_n$, $\mathrm{BV}_n$, $b^{(2)}_m$, $\delta_t$, $\mathcal U_k(m)$, $\mathfrak b_m$, $s_N(k)$, $\pi_n(m)$, $d_{m,k}$, $\mathrm{Bor}(m)$ | [r6f5f48f] §2–3 | $\Theta_n$, $BV_n$(이탤릭), $b^+_m+b^-_m$, $\delta_s$, $U_k(L)$, $V_m$, $s_N$, $\varpi_m(s)$, $d_m$, $\mathrm{Bor}(m)$ | $\Theta_n$은 없음, $\mathrm{BV}_n$은 로마체 이름(글자체); 글자(두 수준 개수); $s\to t$; $L\to m$; 글자체; 용량 인수 명시; $\varpi$를 쓰지 않음($m$은 숲 크기); 둘째 첨자 $k$ 명시; 없음 |
 | $\mathrm{Ren}(j)$, $\mathrm{Bor}(j)$, $\mathrm{Bor}^{*j}(m)$ | [r6a8c8b6] §6 | $c_h=h\beta_h=\sum_{j\ge1}\beta^{*j}(h)$, $\beta_h$, $\beta^{*j}(h)$ | 글자(첨자→인수); 글자만 다름; 글자만 다름 |
 | $\mathcal U_k(m)$, $\mathcal V_k(m)$, $\mathfrak p_m$, $\delta_{m+1}$, $\mathfrak w_n(t)$, $\mathsf V$, $s_m(y)$, $c_m(Y)$, $\mu_m(k)$, $\mathcal P^{(k)}_m(j)$, $\mathrm{cl}^\pm_m$, $\mathfrak r_N$, $\mathsf x_k$, $g(x)$ | [raad7e6d] §1·§5 | $U_k(L)$, $\tilde U(L)$, $v_m=\delta_{m+1}/p_m$, $\delta_{m+1}$, $\varpi_t(s)$, (V), $F_m(\ell)$, $\pi_m(\ell)$, $r_m$, $P_t(j)$, $g^\pm(m)$, $r_N$, $x_k$, $g(n)$ | $L\to m$; $L\to m$; 글자체; 없음; 첨자 $t\to n$·인수 $s\to t$; 산세리프 이름; 수준→용량 $+1$; 글자; 글자; 글자체($t\to m$); 글자; 글자체; 글자체; 없음 |
 | $\Pr^{\sigma}_{n,k}$, $\mathbb E^{\sigma}_{n,k}$, $Z_k$, $H_k$, $\mathcal T_k(\sigma)$, $\mathcal T_{n,k}$, $\mu_n(k)$, $\mathfrak v_k(Z,H)$, $A^\sigma_{k-1}$, $h_i$, $i-h_i$ | [r1892593] §2 | $\nu_{n,y}$($y=k$), $E_y$, $Z_a$, $H_a$(문턱 $a$), $T_k$, $\mathcal S_{n,k}(k)=\mathcal A_n(k)E_kT_k$, $(b_{n,k}-b_{n,k-1})/A_{n,k-1}$(글자 없음), $(1+\frac1k)^Z+(1-\frac1k)^{Z+H}-2$(글자 없음), $\prod_p\min(h_p,k)$(글자 없음), $h_p$, $t_p$ | 글자(법칙 가족; 용량 $y=k$); 글자; 문턱 $a\to k$; 글자체; 글자체·인수 $y=k$ 명시(기록 $\mathcal S_{n,k}(y)$는 이 글 4.2절의 $\mathcal S_{n,k}$와 다른 양; 기록의 $\mathcal A_n(k)$는 이 글의 $A_{n,k-1}$); 이 글의 글자로 적음; 이 글의 글자로 적음; 이 글의 글자로 적음; 지표 $p\to i$; $i-h_i$로 풀어 적음 |
-| $\mu_m(k)$, $\mathrm{cl}^\pm_m$, $\mathcal P^{(k)}_m(j)$, $\mathcal P_m(j)$, $s_m(k)$, $c_m(m-d)$, $\mathrm{Bor}(g)$, $\mathrm{src}_k(m)$, $\mathrm{inh}_k(m)$, $(\star)(m)$, $\mathcal W$, $\mathsf Q^\star$, $\mathsf W_L$, $\nu$, $t_v$, $A_{m,k-1}$ | [r3172894] §0–1·§3 | $r_m$, $g^\pm(m)$, $P_m(j)$, $\Pi_m(j)$, $s_m$, $\rho_m(d)$, $\beta_g$, $\mathrm{src}_k(t)$·$\mathrm{src}_k(s_v)$, $FL(t)$, $(\bigstar)(t)$, $\mathcal W^{(>102)}$, $Q^\star$, $W_L^\flat$, $\nu$($t=2k+\nu$), $s_v$, $A_m$ | 글자; 글자; 글자체; 글자체; 용량 인수 명시; 결손 좌표 약기(글자 없이 풀어 적음); 글자만 다름; 행 $t\to m$; 글자; 같음($t\to m$); 꼬리표 $(>102)$를 뗌; 산세리프 이름; 산세리프 이름(꼬리표 $\flat$를 뗌); 없음(행 $t\to n$); $s\to t$; 약기 없이 두 첨자로 |
-| $J^{\mathrm G}_n(z)$, $\mathfrak a^\circ_n$, $J_n(z)$, $B_{n,\ell}$, $e_n$, $\mathrm{Gr}(x)$, $\mathrm{Bor}(m)$, $Z_k$, $H_k$ | [r8d6850a] §1·§4.2·§7–8 | $J^G_n=n![z^n]Pa_{k-1}I_{k-1,k-1}=p_{k-1}G_{(k-1,k-1,n)}$, $a_n=p_n/n!$, $J_n(k-1)$, $B_{(n,k-1)}$, $\mathscr K^{\prime\prime}_{(n,k)}(k)$, $U$, $\tau_m$, $Z$, $H$ | 무게 변수 $c=k-1$을 인수로 명시(기록의 급수 변수 $z$는 이 글의 $x$, 무게 $c$는 $z$); 글자체; 없음(값); 없음(첨자 수준); 글자; 글자; 글자만 다름; 첨자 $k$ 생략 |
+| $\mu_m(k)$, $\mathrm{cl}^\pm_m$, $\mathcal P^{(k)}_m(j)$, $\mathcal P_m(j)$, $s_m(k)$, $c_m(m-d)$, $\mathrm{Bor}(g)$, $\mathrm{src}_k(m)$, $\mathrm{inh}_k(m)$, $(\star)(m)$, $\mathcal W$, $\mathsf Q^\star$, $\mathsf W_L$, $\nu$, $t_v$, $A_{m,k-1}$, $\Pr^{\sigma}_{n,k}$ | [r3172894] §0–1·§3 | $r_m$, $g^\pm(m)$, $P_m(j)$, $\Pi_m(j)$, $s_m$, $\rho_m(d)$, $\beta_g$, $\mathrm{src}_k(t)$·$\mathrm{src}_k(s_v)$, $FL(t)$, $(\bigstar)(t)$, $\mathcal W^{(>102)}$, $Q^\star$, $W_L^\flat$, $\nu$($t=2k+\nu$), $s_v$, $A_m$, $\nu_{n,k}$ | 글자; 글자; 글자체; 글자체; 용량 인수 명시; 결손 좌표 약기(글자 없이 풀어 적음); 글자만 다름; 행 $t\to m$; 글자; 같음($t\to m$); 꼬리표 $(>102)$를 뗌; 산세리프 이름; 산세리프 이름(꼬리표 $\flat$를 뗌); 없음(행 $t\to n$); $s\to t$; 약기 없이 두 첨자로; 글자(법칙) |
+| $J^{\mathrm G}_n(z)$, $\mathfrak a^\circ_n$, $J_n(z)$, $B_{n,\ell}$, $e_n$, $\mathrm{Gr}(x)$, $\mathrm{Bor}(m)$, $Z_k$, $H_k$, $h_i$, $e^{T(x)}$ | [r8d6850a] §1·§4.2·§7–8 | $J^G_n=n![z^n]Pa_{k-1}I_{k-1,k-1}=p_{k-1}G_{(k-1,k-1,n)}$, $a_n=p_n/n!$, $J_n(k-1)$, $B_{(n,k-1)}$, $\mathscr K^{\prime\prime}_{(n,k)}(k)$, $U$, $\tau_m$, $Z$, $H$, $h_i$, $P=\sum a_nz^n=e^T$ | 무게 변수 $c=k-1$을 인수로 명시(기록의 급수 변수 $z$는 이 글의 $x$, 무게 $c$는 $z$); 글자체; 없음(값); 없음(첨자 수준); 글자; 글자; 글자만 다름; 첨자 $k$ 생략; 없음; 생성함수에 글자를 쓰지 않음 |
 | $\mathcal K_{n,k}(y)$, $A_{n,k-1}$, $d_{n,k}$, $E_{n,k}$, $J_n(k-1)$, $\Xi_{2k,k}$, $Z_k(\sigma)$, $\mathrm{Gr}(x)$, $T(x)$, $e^{T(x)}$, $\mathrm{Bor}(s)$, $R_j$, $\mathsf a_1$, $h_i$ | [ra7615a0] §2·§4 | $E_{k,n}(c)=\sum_{M\le k-1}(c/k)^{J^{cap}_k}$, $E(k)$, $\delta_{n,k}$, $V_{n,k}/2$($V_{n,k}=E(k+1)-2E(k)+E(k-1)$), $B^G_{n,k}=p_{k-1}G_{k-1,k-1,n}$, $C_{n,k}$, $J^{cap}_k$, $U=T-T^2/2$, $T$, $P$, $\tau_s$, $S_j$(독립 Borel 증가량의 부분합), $I=\Gamma(2/3)/3^{1/3}$, $h_i$ | 첨자 순서 $k,n\to n,k$·인수 $c\to y$; 인수 고정값; 글자; 정규화 $2$(짝수 동률 수의 두 배); 글자($B^G_{n,k}$는 중앙 행 $n\in\{2k-1,2k\}$에서 $J_n(k-1)=J^{\mathrm G}_n(k-1)$); 글자; 글자; 글자; 없음; 생성함수에 글자를 쓰지 않음; 글자만 다름; 글자; 글자체(명명 상수); 없음 |
 | $\mathsf P_L$, $\mathsf Q_R$, $\mathsf P_R$, $\mathsf{LH}^+(n)$, $Z_k(\sigma)$, $\mathcal K_{n,k}(y)$, $\Pr^{\sigma}_{n,k}$, $h_i$, $t_v$ | [rdc27681] §1 | $P_L$, $Q_R$, $P_R$, $LH^+(n)$, $Z$($=J^{cap}_k$), $f_n=f_{n;k}(y)$, $\nu_{n;k,y}$($y=k$), $h_i$, $s_v$ | 산세리프 이름; 첨자 $k$ 명시; 글자; 글자(법칙 가족); 없음; $s\to t$ |
 | $A_{n,\ell}$, $b_{n,\ell}$, $\mathfrak a_n$, $k_n$, $\mathsf P$, $\mathsf P_L$, $\mathsf{LH}^+(n)$ | [r15df76b] §1 | $A_{n,\ell}$, $b_{n,\ell}$, $a^{(k)}_n=A_{n,k-1}/n!$, $m=\lceil n/2\rceil$, $P$, L(노드 이름), $LH^+(n)$ | 없음; 없음; 글자체(용량 윗첨자 생략); 글자; 산세리프 이름 |
