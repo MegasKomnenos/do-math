@@ -198,21 +198,21 @@ def main():
     # 5·6. 금지어, 구별 문장, 기록 표기, 앞당김, 정정 이력, 언급 금지
     for i, ln in enumerate(lines, 1):
         ch = chapter_of(i)
-        in_body = 1 <= ch <= 10
-        in_guarantee = ch == 11
+        in_body = 1 <= ch <= 9  # 9장 제거 뒤 본문은 1–9장
+        in_guarantee = ch == 10  # 보증 장은 10장
         in_app = ch >= 101
         for pat in FORBIDDEN_ALL:
             for m in re.finditer(pat, ln):
                 ctx = ln[max(0, m.start() - 15): m.end() + 15]
                 if in_guarantee or in_app:
-                    notes.append(f"{i}(11장/부록): 금지어 '{m.group(0)}' … {ctx}")
+                    notes.append(f"{i}(10장/부록): 금지어 '{m.group(0)}' … {ctx}")
                 else:
                     failures.append(f"{i}: 금지어 '{m.group(0)}' … {ctx}")
         if in_body:
             for pat in FORBIDDEN_BODY:
                 for m in re.finditer(pat, ln):
                     ctx = ln[max(0, m.start() - 15): m.end() + 15]
-                    failures.append(f"{i}: 11장 밖 운영 어휘 '{m.group(0)}' … {ctx}")
+                    failures.append(f"{i}: 10장 밖 운영 어휘 '{m.group(0)}' … {ctx}")
             for pat in DISTINCTION:
                 for m in re.finditer(pat, ln):
                     failures.append(f"{i}: 구별 문장 … {ln[max(0, m.start() - 25): m.end() + 10]}")

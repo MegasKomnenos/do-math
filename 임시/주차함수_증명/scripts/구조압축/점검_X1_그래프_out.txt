@@ -1,0 +1,663 @@
+점검 X1 라벨 그래프 — 읽은 시각 2026-11-17 13:06:50
+  장1.md               69126B  mtime 12:55:52  lines 249
+  장2.md              202820B  mtime 13:03:09  lines 1154
+  장3.md               44396B  mtime 11:59:42  lines 193
+  장4.md              116038B  mtime 13:05:48  lines 525
+  장5A.md             162082B  mtime 12:57:05  lines 669
+  장5B.md              56600B  mtime 12:57:05  lines 312
+  장6.md              168046B  mtime 12:58:02  lines 1045
+  장7A.md              88073B  mtime 12:57:49  lines 422
+  장7B.md              68206B  mtime 12:57:49  lines 405
+  장8.md              117074B  mtime 12:58:53  lines 563
+  장10.md             111787B  mtime 12:55:36  lines 578
+  장11.md              20614B  mtime 13:02:29  lines 68
+  부록D_장10.md          11667B  mtime 10:35:46  lines 19
+  부록D_장2.md            4134B  mtime 10:26:45  lines 28
+  부록D_장3.md            4476B  mtime 10:26:45  lines 23
+  부록D_장4.md           16392B  mtime 10:37:45  lines 48
+  부록D_장5A.md          47667B  mtime 10:35:43  lines 88
+  부록D_장7A.md           9191B  mtime 10:22:52  lines 29
+  부록D_장7B.md          55694B  mtime 13:02:28  lines 63
+  부록D_장8.md           35472B  mtime 13:02:28  lines 73
+
+진술 머리 271개, 부록 D 항목 16개
+  종류별: {'정의': 22, '명제': 43, '정리': 62, '따름정리': 18, '보조정리': 126}
+  장별: {'1': 5, '2': 59, '3': 5, '4': 16, '5': 50, '6': 52, '7': 40, '8': 22, '10': 22}
+  미룬 증명 블록 6: [('2:old-2-31', '장2.md', 654, 668), ('4:old-4-5', '장4.md', 507, 515), ('5:old-5-18', '장5B.md', 297, 297), ('6:old-7-20', '장6.md', 175, 175), ('6:old-8-13', '장6.md', 370, 392), ('6:diag-first-layer', '장6.md', 553, 553)]
+  절 전체가 증명인 절의 블록 밖 인용(정리에 귀속) 36: [('5:old-5-18', '2:borel-arithmetic'), ('5:old-5-18', '2:chain-law'), ('5:old-5-18', '2:curvature-level-mass'), ('5:old-5-18', '2:old-2-13'), ('5:old-5-18', '2:old-2-24'), ('5:old-5-18', '2:old-2-25'), ('5:old-5-18', '2:old-2-34'), ('5:old-5-18', '2:old-2-38'), ('5:old-5-18', '5:joining-width'), ('5:old-5-18', '5:old-5-14'), ('5:old-5-18', '5:old-5-19'), ('5:old-5-18', '5:old-5-21'), ('5:old-5-18', '5:old-5-22'), ('5:old-5-18', '5:old-5-25'), ('5:old-5-18', '5:old-5-26'), ('5:old-5-18', '5:old-5-34'), ('5:old-5-18', '5:old-5-8'), ('5:old-5-18', '5:tail-cells'), ('5:old-5-18', '6:cor-L'), ('5:old-5-18', '6:diag-first-layer'), ('5:old-5-18', '6:old-8-25')]
+
+머리 없는 라벨 인용 0개:
+
+주 정리 1:main-theorem에서 거꾸로(블록 안 인용으로) 도달되는 진술 243/271, 부록 D 항목 14/16
+  장별 도달/전체: {'1': '1/5', '2': '53/59', '3': '0/5', '4': '15/16', '5': '50/50', '6': '44/52', '7': '38/40', '8': '22/22', '10': '20/22'}
+
+=== 도달되지 않는 진술(블록 안 인용 기준) — 자리·종류·서술 인용·블록 밖 인용 ===
+  1:old-1-1                    정의    장1.md:9     [1.1 선형 탐사와 주차함수]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  1:old-1-2                    명제    장1.md:17    [1.1 선형 탐사와 주차함수]  블록인용(소비처 진술) 0: []  서술인용 4: [('장1.md', 39), ('장2.md', 5), ('장11.md', 46), ('장11.md', 47)]
+  1:old-1-3                    정의    장1.md:35    [1.2 변위와 최대 변위]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  1:old-1-4                    정의    장1.md:75    [1.3 개수열과 단봉성]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  10:old-8-1                   정의    장10.md:23    [10.1 둘째 층의 $1/p$ 장부]  블록인용(소비처 진술) 1: ['10:old-8-9']  서술인용 1: [('장7B.md', 405)]
+  10:old-8-9                   정의    장10.md:181   [10.3 명제 FLQ와 함의]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  2:old-2-1                    정의    장2.md:15    [2.1 결과 순열과 용량]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  2:old-2-5                    명제    장2.md:82    [2.1 결과 순열과 용량]  블록인용(소비처 진술) 0: []  서술인용 2: [('장1.md', 107), ('장2.md', 92)]
+  2:old-2-9                    정의    장2.md:98    [2.2 라벨 숲]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  2:old-2-22                   정의    장2.md:361   [2.6 Borel 분포, 임계 볼츠만 법칙, 생존 ]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  2:old-2-40                   정리    장2.md:869   [2.10 지수 공식과 다섯 몫 분해]  블록인용(소비처 진술) 0: []  서술인용 7: [('장1.md', 125), ('장2.md', 7), ('장2.md', 9), ('장8.md', 3), ('장8.md', 7), ('장8.md', 19), ('장10.md', 11)]
+  2:old-2-43                   정의    장2.md:890   [2.11 자유 Borel 보행과 갱신 다리]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  3:old-3-1                    명제    장3.md:23    [3.1 해싱 극한]  블록인용(소비처 진술) 2: ['3:old-3-4', '3:peak-asymptotics']  서술인용 3: [('장1.md', 111), ('장3.md', 175), ('장11.md', 59)]
+  3:old-3-2                    명제    장3.md:41    [3.1 해싱 극한]  블록인용(소비처 진술) 1: ['3:old-3-3']  서술인용 2: [('장3.md', 55), ('장11.md', 60)]
+  3:old-3-3                    정리    장3.md:59    [3.2 극한 밀도의 엄격 단봉성]  블록인용(소비처 진술) 1: ['3:peak-asymptotics']  서술인용 4: [('장1.md', 111), ('장3.md', 171), ('장11.md', 60), ('장11.md', 61)]
+  3:old-3-4                    정리    장3.md:133   [3.3 로그오목성의 실패]  블록인용(소비처 진술) 0: []  서술인용 5: [('장1.md', 109), ('장4.md', 37), ('장11.md', 17), ('장11.md', 22), ('장11.md', 60)]
+  3:peak-asymptotics           따름정리  장3.md:177   [3.4 봉우리 위치의 점근식]  블록인용(소비처 진술) 0: []  서술인용 3: [('장1.md', 111), ('장1.md', 161), ('장3.md', 9)]
+  4:old-4-1                    정의    장4.md:19    [4.1 위치쌍 분할]  블록인용(소비처 진술) 0: []  서술인용 3: [('장5A.md', 5), ('장5A.md', 9), ('장5A.md', 436)]
+  6:chain-recursion            보조정리  장6.md:253   [6.3 머묾 법칙]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  6:log-derivative             명제    장6.md:440   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 1: ['6:insertion']  서술인용 0: []
+  6:split-mass                 보조정리  장6.md:459   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 1: ['6:concave-split']  서술인용 1: [('장11.md', 49)]
+  6:insertion                  명제    장6.md:465   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 0: []  서술인용 0: []
+  6:concave-split              보조정리  장6.md:483   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 1: ['6:highest-long-cell']  서술인용 1: [('장6.md', 521)]
+  6:highest-long-cell          보조정리  장6.md:487   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 0: []  서술인용 1: [('장6.md', 527)]
+  6:geometric-mean             보조정리  장6.md:491   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 0: []  서술인용 3: [('장6.md', 515), ('장6.md', 527), ('장11.md', 62)]
+  6:trapezoid                  보조정리  장6.md:503   [6.4 점질량과 대각선 하계]  블록인용(소비처 진술) 0: []  서술인용 1: [('장6.md', 515)]
+  7:old-6-1                    정의    장7A.md:15    [7.1 모멘트 판정]  블록인용(소비처 진술) 0: []  서술인용 1: [('장7A.md', 59)]
+  7:moment-recursion           보조정리  장7B.md:13    [7.4 중앙 띠와 모멘트 인증]  블록인용(소비처 진술) 0: []  서술인용 0: []
+
+=== 도달되지 않는 부록 D 항목 ===
+  D:zeta-constants             부록D_장2.md:1  인용 자리: [('장2.md', 788, None), ('장11.md', 21, None), ('장11.md', 63, None), ('부록D_장8.md', 5, 'D:window-mass-env'), ('부록D_장8.md', 45, 'D:band-boxes'), ('부록D_장8.md', 59, 'D:stored-table-check')]
+  D:logconcavity-failure-n80   부록D_장3.md:1  인용 자리: [('장3.md', 135, None), ('장11.md', 17, None), ('장11.md', 22, None)]
+
+=== 인용 0인 진술(블록 안·밖 모두; 자기 머리 제외) ===
+  1:old-1-1                    정의    장1.md:9 [1.1 선형 탐사와 주차함수]
+  1:old-1-3                    정의    장1.md:35 [1.2 변위와 최대 변위]
+  1:old-1-4                    정의    장1.md:75 [1.3 개수열과 단봉성]
+  10:old-8-9                   정의    장10.md:181 [10.3 명제 FLQ와 함의]
+  2:old-2-1                    정의    장2.md:15 [2.1 결과 순열과 용량]
+  2:old-2-9                    정의    장2.md:98 [2.2 라벨 숲]
+  2:old-2-22                   정의    장2.md:361 [2.6 Borel 분포, 임계 볼츠만 법칙, 생존 확률]
+  2:old-2-43                   정의    장2.md:890 [2.11 자유 Borel 보행과 갱신 다리]
+  6:chain-recursion            보조정리  장6.md:253 [6.3 머묾 법칙]
+  6:insertion                  명제    장6.md:465 [6.4 점질량과 대각선 하계]
+  7:moment-recursion           보조정리  장7B.md:13 [7.4 중앙 띠와 모멘트 인증]
+
+=== 서술 인용만 있는 진술(블록 안 소비처 0, 블록 밖 인용 ≥1) ===
+  1:old-1-2                    명제    장1.md:17  서술인용 4: [('장1.md', 39, '1:old-1-3'), ('장2.md', 5, None), ('장11.md', 46, None), ('장11.md', 47, None)]
+  2:old-2-5                    명제    장2.md:82  서술인용 2: [('장1.md', 107, '1:main-theorem'), ('장2.md', 92, '2:old-2-5')]
+  2:old-2-40                   정리    장2.md:869  서술인용 7: [('장1.md', 125, '1:main-theorem'), ('장2.md', 7, None), ('장2.md', 9, None), ('장8.md', 3, None), ('장8.md', 7, None), ('장8.md', 19, None), ('장10.md', 11, None)]
+  3:old-3-4                    정리    장3.md:133  서술인용 5: [('장1.md', 109, '1:main-theorem'), ('장4.md', 37, '4:old-4-2'), ('장11.md', 17, None), ('장11.md', 22, None), ('장11.md', 60, None)]
+  3:peak-asymptotics           따름정리  장3.md:177  서술인용 3: [('장1.md', 111, '1:main-theorem'), ('장1.md', 161, '1:main-theorem'), ('장3.md', 9, None)]
+  4:old-4-1                    정의    장4.md:19  서술인용 3: [('장5A.md', 5, None), ('장5A.md', 9, None), ('장5A.md', 436, '5:parity-tail')]
+  6:highest-long-cell          보조정리  장6.md:487  서술인용 1: [('장6.md', 527, '6:pointwise')]
+  6:geometric-mean             보조정리  장6.md:491  서술인용 3: [('장6.md', 515, '6:pointwise'), ('장6.md', 527, '6:pointwise'), ('장11.md', 62, None)]
+  6:trapezoid                  보조정리  장6.md:503  서술인용 1: [('장6.md', 515, '6:pointwise')]
+  7:old-6-1                    정의    장7A.md:15  서술인용 1: [('장7A.md', 59, '7:old-6-4')]
+
+=== 소비처가 같은 장 안에만 있는 진술 가운데, 그 소비처들이 모두 도달 밖인 것(죽은 가지 묶음) ===
+  10:old-8-1                   -> 소비처 ['10:old-8-9'] (모두 도달 밖)
+  3:old-3-1                    -> 소비처 ['3:old-3-4', '3:peak-asymptotics'] (모두 도달 밖)
+  3:old-3-2                    -> 소비처 ['3:old-3-3'] (모두 도달 밖)
+  3:old-3-3                    -> 소비처 ['3:peak-asymptotics'] (모두 도달 밖)
+  6:log-derivative             -> 소비처 ['6:insertion'] (모두 도달 밖)
+  6:split-mass                 -> 소비처 ['6:concave-split'] (모두 도달 밖)
+  6:concave-split              -> 소비처 ['6:highest-long-cell'] (모두 도달 밖)
+
+=== 모든 진술의 소비처(블록 안) 장별 분포와 서술 인용 수 ===
+  1:old-1-1                    정의    장1.md:9     소비처 {}  서술 0  [도달 밖]
+  1:old-1-2                    명제    장1.md:17    소비처 {}  서술 4  [도달 밖]
+  1:old-1-3                    정의    장1.md:35    소비처 {}  서술 0  [도달 밖]
+  1:old-1-4                    정의    장1.md:75    소비처 {}  서술 0  [도달 밖]
+  1:main-theorem               정리    장1.md:93    소비처 {'3': 1}  서술 4
+  10:old-8-1                   정의    장10.md:23    소비처 {'10': 1}  서술 1  [도달 밖]
+  10:old-8-2                   보조정리  장10.md:59    소비처 {'10': 1}  서술 0
+  10:old-8-3                   따름정리  장10.md:82    소비처 {'10': 2}  서술 0
+  10:old-8-6                   명제    장10.md:109   소비처 {'10': 1}  서술 1
+  10:old-8-8                   명제    장10.md:139   소비처 {'10': 2}  서술 2
+  10:old-8-9                   정의    장10.md:181   소비처 {}  서술 0  [도달 밖]
+  10:old-8-10                  정리    장10.md:200   소비처 {'10': 1}  서술 4
+  10:reduction-na              명제    장10.md:252   소비처 {'10': 2}  서술 3
+  10:reduction-ga              명제    장10.md:299   소비처 {'10': 4}  서술 1
+  10:old-8-28                  정리    장10.md:341   소비처 {'10': 1}  서술 0
+  10:families                  정의    장10.md:364   소비처 {'10': 1}  서술 0
+  10:old-8-30                  보조정리  장10.md:379   소비처 {'10': 2}  서술 1
+  10:old-8-31                  보조정리  장10.md:390   소비처 {'10': 2}  서술 1
+  10:old-8-32                  보조정리  장10.md:419   소비처 {'10': 1}  서술 1
+  10:old-8-33                  명제    장10.md:438   소비처 {'10': 4}  서술 2
+  10:old-8-34                  보조정리  장10.md:470   소비처 {'10': 1}  서술 0
+  10:old-8-35                  명제    장10.md:485   소비처 {'10': 2}  서술 0
+  10:bulk-majorants            보조정리  장10.md:498   소비처 {'10': 2}  서술 0
+  10:check-na                  명제    장10.md:514   소비처 {'10': 1}  서술 1
+  10:check-ga                  명제    장10.md:529   소비처 {'10': 1}  서술 1
+  10:old-8-36                  정리    장10.md:558   소비처 {'10': 1}  서술 3
+  10:old-8-37                  정리    장10.md:566   소비처 {'1': 1}  서술 6
+  2:old-2-1                    정의    장2.md:15    소비처 {}  서술 0  [도달 밖]
+  2:old-2-2                    정의    장2.md:21    소비처 {'2': 2}  서술 0
+  2:old-2-3                    정리    장2.md:29    소비처 {'2': 5, '7': 4}  서술 7
+  2:old-2-4                    따름정리  장2.md:43    소비처 {'2': 4, '5': 2, '7': 3}  서술 8
+  2:row-positive               보조정리  장2.md:54    소비처 {'3': 1, '4': 1}  서술 1
+  2:capacity-ratio             보조정리  장2.md:64    소비처 {'2': 3, '6': 1, '7': 1}  서술 2
+  2:old-2-5                    명제    장2.md:82    소비처 {}  서술 2  [도달 밖]
+  2:old-2-9                    정의    장2.md:98    소비처 {}  서술 0  [도달 밖]
+  2:root-removal               보조정리  장2.md:104   소비처 {'10': 1, '2': 3}  서술 3
+  2:weighted-partition         정리    장2.md:114   소비처 {'2': 6, '4': 1, '5': 3, '7': 2}  서술 8
+  2:old-2-6                    정리    장2.md:156   소비처 {'2': 3, '5': 1, '6': 1, '7': 3}  서술 8
+  2:old-2-7                    명제    장2.md:166   소비처 {'2': 2}  서술 4
+  2:old-2-8                    명제    장2.md:193   소비처 {'7': 2}  서술 2
+  2:old-2-10                   정리    장2.md:207   소비처 {'2': 3, '6': 2, '8': 1}  서술 6
+  2:old-2-11                   정리    장2.md:219   소비처 {'2': 4, '6': 2, '8': 1}  서술 6
+  2:old-2-21                   정의    장2.md:240   소비처 {'4': 1}  서술 1
+  2:chain-law                  정리    장2.md:258   소비처 {'10': 2, '2': 5, '5': 2, '6': 4, '7': 2, '8': 5}  서술 9
+  2:union-bound                보조정리  장2.md:294   소비처 {'6': 1, '7': 1}  서술 2
+  2:old-2-12                   정의    장2.md:304   소비처 {'2': 2}  서술 4
+  2:old-2-13                   정리    장2.md:308   소비처 {'2': 2, '5': 3, '6': 2, '8': 1}  서술 6
+  2:old-2-14                   보조정리  장2.md:337   소비처 {'2': 1, '7': 1}  서술 1
+  2:old-2-15                   보조정리  장2.md:353   소비처 {'2': 1}  서술 2
+  2:old-2-22                   정의    장2.md:361   소비처 {}  서술 0  [도달 밖]
+  2:old-2-24                   정의    장2.md:377   소비처 {'5': 1}  서술 0
+  2:old-2-25                   정의    장2.md:395   소비처 {'5': 1}  서술 0
+  2:one-tree-recursion         따름정리  장2.md:405   소비처 {'5': 1, '6': 1, '8': 1}  서술 3
+  2:old-2-26                   보조정리  장2.md:415   소비처 {'10': 2, '2': 3, '4': 1, '5': 4, '6': 10, '7': 2, '8': 3}  서술 5
+  2:level-mass-jensen          보조정리  장2.md:441   소비처 {'10': 4, '5': 1, '6': 1, '8': 1}  서술 3
+  2:capacity-shift-ratio       보조정리  장2.md:455   소비처 {'10': 1, '7': 1, '8': 2}  서술 3
+  2:old-2-27                   정의    장2.md:477   소비처 {'2': 1}  서술 0
+  2:old-2-28                   정리    장2.md:481   소비처 {'4': 1, '5': 1}  서술 5
+  2:old-2-29                   따름정리  장2.md:502   소비처 {'4': 1, '5': 1, '7': 1}  서술 5
+  2:two-variable-frozen        따름정리  장2.md:516   소비처 {'2': 1, '4': 1, '5': 2, '7': 1}  서술 8
+  2:volterra-residual          따름정리  장2.md:572   소비처 {'2': 1, '4': 2, '5': 1, '7': 2}  서술 4
+  2:J-egf                      보조정리  장2.md:602   소비처 {'4': 1, '5': 2, '7': 1}  서술 8
+  2:old-2-31                   정리    장2.md:616   소비처 {'10': 4, '2': 1, '6': 1, '7': 1, '8': 3}  서술 6
+  2:old-2-32                   보조정리  장2.md:626   소비처 {'2': 1, '7': 1}  서술 2
+  2:old-2-33                   보조정리  장2.md:646   소비처 {'2': 1}  서술 1
+  2:old-2-34                   보조정리  장2.md:674   소비처 {'5': 2, '6': 1, '8': 1}  서술 2
+  2:curvature-level-mass       보조정리  장2.md:712   소비처 {'5': 2, '6': 1}  서술 0
+  2:old-2-35                   보조정리  장2.md:726   소비처 {'2': 1}  서술 1
+  2:old-2-38                   정리    장2.md:744   소비처 {'5': 2}  서술 0
+  2:old-2-37                   보조정리  장2.md:750   소비처 {'2': 2, '8': 3}  서술 6
+  2:borel-arithmetic           보조정리  장2.md:764   소비처 {'10': 5, '2': 3, '4': 3, '5': 8, '6': 9, '7': 2, '8': 6}  서술 6
+  2:zeta-constants             보조정리  장2.md:786   소비처 {'2': 1, '6': 1, '8': 2}  서술 4
+  2:power-sum-renewal          보조정리  장2.md:790   소비처 {'8': 6}  서술 4
+  2:b-top                      보조정리  장2.md:835   소비처 {'2': 2, '8': 1}  서술 2
+  2:tree-expansion             정리    장2.md:847   소비처 {'2': 1, '8': 1}  서술 3
+  2:old-2-40                   정리    장2.md:869   소비처 {}  서술 7  [도달 밖]
+  2:old-2-43                   정의    장2.md:890   소비처 {}  서술 0  [도달 밖]
+  2:old-2-45                   보조정리  장2.md:896   소비처 {'10': 2, '2': 2, '5': 1, '6': 2}  서술 4
+  2:supersolution              보조정리  장2.md:916   소비처 {'10': 1, '6': 1}  서술 3
+  2:old-2-46                   보조정리  장2.md:936   소비처 {'10': 2}  서술 1
+  2:h-transform                보조정리  장2.md:950   소비처 {'6': 2}  서술 0
+  2:chain-expansion            정리    장2.md:988   소비처 {'2': 2}  서술 0
+  2:convex-bonferroni          보조정리  장2.md:1021  소비처 {'2': 1}  서술 0
+  2:moving-tail                정리    장2.md:1033  소비처 {'2': 1, '6': 1}  서술 1
+  2:chain-normalization        보조정리  장2.md:1103  소비처 {'5': 2}  서술 2
+  2:nf-log-coefficients        보조정리  장2.md:1136  소비처 {'5': 3}  서술 0
+  3:old-3-1                    명제    장3.md:23    소비처 {'3': 2}  서술 3  [도달 밖]
+  3:old-3-2                    명제    장3.md:41    소비처 {'3': 1}  서술 2  [도달 밖]
+  3:old-3-3                    정리    장3.md:59    소비처 {'3': 1}  서술 4  [도달 밖]
+  3:old-3-4                    정리    장3.md:133   소비처 {}  서술 5  [도달 밖]
+  3:peak-asymptotics           따름정리  장3.md:177   소비처 {}  서술 3  [도달 밖]
+  4:old-4-1                    정의    장4.md:19    소비처 {}  서술 3  [도달 밖]
+  4:old-4-2                    보조정리  장4.md:29    소비처 {'10': 1, '4': 1}  서술 6
+  4:old-4-3                    정의    장4.md:39    소비처 {'5': 1}  서술 4
+  4:decrease-propagation       보조정리  장4.md:43    소비처 {'5': 2}  서술 3
+  4:old-4-5                    정리    장4.md:71    소비처 {'10': 3, '4': 1, '5': 2, '6': 3, '7': 3}  서술 17
+  4:e-integral                 보조정리  장4.md:83    소비처 {'4': 3, '5': 1, '7': 1}  서술 7
+  4:old-4-6                    명제    장4.md:147   소비처 {'4': 1, '5': 1}  서술 5
+  4:gauss-contraction          보조정리  장4.md:183   소비처 {'4': 1}  서술 1
+  4:hermite-nu                 보조정리  장4.md:244   소비처 {'4': 2}  서술 3
+  4:old-4-7                    정리    장4.md:288   소비처 {'4': 3}  서술 0
+  4:gauss-coeff-numeric        따름정리  장4.md:342   소비처 {'4': 1}  서술 1
+  4:borel-tail-arc             보조정리  장4.md:348   소비처 {'4': 2}  서술 1
+  4:correction-contour         보조정리  장4.md:372   소비처 {'4': 3}  서술 1
+  4:vertical-nu                보조정리  장4.md:411   소비처 {'4': 2}  서술 1
+  4:analytic-transfer          명제    장4.md:437   소비처 {'4': 3, '7': 1}  서술 8
+  4:old-4-8                    정리    장4.md:521   소비처 {'10': 1, '5': 1}  서술 8
+  5:old-5-1                    정리    장5A.md:17    소비처 {'10': 3, '4': 1, '5': 4, '6': 5, '7': 2}  서술 17
+  5:old-5-2                    정리    장5A.md:29    소비처 {'5': 4}  서술 8
+  5:witness-position-bound     명제    장5A.md:42    소비처 {'10': 2, '6': 4}  서술 6
+  5:green-connection           보조정리  장5A.md:58    소비처 {'5': 1}  서술 0
+  5:source-rep                 정리    장5A.md:104   소비처 {'5': 2}  서술 1
+  5:SR-implies-QR              따름정리  장5A.md:143   소비처 {'5': 1}  서술 0
+  5:inverse-renewal            보조정리  장5A.md:155   소비처 {'5': 2}  서술 1
+  5:renewal-fkg                보조정리  장5A.md:165   소비처 {'5': 1}  서술 2
+  5:suff-cond                  정리    장5A.md:192   소비처 {'5': 1}  서술 1
+  5:tilted-birthday-mean       보조정리  장5A.md:247   소비처 {'5': 1}  서술 0
+  5:old-5-5                    정리    장5A.md:263   소비처 {'4': 1, '5': 3}  서술 8
+  5:tail-cells                 보조정리  장5A.md:285   소비처 {'10': 1, '5': 8, '6': 3}  서술 5
+  5:kernel-C-bound             보조정리  장5A.md:324   소비처 {'5': 2}  서술 0
+  5:kernel-bounds              보조정리  장5A.md:338   소비처 {'5': 2}  서술 0
+  5:chain-weight-all-orders    정리    장5A.md:348   소비처 {'5': 2}  서술 1
+  5:marked-recursion           보조정리  장5A.md:389   소비처 {'5': 3}  서술 0
+  5:laurent-coeff              보조정리  장5A.md:422   소비처 {'5': 1}  서술 0
+  5:kernel-crude               보조정리  장5A.md:426   소비처 {'5': 2}  서술 0
+  5:parity-tail                보조정리  장5A.md:430   소비처 {'5': 1}  서술 0
+  5:old-5-8                    정의    장5A.md:438   소비처 {'5': 2, '6': 2}  서술 2
+  5:old-5-9                    명제    장5A.md:442   소비처 {'5': 1}  서술 0
+  5:old-5-10                   명제    장5A.md:446   소비처 {'5': 1}  서술 0
+  5:old-5-11                   정리    장5A.md:450   소비처 {'10': 1, '5': 1}  서술 4
+  5:weight-envelope            보조정리  장5A.md:470   소비처 {'5': 2}  서술 0
+  5:kernel-sandwich            보조정리  장5A.md:479   소비처 {'5': 1}  서술 1
+  5:omitted-tail               보조정리  장5A.md:495   소비처 {'5': 1}  서술 0
+  5:old-5-12                   정리    장5A.md:511   소비처 {'5': 1}  서술 4
+  5:cover-edge                 보조정리  장5A.md:529   소비처 {'5': 2}  서술 3
+  5:unit-circle                보조정리  장5A.md:547   소비처 {'5': 1}  서술 0
+  5:cut-rep                    보조정리  장5A.md:559   소비처 {'5': 2}  서술 1
+  5:hat-normalization          보조정리  장5A.md:609   소비처 {'5': 1}  서술 0
+  5:old-5-13                   정리    장5A.md:647   소비처 {'5': 1, '6': 1}  서술 11
+  5:old-5-14                   정의    장5A.md:663   소비처 {'5': 1}  서술 0
+  5:old-5-15                   보조정리  장5A.md:665   소비처 {'5': 1}  서술 1
+  5:old-5-18                   정리    장5B.md:9     소비처 {'10': 3, '6': 3}  서술 8
+  5:old-5-19                   보조정리  장5B.md:29    소비처 {'5': 1}  서술 0
+  5:old-5-20                   보조정리  장5B.md:38    소비처 {'5': 5}  서술 0
+  5:old-5-21                   정의    장5B.md:56    소비처 {'5': 1}  서술 0
+  5:joining-width              보조정리  장5B.md:60    소비처 {'5': 4}  서술 0
+  5:old-5-22                   명제    장5B.md:68    소비처 {'5': 1}  서술 0
+  5:old-5-25                   보조정리  장5B.md:100   소비처 {'5': 1}  서술 0
+  5:old-5-26                   보조정리  장5B.md:109   소비처 {'5': 2}  서술 0
+  5:old-5-30                   보조정리  장5B.md:134   소비처 {'5': 4}  서술 0
+  5:landing-mass               보조정리  장5B.md:158   소비처 {'5': 2}  서술 2
+  5:old-5-33                   정리    장5B.md:192   소비처 {'5': 1}  서술 0
+  5:old-5-34                   따름정리  장5B.md:208   소비처 {'5': 3}  서술 0
+  5:hover-tail                 보조정리  장5B.md:231   소비처 {'5': 2}  서술 0
+  5:band-inequality            명제    장5B.md:239   소비처 {'5': 1}  서술 0
+  5:right-part                 보조정리  장5B.md:271   소비처 {'5': 1}  서술 0
+  5:old-5-38                   보조정리  장5B.md:293   소비처 {'5': 1}  서술 0
+  6:old-8-25                   정리    장6.md:23    소비처 {'10': 2, '5': 2, '6': 4, '8': 1}  서술 8
+  6:old-7-13                   따름정리  장6.md:69    소비처 {'10': 1, '6': 2}  서술 3
+  6:old-7-19                   보조정리  장6.md:85    소비처 {'10': 1, '6': 1}  서술 2
+  6:old-7-20                   보조정리  장6.md:107   소비처 {'6': 1}  서술 0
+  6:difference-identity        보조정리  장6.md:119   소비처 {'6': 1}  서술 0
+  6:cayley-propagation         보조정리  장6.md:129   소비처 {'6': 2}  서술 0
+  6:tilt-interval              보조정리  장6.md:155   소비처 {'6': 1}  서술 0
+  6:tilt-sum                   보조정리  장6.md:163   소비처 {'6': 3}  서술 0
+  6:old-7-21                   정리    장6.md:179   소비처 {'10': 2, '6': 1, '7': 1}  서술 4
+  6:old-7-24                   보조정리  장6.md:195   소비처 {'7': 1, '8': 1}  서술 5
+  6:lemma-ell                  보조정리  장6.md:229   소비처 {'6': 2}  서술 0
+  6:old-8-13                   정리    장6.md:245   소비처 {'10': 1}  서술 6
+  6:chain-recursion            보조정리  장6.md:253   소비처 {}  서술 0  [도달 밖]
+  6:same-kernel                명제    장6.md:272   소비처 {'6': 2}  서술 0
+  6:stay-margin-identity       명제    장6.md:304   소비처 {'6': 1}  서술 0
+  6:lemma-omega                보조정리  장6.md:326   소비처 {'6': 2}  서술 0
+  6:lemma-phi                  보조정리  장6.md:362   소비처 {'6': 1}  서술 0
+  6:diag-first-layer           정리    장6.md:402   소비처 {'5': 1, '6': 4}  서술 5
+  6:chain-count                명제    장6.md:420   소비처 {'6': 1}  서술 1
+  6:class-polynomial           명제    장6.md:429   소비처 {'6': 1}  서술 0
+  6:log-derivative             명제    장6.md:440   소비처 {'6': 1}  서술 0  [도달 밖]
+  6:split-mass                 보조정리  장6.md:459   소비처 {'6': 1}  서술 1  [도달 밖]
+  6:insertion                  명제    장6.md:465   소비처 {}  서술 0  [도달 밖]
+  6:concave-split              보조정리  장6.md:483   소비처 {'6': 1}  서술 1  [도달 밖]
+  6:highest-long-cell          보조정리  장6.md:487   소비처 {}  서술 1  [도달 밖]
+  6:geometric-mean             보조정리  장6.md:491   소비처 {}  서술 3  [도달 밖]
+  6:trapezoid                  보조정리  장6.md:503   소비처 {}  서술 1  [도달 밖]
+  6:pointwise                  정리    장6.md:511   소비처 {'6': 1}  서술 0
+  6:survival-factor            보조정리  장6.md:541   소비처 {'6': 1}  서술 0
+  6:classes-increase           정리    장6.md:549   소비처 {'6': 1}  서술 0
+  6:first-layer-mass           따름정리  장6.md:557   소비처 {'6': 1}  서술 0
+  6:one-step-loss              따름정리  장6.md:573   소비처 {'6': 1}  서술 0
+  6:old-8-11                   따름정리  장6.md:589   소비처 {'10': 3, '6': 4}  서술 3
+  6:old-8-12                   정리    장6.md:629   소비처 {'10': 3}  서술 5
+  6:cor-L                      따름정리  장6.md:647   소비처 {'5': 1}  서술 4
+  6:old-6-18                   명제    장6.md:671   소비처 {'6': 1}  서술 1
+  6:old-8-19                   정리    장6.md:729   소비처 {'6': 1}  서술 0
+  6:old-8-20                   보조정리  장6.md:752   소비처 {'6': 1}  서술 0
+  6:old-8-21                   보조정리  장6.md:760   소비처 {'6': 1}  서술 0
+  6:old-8-22                   정리    장6.md:764   소비처 {'10': 3, '6': 1}  서술 3
+  6:old-8-23                   명제    장6.md:779   소비처 {'10': 6, '6': 1}  서술 4
+  6:old-6-19                   정리    장6.md:829   소비처 {'10': 1, '7': 1}  서술 3
+  6:cutpoint-lower             명제    장6.md:871   소비처 {'6': 2}  서술 2
+  6:prop-R                     명제    장6.md:917   소비처 {'6': 2}  서술 1
+  6:lemma-H                    보조정리  장6.md:937   소비처 {'6': 1}  서술 0
+  6:lemma-Hprime               보조정리  장6.md:959   소비처 {'6': 2}  서술 1
+  6:lemma-M                    보조정리  장6.md:985   소비처 {'6': 1}  서술 1
+  6:far-window                 명제    장6.md:1001  소비처 {'6': 1}  서술 1
+  6:first-layer-end            명제    장6.md:1011  소비처 {'6': 3}  서술 0
+  6:small-k-bulk               명제    장6.md:1017  소비처 {'6': 1}  서술 1
+  6:above-window               명제    장6.md:1035  소비처 {'6': 1}  서술 2
+  6:V-all                      정리    장6.md:1041  소비처 {'10': 2, '7': 2}  서술 7
+  7:old-6-1                    정의    장7A.md:15    소비처 {}  서술 1  [도달 밖]
+  7:old-6-2                    정리    장7A.md:25    소비처 {'7': 2}  서술 2
+  7:old-6-3                    보조정리  장7A.md:33    소비처 {'7': 1}  서술 0
+  7:old-6-4                    따름정리  장7A.md:43    소비처 {'7': 1}  서술 1
+  7:old-6-6                    정리    장7A.md:61    소비처 {'7': 2}  서술 6
+  7:old-6-7                    명제    장7A.md:115   소비처 {'5': 1, '7': 2}  서술 3
+  7:old-6-8                    정리    장7A.md:180   소비처 {'7': 1}  서술 4
+  7:band-propagation           보조정리  장7A.md:194   소비처 {'5': 1, '7': 1}  서술 2
+  7:column-lemma               보조정리  장7A.md:204   소비처 {'5': 1, '7': 1}  서술 6
+  7:old-6-9                    명제    장7A.md:226   소비처 {'10': 1}  서술 10
+  7:prime-decomposition        보조정리  장7A.md:240   소비처 {'7': 2}  서술 4
+  7:supermultiplicative        보조정리  장7A.md:268   소비처 {'7': 2}  서술 1
+  7:flat-threshold             따름정리  장7A.md:274   소비처 {'7': 1}  서술 3
+  7:pole-unique                보조정리  장7A.md:284   소비처 {'7': 1}  서술 1
+  7:fourier-lemmas             보조정리  장7A.md:306   소비처 {'7': 1}  서술 1
+  7:pole-frame                 보조정리  장7A.md:326   소비처 {'7': 2}  서술 2
+  7:old-6-11                   정리    장7A.md:342   소비처 {'7': 1}  서술 0
+  7:lemma-P-prime              보조정리  장7A.md:377   소비처 {'7': 1}  서술 2
+  7:theorem-G-prime            정리    장7A.md:397   소비처 {'7': 1}  서술 4
+  7:moment-recursion           보조정리  장7B.md:13    소비처 {}  서술 0  [도달 밖]
+  7:block-exponential          명제    장7B.md:60    소비처 {'7': 1}  서술 1
+  7:green-atom                 보조정리  장7B.md:75    소비처 {'7': 1}  서술 2
+  7:pair-terms                 보조정리  장7B.md:92    소비처 {'7': 1}  서술 0
+  7:heavy-block                보조정리  장7B.md:116   소비처 {'7': 2}  서술 0
+  7:tail-half                  보조정리  장7B.md:126   소비처 {'7': 1}  서술 0
+  7:pair-criterion             보조정리  장7B.md:151   소비처 {'7': 1}  서술 0
+  7:pair-loss-bound            보조정리  장7B.md:162   소비처 {'7': 1}  서술 0
+  7:integer-strips             명제    장7B.md:175   소비처 {'7': 1}  서술 3
+  7:old-6-13                   정리    장7B.md:185   소비처 {'10': 1, '7': 2}  서술 6
+  7:old-6-14                   정리    장7B.md:219   소비처 {'10': 2}  서술 3
+  7:old-6-15                   명제    장7B.md:234   소비처 {'10': 2, '7': 2}  서술 4
+  7:qstar-implies-wlflat       따름정리  장7B.md:246   소비처 {'10': 1}  서술 7
+  7:root-symmetry              보조정리  장7B.md:260   소비처 {'7': 2}  서술 0
+  7:explicit-bounds            보조정리  장7B.md:270   소비처 {'7': 1}  서술 0
+  7:top-roots                  정리    장7B.md:284   소비처 {'7': 1}  서술 0
+  7:apex-positive              정리    장7B.md:301   소비처 {'7': 1}  서술 1
+  7:src-plus                   명제    장7B.md:314   소비처 {'10': 1, '7': 1}  서술 7
+  7:old-6-20                   명제    장7B.md:345   소비처 {'10': 1, '7': 1}  서술 9
+  7:threshold-unit-ratio       보조정리  장7B.md:362   소비처 {'10': 2, '7': 1}  서술 0
+  7:old-6-21                   정리    장7B.md:377   소비처 {'10': 4}  서술 8
+  8:old-6-23                   보조정리  장8.md:36    소비처 {'8': 2}  서술 0
+  8:old-6-24                   보조정리  장8.md:62    소비처 {'8': 1}  서술 0
+  8:old-6-25                   보조정리  장8.md:72    소비처 {'8': 2}  서술 0
+  8:old-6-26                   보조정리  장8.md:86    소비처 {'8': 2}  서술 0
+  8:old-6-27                   보조정리  장8.md:92    소비처 {'8': 1}  서술 0
+  8:escape-lower               정리    장8.md:114   소비처 {'8': 1}  서술 0
+  8:envelope-H                 보조정리  장8.md:130   소비처 {'8': 1}  서술 0
+  8:envelope-HG                보조정리  장8.md:162   소비처 {'8': 1}  서술 0
+  8:pieces-k-monotone          정리    장8.md:210   소비처 {'8': 1}  서술 0
+  8:escape-y-monotone          정리    장8.md:241   소비처 {'8': 1}  서술 0
+  8:jensen-H-ii                보조정리  장8.md:285   소비처 {'8': 1}  서술 0
+  8:closed-form-envelope       정리    장8.md:295   소비처 {'8': 1}  서술 1
+  8:table-tolerance            보조정리  장8.md:324   소비처 {'8': 3}  서술 1
+  8:large-q-bounds             보조정리  장8.md:349   소비처 {'8': 1}  서술 0
+  8:cell-bound                 보조정리  장8.md:365   소비처 {'8': 1}  서술 0
+  8:reduction-J                명제    장8.md:371   소비처 {'8': 2}  서술 0
+  8:old-6-28                   정리    장8.md:403   소비처 {'8': 3}  서술 5
+  8:old-6-30                   보조정리  장8.md:417   소비처 {'8': 1}  서술 0
+  8:old-6-31                   보조정리  장8.md:443   소비처 {'8': 3}  서술 0
+  8:old-6-32                   보조정리  장8.md:459   소비처 {'8': 2}  서술 1
+  8:hazard-H1                  보조정리  장8.md:487   소비처 {'8': 1}  서술 0
+  8:old-6-33                   정리    장8.md:499   소비처 {'10': 2}  서술 7
+
+=== 부록 D 항목별 인용 자리(장 파일 + 11장) ===
+  D:four-families              부록D_장10.md:1    인용 3: [('장10.md', 525, '10:check-na'), ('장10.md', 554, '10:check-ga'), ('장11.md', 36, None)]
+  D:zeta-constants             부록D_장2.md:1    인용 6: [('장2.md', 788, None), ('장11.md', 21, None), ('장11.md', 63, None), ('부록D_장8.md', 5, 'D:window-mass-env'), ('부록D_장8.md', 45, 'D:band-boxes'), ('부록D_장8.md', 59, 'D:stored-table-check')]
+  D:logconcavity-failure-n80   부록D_장3.md:1    인용 3: [('장3.md', 135, None), ('장11.md', 17, None), ('장11.md', 22, None)]
+  D:central-gap-integer        부록D_장4.md:1    인용 6: [('장4.md', 513, '4:old-4-5'), ('장11.md', 23, None), ('장11.md', 25, None), ('부록D_장5A.md', 3, 'D:exact-n20000'), ('부록D_장5A.md', 15, 'D:exact-n20000'), ('부록D_장5A.md', 19, 'D:exact-n20000')]
+  D:central-gap-rational-audit 부록D_장4.md:30   인용 12: [('장4.md', 205, '4:gauss-contraction'), ('장4.md', 244, '4:hermite-nu'), ('장4.md', 266, '4:hermite-nu'), ('장4.md', 272, '4:hermite-nu'), ('장4.md', 276, '4:hermite-nu'), ('장4.md', 344, '4:gauss-coeff-numeric'), ('장4.md', 433, '4:vertical-nu'), ('장4.md', 485, '4:analytic-transfer'), ('장4.md', 499, '4:analytic-transfer'), ('장4.md', 505, '4:analytic-transfer')]
+  D:exact-n20000               부록D_장5A.md:1    인용 13: [('장1.md', 58, None), ('장5A.md', 19, '5:old-5-1'), ('장5A.md', 19, '5:old-5-1'), ('장5A.md', 21, '5:old-5-1'), ('장5A.md', 25, '5:old-5-1'), ('장5A.md', 25, '5:old-5-1'), ('장5A.md', 27, '5:old-5-1'), ('장5A.md', 48, '5:witness-position-bound'), ('장11.md', 25, None), ('부록D_장5A.md', 27, 'D:c50')]
+  D:c50                        부록D_장5A.md:25   인용 4: [('장5A.md', 38, '5:old-5-2'), ('장5A.md', 38, '5:old-5-2'), ('장11.md', 26, None), ('부록D_장5A.md', 19, 'D:exact-n20000')]
+  D:band-A-certification       부록D_장5A.md:50   인용 3: [('장5A.md', 527, '5:old-5-12'), ('장11.md', 27, None), ('장11.md', 65, None)]
+  D:critical-window-rig        부록D_장5A.md:70   인용 3: [('장5A.md', 607, None), ('장5A.md', 655, '5:old-5-13'), ('장11.md', 28, None)]
+  D:column-certification-k500  부록D_장7A.md:1    인용 3: [('장7A.md', 218, '7:column-lemma'), ('장11.md', 29, None), ('부록D_장5A.md', 13, 'D:exact-n20000')]
+  D:band102-integer            부록D_장7B.md:1    인용 9: [('장4.md', 244, '4:hermite-nu'), ('장4.md', 266, '4:hermite-nu'), ('장4.md', 266, '4:hermite-nu'), ('장4.md', 272, '4:hermite-nu'), ('장4.md', 276, '4:hermite-nu'), ('장4.md', 433, '4:vertical-nu'), ('장4.md', 503, '4:analytic-transfer'), ('장7B.md', 183, None), ('장11.md', 30, None)]
+  D:moment-certification       부록D_장7B.md:21   인용 4: [('장7A.md', 228, '7:old-6-9'), ('장7A.md', 422, None), ('장7B.md', 39, None), ('장11.md', 31, None)]
+  D:column-certificates-501-2000 부록D_장7B.md:45   인용 6: [('장7A.md', 228, '7:old-6-9'), ('장7A.md', 422, None), ('장11.md', 32, None), ('부록D_장7B.md', 23, 'D:moment-certification'), ('부록D_장7B.md', 35, 'D:moment-certification'), ('부록D_장7B.md', 39, 'D:moment-certification')]
+  D:window-mass-env            부록D_장8.md:1    인용 8: [('장8.md', 208, '8:envelope-HG'), ('장8.md', 393, '8:reduction-J'), ('장8.md', 409, '8:old-6-28'), ('장8.md', 409, '8:old-6-28'), ('장8.md', 411, '8:old-6-28'), ('장11.md', 33, None), ('부록D_장8.md', 31, 'D:band-boxes'), ('부록D_장8.md', 69, 'D:stored-table-check')]
+  D:band-boxes                 부록D_장8.md:21   인용 3: [('장8.md', 561, '8:old-6-33'), ('장11.md', 34, None), ('부록D_장8.md', 5, 'D:window-mass-env')]
+  D:stored-table-check         부록D_장8.md:55   인용 5: [('장8.md', 320, '8:closed-form-envelope'), ('장8.md', 326, '8:table-tolerance'), ('장11.md', 35, None), ('부록D_장8.md', 5, 'D:window-mass-env'), ('부록D_장8.md', 5, 'D:window-mass-env')]
+
+=== 선 목록(입력 -> 소비처; 블록 안 인용) ===
+  D:four-families              <- []
+  D:central-gap-integer        <- []
+  D:central-gap-rational-audit <- []
+  D:exact-n20000               <- []
+  D:c50                        <- []
+  D:band-A-certification       <- []
+  D:critical-window-rig        <- []
+  D:column-certification-k500  <- []
+  D:band102-integer            <- []
+  D:moment-certification       <- []
+  D:column-certificates-501-2000 <- []
+  D:window-mass-env            <- []
+  D:band-boxes                 <- []
+  D:stored-table-check         <- []
+  1:main-theorem               <- ['10:old-8-37']
+  10:old-8-1                   <- ['7:old-6-14', '7:old-6-15', '7:old-6-21']
+  10:old-8-2                   <- ['7:old-6-14']
+  10:old-8-3                   <- ['2:borel-arithmetic', '2:chain-law', '2:old-2-26', '2:old-2-31', '6:old-7-19', '6:old-7-21', '7:threshold-unit-ratio']
+  10:old-8-6                   <- []
+  10:old-8-8                   <- ['6:old-8-22', '6:old-8-23']
+  10:old-8-9                   <- ['10:old-8-1', '10:reduction-ga', '4:old-4-5', '5:old-5-1', '5:old-5-18', '5:witness-position-bound', '7:old-6-21']
+  10:old-8-10                  <- ['10:old-8-2', '10:old-8-3', '10:old-8-6', '6:V-all', '6:old-6-19', '6:old-7-21', '7:old-6-21', '7:threshold-unit-ratio', '8:old-6-33']
+  10:reduction-na              <- ['10:old-8-3', '10:old-8-33', '10:old-8-8', '2:capacity-shift-ratio', '2:level-mass-jensen', '2:old-2-26', '2:old-2-31', '2:supersolution', '6:old-7-13', '6:old-8-11', '6:old-8-12', '6:old-8-13', '6:old-8-22', '6:old-8-23', '6:old-8-25']
+  10:reduction-ga              <- ['10:old-8-8', '10:reduction-na', '2:old-2-31', '4:old-4-5', '5:old-5-1', '5:old-5-18', '5:tail-cells', '5:witness-position-bound', '6:old-8-22', '6:old-8-23']
+  10:old-8-28                  <- ['10:reduction-ga', '2:chain-law', '2:level-mass-jensen', '2:root-removal']
+  10:families                  <- ['10:old-8-33', '2:old-2-46']
+  10:old-8-30                  <- ['2:borel-arithmetic', '2:level-mass-jensen', '2:old-2-45']
+  10:old-8-31                  <- ['10:old-8-28', '2:borel-arithmetic', '2:level-mass-jensen', '2:old-2-31', '2:old-2-45', '2:old-2-46']
+  10:old-8-32                  <- ['10:old-8-30', '10:old-8-31']
+  10:old-8-33                  <- ['6:old-8-12', '6:old-8-25']
+  10:old-8-34                  <- ['2:borel-arithmetic']
+  10:old-8-35                  <- ['10:old-8-34', '2:borel-arithmetic', '6:old-8-11', '6:old-8-23']
+  10:bulk-majorants            <- ['10:old-8-33', '10:old-8-35', '10:reduction-ga', '6:old-8-11', '6:old-8-12', '6:old-8-23']
+  10:check-na                  <- ['10:bulk-majorants', '10:old-8-33', '10:old-8-35', '10:reduction-na', '6:old-8-23', 'D:four-families']
+  10:check-ga                  <- ['10:bulk-majorants', '10:old-8-30', '10:old-8-31', '10:old-8-32', '10:reduction-ga', 'D:four-families']
+  10:old-8-36                  <- ['10:check-ga', '10:check-na', '10:families']
+  10:old-8-37                  <- ['10:old-8-10', '10:old-8-36', '4:old-4-2', '4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-11', '5:old-5-18', '6:V-all', '7:old-6-13', '7:old-6-15', '7:old-6-20', '7:old-6-21', '7:old-6-9', '7:qstar-implies-wlflat', '7:src-plus', '8:old-6-33']
+  2:old-2-2                    <- []
+  2:old-2-3                    <- []
+  2:old-2-4                    <- ['2:old-2-3']
+  2:row-positive               <- []
+  2:capacity-ratio             <- ['2:old-2-3']
+  2:old-2-5                    <- ['2:old-2-3']
+  2:root-removal               <- []
+  2:weighted-partition         <- ['2:old-2-2', '2:root-removal']
+  2:old-2-6                    <- ['2:old-2-3', '2:old-2-4', '2:weighted-partition']
+  2:old-2-7                    <- ['2:old-2-6']
+  2:old-2-8                    <- ['2:weighted-partition']
+  2:old-2-10                   <- ['2:old-2-4', '2:weighted-partition']
+  2:old-2-11                   <- ['2:weighted-partition']
+  2:old-2-21                   <- []
+  2:chain-law                  <- ['2:old-2-7', '2:root-removal']
+  2:union-bound                <- ['2:chain-law', '2:old-2-11']
+  2:old-2-12                   <- []
+  2:old-2-13                   <- ['2:old-2-10', '2:root-removal']
+  2:old-2-14                   <- ['2:capacity-ratio']
+  2:old-2-15                   <- []
+  2:old-2-24                   <- []
+  2:old-2-25                   <- []
+  2:one-tree-recursion         <- ['2:chain-law', '2:old-2-13']
+  2:old-2-26                   <- []
+  2:level-mass-jensen          <- ['2:capacity-ratio', '2:old-2-11', '2:old-2-12']
+  2:capacity-shift-ratio       <- ['2:old-2-2', '2:old-2-4']
+  2:old-2-27                   <- []
+  2:old-2-28                   <- ['2:old-2-3']
+  2:old-2-29                   <- []
+  2:two-variable-frozen        <- ['2:old-2-15', '2:old-2-27', '2:old-2-4', '2:weighted-partition']
+  2:volterra-residual          <- ['2:two-variable-frozen', '2:weighted-partition']
+  2:J-egf                      <- ['2:volterra-residual']
+  2:old-2-31                   <- ['2:old-2-33', '2:old-2-6']
+  2:old-2-32                   <- ['2:old-2-26', '2:old-2-7']
+  2:old-2-33                   <- ['2:old-2-32']
+  2:old-2-34                   <- ['2:old-2-31']
+  2:curvature-level-mass       <- ['2:old-2-10']
+  2:old-2-35                   <- ['2:capacity-ratio', '2:old-2-11', '2:old-2-14']
+  2:old-2-38                   <- ['2:chain-law', '2:old-2-35']
+  2:old-2-37                   <- []
+  2:borel-arithmetic           <- ['2:old-2-26']
+  2:zeta-constants             <- []
+  2:power-sum-renewal          <- ['2:borel-arithmetic', '2:zeta-constants']
+  2:b-top                      <- ['2:old-2-10', '2:old-2-6']
+  2:tree-expansion             <- ['2:b-top']
+  2:old-2-40                   <- ['2:b-top', '2:tree-expansion']
+  2:old-2-45                   <- ['2:chain-law', '2:old-2-12', '2:old-2-37']
+  2:supersolution              <- ['2:old-2-13', '2:old-2-26', '2:old-2-45']
+  2:old-2-46                   <- ['2:old-2-37', '2:old-2-45']
+  2:h-transform                <- []
+  2:chain-expansion            <- ['2:old-2-11']
+  2:convex-bonferroni          <- []
+  2:moving-tail                <- ['2:borel-arithmetic', '2:chain-expansion', '2:chain-law', '2:convex-bonferroni']
+  2:chain-normalization        <- ['2:borel-arithmetic', '2:chain-expansion', '2:moving-tail']
+  2:nf-log-coefficients        <- []
+  3:old-3-3                    <- ['3:old-3-2']
+  3:old-3-4                    <- ['2:row-positive', '3:old-3-1']
+  3:peak-asymptotics           <- ['1:main-theorem', '3:old-3-1', '3:old-3-3']
+  4:old-4-2                    <- []
+  4:old-4-3                    <- []
+  4:decrease-propagation       <- ['2:row-positive', '5:old-5-5']
+  4:old-4-5                    <- ['2:old-2-28', '2:old-2-29', '2:two-variable-frozen', '2:volterra-residual', '2:weighted-partition', '4:analytic-transfer', '4:correction-contour', '4:hermite-nu', '4:old-4-7', '4:vertical-nu', 'D:central-gap-integer']
+  4:e-integral                 <- ['2:old-2-21', '2:volterra-residual', '4:old-4-7']
+  4:old-4-6                    <- ['2:J-egf', '4:e-integral']
+  4:gauss-contraction          <- ['D:central-gap-rational-audit']
+  4:hermite-nu                 <- ['4:analytic-transfer', '4:gauss-contraction', 'D:band102-integer', 'D:central-gap-rational-audit']
+  4:old-4-7                    <- ['2:old-2-26', '4:e-integral']
+  4:gauss-coeff-numeric        <- ['D:central-gap-rational-audit']
+  4:borel-tail-arc             <- ['2:borel-arithmetic']
+  4:correction-contour         <- []
+  4:vertical-nu                <- ['2:borel-arithmetic', '4:analytic-transfer', '4:borel-tail-arc', '4:correction-contour', 'D:band102-integer', 'D:central-gap-rational-audit']
+  4:analytic-transfer          <- ['2:borel-arithmetic', '4:borel-tail-arc', '4:correction-contour', '4:e-integral', '4:gauss-coeff-numeric', '4:hermite-nu', '4:old-4-6', '4:old-4-7', '4:vertical-nu', 'D:band102-integer', 'D:central-gap-rational-audit']
+  4:old-4-8                    <- ['4:old-4-2', '4:old-4-5', '5:old-5-1']
+  5:old-5-1                    <- ['2:old-2-6', '2:weighted-partition', '4:old-4-3', '4:old-4-5', '7:band-propagation', '7:column-lemma', '7:old-6-7', 'D:exact-n20000']
+  5:old-5-2                    <- ['2:old-2-13', '2:one-tree-recursion', '4:decrease-propagation', '5:old-5-1', 'D:c50']
+  5:witness-position-bound     <- ['5:old-5-1', '5:old-5-2', 'D:exact-n20000']
+  5:green-connection           <- ['2:J-egf', '2:old-2-4', '2:two-variable-frozen', '2:weighted-partition']
+  5:source-rep                 <- ['2:old-2-28', '2:old-2-4', '2:two-variable-frozen', '2:volterra-residual', '2:weighted-partition', '5:green-connection']
+  5:SR-implies-QR              <- ['5:source-rep']
+  5:inverse-renewal            <- []
+  5:renewal-fkg                <- ['5:inverse-renewal']
+  5:suff-cond                  <- ['2:old-2-26', '5:inverse-renewal', '5:renewal-fkg', '5:source-rep']
+  5:tilted-birthday-mean       <- []
+  5:old-5-5                    <- ['5:SR-implies-QR', '5:old-5-2', '5:suff-cond', '5:tilted-birthday-mean']
+  5:tail-cells                 <- ['5:old-5-5']
+  5:kernel-C-bound             <- ['2:borel-arithmetic']
+  5:kernel-bounds              <- ['2:nf-log-coefficients', '5:kernel-C-bound']
+  5:chain-weight-all-orders    <- ['2:nf-log-coefficients']
+  5:marked-recursion           <- ['2:nf-log-coefficients', '5:chain-weight-all-orders']
+  5:laurent-coeff              <- []
+  5:kernel-crude               <- []
+  5:parity-tail                <- ['5:kernel-crude', '5:marked-recursion']
+  5:old-5-8                    <- ['5:tail-cells']
+  5:old-5-9                    <- ['4:decrease-propagation']
+  5:old-5-10                   <- ['5:old-5-1', '5:tail-cells']
+  5:old-5-11                   <- ['4:old-4-5', '4:old-4-8', '5:cover-edge', '5:old-5-1', '5:old-5-10', '5:old-5-5', '5:old-5-9', '5:tail-cells']
+  5:weight-envelope            <- ['5:chain-weight-all-orders', '5:marked-recursion']
+  5:kernel-sandwich            <- ['5:kernel-C-bound', '5:kernel-bounds', '5:laurent-coeff']
+  5:omitted-tail               <- ['2:chain-normalization', '5:kernel-crude', '5:parity-tail', '5:weight-envelope']
+  5:old-5-12                   <- ['2:chain-normalization', '5:kernel-bounds', '5:kernel-sandwich', '5:marked-recursion', '5:omitted-tail', '5:weight-envelope', 'D:band-A-certification']
+  5:cover-edge                 <- ['5:old-5-12', '5:tail-cells']
+  5:unit-circle                <- []
+  5:cut-rep                    <- []
+  5:hat-normalization          <- ['2:J-egf', '4:e-integral', '4:old-4-6', '5:cut-rep']
+  5:old-5-13                   <- ['2:old-2-29', '5:cut-rep', '5:hat-normalization', '5:unit-circle', 'D:critical-window-rig']
+  5:old-5-14                   <- []
+  5:old-5-15                   <- ['5:cover-edge', '5:old-5-13', '5:old-5-2', '5:tail-cells']
+  5:old-5-18                   <- ['2:borel-arithmetic', '2:chain-law', '2:curvature-level-mass', '2:old-2-13', '2:old-2-24', '2:old-2-25', '2:old-2-34', '2:old-2-38', '5:band-inequality', '5:joining-width', '5:old-5-11', '5:old-5-14', '5:old-5-15', '5:old-5-19', '5:old-5-2', '5:old-5-21', '5:old-5-22', '5:old-5-25', '5:old-5-26', '5:old-5-30', '5:old-5-34', '5:old-5-38', '5:old-5-8', '5:right-part', '5:tail-cells', '6:cor-L', '6:diag-first-layer', '6:old-8-25']
+  5:old-5-19                   <- ['2:curvature-level-mass', '2:old-2-13']
+  5:old-5-20                   <- ['2:old-2-26']
+  5:old-5-21                   <- ['5:old-5-5', '5:tail-cells']
+  5:joining-width              <- ['5:tail-cells']
+  5:old-5-22                   <- ['5:old-5-20']
+  5:old-5-25                   <- ['2:chain-law', '2:old-2-38', '5:old-5-20']
+  5:old-5-26                   <- ['2:borel-arithmetic', '2:old-2-26', '5:old-5-20']
+  5:old-5-30                   <- ['2:borel-arithmetic', '2:old-2-26', '5:old-5-20']
+  5:landing-mass               <- ['2:old-2-34', '6:old-8-25']
+  5:old-5-33                   <- ['2:borel-arithmetic', '2:level-mass-jensen', '2:old-2-45']
+  5:old-5-34                   <- ['5:landing-mass', '5:old-5-20', '5:old-5-30', '5:old-5-33']
+  5:hover-tail                 <- ['2:borel-arithmetic']
+  5:band-inequality            <- ['2:borel-arithmetic', '5:hover-tail', '5:joining-width', '5:old-5-26', '5:old-5-30', '5:old-5-34']
+  5:right-part                 <- ['2:borel-arithmetic', '5:hover-tail', '5:joining-width', '5:landing-mass', '5:old-5-30', '5:old-5-34']
+  5:old-5-38                   <- ['5:joining-width', '5:old-5-8']
+  6:old-8-25                   <- ['2:borel-arithmetic', '2:supersolution']
+  6:old-7-13                   <- ['6:old-8-25']
+  6:old-7-19                   <- ['2:old-2-26', '6:old-7-21']
+  6:old-7-20                   <- ['2:old-2-6', '6:cayley-propagation', '6:tilt-interval', '6:tilt-sum']
+  6:difference-identity        <- []
+  6:cayley-propagation         <- ['6:difference-identity']
+  6:tilt-interval              <- []
+  6:tilt-sum                   <- ['2:borel-arithmetic', '2:old-2-26']
+  6:old-7-21                   <- ['2:old-2-26', '6:cayley-propagation', '6:old-7-19', '6:old-7-20', '6:tilt-sum']
+  6:old-7-24                   <- ['2:old-2-26', '6:tilt-sum']
+  6:lemma-ell                  <- ['2:old-2-26']
+  6:old-8-13                   <- ['2:old-2-26', '6:lemma-omega', '6:lemma-phi', '6:same-kernel']
+  6:chain-recursion            <- ['2:chain-law', '2:old-2-13']
+  6:same-kernel                <- ['2:old-2-26', '2:one-tree-recursion']
+  6:stay-margin-identity       <- []
+  6:lemma-omega                <- ['2:borel-arithmetic', '2:old-2-26', '6:same-kernel', '6:stay-margin-identity']
+  6:lemma-phi                  <- ['6:lemma-omega']
+  6:diag-first-layer           <- ['2:old-2-10', '2:old-2-11', '6:classes-increase']
+  6:chain-count                <- ['2:capacity-ratio']
+  6:class-polynomial           <- ['6:chain-count']
+  6:insertion                  <- ['6:log-derivative']
+  6:concave-split              <- ['6:split-mass']
+  6:highest-long-cell          <- ['6:concave-split']
+  6:pointwise                  <- []
+  6:survival-factor            <- ['2:old-2-26']
+  6:classes-increase           <- ['6:class-polynomial', '6:pointwise', '6:survival-factor']
+  6:first-layer-mass           <- ['2:borel-arithmetic', '6:diag-first-layer']
+  6:one-step-loss              <- ['2:borel-arithmetic', '6:diag-first-layer']
+  6:old-8-11                   <- ['4:old-4-5', '5:old-5-1', '5:old-5-18', '5:old-5-8', '5:tail-cells', '5:witness-position-bound', '6:old-7-13', '6:old-8-25']
+  6:old-8-12                   <- ['4:old-4-5', '5:old-5-1', '5:old-5-18', '5:tail-cells', '5:witness-position-bound', '6:old-7-13', '6:old-8-11']
+  6:cor-L                      <- ['2:curvature-level-mass', '6:diag-first-layer']
+  6:old-6-18                   <- ['2:h-transform', '2:old-2-13', '2:old-2-26', '2:old-2-45', '6:lemma-ell']
+  6:old-8-19                   <- ['2:h-transform', '2:old-2-45']
+  6:old-8-20                   <- []
+  6:old-8-21                   <- []
+  6:old-8-22                   <- ['6:old-8-19', '6:old-8-20']
+  6:old-8-23                   <- ['2:borel-arithmetic', '6:lemma-ell', '6:old-8-21']
+  6:old-6-19                   <- ['2:old-2-31', '6:old-8-11', '6:old-8-22', '6:old-8-23', '6:old-8-25']
+  6:cutpoint-lower             <- ['2:borel-arithmetic', '2:chain-law', '2:old-2-34', '2:union-bound', '6:diag-first-layer', '6:old-8-11', '6:old-8-25']
+  6:prop-R                     <- ['2:borel-arithmetic', '2:old-2-10', '2:old-2-11', '6:first-layer-mass', '6:old-8-11', '6:one-step-loss']
+  6:lemma-H                    <- ['2:chain-law', '2:level-mass-jensen', '6:cutpoint-lower']
+  6:lemma-Hprime               <- ['2:borel-arithmetic', '2:chain-law', '2:moving-tail', '2:zeta-constants', '6:lemma-H']
+  6:lemma-M                    <- []
+  6:far-window                 <- ['6:lemma-Hprime', '6:lemma-M', '6:prop-R']
+  6:first-layer-end            <- ['4:old-4-5', '5:old-5-1']
+  6:small-k-bulk               <- ['5:old-5-1', '5:witness-position-bound', '6:first-layer-end', '6:lemma-Hprime', '6:prop-R']
+  6:above-window               <- ['5:old-5-1', '5:old-5-13', '5:old-5-18', '5:old-5-8', '5:tail-cells', '5:witness-position-bound', '6:first-layer-end']
+  6:V-all                      <- ['6:above-window', '6:cutpoint-lower', '6:far-window', '6:first-layer-end', '6:old-6-18', '6:small-k-bulk']
+  7:old-6-1                    <- ['2:old-2-3']
+  7:old-6-2                    <- ['2:capacity-ratio', '2:old-2-14', '2:old-2-4']
+  7:old-6-3                    <- []
+  7:old-6-4                    <- ['7:old-6-2', '7:old-6-3']
+  7:old-6-6                    <- ['2:old-2-3', '2:weighted-partition']
+  7:old-6-7                    <- ['2:old-2-4']
+  7:old-6-8                    <- ['7:old-6-6', '7:old-6-7']
+  7:band-propagation           <- ['2:old-2-6']
+  7:column-lemma               <- ['7:band-propagation', '7:old-6-7', 'D:column-certification-k500']
+  7:old-6-9                    <- ['4:old-4-5', '5:old-5-1', '7:column-lemma', '7:old-6-13', '7:old-6-4', '7:old-6-8', '7:theorem-G-prime', 'D:column-certificates-501-2000', 'D:moment-certification']
+  7:prime-decomposition        <- ['2:old-2-8']
+  7:supermultiplicative        <- ['2:old-2-4', '7:prime-decomposition']
+  7:flat-threshold             <- ['7:old-6-2', '7:old-6-6']
+  7:pole-unique                <- ['7:prime-decomposition']
+  7:fourier-lemmas             <- ['7:pole-unique']
+  7:pole-frame                 <- ['7:fourier-lemmas']
+  7:old-6-11                   <- ['2:old-2-3', '2:old-2-8', '2:weighted-partition', '7:pole-frame', '7:supermultiplicative']
+  7:lemma-P-prime              <- ['7:pole-frame']
+  7:theorem-G-prime            <- ['7:flat-threshold', '7:lemma-P-prime', '7:old-6-11', '7:supermultiplicative']
+  7:moment-recursion           <- ['2:old-2-3', '2:old-2-6']
+  7:block-exponential          <- ['2:volterra-residual', '4:e-integral']
+  7:green-atom                 <- ['2:J-egf', '2:volterra-residual']
+  7:pair-terms                 <- []
+  7:heavy-block                <- []
+  7:tail-half                  <- ['2:borel-arithmetic', '2:chain-law', '2:union-bound']
+  7:pair-criterion             <- ['7:heavy-block']
+  7:pair-loss-bound            <- []
+  7:integer-strips             <- []
+  7:old-6-13                   <- ['2:old-2-29', '2:two-variable-frozen', '4:analytic-transfer', '4:old-4-5', '7:block-exponential', '7:green-atom', '7:heavy-block', '7:integer-strips', '7:pair-criterion', '7:pair-loss-bound', '7:pair-terms', '7:tail-half']
+  7:old-6-14                   <- ['2:old-2-6']
+  7:old-6-15                   <- []
+  7:qstar-implies-wlflat       <- ['4:old-4-5', '5:old-5-1', '7:old-6-13', '7:old-6-15']
+  7:root-symmetry              <- ['2:chain-law', '2:old-2-26']
+  7:explicit-bounds            <- []
+  7:top-roots                  <- ['7:root-symmetry']
+  7:apex-positive              <- ['2:borel-arithmetic', '2:old-2-32', '6:old-7-24', '7:explicit-bounds', '7:root-symmetry', '7:top-roots']
+  7:src-plus                   <- ['7:apex-positive']
+  7:old-6-20                   <- ['6:V-all', '6:old-7-21', '7:old-6-15', '7:src-plus']
+  7:threshold-unit-ratio       <- ['2:capacity-shift-ratio', '2:old-2-26', '2:old-2-31']
+  7:old-6-21                   <- ['6:V-all', '6:old-6-19', '7:old-6-20', '7:threshold-unit-ratio']
+  8:old-6-23                   <- ['2:b-top', '2:old-2-37', '2:tree-expansion', '8:old-6-28']
+  8:old-6-24                   <- ['2:old-2-26']
+  8:old-6-25                   <- ['2:old-2-37']
+  8:old-6-26                   <- []
+  8:old-6-27                   <- ['2:old-2-37', '8:old-6-26']
+  8:escape-lower               <- ['2:chain-law', '2:old-2-13', '2:old-2-31']
+  8:envelope-H                 <- ['2:borel-arithmetic', '2:chain-law', '2:level-mass-jensen', '2:old-2-11', '2:power-sum-renewal']
+  8:envelope-HG                <- ['2:borel-arithmetic', '2:old-2-26', '2:power-sum-renewal', '8:escape-lower', '8:table-tolerance', 'D:window-mass-env']
+  8:pieces-k-monotone          <- ['2:power-sum-renewal', '2:zeta-constants']
+  8:escape-y-monotone          <- ['2:power-sum-renewal']
+  8:jensen-H-ii                <- []
+  8:closed-form-envelope       <- ['2:power-sum-renewal', '2:zeta-constants', '8:envelope-H', '8:envelope-HG', '8:escape-y-monotone', '8:jensen-H-ii', '8:pieces-k-monotone', 'D:stored-table-check']
+  8:table-tolerance            <- ['8:closed-form-envelope', '8:old-6-25', '8:old-6-28', '8:reduction-J', 'D:stored-table-check']
+  8:large-q-bounds             <- ['2:borel-arithmetic', '2:power-sum-renewal']
+  8:cell-bound                 <- []
+  8:reduction-J                <- ['8:large-q-bounds', '8:old-6-24', '8:old-6-25', '8:old-6-26', '8:old-6-27', 'D:window-mass-env']
+  8:old-6-28                   <- ['2:old-2-34', '6:old-8-25', '8:cell-bound', '8:reduction-J', '8:table-tolerance', 'D:window-mass-env']
+  8:old-6-30                   <- ['2:borel-arithmetic', '2:capacity-shift-ratio', '2:chain-law', '2:old-2-10', '8:old-6-31', '8:old-6-32']
+  8:old-6-31                   <- ['2:chain-law', '2:old-2-26', '8:old-6-23']
+  8:old-6-32                   <- ['2:chain-law', '2:old-2-31', '8:old-6-31']
+  8:hazard-H1                  <- ['2:borel-arithmetic', '6:old-7-24']
+  8:old-6-33                   <- ['2:borel-arithmetic', '2:capacity-shift-ratio', '2:old-2-31', '2:one-tree-recursion', '8:hazard-H1', '8:old-6-23', '8:old-6-28', '8:old-6-30', '8:old-6-31', '8:old-6-32', '8:table-tolerance', 'D:band-boxes']

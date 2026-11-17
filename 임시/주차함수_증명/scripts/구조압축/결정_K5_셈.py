@@ -31,7 +31,10 @@ for tag in ['(가)', '(나)']:
     out.append(f'{{{{4:old-4-8}}}}{tag}\t{len(hits)}\t' + ' '.join(hits))
 # 2. 글자 수
 def chars(path, a, b):
-    L = texts[os.path.join(ROOT, *path.split('/'))]
+    key = os.path.join(ROOT, *path.split('/'))
+    if key not in texts:
+        return 0, 0  # 9장 제거 뒤 사라진 파일(장11 등)
+    L = texts[key]
     seg = L[a-1:b]
     return len(seg), sum(len(x) for x in seg) + max(0, len(seg) - 1)
 RANGES = [

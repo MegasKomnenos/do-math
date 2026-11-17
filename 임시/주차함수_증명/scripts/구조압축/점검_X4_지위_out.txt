@@ -1,0 +1,308 @@
+## 진술 수: 271 | 외부 입력 표지 있는 진술: 63
+
+## 의존 목록의 라벨 가운데 정의 없는 것
+
+## 의존 목록이 외부 입력 없는 진술을 드는 자리(1.5절: 의존은 계산·문헌·의존 가진 진술만)
+
+## 의존 목록의 라벨 가운데 그 진술·증명 블록이 인용하지 않는 것(색인; 블록 경계는 근사)
+
+## 증명 블록이 외부 입력 진술을 인용하는데 머리에 「…에 의존」이 없거나 그 라벨이 빠진 자리(색인)
+   ('장v2\\장1.md', 93) 1:main-theorem [증명됨, 정리 {{10:old-8-37}}에 의존; r3d0856b, re71a735] ← 빠짐: ['10:old-8-10', '10:old-8-36', '2:zeta-constants', '3:old-3-1', '3:old-3-3', '3:old-3-4', '3:peak-asymptotics', '4:analytic-transfer', '4:old-4-5', '4:old-4-8', '5:old-5-1', '5:old-5-11', '5:old-5-12', '5:old-5-13', '5:old-5-18', '5:old-5-2', '5:witness-position-bound', '6:V-all', '6:cutpoint-lower', '6:old-6-19', '6:old-8-12', '7:column-lemma', '7:integer-strips', '7:old-6-13', '7:old-6-20', '7:old-6-21', '7:old-6-9', '7:qstar-implies-wlflat', '8:old-6-28', '8:old-6-33']
+   ('장v2\\장10.md', 200) 10:old-8-10 [r3d0856b]의 관계 q-flq-relation) [증명됨, 정리 {{8:old-6-33}}·{{7:old-6-21}}에 ] ← 빠짐: ['6:V-all', '6:old-6-19']
+   ('장v2\\장10.md', 252) 10:reduction-na [r3d0856b]의 명제 T) [증명됨, 따름정리 {{6:old-8-11}}에 의존; r3d0856b, re71a735] ← 빠짐: ['10:old-8-33', '6:old-8-12']
+   ('장v2\\장10.md', 341) 10:old-8-28 [re71a735]의 정리 P) [증명됨, 작성자 판단; re71a735] ← 빠짐: ['10:reduction-ga']
+   ('장v2\\장10.md', 498) 10:bulk-majorants [증명됨, 정리 {{6:old-8-12}}·따름정리 {{6:old-8-11}}·명제 {{10:old-8-33}}·{{10:old] ← 빠짐: ['10:reduction-ga']
+   ('장v2\\장10.md', 566) 10:old-8-37 [증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{7:old-6-21}}·] ← 빠짐: ['7:old-6-13']
+   ('장v2\\장3.md', 133) 3:old-3-4 [$n\le80$의 진술은 계산 증거(정확 정수·유리수), $n\ge n_0$의 진술은 증명됨, 문헌 인용, 시작점 비명시, 명] ← 빠짐: ['3:old-3-3']
+   ('장v2\\장4.md', 71) 4:old-4-5 [rce3dc75]의 정리 8.1) [증명됨, 계산 보조(정확 정수·유리수), 명제 {{4:analytic-transfer}}에] ← 빠짐: ['4:hermite-nu', '4:vertical-nu']
+   ('장v2\\장4.md', 244) 4:hermite-nu [rce3dc75]의 보조정리 H와 기록 [r475ada3]의 보조정리 H′) [증명됨, 계산 보조(정확 정수·유리수), 보조정] ← 빠짐: ['4:analytic-transfer']
+   ('장v2\\장4.md', 411) 4:vertical-nu [rce3dc75]의 보조정리 V와 기록 [r475ada3]의 보조정리 V′) [증명됨, (마)는 계산 보조(정확 정수·유리수)] ← 빠짐: ['4:analytic-transfer']
+   ('장v2\\장4.md', 521) 4:old-4-8 [rce3dc75]의 명제 8.4) [증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}에 의존; rce3dc75] ← 빠짐: ['5:old-5-11']
+   ('장v2\\장5A.md', 29) 5:old-5-2 [계산 증거(방향 반올림 구간); r59c82d7] ← 빠짐: ['5:old-5-1']
+   ('장v2\\장5A.md', 263) 5:old-5-5 [r708d99c]의 명제 D2와 기록 [r0dc57fa]의 정리 T1) [증명됨, 작성자 판단; r708d99c, r0dc57] ← 빠짐: ['5:old-5-2']
+   ('장v2\\장5A.md', 647) 5:old-5-13 [ra4c01fc]의 정리 D) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; ra4c01fc] ← 빠짐: ['5:old-5-12']
+   ('장v2\\장6.md', 629) 6:old-8-12 [r7e03176]의 p-bulk-point-mass) [증명됨, 작성자 판단, 정리 {{4:old-4-5}}·{{5:old-5] ← 빠짐: ['6:old-8-11']
+   ('장v2\\장6.md', 937) 6:lemma-H [r9bf2dc6]의 보조정리 H) [증명됨; r9bf2dc6] ← 빠짐: ['6:cutpoint-lower']
+   ('장v2\\장6.md', 1011) 6:first-layer-end [r29c10cd]의 명제 E (가)) [증명됨, 정리 {{4:old-4-5}}에 의존; r29c10cd] ← 빠짐: ['5:old-5-1']
+   ('장v2\\장7A.md', 204) 7:column-lemma [rc9aee43]의 보조정리 4.1·4.2) [증명됨, (다)는 계산 보조(정확 정수·유리수), (가)는 작성자 판단; rc9] ← 빠짐: ['5:old-5-1']
+   ('장v2\\장7A.md', 397) 7:theorem-G-prime [rb7effe0]의 정리 G′, 기록 [r89eb039]의 명제 R) [증명됨; rb7effe0, r89eb039] ← 빠짐: ['7:old-6-9']
+   ('장v2\\장7B.md', 13) 7:moment-recursion [r10ff8c2]의 보조정리 2.1과 명제 2.2) [증명됨; r10ff8c2] ← 빠짐: ['7:old-6-9']
+   ('장v2\\장7B.md', 75) 7:green-atom [r8d6850a]의 green-marker-majorant-all-n, 기록 [r475ada3] §6.3의 둘째 단계) [증명] ← 빠짐: ['4:analytic-transfer']
+   ('장v2\\장7B.md', 162) 7:pair-loss-bound [증명됨, 작성자 판단; r475ada3, r6b37c7e] ← 빠짐: ['4:analytic-transfer', '7:old-6-13']
+   ('장v2\\장7B.md', 377) 7:old-6-21 [r317d678]의 정리 R과 정리 T) [증명됨, 둘째 주장은 정리 {{6:old-6-19}}·{{6:V-all}}에 의존;] ← 빠짐: ['7:old-6-20']
+   ('장v2\\장8.md', 36) 8:old-6-23 [r030ffae]의 사실 (E1)) [증명됨; r030ffae] ← 빠짐: ['8:old-6-28']
+   ('장v2\\장8.md', 162) 8:envelope-HG [r030ffae]의 보조정리 H-G) [증명됨, 작성자 판단, 보조정리 {{2:power-sum-renewal}}에 의존; r] ← 빠짐: ['8:table-tolerance']
+   ('장v2\\장8.md', 324) 8:table-tolerance [rfc69320]의 §8.4) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:closed-form-envelope}}] ← 빠짐: ['8:old-6-28', '8:reduction-J']
+
+## 지위 표지 전수(라벨 | 표지)
+   장v2\장1.md:9 정의 1:old-1-1 | 
+   장v2\장1.md:17 명제 1:old-1-2 | 증명됨; 표준
+   장v2\장1.md:35 정의 1:old-1-3 | 
+   장v2\장1.md:75 정의 1:old-1-4 | 
+   장v2\장1.md:93 정리 1:main-theorem | 증명됨, 정리 {{10:old-8-37}}에 의존; r3d0856b, re71a735
+   장v2\장10.md:23 정의 10:old-8-1 | r3d0856b
+   장v2\장10.md:59 보조정리 10:old-8-2 | r3d0856b]의 보조정리 1, 기록 [r317d678]의 c-ledger) [증명됨; r3d0856b, r317d678
+   장v2\장10.md:82 따름정리 10:old-8-3 | r3d0856b]의 보조정리 2) [증명됨; r3d0856b
+   장v2\장10.md:109 명제 10:old-8-6 | r3d0856b]의 명제 6) [증명됨; r3d0856b
+   장v2\장10.md:139 명제 10:old-8-8 | r3d0856b]의 명제 S) [증명됨; r3d0856b
+   장v2\장10.md:181 정의 10:old-8-9 | r3d0856b
+   장v2\장10.md:200 정리 10:old-8-10 | r3d0856b]의 관계 q-flq-relation) [증명됨, 정리 {{8:old-6-33}}·{{7:old-6-21}}에 의존; r3d0856b
+   장v2\장10.md:252 명제 10:reduction-na | r3d0856b]의 명제 T) [증명됨, 따름정리 {{6:old-8-11}}에 의존; r3d0856b, re71a735
+   장v2\장10.md:299 명제 10:reduction-ga | 증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{10:reduction-na}}에 의존; re71a735
+   장v2\장10.md:341 정리 10:old-8-28 | re71a735]의 정리 P) [증명됨, 작성자 판단; re71a735
+   장v2\장10.md:364 정의 10:families | re71a735
+   장v2\장10.md:379 보조정리 10:old-8-30 | re71a735]의 보조정리 J) [증명됨; re71a735
+   장v2\장10.md:390 보조정리 10:old-8-31 | re71a735]의 보조정리 R) [증명됨; re71a735
+   장v2\장10.md:419 보조정리 10:old-8-32 | re71a735]의 보조정리 R′) [증명됨, 작성자 판단; re71a735
+   장v2\장10.md:438 명제 10:old-8-33 | re71a735]의 명제 U) [증명됨, 작성자 판단, 정리 {{6:old-8-12}}에 의존; re71a735
+   장v2\장10.md:470 보조정리 10:old-8-34 | re71a735]의 상쇄 보조정리) [증명됨, 작성자 판단; re71a735
+   장v2\장10.md:485 명제 10:old-8-35 | re71a735]의 명제 L) [증명됨, 따름정리 {{6:old-8-11}}에 의존; re71a735
+   장v2\장10.md:498 보조정리 10:bulk-majorants | 증명됨, 정리 {{6:old-8-12}}·따름정리 {{6:old-8-11}}·명제 {{10:old-8-33}}·{{10:old-8-35}}에 의존; re71a735
+   장v2\장10.md:514 명제 10:check-na | 증명됨, 계산 보조(방향 반올림 구간), 명제 {{10:reduction-na}}·{{10:old-8-33}}·{{10:old-8-35}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735
+   장v2\장10.md:529 명제 10:check-ga | 증명됨, 계산 보조(방향 반올림 구간), 작성자 판단, 명제 {{10:reduction-ga}}·보조정리 {{10:bulk-majorants}}에 의존; re71a735
+   장v2\장10.md:558 정리 10:old-8-36 | re71a735]의 정리 FLQ) [증명됨, 명제 {{10:check-na}}·{{10:check-ga}}에 의존; re71a735
+   장v2\장10.md:566 정리 10:old-8-37 | 증명됨, 정리 {{10:old-8-36}}·{{10:old-8-10}}·{{8:old-6-33}}·{{7:old-6-21}}·{{6:V-all}}·{{5:old-5-1}}·{{5:old-5-18}}·{{5:old-5-11}}·{{4:old-4-8}}·{{4:old-4-5}}·명제 {{7:old-6-20}}·{{7:old-6-9}}·따름정리 {{7:qstar-implies-wlflat}}에 의존; r3d0856b, re71a735
+   장v2\장2.md:15 정의 2:old-2-1 | 
+   장v2\장2.md:21 정의 2:old-2-2 | 
+   장v2\장2.md:29 정리 2:old-2-3 | 증명됨; r81e7051, r15524fd
+   장v2\장2.md:43 따름정리 2:old-2-4 | 증명됨; r81e7051, r15524fd
+   장v2\장2.md:54 보조정리 2:row-positive | 증명됨; r15524fd, r81e7051
+   장v2\장2.md:64 보조정리 2:capacity-ratio | 증명됨; r88bed8a
+   장v2\장2.md:82 명제 2:old-2-5 | 증명됨; r81e7051, r15524fd
+   장v2\장2.md:98 정의 2:old-2-9 | 
+   장v2\장2.md:104 보조정리 2:root-removal | 증명됨; r42d9a17
+   장v2\장2.md:114 정리 2:weighted-partition | 증명됨; r15524fd, r81e7051, r42d9a17, r88bed8a
+   장v2\장2.md:156 정리 2:old-2-6 | 증명됨; r15524fd, r81e7051
+   장v2\장2.md:166 명제 2:old-2-7 | 증명됨; r81e7051
+   장v2\장2.md:193 명제 2:old-2-8 | 증명됨; r15524fd, r81e7051
+   장v2\장2.md:207 정리 2:old-2-10 | 증명됨; r42d9a17
+   장v2\장2.md:219 정리 2:old-2-11 | 증명됨; r42d9a17
+   장v2\장2.md:240 정의 2:old-2-21 | 
+   장v2\장2.md:258 정리 2:chain-law | 증명됨; r42d9a17, r4868e30, re71a735, r88bed8a
+   장v2\장2.md:294 보조정리 2:union-bound | 증명됨; r42d9a17
+   장v2\장2.md:304 정의 2:old-2-12 | 
+   장v2\장2.md:308 정리 2:old-2-13 | r39ea75d]의 heavy-path-recurrence) [증명됨; r39ea75d, rae1f209
+   장v2\장2.md:337 보조정리 2:old-2-14 | r88bed8a]의 식 (1.1)) [증명됨; r88bed8a
+   장v2\장2.md:353 보조정리 2:old-2-15 | r88bed8a]의 보조정리 L) [증명됨; r88bed8a
+   장v2\장2.md:361 정의 2:old-2-22 | 
+   장v2\장2.md:377 정의 2:old-2-24 | 
+   장v2\장2.md:395 정의 2:old-2-25 | 
+   장v2\장2.md:405 따름정리 2:one-tree-recursion | 증명됨; r39ea75d, r030ffae
+   장v2\장2.md:415 보조정리 2:old-2-26 | 증명됨, 작성자 판단; r58b4caa, r23f10e9
+   장v2\장2.md:441 보조정리 2:level-mass-jensen | 증명됨; r2ec875c, re71a735, r8456f59
+   장v2\장2.md:455 보조정리 2:capacity-shift-ratio | 증명됨; r030ffae
+   장v2\장2.md:477 정의 2:old-2-27 | 
+   장v2\장2.md:481 정리 2:old-2-28 | 증명됨; r631b0f4, r37c204b
+   장v2\장2.md:502 따름정리 2:old-2-29 | 증명됨; r631b0f4, r37c204b
+   장v2\장2.md:516 따름정리 2:two-variable-frozen | 증명됨; r5f5cf73, r631b0f4, r37c204b
+   장v2\장2.md:572 따름정리 2:volterra-residual | 증명됨; r475ada3, r37c204b, ra7615a0, rba2ecf4
+   장v2\장2.md:602 보조정리 2:J-egf | rba2ecf4]의 green-reconstruction, 기록 [r37c204b]의 보조정리 3.3) [증명됨; rba2ecf4, r37c204b
+   장v2\장2.md:616 정리 2:old-2-31 | r79ee9e0]의 보조정리 Sh) [증명됨; r79ee9e0, r207f124
+   장v2\장2.md:626 보조정리 2:old-2-32 | r79ee9e0]의 보조정리 Πβ(i)와 Πn) [증명됨; r79ee9e0
+   장v2\장2.md:646 보조정리 2:old-2-33 | r79ee9e0]의 보조정리 R) [증명됨; r79ee9e0
+   장v2\장2.md:674 보조정리 2:old-2-34 | rae1f209]의 보조정리 C) [증명됨, 작성자 판단; rae1f209
+   장v2\장2.md:712 보조정리 2:curvature-level-mass | 증명됨; r4868e30, r33475a7
+   장v2\장2.md:726 보조정리 2:old-2-35 | 증명됨; r4868e30, r33475a7
+   장v2\장2.md:744 보조정리 2:old-2-37 | 증명됨; r030ffae, r6a8c8b6, r2ec875c
+   장v2\장2.md:758 보조정리 2:borel-arithmetic | 증명됨; 표준, r4868e30, r2ec875c
+   장v2\장2.md:780 보조정리 2:zeta-constants | 계산 증거(방향 반올림 구간); 표준
+   장v2\장2.md:784 보조정리 2:power-sum-renewal | 증명됨, 보조정리 {{2:zeta-constants}}에 의존; 표준
+   장v2\장2.md:817 정리 2:old-2-38 | r4868e30]의 c-threshold-subtree, 정리 T) [증명됨; r4868e30
+   장v2\장2.md:835 보조정리 2:b-top | 증명됨; r33475a7, r05cf8c9
+   장v2\장2.md:847 정리 2:tree-expansion | 증명됨; r6f5f48f, r05cf8c9, r2e22726, r77e234e, rae1f209
+   장v2\장2.md:875 정리 2:old-2-40 | 증명됨; r6f5f48f
+   장v2\장2.md:896 정의 2:old-2-43 | r6a8c8b6
+   장v2\장2.md:906 보조정리 2:old-2-45 | re71a735]의 보조정리 3) [증명됨; re71a735
+   장v2\장2.md:926 보조정리 2:supersolution | 증명됨; re71a735, r3d0856b
+   장v2\장2.md:946 보조정리 2:old-2-46 | re71a735]의 보조정리 B) [증명됨; re71a735
+   장v2\장2.md:960 보조정리 2:h-transform | 증명됨; re71a735, r845b205
+   장v2\장2.md:998 정리 2:chain-expansion | r42d9a17]의 식 (7)–(11)) [증명됨, 작성자 판단; r42d9a17
+   장v2\장2.md:1031 보조정리 2:convex-bonferroni | r42d9a17]의 convex-bonferroni) [증명됨; r42d9a17
+   장v2\장2.md:1043 정리 2:moving-tail | r42d9a17]의 uniform-moving-tail) [증명됨, 작성자 판단; r42d9a17
+   장v2\장2.md:1113 보조정리 2:chain-normalization | r1aa0be6]의 chain-normalization) [증명됨, 작성자 판단; r1aa0be6
+   장v2\장2.md:1146 보조정리 2:nf-log-coefficients | 증명됨; r1aa0be6, r13b0b8f
+   장v2\장3.md:23 명제 3:old-3-1 | 증명됨, 극한 진술은 문헌 인용; r81e7051
+   장v2\장3.md:41 명제 3:old-3-2 | 증명됨, 문헌 인용; r81e7051
+   장v2\장3.md:59 정리 3:old-3-3 | 증명됨, 문헌 인용, 작성자 판단, 명제 {{3:old-3-2}}에 의존; r81e7051
+   장v2\장3.md:133 정리 3:old-3-4 | $n\le80$의 진술은 계산 증거(정확 정수·유리수), $n\ge n_0$의 진술은 증명됨, 문헌 인용, 시작점 비명시, 명제 {{3:old-3-1}}에 의존; r81e7051, r15524fd
+   장v2\장3.md:177 따름정리 3:peak-asymptotics | 증명됨, 작성자 판단, 명제 {{3:old-3-1}}·정리 {{1:main-theorem}}·{{3:old-3-3}}에 의존; r81e7051
+   장v2\장4.md:19 정의 4:old-4-1 | rce3dc75
+   장v2\장4.md:29 보조정리 4:old-4-2 | rce3dc75]의 보조정리 1.1) [증명됨; rce3dc75
+   장v2\장4.md:39 정의 4:old-4-3 | r708d99c
+   장v2\장4.md:43 보조정리 4:decrease-propagation | 증명됨; r15524fd
+   장v2\장4.md:71 정리 4:old-4-5 | rce3dc75]의 정리 8.1) [증명됨, 계산 보조(정확 정수·유리수), 명제 {{4:analytic-transfer}}에 의존; rce3dc75
+   장v2\장4.md:83 보조정리 4:e-integral | 증명됨; r37c204b, ra7615a0
+   장v2\장4.md:147 명제 4:old-4-6 | rce3dc75]의 명제 3.1) [증명됨; rce3dc75
+   장v2\장4.md:183 보조정리 4:gauss-contraction | rce3dc75]의 보조정리 H의 수축 오차 (H3)과 $M_0$ 하계의 전반부) [증명됨, 계산 보조(정확 정수·유리수), 작성자 판단; rce3dc75
+   장v2\장4.md:244 보조정리 4:hermite-nu | rce3dc75]의 보조정리 H와 기록 [r475ada3]의 보조정리 H′) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:gauss-contraction}}에 의존; rce3dc75, r475ada3
+   장v2\장4.md:288 정리 4:old-4-7 | rce3dc75]의 정리 1) [증명됨; rce3dc75
+   장v2\장4.md:342 따름정리 4:gauss-coeff-numeric | 증명됨, 계산 보조(정확 정수·유리수); rce3dc75
+   장v2\장4.md:348 보조정리 4:borel-tail-arc | rce3dc75]의 보조정리 V의 (V6)과 §7.1의 꼬리 상계) [증명됨, 작성자 판단; rce3dc75
+   장v2\장4.md:372 보조정리 4:correction-contour | 증명됨, 작성자 판단; rce3dc75
+   장v2\장4.md:411 보조정리 4:vertical-nu | rce3dc75]의 보조정리 V와 기록 [r475ada3]의 보조정리 V′) [증명됨, (마)는 계산 보조(정확 정수·유리수); rce3dc75, r475ada3
+   장v2\장4.md:437 명제 4:analytic-transfer | rce3dc75]의 정리 8.1의 해석적 부분, 기록 [r475ada3]의 정리 C·C′·C″, 기록 [r6b37c7e]의 정리 4.A의 감사 부분) [증명됨, 계산 보조(정확 정수·유리수), 보조정리 {{4:hermite-nu}}·{{4:vertical-nu}}·따름정리 {{4:gauss-coeff-numeric}}에 의존; rce3dc75, r475ada3, r6b37c7e
+   장v2\장4.md:521 정리 4:old-4-8 | rce3dc75]의 명제 8.4) [증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}에 의존; rce3dc75
+   장v2\장5A.md:17 정리 5:old-5-1 | 계산 증거(정확 정수·유리수), 정리 {{4:old-4-5}}·보조정리 {{7:column-lemma}}에 의존; r15df76b, rc9aee43, rce3dc75, r19de912, r6373c70
+   장v2\장5A.md:29 정리 5:old-5-2 | 계산 증거(방향 반올림 구간); r59c82d7
+   장v2\장5A.md:42 명제 5:witness-position-bound | r19de912]의 mode-formula-crosscheck) [계산 증거(정확 정수·유리수, 방향 반올림 구간), 정리 {{5:old-5-1}}·{{5:old-5-2}}에 의존; r19de912
+   장v2\장5A.md:58 보조정리 5:green-connection | rda45d0e]의 exact-green-connection, 정리 G) [증명됨, 작성자 판단; rda45d0e
+   장v2\장5A.md:104 정리 5:source-rep | r708d99c]의 명제 C1, positive-source-representation, source-comparison-implies-S) [증명됨; r708d99c
+   장v2\장5A.md:143 따름정리 5:SR-implies-QR | r708d99c]의 따름정리 B2) [증명됨; r708d99c
+   장v2\장5A.md:155 보조정리 5:inverse-renewal | rbeae3a3]의 inverse-renewal-form) [증명됨; rbeae3a3
+   장v2\장5A.md:165 보조정리 5:renewal-fkg | rbeae3a3]의 renewal-fkg, 보조정리 6.1) [증명됨; rbeae3a3
+   장v2\장5A.md:192 정리 5:suff-cond | r5ddf8a8]의 endpoint-comparison, colored-count-mean, doubly-marked-curvature, boundary-gain-lemma, 정리 2와 기록 [r0dc57fa]의 (10.1)) [증명됨; r5ddf8a8, r0dc57fa
+   장v2\장5A.md:247 보조정리 5:tilted-birthday-mean | 증명됨, 작성자 판단; r0dc57fa
+   장v2\장5A.md:263 정리 5:old-5-5 | r708d99c]의 명제 D2와 기록 [r0dc57fa]의 정리 T1) [증명됨, 작성자 판단; r708d99c, r0dc57fa
+   장v2\장5A.md:285 보조정리 5:tail-cells | 증명됨, 작성자 판단; r2ec875c
+   장v2\장5A.md:324 보조정리 5:kernel-C-bound | r7798355]의 matched-third-kernels) [증명됨; r7798355
+   장v2\장5A.md:338 보조정리 5:kernel-bounds | r690be93]의 kernel-bounds) [증명됨; r690be93
+   장v2\장5A.md:348 정리 5:chain-weight-all-orders | 증명됨, 작성자 판단; r1aa0be6, r690be93, r13b0b8f
+   장v2\장5A.md:389 보조정리 5:marked-recursion | r1aa0be6]의 renewal-bounds, 기록 [r690be93]의 (7.1)(7.2), 기록 [r13b0b8f]의 (4.1)(4.2)) [증명됨; r1aa0be6, r690be93, r13b0b8f
+   장v2\장5A.md:422 보조정리 5:laurent-coeff | r690be93] §6의 계수 감싸기) [증명됨; r690be93
+   장v2\장5A.md:426 보조정리 5:kernel-crude | r13b0b8f] §6) [증명됨; r13b0b8f
+   장v2\장5A.md:430 보조정리 5:parity-tail | 증명됨; r690be93
+   장v2\장5A.md:438 정의 5:old-5-8 | r0dc57fa
+   장v2\장5A.md:442 명제 5:old-5-9 | 증명됨; r0dc57fa, r690be93, rdc27681
+   장v2\장5A.md:446 명제 5:old-5-10 | 증명됨, 정리 {{5:old-5-1}}에 의존; r0dc57fa
+   장v2\장5A.md:450 정리 5:old-5-11 | 증명됨, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{4:old-4-8}}·명제 {{5:old-5-10}}·보조정리 {{5:cover-edge}}에 의존; r690be93
+   장v2\장5A.md:470 보조정리 5:weight-envelope | r13b0b8f]의 (3.1)–(3.5)) [증명됨; r13b0b8f
+   장v2\장5A.md:479 보조정리 5:kernel-sandwich | r13b0b8f]의 식 (5.1)) [증명됨; r13b0b8f
+   장v2\장5A.md:495 보조정리 5:omitted-tail | r13b0b8f] §6) [증명됨, 작성자 판단; r13b0b8f
+   장v2\장5A.md:511 정리 5:old-5-12 | r13b0b8f]의 정리 A·A⁺) [증명됨, 계산 보조(정확 정수·유리수, 방향 반올림 구간); r13b0b8f
+   장v2\장5A.md:529 보조정리 5:cover-edge | r13b0b8f] §9.1의 (E)와 따름 W⁺) [증명됨, 정리 {{5:old-5-12}}에 의존; r13b0b8f
+   장v2\장5A.md:547 보조정리 5:unit-circle | ra4c01fc]의 보조정리 A·B) [증명됨; ra4c01fc
+   장v2\장5A.md:559 보조정리 5:cut-rep | ra4c01fc]의 보조정리 S, 따름정리 S′, 명제 H, 식 (5.1)) [증명됨; ra4c01fc
+   장v2\장5A.md:609 보조정리 5:hat-normalization | ra4c01fc]의 (6.1)) [증명됨; ra4c01fc
+   장v2\장5A.md:647 정리 5:old-5-13 | ra4c01fc]의 정리 D) [증명됨, 계산 보조(방향 반올림 구간), 작성자 판단; ra4c01fc
+   장v2\장5A.md:663 정의 5:old-5-14 | ra4c01fc
+   장v2\장5A.md:665 보조정리 5:old-5-15 | ra4c01fc]의 보조정리 R♯) [증명됨, 정리 {{5:old-5-2}}·{{5:old-5-13}}·보조정리 {{5:cover-edge}}에 의존; ra4c01fc
+   장v2\장5B.md:9 정리 5:old-5-18 | 증명됨, 정리 {{5:old-5-2}}·{{5:old-5-11}}·보조정리 {{5:old-5-15}}에 의존; r8a9b11e
+   장v2\장5B.md:29 보조정리 5:old-5-19 | 증명됨; r58b4caa
+   장v2\장5B.md:38 보조정리 5:old-5-20 | 증명됨; r58b4caa
+   장v2\장5B.md:56 정의 5:old-5-21 | r58b4caa
+   장v2\장5B.md:60 보조정리 5:joining-width | 증명됨, 작성자 판단; r58b4caa
+   장v2\장5B.md:70 명제 5:old-5-22 | r58b4caa]의 이름 (★′)) [증명됨; r58b4caa
+   장v2\장5B.md:102 보조정리 5:old-5-25 | 증명됨; r58b4caa
+   장v2\장5B.md:111 보조정리 5:old-5-26 | r8a9b11e]의 보조정리 WIN) [증명됨; r8a9b11e
+   장v2\장5B.md:136 보조정리 5:old-5-30 | r8a9b11e]의 보조정리 A) [증명됨, 작성자 판단; r8a9b11e
+   장v2\장5B.md:160 보조정리 5:landing-mass | 증명됨, 작성자 판단; r8a9b11e
+   장v2\장5B.md:194 정리 5:old-5-33 | r8a9b11e]의 정리 T) [증명됨; r8a9b11e
+   장v2\장5B.md:210 따름정리 5:old-5-34 | r8a9b11e]의 따름정리 T-POS) [증명됨; r8a9b11e
+   장v2\장5B.md:233 보조정리 5:hover-tail | r8a9b11e]의 보조정리 H′) [증명됨; r8a9b11e
+   장v2\장5B.md:241 명제 5:band-inequality | 증명됨, 작성자 판단; r8a9b11e
+   장v2\장5B.md:273 보조정리 5:right-part | 증명됨, 작성자 판단; r8a9b11e
+   장v2\장5B.md:295 보조정리 5:old-5-38 | 증명됨, 작성자 판단; r58b4caa
+   장v2\장6.md:23 정리 6:old-8-25 | re71a735]의 정리 S′) [증명됨, 작성자 판단; re71a735
+   장v2\장6.md:69 따름정리 6:old-7-13 | r7e03176]의 정리 F′) [증명됨, 작성자 판단; r7e03176
+   장v2\장6.md:85 보조정리 6:old-7-19 | rb6a2cd0]의 식 (2.1)) [증명됨; rb6a2cd0
+   장v2\장6.md:107 보조정리 6:old-7-20 | r051bfe1]의 c-sharp) [증명됨; r051bfe1
+   장v2\장6.md:119 보조정리 6:difference-identity | r051bfe1]의 보조정리 D) [증명됨; r051bfe1
+   장v2\장6.md:129 보조정리 6:cayley-propagation | r051bfe1]의 정리 A) [증명됨; r051bfe1
+   장v2\장6.md:155 보조정리 6:tilt-interval | r051bfe1]의 보조정리 C) [증명됨; r051bfe1
+   장v2\장6.md:163 보조정리 6:tilt-sum | r051bfe1]의 보조정리 S) [증명됨; r051bfe1
+   장v2\장6.md:179 정리 6:old-7-21 | rcb2e2d4]의 정리 L) [증명됨; rcb2e2d4
+   장v2\장6.md:195 보조정리 6:old-7-24 | r051bfe1]의 (Hz)) [증명됨, (다)는 작성자 판단; r051bfe1
+   장v2\장6.md:229 보조정리 6:lemma-ell | r845b205]의 보조정리 ℓ) [증명됨; r845b205
+   장v2\장6.md:245 정리 6:old-8-13 | r98fb348]의 정리 S) [증명됨; r98fb348
+   장v2\장6.md:253 보조정리 6:chain-recursion | r98fb348]의 보조정리 C) [증명됨; r98fb348
+   장v2\장6.md:272 명제 6:same-kernel | r98fb348]의 명제 D) [증명됨; r98fb348
+   장v2\장6.md:304 명제 6:stay-margin-identity | r98fb348]의 명제 E) [증명됨; r98fb348
+   장v2\장6.md:326 보조정리 6:lemma-omega | r98fb348]의 보조정리 Ω) [증명됨; r98fb348
+   장v2\장6.md:362 보조정리 6:lemma-phi | r98fb348]의 보조정리 Φ) [증명됨; r98fb348
+   장v2\장6.md:402 정리 6:diag-first-layer | r696d62c]의 정리 P6) [증명됨; r696d62c
+   장v2\장6.md:420 명제 6:chain-count | r696d62c]의 명제 1) [증명됨; r696d62c
+   장v2\장6.md:429 명제 6:class-polynomial | r696d62c]의 명제 P1) [증명됨; r696d62c
+   장v2\장6.md:440 명제 6:log-derivative | r696d62c]의 명제 P2) [증명됨; r696d62c
+   장v2\장6.md:459 보조정리 6:split-mass | r696d62c]의 보조정리 S) [증명됨; r696d62c
+   장v2\장6.md:465 명제 6:insertion | r696d62c]의 명제 P3) [증명됨; r696d62c
+   장v2\장6.md:483 보조정리 6:concave-split | r696d62c]의 보조정리 C) [증명됨; r696d62c
+   장v2\장6.md:487 보조정리 6:highest-long-cell | r696d62c]의 보조정리 T) [증명됨; r696d62c
+   장v2\장6.md:491 보조정리 6:geometric-mean | r696d62c]의 보조정리 G) [증명됨; r696d62c
+   장v2\장6.md:503 보조정리 6:trapezoid | 증명됨; r696d62c
+   장v2\장6.md:511 정리 6:pointwise | r696d62c]의 정리 P4) [증명됨; r696d62c
+   장v2\장6.md:541 보조정리 6:survival-factor | r696d62c]의 보조정리 N) [증명됨; r696d62c
+   장v2\장6.md:549 정리 6:classes-increase | r696d62c]의 정리 P5) [증명됨; r696d62c
+   장v2\장6.md:557 따름정리 6:first-layer-mass | 증명됨, 작성자 판단; r29c10cd, r696d62c
+   장v2\장6.md:573 따름정리 6:one-step-loss | 증명됨, 작성자 판단; r29c10cd, r696d62c
+   장v2\장6.md:589 따름정리 6:old-8-11 | r7e03176]의 따름정리 E) [증명됨, 작성자 판단, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}에 의존; r7e03176, r317d678
+   장v2\장6.md:629 정리 6:old-8-12 | r7e03176]의 p-bulk-point-mass) [증명됨, 작성자 판단, 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}에 의존; r7e03176
+   장v2\장6.md:647 따름정리 6:cor-L | r696d62c]의 따름정리 L) [증명됨; r696d62c
+   장v2\장6.md:671 명제 6:old-6-18 | 증명됨; raad7e6d
+   장v2\장6.md:729 정리 6:old-8-19 | re71a735]의 정리 B) [증명됨; re71a735
+   장v2\장6.md:752 보조정리 6:old-8-20 | re71a735]의 보조정리 4·5) [증명됨; re71a735
+   장v2\장6.md:760 보조정리 6:old-8-21 | re71a735]의 보조정리 N) [증명됨; re71a735
+   장v2\장6.md:764 정리 6:old-8-22 | re71a735]의 정리 C) [증명됨; re71a735
+   장v2\장6.md:779 명제 6:old-8-23 | re71a735]의 명제 M♮) [증명됨, 작성자 판단; re71a735
+   장v2\장6.md:829 정리 6:old-6-19 | 증명됨, 작성자 판단, 따름정리 {{6:old-8-11}}에 의존; r845b205, r317d678
+   장v2\장6.md:871 명제 6:cutpoint-lower | 증명됨, 작성자 판단, 따름정리 {{6:old-8-11}}에 의존; r29c10cd, r7e03176, r696d62c
+   장v2\장6.md:917 명제 6:prop-R | r9bf2dc6]의 명제 R) [증명됨, 작성자 판단, 따름정리 {{6:old-8-11}}에 의존; r9bf2dc6
+   장v2\장6.md:937 보조정리 6:lemma-H | r9bf2dc6]의 보조정리 H) [증명됨; r9bf2dc6
+   장v2\장6.md:959 보조정리 6:lemma-Hprime | r9bf2dc6]의 보조정리 H′) [증명됨, 보조정리 {{2:zeta-constants}}에 의존; r9bf2dc6
+   장v2\장6.md:985 보조정리 6:lemma-M | r9bf2dc6]의 보조정리 M) [증명됨; r9bf2dc6
+   장v2\장6.md:1001 명제 6:far-window | r9bf2dc6]의 N2) [증명됨, 명제 {{6:prop-R}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6
+   장v2\장6.md:1011 명제 6:first-layer-end | r29c10cd]의 명제 E (가)) [증명됨, 정리 {{4:old-4-5}}에 의존; r29c10cd
+   장v2\장6.md:1017 명제 6:small-k-bulk | r9bf2dc6]의 N3) [증명됨, (가)는 작성자 판단, 정리 {{5:old-5-1}}·명제 {{5:witness-position-bound}}·{{6:prop-R}}·{{6:first-layer-end}}·보조정리 {{6:lemma-Hprime}}에 의존; r9bf2dc6
+   장v2\장6.md:1035 명제 6:above-window | r29c10cd]의 명제 E (나)) [증명됨, $\hat x>10$의 경우는 작성자 판단, 정리 {{5:old-5-1}}·{{5:old-5-13}}·{{5:old-5-18}}·명제 {{5:witness-position-bound}}·{{6:first-layer-end}}에 의존; r29c10cd
+   장v2\장6.md:1041 정리 6:V-all | 증명됨, 명제 {{6:cutpoint-lower}}·{{6:far-window}}·{{6:first-layer-end}}·{{6:small-k-bulk}}·{{6:above-window}}에 의존; r29c10cd, r9bf2dc6, r317d678
+   장v2\장7A.md:15 정의 7:old-6-1 | r1892593
+   장v2\장7A.md:25 정리 7:old-6-2 | 증명됨; r1892593
+   장v2\장7A.md:33 보조정리 7:old-6-3 | 증명됨; r1892593
+   장v2\장7A.md:43 따름정리 7:old-6-4 | 증명됨; r1892593
+   장v2\장7A.md:61 정리 7:old-6-6 | rb6423c6]의 정리 B) [증명됨; rb6423c6
+   장v2\장7A.md:115 명제 7:old-6-7 | r39ba7c1]의 결합 부등식) [증명됨; r39ba7c1
+   장v2\장7A.md:180 정리 7:old-6-8 | rb6423c6]의 정리 P2) [증명됨; rb6423c6
+   장v2\장7A.md:194 보조정리 7:band-propagation | r39ba7c1]의 명제 6.1) [증명됨; r39ba7c1
+   장v2\장7A.md:204 보조정리 7:column-lemma | rc9aee43]의 보조정리 4.1·4.2) [증명됨, (다)는 계산 보조(정확 정수·유리수), (가)는 작성자 판단; rc9aee43
+   장v2\장7A.md:226 명제 7:old-6-9 | 증명됨, 계산 보조(방향 반올림 구간), 정리 {{4:old-4-5}}·{{5:old-5-1}}·{{7:old-6-13}}·보조정리 {{7:column-lemma}}에 의존; rb6423c6
+   장v2\장7A.md:240 보조정리 7:prime-decomposition | rf09e7ef]의 prime-decomposition, 기록 [r7c079be]의 exact-identities) [증명됨; rf09e7ef, r7c079be
+   장v2\장7A.md:268 보조정리 7:supermultiplicative | r7c26b8b]의 보조정리 4.1) [증명됨; r7c26b8b, rb7effe0
+   장v2\장7A.md:274 따름정리 7:flat-threshold | rb6423c6]의 명제 P8, 기록 [r7c26b8b]의 따름정리 3의 증명) [증명됨; rb6423c6, r7c26b8b
+   장v2\장7A.md:284 보조정리 7:pole-unique | r7c079be] §2, 기록 [rf09e7ef]의 fixed-bound §1) [증명됨; r7c079be, rf09e7ef
+   장v2\장7A.md:306 보조정리 7:fourier-lemmas | rf451d83]의 보조정리 2) [증명됨, 작성자 판단; rf451d83
+   장v2\장7A.md:326 보조정리 7:pole-frame | 증명됨; rb7effe0, r7c079be
+   장v2\장7A.md:342 정리 7:old-6-11 | rb7effe0]의 정리 C) [증명됨; rb7effe0
+   장v2\장7A.md:377 보조정리 7:lemma-P-prime | rb7effe0]의 보조정리 P′) [증명됨; rb7effe0
+   장v2\장7A.md:397 정리 7:theorem-G-prime | rb7effe0]의 정리 G′, 기록 [r89eb039]의 명제 R) [증명됨; rb7effe0, r89eb039
+   장v2\장7B.md:13 보조정리 7:moment-recursion | r10ff8c2]의 보조정리 2.1과 명제 2.2) [증명됨; r10ff8c2
+   장v2\장7B.md:60 명제 7:block-exponential | r475ada3]의 정리 B(II)–(III)) [증명됨; r475ada3
+   장v2\장7B.md:75 보조정리 7:green-atom | r8d6850a]의 green-marker-majorant-all-n, 기록 [r475ada3] §6.3의 둘째 단계) [증명됨; r8d6850a, r475ada3
+   장v2\장7B.md:92 보조정리 7:pair-terms | r475ada3] §3.5) [증명됨; r475ada3
+   장v2\장7B.md:116 보조정리 7:heavy-block | r475ada3]의 보조정리 3.2) [증명됨; r475ada3
+   장v2\장7B.md:126 보조정리 7:tail-half | 증명됨, 작성자 판단; r6b37c7e, r42d9a17
+   장v2\장7B.md:151 보조정리 7:pair-criterion | r475ada3]의 보조정리 P) [증명됨; r475ada3
+   장v2\장7B.md:162 보조정리 7:pair-loss-bound | 증명됨, 작성자 판단; r475ada3, r6b37c7e
+   장v2\장7B.md:175 명제 7:integer-strips | r475ada3]의 명제 F1·F2, 기록 [r6b37c7e]의 정리 4.B의 인증 부분) [계산 증거(방향 반올림 구간); r475ada3, r6b37c7e
+   장v2\장7B.md:185 정리 7:old-6-13 | 증명됨, 명제 {{4:analytic-transfer}}·{{7:integer-strips}}·정리 {{4:old-4-5}}에 의존; r475ada3, r6b37c7e
+   장v2\장7B.md:219 정리 7:old-6-14 | 증명됨; r3172894
+   장v2\장7B.md:234 명제 7:old-6-15 | 증명됨; r3172894
+   장v2\장7B.md:246 따름정리 7:qstar-implies-wlflat | r3172894]의 rel-qstar-wlflat, 기록 [r6b37c7e]의 따름정리 (잔여)) [증명됨, 정리 {{7:old-6-13}}·{{5:old-5-1}}·{{4:old-4-5}}에 의존; r3172894, r6b37c7e
+   장v2\장7B.md:260 보조정리 7:root-symmetry | r79ee9e0]의 보조정리 r) [증명됨; r79ee9e0
+   장v2\장7B.md:270 보조정리 7:explicit-bounds | r79ee9e0] §4.3의 보조정리 Πβ′) [증명됨; r79ee9e0
+   장v2\장7B.md:284 정리 7:top-roots | r79ee9e0]의 명제 S1′·정리 T·정리 V″) [증명됨; r79ee9e0
+   장v2\장7B.md:301 정리 7:apex-positive | r79ee9e0]의 정리 W의 셈) [증명됨, 작성자 판단; r79ee9e0
+   장v2\장7B.md:314 명제 7:src-plus | r79ee9e0]의 명제 SRC⁺) [증명됨; r79ee9e0
+   장v2\장7B.md:345 명제 7:old-6-20 | r317d678]의 명제 P) [증명됨, 정리 {{6:V-all}}에 의존; r317d678
+   장v2\장7B.md:362 보조정리 7:threshold-unit-ratio | r317d678]의 식 (9.1)) [증명됨; r317d678
+   장v2\장7B.md:377 정리 7:old-6-21 | r317d678]의 정리 R과 정리 T) [증명됨, 둘째 주장은 정리 {{6:old-6-19}}·{{6:V-all}}에 의존; r317d678
+   장v2\장8.md:36 보조정리 8:old-6-23 | r030ffae]의 사실 (E1)) [증명됨; r030ffae
+   장v2\장8.md:62 보조정리 8:old-6-24 | r030ffae]의 보조정리 D1) [증명됨; r030ffae
+   장v2\장8.md:72 보조정리 8:old-6-25 | r030ffae]의 보조정리 E) [증명됨; r030ffae
+   장v2\장8.md:86 보조정리 8:old-6-26 | r030ffae]의 보조정리 F) [증명됨; r030ffae
+   장v2\장8.md:92 보조정리 8:old-6-27 | r030ffae]의 보조정리 G) [증명됨; r030ffae
+   장v2\장8.md:114 정리 8:escape-lower | r8456f59]의 정리 G) [증명됨; r8456f59
+   장v2\장8.md:130 보조정리 8:envelope-H | r030ffae]의 보조정리 H) [증명됨, 보조정리 {{2:power-sum-renewal}}에 의존; r030ffae
+   장v2\장8.md:162 보조정리 8:envelope-HG | r030ffae]의 보조정리 H-G) [증명됨, 작성자 판단, 보조정리 {{2:power-sum-renewal}}에 의존; r030ffae
+   장v2\장8.md:210 정리 8:pieces-k-monotone | rfc69320]의 정리 B) [증명됨, 보조정리 {{2:zeta-constants}}·{{2:power-sum-renewal}}에 의존; rfc69320
+   장v2\장8.md:241 정리 8:escape-y-monotone | rfc69320]의 정리 A와 보조정리 1–3) [증명됨, 보조정리 {{2:power-sum-renewal}}에 의존; rfc69320
+   장v2\장8.md:285 보조정리 8:jensen-H-ii | 증명됨; rfc69320
+   장v2\장8.md:295 정리 8:closed-form-envelope | rfc69320]의 보조정리 8.1, 명제 W\*·G\*, 정리 CF) [증명됨, (라)의 두 이음새 값은 계산 보조(방향 반올림 구간), 보조정리 {{2:zeta-constants}}·{{2:power-sum-renewal}}·{{8:envelope-H}}·정리 {{8:envelope-HG}}·{{8:pieces-k-monotone}}·{{8:escape-y-monotone}}에 의존; rfc69320
+   장v2\장8.md:324 보조정리 8:table-tolerance | rfc69320]의 §8.4) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:closed-form-envelope}}에 의존; rfc69320
+   장v2\장8.md:349 보조정리 8:large-q-bounds | r030ffae] §3.6의 보조정리 K(i)) [증명됨, 보조정리 {{2:power-sum-renewal}}에 의존; r030ffae
+   장v2\장8.md:365 보조정리 8:cell-bound | r030ffae]의 보조정리 L) [증명됨; r030ffae
+   장v2\장8.md:371 명제 8:reduction-J | r030ffae]의 명제 J) [증명됨, 보조정리 {{8:large-q-bounds}}에 의존; r030ffae
+   장v2\장8.md:403 정리 8:old-6-28 | r030ffae]의 정리 W) [증명됨, 계산 보조(방향 반올림 구간), 명제 {{8:reduction-J}}·보조정리 {{8:table-tolerance}}에 의존; r030ffae, rfc69320
+   장v2\장8.md:417 보조정리 8:old-6-30 | r030ffae]의 보조정리 C₀) [증명됨; r030ffae
+   장v2\장8.md:443 보조정리 8:old-6-31 | r030ffae]의 사실 1·2) [증명됨; r030ffae
+   장v2\장8.md:459 보조정리 8:old-6-32 | r030ffae] §4″.3의 보조정리 K) [증명됨; r030ffae
+   장v2\장8.md:487 보조정리 8:hazard-H1 | r5bbc534]의 정리 H1(a)에 해당) [증명됨, 작성자 판단; r5bbc534
+   장v2\장8.md:499 정리 8:old-6-33 | r030ffae]의 정리 B‴) [증명됨, 계산 보조(방향 반올림 구간), 정리 {{8:old-6-28}}·보조정리 {{8:table-tolerance}}에 의존; r030ffae

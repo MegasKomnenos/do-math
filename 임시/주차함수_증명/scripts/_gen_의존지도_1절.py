@@ -22,7 +22,7 @@ OLD = os.path.join(ROOT, "대조v2", "의존지도_v2_1112판.md")
 OUT = os.path.join(ROOT, "의존지도_v2.md")
 MAP_OUT = os.path.join(ROOT, "대조v2", "라벨_번호_대응표_1114.md")
 LEDGER = os.path.join(ROOT, "장부_v2.md")
-CH11 = os.path.join(ROOT, "장v2", "장11.md")
+CH11 = os.path.join(ROOT, "장v2", "장10.md")  # 9장 제거 뒤 보증 장은 10장
 MS = os.path.join(ROOT, "원고.md")
 
 LAB = re.compile(r"\{\{(\d+:[A-Za-z][A-Za-z0-9\-]*)\}\}")
@@ -108,7 +108,7 @@ for ln in ch11:
 lit_of = {}
 on = False
 for ln in ch11:
-    if ln.startswith("### 11.4"):
+    if ln.startswith("### 10.3"):  # 문헌 표(옛 11.4 → 11.3 → 9장 제거 뒤 10.3)
         on = True
         continue
     if on and ln.startswith("| ") and not ln.startswith("| 문헌") and not ln.startswith("|---"):
@@ -242,7 +242,7 @@ for k in order:
     if k in appd_of:
         appd = ", ".join(appd_of[k])
     elif "계산 보조" in status:
-        appd = "머리에 계산 보조 표시, 11.2 표에 항목 없음"
+        appd = "머리에 계산 보조 표시, 10.2 표에 항목 없음"
     else:
         appd = "없음"
     # 비고(11-12 판에서 이어받음; 지운 라벨은 「뺀 …」으로 표시; NOTE_FIX의 문구는 걷어 낸다)
@@ -447,7 +447,7 @@ mp_text = "\n".join(mp) + "\n"
 
 print("1절 행", len(rows), "/ 뺌·대체", len(gone_rows), "/ 입력 라벨", len(all_inputs), "/ 머리 순환", len(head_cycles), "/ 본문 상호 인용 묶음", len(all_sccs))
 print("옛 표에서 이어받음: 첫 판 번호(장부 4절 기준)", sum(1 for k in order if led4.get(k, {}).get("first", "—") not in ("—", "")),
-      "/ 문헌(11.4절)", sum(1 for k in order if k in lit_of),
+      "/ 문헌(10.3절)", sum(1 for k in order if k in lit_of),
       "/ 비고", sum(1 for k in order if old_rows.get(k, {}).get("note", "—") not in ("—", "")), "/ 부록 D", sum(1 for k in order if k in appd_of))
 print("M14 2.3 손질: 기록 주장 앞 목록 채움", claims_fix, "/ 비고 문구 걷어 냄", len(note_fix_hits), "종", {a[:18]: n for a, n in note_fix_hits.items()},
       "/ 안 맞은 문구", [a[:18] for a, _ in NOTE_FIX if a not in note_fix_hits])

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """주 정리에서 출발한 의존 도달 검사(사용자 결정 91 (3)).
 
-사용: python -I scripts/_의존_도달.py [--list] [--strict] [--mentions] [--d] [--check-11-3] [--all]
+사용: python -I scripts/_의존_도달.py [--list] [--strict] [--mentions] [--d] [--all]
 읽기만 한다(멱등). 장v2/장*.md의 진술 머리와 증명 본문, 뒤로 미룬 증명 단락에서 간선을 뽑고,
-뿌리(주 정리와 그 두 증명)에서 닿지 않는 진술을 적는다.
+뿌리(주 정리와 그 증명)에서 닿지 않는 진술을 적는다.
 
 간선 규칙(파견문):
   진술 머리 **정리 {{N:label}} (이름) [지위, …에 의존; r…].**  의 머리 줄이 인용하는 라벨,
@@ -11,7 +11,6 @@
   뒤로 미룬 증명 「**정리 {{…}}의 증명.**」 단락(다음 머리 전까지)이 인용하는 라벨.
   --strict 는 증명 본문을 「머리 다음부터 첫 ∎ 또는 다음 절 머리(###)까지」로 좁힌다(비교용).
 부록 D 항목은 머리 줄과 「**확인하는 진술.**」 줄의 라벨 가운데 하나라도 닿으면 닿은 것으로 본다.
---check-11-3 은 11.3절의 세 표가 인용하는 라벨이 모두 닿는지 확인한다.
 --mentions 는 닿지 않는 진술마다 장v2 전체·장부_v2.md·구조표_v2.md의 언급 자리를 적는다.
 """
 import argparse
@@ -33,7 +32,7 @@ D_HEAD_RE = re.compile(r"^### D\.\{\{D:([A-Za-z][A-Za-z0-9\-]*)\}\}")
 SECTION_RE = re.compile(r"^### (\d+\.\d+(?:\.\d+)?)")
 CHAPTER_RE = re.compile(r"^## (\d+)\.")
 
-ROOTS = ["1:main-theorem", "9:old-7-46", "10:old-8-37"]
+ROOTS = ["1:main-theorem", "10:old-8-37"]
 
 
 def chapter_files(prefix):
@@ -174,24 +173,6 @@ def reach(stmts, roots):
     return seen, via
 
 
-def labels_in_11_3():
-    path = os.path.join(BASE, "장11.md")
-    if not os.path.exists(path):
-        return set()
-    lines = read_lines(path)
-    on = False
-    out = set()
-    for ln in lines:
-        if ln.startswith("### 11.3"):
-            on = True
-            continue
-        if ln.startswith("### 11.4"):
-            break
-        if on:
-            out.update(f"{a}:{b}" for a, b in LABEL_RE.findall(ln))
-    return out
-
-
 def mentions(key, stmts):
     """장v2 전체·장부_v2.md·구조표_v2.md에서 라벨이 나오는 줄(자기 머리와 본문 범위 밖)."""
     out = []
@@ -215,12 +196,11 @@ def main():
     ap.add_argument("--strict", action="store_true", help="증명 본문을 첫 ∎까지로 좁힌다")
     ap.add_argument("--mentions", action="store_true", help="닿지 않는 진술의 언급 자리")
     ap.add_argument("--d", action="store_true", help="부록 D 항목의 도달")
-    ap.add_argument("--check-11-3", action="store_true", help="11.3절 표의 라벨이 모두 닿는지")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--roots", default=",".join(ROOTS))
     args = ap.parse_args()
     if args.all:
-        args.list = args.d = args.check_11_3 = args.mentions = True
+        args.list = args.d = args.mentions = True
     roots = [r for r in args.roots.split(",") if r]
     stmts = parse_chapters(strict=args.strict)
     seen, via = reach(stmts, roots)
@@ -256,12 +236,6 @@ def main():
             if not touched:
                 extra = f" (라벨: {', '.join(sorted(it['labels']))})"
             print(f"D.{it['order']:>2} {{{{D:{nm}}}}} {flag}{extra}; 닿는 본문이 인용: {'예' if nm in cited else '아니오'}  [{it['file']}:{it['line']}]")
-    if args.check_11_3:
-        labs = labels_in_11_3()
-        bad = sorted(l for l in labs if l not in seen)
-        print(f"\n== 11.3절 표의 라벨 {len(labs)}개 가운데 닿지 않는 것 {len(bad)}개 ==")
-        for l in bad:
-            print(f"  {{{{{l}}}}} ({'있음' if l in stmts else '정의 없음'})")
     return 0
 
 

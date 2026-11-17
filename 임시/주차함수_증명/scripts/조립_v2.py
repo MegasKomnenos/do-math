@@ -2,8 +2,8 @@
 """둘째 판: 장 파일들을 순서대로 이어 원고.md를 만들고 라벨을 번호로 푼다.
 
 사용: python 조립_v2.py [--out 원고.md] [--keep-labels]
-입력: 상위 폴더의 장v2/장1.md … 장v2/장11.md, 장v2/부록A.md, 장v2/부록B.md, 장v2/부록C.md,
-      부록 D는 장v2/부록D_장N.md(N=1..11)를 장 순서로 이어 「## 부록 D. 계산 증거 자료」 아래에 둔다.
+입력: 상위 폴더의 장v2/장1.md … 장v2/장10.md, 장v2/부록A.md, 장v2/부록B.md, 장v2/부록C.md,
+      부록 D는 장v2/부록D_장N.md(있는 N만; 9장 제거 뒤 N≤10)를 장 순서로 이어 「## 부록 D. 계산 증거 자료」 아래에 둔다.
 없는 파일은 건너뛰고 그 사실을 적는다(중간 판본에도 쓴다).
 
 라벨 규칙(집필 공통 지침 v2 7절):
@@ -28,7 +28,7 @@ APPENDICES = ["부록A.md", "부록B.md", "부록C.md"]
 def chapter_files(base, prefix="장"):
     """장N.md 또는 나뉘어 쓰인 장NA.md, 장NB.md…(장 번호 순, 조각은 글자 순). prefix는 '장' 또는 '부록D_장'."""
     out = []
-    for i in range(1, 12):
+    for i in range(1, 11):  # 9장 제거 뒤 장은 1–10(옛 11장 보증이 10장)
         whole = f"{prefix}{i}.md"
         if os.path.exists(os.path.join(base, whole)):
             out.append(whole)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""11.2 표(장v2/장11.md)의 다섯째 칸(재계산 꺾쇠 〔…〕)을 부록 D 조각의 **독립 재계산.** 줄 첫머리 꺾쇠와 같게 맞춘다.
+"""11.2 표(지금은 10.2절; 장v2/장10.md)의 다섯째 칸(재계산 꺾쇠 〔…〕)을 부록 D 조각의 **독립 재계산.** 줄 첫머리 꺾쇠와 같게 맞춘다.
 여섯째 칸(독립 재계산 전문)은 2026-11-17 결정 K5-11로 표에서 빠졌다(`_sync_11_2행.py`는 그 칸이 남아 있지 않은지만 검사한다). 그래서 꺾쇠 칸이
 행의 마지막 칸이고, 칸은 양 끝의 세로줄을 벗긴 뒤 ` | `로 가른다(끝 칸에 닫는 세로줄이 붙은 채 비교되어 모든 행을 갱신으로 잡고 닫는 세로줄을
 잘라 내던 결함을 2026-11-17 V5가 고침). 멱등.
@@ -37,7 +37,7 @@ def main():
     dry = "--dry" in sys.argv
     names = [a for a in sys.argv[1:] if not a.startswith("--")]
     br = brackets()
-    p = os.path.join(CHAP, "장11.md")
+    p = os.path.join(CHAP, "장10.md")
     lines = io.open(p, encoding="utf-8").read().split("\n")
     n = 0
     for i, row in enumerate(lines):

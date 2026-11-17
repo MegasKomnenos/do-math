@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../.." || exit 1
 echo "== $(date '+%H:%M:%S') 장부 4절 이름 동기화"; python -I scripts/_sync_4절이름.py
 echo "== 11.2 표 5열(꺾쇠) 동기화"; python -I scripts/_sync_11_2꺾쇠.py
 echo "== 11.2 표 6열(독립 재계산) 동기화"
-LABELS=$(grep -o '^| 부록 D.{{D:[A-Za-z0-9-]*}}' 장v2/장11.md | sed 's/.*{{D:\(.*\)}}/\1/' | tr '\n' ' ')
+LABELS=$(grep -o '^| 부록 D.{{D:[A-Za-z0-9-]*}}' 장v2/장10.md | sed 's/.*{{D:\(.*\)}}/\1/' | tr '\n' ' ')
 python -I scripts/_sync_11_2행.py $LABELS | tail -3
 echo "== 재실행표"; python -I scripts/_gen_재실행표.py | tail -2
 echo "== 조립"; python -I scripts/조립_v2.py | tail -6

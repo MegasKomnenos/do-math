@@ -89,9 +89,9 @@ if kan:
     hits["칸(부록 D)"] = kan
 # 개수 대조
 d_items = sum(len(re.findall(r"^### D\.\{\{D:", io.open(p, encoding="utf-8").read(), re.M)) for p in glob.glob(os.path.join(ROOT, "장v2", "부록D_*.md")))
-rows_112 = len(re.findall(r"^\| 부록 D\.\{\{D:", io.open(os.path.join(ROOT, "장v2", "장11.md"), encoding="utf-8").read(), re.M))
+rows_112 = len(re.findall(r"^\| 부록 D\.\{\{D:", io.open(os.path.join(ROOT, "장v2", "장10.md"), encoding="utf-8").read(), re.M))
 rows_re = len(re.findall(r"^\| D\.\{\{D:", io.open(os.path.join(ROOT, "원고_자료", "재실행표.md"), encoding="utf-8").read(), re.M))
-print(f"부록 D 항목 {d_items}, 11.2 행 {rows_112}, 재실행표 행 {rows_re}")
+print(f"부록 D 항목 {d_items}, 10.2 행 {rows_112}, 재실행표 행 {rows_re}")
 total = sum(len(v) for v in hits.values())
 print("잔재", total)
 for tok, v in hits.items():
