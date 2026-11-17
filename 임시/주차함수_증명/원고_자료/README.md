@@ -62,9 +62,9 @@
 | `rce3dc75/icert.c`(기록) | `D.{{D:central-gap-integer}}`, `D.{{D:exact-n20000}}` (ㄷ) | `cl /nologo /O2 /openmp icert.c`(기록 `build_icert.bat`) | 정수 고정소수점 프로그램이지만 MSVC 내장함수 `_umul128`(`<intrin.h>`)을 쓰므로 GCC·Clang에서는 `unsigned __int128` 곱으로 바꾸는 이식이 필요하다. 옵션 `-O2 -ffp-contract=off -fopenmp` |
 | `r19de912/qr_cert2.c`(기록; 같은 기록의 `qr_cert3.c`도 같은 구조) | `D.{{D:exact-n20000}}` (ㄹ) | `cl /nologo /O2 /openmp /W3 qr_cert2.c`(기록 `build.bat`) | `icert.c`와 같다(`_umul128` 이식 필요, `-O2 -ffp-contract=off -fopenmp`) |
 | `r15df76b/leftcert.c`(기록; `leftcert_build1.c`·`leftcert_build2.c`는 빌드 이력판) | `D.{{D:exact-n20000}}` (ㄴ) | `clang -O3 -march=native -D_CRT_SECURE_NO_WARNINGS`(Visual Studio 2022 동봉 clang 19.1.5; `unsigned __int128` 때문에 MSVC `cl`은 불가) | `-O2 -ffp-contract=off`. 판정은 정수 비교이고 부동소수는 진단 출력에만 쓰인다 |
-| `pcertv.c`(기록 [r15df76b], 이 묶음에 없음) | `D.{{D:exact-n20000}}` | `clang -O2 -mavx2 -ffp-model=strict` | `gcc -O2 -mavx2 -ffp-contract=off -frounding-math`(`fesetround`로 방향 반올림) |
-| `icert_rows.c`(기록 [r6b37c7e]·[r475ada3], 이 묶음에 없음) | `D.{{D:band102-integer}}` (ㅁ) | `clang -O2 -D_CRT_SECURE_NO_WARNINGS`(MSVC 19 환경의 clang 19.1.5) | `-O2 -ffp-contract=off`. `unsigned __int128`을 쓰는 정수 전용 프로그램이고 MSVC `cl`로는 빌드되지 않는다 |
-| `lmcert_sweep.c`(기록 [r10ff8c2], 이 묶음에 없음) | `D.{{D:moment-certification}}` | MSVC 19.44 `cl /O2 /fp:precise`, 소스 안 `#pragma fp_contract(off)` | `-O2 -ffp-contract=off`. 반올림-최근접 binary64와 사전 오차 해석이므로 반올림 모드는 바꾸지 않는다 |
+| `pcertv.c`(기록 [r15df76b]; 이 묶음의 사본 `r15df76b/pcertv.c`) | `D.{{D:exact-n20000}}` | `clang -O2 -mavx2 -ffp-model=strict` | `gcc -O2 -mavx2 -ffp-contract=off -frounding-math`(`fesetround`로 방향 반올림) |
+| `icert_rows.c`(기록 [r6b37c7e]·[r475ada3]; 이 묶음의 사본 `r475ada3/icert_rows.c`) | `D.{{D:band102-integer}}` | `clang -O2 -D_CRT_SECURE_NO_WARNINGS`(MSVC 19 환경의 clang 19.1.5) | `-O2 -ffp-contract=off`. `unsigned __int128`을 쓰는 정수 전용 프로그램이고 MSVC `cl`로는 빌드되지 않는다 |
+| `lmcert_sweep.c`(기록 [r10ff8c2]; 이 묶음의 사본 `r10ff8c2/lmcert_sweep.c`) | `D.{{D:moment-certification}}` | MSVC 19.44 `cl /O2 /fp:precise`, 소스 안 `#pragma fp_contract(off)` | `-O2 -ffp-contract=off`. 반올림-최근접 binary64와 사전 오차 해석이므로 반올림 모드는 바꾸지 않는다 |
 
 **GCC 시험.** WSL이 뜨지 않아 리눅스에서는 빌드하지 못했다. 대신 같은 기계의 MSYS2 GCC 16.2.0(대상 `x86_64-pc-cygwin`)으로 `c50iv.c`를 소스 수정 없이 위 표의 GCC 줄 옵션에 `-fno-fast-math`를 더해 빌드했고, 역어셈블에 `vfmadd` 명령은 없었다. 이 빌드로 두 실행을 했다.
 
@@ -103,7 +103,7 @@
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_31_1500.out` | `c86c2ac4ecb5fd2758d5392a5bf08130a30248e00f4d4e605feea522e94be9fa` |
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_1500_2250.out` | `5ccd59f419542b03c2020ed67432638ce1d3a95ed358859a4ef53291d7acf8d4` |
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_2250_3000.out` | `55e08066959ce5a47d200e1b08038f2ce7fd68e05dce05b4844946e7ad42fde5` |
-| `세션_재계산/band_boxes/band_iv.py` | `f0151118feada4293db5415bff25f0165ab53d303c9f7a2fd51890ece388bb22` |
+| `세션_재계산/band_boxes/band_iv.py` | `58ace9e9c71dbb91d528ce7c9a025f601883e3fedeea19f44d7fe2ab45429cad` |
 | `세션_재계산/band_boxes/band_result.txt` | `6a78d14f536e4124340f179fcbba3c4322d2cd554ecccff5bac1523eed29aced` |
 | `세션_재계산/band_boxes/band_summary.py` | `30e56358f9fec897fb835bab34956b33be10625d7604f0c418998fd1163fca27` |
 | `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json` | `b1bca8298e8e01fc1816a9dd1ca1f15f93a6b48db9a362bade3c86a0a4d2c3b3` |
@@ -118,16 +118,16 @@
 | `세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt` | `d5a267f7123a971cfbaab080c3d3697bf8699cd6efcfb4c9f20ae22f51b917fa` |
 | `세션_재계산/band_boxes/run_all.sh` | `a748478f59a4bdb2a9bb8051e1061a83f26ac79513e05826299e7e13b8eb6f53` |
 | `세션_재계산/band_boxes/tail_H_T12-25_k6668.txt` | `78ab06c7df2fcd10302d88b42900adfa23954d626c25ad80e9c5c535d48ee5b2` |
-| `세션_재계산/window_mass_env/cert_Cb_iv.py` | `104db0e9f3656c06f93b8140fb74ff7a3cc30df03af39790da6326a380020c23` |
+| `세션_재계산/window_mass_env/cert_Cb_iv.py` | `f5571b9bb9b776030127b7217e40d27e34ea34c660d8a24a7253340083a76ed9` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_out_1_2280.txt` | `722ba85fe918fe3374644b046f29fa86ec41f21224d538876190d0f672a76862` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_out_2280_3000.txt` | `abbf5befcc90d2fa84e72716de0b15fe8b9acec421c2f69d74d8d9391e9f2267` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_result_1_2280.json` | `acfcbbf03dff637b3ef0465ccabef28135d7d4f8b75838f4d8611e66b82a74e4` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_result_2280_3000.json` | `116247dc865033f243d3688ec8f1de81e4c95098541f17e44d825b392a90dc6f` |
-| `세션_재계산/window_mass_env/cert_interval_iv.py` | `a601cab38fde402bf2d9457f4dd9fdd3dd5a92ea499511477fd0e5e639ea75e3` |
+| `세션_재계산/window_mass_env/cert_interval_iv.py` | `7e984da698b7f2659b9e57458b0affeb891ac230bdaf62619ebf2ec9beb15b95` |
 | `세션_재계산/window_mass_env/cert_interval_iv_out.txt` | `873a8e1e388b509f763983268b35b1414c8d5b7f3da82b6e869807fbc0caa26b` |
 | `세션_재계산/window_mass_env/cert_interval_iv_result.json` | `519b3951942ab1b8fda8d3d368857165d5e50ce9129100375ef29e64e90bc26e` |
-| `세션_재계산/window_mass_env/check_table_iv.py` | `cacdc234a1d1c3e5f1456344fec07765acd15f7f6a841eedd8a5bc07fed61b81` |
-| `세션_재계산/window_mass_env/check_table_iv_out.txt` | `b426d196391655d9678cdb0ad0ba0922bd975cfad3775375e80e2e6d3580e9e0` |
+| `세션_재계산/window_mass_env/check_table_iv.py` | `50d4f58b6ebfd42d99314fd7ea1394bb7fd52e62c0ddfee2d506af91132cca15` |
+| `세션_재계산/window_mass_env/check_table_iv_out.txt` | `25ed03a972929fecaf7ca5093ed0803b65a9e810c36a214003ee991498d916e5` |
 | `세션_재계산/window_mass_env/ia.py` | `8106bd07c5706bf495c74d03b6a6df3a8b0459f10491679bfcc037d1ef90f17c` |
 | `세션_재계산/window_mass_env/summarize.py` | `19b7a064b313e8ff3897b32531baa1ba7a44a962a76a134dbeef072e2c95dc49` |
 | `세션_재계산/window_mass_env/summarize_out.txt` | `0cac74a6c6282c86a3b3f350d310ad219a143c626683e61297f338a5d9c62d72` |
@@ -191,7 +191,7 @@
 | `세션_재계산/column_cert_iv/test_1171.txt` | `76c6453d4a61251761ef54c0c0b0fd8d0dc31dea56b6c8d2d64ecfacda07c005` |
 | `세션_재계산/column_cert_iv/test_2000.txt` | `fd74ac0d9a5c80ba079577bae41ea3dea7625cbed1f7bb236428f0249a1828dd` |
 | `세션_재계산/column_cert_iv/tables_out.txt` | `a1222153291283b5b42e11d27d24bdef15d059df12f678c25361392c7c99f788` |
-| `세션_재계산/moment_cert_iv/mcert_iv.py` | `4a8796d8a96c2cf557936e3a1788868a6a630bd8e10c7ce85117892d8fcbf64a` |
+| `세션_재계산/moment_cert_iv/mcert_iv.py` | `edaf66b4da7b6e398bc388089fbfda8db8c08833bb078c9044eee12790282cd6` |
 | `세션_재계산/moment_cert_iv/sweep_p0.jsonl` | `77143d1b5c102f43a4c8cb2ce207f17597779ba8b285fc652fe71b0fb6527009` |
 | `세션_재계산/moment_cert_iv/sweep_p1.jsonl` | `6699672ff30a00402b2134e2931bf6cd0fd10c991205e97ce647347978c4c949` |
 | `세션_재계산/moment_cert_iv/sweep_p0.log` | `31565069b7a4e3f938ce1b3d61e2abf29ba5fdabd312cb707d5e0609f99ef065` |
@@ -450,15 +450,15 @@
 | `세션_재계산/icert_py_full/out_9630_9998.txt` | `6ec0902887cb8870566f5686107882869ef494494f259297bcedf2df0fb526d4` |
 | `세션_재계산/icert_py_full/out_9632_10000.txt` | `68d52190f7e099486483c65b2456fd45ecce236bebd095b08796550bc2a60e13` |
 | `세션_재계산/icert_py_full/pids.txt` | `cf90cad32e4bf6a8e6e8ec67d1f369a500de47bebb48cc00df24fd3d01118e82` |
-| `세션_재계산/four_families_DDLnat/families_iv.py` | `c83a963d1d18203680b94e1967669131d519383ac45e9bede029b5e0d08ba1ab` |
-| `세션_재계산/four_families_DDLnat/families_iv_out.txt` | `399e85169b28a017dbec24808a7d24cc3b70a3f926c533f74555b805c5f0da29` |
+| `세션_재계산/four_families_DDLnat/families_iv.py` | `b86be966704f15123901ecf95184d2e0e295ba06e9fef2cd610202be415e373a` |
+| `세션_재계산/four_families_DDLnat/families_iv_out.txt` | `4094775b52b616692a34a2e5cb9496a2c798496ba02be56810ec7fa3ba8fb0a4` |
 | `세션_재계산/band_boxes/ivbox_lib.py` | `ab5ef70f632caa0f9a4813e2455b10f0751fdf4f158dc8ea591f6fb9a6bd1f9b` |
 
 `세션_재계산/zeta_constants/zeta_iv.py`는 부록 D의 Riemann 제타 상수 항목이 적은 방법을 mpmath 구간 산술(소수 30자리)로 다시 돌려 $\mathsf z_{3/2}$·$\mathsf z_{-1/2}$·$\mathsf z_{1/2}$의 구간을 확인한다(2026-11-13 세션; 인자는 부분합 항 수 $C$ 둘, 기본 4000). 함수 `z32`는 부분합 $S=\sum_{j<C}j^{-3/2}$에 항목 식 줄의 사다리꼴 하계 $2C^{-1/2}+\tfrac12C^{-3/2}$와 중점 상계 $2(C-\tfrac12)^{-1/2}$를 더하고, $\mathsf z_{-1/2}$·$\mathsf z_{1/2}$는 Euler–Maclaurin 공식과 첫 생략항의 나머지 상하계로 감싼다. `python -I zeta_iv.py 4000 4000`의 출력 `zeta_iv_out.txt`는 $\mathsf z_{3/2}\in[2.61237534856\ldots,2.61237534874\ldots]$, $\mathsf z_{-1/2}\in[-0.20788622497838\ldots,-0.20788622497735\ldots]$, $\mathsf z_{1/2}\in[-1.4603545088095868\ldots,-1.4603545088095855\ldots]$이고, 셋 다 확인하는 진술의 구간 안에 있다.
 
 `세션_재계산/r030ffae_window/`는 부록 D의 창의 수준 질량 하계 항목의 셀 검사를 시험 함수 격자를 한 점 늘려($0\le i\le12927$) 다시 돌린 것이다(2026-11-13 세션). `work/`는 기록 [r030ffae] `evidence/peer/rerun/work/`의 코드 사본에 늘린 표 `xKrig.npy`·`wKrig.npy`(기록의 표는 `xKrig_orig.npy`·`wKrig_orig.npy`; 처음 12,927개 값은 비트 단위로 같다)와 결과 JSON을 더한 것이고, `NEW_*.out`이 실행 출력이다.
 
-`세션_재계산/band_boxes/ivbox_lib.py`는 같은 폴더의 `band_iv.py`가 쓰는 구간 성분이다. 스칼라는 mpmath `iv`(소수 34자리), 리만 합 벡터는 binary64의 정확 반올림 사칙연산·제곱근만 써서 1 ulp 바깥 밀기와 합의 $1-10^{-11}$ 인자로 아래로 민다. $\Omega$의 하계는 `window_mass_env/ia.py`의 정확 정의(격자 $i\mathsf K^{-2/3}$·절점값·Fritsch–Carlson 기울기의 구간)에서 조각별 3차 계수의 바깥 괄호를 만들어 쓰며 조각별 비증가를 구간으로 확인한다. 저장된 봉투 표 $\hat{\mathcal T}$는 저장값을 정확한 점 $\xi^{\mathcal T}_i=0.0005\,i$에 둔 선형 보간으로 읽는다.
+`세션_재계산/band_boxes/ivbox_lib.py`는 같은 폴더의 `band_iv.py`가 쓰는 구간 성분이다. 스칼라는 mpmath `iv`(소수 34자리), 리만 합 벡터는 binary64의 정확 반올림 사칙연산·제곱근만 써서 1 ulp 바깥 밀기와 합의 $1-10^{-11}$ 인자로 아래로 민다. $\Omega$의 하계는 `window_mass_env/ia.py`의 정확 정의(격자 $i\mathsf K^{-2/3}$·절점값·절점 기울기의 구간)에서 조각별 3차 계수의 바깥 괄호를 만들어 쓰며 조각별 비증가를 구간으로 확인한다. 저장된 봉투 표 $\hat{\mathcal T}$는 저장값을 정확한 점 $\xi^{\mathcal T}_i=0.0005\,i$에 둔 선형 보간으로 읽는다.
 
 `세션_재계산/band_boxes/`는 부록 D의 띠 정리의 상자 검사 항목을 같은 구간 산술로 다시 계산한 것이다. 상자 안의 모든 경우 가름과 되먹임 폭의 점별 범위를 함께 고려해 식 (8.23) 자체를 아래에서 막는다. `band_iv.py`가 계산, `band_summary.py`가 요약, `run_all.sh`가 실행 순서이고, `compare_record.py`가 기록의 상자 값과 대조한다. $\Omega$는 같은 폴더의 `ivbox_lib.py`의 정확 정의를 쓴다.
 
@@ -474,13 +474,13 @@
 
 `세션_재계산/moment_cert_iv/`는 부록 D의 모멘트 판정 항목(재귀 인증)을 구간 산술로 다시 계산한 것이다(2026-11-13~15 세션). `mcert_iv.py`는 재귀 (7.1)과 모멘트 재귀 (7.2)에 $\hat{\mathfrak a}_n$을 곱해 나눗셈 없는 네 양의 재귀로 바꾸고, 필요한 끝점만 binary64 구간으로 계산한다(아래 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^\flat$, $\hat{\mathfrak a}\mathfrak Z$; 위 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^{\mathrm H}$). 항목이 쓰는 본 실행은 BLAS 없는 연산 수 한계 판(`sweep_nb … --count`)이다. 각 합을 numpy 원소별 곱과 원소별 덧셈의 짝지은 나무로 계산하고 한 항이 겪는 반올림 횟수 $r$을 세어 끝에서 $(1\pm\mathsf p)^r$로 넓히며, 저장값이 모두 $[2^{-400},2^{400}]$ 안임을 확인하고(벗어나면 척도 $\beta$를 고쳐 다시 돈다), 스칼라 연산은 한 ulp 밖으로 민다. 초등함수와 기록의 binary64 판정식(부록 D 모멘트 판정 항목의 「식」 줄)은 쓰지 않고 $\mathbb E>0$을 직접 판정한다. (A5) 1160열 40,638,833개 위치 전부 통과(실패 0; 프로세스 1개 `mcert_iv.py sweep_nb A5 sweep_ct_A5.jsonl --low --count`; `sweep_ct_A5.jsonl`과 로그). 기록의 (A3) 340열(열 $501\le k\le840$)도 같은 판으로 통과했으나 본문이 그 범위를 쓰지 않아 항목과 묶음에서 뺐다(2026-11-17 22차; `sweep_ct_mp.py`는 그때 쓴 샤드 도구다). `summarize_nb.py`→`summary_noblas.txt`(범위별 집계와 BLAS 판과의 판정 대조). 대조 실행으로, 같은 재귀의 합을 행렬곱으로 계산한 뒤 덧셈 순서·융합 여부와 무관한 한계 $(1\pm u)^{m+1}$($m=6n+3$)로 넓힌 판(`sweep 0 2`·`sweep 1 2`)이 기록의 다섯 실행 A1–A5(글이 쓰는 범위는 A5이고, 나머지 넷은 어느 장도 쓰지 않는 추가 계산이다) 7619열 60,703,015개 위치에서 전부 통과했고(프로세스 2개로 약 2시간 10분, CPU 합 15,164초; `sweep_p0.jsonl`·`sweep_p1.jsonl`과 로그), 항목의 1160열에서 두 판의 열별 최솟값 하계는 상대 $1.1\times10^{-9}$ 안에서 같다. `summarize.py`→`summary.txt`(BLAS 판의 범위별 집계), `compare.py`→`compare_out.txt`(기록의 여덟 열 대조: 인쇄값이 모두 구간 안), `test_exact.py`→`test_exact_out.txt`(작은 열의 정확 유리수 포함), `test_count.py`→`test_count_out.txt`(연산 수 한계 판의 나무 깊이 검증, 작은 열의 포함 검사, BLAS 판과의 세 열 대조), `nM.py`→`nM.json`·`nM_out.txt`(열별 문턱 $n_{\mathrm M}(k)$의 정확 유리수 재계산; 1160열 모두 기록과 같음).
 
-`세션_재계산/column_k500_iv/`는 부록 D의 열 인증($121\le k\le500$) 항목을 이 글의 새 구현으로 380열 전부 다시 인증한 것이다(2026-11-13 세션). `lastcar_iv.py`는 세 재귀 G·H·E를 쓰지 않고 마지막 차 재귀 $n\mathfrak e_n=\mathfrak x\sum_j\min(j+1,y)\mathfrak e_j\mathfrak e_{n-1-j}$ 하나를 정확한 큰 정수 합성곱의 온라인 분할 정복(Kronecker 포장; 큰 크기는 `decimal`의 수론 변환, 부정확 반올림은 트랩)으로 160비트 고정소수점 정수 구간에서 계산하며, 반올림은 계수를 확정할 때 한 번(아래 끝은 내림, 위 끝은 올림)뿐이라 끝점이 직접 합과 비트 단위로 같다. 연속한 열 열 개가 하나의 정확한 이진 유리수 $\mathfrak x=e^{-1}(1+c/\bar k)$를 공유한다. `colk500.py`(`--worker i --nworkers 2`)가 열별 판정·최소 상대 여유·시간을 `res/k<k>.json`에 쓰고(380개; 해시 목록 `res/SHA256SUMS.txt`), `summarize.py`→`summary_out.txt`(380열 실패 0, 직접 비교 20,368,570개·비 비교 10,302,655개, 최소 상대 여유 $1.3778\times10^{-5}$($k=500$, $n=2k+1$)), `compare_indep.py`→`compare_indep_out.txt`(기록 검토의 다섯 열과 판정·최대 폭 일치, $k=121$은 모든 끝점 동일; 열별 최소 여유가 기록과 상대 $1.1\times10^{-35}$ 안), `test_small.py`→`test_small_out.txt`($n\le7$ 전수·$n\le120$ 정확 개수 포함, 분할 정복과 직접 합의 일치). 두 작업자 각 약 9500초(공유 기계, 벽시계 2.7시간; `run_w0.log`·`run_w1.log`).
+`세션_재계산/column_k500_iv/`는 부록 D의 열 인증($121\le k\le500$) 항목을 이 글의 새 구현으로 380열 전부 다시 인증한 것이다(2026-11-13 세션). `lastcar_iv.py`는 세 재귀 G·H·E를 쓰지 않고 마지막 차 재귀 $n\mathfrak e_n=\mathfrak x\sum_j\min(j+1,y)\mathfrak e_j\mathfrak e_{n-1-j}$ 하나를 정확한 큰 정수 합성곱의 온라인 분할 정복(Kronecker 포장; 큰 크기는 `decimal`의 수론 변환, 부정확 반올림은 트랩)으로 160비트 고정소수점 정수 구간에서 계산하며, 반올림은 계수를 확정할 때 한 번(아래 끝은 내림, 위 끝은 올림)뿐이라 끝점이 직접 합과 비트 단위로 같다. 연속한 열 열 개가 하나의 정확한 이진 유리수 $\mathfrak x=e^{-1}(1+c/\bar k)$를 공유한다. `colk500.py`(`--worker i --nworkers 2`)가 열별 판정·최소 상대 여유·시간을 `res/k<k>.json`에 쓰고(380개; 해시 목록 `res/SHA256SUMS.txt`), `summarize.py`→`summary_out.txt`(380열 실패 0, 직접 비교 20,368,570개·비 비교 10,302,655개, 최소 상대 여유 $1.3778\times10^{-5}$($k=500$, $n=2k+1$)), `compare_indep.py`→`compare_indep_out.txt`(기록 검토의 다섯 열과 판정·최대 폭 일치, $k=121$은 모든 끝점 동일; 열별 최소 여유가 기록과 상대 $1.1\times10^{-35}$ 안), `test_small.py`→`test_small_out.txt`($n\le7$ 전수·$n\le120$ 정확 개수 포함, 분할 정복과 직접 합의 일치). 두 프로세스 각 약 9500초(공유 기계, 벽시계 2.7시간; `run_w0.log`·`run_w1.log`).
 
 `세션_재계산/left_columns_k2_120/`는 부록 D의 모든 $n\le20000$의 단봉성 항목 (ㄱ) 가운데 열 $2\le k\le120$($\max(2k+1,12)\le n\le10000$)을 기록 [rc9aee43]의 열 인증 코드(`code/positive_columns.py`, 바이트 그대로의 사본)의 열 계산으로 다시 인증한 것이다(2026-11-15 세션). `code/left_columns.py`가 용량 $1\le y\le121$의 열을 열별 이진 유리 반지름(`code/radii.json`)으로 한 번씩 계산하고 이웃 세 열을 정확한 유리수 배율의 구간으로 한 반지름에 맞추어 비교하며, 출력은 `results_k2_70.jsonl`·`results_k71_120.jsonl`과 `summary.json`(비교 1,175,466개, 실패 0, 최소 상대 여유 $1.2608\times10^{-4}$, $k=6$, $n=13$)이다. `code/exact_check.py`→`exact_check.json`은 $n\le300$의 정확 정수(정리 2.6의 재귀)와 전수 대조, `indep/`는 기록의 독립 프로그램 `indep_lastcar.py`(사본)와 그 재귀로 최소 여유를 재는 `indep_margin.py`를 표본 열 $k\in\{2,3,7,30,60,120\}$에 돌린 것이다. 첫 실행(범위 $2k+1$부터; $n=5,7,9,11$의 네 예외가 드러남)의 결과는 `logs/firstpass/`에 있다.
 
 `세션_재계산/witness_offset_iv/`는 부록 D의 모든 $n\le20000$의 단봉성 항목 (ㅂ), 곧 명제 witness-position-bound(5.1절)가 확인하는 증인 위치 차 $n+1-\ell^\ast_n-0.59963(n+1)^{2/3}-1.24847(n+1)^{1/3}$을 기록 [r19de912]의 행 자료(자료 묶음의 사본 `r19de912/evidence__peer__cert__v2run20000-rows.tsv`의 봉우리 열 `mode_ell_mid`)에서 방향 반올림 구간(mpmath `iv`, 소수 30자리)으로 다시 계산한 것이다(2026-11-15 세션). 기록의 계산 `mode_offset.py`는 binary64 최근접 반올림의 배정밀도 평가였다. `code/witness_offset_iv.py`는 두 상수를 십진 문자열의 구간으로, 두 지수 $2/3$·$1/3$을 정수 나눗셈의 구간으로 두고 두 범위 $50\le n\le900$·$901\le n\le20000$마다 구간 아래 끝의 최솟값과 위 끝의 최댓값을 이진 유리수 그대로의 분수와 소수 열다섯 자리(아래 끝 내림·위 끝 올림)로 `witness_offset_iv.json`에 적고, 진술의 구간 $[0.85,1.99]$ 안에 드는지를 정확한 유리수 비교로 판정한다(두 범위 $[0.889979773145161,1.986242781217464]$·$[0.850826875264814,1.875832792791377]$, 모두 안에 듦, 최소 여유 $8.27\times10^{-4}$, 구간 폭 $7.5\times10^{-28}$ 이하, 약 10초). `code/summarize.py`가 부록 D 항목과 재실행표에 적는 꼴(바깥쪽 세 자리 $[0.889,1.987]$·$[0.850,1.876]$)로 요약하고, 실행 명령·시각·환경은 `logs/commands.txt`, 설명은 `README_run.md`에 있다.
 
-`세션_재계산/icert_py_full/`는 부록 D의 가운데 증가의 정수 인증 항목의 독립 재계산, 곧 기록 검토의 Python 큰 정수 구현 `rev_icert_unpaired_fast.py`(사본; `CERT` 경로 한 줄만 기록 사본으로 바꿈)를 $1001\le k\le10000$의 9000열 전부에 돌려 `icert.c`의 출력 `out_8_10000.txt`와 비트 단위로 대조한 것이다(2026-11-13~16 세션). `worker.py W i`가 작업자 $W$개 가운데 $i$번째 몫을 100열 묶음으로 자식 프로세스에 돌리고 묶음마다 `out_<k1>_<k2>.txt`에 열별 JSON 한 줄(`k`, `bit_identical_to_C`, `ok`, `sec`)을 남기며, `launch.py W`가 작업자를 띄우고(`launches.txt`에 이력, 끊긴 묶음의 `.part`는 완결된 줄만 거둠) `stop.py`가 멈춘다. 작업자 1→4→2→3개로 돌리다 2026-11-15 13:51 멈추고 21:00 4개로 다시 띄워 2026-11-16 08:01 끝났다(정지 기간에는 자료 묶음 밖의 세션 구현이 같은 열의 잠정 판정을 냈고, 원본의 결과와 열마다 같다). `summarize.py`→`summary.json`: 9000열 전부, 결측 0, 비트 불일치 0, `ok` 거짓 0, 중복 0, 열별 시간 합 573,393.5초(159.28시간; 다른 계산과 코어를 나눠 쓴 구간이 있다), 출력 파일 96개, 열당 최대 421초($k=9537$). `README_run.md`에 실행·정지·재기동 기록이 있다.
+`세션_재계산/icert_py_full/`는 부록 D의 가운데 증가의 정수 인증 항목의 독립 재계산, 곧 기록 검토의 Python 큰 정수 구현 `rev_icert_unpaired_fast.py`(사본; `CERT` 경로 한 줄만 기록 사본으로 바꿈)를 $1001\le k\le10000$의 9000열 전부에 돌려 `icert.c`의 출력 `out_8_10000.txt`와 비트 단위로 대조한 것이다(2026-11-13~16 세션). `worker.py W i`가 프로세스 $W$개 가운데 $i$번째 몫을 100열 묶음으로 자식 프로세스에 돌리고 묶음마다 `out_<k1>_<k2>.txt`에 열별 JSON 한 줄(`k`, `bit_identical_to_C`, `ok`, `sec`)을 남기며, `launch.py W`가 프로세스를 띄우고(`launches.txt`에 이력, 끊긴 묶음의 `.part`는 완결된 줄만 거둠) `stop.py`가 멈춘다. 작업자 1→4→2→3개로 돌리다 2026-11-15 13:51 멈추고 21:00 4개로 다시 띄워 2026-11-16 08:01 끝났다(정지 기간에는 자료 묶음 밖의 세션 구현이 같은 열의 잠정 판정을 냈고, 원본의 결과와 열마다 같다). `summarize.py`→`summary.json`: 9000열 전부, 결측 0, 비트 불일치 0, `ok` 거짓 0, 중복 0, 열별 시간 합 573,393.5초(159.28시간; 다른 계산과 코어를 나눠 쓴 구간이 있다), 출력 파일 96개, 열당 최대 421초($k=9537$). `README_run.md`에 실행·정지·재기동 기록이 있다.
 
 `세션_재계산/four_families_DDLnat/families_iv.py`는 부록 D의 네 가족의 첫 열 검사 항목의 모든 값(여유, 하계, 가장자리, 보조정리 조건, 단조성 표본)을 mpmath 구간 산술(소수 30자리)로 다시 계산한다(2026-11-17 세션). 실행은 폴더 안에서 `python -I families_iv.py > families_iv_out.txt`(약 93초)이고 출력은 `families_iv_out.txt`다. `변경.md`는 이 판이 바꾼 함수 `DDL`의 전후를, `결과_요약.md`는 결과값과 실행 기록을 적는다.
 
@@ -531,11 +531,15 @@
 | `r10ff8c2/block3_501_2000_all.json` | [r10ff8c2] `evidence/peer/block3_501_2000_all.json` | moment-certification | `0fcac5fef27b255718bf15fd0a91b909d4424a795e7e3444ea43f173a31c21a6` |
 | `r10ff8c2/brute.py` | [r10ff8c2] `evidence/peer/brute.py` | moment-certification | `7a6b3733cdcc7c9773b96e79f3dee32156f2b4ff238ca7fb13559c7b5e5124d7` |
 | `r10ff8c2/c_results.txt` | [r10ff8c2] `evidence/peer/c_results.txt` | moment-certification | `df9445998924c14c0b63df35d17f33ba8fee884e131069a64ff1d7a38d456af4` |
+| `r10ff8c2/cover_check.py` | [r10ff8c2] `review/checks/scripts/cover_check.py` | moment-certification | `c247453b821af27fd23c2ecd544c5ccfe0e19c45efef593b0c00355989248df2` |
+| `r10ff8c2/cover_check_out.txt` | [r10ff8c2] `review/checks/cover_check_out.txt` | moment-certification | `dea801401bc5a47139a90d96285a2f82672603b260a7c6dc05dfa244d456ebb9` |
 | `r10ff8c2/coverage.py` | [r10ff8c2] `evidence/peer/coverage.py` | moment-certification | `8c5e93eaaff4c91700706583afb09dc7cffac6d8862b0cdded1ed17f3808ac0b` |
 | `r10ff8c2/coverage_out.txt` | [r10ff8c2] `evidence/peer/coverage_out.txt` | moment-certification | `b53b6a0e9f8f1cc25283d7fe8135d15f02a4a3ddfe1654ddcd940a71c79aa0ae` |
 | `r10ff8c2/evidence__peer__block3_501_2000_all.json` | [r10ff8c2] `evidence/peer/block3_501_2000_all.json` | column-certificates-501-2000 | `0fcac5fef27b255718bf15fd0a91b909d4424a795e7e3444ea43f173a31c21a6` |
 | `r10ff8c2/exact_cols.py` | [r10ff8c2] `evidence/peer/exact_cols.py` | moment-certification | `2d6febab3aebc4f5422cd3abaf3c93be1f296830353b152eb761087947f1d058` |
 | `r10ff8c2/identities.py` | [r10ff8c2] `evidence/peer/identities.py` | moment-certification | `7fbb74baa785a2c0682411321a689bcfa972219950ac3f22d3eb7a875b01ea1e` |
+| `r10ff8c2/iv_results.txt` | [r10ff8c2] `review/checks/iv/iv_results.txt` | moment-certification | `f090b121608ad8f99ca56ba927389957283ac79578ce9ea3cadb8c363b788c4c` |
+| `r10ff8c2/ivcert.c` | [r10ff8c2] `review/checks/iv/ivcert.c` | moment-certification | `0ecd0e8baba546d1fbe43211d18053ea17a7fdf6bcd5f4e12d44de5189426483` |
 | `r10ff8c2/lmcert_sweep.c` | [r10ff8c2] `evidence/producer/lmcert_sweep.c` | moment-certification | `4203421474b9e2c6b6c9fde59cb1639e780ad7754c222aea36c04715f25ee74d` |
 | `r10ff8c2/nj_summaries.txt` | [r10ff8c2] `evidence/peer/nj_summaries.txt` | moment-certification | `d87781d016a0b0afb15880bb4b8367ef205fa2fa0f094cce916f32cdd09dff88` |
 | `r10ff8c2/notes_errors.md` | [r10ff8c2] `evidence/producer/notes_errors.md` | moment-certification | `b1541cefd8ab26d5fb45cd6c9010fac81d72a49d8567192f1a497d38cad4d454` |
@@ -997,17 +1001,22 @@
 | `rc9aee43/indep-lastcar-121-140-160.json` | [rc9aee43] `evidence/peer/output/indep-lastcar-121-140-160.json` | column-certification-k500 | `27f49b58b4d0db7c42adf1d5bf73d495c0ae551f92d748b4f93e0b227843a2b3` |
 | `rc9aee43/indep-lastcar-128.json` | [rc9aee43] `evidence/peer/output/indep-lastcar-128.json` | column-certification-k500 | `d50e0fa478f5ced7b4e7fa53bf55a49ff9b337c41587810d222dcdb76769fd8e` |
 | `rc9aee43/indep-lastcar-161.json` | [rc9aee43] `evidence/peer/output/indep-lastcar-161.json` | column-certification-k500 | `6fe61c811236e3beafc106d3040fbae971aad951ee8df7c36d01d1eca4f12f02` |
+| `rc9aee43/indep-rowwise-10000.json` | [rc9aee43] `evidence/peer/output/indep-rowwise-10000.json` | exact-n20000 | `544a624abd01cc84d099461e858c3e861847d152fe43018f97d5ea876151ff4d` |
 | `rc9aee43/indep_lastcar.py` | [rc9aee43] `evidence/peer/code/indep_lastcar.py` | exact-n20000 | `25b2af15b9ed44c7c115c6c7621fc62ac3db1da4274e233d636d494bb7a0bff5` |
+| `rc9aee43/indep_rowwise.py` | [rc9aee43] `evidence/peer/code/indep_rowwise.py` | exact-n20000 | `6621258c870a679ede89c9e17172f19ec43f4e51cc2455529749328a5328b3af` |
 | `rc9aee43/positive_columns.py` | [rc9aee43] `evidence/producer/code/positive_columns.py` | exact-n20000 | `2f1841a9bd301cfa541c3877e50ae0dfac10d84ed0b8434d3c3e35dff0c8065b` |
 | `rc9aee43/producer_positive_columns.py` | [rc9aee43] `evidence/peer/code/producer_positive_columns.py` | column-certification-k500 | `2f1841a9bd301cfa541c3877e50ae0dfac10d84ed0b8434d3c3e35dff0c8065b` |
 | `rc9aee43/rerun-k500.json` | [rc9aee43] `review/evidence/rerun-k500.json` | exact-n20000 | `05a2a14bf32ebfa4c85247bfe88a0a832a8ade478dcc5abf9855bba0bb1f65d3` |
 | `rc9aee43/rev-col-k150.json` | [rc9aee43] `review/evidence/rev-col-k150.json` | exact-n20000 | `dc3d0295ce0f3137af132724276dd10843534776742c8f177931aaa835cea30a` |
 | `rc9aee43/rev-col-k200.json` | [rc9aee43] `review/evidence/rev-col-k200.json` | exact-n20000 | `d70b4cd57c0cf837ebe38943fbcb9ce4c4586473b6215467df9c209d4f890acc` |
+| `rc9aee43/rev-rows-a.json` | [rc9aee43] `review/evidence/rev-rows-a.json` | exact-n20000 | `32e9f5042510bd734e4aa53946116f9b05c62252fffd70dadf2a299a6fb08a29` |
 | `rc9aee43/rev_column_full.py` | [rc9aee43] `review/evidence/rev_column_full.py` | column-certification-k500 | `180d7dad463edf065e907e78709d37e3cb74237b922903b4ed5769dbd6474d4a` |
-| `rc9aee43/rev_interval.py` | [rc9aee43] `review/evidence/rev_interval.py` | column-certification-k500 | `76a90d1a7e4d33654cdc28f8bf81a0f54f6162b8b02b115c58a93852d6191323` |
+| `rc9aee43/rev_interval.py` | [rc9aee43] `review/evidence/rev_interval.py` | exact-n20000 | `76a90d1a7e4d33654cdc28f8bf81a0f54f6162b8b02b115c58a93852d6191323` |
+| `rc9aee43/rev_rows.py` | [rc9aee43] `review/evidence/rev_rows.py` | exact-n20000 | `d21e7ccb69e52f23785d6c97a50b542a65caaa9b96d2af0cbac140342cae8a15` |
 | `rc9aee43/review__evidence__rerun-k500.json` | [rc9aee43] `review/evidence/rerun-k500.json` | column-certification-k500 | `05a2a14bf32ebfa4c85247bfe88a0a832a8ade478dcc5abf9855bba0bb1f65d3` |
 | `rc9aee43/review__evidence__rev-col-k150.json` | [rc9aee43] `review/evidence/rev-col-k150.json` | column-certification-k500 | `dc3d0295ce0f3137af132724276dd10843534776742c8f177931aaa835cea30a` |
 | `rc9aee43/review__evidence__rev-col-k200.json` | [rc9aee43] `review/evidence/rev-col-k200.json` | column-certification-k500 | `d70b4cd57c0cf837ebe38943fbcb9ce4c4586473b6215467df9c209d4f890acc` |
+| `rc9aee43/review__evidence__rev_interval.py` | [rc9aee43] `review/evidence/rev_interval.py` | column-certification-k500 | `76a90d1a7e4d33654cdc28f8bf81a0f54f6162b8b02b115c58a93852d6191323` |
 | `rc9aee43/rowwise_left.py` | [rc9aee43] `evidence/peer/code/rowwise_left.py` | exact-n20000 | `c1843ee1f6da2a61c03a25ace5f48c119ef6ba614758d8f982cac6c98ade9dab` |
 | `rc9aee43/rw-10000-a.json` | [rc9aee43] `evidence/peer/output/rw-10000-a.json` | exact-n20000 | `2ea522a697fd46bb5601478c2370969ab8e8b01a57f6c640c16535ba0e1e0379` |
 | `rc9aee43/rw-10000-b.json` | [rc9aee43] `evidence/peer/output/rw-10000-b.json` | exact-n20000 | `108be3c453080fde7bc76f5c19765c7e1cda4f31c39a7b0cbf2f5671063675c0` |
@@ -1054,6 +1063,7 @@
 | `rce3dc75/v_exact_small.py` | [rce3dc75] `evidence/peer/code/v_exact_small.py` | central-gap-integer | `71c74e860c9e1cf2caafa3537fae7062ac75112f9c86fae0897f02d412d0b475` |
 | `rce3dc75/v_exact_small_out.json` | [rce3dc75] `evidence/peer/data/v_exact_small_out.json` | central-gap-integer | `2980f5394520dbca3f645e2c8bd7eca7abda83b10bbf5a34b42728aea450329a` |
 | `rce3dc75/v_hermite.py` | [rce3dc75] `evidence/peer/code/v_hermite.py` | central-gap-rational-audit | `8330f4738705efc652f2618392ae54076017bc892e1a59e9e57910bbde662151` |
+| `rce3dc75/v_hermite_k10000_out.json` | [rce3dc75] `evidence/peer/data/v_hermite_k10000_out.json` | central-gap-rational-audit | `ad40d6ad2c55a5257d81d21465fcf6ecec2e0aab1a0b30418223bac00ba4a22a` |
 | `rce3dc75/v_majorants_K1.py` | [rce3dc75] `evidence/peer/code/v_majorants_K1.py` | central-gap-rational-audit | `a0fd6b9b32991954783c053edefd0b6060471b3a952e71c3eef652abeb2cfafb` |
 | `rce3dc75/v_small_rows.py` | [rce3dc75] `evidence/peer/code/v_small_rows.py` | central-gap-integer | `eec704e5b065ee4c6c7fdbac37fb58a6fca6b0fda5574d0db9ca55ff3ce7d043` |
 | `rce3dc75/v_small_rows_out.json` | [rce3dc75] `evidence/peer/data/v_small_rows_out.json` | central-gap-integer | `f5294f5642c795ac4badea6fb498a53e458cf59e64cf0b53ca70307dc17c9522` |

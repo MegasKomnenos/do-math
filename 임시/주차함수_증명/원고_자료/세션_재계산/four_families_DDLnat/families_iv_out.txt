@@ -23,13 +23,13 @@ family 1a   R# in [4.806206801, 4.806206802]   R#' in [1.806206801, 1.806206802]
 
 (ga)(a)  min over 2 <= q0 <= eps0 of e_low(k0,q0) - R#_F(k0);  1a,1b: min over 104 <= q0 <= eps0 of e_low_R + s_{q0+1}(k0) - R#'
 family bulk k0=6668 eps0=562: min at q0=2, margin in [2.641206651, 2.641206652] (e_low in [5.005413597, 5.005413598])  >0: True
-      max(z_R, s - Pr) decided by z_R at 560, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999944833257, 0.999944833258], s_3(k0) in [0.999849067963, 0.999849067964]  (9 s)
+      max(z_R, s - Pr) decided by z_R at 560, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999944833257, 0.999944833258], s_3(k0) in [0.999849067963, 0.999849067964]  (10 s)
 family 2    k0=8065 eps0=638: min at q0=2, margin in [1.324976921, 1.324976922] (e_low in [5.005589546, 5.005589547])  >0: True
-      max(z_R, s - Pr) decided by z_R at 636, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999954388515, 0.999954388516], s_3(k0) in [0.999875211734, 0.999875211735]  (12 s)
+      max(z_R, s - Pr) decided by z_R at 636, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999954388515, 0.999954388516], s_3(k0) in [0.999875211734, 0.999875211735]  (14 s)
 family 1b   k0=9551 eps0=714: min at q0=2, margin in [0.6906200981, 0.6906200982] (e_low in [5.005720215, 5.005720216])  >0: True | m0>N: min at q0=714, margin in [3.128212786, 3.128212787]  >0: True
-      max(z_R, s - Pr) decided by z_R at 712, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999961484642, 0.999961484643], s_3(k0) in [0.999894626819, 0.999894626820]  (15 s)
+      max(z_R, s - Pr) decided by z_R at 712, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999961484642, 0.999961484643], s_3(k0) in [0.999894626819, 0.999894626820]  (16 s)
 family 1a   k0=9705 eps0=722: min at q0=2, margin in [0.1995246672, 0.1995246673] (e_low in [5.005731468, 5.005731469])  >0: True | m0>N: min at q0=722, margin in [3.196131317, 3.196131318]  >0: True
-      max(z_R, s - Pr) decided by z_R at 720, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999962095777, 0.999962095778], s_3(k0) in [0.999896298875, 0.999896298876]  (15 s)
+      max(z_R, s - Pr) decided by z_R at 720, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999962095777, 0.999962095778], s_3(k0) in [0.999896298875, 0.999896298876]  (16 s)
 
 (ga)(b)  edge points
 family bulk k0=6668: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.349608430, 4.349608431], margin in [1.985401484, 1.985401485]  >0: True
@@ -37,7 +37,7 @@ family 2    k0=8065: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.639523243, 4.639
 family 1b   k0=9551: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.913345070, 4.913345071], margin in [0.5982449536, 0.5982449537]  >0: True | m0>N: Q + s_low in [2.151862297, 2.151862298], margin in [0.3011220516, 0.3011220517]  >0: True
 family 1a   k0=9705: m0<=N, xi_cap=1.3: 4 s_low + 2 Q in [7.647281546, 7.647281547], margin in [2.841074744, 2.841074745]  >0: True | m0>N: Q + s_low in [2.165010335, 2.165010336], margin in [0.3588035342, 0.3588035343]  >0: True
 
-Lemma 10:old-8-32(iii) conditions on xi in [1.04, 2^(2/3)] (40000 interval cells; y = 6669 in (h1), q0 = 562 in (h2)):
+Lemma 9:old-8-32(iii) conditions on xi in [1.04, 2^(2/3)] (40000 interval cells; y = 6669 in (h1), q0 = 562 in (h2)):
   (h1) min_xi [e^{-c d}(1+c d) - g(a)] in [0.0855877, 0.0856190]  >0: True
   (h2) min_xi [g(a1) - g(a2) - a1 e^{-a1}/564] in [0.163537, 0.163598]  >0: True
 
@@ -67,4 +67,4 @@ monotonicity samples (record grids; consecutive values compared with certified i
   edge bounds decreasing in xi on [0.8 xi_cap, xi_cap] (2 x 60 values of y in [6669, 1e9], 120 xi each): True
   Q(y, xi) increasing and s_low nondecreasing in y on 400 points of [k0+1, 1e8] (each family, each cap): True
 
-total time 93 s
+total time 100 s

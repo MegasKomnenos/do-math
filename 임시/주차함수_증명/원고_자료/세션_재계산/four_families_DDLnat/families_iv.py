@@ -4,7 +4,7 @@
 
 Method.  mpmath `iv` (outward-rounded interval arithmetic), 30 decimal digits, everywhere.
   * Closed forms (o_F, Bd^T, u, s^up, e^c, bulk majorants, DDL^natural, Flat, Ab, R#, R#') are evaluated in `iv`.
-  * The integrals Sub and Top of Proposition 10:old-8-33 are evaluated by exact antiderivatives in `iv`:
+  * The integrals Sub and Top of Proposition 9:old-8-33 are evaluated by exact antiderivatives in `iv`:
       Sub(k;nu) = (k-1)/k * 2 [G(sqrt 0.6) - G(sqrt xi)],  G(s) = xi/s + (1-xi) s/(1-s^2) - 2 xi atanh(s),  xi = (nu+4)/(k-1)
         (substitution rho = s^2 and partial fractions (u-xi)(1+u)/(u(1-u)^2) = -xi/u - (1+xi)/(1-u) + 2(1-xi)/(1-u)^2);
       Top(k;nu): for every family e := (nu+1)/k <= 0.6 - 2.6/k (checked in `iv`), so min(2, 2+e-rho) = 2+e-rho on the
@@ -16,7 +16,7 @@ Method.  mpmath `iv` (outward-rounded interval arithmetic), 30 decimal digits, e
     with log Bor(n) = (n-1) log n - n - sum_{j<=n} log j  (interval sum).  Pr(Bor >= q0) = 1 - sum_{j<q0} Bor(j).
   * (ga)(a) is evaluated for every 2 <= q0 <= eps0 (and 104 <= q0 <= eps0 for 1a, 1b); the minimum over q0 is the
     minimum of the certified lower endpoints.  (ga)(b) is a point evaluation.
-  * Lemma 10:old-8-32(iii): the two analytic conditions are enclosed on 40000 interval cells covering [1.04, 2^(2/3)].
+  * Lemma 9:old-8-32(iii): the two analytic conditions are enclosed on 40000 interval cells covering [1.04, 2^(2/3)].
   * Monotonicity samples (same grids as the record): each consecutive pair is compared with certified intervals.
 Run:  python -I families_iv.py   (output: families_iv_out.txt)
 """
@@ -107,7 +107,7 @@ def p15(x):
     return x * iv.sqrt(x)
 
 
-# ---------------------------------------------------------------- DDL^natural (Proposition 10:old-8-23)
+# ---------------------------------------------------------------- DDL^natural (Proposition 6:old-8-23)
 def qnat(r):
     return 1 + F('0.7501') * r / (1 + r)
 
@@ -452,7 +452,7 @@ def main():
         print(line)
 
     m1, m2 = lemma_iii_margins()
-    print("\nLemma 10:old-8-32(iii) conditions on xi in [1.04, 2^(2/3)] (40000 interval cells; y = 6669 in (h1), q0 = 562 in (h2)):")
+    print("\nLemma 9:old-8-32(iii) conditions on xi in [1.04, 2^(2/3)] (40000 interval cells; y = 6669 in (h1), q0 = 562 in (h2)):")
     print("  (h1) min_xi [e^{-c d}(1+c d) - g(a)] in", fmt(m1, 6), " >0:", pos(m1))
     print("  (h2) min_xi [g(a1) - g(a2) - a1 e^{-a1}/564] in", fmt(m2, 6), " >0:", pos(m2))
 

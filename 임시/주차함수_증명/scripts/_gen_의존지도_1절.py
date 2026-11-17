@@ -89,7 +89,8 @@ for ln in led[j1:j2].split("\n"):
         continue
     m = re.search(r"\((\d+:[A-Za-z][A-Za-z0-9\-]*)\)", c[5])
     if m and c[4] == "뺌":
-        removed_led[m.group(1)] = dict(first=c[0], kind=c[1], name=c[2], recname=c[3])
+        _mv = re.search(r"라벨을 `(\d+:[A-Za-z][A-Za-z0-9\-]*)`(?:으로|로) 바꿈", c[2])   # 2026-11-17 23차 R13: 옮긴 라벨의 새 이름
+        removed_led[m.group(1)] = dict(first=c[0], kind=c[1], name=c[2], recname=c[3], moved=(_mv.group(1) if _mv else None))
     elif c[4] == "뺌" and c[5] == "—":
         # 라벨을 받은 적이 없는 첫 판 진술(설계 때 뺌)
         removed_led["첫 판 %s %s" % (c[1], c[0])] = dict(first=c[0], kind=c[1], name=c[2], recname=c[3])
@@ -278,7 +279,9 @@ for k in gone:
     elif r:
         had = "; 11-12 판에 행 있음" if o else "; 11-12 판에 행 없음"
         m_rep = LAB.search(r["name"]) if "로 대체" in r["name"] else None
-        if m_rep:
+        if r.get("moved") and r["moved"] in cur:   # 2026-11-17 23차 R13 [지도-1]: 장부 4절이 「라벨을 … 바꿈」이라 적은 것은 뺀 것이 아니라 옮긴 것
+            how = "옮김(%s %s절; 장부 4절의 「라벨을 … 바꿈」 주석%s)" % (lab_tag(r["moved"]), st[r["moved"]]["section"], had)
+        elif m_rep:
             how = "대체(%s; 장부 4절%s)" % (lab_tag(m_rep.group(1)), had)
         else:
             how = "뺌(장부 4절%s)" % had
@@ -434,7 +437,14 @@ for k in sorted(set(snap_num) - cur, key=lambda x: snap_num[x]):
     r = removed_led.get(k)
     nm = (r["name"] if r and r["name"] else "—").replace("|", "／")
     # 2026-11-15 N14-1: 같은 이름의 라벨이 다른 장에 살아 있으면 뺀 것이 아니라 옮긴 것이다(예: 5:zeta-constants → 2:zeta-constants).
-    moved = [c for c in cur if c.split(":", 1)[1] == k.split(":", 1)[1] and c != k]
+    # 2026-11-17 23차 R13 [대응-1]·[대응-2]: 장부 4절의 「라벨을 `X`로 바꿈」 주석이 있으면 그 라벨로 옮긴 것이고, 장부가 뺌이라 적은 라벨은
+    # 같은 이름의 라벨이 다른 장에 살아 있어도 뺀 것이다(8:explicit-bounds ≠ 7:explicit-bounds). 장부에 행이 없는 라벨만 이름 일치로 가른다.
+    if r and r.get("moved") and r["moved"] in cur:
+        moved = [r["moved"]]
+    elif r:
+        moved = []
+    else:
+        moved = [c for c in cur if c.split(":", 1)[1] == k.split(":", 1)[1] and c != k]
     if moved:
         how = "옮김 → %s %s" % (lab_tag(moved[0]), number[moved[0]])
         nm = st[moved[0]]["name"].strip().replace("|", "／") or nm

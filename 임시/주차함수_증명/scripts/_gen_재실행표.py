@@ -72,13 +72,13 @@ CONFIG = {
              "python -I summarize.py > summary_out.txt", "python -I compare_indep.py > compare_indep_out.txt"],
         expect="380열 실패 0(직접 비교 20,368,570개·비 비교 10,302,655개); 최소 상대 여유 $1.3778\\times10^{-5}$($k=500$, $n=2k+1$)",
         outputs=[S + "column_k500_iv/summary_out.txt", S + "column_k500_iv/compare_indep_out.txt", S + "column_k500_iv/res/SHA256SUMS.txt"],
-        time="작업자 2개 각 약 9500초(공유 기계; 벽시계 2.7시간; `run_w0.log`·`run_w1.log`)"),
+        time="프로세스 2개 각 약 9500초(공유 기계; 벽시계 2.7시간; `run_w0.log`·`run_w1.log`)"),
     "central-gap-integer": dict(
         scripts=[S + "icert_py_full/rev_icert_unpaired_fast.py", S + "icert_py_full/worker.py", S + "icert_py_full/launch.py", S + "icert_py_full/stop.py", S + "icert_py_full/summarize.py", S + "icert_py_full/make_draft.py"],
         cmd=["python -I launch.py 4", "python -I summarize.py", "python -I make_draft.py"],
         expect="$1001\\le k\\le10000$의 9000열 전부에서 네 출력값이 `icert.c`의 `out_8_10000.txt`와 비트 동일(불일치 0, `ok` 거짓 0); `summary.json`의 `complete` 참",
         outputs=[S + "icert_py_full/summary.json", S + "icert_py_full/launches.txt", S + "icert_py_full/out_1001_1100.txt", S + "icert_py_full/out_9632_10000.txt"],
-        time="작업자 1→4→2→3개(11-13 17:46–11-15 13:51), 정지 뒤 4개(11-15 21:00–11-16 08:01); 열별 시간 합 573,394초(159시간; 코어를 나눠 쓴 구간 포함), 열당 최대 421초($k=9537$)"),
+        time="프로세스 1→4→2→3개(11-13 17:46–11-15 13:51), 정지 뒤 4개(11-15 21:00–11-16 08:01); 열별 시간 합 573,394초(159시간; 코어를 나눠 쓴 구간 포함), 열당 최대 421초($k=9537$)"),
     "moment-certification": dict(
         scripts=[S + "moment_cert_iv/mcert_iv.py", S + "moment_cert_iv/sweep_ct_mp.py", S + "moment_cert_iv/summarize_nb.py",
                  S + "moment_cert_iv/summarize.py", S + "moment_cert_iv/compare.py", S + "moment_cert_iv/nM.py"],
@@ -118,7 +118,7 @@ CONFIG = {
     "critical-window-rig": dict(
         scripts=[S + "critical_window_rerun/rerun_boxes.py", S + "critical_window_rerun/rig_cert.py", S + "critical_window_rerun/recert_first.py",
                  S + "critical_window_rerun/verify_exact_cover.py", S + "critical_window_rerun/summarize.py"],
-        cmd=["python -I check_fixes.py > check_fixes_out.txt (코드 자체 검사)", "python -I launch_rerun.py 2 (작업자 둘; 하나면 python -I rerun_boxes.py 0 1)", "python -I recert_first.py A29 (G06, G07, G08, G13도; python -I postrun.py가 본 실행 뒤 다섯을 잇는다)",
+        cmd=["python -I check_fixes.py > check_fixes_out.txt (코드 자체 검사)", "python -I launch_rerun.py 2 (프로세스 둘; 하나면 python -I rerun_boxes.py 0 1)", "python -I recert_first.py A29 (G06, G07, G08, G13도; python -I postrun.py가 본 실행 뒤 다섯을 잇는다)",
              "python -I verify_exact_cover.py > verify_exact_cover_out.txt", "python -I summarize.py > summary_out.txt"],
         expect="모든 셀 여유 양수; 최소 여유 $0.001827$(A00, $\\hat x\\in[9.8,10]$); verify_exact_cover: ALL CHECKS PASSED",
         outputs=[S + "critical_window_rerun/verify_exact_cover_out.txt", S + "critical_window_rerun/summary_out.txt"],
@@ -133,9 +133,9 @@ CONFIG = {
     "stored-table-check": dict(
         scripts=[S + "window_mass_env/check_table_iv.py"],
         cmd=["python -I check_table_iv.py"],
-        expect="위반 $0$; 가장 작은 여유 $4.7447\\cdot10^{-13}$($i=0$); 엄격 감소, 최소 감소 $6.643869\\cdot10^{-6}$($i=11999$)",
+        expect="위반 $0$; 가장 작은 여유 $4.7447\\cdot10^{-13}$($i=0$); 엄격 감소, 최소 감소 $6.643869\\cdot10^{-6}$($i=11999$); 이음새 두 줄(정리 closed-form-envelope (라); $\\xi=2$, $2.1$) True",
         outputs=[S + "window_mass_env/check_table_iv_out.txt"],
-        time="약 6초(`check_table_iv_out.txt`의 time 줄)"),
+        time="약 7초(`check_table_iv_out.txt`의 time 줄)"),
     "window-mass-env": dict(
         scripts=[S + "window_mass_env/cert_Cb_iv.py", S + "window_mass_env/cert_interval_iv.py", S + "window_mass_env/check_table_iv.py",
                  S + "r030ffae_window/work/cert_Cb_range.py"],
@@ -143,7 +143,7 @@ CONFIG = {
              "python -I cert_Cb_iv.py 2280 3000", "python -I summarize.py"],
         expect="(가) $1\\le q\\le2999$ 전부 통과; (나) 열일곱 구간의 최소 상대 여유 $0.011251$($\\xi=0.912$)",
         outputs=[S + "window_mass_env/summarize_out.txt", S + "window_mass_env/cert_interval_iv_out.txt"],
-        time="(나) 1981초, (가) 5171초·4206초(두 프로세스 동시), 표 검사 6초(각 출력의 total·time 줄)"),
+        time="(나) 1981초, (가) 5171초·4206초(두 프로세스 동시), 표 검사 7초(각 출력의 total·time 줄)"),
     "band-boxes": dict(
         scripts=[S + "band_boxes/band_iv.py", S + "band_boxes/ivbox_lib.py", S + "band_boxes/band_summary.py", S + "band_boxes/run_all.sh"],
         cmd=["sh run_all.sh", "python -I band_summary.py"],
