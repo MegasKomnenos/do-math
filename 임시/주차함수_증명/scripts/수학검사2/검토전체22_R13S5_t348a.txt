@@ -1,0 +1,115 @@
+[0,6]
+\mathfrak J
+\varsigma
+\mathrm{Bor}_\le
+\mathrm{Bor}_{\le
+\mathrm{Bor}_>
+\mathrm{Bor}_{>
+\mathrm{wgt}
+\mathrm{surv}
+\mathrm{exc}
+\mathsf K
+\xi^{\mathsf K}_i
+\xi^{\mathsf K}
+\mathfrak r_i
+\mathfrak r_
+\mathfrak w_i
+\mathfrak w
+\mathfrak g(\xi)
+\mathfrak g
+\mathfrak e
+\mathfrak e_N
+\tau(v;q)
+\tau(
+\mathrm{Flow}^-
+\mathrm{Flow}
+\mathfrak S^+
+\mathfrak S
+\mathrm{Bor}^{\mathrm{low}}
+\Phi
+\mathfrak t
+\mathfrak l
+\Upsilon
+\mathcal F
+\mathfrak v_\pm
+\mathfrak v
+\omega_i
+\omega
+\mathfrak T_i
+\mathfrak T
+\mathfrak f
+\hat{\mathcal T}
+z_i
+\xi^{\mathcal T}_i
+\xi^{\mathcal T}
+0.0005
+12001
+J_i
+3000\cdot2^i
+3000
+\mathcal J(q,k)
+\mathcal J
+\Lambda(\mathfrak q)
+\Lambda
+\mathrm{Bp}
+\mathrm{Cr}
+\mathfrak s(\mathfrak q)
+\mathfrak s
+\varrho^+_r
+\varrho^+
+\varrho_j
+\varrho
+R_1
+R_2
+D_1
+D_2
+D_3
+\mathcal H(\mathfrak p)
+\mathcal H
+\iota_j
+\iota_{\max}
+\iota
+\mathfrak q
+\mathfrak p
+\mathfrak n
+\mathfrak k
+\varepsilon
+\mu
+\mathfrak q_{\min}
+\mathfrak p_{\min}
+\varepsilon_0
+70.3708
+E_0(\xi)
+E_0
+V_{k,k}
+U_{k,k}
+\varphi
+\rho_1
+\rho_2
+\vartheta_1
+\vartheta_3
+\vartheta
+\upsilon
+\xi^*
+\xi^\ast
+\mathfrak y(\mathfrak p)
+\mathfrak y
+q_{k,k}
+q_{6600,6600}
+\mathrm{km}_N
+\mathrm{km}
+Q^{\mathrm{cf}}
+B_\infty
+\tilde Q_W
+\tilde Q_G
+\tilde Q
+Q^{\mathrm{env}}
+Q_c
+\Psi_\flat
+\mathsf z_{1/2}
+\mathsf z_{-1/2}
+\mathsf z_{3/2}
+\mathsf c_\Psi
+\Psi^{\mathrm{low}}
+\mathcal O
+\Omega

@@ -1,0 +1,74 @@
+6600
+\mathfrak h(k,\nu)
+\mathfrak h(k-1,\nu+2)
+\mathfrak h'
+\mathfrak h
+d_0
+\mathcal G(\mathfrak z)
+\mathcal G
+\mathfrak z=\nu/k
+\mathfrak z:=\nu/k
+\mathfrak z_+
+\mathfrak z
+k_{\mathrm{last}}
+\mathfrak L_k
+\mathfrak L
+q_{\mathrm w}
+q^\ast_{\mathrm w}
+q^*_{\mathrm w}
+\mathrm{LB}
+\tilde{\mathfrak R}
+\mathrm{fb}^\circ
+q^\circ
+\mathfrak m_i
+\mathfrak m_
+\mathfrak a
+\mathfrak b
+\mathcal L_{\mathrm a}
+\mathcal L_{\mathrm c}
+\mathcal L_i
+\mathcal L'_{\mathrm a}
+\mathcal L'_{\mathrm c}
+\mathcal L'_i
+\mathcal L'
+\epsilon_{\mathrm{cap}}
+\epsilon_{\mathrm{size}}
+)_+
+\mathfrak D
+\mathfrak e_{\mathrm{H1}}
+\kappa_{N'}
+0.307
+(6.19)
+A_m
+B_m
+C_k
+c_1
+\mathrm{Bor}(N+1-r)
+g(N+1)-g(N+1-r)
+g(N'+1)
+q_{\mathrm{fb}}
+m_{\mathrm{fb}}
+\mathrm{fb}
+\sum_{i<8}
+i<8
+q^\prime
+q'
+\nu-1
+\nu/k
+1-s_N(k-1)/s_N(k)
+\mathrm{dup}_m
+e^{g(m)-1}
+\lambda_q
+\epsilon_\pi
+f_1
+\hat\varsigma
+\mathcal T_N
+\mathfrak R^{\mathrm{low}}_k
+q_{\max}
+s^T_t
+\Omega(\xi_{q-1})
+(8.22)
+(8.23)
+(8.24)
+H_k
+\mathrm{hz}

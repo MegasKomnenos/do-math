@@ -255,6 +255,8 @@ for k in order:
         note = note.replace("`{{" + gone_lab + "}}`", "(뺀 " + gone_lab + ")").replace("{{" + gone_lab + "}}", "(뺀 " + gone_lab + ")")
     if note != "—" and any(x in note for x in ("2절 열린 입력", "[todo]", "둘째 판에 진술 없음")):
         note += " (11-12 판 기록; 현행 입력은 이 행의 입력 열에 있다)"
+    if s["name"].strip() and "머리에 제목 없음" in note:   # 2026-11-17 R13 [지도-1]: 머리에 이름이 생긴 뒤 남은 11-12 판 주석
+        note = re.sub(r"(;\s*)?머리에 제목 없음(\s*;)?", "", note).strip(" ;") or "—"
     if s.get("defer"):
         note = ("뒤로 미룬 증명 %s" % ", ".join(s["defer"])) + ("" if note == "—" else "; " + note)
     status = status.replace("|", "／")
@@ -280,7 +282,7 @@ for k in gone:
             how = "대체(%s; 장부 4절%s)" % (lab_tag(m_rep.group(1)), had)
         else:
             how = "뺌(장부 4절%s)" % had
-        tag = lab_tag(k)
+        tag = "`(%s)`" % k   # 2026-11-17 22차 R13 [지도-3]: 죽은 라벨은 중괄호 없이 (N:이름)
     else:
         # 2026-11-16 13차 T14-5: 같은 이름의 라벨이 다른 장에 살아 있으면 뺀 것이 아니라 옮긴 것이다(대응표와 같은 규칙; 예: 5:zeta-constants → 2:zeta-constants).
         moved = [c for c in cur if c.split(":", 1)[1] == k.split(":", 1)[1] and c != k]
@@ -288,7 +290,7 @@ for k in gone:
             how = "옮김(%s %s절; 장부 4절 머리말)" % (lab_tag(moved[0]), st[moved[0]]["section"])
         else:
             how = "11-12 판에만 있던 라벨(장부 4절에 뺌 행 없음; 결정 73·97 또는 집필 회수 때 뺌·대체)"
-        tag = lab_tag(k)
+        tag = "`(%s)`" % k   # 죽은 라벨(옮긴 라벨의 옛 이름 포함)은 중괄호 없이
     gone_rows.append("| %s | %s | %s |" % (tag, gist.replace("|", "／"), how))
 
 # ---------- 순환 검사 ----------
@@ -368,12 +370,12 @@ header = """# 의존 지도 v2: 둘째 판의 모든 진술과 그 입력
 
 ## 1. 진술별 입력 표
 
-| 라벨 | 둘째 판 절 | 첫 판 번호(있으면) | 진술의 한 줄 요지 | 지위 | 입력: 이 글의 다른 진술(라벨) | 입력: 기록 주장(식별자/주장 ID) | 입력: 문헌 | 입력: 부록 D 계산 | 비고 |
+| 라벨 | 둘째 판 절 | 첫 판 번호(있으면) | 진술의 한 줄 요지 | 지위 | 입력: 이 글의 다른 진술(라벨) | 입력: 기록 주장(식별자/주장 ID) | 입력: 문헌 | 입력: 부록 D 계산 | 비고(11-12 판 기록에서 이어받음 — 현행 사실은 앞 열들; 「뒤로 미룬 증명」만 생성기가 적는다) |
 |---|---|---|---|---|---|---|---|---|---|
 """ % (now[:-3] + "x" if False else now, len(cur))
 
 body = header + "\n".join(rows) + "\n\n"
-body += "### 1.1 뺌·대체된 라벨\n\n11-12 판의 표에 있었으나 현재 장 파일에 머리가 없는 라벨과 장부 v2 4절의 「뺌」 행이다(합 %d). 이 라벨들은 1절 표와 「입력」 열에 나오지 않는다.\n\n" % len(gone_rows)
+body += "### 1.1 뺌·대체된 라벨\n\n11-12 판의 표에 있었으나 현재 장 파일에 머리가 없는 라벨과 장부 v2 4절의 「뺌」 행이다(합 %d). 이 라벨들은 1절 표와 「입력」 열에 나오지 않는다. 죽은 라벨(옮긴 라벨의 옛 이름 포함)은 장부 4절·대응표와 같이 중괄호 없이 `(N:이름)`으로 적는다.\n\n" % len(gone_rows)
 body += "| 라벨 | 11-12 판 요지 / 장부의 이름 | 처리 |\n|---|---|---|\n" + "\n".join(gone_rows) + "\n"
 
 # 옛 꼬리에서 2.1절을 새 것으로 갈아 끼움
@@ -381,7 +383,7 @@ k1 = old_tail.find("### 2.1 라벨 닫힘")
 k2 = old_tail.find("### 2.2 ")
 tail = old_tail[:k1] + "\n".join(sec21) + "\n" + old_tail[k2:]
 tail = tail.replace("\n## 2. 입력의 닫힘 검사와 열린 입력\n", "\n## 2. 입력의 닫힘 검사와 열린 입력\n\n(2.1절은 재생성, 2.2–2.4절은 11-12 판의 기록.)\n", 1)
-tail = tail.replace("\n### 2.3 열린 입력\n", "\n### 2.3 열린 입력\n\n(11-12 판의 기록. 현행 처분: 1·3은 집필에서 새 진술 `{{8:hazard-H1}}`·`{{7:factorial-moment}}`로 닫혔고, 2는 결정 101로 그 진술과 함께 뺐다. 처분의 경위는 `작업_장부.md`.)\n", 1)
+tail = tail.replace("\n### 2.3 열린 입력\n", "\n### 2.3 열린 입력\n\n(11-12 판의 기록. 현행 처분: 1은 집필에서 새 진술 `{{8:hazard-H1}}`로 닫혔다. 3은 `(7:factorial-moment)`로 닫혔다가 2026-11-17 구조 압축(K1-5·U3)으로 그 진술과 소비처가 함께 빠졌고, 2는 결정 101로 그 진술과 함께 뺐다. 처분의 경위는 `작업_장부.md`.)\n", 1)
 tail = tail.replace("\n## 3. 구조표가 남긴 질문의 답\n", "\n## 3. 구조표가 남긴 질문의 답\n\n(3–7절은 11-12 판의 기록이다. 제안·상신의 처분은 `작업_장부.md`와 세션 결정에 있다.)\n", 1)
 body += tail
 if not body.endswith("\n"):
@@ -397,7 +399,7 @@ _cnt = {}
 for fn in DD.chapter_files("장"):
     p = os.path.join(SNAP, fn)
     if not os.path.exists(p):
-        p = os.path.join(ROOT, "장v2", fn)  # 사본이 없는 장(장4·장8)은 결정 101이 라벨을 바꾸지 않았다
+        p = os.path.join(ROOT, "장v2", fn)  # 사본이 없는 장은 현행으로 — 2026-11-17 22차 R13 [대응표-1] 뒤 장4·장8 사본을 커밋 87a03929(11-16; 15:52 판과 머리 같음 — 11-14 번역 원천 사본으로 확인)에서 넣어 지금은 모든 장에 사본이 있다
     for ln in read(p).split("\n"):
         m = HEAD_RE.match(ln)
         if m:

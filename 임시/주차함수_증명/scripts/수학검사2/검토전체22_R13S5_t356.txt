@@ -1,0 +1,123 @@
+# column-certification-k500 (7A)
+\mathfrak x
+\mathfrak e^{(y)}_n
+\mathfrak e^{(y)}
+\mathfrak g_n
+\mathfrak h_n
+\mathfrak e^-
+\mathfrak e^+
+B=\lceil k^2/4\rceil
+\lceil k^2/4\rceil
+\bar k
+# band102-integer (7B)
+\mathrm q_4
+\mathrm p_3
+\mathrm q_5
+\mathsf D(\nu)
+\mathsf D
+\mathrm{tails}
+\mathrm L_2
+\mathrm e_{\mathrm L}
+\mathrm L_u
+\mathrm{tail}(m)
+\mathrm{tail}
+\mathrm{cf}
+with_gamma
+\mathrm G_\ast
+\mathrm G_*
+\mathrm P_{\mathrm R}
+\mathrm P_{\mathrm I}
+\mathsf B_k
+\mathrm{Jerr}
+\mathrm{amp}
+\mathrm{Tb}
+\mathrm{Eb}
+\mathrm{phb}
+\mathrm C_1
+\mathrm D_1
+L^{(y)}_n
+U^{(y)}_n
+\omega
+\mathcal M_i
+\mathcal M^{(y,n)}_2
+\mathcal M
+\vartheta
+\mathcal H_j
+\mathrm{rad}
+\mathrm{tol}
+\mathrm{nm}
+\mathrm U_i
+\mathrm V_i
+\mathsf n_k
+\mathsf n_\infty
+\mathsf b_D
+\mathsf b_J
+\mathsf b^{\mathrm{vert}}_D
+# moment-certification (7B)
+\hat{\mathfrak a}_n
+\hat{\mathfrak a}
+\beta
+\hat{\mathfrak a}^\flat_n
+\hat{\mathfrak a}^{\mathrm H}_n
+\hat{\mathfrak a}^{\mathrm Z}_n
+\hat{\mathfrak Z}^\flat_n
+\hat{\mathfrak Z}^{\mathrm H}_n
+\hat{\mathfrak Z}_n
+\hat{\mathfrak Z}
+\mathsf p
+2^{-53}
+\mathsf u
+\mathfrak e^{(0)}_n
+\mathfrak e^{(3)}_n
+\mathfrak e^{(
+\mathrm w_i
+\mathrm w
+n_{\mathrm M}(k)
+n_{\mathrm M}
+\mathbb E^\sigma_{n,k}[\mathcal T_k]
+\mathcal T_k
+\mathcal T_{n,k}
+# column-certificates-501-2000 (7B)
+\mathfrak N=14k
+\mathfrak N
+\mathfrak J=40k
+\mathfrak J
+\mathrm{pr}_{n,k}
+\mathrm{pr}^\circ_n
+\mathrm{pr}
+\mathfrak S(u)
+\mathfrak S
+\mathfrak N_{\mathrm f}
+\tilde v_i
+\mathfrak e
+\mathrm{REL}
+\rho=e^{-1+\mathrm{lp}/k}
+\rho
+\rho_{\mathrm U}
+\hat{\mathfrak K}_j
+\hat{\mathfrak K}
+\Gamma(n)
+\Gamma
+$M$
+$t$
+$d$
+\mathrm{lp}_{\mathrm L}
+\mathrm{lp}_{\mathrm U}
+\mathfrak z
+\mathfrak b_0
+\mathfrak P^{\mathrm U}_k
+\mathrm{sep}
+\mathcal U^\sharp
+n^{\mathrm{bis}}_0
+n^\psi_k
+\mathfrak m_L
+\mathfrak m_U
+\mathfrak H''
+\varepsilon'_m
+\tilde\Lambda_j
+\mathfrak K_j
+\omega_j
+\Omega^{\mathrm{pr}}
+n^{\mathrm G}_k
+\mathfrak a^\circ_m
+\mathrm{lp}_k

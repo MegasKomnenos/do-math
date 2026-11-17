@@ -1,0 +1,90 @@
+# 351
+\mathfrak g^{\mathrm L}_m
+\mathfrak g^{\mathrm L}
+\mathfrak g
+u^\ast_S
+u^*_S
+\bar w
+C^{(\ell)}
+\mathrm{Stays}_{\mathrm{col}}
+\mathrm{Stays}
+\delta_m
+# 352
+\mathfrak a^{\mathrm S}_m
+\mathfrak b^{\mathrm S}_m
+\mathfrak a^{\mathrm S}
+\mathfrak b^{\mathrm S}
+m^\flat
+m_0
+# 353
+j_0
+h_0
+\mathsf r_\ast
+\mathsf r_*
+\Pi
+\mathrm{Stays}^{\mathrm{up}}_\circ
+s^{\mathrm{up}}_\circ
+\pi^{\mathrm{two}}_N
+\pi^{\mathrm{two}}
+s^{\mathrm W}_{\nu-1}(N,k+1)
+s^{\mathrm W}
+\mathrm{Stays}^{\mathrm{adm}}
+\vartheta^{\mathrm T}
+\mathrm{Bd}^{\mathrm T}
+\mathcal N
+0.35
+Y_0
+\vartheta_{\mathrm{lb}}
+# 354
+I_y
+\omega_y(d)
+\omega_y
+\mathrm{PM}_y(d)
+\mathrm{PM}_y
+\mathbf 1_{\mathrm{ch}}
+\mathbf 1
+\mathfrak s_d(y)
+\mathbb E^y[\Pi_L(y)]
+\Pi_L
+q_L
+\mathfrak n
+\mathfrak t_q
+\mathrm{stp}
+z_0
+\mathfrak i
+d^\natural
+\mathfrak q
+\mathfrak j
+\natural
+\mathfrak c_d
+\mathfrak g_d
+\hat{\mathfrak i}
+\rho_0
+\sigma^\sharp
+\iota_0
+\mathfrak y
+\mathrm{ex}_
+\mathfrak o(q)
+\mathfrak a'
+\upsilon
+\theta
+\mathfrak v
+\mathfrak x
+\mathcal I
+\mathcal F
+\mathcal E
+\phi
+\mathfrak e^{\mathrm{ld}}
+\mathfrak h_y
+\mathrm{tr}_y
+\mathfrak M_y
+\mathfrak H_d
+\mathrm{DDL}_2
+\mathrm{DDL}^\natural
+\mathrm{DDL}
+y_0
+\mathrm{tilt}_d
+\mathrm{tilt}
+\mathfrak s^{\mathrm{up}}
+\mathsf m_{\mathrm S}
+d^\star

@@ -1,0 +1,22 @@
+\varsigma
+\mathrm{wgt}
+\mathsf K
+\mathfrak g(\xi)
+\mathfrak e
+\tau(v;q)
+\mathrm{Flow}^-
+\mathfrak S^+
+\mathrm{Bor}^{\mathrm{low}}
+\Phi
+\Upsilon
+\mathcal F
+\mathfrak v
+\omega_i
+\mathfrak f
+z_i
+J_i
+\mathcal J(q,k)
+\Lambda(\mathfrak q)
+\mathrm{Bp}
+\mathrm{Cr}
+\varrho^+_r

@@ -1,0 +1,135 @@
+cells 4
+[j] 장5A=780 장5B=19 부록D_장5A=107
+[\mathcal Y_j] 장5A=6 장5B=0 부록D_장5A=1
+[\mathcal J_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{Wr}_j] 장5A=7 장5B=0 부록D_장5A=0
+[\hat{\mathrm{Wr}}_j] 장5A=3 장5B=0 부록D_장5A=3
+[\mathcal K_j] 장5A=0 장5B=0 부록D_장5A=0
+[\hat W_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal W_j] 장5A=0 장5B=0 부록D_장5A=0
+[W_n(\gamma)] 장5A=13 장5B=0 부록D_장5A=0 ; [W_n] 장5A=14 장5B=0 부록D_장5A=0
+[\mathcal U_j(d)] 장5A=1 장5B=0 부록D_장5A=0 ; [\mathcal U_j] 장5A=5 장5B=0 부록D_장5A=1
+[\mathcal U_k] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{dc}'_j] 장5A=9 장5B=0 부록D_장5A=0
+[D_k] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak d'_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak d_i] 장5A=20 장5B=0 부록D_장5A=0
+[\vartheta'_j=3j/2-1] 장5A=0 장5B=0 부록D_장5A=0 ; [\vartheta'_j] 장5A=24 장5B=0 부록D_장5A=0
+[\alpha_k] 장5A=0 장5B=0 부록D_장5A=0
+[\theta_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{cr}_k] 장5A=5 장5B=0 부록D_장5A=0
+[\chi_k] 장5A=0 장5B=0 부록D_장5A=0
+[\mathsf o=1/\sqrt2] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathsf o] 장5A=16 장5B=0 부록D_장5A=0
+[a] 장5A=5327 장5B=1040 부록D_장5A=727
+[\mathrm{cb}_m=\binom{2m}m/4^m] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathrm{cb}_m] 장5A=28 장5B=0 부록D_장5A=0
+[a_h] 장5A=0 장5B=0 부록D_장5A=0
+[A_h] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak o_h] 장5A=0 장5B=0 부록D_장5A=0
+[w=\sqrt{1-z}] 장5A=0 장5B=0 부록D_장5A=0 ; [w] 장5A=155 장5B=193 부록D_장5A=52
+[C(z)] 장5A=4 장5B=0 부록D_장5A=0 ; [C] 장5A=166 장5B=2 부록D_장5A=13
+[\mathrm{Ch}_j(d)] 장5A=5 장5B=0 부록D_장5A=0 ; [\mathrm{Ch}_j] 장5A=17 장5B=0 부록D_장5A=1
+[C_j(d)] 장5A=0 장5B=0 부록D_장5A=0 ; [C_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal C_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal C] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal Q^{(\iota)}_{n,r,j}] 장5A=2 장5B=0 부록D_장5A=0 ; [\mathcal Q^{] 장5A=10 장5B=0 부록D_장5A=0 ; [\mathcal Q^{(\iota)}_{n] 장5A=2 장5B=0 부록D_장5A=0 ; [r] 장5A=3976 장5B=1016 부록D_장5A=830 ; [j}] 장5A=86 장5B=1 부록D_장5A=3
+[\iota=2] 장5A=2 장5B=0 부록D_장5A=0 ; [\iota] 장5A=58 장5B=0 부록D_장5A=0
+[\mathcal Q^{(2)}_{n,r,j}] 장5A=8 장5B=0 부록D_장5A=0 ; [\mathcal Q^{] 장5A=10 장5B=0 부록D_장5A=0 ; [\mathcal Q^{(2)}_{n] 장5A=8 장5B=0 부록D_장5A=0 ; [r] 장5A=3976 장5B=1016 부록D_장5A=830 ; [j}] 장5A=86 장5B=1 부록D_장5A=3
+[\mathcal Q_k] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal E_{<k}] 장5A=5 장5B=0 부록D_장5A=1 ; [\mathcal E_{] 장5A=5 장5B=0 부록D_장5A=1
+[\mathcal Q] 장5A=10 장5B=0 부록D_장5A=0
+[\mathcal Z^{(\iota)}_j(z)=(1-z)^\iota\sum_{d\ge0}\mathrm{Ch}_j(d)z^d] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal Z^{(\iota)}_j(z)] 장5A=1 장5B=0 부록D_장5A=0 ; [\mathcal Z^{(\iota)}_j(z)=(1-z)^\iota\sum_{d] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal Z^{] 장5A=46 장5B=0 부록D_장5A=1
+[(\iota)] 장5A=26 장5B=0 부록D_장5A=0
+[\mathcal Q^{(\iota)}] 장5A=2 장5B=0 부록D_장5A=0 ; [\mathcal Q^{] 장5A=10 장5B=0 부록D_장5A=0
+[\mathrm{Bor}(j)] 장5A=5 장5B=1 부록D_장5A=1 ; [\mathrm{Bor}] 장5A=37 장5B=58 부록D_장5A=14
+[\beta_j] 장5A=0 장5B=0 부록D_장5A=0
+[T_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{rq}] 장5A=32 장5B=0 부록D_장5A=3
+[\rho] 장5A=48 장5B=26 부록D_장5A=0
+[z_\ast] 장5A=23 장5B=0 부록D_장5A=0
+[r_\ast] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{lc}_i(d)] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathrm{lc}_i] 장5A=5 장5B=0 부록D_장5A=0
+[\lambda_h(d)] 장5A=0 장5B=0 부록D_장5A=0 ; [\lambda_h] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak g_i(d)] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathfrak g_i] 장5A=0 장5B=0 부록D_장5A=0
+[[n^{-i}]W_n(\gamma)] 장5A=0 장5B=0 부록D_장5A=0 ; [[n^{-i}]W_n] 장5A=0 장5B=0 부록D_장5A=0
+[w_h] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal N(\gamma)] 장5A=3 장5B=0 부록D_장5A=0 ; [\mathcal N] 장5A=12 장5B=0 부록D_장5A=1
+[J(\mathbf g)] 장5A=0 장5B=0 부록D_장5A=0 ; [J] 장5A=21 장5B=0 부록D_장5A=5
+[J(\gamma)] 장5A=0 장5B=0 부록D_장5A=0 ; [J] 장5A=21 장5B=0 부록D_장5A=5
+[J_n(z)] 장5A=1 장5B=0 부록D_장5A=0 ; [J_n] 장5A=4 장5B=0 부록D_장5A=0
+[\mathrm{Rm}_j] 장5A=8 장5B=0 부록D_장5A=2
+[\mathrm{Rm}^{(2)}_j] 장5A=6 장5B=0 부록D_장5A=1 ; [\mathrm{Rm}^{] 장5A=6 장5B=0 부록D_장5A=1
+[E_j] 장5A=0 장5B=0 부록D_장5A=0
+[E^{(2)}_j] 장5A=0 장5B=0 부록D_장5A=0 ; [E^{] 장5A=2 장5B=0 부록D_장5A=0
+[\mathfrak e_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak e_m] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal N_j(d)] 장5A=1 장5B=0 부록D_장5A=0 ; [\mathcal N_j] 장5A=4 장5B=0 부록D_장5A=1
+[\mathcal O_j] 장5A=6 장5B=0 부록D_장5A=1
+[V_j] 장5A=0 장5B=0 부록D_장5A=0
+[Y_j] 장5A=6 장5B=0 부록D_장5A=1
+[\mathcal V_j] 장5A=0 장5B=0 부록D_장5A=0
+[\Omega_j] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak d] 장5A=48 장5B=0 부록D_장5A=0
+[D] 장5A=53 장5B=30 부록D_장5A=31
+[\mathrm{Pol}_{\mathrm A}] 장5A=5 장5B=0 부록D_장5A=3
+[P_{\mathrm A}] 장5A=0 장5B=0 부록D_장5A=0
+[P_n(y)] 장5A=0 장5B=8 부록D_장5A=0 ; [P_n] 장5A=0 장5B=8 부록D_장5A=0
+[U] 장5A=91 장5B=0 부록D_장5A=14
+[U'] 장5A=32 장5B=0 부록D_장5A=0
+[N] 장5A=12 장5B=12 부록D_장5A=7
+[\mu] 장5A=27 장5B=0 부록D_장5A=0
+[\mathfrak t_i] 장5A=2 장5B=0 부록D_장5A=0
+[W^{[s]}(\gamma)] 장5A=9 장5B=0 부록D_장5A=0 ; [W^{[s]}] 장5A=15 장5B=0 부록D_장5A=0
+[1/n] 장5A=8 장5B=8 부록D_장5A=0
+[s] 장5A=917 장5B=297 부록D_장5A=400
+[r'] 장5A=44 장5B=0 부록D_장5A=0
+[s_m(y)] 장5A=0 장5B=0 부록D_장5A=0 ; [s_m] 장5A=0 장5B=3 부록D_장5A=2
+[\mathrm{tsf}_{j,s,r'}(\gamma)] 장5A=4 장5B=0 부록D_장5A=0 ; [\mathrm{tsf}_{j,s,r'}] 장5A=12 장5B=0 부록D_장5A=0 ; [\mathrm{tsf}_{j] 장5A=17 장5B=0 부록D_장5A=0 ; [s] 장5A=917 장5B=297 부록D_장5A=400 ; [r'}(\gamma)] 장5A=4 장5B=0 부록D_장5A=0
+[\mathrm{Ch}^{[s]}_j(d)] 장5A=3 장5B=0 부록D_장5A=0 ; [\mathrm{Ch}^{[s]}_j] 장5A=5 장5B=0 부록D_장5A=0
+[\mathcal Z^{(\iota)[s]}_j(z)] 장5A=1 장5B=0 부록D_장5A=0 ; [\mathcal Z^{] 장5A=46 장5B=0 부록D_장5A=1
+[s=0] 장5A=1 장5B=0 부록D_장5A=0 ; [s] 장5A=917 장5B=297 부록D_장5A=400
+[\mathrm{Ch}_j] 장5A=17 장5B=0 부록D_장5A=1
+[\mathcal Z^{(\iota)}_j] 장5A=6 장5B=0 부록D_장5A=0 ; [\mathcal Z^{] 장5A=46 장5B=0 부록D_장5A=1
+[\mathcal L=W^{[1]}] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal L] 장5A=12 장5B=0 부록D_장5A=0
+[\mathcal N=W^{[2]}] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal N] 장5A=12 장5B=0 부록D_장5A=1
+[\mathcal U_j=\mathrm{Ch}^{[1]}_j] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal U_j] 장5A=5 장5B=0 부록D_장5A=1
+[\mathcal N_j=\mathrm{Ch}^{[2]}_j] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal N_j] 장5A=4 장5B=0 부록D_장5A=1
+[\mathcal Y_j=\mathcal Z^{(2)[1]}_j] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal Y_j] 장5A=6 장5B=0 부록D_장5A=1 ; [\mathcal Y_j=\mathcal Z^{] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal O_j=\mathcal Z^{(2)[2]}_j] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal O_j] 장5A=6 장5B=0 부록D_장5A=1 ; [\mathcal O_j=\mathcal Z^{] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{pol}\bigl(z\tfrac d{dz}\bigr)F=\sum_m\mathrm{pol}(m)f_mz^m] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathrm{pol}\bigl(z\tfrac d{dz}\bigr)F] 장5A=1 장5B=0 부록D_장5A=0 ; [\mathrm{pol}\bigl] 장5A=1 장5B=0 부록D_장5A=0
+[\theta=z\frac d{dz}] 장5A=0 장5B=0 부록D_장5A=0 ; [\theta] 장5A=0 장5B=5 부록D_장5A=0
+[\theta] 장5A=0 장5B=5 부록D_장5A=0
+[\mathcal D] 장5A=8 장5B=0 부록D_장5A=0
+[z\frac{d}{dz}] 장5A=0 장5B=0 부록D_장5A=0
+[k] 장5A=1329 장5B=107 부록D_장5A=321
+[j=2] 장5A=1 장5B=0 부록D_장5A=1 ; [j] 장5A=780 장5B=19 부록D_장5A=107
+[\iota=3] 장5A=0 장5B=0 부록D_장5A=0 ; [\iota] 장5A=58 장5B=0 부록D_장5A=0
+[\mathrm{Lp}^\pm_j] 장5A=0 장5B=0 부록D_장5A=0
+[q_\pm] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm e_\pm] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{dc}_j] 장5A=0 장5B=0 부록D_장5A=0
+[\vartheta_j] 장5A=0 장5B=0 부록D_장5A=0
+[\iota_{\mathrm{ws}}] 장5A=0 장5B=0 부록D_장5A=0
+[\iota^\circ] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{ws}_\gamma] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{Fs}] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{nS}] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{pS}] 장5A=0 장5B=0 부록D_장5A=0
+[\Theta] 장5A=12 장5B=0 부록D_장5A=0
+[\mathfrak v] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak q] 장5A=0 장5B=0 부록D_장5A=0
+[\mathcal Z^{(3)}_2] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathcal Z^{] 장5A=46 장5B=0 부록D_장5A=1
+[f] 장5A=1378 장5B=350 부록D_장5A=190
+[\mathfrak W_m] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak E=(1-z)C'] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathfrak E] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathfrak E=] 장5A=0 장5B=0 부록D_장5A=0
+[\Theta(\vartheta)] 장5A=0 장5B=0 부록D_장5A=0 ; [\Theta] 장5A=12 장5B=0 부록D_장5A=0
+[\Psi] 장5A=26 장5B=8 부록D_장5A=0
+[u^\pm] 장5A=0 장5B=0 부록D_장5A=0
+[L_\Theta,U_\Theta,P_\Theta,Q_\Theta] 장5A=0 장5B=0 부록D_장5A=0 ; [L_\Theta] 장5A=0 장5B=0 부록D_장5A=0 ; [U_\Theta] 장5A=0 장5B=0 부록D_장5A=0 ; [P_\Theta] 장5A=0 장5B=0 부록D_장5A=0 ; [Q_\Theta] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak E] 장5A=0 장5B=0 부록D_장5A=0
+[r] 장5A=3976 장5B=1016 부록D_장5A=830
+[\mathrm S_\pm] 장5A=0 장5B=0 부록D_장5A=0
+[\mathfrak r=n-d] 장5A=0 장5B=0 부록D_장5A=0 ; [\mathfrak r] 장5A=0 장5B=0 부록D_장5A=0
+[\varsigma] 장5A=44 장5B=0 부록D_장5A=0
+[\mathrm{bv}] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{rq}_r] 장5A=0 장5B=0 부록D_장5A=0
+[\mathrm{Pol}_{\mathrm E}] 장5A=0 장5B=0 부록D_장5A=0
