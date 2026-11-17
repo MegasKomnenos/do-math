@@ -19,6 +19,10 @@
     「N째 고리는 …」 문단마다 「10.7절 N째 고리」로 적는다. 진술 본문(괄호 밖 머리 줄·증명 앞 줄)과 ∎ 뒤 산문, 진술 밖 준비 문단의 인용은
     근거 인용이 아니므로 셀에 넣지 않고 --diff 보고의 진단에만 적는다. 입력이 여럿이면 자리 뒤 괄호에 어느 입력인지 붙인다.
     직접 인용이 없으면 「직접 인용 없음(경유: 라벨들)」 — 경유는 그 증명의 뿌리에서 거슬러 닿는 진술 가운데 입력을 인용하는 것 중 뿌리에 가장 가까운 것들.
+    경유가 진술 밖(준비 문단·식 번호만 있는 자리)이라 기계가 찾지 못하면 행 정의의 「경유」({"첫째"|"둘째": {라벨: 글}})가 그 글을 대신 넣는다.
+  의존 간선: 머리의 의존 괄호·증명 본문(식 번호 포함)·뒤로 미룬 증명의 인용. 뒤 진술을 앞에서 부르는 인용은 괄호 안·미룬 증명 안·**증명 본문 안**일 때 의존으로
+    세고(증명이 뒤 절의 정리를 쓰는 자리 — 예: 7.2절 명제가 7.3절 정리의 인증서를 쓴다), 진술 본문·∎ 뒤 산문의 앞선 언급은 세지 않는다. 증명 본문의 앞선 인용은
+    실행 때 「앞선 인용(증명 안)」으로 모두 출력하므로 뜻이 「뒤에서 쓴다」는 안내인 것이 섞이면 그 목록에서 가른다(2026-11-17 U16: 여섯 가운데 4장 둘이 안내).
 
 명령
   python -I scripts/_gen_11_3표.py --init-rows            현행 장11.md 세 표의 첫째 열에서 행 정의 파일을 처음 뽑는다(있으면 --force 필요)
@@ -266,10 +270,11 @@ def citations(v, eq_owner):
 GROUND = {"bracket", "proof", "dproof"}
 
 
-def build_graph(stmts, eq_owner):
+def build_graph(stmts, eq_owner, forward_proof=True):
     """근거 인용(머리 괄호·증명 본문·식 번호)의 의존 간선 {라벨: {인용 라벨: 정보}}. 정의는 결과가 아니라 언어이므로 간선의 도착점에서 뺀다.
-    앞선 언급(뒤 진술의 인용)은 괄호 안이거나 미룬 증명 안일 때만 의존으로 센다."""
-    cites, deps = {}, {}
+    앞선 언급(뒤 진술의 인용)은 괄호 안·미룬 증명 안, 그리고(forward_proof) 증명 본문 안일 때 의존으로 센다 — 증명 본문의 앞선 인용은
+    세 번째 반환값 forward에 (인용자, 인용된 라벨, 줄들)로 모아 실행 때 보인다(안내 문장이 섞일 수 있으므로)."""
+    cites, deps, forward_edges = {}, {}, []
     for lab, v in stmts.items():
         c = citations(v, eq_owner)
         cites[lab] = c
@@ -281,10 +286,13 @@ def build_graph(stmts, eq_owner):
                 continue
             forward = stmts[a]["order"] > v["order"]
             if forward and not (info["zones"] & {"bracket", "dproof"}) and not v["defer"]:
-                continue
+                if forward_proof and ("proof" in info["zones"]):
+                    forward_edges.append((lab, a, sorted(set(info["lines"]))))
+                else:
+                    continue
             d[a] = info
         deps[lab] = d
-    return cites, deps
+    return cites, deps, forward_edges
 
 
 def reach(deps, root):
@@ -357,10 +365,16 @@ def head_grades(v):
     return out
 
 
+STALE_HEADS = []   # (부록 D 항목, 라벨): 항목 머리가 확인한다고 들었으나 진술 머리에 계산 표지가 없는 자리 — 실행 때 보인다
+
+
 def grades_for(lab, gmap, stmts, row_letters=None, override=None):
     """라벨의 등급 목록. 차례: 행 정의의 「등급」 덧씌우기 → 진술 머리 표지의 「계산 증거/보조(…)」 괄호(진술 하나의 등급을 바로 적은 자리) →
     부록 D 항목의 「산술 등급」 줄(항목 하나가 여러 진술을 확인하면 등급이 섞인다). 행 정의가 그 라벨에 항목 글자를 적었고(「정리 {{X}}(가)」)
-    부록 D 머리도 글자를 적었는데 겹치지 않으면(「(나)」) 그 항목은 이 행의 계산이 아니다."""
+    부록 D 머리도 글자를 적었는데 겹치지 않으면(「(나)」) 그 항목은 이 행의 계산이 아니다.
+    진술의 머리에 계산 표지가 하나도 없으면 그 진술은 계산에 기대지 않는 것이고(1.5절의 표지 규칙; 등급의 정본은 머리 표지다), 부록 D 항목이 그래도
+    그 라벨을 들고 있으면 항목 머리가 옛것이다 — 적지 않고 STALE_HEADS에 모아 실행 때 보인다(2026-11-17 U16; 지은 진술을 아직 부르는 항목 머리가
+    표에 흘러드는 것을 막는다)."""
     if override and lab in override:
         return [override[lab]]
     items = [(name, grades, letters) for name, grades, letters in gmap.get(lab, []) if not (row_letters and letters and not (row_letters & letters))]
@@ -369,6 +383,11 @@ def grades_for(lab, gmap, stmts, row_letters=None, override=None):
     hg = head_grades(stmts[lab]) if lab in stmts else []
     if hg:
         return hg
+    if lab in stmts:
+        for name, _, _ in items:
+            if (name, lab) not in STALE_HEADS:
+                STALE_HEADS.append((name, lab))
+        return []
     out = []
     for name, grades, letters in items:
         for x in grades:
@@ -434,7 +453,7 @@ def memo_of(inp_text):
 ROWS_DOC = [
     "11.3절 세 표의 행 정의(사람이 고치는 정본; 결정 K5-13). scripts/_gen_11_3표.py가 읽어 세 표의 나머지 열을 생성한다.",
     "행마다: 「표」 공유|첫째|둘째, 「이름」 첫째 열의 행 이름(콜론 앞), 「입력」 행의 입력 라벨(순서 보존), 「딸림」 입력의 증명이 거쳐 부르는 라벨(「…과 그 증명이 (거쳐) 부르는」 뒤; 계산 폐포의 출발점이 되고 다른 행의 멈춤점이 되지만 인용 자리는 적지 않는다), 「메모」 첫째 열의 라벨 밖 산문, 「입력열」 첫째 열의 콜론 뒤 글(있으면 그대로 첫째 열에 쓴다).",
-    "선택: 「등급」 {라벨: 등급 글} — 부록 D 항목 하나가 여러 진술·여러 등급을 적어 기계가 진술별 등급을 가르지 못할 때 사람이 정한 값; 「계산제외」 [라벨…] — 이 행의 계산 열에서 뺄 진술(다른 행의 몫으로 돌릴 때).",
+    "선택: 「등급」 {라벨: 등급 글} — 부록 D 항목 하나가 여러 진술·여러 등급을 적어 기계가 진술별 등급을 가르지 못할 때 사람이 정한 값; 「계산제외」 [라벨…] — 이 행의 계산 열에서 뺄 진술(다른 행의 몫으로 돌릴 때); 「경유」 {\"첫째\"|\"둘째\": {라벨: 글}} — 그 증명이 그 입력을 진술 밖(준비 문단·식 번호만 있는 자리)에서만 거쳐 들어 기계가 경유를 찾지 못할 때 「직접 인용 없음(경유: 글)」의 글을 사람이 적은 것.",
     "처음 만들 때: python -I scripts/_gen_11_3표.py --init-rows [--base HEAD]. 그 뒤로는 손으로 고친다.",
 ]
 
@@ -622,7 +641,9 @@ def merge_links(texts):
     return out
 
 
-def gen_cite_cell(row, places, diag, depth, cites, stmts, all_inputs=()):
+def gen_cite_cell(row, places, diag, depth, cites, stmts, all_inputs=(), side=None):
+    """side: 「첫째」|「둘째」 — 행 정의의 「경유」 덧씌우기({side: {라벨: 글}})를 읽는 열쇠."""
+    override = (row.get("경유") or {}).get(side or "", {}) or {}
     inputs = [l for l in row["입력"] if l in stmts]
     n = len(inputs)
     by_place = collections.OrderedDict()   # (키, 글) → 인용하는 입력들
@@ -644,9 +665,16 @@ def gen_cite_cell(row, places, diag, depth, cites, stmts, all_inputs=()):
     extra = []
     by_via = collections.OrderedDict()
     for l in missing:
-        by_via.setdefault(tuple(via_candidates(l, depth, cites, stmts, all_inputs)), []).append(l)
+        if l in override:
+            key = ("텍스트", override[l])   # 사람이 적은 경유(준비 문단·식 번호만 있는 자리)
+        else:
+            key = tuple(via_candidates(l, depth, cites, stmts, all_inputs))
+        by_via.setdefault(key, []).append(l)
     for via, labs in by_via.items():
-        via_text = kind_label_list(list(via), stmts) if via else "없음"
+        if via and via[0] == "텍스트":
+            via_text = via[1]
+        else:
+            via_text = kind_label_list(list(via), stmts) if via else "없음"
         if len(labs) == n:
             extra.append(f"직접 인용 없음(경유: {via_text})")
         else:
@@ -661,7 +689,7 @@ def gen_cite_cell(row, places, diag, depth, cites, stmts, all_inputs=()):
 def build(src, rows, dedupe=True, prep=False):
     stmts, prose = parse_chapters(src)
     eq_owner = equation_owners(stmts, src)
-    cites, deps = build_graph(stmts, eq_owner)
+    cites, deps, forward_edges = build_graph(stmts, eq_owner)
     items = parse_appendix_d(src)
     gmap = grade_map(items)
     all_inputs = {l for r in rows for l in r["입력"] + r.get("딸림", [])}
@@ -684,7 +712,7 @@ def build(src, rows, dedupe=True, prep=False):
         d = {"폐포": sorted(closure, key=lambda l: stmts[l]["order"]), "진술본문인용": {}, "준비문단": {}}
         for side in (("첫째", first), ("둘째", second)):
             if r["표"] in ("공유", side[0]):
-                c, miss = gen_cite_cell(r, side[1][0], side[1][1], side[1][2], cites, stmts, all_inputs)
+                c, miss = gen_cite_cell(r, side[1][0], side[1][1], side[1][2], cites, stmts, all_inputs, side=side[0])
                 cells.append(c)
                 d["진술본문인용"][side[0]] = {l: side[1][1].get(l, []) for l in r["입력"] if side[1][1].get(l)}
                 d.setdefault("직접인용없음", {})[side[0]] = miss
@@ -697,7 +725,7 @@ def build(src, rows, dedupe=True, prep=False):
                 d["준비문단"].setdefault("첫째" if ch == FIRST_CH else "둘째", []).append((sec, prev, n, hit))
         gen.append({"표": r["표"], "행": r, "셀": cells, "진단": d})
     return dict(stmts=stmts, prose=prose, cites=cites, deps=deps, items=items, gmap=gmap, gen=gen, unknown=unknown,
-                first_depth=first[2], second_depth=second[2])
+                first_depth=first[2], second_depth=second[2], forward=forward_edges)
 
 
 def tables_markdown(gen):
@@ -935,6 +963,14 @@ def main():
     noproof = [l for l, v in stmts.items() if v["kind"] != "정의" and not any(z in ("proof", "dproof") for _, _, z in v["lines"])]
     if noproof:
         print(f"[참고] 증명 범위를 찾지 못한 진술 {len(noproof)}개: {', '.join(noproof)}")
+    if res["forward"]:
+        print(f"[참고] 앞선 인용(증명 안)을 의존으로 센 자리 {len(res['forward'])}개 — 「뒤에서 쓴다」는 안내가 섞였는지 본다:")
+        for lab, a, lines in res["forward"]:
+            print(f"    {lab}({stmts[lab]['file']}:{stmts[lab]['line']}) → {a}  줄 {','.join(map(str, lines))}")
+    if STALE_HEADS:
+        print(f"[경고] 부록 D 항목 머리가 확인한다고 든 진술인데 머리에 계산 표지(계산 증거/계산 보조)가 없는 것 {len(STALE_HEADS)}개 — 계산 열에 적지 않았다(항목 머리가 옛것이거나 진술 머리가 표지를 빠뜨렸다; 부록 D 임자·그 장 임자에게):")
+        for name, lab in STALE_HEADS:
+            print(f"    D:{name} → {lab}")
     if args.debug:
         lab = args.debug
         print(f"== {lab}: {stmts[lab]['kind']} {stmts[lab]['file']}:{stmts[lab]['line']} 절 {stmts[lab]['section']}")
