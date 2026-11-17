@@ -427,12 +427,34 @@ def old_number(k):
 
 
 mp = ["# 라벨–번호 대응표 (%s)" % now[:10], "",
-      "현재 번호는 이 표를 만든 시각의 장 파일(`장v2/장*.md`)에서 진술 머리를 순서대로 센 번호이고, 같은 파일들에서 조립한 `원고.md`의 번호와 같다. 「15:52 조립본 번호」는 2026-11-14 15:52 조립본(지도 JSON·번역 초안이 기준으로 삼은 판; 결정 97·101 전)의 번호다. 그 열은 결정 101 전 장 파일 사본(`대조v2/수학검사2/전_정합1114/`)의 머리 순서에 결정 97이 지운 둘(따름정리 6.46 V-핵심의 머묾 항등식, 명제 10.5 예산 분해)을 되돌려 센 것이다. 그 뒤 지운 진술은 표 끝에 「뺌」으로 적었다. 번호는 라벨에서 조립 때 매겨지므로 정본은 라벨이다.", "",
+      "현재 번호는 이 표를 만든 시각의 장 파일(`장v2/장*.md`)에서 진술 머리를 순서대로 센 번호이고, 같은 파일들에서 조립한 `원고.md`의 번호와 같다. 「15:52 조립본 번호」는 2026-11-14 15:52 조립본(지도 JSON·번역 초안이 기준으로 삼은 판; 결정 97·101 전)의 번호다. 그 열은 결정 101 전 장 파일 사본(`대조v2/수학검사2/전_정합1114/`)의 머리 순서에 결정 97이 지운 둘(따름정리 6.46 V-핵심의 머묾 항등식, 명제 10.5 예산 분해)을 되돌려 센 것이다. 그 뒤 지운 진술은 표 끝에 「뺌」으로 적었다. 라벨이 바뀐 채 살아 있는 진술(옮김)은 산 행의 그 열에 「옛 `(옛 라벨)` 번호」로 적고 표 끝의 「옮김」 행이 같은 짝을 되짚는다; 「사본에 없음」은 라벨 기준이라 그 뒤 새로 생긴 진술에만 남는다. 번호는 라벨에서 조립 때 매겨지므로 정본은 라벨이다.", "",
       "| 라벨 | 종류 | 이름 | 현재 번호 | 15:52 조립본 번호 | 둘째 판 절 |", "|---|---|---|---|---|---|"]
+# 2026-11-18 24차 R13 [대응표-1]: 라벨이 바뀐 채 살아 있는 진술(옮김)의 산 행에 옛 라벨의 15:52 번호를 적는다.
+# 옛 라벨→현행 라벨은 표 끝 「옮김」 행과 같은 규칙으로 가른다(장부 4절 「라벨을 … 바꿈」 주석이 먼저, 장부에 행이 없는 라벨만 이름 일치).
+moved_from = {}
+for _k in sorted(set(snap_num) - cur, key=lambda x: snap_num[x]):
+    _r = removed_led.get(_k)
+    if _r and _r.get("moved") and _r["moved"] in cur:
+        _to = [_r["moved"]]
+    elif _r:
+        _to = []
+    else:
+        _to = [c for c in cur if c.split(":", 1)[1] == _k.split(":", 1)[1] and c != _k]
+    if _to and _to[0] not in moved_from:
+        moved_from[_to[0]] = _k
+
+
+def old_number_live(k):
+    n = old_number(k)
+    if n == "사본에 없음" and k in moved_from:
+        return "옛 `(%s)` %s" % (moved_from[k], old_number(moved_from[k]))
+    return n
+
+
 for k in order:
     s = st[k]
     nm = s["name"].strip().replace("|", "／") or "—"
-    mp.append("| %s | %s | %s | %s | %s | %s |" % (lab_tag(k), s["kind"], nm, number[k], old_number(k), s["section"]))
+    mp.append("| %s | %s | %s | %s | %s | %s |" % (lab_tag(k), s["kind"], nm, number[k], old_number_live(k), s["section"]))
 for k in sorted(set(snap_num) - cur, key=lambda x: snap_num[x]):
     r = removed_led.get(k)
     nm = (r["name"] if r and r["name"] else "—").replace("|", "／")

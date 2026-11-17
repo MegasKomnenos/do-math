@@ -1,6 +1,6 @@
 ## 부록 A. 기호표
 
-변수와 지표 글자를 먼저 적고, 본문에 나오는 전역 기호를 장별로 처음 정의된 절의 순서로 적는다. 열은 기호, 뜻, 처음 정의된 절, 그리고 같은 양을 연구 기록이 다른 글자로 적은 경우 그 글자와 식별자다. 증명 안에서만 쓰이는 국소 기호는 그 증명이 정의한다.
+변수와 지표 글자를 먼저 적고, 본문에 나오는 전역 기호를 장별로 처음 정의된 절의 순서로 적는다. 열은 기호, 뜻, 처음 정의된 절, 그리고 같은 양을 연구 기록이 다른 글자로 적은 경우 그 글자와 식별자다. 마지막 열은 기호마다 주된 대응만 적은 것이고, 기록마다의 대응 전부는 부록 C의 글자 표에 있다. 증명 안에서만 쓰이는 국소 기호는 그 증명이 정의한다.
 
 ### 변수와 지표 글자
 
@@ -75,7 +75,7 @@
 | $\mathrm{Bor}^{*j}(m)$ | Borel–Tanner 질량(독립 Borel 변수 $j$개의 합이 $m$일 확률) | 2.5 | $BT$ ([r8a9b11e]); $BT_n(j)$ ([re71a735]); $BT_j(J)$ ([r58b4caa]; 누적); $\beta^{*j}(h)$ ([r6a8c8b6]) |
 | $\Pr_n, \mathbb E_n$ | 크기 $n$ 균등 뿌리 숲의 법칙(=길이 $n$ 균등 주차함수의 법칙)과 그 기댓값 | 2.5 | — |
 | $\Psi(q)$ | Borel 갱신함수 $\sum_{j=1}^q\mathrm{Ren}(j)$ | 2.5 | $U(D)=1+\Psi(D)$ ([r4868e30]); $\Psi(d)$ ([r5bbc534], [r9bf2dc6], [r2ec875c]); $\Psi(b)$ ([r030ffae]); $\bar\Psi$ ([r030ffae], 다른 양) |
-| $\theta_t(k)$ | 크기 $t$ 균등 나무의 문턱 부분나무 기대 수 $\mathbb E^T_t[H_k]=\mathrm{Ren}(t-k)\mathrm{Bor}(k)/\mathrm{Bor}(t)=\binom tk\frac{k^{k-1}(t-k)^{t-k}}{t^{t-1}}$(정리 {{2:chain-law}}(라)가 정의; 크기 $N$ 숲에서 부분나무 크기가 $m$인 꼭짓점의 기대 수는 같은 (라)의 $\mathbb E_N[H_m(F)]=\theta_{N+1}(m)$) | 2.5 | $\theta_N(k)$ ([rb6a2cd0]; $N\to t$) |
+| $\theta_t(k)$ | 크기 $t$ 균등 나무의 문턱 부분나무 기대 수 $\mathbb E^T_t[H_k]=\mathrm{Ren}(t-k)\mathrm{Bor}(k)/\mathrm{Bor}(t)=\binom tk\frac{k^{k-1}(t-k)^{t-k}}{t^{t-1}}$(정리 {{2:chain-law}}(라)가 정의; 크기 $N$ 숲에서 부분나무 크기가 $m$인 꼭짓점의 기대 수는 같은 (라)의 $\mathbb E_N[H_m(F)]=\theta_{N+1}(m)$) | 2.5 | $\theta_N(k)$ ([rb6a2cd0]; $N\to t$); $\mathcal V^{tr}_t(y)$ ([r8a9b11e], [r58b4caa], [r23f10e9]); $\zeta_N(m)$ ([r8456f59], [r030ffae], [r9bf2dc6], [rae1f209]; $=\theta_{N+1}(m)$) |
 | $\mathrm{Ren}(j)$ | 갱신 방문 핵 $j^je^{-j}/j!=j\,\mathrm{Bor}(j)$, $\mathrm{Ren}(0):=1$; 하계 함수는 $\mathrm{Ren}_*(j)$ | 2.5 | $c_j$, $c_h$, $c_0=1$ ([r4868e30]); $u(j)$, $u(r)$, $u(n)$, $u(q)$ ([r030ffae], [re71a735], [r2ec875c], [r98fb348], [r8456f59], [r5bbc534]); $c_d$ ([r79ee9e0]); $c_j$, $c_g$, $c_h$ ([r42d9a17], [r1aa0be6], [r13b0b8f], [r7798355], [r690be93]); $c_h=h\beta_h$ ([r6a8c8b6]) |
 | $\Pr^{T}_t, \mathbb E^{T}_t$ | 크기 $t$ 균등 뿌리 라벨 나무의 법칙과 기댓값 | 2.5 | — |
 | $c_m(Y)$ | 수준 질량 $b_{m,Y}/p_m=\Pr_m(M=Y)$ | 2.6 | $\pi_m(\ell)$ ([r845b205], [r3d0856b], [re71a735]); $\beta_m(c)=b_{m,c}/p_m$ ([r13b0b8f]); $q_m$, $q^+_m$ ([r79ee9e0]; 수준 $k-1$·$k$); $r_N,r^\prime_N$ ([rae1f209], [r030ffae]); $f_N=c_N(k-1)$ ([r77e234e], [rae1f209]); $V_c(d)$ ([re71a735]); $c_m(\ell)$ ([r2ec875c]); 같음 ([r8a9b11e], [r23f10e9], [r58b4caa]); $\pi_m(\ell)$ ([raad7e6d]); $\beta_n(c)$ ([r59c82d7]; $c\to y$) |
@@ -101,7 +101,7 @@
 | $x_t(y)$ | 나무 곡률 $s^T_t(y+1)-2s^T_t(y)+s^T_t(y-1)$; 열 $k$에서는 $x_t(k)$ | 2.9 | 같음 ([r58b4caa], [r8a9b11e], [r23f10e9]); $x_N(k)$ ([r4868e30]) |
 | $M^{T}_t$ | 크기 $t$ 균등 뿌리 나무의 최대 변위 | 2.9 | — |
 | $\Pi$ | 사슬 생존 곱: 나무(사슬) 전체의 $\prod_{S_i>y}y/S_i=\prod_i y/(y+q_i)$ | 2.9 | $W_v=\prod_{S_j>v}v/S_j$ ([r23f10e9]; 용량 $v$) |
-| $\Psi^{\mathrm{low}}_{(\varkappa)}$ | 갱신함수 하계의 실수 인수 정밀판 $(2\pi)^{-1/2}(2\sqrt\varkappa-\mathsf c_\Psi+\frac1{2\sqrt\varkappa}-\frac1{24}\varkappa^{-3/2})$($\varkappa\ge1$; $\varkappa<1$에서 $0$; 보조정리 {{2:power-sum-renewal}}(ㄴ)이 정의하고 8.2절 보조정리 {{8:envelope-H}}와 (8.18)이 쓴다; 인수 $\varkappa$는 실수이고 8장은 제 인수를 넣어 부른다; 6.6절 보조정리 {{6:lemma-Hprime}}의 증명은 (ㄴ)의 하계 $(2\pi)^{-1/2}(2\sqrt d-\mathsf c_\Psi)$를 받는다) | 2.9 | $\Psi_{(r)}$ ([r030ffae]); $\Psi_\flat(r)$ ([rfc69320]) |
+| $\Psi^{\mathrm{low}}_{(\varkappa)}$ | 갱신함수 하계의 실수 인수 정밀판 $(2\pi)^{-1/2}(2\sqrt\varkappa-\mathsf c_\Psi+\frac1{2\sqrt\varkappa}-\frac1{24}\varkappa^{-3/2})$($\varkappa\ge1$; $\varkappa<1$에서 $0$; 보조정리 {{2:power-sum-renewal}}(ㄴ)이 정의하고 8.2절 보조정리 {{8:envelope-HG}}의 (8.12)(탈출 하계의 조각 $D_3$)와 흐름 항 하계의 $\tau(v;q)$가 쓴다; 인수 $\varkappa$는 실수이고 8장은 제 인수를 넣어 부른다; 6.6절 보조정리 {{6:lemma-Hprime}}의 증명은 (ㄴ)의 하계 $(2\pi)^{-1/2}(2\sqrt d-\mathsf c_\Psi)$를 받는다) | 2.9 | $\Psi_{(r)}$ ([r030ffae]); $\Psi_\flat(r)$ ([rfc69320]) |
 | $\mathsf c_\Psi$ | 갱신함수 하계의 상수 $-\mathsf z_{1/2}+\mathsf z_{3/2}/12$($\in(\frac32,1.6781)$; 명명 상수; $\Psi^{\mathrm{low}}_{(\varkappa)}$의 식에 든다 — 보조정리 {{2:power-sum-renewal}}(ㄴ); 6.6절 보조정리 {{6:lemma-Hprime}}의 증명도 부른다) | 2.9 | $C_\Psi$ ([rfc69320]); $-\zeta(\frac12)+\zeta(\frac32)/12$로 풀어 적음 ([r030ffae]) |
 | $\mathsf z_{1/2}, \mathsf z_{-1/2}, \mathsf z_{3/2}$ | Riemann 제타 함수의 $\tfrac12$, $-\tfrac12$, $\tfrac32$에서의 값(명명 상수; 수치와 인증 구간은 부록 D; 2.9가 정의하고 같은 절의 보조정리 {{2:power-sum-renewal}}과 8장이 받는다) | 2.9 | $\zeta(\frac12)$, $\zeta(-\frac12)$, $\zeta(\frac32)$ ([r8a9b11e], [r030ffae], [rfc69320]) |
 | $\mathrm{rb}_m$ | Robbins 나머지 $\log m!-(m+\tfrac12)\log m+m-\tfrac12\log(2\pi)$ | 2.9 | $\rho_m$ ([rae1f209]); $\lambda_q$ ([r5bbc534]); $r_n$ ([r9bf2dc6]); $\varepsilon_h$ ([r7798355]); $\theta_n$ ([r29c10cd]) |
@@ -144,7 +144,7 @@
 | $\Phi, \Phi^{\mathrm{aux}}$ | 중앙 틈의 생성함수($e_n/n!=[x^n]\Phi(T(x))$)와 위 끝을 $1$로 바꾼 것 | 4.3 | $\Phi(t)$, $\Phi_{aux}$ ([rce3dc75]; 아래첨자 — 이 글은 윗첨자 로마체); $\Phi(t)$ ([ra4c01fc]) |
 | $\mathcal A_{k,n}$ | 중앙 틈의 계수 $\frac{n!}{p_n}[x^n]\Phi^{\mathrm{aux}}(T)$ | 4.3 | 같음 ([rce3dc75], [ra4c01fc], [r5f5cf73]) |
 | $\mathcal D(\beta)$ | Dawson 함수 $\mathcal D(\beta)=e^{-\beta^2/2}\int_0^\beta e^{v^2/2}\,dv$ | 4.3 | 같음 ([rce3dc75], [r5f5cf73]) |
-| $\mathcal I_k$ | Gauss형 적분(중앙 틈) $\int_0^1\frac v{1-v}e^{-v^2/2}e^{-k\eta(v)}dv$, $\eta(v)=-\log(1-v)-v-\frac{v^2}2$ | 4.3 | 같음 ([rce3dc75], [r5f5cf73]; 지수의 $\varrho(v)$는 이 글의 $\eta(v)$); $J_c$ ([ra4c01fc]) |
+| $\mathcal I_k$ | 명제 {{4:old-4-6}}의 적분(중앙 틈) $\int_0^1\frac v{1-v}e^{-v^2/2}e^{-k\eta(v)}dv$, $\eta(v)=-\log(1-v)-v-\frac{v^2}2$ | 4.3 | 같음 ([rce3dc75], [r5f5cf73]; 지수의 $\varrho(v)$는 이 글의 $\eta(v)$); $J_c$ ([ra4c01fc]) |
 | $\mathcal M_i$ | Gauss형 계수(중앙 틈의 실수 비교; 차수 지표 $i\ge0$; 쓰이는 값 $0,2,4$); $(y,n)$-판은 $\mathcal M^{(y,n)}_i$ | 4.3 | $M_r=M^{(k,n)}_r$, $M^{(c,n)}_r$ ([rce3dc75], [ra4c01fc], [r5f5cf73]; 글자체, $c\to y$, 지표 $r\to i$) |
 | $\mathsf a_j$ | 적분 상수 $\int_0^\infty w^je^{-w^3/3}\,dw$ | 4.3 | $C_0$, $I$ ([rce3dc75], [r5f5cf73], [ra4c01fc], [r475ada3]); $I$ ([ra7615a0]); $M_m$ ([ra4c01fc]); $C_A$ ([rb7effe0]) |
 | $\mathsf b_D, \mathsf b_J$ | 상쇄 분해의 두 보정 계수 | 4.3 | $c_D$, $c_J$ ([rce3dc75], [ra4c01fc], [r5f5cf73]) |
@@ -158,7 +158,7 @@
 | 기호 | 뜻 | 처음 정의된 절 | 기록의 글자 |
 |---|---|---|---|
 | $A^{c}_{n,\ell}$ | 넘는 수 $p_n-A_{n,\ell}$(최대 변위가 $\ell$을 넘는 주차함수의 수); 꼬리 좌표로는 $A^c_{n,n-r-1}$ | 5.1 | $D_{n,\ell}$, $\mathscr D_n(r)$ ([r42d9a17], [r1aa0be6]; 기록 $r=n-\ell$은 이 글의 $r+1$); $\Delta_n=p_n-A_{n,c-1}$ ([rba2ecf4]); $D_{n,\ell}$ ([r15524fd]; [r15524fd]의 $D_{n,n-r}$의 $r$은 이 글의 $r+1$); $D_{n,c}$ ([r19de912]; 첨자 용량 $c\to$ 수준 $c-1$); $D_{n,n-u}$ ([ra88ba51]; $u=n-\ell$은 이 글의 $r+1$) |
-| $\mathfrak a_n$ | 지수 생성함수 계수 $A_{n,k-1}/n!$ | 5.1 | $a_m$ ([rb7effe0], [r207f124]); $a_n$ ([r7c26b8b], [rf451d83]); $a_N$ ([r051bfe1]); $f_j$ ([rbeae3a3]); $\tilde a_m$ ([r207f124]); $a^{(k)}_n$ ([r15df76b]); $\tilde a_n$ ([r6f5f48f]; 볼츠만판) |
+| $\mathfrak a_n$ | 지수 생성함수 계수 $A_{n,k-1}/n!$ | 5.1 | $a_m$ ([rb7effe0], [r207f124]); $a_n$ ([r7c26b8b], [rf451d83]); $a_N$ ([r051bfe1]); $f_j$ ([rbeae3a3]); $a^{(k)}_n$ ([r15df76b]) |
 | $\mathfrak m(n)$ | 꼬리 칸 수: 정리 {{5:old-5-5}}의 두 분기가 오른쪽 끝에서부터 덮는 칸 수 $\max(\{170\}\cup\{m\ge171:m^{3/2}+9m\le n\})$($n\ge20001$; 성질은 보조정리 {{5:tail-cells}}) | 5.2 | 같음 ([r2ec875c], [r23f10e9]) |
 | $(\mathrm G)_d$ | 경계 응답 부등식을 합 지표 $d$별로 쪼갠 조각 | 5.2 | (G) ([r708d99c], [r5ddf8a8]; 기록의 이름은 「원천별 비교」) |
 | $\mathsf W, \mathsf W^\sharp$ | 오른쪽 벌크 증가 명제; 임계 창 잔여 명제 | 5.3, 5.4 | — |
@@ -169,10 +169,10 @@
 | $\mathsf w_0$ | 착지 질량의 균일 하계 $\frac45$(보조정리 {{5:landing-mass}}) | 5.5 | $s_0$ ([r8a9b11e]; 기록의 검토가 바로잡은 값 $0.71216$) |
 | $\mathrm{IH}(n,y)$ | 귀납 가정 | 5.5 | $H(n,y)$ ([r58b4caa], [r8a9b11e], [r23f10e9]) |
 | $P_n(y)$ | 기저량 $\sum_{t=y}^{n}x_t(y)$(5.5절 Abel 재배열의 기저 — 명제 {{5:old-5-22}} 첫 항의 인자; 따름정리 {{6:cor-L}}가 아래에서 막는다) | 5.5 | $D2S_n(y)$ ([r23f10e9], [r58b4caa]) |
-| $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$ | 환원 $(5.1)$의 꼭대기(원천) 항; 흡수 뒤의 원천 항과 그 하계 | 5.5 | $\mathrm{POS}_\alpha$ ([r58b4caa]; 기울임 매개변수 $\alpha=0$); (R₀), $\mathrm{POS}_0$, $\mathrm{POS}^\prime_0$, $\mathrm{POS}^{\prime-}_0$, (CF₀′) ([r8a9b11e] L238·250·254) |
+| $\mathrm{POS}_0, \mathrm{POS}^\prime_0, \mathrm{POS}^{\prime-}_0$ | 환원 $(5.1)$의 꼭대기 항(꼭대기 행들의 원천 항을 모은 양); 흡수 뒤의 꼭대기 항과 그 하계 | 5.5 | $\mathrm{POS}_\alpha$ ([r58b4caa]; 기울임 매개변수 $\alpha=0$); (R₀), $\mathrm{POS}_0$, $\mathrm{POS}^\prime_0$, $\mathrm{POS}^{\prime-}_0$, (CF₀′) ([r8a9b11e] L238·250·254) |
 | $\mathrm{tail}_s(y)$ | 나무 곡률의 꼬리합 $\sum_{t=s+1}^nx_t(y)$(바깥 지표는 $s$; 안쪽 합의 지표가 나무 크기 $t$다) | 5.5 | $\mathcal T_s(y)$ ([r58b4caa], [r8a9b11e], [r23f10e9]) |
 | $\mathrm{top}, \mathrm{top}_\pi$ | 꼭대기 보정 $y(y-1)c_{n-1}(y-1)/n$; 가장 큰 나무 핵판 $(y-1)\pi_n(y)$ | 5.5 | — |
-| $\mathrm{WIN}_0, \mathrm{WIN}^{\mathrm V}_0$ | 환원 $(5.1)$의 창 항(꼬리 창의 음의 질량); 그 방문 확률 상계 | 5.5 | $\mathrm{WIN}_\alpha$, $\mathrm{WIN}^V_\alpha$ ([r58b4caa]; $\alpha=0$) |
+| $\mathrm{WIN}_0, \mathrm{WIN}^{\mathrm V}_0$ | 환원 $(5.1)$의 창 항(꼬리 창의 음의 질량); 음의 부분 $(x_t(y))_-$ 자리에 문턱 부분나무의 기대 수로 만든 상계 $\theta_t(y)/y$를 넣은 그 항별 상계(보조정리 {{5:old-5-25}}) | 5.5 | $\mathrm{WIN}_\alpha$, $\mathrm{WIN}^V_\alpha$ ([r58b4caa]; $\alpha=0$) |
 
 ### 6장에서 정의하는 기호
 
@@ -195,7 +195,7 @@
 | $y_0$ | 기준 용량(용량 변수의 특정값; 6.5절 얼린 법칙 $\Pr^{y_0}$의 용량 — 정수 $y_0\ge2$이고 정리 {{6:old-8-22}}부터는 $y_0=k$) | 6.5 | — |
 | $\Pi_j(y)$ | 사슬 생존 곱의 $j$번째까지의 부분곱 $\prod_{i\le j}y/(y+q_i)$(6.5절 머리 문단이 정의한다) | 6.5 | $\Pi_j(t)$ ([r845b205]); $\Pi_J(y)$ ([re71a735]) |
 | $\mathcal U_k(m)$ | 볼츠만 꼬리합 $\sum_{m^\prime=m}^{2k}\mathfrak b_{m^\prime}$(볼츠만 무게의 꼬리합; 명제 {{6:old-6-18}}의 사다리가 그 양성을 확률 꼬리합 $\mathcal V_k(m)$의 양성으로 옮긴다) | 6.5 | $U_k(L)$ ([r7e03176], [r6f5f48f], [raad7e6d]); [r29c10cd]의 $\mathcal U_k=\sum_{m\ge k}V_m$은 $2k$ 절단이 없는 다른 양 |
-| $\mathcal V_k(m)$ | 확률 꼬리합 $\sum_{m^\prime=m}^{2k}\mathfrak p_{m^\prime}$(판정 V의 꼬리합; V-핵심은 $\mathcal V_k(k)$) | 6.5 | $\tilde U(L)$, $\tilde U(k)$ ([r845b205], [r3d0856b], [r23f10e9], [rb6a2cd0], [raad7e6d]) |
+| $\mathcal V_k(m)$ | 확률 꼬리합 $\sum_{m^\prime=m}^{2k}\mathfrak p_{m^\prime}$(판정 V의 꼬리합; V-핵심은 $\mathcal V_k(k)$) | 6.5 | $\tilde U(L)$, $\tilde U(k)$ ([r845b205], [r3d0856b], [rb6a2cd0], [raad7e6d]) |
 | $\mathfrak A_j, \mathfrak A^{\mathrm{crit}}_d(q), \mathfrak A^{\mathrm{up}}_{q_0}(q)$ | 경로의 면적 $\sum_{i\le j}q_i/(y_0+1+q_i)$; 임계 면적(6.5절 젊은 사슬 문단); 조건부 면적 상계 $\frac{\sqrt{2\pi}}4e^{1/(12(q_0-q))}(q_0+q)\sqrt{q_0-q}$(9.6절 보조정리 {{9:old-8-31}}의 진술) | 6.5($\mathfrak A_j$·$\mathfrak A^{\mathrm{crit}}$), 9.6($\mathfrak A^{\mathrm{up}}$) | $\tilde X_j$, $X^{crit}_d(b)$ ([re71a735]) |
 | $\mathfrak b_m$ | 볼츠만 무게의 항 $\delta_{m+1}e^{-m}/m!$(볼츠만 꼬리합 $\mathcal U_k(m)$의 항) | 6.5 | $V_m$ ([r29c10cd], [r9bf2dc6], [r6f5f48f]) |
 | $\mathfrak H_d$ | 정리 {{6:old-8-22}}의 결손별 손실 합(결손 $d$의 몫; $\mathrm{DDL}_2(k)=2\sum_{d=2}^{k+1}\mathfrak H_d$) | 6.5 | $H_2(d)$ ([re71a735]) |
@@ -211,7 +211,7 @@
 | $\mathrm{inc}^{\pm}_q$ | 기울임 증분 $g(y_0+d)-g(y_0+q)$, $g(y_0-1+d)-g(y_0-1+q)$ | 6.5 | $u_b$, $v_b$ ([re71a735]) |
 | $\mathrm{Res}_d$ | 기울임 나머지(얼린 볼록 몫을 뺀 나머지) | 6.5 | 같음 ([re71a735]) |
 | $\mathrm{stp}_q$ | 젊은 걸음 수 상계 $\mathfrak A^{\mathrm{crit}}_d(q)(y_0+1+q)/q$(보조정리 {{6:old-8-20}}(나)의 진술; 실수 변수 판 $\mathrm{stp}$는 보조정리 {{6:old-8-21}}의 진술 국소) | 6.5 | — |
-| $\mathrm{vm}_y(q)$ | 얼린 법칙 $\Pr^{y_0}$ 아래 초과 $q$에서의 생존 가중 방문 측도 $\mathbb E^{y_0}[\Pi_j(y); \ q_j=q]$(6.5절 머리 문단이 정의하고 식 (6.35)가 초과마다 이 양을 무게로 더한다; 보조정리 {{2:h-transform}}(가)의 생존 가중 방문 측도 $\mathrm{vm}$을 이 사슬에서 읽은 것). 9.6절 보조정리 {{9:old-8-31}} 증명의 $\mathfrak M^y(q)$는 참 법칙 $\Pr^y$ 아래의 같은 꼴 다른 양(그 증명의 국소 기호) | 6.5 | $G_y(b)$ ([re71a735]) |
+| $\mathrm{vm}_y(q)$ | 얼린 법칙 $\Pr^{y_0}$ 아래 초과 $q$에서의 생존 가중 방문 측도 $\mathbb E^{y_0}[\Pi_{j(q)}(y);\ q\text{를 지남}]$($j(q)$는 사슬이 초과 $q$에 닿는 걸음의 번호; 6.5절 머리 문단이 정의하고 식 (6.35)가 초과마다 이 양을 무게로 더한다; 보조정리 {{2:h-transform}}(가)의 생존 가중 방문 측도 $\mathrm{vm}$을 이 사슬에서 읽은 것). 9.6절 보조정리 {{9:old-8-31}} 증명의 $\mathfrak M^y(q)$는 참 법칙 $\Pr^y$ 아래의 같은 꼴 다른 양(그 증명의 국소 기호) | 6.5 | $G_y(b)$ ([re71a735]) |
 | $\mathsf s_{\mathrm B}$ | Borel 상수 $e/\sqrt{2\pi}$ | 6.6 | $B$ ([r7e03176], [r29c10cd], [r9bf2dc6]) |
 
 ### 7장에서 정의하는 기호
@@ -222,7 +222,7 @@
 | $\mathcal T_k(\sigma), \mathcal T_{n,k}$ | 모멘트 판정의 통계 $Z_k(Z_k-1)-kH_k$; 그 합 $\sum_{\alpha\in\mathrm{PF}_n,\ M(\alpha)\le k-1}\mathcal T_k(\sigma(\alpha))=A_{n,k-1}\mathbb E^\sigma_{n,k}[\mathcal T_k]$(주차함수에 걸친 합이라 결과 순열 $\sigma$마다 섬유 크기 $\prod_i\min(h_i,k)$의 가중이 붙는다) | 7.1 | $LM_{n,k}$ ([r475ada3]); $T_n=S_n-kh_n$ ([r10ff8c2]; 기댓값판); $T_k$, $\mathcal S_{n,k}(k)$ ([r1892593]) |
 | $\mathsf t_k$ | 반감 경계 지표 $\min\{j\ge0:(k+1)^jk^{j+1}+(k-1)^{2j+1}\ge2k^{2j+1}\}$ | 7.1 | $t_k$ ([r39ba7c1], [rb6423c6]) |
 | $\Pr^{\sigma}_{n,k}, \mathbb E^{\sigma}_{n,k}$ | 용량 가중 결과 순열 법칙 $\prod_i\min(h_i,k)/A_{n,k-1}$($\mathfrak S_n$ 위; 균등 주차함수를 $M\le k-1$로 조건화한 결과 순열의 법칙)과 그 기댓값 | 7.1 | $\nu_{n,k}$ ([r3172894]); $\nu_{n,y}$, $E_y$ ([r1892593]; $y=k$); $\nu_{n; k,y}$ ([rdc27681]) |
-| $n^\sharp_k$ | 열 $k$의 반감 경계 $k+(k+1)\mathsf t_k$(행 크기의 특정값; 정리 {{7:old-6-8}} — 열 $2\le k\le140$에서 $n^\sharp_k\le k^2+2k\le19880<20001$이라 명제 {{7:old-6-9}}의 증명이 그 열을 이 경계로 닫는다) | 7.2 | $N^\sharp_k$ ([rb6423c6]); [r39ba7c1]의 $N^\#_k$(기록의 경계)·[rc9aee43]의 $N_k=\lceil k^2/4\rceil$는 보조정리 {{7:column-lemma}}(다)의 정수 $n_\ast=\lceil k^2/4\rceil$ |
+| $n^\sharp_k$ | 열 $k$의 반감 경계 $k+(k+1)\mathsf t_k$(행 크기의 특정값; 정리 {{7:old-6-8}} — 열 $2\le k\le140$에서 $n^\sharp_k\le k^2+2k\le19880<20001$이라 명제 {{7:old-6-9}}의 증명이 그 열을 이 경계로 닫는다) | 7.2 | $N^\sharp_k$ ([rb6423c6]); [r39ba7c1]의 $N^\#_k=\min(N_k,\tilde N_k)$는 이 글이 쓰지 않는 다른 양; [rc9aee43]의 $N_k=\lceil k^2/4\rceil$는 보조정리 {{7:column-lemma}}(다)의 정수 $n_\ast=\lceil k^2/4\rceil$ |
 | $C_k(x), C_{n,k}$ | 용량 $k$ 아래 소인 주차함수의 지수 생성함수와 그 계수 $n!\,[x^n]C_k$ | 7.2 | $C_k$, $c_{n,k-1}$ ([rf451d83], [r7c079be]); $C_\ell(z)$, $c_{d,\ell}$ ([rf09e7ef]; 첨자 수준) |
 | $\rho_k$ | 열 $k$의 극 | 7.2 | 같음 ([rb7effe0], [rf451d83]); $\rho_\ell$ ([rf09e7ef], 첨자는 수준); [r39ba7c1] 검토 파일의 $\rho_k$(영점)와 [r051bfe1]의 $\rho^*=\rho_{k-1}$($=\mathfrak r_{k-1}$)은 다른 양 |
 | $\mathcal W$ | 왼쪽 창(한 걸음 판정 $\mathsf Q^\star$를 묻는 위치 집합) $\{(n,k):\ k\ge2001,\ n\ge\max(2k+103,20001)\}$(7.2절이 정의한다) | 7.2 | $\mathcal W^{(>102)}$ ([r6b37c7e], [r3172894]); $\mathcal W$ ([r89eb039]; $2k+41$판) |
@@ -256,9 +256,9 @@
 | $s^{\mathrm{low}}_q$ | 원천의 생존 하계 수열(착지 창 크기 $k+q$의 생존 확률 $s_{k+q}(k+1)$을 아래에서 막는 임의의 수열; $s^{\mathrm{low}}_0=1$) | 8.1 | $Q^{\mathrm{low}}_c$ ([r030ffae] L94); [r030ffae]·[rfc69320]의 $Q_c$는 정확 생존 $s_{k+c}(k+1)$ |
 | $\Omega(\xi), \Omega_q$ | 모양 함수(상위해를 $\mathfrak E_q=\Psi(q)(1-\Omega_q)$ 꼴로 잡는 감소 함수)와 그 값 $\Omega_q:=\Omega(\xi_q)$(첨자는 정수 초과 $q$) | 8.1 | $W$, $W_c$ ([r030ffae]) |
 | $\xi$ | 창 좌표 $q/k^{2/3}$(초과를 $k^{2/3}$ 눈금으로 잰 것; 정수 초과 $q$의 것은 $\xi_q:=q/k^{2/3}$); 9장에서 시작 초과 $q_0$의 것은 $\xi=q_0/y^{2/3}$(다른 절들이 국소 글자로 쓰는 $\xi$와 다른 양 — 국소 글자는 그 자리가 정의한다) | 8.1 | $x_b$, $x$, $y$ ([r030ffae]); $y$ ([rfc69320]); $x$ ([re71a735] §4); $x=d/k^{2/3}$ ([r9bf2dc6]) |
-| $\mathfrak D^{\mathrm{src}}_q$ | 부족량의 원천 항 $\frac q{k+q}\Psi(q)+\frac k{k+q}\sum_{m=1}^q\mathrm{Bor}(m)(1-s^{\mathrm{low}}_{q-m})$ | 8.1 | $\sigma_b$ ([r030ffae]) |
+| $\mathfrak D^{\mathrm{src}}_q$ | 부족량의 원천 항 $\frac q{k+q}\Psi(q)+\frac k{k+q}\sum_{j=1}^q\mathrm{Bor}(j)(1-s^{\mathrm{low}}_{q-j})$ | 8.1 | $\sigma_b$ ([r030ffae]) |
 | $\mathfrak D_q$ | 부족량 $\Psi(q)-\mathfrak R_q$($\mathfrak R_q$가 $k=\infty$의 극한값 $\Psi(q)$에서 모자라는 양; $\mathfrak D_0=0$) | 8.1 | $D_b$ ([r030ffae]) |
-| $\mathfrak E_q$ | 부족량의 상위해(부족량 부등식을 만족하는 수열) | 8.1 | $E_b$ ([r030ffae]) |
+| $\mathfrak E_q$ | 부족량의 상위해(보조정리 {{8:old-6-26}}의 조건, 곧 부족량 부등식 (8.6)을 반대 방향으로 만족하는 수열) | 8.1 | $E_b$ ([r030ffae]) |
 | $\mathfrak R_q$ | 착지 창의 수준 질량에 용량을 곱한 값 $k\,c_{k+q}(k)$ | 8.1 | $R_b=k\,r_{k+b}$ ([r030ffae]) |
 | $\mathrm{Bor}_\le(q)$ | $\sum_{m\le q}\mathrm{Bor}(m)=1-\mathrm{Bor}_>(q)$(8.1절 보조정리 {{8:old-6-25}}의 증명이 정의하고 8.2절·8.4절이 받는다) | 8.1 | $S_0(b)$ ([r030ffae]); $S_0(d)$ ([r5bbc534]); $\beta(m)$ ([r29c10cd]) |
 | $\mathrm{dup}_m$ | 한 나무 재귀의 중복 몫 | 8.1 | $\mathrm{rem}_L$ ([r030ffae]) |
@@ -272,7 +272,7 @@
 | $q_{\mathrm{fb}}$ | 되먹임 폭 $\lfloor(3(k-1)/4-q_{\max}-3)/8\rfloor$(한 걸음에서 줄어드는 부분나무 크기의 상한; 정리 {{8:old-6-33}}; 초과 변수의 특정값) | 8.4 | $G$ ([r030ffae]; 두 정의 L241·L191) |
 | $\mathfrak R^{\mathrm{low}}_k$ | 띠 정리 조립의 창 합 하계 — 창 착지 항 $q=1,\dots,q_{\mathrm w}$(나무 크기 $k+q$, 내부 숲 크기 $k+q-1$)의 원천에 쓰는 생존과 $\mathfrak R_{q-1}$의 괄호 $[s_{k+q-1}(k+1)+\mathfrak R_{q-1}]$를 아래에서 막아 더한 합((8.23); 8장 머리가 밝힌 셈법대로 착지 창 $k+1,\dots,k+q_{\max}$보다 내부 숲 크기가 하나 아래) | 8.4 | $\hat S_k$ ([r030ffae]) |
 | $\mathrm{fb}(\lambda)$ | 되먹임 인자 $\mathrm{fb}(\lambda):=\sum_{i<8}(\lambda\,\mathrm{Bor}_\le(q_{\mathrm{fb}}))^i$(되먹임 기하합; 인수는 1.5절의 비 $\lambda=k/n$이고 수준 $k-1$의 항에서는 $(k-1)/n$을 넣는다) | 8.4 | $F(\theta)$ ([r030ffae]) |
-| $\mathrm{LB}^{\mathrm{mono}}, \mathrm{LB}^{\mathrm{low}}, \mathrm{LOW}_k$ | 띠 정리 조립의 두 명시 하계와 생존 $1$ 착지 항 | 8.4 | $\rho_{\mathrm{mono}}$, $\rho_{\mathrm{low}}$, $\mathrm{LOW}_k$ ([r030ffae]) |
+| $\mathrm{LB}^{\mathrm{mono}}, \mathrm{LB}^{\mathrm{low}}, \mathrm{LOW}_k$ | 띠 정리 조립의 두 명시 하계와 생존 1 착지 항 | 8.4 | $\rho_{\mathrm{mono}}$, $\rho_{\mathrm{low}}$, $\mathrm{LOW}_k$ ([r030ffae]) |
 
 ### 9장에서 정의하는 기호
 

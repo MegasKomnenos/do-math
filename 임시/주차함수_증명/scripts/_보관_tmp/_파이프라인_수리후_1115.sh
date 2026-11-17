@@ -5,6 +5,7 @@ set -u
 export MSYS_NO_PATHCONV=1
 cd "$(dirname "$0")/../.." || exit 1
 echo "== $(date '+%H:%M:%S') 장부 4절 이름 동기화"; python -I scripts/_sync_4절이름.py
+echo "== 10.2 표 행 생성(등급·놓인 곳·꺾쇠; 2026-11-17 24차 R7a 뒤 추가)"; python -I scripts/_gen_11_2표.py --fill 장v2/장10.md | tail -2
 echo "== 11.2 표 5열(꺾쇠) 동기화"; python -I scripts/_sync_11_2꺾쇠.py
 echo "== 11.2 표 6열(독립 재계산) 동기화"
 LABELS=$(grep -o '^| 부록 D.{{D:[A-Za-z0-9-]*}}' 장v2/장10.md | sed 's/.*{{D:\(.*\)}}/\1/' | tr '\n' ' ')
