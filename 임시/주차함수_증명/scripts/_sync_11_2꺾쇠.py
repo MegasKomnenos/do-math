@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """11.2 표(장v2/장11.md)의 다섯째 칸(재계산 꺾쇠 〔…〕)을 부록 D 조각의 **독립 재계산.** 줄 첫머리 꺾쇠와 같게 맞춘다.
-여섯째 칸(독립 재계산 전문)은 `_sync_11_2행.py`가 맡는다. 멱등.
+여섯째 칸(독립 재계산 전문)은 2026-11-17 결정 K5-11로 표에서 빠졌다(`_sync_11_2행.py`는 그 칸이 남아 있지 않은지만 검사한다). 그래서 꺾쇠 칸이
+행의 마지막 칸이고, 칸은 양 끝의 세로줄을 벗긴 뒤 ` | `로 가른다(끝 칸에 닫는 세로줄이 붙은 채 비교되어 모든 행을 갱신으로 잡고 닫는 세로줄을
+잘라 내던 결함을 2026-11-17 V5가 고침). 멱등.
 사용: python -I scripts/_sync_11_2꺾쇠.py [--dry] [<라벨> ...]   (라벨을 주지 않으면 표의 모든 행)"""
 import glob
 import io
@@ -48,17 +50,18 @@ def main():
         if name not in br:
             print("꺾쇠 없음(부록 D):", name)
             continue
-        cells = row.split(" | ")
-        k = [j for j, c in enumerate(cells) if c.startswith("〔")]
+        # 칸 경계는 ` | `(수식 안의 세로줄은 생성기가 `\vert`로 바꾸어 둔다); 양 끝의 세로줄을 벗기고 가른 뒤 같은 꼴로 되묶는다
+        cells = row.strip()[1:-1].split(" | ")
+        k = [j for j, c in enumerate(cells) if c.strip().startswith("〔")]
         if len(k) != 1:
             print("꺾쇠 칸을 못 찾음:", name)
             continue
-        if cells[k[0]] != br[name]:
+        if cells[k[0]].strip() != br[name]:
             print("갱신", name)
-            print("   전:", cells[k[0]][:160])
+            print("   전:", cells[k[0]].strip()[:160])
             print("   후:", br[name][:160])
             cells[k[0]] = br[name]
-            lines[i] = " | ".join(cells)
+            lines[i] = "| " + " | ".join(c.strip() for c in cells) + " |"
             n += 1
     if not dry and n:
         io.open(p, "w", encoding="utf-8", newline="\n").write("\n".join(lines))
