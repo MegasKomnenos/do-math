@@ -18,6 +18,7 @@ from 수리_U17_편집 import apply  # noqa: E402
 
 LEDGER = os.path.join(ROOT, '장부_v2.md')
 WRITE = '--write' in sys.argv
+ONLY5 = '--only5' in sys.argv  # 2026-11-17(21차 ZL 뒤): 1.2 「쓰이는 장」 칸은 손으로 채운 현행을 믿고 5절만 다시 만든다(1.2는 읽기만, 쓰지 않음)
 
 
 def section(lines, start, end):
@@ -215,7 +216,7 @@ for i, c in r12:
         _cnt[t] = _cnt.get(t, 0) + 1
 SHARED.update(t for t, n in _cnt.items() if n > 1)
 col5_ops, col5_log = [], []
-for i, c in r12:
+for i, c in (r12 if not ONLY5 else []):
     if len(c) < 7:
         col5_log.append(f'[칸 수 이상] 줄 {i+1}: {c[0][:50]}')
         continue
@@ -263,7 +264,7 @@ for i, c in r12:
         continue
     defch = def_chapters(c[3])
     used = parse_chs(c[4]) if c[4].strip() not in ('', '—') else set()
-    newused = used_chapters(c[0], used) if not (not used and defch == {1}) else set()
+    newused = used if ONLY5 else (used_chapters(c[0], used) if not (not used and defch == {1}) else set())
     glyphs12.append((bf[0], bf[1], defch, newused | defch, c[0]))   # newused는 재계산 뒤의 「쓰이는 장」(빠진 장은 이미 뺀 것)
 print(f'== 1.2 바탕 글자·글자체 칸을 못 읽은 행 {len(odd)}')
 for o in odd:
@@ -345,5 +346,6 @@ for l in log5:
     print('  ', l[:1200])
 
 if WRITE:
-    apply(LEDGER, col5_ops, region=('### 1.2', '### 1.3'))
+    if not ONLY5:
+        apply(LEDGER, col5_ops, region=('### 1.2', '### 1.3'))
     apply(LEDGER, ops5, region=('## 5. ', '## 6. '))

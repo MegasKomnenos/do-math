@@ -43,7 +43,7 @@
 
 불일치는 모두 수치가 달라서가 아니라 스크립트가 중간에 멈춘 것이다. 원인은 둘이었고, 지금의 항목 구성에 남은 것은 하나다.
 
-- **`math.nextafter`.** Python 3.9에 들어온 함수라 3.8에서는 `bprime_boxes/ivbox_lib.py`(띠 상자가 이것을 쓴다)를 비롯해 이 함수를 쓰는 스크립트를 읽는 단계에서 멈춘다. 3.8의 불일치 11개 가운데 9개다.
+- **`math.nextafter`.** Python 3.9에 들어온 함수라 3.8에서는 `band_boxes/ivbox_lib.py`(띠 상자가 이것을 쓴다)를 비롯해 이 함수를 쓰는 스크립트를 읽는 단계에서 멈춘다. 3.8의 불일치 11개 가운데 9개다.
 
 따라서 이 묶음의 파이썬 스크립트에는 Python 3.9 이상이 필요하다. 기준 환경(`requirements.txt`)의 판을 쓰는 것이 가장 안전하다.
 
@@ -103,22 +103,21 @@
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_31_1500.out` | `c86c2ac4ecb5fd2758d5392a5bf08130a30248e00f4d4e605feea522e94be9fa` |
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_1500_2250.out` | `5ccd59f419542b03c2020ed67432638ce1d3a95ed358859a4ef53291d7acf8d4` |
 | `세션_재계산/r030ffae_window/NEW_cert_Cb_2250_3000.out` | `55e08066959ce5a47d200e1b08038f2ce7fd68e05dce05b4844946e7ad42fde5` |
-| `세션_재계산/band_boxes/band_iv.py` | `9e71706b1e719a376965909fa8f61ed0d16fb05db2a41aeb6bd49451972d9e7f` |
-| `세션_재계산/band_boxes/band_result.txt` | `c0ebd4267bf232fa16c927fb6b843995cf39918f74752566e6e59253a6ceff48` |
-| `세션_재계산/band_boxes/band_summary.py` | `3f957350810f8b22453cc2dc8eee014866bf75f2cac0a5619e419ef2859e0e83` |
-| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json` | `c45ef79174f595c951aff327c32e4e41bbd0a0820f778081df21467cafe032e5` |
-| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json` | `5847ceec24595dbcb5918368cb90df70028427565665bb4c510c912d3ad051c6` |
-| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json` | `9737654f03d1260c2201ac0d857adaa39e4843acf6e2833fb4d2f43993b2b5c4` |
-| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json` | `3323a35bed9faf4fdc112d0d5837642dafdfb1f38c907ad12ea0b763d29e7028` |
+| `세션_재계산/band_boxes/band_iv.py` | `f0151118feada4293db5415bff25f0165ab53d303c9f7a2fd51890ece388bb22` |
+| `세션_재계산/band_boxes/band_result.txt` | `6a78d14f536e4124340f179fcbba3c4322d2cd554ecccff5bac1523eed29aced` |
+| `세션_재계산/band_boxes/band_summary.py` | `30e56358f9fec897fb835bab34956b33be10625d7604f0c418998fd1163fca27` |
+| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json` | `b1bca8298e8e01fc1816a9dd1ca1f15f93a6b48db9a362bade3c86a0a4d2c3b3` |
+| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json` | `a2ca8c6a1348dab72b8d6ef547dc25113c75730f611870185d958df1a7dc2abd` |
+| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.json` | `5f415fbd69bff5e01054c7d31c7c5c5af3d40b3866580961f22e00eb43c110de` |
+| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.json` | `13ee21dc9667661408013d2019fbaaebbb41f47b0f93ee0052339931b2d12138` |
 | `세션_재계산/band_boxes/compare_record.py` | `8f94619ba96abe12dd7be43fffdbbee17d89f3d76eff634d18146c3c8db0f029` |
 | `세션_재계산/band_boxes/compare_record_out.txt` | `f9a45d11b8f11a16b3cfd9ed9ad1cf55b79e367c6a4982bad327719f3d553b51` |
-| `세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt` | `a4437c7c058f9c1504899ec8860e09e40f4642784561b89650a67c48a300b271` |
-| `세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt` | `677aa3c6c393588b38b360008ad6f3eeb1384298474be4b1ea1438f920b3620d` |
-| `세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt` | `30762e597981c26528bb6df7bce1e666b0da7adfe740fdc97be688008d953f7c` |
-| `세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt` | `7596c0f6701a19ce45423ae9b4ea6817609f0786fe1510897fdfb913b8a5730c` |
+| `세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt` | `8f23e4e1565a141442a301cfc092e1b95f71ecef2deeeebd00f9461e101e585e` |
+| `세션_재계산/band_boxes/log_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt` | `37802894f7464cd12e7269b35c98471899fb7b0640c2b4a3d3ac07f29fafde47` |
+| `세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.txt` | `52940ff8b4d0c2962b794725dcf9dfa60d896a6a127ab5f760d366ce19c66cfa` |
+| `세션_재계산/band_boxes/log_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.txt` | `d5a267f7123a971cfbaab080c3d3697bf8699cd6efcfb4c9f20ae22f51b917fa` |
 | `세션_재계산/band_boxes/run_all.sh` | `a748478f59a4bdb2a9bb8051e1061a83f26ac79513e05826299e7e13b8eb6f53` |
-| `세션_재계산/band_boxes/tail_H_T12-25_k6668.txt` | `7b2f89bf1a5913fe487c789fb95ea0ef0c8b6cfd621b7108a8b5fa45d5414561` |
-| `세션_재계산/bprime_boxes/ivbox_lib.py` | `be4fd555118b17a998788b6484b31252a705c6aba29b97716ba5604776674b0f` |
+| `세션_재계산/band_boxes/tail_H_T12-25_k6668.txt` | `78ab06c7df2fcd10302d88b42900adfa23954d626c25ad80e9c5c535d48ee5b2` |
 | `세션_재계산/window_mass_env/cert_Cb_iv.py` | `104db0e9f3656c06f93b8140fb74ff7a3cc30df03af39790da6326a380020c23` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_out_1_2280.txt` | `722ba85fe918fe3374644b046f29fa86ec41f21224d538876190d0f672a76862` |
 | `세션_재계산/window_mass_env/cert_Cb_iv_out_2280_3000.txt` | `abbf5befcc90d2fa84e72716de0b15fe8b9acec421c2f69d74d8d9391e9f2267` |
@@ -127,8 +126,8 @@
 | `세션_재계산/window_mass_env/cert_interval_iv.py` | `a601cab38fde402bf2d9457f4dd9fdd3dd5a92ea499511477fd0e5e639ea75e3` |
 | `세션_재계산/window_mass_env/cert_interval_iv_out.txt` | `873a8e1e388b509f763983268b35b1414c8d5b7f3da82b6e869807fbc0caa26b` |
 | `세션_재계산/window_mass_env/cert_interval_iv_result.json` | `519b3951942ab1b8fda8d3d368857165d5e50ce9129100375ef29e64e90bc26e` |
-| `세션_재계산/window_mass_env/check_table_iv.py` | `8a85b39263b8c2b24eee4450cf6d53d6649820cc024ce97dc4113d234610718f` |
-| `세션_재계산/window_mass_env/check_table_iv_out.txt` | `88f1e13d97e36f98fa99d6f3166f13757148c895642da7a888b6cdf73039a690` |
+| `세션_재계산/window_mass_env/check_table_iv.py` | `168f7d9c70c4f7270cc64cf2d0eedb76669a8e26ff32176873a3923d1ece5853` |
+| `세션_재계산/window_mass_env/check_table_iv_out.txt` | `b426d196391655d9678cdb0ad0ba0922bd975cfad3775375e80e2e6d3580e9e0` |
 | `세션_재계산/window_mass_env/ia.py` | `8106bd07c5706bf495c74d03b6a6df3a8b0459f10491679bfcc037d1ef90f17c` |
 | `세션_재계산/window_mass_env/summarize.py` | `19b7a064b313e8ff3897b32531baa1ba7a44a962a76a134dbeef072e2c95dc49` |
 | `세션_재계산/window_mass_env/summarize_out.txt` | `0cac74a6c6282c86a3b3f350d310ad219a143c626683e61297f338a5d9c62d72` |
@@ -204,7 +203,7 @@
 | `세션_재계산/moment_cert_iv/compare.py` | `0eae727bab12cdbabe881c87d313427d864771b93a566060294efb5668a2694f` |
 | `세션_재계산/moment_cert_iv/compare_out.txt` | `9fe4f33b71d131184ee51ccc33c508443e2505247ae13cdff5d0d060ca41e1e0` |
 | `세션_재계산/moment_cert_iv/compare_out.json` | `9b5f64ba6c3c05d783857abff1e15570139a1fabee62b2ac91e1ccb350485cd2` |
-| `세션_재계산/moment_cert_iv/test_exact.py` | `a7a2f734df7fdd1bed517becae90b5abba7235fec162a8d4f9a5ad968d142b1d` |
+| `세션_재계산/moment_cert_iv/test_exact.py` | `6785aa45ec4700318be3dd4051b710baa542a08fffcf6b14cd05dced08a44c4b` |
 | `세션_재계산/moment_cert_iv/test_exact_out.txt` | `4a947810edafd3f9342acf815ce10b5a9023af694e3277ad12f13d563af77cc3` |
 | `세션_재계산/moment_cert_iv/nM.py` | `8bfadc59da7fad9439385949aec22a0eaa4f59232c426928b659de0fc70ac93b` |
 | `세션_재계산/moment_cert_iv/nM.json` | `51b38b5eca6deb47f61dabd342c94617fce720c90ceb6efa99f260b3a0a9515a` |
@@ -274,10 +273,10 @@
 | `세션_재계산/critical_window_rerun/rig_ray4.py` | `235050c36bc5010efca2cc82f534e50ad9e9afd89bdce497014e08626d157245` |
 | `세션_재계산/critical_window_rerun/summarize.py` | `b08b9d83771a7dcc984319bd1e1364896c56b60a0ddcc14acbabcde0aaa970ff` |
 | `세션_재계산/critical_window_rerun/verify_exact_cover.py` | `f9e3cc3c94b5594f13bc607748ef29b7cba5b4942f67f55454ee25e35df6d321` |
-| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.npy` | `b505f8bd932abd0ae67e23dc68f4d3e75799eb4805eb7d4d34f1cb1c970f65bc` |
-| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.npy` | `afded953badf2e763a140ad5b108dbb4ecd2ac8a29932391bbefc8eeb1f4c6f3` |
-| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.npy` | `91858b8841172e801511d3236991373ce03c900814bd436706e58a158e99c4e8` |
-| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.npy` | `c41d941372b25bced54e603baebff240b7b58be664f53524a69e744f4ef9f407` |
+| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.npy` | `33ba1045bd75e4e4d1f71377965732553ac3d928937f8250e30fb07bea1811a9` |
+| `세션_재계산/band_boxes/box_FH_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.npy` | `7f3f28353428fe41d4cb56f4d31ba7cbb78ba879531cb8eb341c603a060232e4` |
+| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p0.npy` | `8c647395f73eaf14a9e83b566d0171117fcda5ad3d6ce172368a1cb88d973dfc` |
+| `세션_재계산/band_boxes/box_H_T12-25_k6668_RK1.04_RNU1.03_NY6000_p1.npy` | `2e14190758d6b15f0726e363e5f0a1faea26633fb95e3d9ab7675b5e23b71de9` |
 | `세션_재계산/critical_window_rerun/postrun.py` | `79980942572368bcf9b4c2cd6125c886fe63783629fec9f15e3addd24f7e1499` |
 | `세션_재계산/critical_window_rerun/postrun_log.txt` | `2bd695fbb37078de9df80b1ce0a8b71e0029cba2590de72b3ea599e6de62e3d1` |
 | `세션_재계산/critical_window_rerun/postrun_stdout.txt` | `2bd695fbb37078de9df80b1ce0a8b71e0029cba2590de72b3ea599e6de62e3d1` |
@@ -333,7 +332,7 @@
 | `세션_재계산/moment_cert_iv/launch_handoff.py` | `744903b47d85d20a1b63c98c5dc09a091b5a9fedb30ac41dcecf6be96de3d9db` |
 | `세션_재계산/moment_cert_iv/make_draft_v2.py` | `f42e5ac17023dae2dcc06c7a71a3c61c8b1455bb58b947d127a4f36df936bba4` |
 | `세션_재계산/moment_cert_iv/run_ct.sh` | `8ec6724b368bc69921e4ac3c6a7bd723f12064463b6bb38215a8fcbbfaddbf56` |
-| `세션_재계산/moment_cert_iv/summarize_nb.py` | `1a76d34c2a7af482379e5db6e064bd0cd363b88d4a11089886df564c2a1a13c0` |
+| `세션_재계산/moment_cert_iv/summarize_nb.py` | `711f1743caed80efbcbf7066a0dc693c5f0c950afb0e6e590582c30a0cd2e001` |
 | `세션_재계산/moment_cert_iv/summary_noblas.txt` | `d8fa4d3e6ee1058488069bb059cbc36850e320fb68f16fc46fbe5627cbb2ddfd` |
 | `세션_재계산/moment_cert_iv/sweep_ct_A3_s0.jsonl` | `012f27d4525db6cabf79f97c0df4fb8d973e87ccfa1d8652e2084dfe23fde700` |
 | `세션_재계산/moment_cert_iv/sweep_ct_A3_s0.log` | `908cab704d387bc0fa8725c4a4ff371637385ed21cfce625667388375df12e4e` |
@@ -468,14 +467,15 @@
 | `세션_재계산/icert_py_full/pids.txt` | `cf90cad32e4bf6a8e6e8ec67d1f369a500de47bebb48cc00df24fd3d01118e82` |
 | `세션_재계산/four_families_DDLnat/families_iv.py` | `c83a963d1d18203680b94e1967669131d519383ac45e9bede029b5e0d08ba1ab` |
 | `세션_재계산/four_families_DDLnat/families_iv_out.txt` | `399e85169b28a017dbec24808a7d24cc3b70a3f926c533f74555b805c5f0da29` |
+| `세션_재계산/band_boxes/ivbox_lib.py` | `ab5ef70f632caa0f9a4813e2455b10f0751fdf4f158dc8ea591f6fb9a6bd1f9b` |
 
 `세션_재계산/zeta_constants/zeta_iv.py`는 부록 D의 Riemann 제타 상수 항목이 적은 방법을 mpmath 구간 산술(소수 30자리)로 다시 돌려 $\mathsf z_{3/2}$·$\mathsf z_{-1/2}$·$\mathsf z_{1/2}$의 구간을 확인한다(2026-11-13 세션; 인자는 부분합 항 수 $C$ 둘, 기본 4000). 함수 `z32`는 부분합 $S=\sum_{j<C}j^{-3/2}$에 항목 식 줄의 사다리꼴 하계 $2C^{-1/2}+\tfrac12C^{-3/2}$와 중점 상계 $2(C-\tfrac12)^{-1/2}$를 더하고, $\mathsf z_{-1/2}$·$\mathsf z_{1/2}$는 Euler–Maclaurin 공식과 첫 생략항의 나머지 상하계로 감싼다. `python -I zeta_iv.py 4000 4000`의 출력 `zeta_iv_out.txt`는 $\mathsf z_{3/2}\in[2.61237534856\ldots,2.61237534874\ldots]$, $\mathsf z_{-1/2}\in[-0.20788622497838\ldots,-0.20788622497735\ldots]$, $\mathsf z_{1/2}\in[-1.4603545088095868\ldots,-1.4603545088095855\ldots]$이고, 셋 다 확인하는 진술의 구간 안에 있다.
 
 `세션_재계산/r030ffae_window/`는 부록 D의 창의 수준 질량 하계 항목의 셀 검사를 시험 함수 격자를 한 점 늘려($0\le i\le12927$) 다시 돌린 것이다(2026-11-13 세션). `work/`는 기록 [r030ffae] `evidence/peer/rerun/work/`의 코드 사본에 늘린 표 `xKrig.npy`·`wKrig.npy`(기록의 표는 `xKrig_orig.npy`·`wKrig_orig.npy`; 처음 12,927개 값은 비트 단위로 같다)와 결과 JSON을 더한 것이고, `NEW_*.out`이 실행 출력이다.
 
-`세션_재계산/bprime_boxes/ivbox_lib.py`는 `band_boxes/band_iv.py`가 쓰는 공용 구간 성분이다. 스칼라는 mpmath `iv`(소수 34자리), 리만 합 벡터는 binary64의 정확 반올림 사칙연산·제곱근만 써서 1 ulp 바깥 밀기와 합의 $1-10^{-11}$ 인자로 아래로 민다. $\Omega$의 하계는 `window_mass_env/ia.py`의 정확 정의(격자 $i\mathsf K^{-2/3}$·절점값·Fritsch–Carlson 기울기의 구간)에서 조각별 3차 계수의 바깥 괄호를 만들어 쓰며 조각별 비증가를 구간으로 확인한다. 저장된 봉투 표 $\hat{\mathcal T}$는 저장값을 정확한 점 $\xi^{\mathcal T}_i=0.0005\,i$에 둔 선형 보간으로 읽는다.
+`세션_재계산/band_boxes/ivbox_lib.py`는 같은 폴더의 `band_iv.py`가 쓰는 구간 성분이다. 스칼라는 mpmath `iv`(소수 34자리), 리만 합 벡터는 binary64의 정확 반올림 사칙연산·제곱근만 써서 1 ulp 바깥 밀기와 합의 $1-10^{-11}$ 인자로 아래로 민다. $\Omega$의 하계는 `window_mass_env/ia.py`의 정확 정의(격자 $i\mathsf K^{-2/3}$·절점값·Fritsch–Carlson 기울기의 구간)에서 조각별 3차 계수의 바깥 괄호를 만들어 쓰며 조각별 비증가를 구간으로 확인한다. 저장된 봉투 표 $\hat{\mathcal T}$는 저장값을 정확한 점 $\xi^{\mathcal T}_i=0.0005\,i$에 둔 선형 보간으로 읽는다.
 
-`세션_재계산/band_boxes/`는 부록 D의 띠 정리의 상자 검사 항목을 같은 구간 산술로 다시 계산한 것이다. 상자 안의 모든 경우 가름과 되먹임 폭의 점별 범위를 함께 고려해 식 (8.30) 자체를 아래에서 막는다. `band_iv.py`가 계산, `band_summary.py`가 요약, `run_all.sh`가 실행 순서이고, `compare_record.py`가 기록의 상자 값과 대조한다. $\Omega$는 `bprime_boxes/ivbox_lib.py`의 정확 정의를 쓴다.
+`세션_재계산/band_boxes/`는 부록 D의 띠 정리의 상자 검사 항목을 같은 구간 산술로 다시 계산한 것이다. 상자 안의 모든 경우 가름과 되먹임 폭의 점별 범위를 함께 고려해 식 (8.23) 자체를 아래에서 막는다. `band_iv.py`가 계산, `band_summary.py`가 요약, `run_all.sh`가 실행 순서이고, `compare_record.py`가 기록의 상자 값과 대조한다. $\Omega$는 같은 폴더의 `ivbox_lib.py`의 정확 정의를 쓴다.
 
 `세션_재계산/window_mass_env/`는 부록 D의 창의 수준 질량 하계 항목의 셀 검사((가) $q\le2999$, (나) 구간 열일곱 개)를 구간 산술로 다시 계산한 것이다(2026-11-13 세션). `ia.py`가 바깥 반올림 구간(binary64의 정확 반올림 사칙연산·제곱근만 사용)과 $\Omega$의 Hermite 조각·봉투 표·정확 표(mpmath `iv` 25–40자리)를 만들고(세 제타 상수 $\zeta(\frac12)$, $\zeta(-\frac12)$, $\zeta(\frac32)$는 `zeta_constants/zeta_iv_out.txt`의 인증 구간을 바깥쪽으로 넓혀 넣는다), `cert_interval_iv.py`·`cert_Cb_iv.py`가 두 검사를 돌리며, `check_table_iv.py`가 저장된 봉투 표의 하계 조건을 다시 확인하고, `test_ia.py`가 기록의 값이 구간 안에 듦을 확인한다. 출력은 `*_out*.txt`와 `*_result*.json`, 요약은 `summarize_out.txt`.
 
@@ -487,9 +487,9 @@
 
 `세션_재계산/column_cert_iv/`는 부록 D의 열 $501\le k\le2000$의 열별 갱신 인증서 항목을 라이브러리 함수 가정 없이 방향 반올림 구간으로 다시 계산한 것이다(2026-11-13 세션). `colcert_iv.py`가 열 $501\le k\le2000$마다 정리 G′의 조건 (a′)(b′)(c′)를 확인한다: 소인 질량과 창 계수의 양의 재귀는 아래 끝·위 끝 두 줄의 binary64 구간(연산마다 바깥 밀기, 내적은 짝지은 합 나무와 끝의 $(1\mp2^{-53})^{-(d+1)}$ 인자), 원 위의 격자값은 `ivlib.py`의 자기 구현 구간 FFT(실부·허부 상자, 회전 인자는 mpmath `iv` 표), 주편각은 $\arctan$ 포위, 스칼라 조립은 mpmath `iv` 소수 40자리다. $k$에 무관한 표(Borel 수, $n\le2000$의 소인 질량, 회전 인자)는 `tables.py`가 `_cache/bor_pr0.npy`·`_cache/twiddle_2p21.npy`로 만든다(약 1.5분; 33 MB라 묶음에 넣지 않고 다시 만든다). 실행은 `python -I colcert_iv.py --ks 841-2000 --part 0 --nparts 2 --batch 16 --out res_p0.jsonl`과 `--part 1`(각 2.9시간), 열 501–840은 `--ks 501-840 … --out res_ext_p0.jsonl`과 `--part 1`(각 16분)이다. 열별 성분과 판정은 `res_*.jsonl`(binary64 값을 왕복 가능한 전체 자리로), 실행 기록은 `run_*.log`, 요약은 `summary.py`(`summary_all_out.txt`: 1500열 모두 성공, 최소 $\mathfrak b_0=0.03478$, 최소 여유 $0.02722$, $V$ 위 끝은 저장값 곱의 $1.000007$배 이하), 기록 검토의 40자리 값과의 대조는 `crosscheck_review.py` → `crosscheck_review_out.txt`, numpy FFT와의 대조는 `test_841.txt`·`test_1171.txt`·`test_2000.txt`다. `make_draft.py`는 결과에서 부록 D 항목 본문을 만든다.
 
-`세션_재계산/moment_cert_iv/`는 부록 D의 모멘트 판정 항목 (ㄱ)(두 범위의 재귀 인증)을 구간 산술로 다시 계산한 것이다(2026-11-13~15 세션). `mcert_iv.py`는 재귀 (7.2)·(7.3)에 $\hat{\mathfrak a}_n$을 곱해 나눗셈 없는 네 양의 재귀로 바꾸고, 필요한 끝점만 binary64 구간으로 계산한다(아래 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^\flat$, $\hat{\mathfrak a}\mathfrak Z$; 위 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^{\mathrm H}$). 항목이 쓰는 본 실행은 BLAS 없는 연산 수 한계 판(`sweep_nb … --count`)이다. 각 합을 numpy 원소별 곱과 원소별 덧셈의 짝지은 나무로 계산하고 한 항이 겪는 반올림 횟수 $r$을 세어 끝에서 $(1\pm u)^r$로 넓히며, 저장값이 모두 $[2^{-400},2^{400}]$ 안임을 확인하고(벗어나면 척도 $\beta$를 고쳐 다시 돈다; (A3)는 짧은 선행 실행으로 미리 고친다), 스칼라 연산은 한 ulp 밖으로 민다. 초등함수와 기록의 binary64 판정식(부록 D 모멘트 판정 항목의 「식」 줄)은 쓰지 않고 $\mathbb E>0$을 직접 판정한다. 1500열 60,479,535개 위치 전부 통과(실패 0; (A5) 1160열은 프로세스 1개 `mcert_iv.py sweep_nb A5 sweep_ct_A5.jsonl --low --count`, (A3) 340열은 claim 파일로 열을 나눈 샤드 4개 `sweep_ct_mp.py A3 <i>`; 열별 소요 시간 합 219,744초(다른 계산과 코어를 나눠 써서 CPU 시간보다 길다); `sweep_ct_A5.jsonl`·`sweep_ct_A3_s0.jsonl`–`sweep_ct_A3_s3.jsonl`과 로그). `summarize_nb.py`→`summary_noblas.txt`(범위별 집계와 BLAS 판과의 판정 대조). 대조 실행으로, 같은 재귀의 합을 행렬곱으로 계산한 뒤 덧셈 순서·융합 여부와 무관한 한계 $(1\pm u)^{m+1}$($m=6n+3$)로 넓힌 판(`sweep 0 2`·`sweep 1 2`)이 기록의 다섯 실행 A1–A5(글이 쓰는 두 범위는 A3·A5이고, A1·A2는 어느 장도 쓰지 않는 추가 계산이다) 7619열 60,703,015개 위치에서 전부 통과했고(프로세스 2개로 약 2시간 10분, CPU 합 15,164초; `sweep_p0.jsonl`·`sweep_p1.jsonl`과 로그), 항목의 1500열에서 두 판의 열별 최솟값 하계는 상대 $1.1\times10^{-9}$ 안에서 같다. `summarize.py`→`summary.txt`(BLAS 판의 범위별 집계), `compare.py`→`compare_out.txt`(기록의 여덟 열 대조: 인쇄값이 모두 구간 안), `test_exact.py`→`test_exact_out.txt`(작은 열의 정확 유리수 포함), `test_count.py`→`test_count_out.txt`(연산 수 한계 판의 나무 깊이 검증, 작은 열의 포함 검사, BLAS 판과의 세 열 대조), `nM.py`→`nM.json`·`nM_out.txt`(열별 문턱 $n_{\mathrm M}(k)$의 정확 유리수 재계산; 1160열 모두 기록과 같음). `make_draft.py`·`make_draft_v2.py`는 결과에서 부록 D 항목 본문을 만든다. `handoff_A3.py`·`launch_handoff.py`는 (A3) 샤드의 기동 순서를 자동화한 운영 스크립트다.
+`세션_재계산/moment_cert_iv/`는 부록 D의 모멘트 판정 항목(두 범위의 재귀 인증)을 구간 산술로 다시 계산한 것이다(2026-11-13~15 세션). `mcert_iv.py`는 재귀 (7.1)과 모멘트 재귀 (7.2)에 $\hat{\mathfrak a}_n$을 곱해 나눗셈 없는 네 양의 재귀로 바꾸고, 필요한 끝점만 binary64 구간으로 계산한다(아래 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^\flat$, $\hat{\mathfrak a}\mathfrak Z$; 위 끝 $\hat{\mathfrak a}$, $\hat{\mathfrak a}\mathfrak Z^{\mathrm H}$). 항목이 쓰는 본 실행은 BLAS 없는 연산 수 한계 판(`sweep_nb … --count`)이다. 각 합을 numpy 원소별 곱과 원소별 덧셈의 짝지은 나무로 계산하고 한 항이 겪는 반올림 횟수 $r$을 세어 끝에서 $(1\pm\mathsf p)^r$로 넓히며, 저장값이 모두 $[2^{-400},2^{400}]$ 안임을 확인하고(벗어나면 척도 $\beta$를 고쳐 다시 돈다; (A3)는 짧은 선행 실행으로 미리 고친다), 스칼라 연산은 한 ulp 밖으로 민다. 초등함수와 기록의 binary64 판정식(부록 D 모멘트 판정 항목의 「식」 줄)은 쓰지 않고 $\mathbb E>0$을 직접 판정한다. 1500열 60,479,535개 위치 전부 통과(실패 0; (A5) 1160열은 프로세스 1개 `mcert_iv.py sweep_nb A5 sweep_ct_A5.jsonl --low --count`, (A3) 340열은 claim 파일로 열을 나눈 샤드 4개 `sweep_ct_mp.py A3 <i>`; 열별 소요 시간 합 219,744초(다른 계산과 코어를 나눠 써서 CPU 시간보다 길다); `sweep_ct_A5.jsonl`·`sweep_ct_A3_s0.jsonl`–`sweep_ct_A3_s3.jsonl`과 로그). `summarize_nb.py`→`summary_noblas.txt`(범위별 집계와 BLAS 판과의 판정 대조). 대조 실행으로, 같은 재귀의 합을 행렬곱으로 계산한 뒤 덧셈 순서·융합 여부와 무관한 한계 $(1\pm u)^{m+1}$($m=6n+3$)로 넓힌 판(`sweep 0 2`·`sweep 1 2`)이 기록의 다섯 실행 A1–A5(글이 쓰는 두 범위는 A3·A5이고, A1·A2는 어느 장도 쓰지 않는 추가 계산이다) 7619열 60,703,015개 위치에서 전부 통과했고(프로세스 2개로 약 2시간 10분, CPU 합 15,164초; `sweep_p0.jsonl`·`sweep_p1.jsonl`과 로그), 항목의 1500열에서 두 판의 열별 최솟값 하계는 상대 $1.1\times10^{-9}$ 안에서 같다. `summarize.py`→`summary.txt`(BLAS 판의 범위별 집계), `compare.py`→`compare_out.txt`(기록의 여덟 열 대조: 인쇄값이 모두 구간 안), `test_exact.py`→`test_exact_out.txt`(작은 열의 정확 유리수 포함), `test_count.py`→`test_count_out.txt`(연산 수 한계 판의 나무 깊이 검증, 작은 열의 포함 검사, BLAS 판과의 세 열 대조), `nM.py`→`nM.json`·`nM_out.txt`(열별 문턱 $n_{\mathrm M}(k)$의 정확 유리수 재계산; 1160열 모두 기록과 같음). `make_draft.py`·`make_draft_v2.py`는 결과에서 부록 D 항목 본문을 만든다. `handoff_A3.py`·`launch_handoff.py`는 (A3) 샤드의 기동 순서를 자동화한 운영 스크립트다.
 
-`세션_재계산/column_k500_iv/`는 부록 D의 열 인증($121\le k\le500$) 항목을 이 글의 새 구현으로 380열 전부 다시 인증한 것이다(2026-11-13 세션). `lastcar_iv.py`는 세 재귀 G·H·E를 쓰지 않고 마지막 차 재귀 $n\mathfrak e_n=\mathfrak x\sum_j\min(j+1,y)\mathfrak e_j\mathfrak e_{n-1-j}$ 하나를 정확한 큰 정수 합성곱의 온라인 분할 정복(Kronecker 포장; 큰 크기는 `decimal`의 수론 변환, 부정확 반올림은 트랩)으로 160비트 고정소수점 정수 구간에서 계산하며, 반올림은 계수를 확정할 때 한 번(아래 끝은 내림, 위 끝은 올림)뿐이라 끝점이 직접 합과 비트 단위로 같다. 연속한 열 열 개가 하나의 정확한 이진 유리수 $\mathfrak x=e^{-1}(1+c/\bar k)$를 공유한다. `colk500.py`(`--worker i --nworkers 2`)가 열별 판정·최소 상대 여유·시간을 `res/k<k>.json`에 쓰고(380개; 해시 목록 `res/SHA256SUMS.txt`), `summarize.py`→`summary_out.txt`(380열 실패 0, 직접 차분 20,368,570개·띠 10,302,655개, 최소 상대 여유 $1.3778\times10^{-5}$($k=500$, $n=2k+1$)), `compare_indep.py`→`compare_indep_out.txt`(기록 검토의 다섯 열과 판정·최대 폭 일치, $k=121$은 모든 끝점 동일; 열별 최소 여유가 기록과 상대 $1.1\times10^{-35}$ 안), `test_small.py`→`test_small_out.txt`($n\le7$ 전수·$n\le120$ 정확 개수 포함, 분할 정복과 직접 합의 일치). 두 작업자 각 약 9500초(공유 기계, 벽시계 2.7시간; `run_w0.log`·`run_w1.log`). `make_draft.py`는 결과에서 부록 D 항목 본문을 만든다.
+`세션_재계산/column_k500_iv/`는 부록 D의 열 인증($121\le k\le500$) 항목을 이 글의 새 구현으로 380열 전부 다시 인증한 것이다(2026-11-13 세션). `lastcar_iv.py`는 세 재귀 G·H·E를 쓰지 않고 마지막 차 재귀 $n\mathfrak e_n=\mathfrak x\sum_j\min(j+1,y)\mathfrak e_j\mathfrak e_{n-1-j}$ 하나를 정확한 큰 정수 합성곱의 온라인 분할 정복(Kronecker 포장; 큰 크기는 `decimal`의 수론 변환, 부정확 반올림은 트랩)으로 160비트 고정소수점 정수 구간에서 계산하며, 반올림은 계수를 확정할 때 한 번(아래 끝은 내림, 위 끝은 올림)뿐이라 끝점이 직접 합과 비트 단위로 같다. 연속한 열 열 개가 하나의 정확한 이진 유리수 $\mathfrak x=e^{-1}(1+c/\bar k)$를 공유한다. `colk500.py`(`--worker i --nworkers 2`)가 열별 판정·최소 상대 여유·시간을 `res/k<k>.json`에 쓰고(380개; 해시 목록 `res/SHA256SUMS.txt`), `summarize.py`→`summary_out.txt`(380열 실패 0, 직접 차분 20,368,570개·비 비교 10,302,655개, 최소 상대 여유 $1.3778\times10^{-5}$($k=500$, $n=2k+1$)), `compare_indep.py`→`compare_indep_out.txt`(기록 검토의 다섯 열과 판정·최대 폭 일치, $k=121$은 모든 끝점 동일; 열별 최소 여유가 기록과 상대 $1.1\times10^{-35}$ 안), `test_small.py`→`test_small_out.txt`($n\le7$ 전수·$n\le120$ 정확 개수 포함, 분할 정복과 직접 합의 일치). 두 작업자 각 약 9500초(공유 기계, 벽시계 2.7시간; `run_w0.log`·`run_w1.log`). `make_draft.py`는 결과에서 부록 D 항목 본문을 만든다.
 
 `세션_재계산/left_columns_k2_120/`는 부록 D의 모든 $n\le20000$의 단봉성 항목 (ㄱ) 가운데 열 $2\le k\le120$($\max(2k+1,12)\le n\le10000$)을 기록 [rc9aee43]의 열 인증 코드(`code/positive_columns.py`, 바이트 그대로의 사본)의 열 계산으로 다시 인증한 것이다(2026-11-15 세션). `code/left_columns.py`가 용량 $1\le c\le121$의 열을 열별 이진 유리 반지름(`code/radii.json`)으로 한 번씩 계산하고 이웃 세 열을 정확한 유리수 배율의 구간으로 한 반지름에 맞추어 비교하며, 출력은 `results_k2_70.jsonl`·`results_k71_120.jsonl`과 `summary.json`(비교 1,175,466개, 실패 0, 최소 상대 여유 $1.2608\times10^{-4}$, $k=6$, $n=13$)이다. `code/exact_check.py`→`exact_check.json`은 $n\le300$의 정확 정수(정리 2.6의 재귀)와 전수 대조, `indep/`는 기록의 독립 프로그램 `indep_lastcar.py`(사본)와 그 재귀로 최소 여유를 재는 `indep_margin.py`를 표본 열 $k\in\{2,3,7,30,60,120\}$에 돌린 것이다. 첫 실행(범위 $2k+1$부터; $n=5,7,9,11$의 네 예외가 드러남)의 결과는 `logs/firstpass/`에 있다.
 

@@ -70,7 +70,7 @@ CONFIG = {
         scripts=[S + "column_k500_iv/lastcar_iv.py", S + "column_k500_iv/colk500.py", S + "column_k500_iv/summarize.py"],
         cmd=["python -I colk500.py --worker 0 --nworkers 2", "python -I colk500.py --worker 1 --nworkers 2",
              "python -I summarize.py > summary_out.txt", "python -I compare_indep.py > compare_indep_out.txt"],
-        expect="380열 실패 0(직접 차분 20,368,570개·띠 10,302,655개); 최소 상대 여유 $1.3778\\times10^{-5}$($k=500$, $n=2k+1$)",
+        expect="380열 실패 0(직접 차분 20,368,570개·비 비교 10,302,655개); 최소 상대 여유 $1.3778\\times10^{-5}$($k=500$, $n=2k+1$)",
         outputs=[S + "column_k500_iv/summary_out.txt", S + "column_k500_iv/compare_indep_out.txt", S + "column_k500_iv/res/SHA256SUMS.txt"],
         time="작업자 2개 각 약 9500초(공유 기계; 벽시계 2.7시간; `run_w0.log`·`run_w1.log`)"),
     "central-gap-integer": dict(
@@ -137,7 +137,7 @@ CONFIG = {
         cmd=["python -I check_table_iv.py"],
         expect="위반 $0$; 가장 작은 여유 $4.7447\\cdot10^{-13}$($i=0$); 엄격 감소, 최소 감소 $6.643869\\cdot10^{-6}$($i=11999$)",
         outputs=[S + "window_mass_env/check_table_iv_out.txt"],
-        time="약 14초(`check_table_iv_out.txt`의 time 줄)"),
+        time="약 6초(`check_table_iv_out.txt`의 time 줄)"),
     "window-mass-env": dict(
         scripts=[S + "window_mass_env/cert_Cb_iv.py", S + "window_mass_env/cert_interval_iv.py", S + "window_mass_env/check_table_iv.py",
                  S + "r030ffae_window/work/cert_Cb_range.py"],
@@ -145,13 +145,13 @@ CONFIG = {
              "python -I cert_Cb_iv.py 2280 3000", "python -I summarize.py"],
         expect="(가) $1\\le q\\le2999$ 전부 통과; (나) 열일곱 구간의 최소 상대 여유 $0.011251$($\\xi=0.912$)",
         outputs=[S + "window_mass_env/summarize_out.txt", S + "window_mass_env/cert_interval_iv_out.txt"],
-        time="(나) 1981초, (가) 5171초·4206초(두 프로세스 동시), 표 검사 14초(각 출력의 total 줄)"),
+        time="(나) 1981초, (가) 5171초·4206초(두 프로세스 동시), 표 검사 6초(각 출력의 total·time 줄)"),
     "band-boxes": dict(
-        scripts=[S + "band_boxes/band_iv.py", S + "band_boxes/band_summary.py", S + "band_boxes/run_all.sh"],
+        scripts=[S + "band_boxes/band_iv.py", S + "band_boxes/ivbox_lib.py", S + "band_boxes/band_summary.py", S + "band_boxes/run_all.sh"],
         cmd=["sh run_all.sh", "python -I band_summary.py"],
         expect="최솟값 $1.0097628$; 꼬리 $1.12224$",
         outputs=[S + "band_boxes/band_result.txt"],
-        time="프로세스 2개로 각 $340$초, 꼬리 $4$초(`band_result.txt`의 wall 줄)"),
+        time="프로세스 2개로 각 $135$초, 꼬리 $1$초(`band_result.txt`의 wall 줄; 2026-11-17 재실행)"),
     "four-families": dict(
         scripts=[S + "four_families_DDLnat/families_iv.py"],
         cmd=["python -I families_iv.py"],
