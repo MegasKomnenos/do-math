@@ -10,13 +10,14 @@ from urllib.parse import quote, unquote
 from runtime_support import write_json, write_text
 
 
+RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
 ROLE_REFERENCES = {
-    'attempt': ['retained-work.md'],
-    'explore': ['retained-work.md'],
+    'attempt': RESEARCH_CONTEXT + ['retained-work.md'],
+    'explore': RESEARCH_CONTEXT + ['retained-work.md'],
     'formalizer': ['retained-work.md', 'lean.md'],
-    'peer': ['record-format.md', 'retained-work.md'],
-    'review': ['record-format.md', 'review-output.md'],
-    'organizer': ['organizer-output.md'],
+    'peer': RESEARCH_CONTEXT + ['record-format.md', 'retained-work.md'],
+    'review': RESEARCH_CONTEXT + ['record-format.md', 'review-output.md'],
+    'organizer': RESEARCH_CONTEXT + ['organizer-output.md'],
 }
 
 
@@ -95,12 +96,11 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
     parts += ['', '# Assignment and executable commands', '',
-              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt has no assigned mathematical task. An exploration whose task names a question already occupies that question; one whose task names none chooses a free question itself.', '',
+              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot.', '',
               '```json', json.dumps({'task': task, 'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     write_text(session / 'pack.md', '\n'.join(parts))
     write_text(session / 'prompt.txt',
                f'You are a do-math {role} session. Your working directory is {session}.\n'
                f'Read {session / "pack.md"} in full, then carry out the role it describes.\n'
-               f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n'
-               'The runner launches the research sessions. Work in this session and retain your mathematics in your own folder.\n')
+               f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n')
     return inp

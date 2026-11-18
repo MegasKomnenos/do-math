@@ -12,7 +12,7 @@ The assessment has these fields:
 |---|---|
 | `publish` | Boolean: whether useful material should be retained as a published record. |
 | `reason` | The reason for publication or exclusion. |
-| `index_assessment` | Short assessment displayed beside the immutable candidate description. |
+| `index_assessment` | Short assessment displayed beside the immutable candidate description: the supported scope, the limitations a reader needs, and what the record contributed to the research. |
 | `feedback` | Relative path to the full feedback document. |
 | `claims` | Exactly one `{claim, status, reason}` for each candidate claim ID. Status is `supported`, `unsupported` or `undetermined`. |
 | `nodes` | Exactly one `{proposal, node, reason}` for each proposed node. `node` is the proposal ID when admitted, an existing node ID when identified with that node, or null when declined. |
@@ -27,11 +27,11 @@ The assessment has these fields:
 
 An accepted relation or solution cites a supported claim. Admitting a node requires a supported connection through an accepted relation to the existing research. A solution assessment can include `formal_dependencies`, replacing the candidate's list with the signed nodes actually required by the accepted argument. Assess every proposal, using null, false or `none` for those not accepted.
 
-A question verdict records which of two different judgments led to a refusal, because later peers read them differently. `declined` says the research does not want this question as proposed: it duplicates an existing question, named in `duplicate_of`, or it does not concern something important enough. `revise` says the question may well be wanted but is not yet stated specifically or clearly enough to be taken up; the reason then says what is unspecific and what would need to be made explicit, so that a later peer can propose it again in that form. The reviewer does not reword the proposal itself. An accepted resolution requires the cited claim to be supported; its reason says why the account settles the question rather than part of it.
+`declined` and `revise` record two different judgments behind a refusal, which later peers read differently; the role guide explains when each applies and what its reason says. An accepted resolution requires the cited claim to be supported; its reason says why the account settles the question rather than part of it.
 
 The feedback covers important mathematical assertions in the body as well as the structured list. Explain missing source content, defects, restrictions, unperformed checks and valuable supported work. The structured judgment does not limit the mathematical scope of review to what the peer happened to list.
 
-If `publish` is false, accept no nodes, relations, solutions, questions or resolutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing and ends the occupancy of the attempt's sections or of the exploration's question, as applicable.
+If `publish` is false, accept no nodes, relations, solutions, questions or resolutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing and ends the occupancy its pipeline held: the sections recorded for its producer and peers, including a formalizer's assigned whole node, or the exploration's question.
 
 ## Evidence for a formal solution
 
@@ -53,7 +53,7 @@ These are placeholders, not evidence. `axioms` must be the actual list printed f
 
 For every file listed in `lean.sources`, `source_hashes` records the SHA-256 of the candidate bytes and `source_files` points to the corresponding working copy relative to your session directory. The working copy must preserve the candidate bytes; only `#print axioms` lines may be appended. The broker records the source identity used in the compile. Python's `hashlib.sha256(path.read_bytes()).hexdigest()` obtains the hash.
 
-Copy the sources into a working directory with the same module layout. Append the audit command to the target file and run the broker. Then inspect the actual output, compare the theorem with the node, and record the evidence. The structural checker confirms the job ownership, successful fresh compile, source identities and printed axiom list. Your mathematical judgment establishes correspondence and sufficiency. The runner preserves the referenced broker evidence with the published assessment.
+The transport check confirms the job ownership, successful fresh compile, source identities and printed axiom list. Your mathematical judgment establishes correspondence and sufficiency. The runner preserves the referenced broker evidence with the published assessment, in a `lean-evidence` folder it adds beside your output files. That top-level name is therefore reserved in your output directory, and the transport check rejects an output that uses it.
 
 If compilation cannot be completed, do not issue formal acceptance. An informal proof can still be supported with its remaining formal work made explicit. If the source itself fails or its theorem differs, explain the specific defect rather than treating every kind of failed check as a false mathematical proposition.
 
@@ -69,7 +69,7 @@ A finding has `concerns` (the existing concern IDs it addresses), `status` (`cle
 | `validates` | Existing claim references whose support this review establishes or restores. |
 | `dependency_updates` | `{proof, dependencies, reason}` entries correcting the formal dependencies of an existing proof route. |
 
-Write only consequences supported by your examination of the evidence. A pending concern leaves the questioned claim in force; a finding that withdraws the claim removes every consequence that rested on it, and a finding that reaffirms it leaves them standing. A confirmed defect can withdraw one argument while another argument continues to support the same node. The feedback explains the actual uses and what remains unresolved.
+Write only consequences supported by your examination of the evidence. A pending concern leaves the questioned claim in force; a finding that withdraws the claim removes every outcome derived through it, that is, the solutions, relation applications and question resolutions that cite it and whatever was derived from them, and a finding that reaffirms it leaves them standing. A claim that lists the withdrawn claim among its `dependencies` is different: it is a use of that claim, and it keeps its standing, with the outcomes it supports, until a finding names it in `invalidates` as well. A confirmed defect can withdraw one argument while another argument continues to support the same node. The feedback explains the actual uses and what remains unresolved.
 
 The `proofs` object in `knowledge/state.json` lists the currently supported proof routes. A direct solution has ID `<record-id>/<solution-id>`. A relation applied forward, to its conclusion, has ID `<record-id>/<relation-id>`; applied backward, so that one premise fails and its node receives the opposite of the outcome written for that premise, it has that ID followed by `~` and the position of that premise, counted from zero. Each entry identifies its node, outcome and supporting claims, and a derived outcome lists in `premise_proofs` the proofs it used. Use those exact IDs in `dependency_updates`. The separate `relations` object contains the reviewed implication statements, including relations whose premises are not yet solved.
 
@@ -77,7 +77,7 @@ When a candidate review that publishes its candidate finds a defect in an earlie
 
 ## Comprehensive assessment
 
-For a comprehensive assignment, `assessment.json` contains `feedback`, `index_assessment`, `findings`, and optional `concerns`. It has no candidate publication decision. Address the assigned concerns and requested evidence in the feedback, following the actual uses described in the role guide. The runner publishes this assessment directly as a review record and attaches its findings to their sources. It does not require another peer/review cycle for your judgment to take effect.
+For a comprehensive assignment, `assessment.json` contains `feedback`, `findings`, and optional `concerns`. It has no candidate publication decision and no index assessment, because the review is not itself an index entry. Address the assigned concerns and requested evidence in the feedback, following the actual uses described in the role guide. The runner publishes this assessment directly as a review record and attaches its findings to their sources, where the index and frontier show them. It does not require another peer/review cycle for your judgment to take effect.
 
 If you introduce notation needed to explain your assessment, add a `glossary` array in the local entry format of [Record format](record-format.md), and use it in the feedback. No entries are needed when you introduce no terms. These local definitions explain your output; they do not create new mathematical proof claims.
 

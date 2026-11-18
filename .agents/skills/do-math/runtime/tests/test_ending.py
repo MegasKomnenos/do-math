@@ -12,7 +12,7 @@ from coordination import board, session_live
 from ending import request_prompt, run_turn
 from launch import worker_command
 from runner import Runner, main
-from runtime_support import read_json, session_host, write_json
+from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
 from test_research import InstanceCase, take
 
@@ -173,6 +173,16 @@ class EndingTests(InstanceCase):
         self.assertEqual(state['authorization']['basis'], 'no_research')
         self.assertEqual(state['resumptions'], 0)
 
+    def test_a_rejected_no_research_outcome_is_reported_to_the_next_turn(self):
+        # An attempt that registered a section cannot close through no_research (reference/retained-work.md).
+        # The host resumes it and names the reason, as the transport check would.
+        _, _, directory = self.prepare(maximum=1, config={'no_research': True})
+        self.assertTrue(take(directory, 'root')['registered'])
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        self.assertIn('no_research is incompatible with registered sections',
+                      read_json(directory / 'turns/0001/request.json')['previous_error'])
+
     def test_refusal_is_interruption_not_worker_authorization(self):
         _, _, directory = self.prepare(config={'refuse_at': 1})
         state = self.run_host(directory)
@@ -227,6 +237,22 @@ class EndingTests(InstanceCase):
         self.assertEqual(s['status'], 'ended')
         self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
 
+    def test_output_limit_at_the_last_allowed_peer_turn_sends_its_candidate_to_review(self):
+        engine, sid, directory = self.prepare_claude(maximum=1, role='peer', config={'output_limit_at': [0, 1]})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        self.assertEqual(s['exit_code'], 1)
+        engine.finish(sid, s)
+        # The host's own end authorization is not an interruption: the candidate is frozen for
+        # review instead of the stage being handed to a replacement peer.
+        pipeline = engine.state['jobs'][s['job']]['pipeline']
+        self.assertEqual(s['status'], 'ended')
+        self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review')
+        self.assertTrue((directory / 'candidate/record.json').is_file())
+
     def test_output_limit_is_resumable_only_for_the_claude_stream(self):
         _, _, directory = self.prepare(config={'output_limit_at': [0]})
         state = self.run_host(directory)
@@ -243,17 +269,24 @@ class EndingTests(InstanceCase):
         self.assertEqual(receipt['result']['exit_code'], 2)
         self.assertIsNone(receipt['refusal'])
 
-    def test_only_the_two_ending_bases_authorize_a_worker_end(self):
-        for basis, expected in (('task_completed', 'task_completed'), ('partial_result', 'resumption_limit')):
-            with self.subTest(basis=basis):
-                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, 'basis': basis})
+    def test_only_a_complete_decision_on_the_two_ending_bases_authorizes_a_worker_end(self):
+        # reference/retained-work.md asks for exactly four fields, one of the two bases and an explanation
+        # of the grounds; any other decision is rejected and the session continues to the limit.
+        cases = (({'basis': 'task_completed'}, 'task_completed', None),
+                 ({'basis': 'partial_result'}, 'resumption_limit', 'task_completed or no_way_forward'),
+                 ({'explanation': ' '}, 'resumption_limit', 'nonempty explanation'),
+                 ({'extra_fields': {'confidence': 'high'}}, 'resumption_limit',
+                  'request_id, decision, basis and explanation'))
+        for decision, expected, error in cases:
+            with self.subTest(decision=decision):
+                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, **decision})
                 state = self.run_host(directory)
                 self.assertEqual(state['authorization']['basis'], expected)
-                error = read_json(directory / 'turns/0001/decision-check.json')['error']
-                if basis == 'partial_result':
-                    self.assertIn('task_completed or no_way_forward', error)
+                found = read_json(directory / 'turns/0001/decision-check.json')['error']
+                if error is None:
+                    self.assertIsNone(found)
                 else:
-                    self.assertIsNone(error)
+                    self.assertIn(error, found)
                 pipeline = engine.state['jobs'][engine.state['sessions'][sid]['job']]['pipeline']
                 engine.state['pipelines'][pipeline]['stage'] = 'done'
                 engine.save()
@@ -299,9 +332,11 @@ class EndingTests(InstanceCase):
                 (directory / 'CANCEL').touch()
                 thread.join(10)
 
-    def test_cancel_while_dispatch_stopped_never_launches_another_turn(self):
-        _, sid, directory = self.prepare()
-        (self.instance / 'control/STOP').touch()
+    def test_kill_session_ends_a_running_turn_and_retained_work_reaches_peer(self):
+        # kill-session while a CLI turn is still running: the command terminates the identified CLI,
+        # the host records an interruption without launching another turn, and the producer's
+        # retained work goes to peer (reference/operations.md, Commands).
+        engine, sid, directory = self.prepare(config={'hold_at': 0})
         errors = []
         def run():
             try:
@@ -312,13 +347,12 @@ class EndingTests(InstanceCase):
             thread = threading.Thread(target=run, daemon=True)
             thread.start()
             try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    path = directory / 'end-check.json'
-                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
-                        break
+                deadline = time.monotonic() + 30
+                while time.monotonic() < deadline and not (
+                        (directory / 'work/holding').exists() and (directory / 'process.json').exists()):
                     time.sleep(.05)
-                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
+                cli = read_json(directory / 'process.json')['process']
+                self.assertTrue(alive(cli))
                 import io
                 with patch('sys.stdout', new=io.StringIO()):
                     self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
@@ -328,9 +362,16 @@ class EndingTests(InstanceCase):
             finally:
                 (directory / 'CANCEL').touch()
                 thread.join(10)
+        self.assertFalse(alive(cli))
         state = read_json(directory / 'end-check.json')
-        self.assertEqual(state['authorization']['basis'], 'interrupted')
-        self.assertEqual(state['resumptions'], 0)
+        self.assertEqual((state['authorization']['basis'], state['resumptions']), ('interrupted', 0))
+        self.assertEqual(len((directory / 'work/turns.jsonl').read_text().splitlines()), 1)
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        self.assertNotIn(s['exit_code'], (0, None))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
 
     def test_cancelled_peer_resumption_gets_a_replacement_instead_of_review(self):
         engine, sid, directory = self.prepare(role='peer')
@@ -360,7 +401,8 @@ class EndingTests(InstanceCase):
         s.update(read_json(directory / 'exit.json'))
         s.update(host=None, cli=None)
         engine.finish(sid, s)
-        self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+        # kill-session cancelled the pending resumption, so no further turn was launched.
+        self.assertEqual((s['end_check']['authorization']['basis'], s['end_check']['resumptions']), ('interrupted', 0))
         self.assertFalse((directory / 'candidate').exists())
         job = engine.state['jobs'][s['job']]
         self.assertEqual((job['status'], s['status']), ('pending', 'failed'))
@@ -451,6 +493,48 @@ class EndingConfigurationTests(unittest.TestCase):
                     self.assertEqual(command.argv[-2:], ['--resume', identity])
                     self.assertIn('--strict-mcp-config', command.argv)
                     self.assertIn('opus[1m]', command.argv)
+
+
+class SessionGateTests(unittest.TestCase):
+    # The runner records a host's identity in its state and only then writes GO, so a host that never
+    # sees GO starts no CLI the runner could not follow (runtime_support.session_host). The broker's
+    # job host keeps the same gate; test_lean_broker tests that one.
+    def launch(self, folder, runner):
+        # The stand-in CLI only marks that it was started.
+        write_json(folder / 'launch.json', {'runner': runner, 'command': {
+            'argv': [sys.executable, '-c', "open('started', 'w').close()"], 'cwd': str(folder)}})
+        (folder / 'prompt.txt').write_bytes(b'')
+
+    def test_host_without_go_exits_on_cancel_or_dead_runner_without_starting_a_cli(self):
+        # A failed dispatch, or a restarted runner finding no GO, writes CANCEL (runner.dispatch, Runner.collect).
+        import tempfile
+        dead = {'pid': os.getpid(), 'birth': 'a runner that has died'}
+        for gate, runner in (('CANCEL', process_identity(os.getpid())), (None, dead)):
+            with self.subTest(gate=gate), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp)
+                self.launch(folder, runner)
+                if gate:
+                    (folder / gate).write_bytes(b'')
+                self.assertEqual(session_host(folder), 1)
+                self.assertFalse((folder / 'started').exists())
+                self.assertFalse((folder / 'exit.json').exists())
+
+    def test_go_written_as_the_runner_dies_still_starts_the_session(self):
+        # The runner can die right after writing GO, between the host's look for GO and its look at the
+        # runner. The runner's state already names this host, so the host must start the session.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            self.launch(folder, {'pid': os.getpid(), 'birth': 'a runner that has died'})
+
+            def died_after_go(identity):
+                (folder / 'GO').write_bytes(b'go\n')
+                return False
+
+            with patch('runtime_support.alive', side_effect=died_after_go):
+                self.assertEqual(session_host(folder), 0)
+            self.assertTrue((folder / 'started').exists())
+            self.assertEqual(read_json(folder / 'exit.json')['exit_code'], 0)
 
 
 if __name__ == '__main__':

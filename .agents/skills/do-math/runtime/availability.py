@@ -12,7 +12,7 @@ from knowledge import canonical
 from runtime_support import read_json, write_json
 
 
-def availability_view(model, rows, epoch=0):
+def availability_view(model, rows, epoch):
     nodes = {nid: [] for nid, node in model['nodes'].items()
              if canonical(model, nid) == nid and node['state'] == 'unresolved'}
     for row in rows:
@@ -39,8 +39,7 @@ def normalized_nodes(view, model):
     """Node merges preserve registered sections, rather than falsely opening a new node."""
     result = {}
     for nid, sections in view['nodes'].items():
-        if nid in model['nodes'] or nid in model['aliases']:
-            result.setdefault(canonical(model, nid), set()).update(sections)
+        result.setdefault(canonical(model, nid), set()).update(sections)
     return result
 
 
@@ -86,7 +85,7 @@ def reported_availability(session, outcome):
     if report is None:
         return None
     if not isinstance(report, dict) or set(report) != {'status', 'snapshot'}:
-        raise ValueError('availability needs status and snapshot')
+        raise ValueError('availability needs exactly the fields status and snapshot, and no others')
     if report['status'] != 'all_unresolved_work_occupied':
         raise ValueError('unknown availability status')
     token = report['snapshot']

@@ -24,9 +24,19 @@ def text(value, name):
     return value
 
 
+# The ID rule of the record format. The questions command applies it to operator questions as well.
+IDENTIFIER = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
+
+
 def identifier(value):
-    need(isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', value), 'invalid identifier')
+    need(isinstance(value, str) and IDENTIFIER.fullmatch(value), 'invalid identifier')
     return value
+
+
+def taken_question_ids(model):
+    """IDs a new question cannot take, whether a peer proposes it or the operator publishes it:
+    one ID names one question or node."""
+    return set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases'])
 
 
 def array(value, name):
@@ -126,7 +136,7 @@ def record_check(data, root, model, proposal_owner=None):
         prefix = identifier(proposal_owner) + '-'
         need(all(q.startswith(prefix) and len(q) > len(prefix) for q in proposed_questions),
              'new question proposals must use their peer session prefix: ' + prefix)
-    taken = set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases']) | proposed
+    taken = taken_question_ids(model) | proposed
     need(not proposed_questions & taken, 'question proposal ID already names a question or node')
     for question in questions:
         text(question.get('statement'), 'question.statement')
@@ -141,12 +151,9 @@ def record_check(data, root, model, proposal_owner=None):
              'question resolution must name an existing question')
         need(canonical_question(model, target) != ROOT_QUESTION, 'the root question is not resolved by an explanation')
         need(resolution.get('claim') in ids, 'question resolution needs its resolving claim')
-    glossary = array(data.get('glossary'), 'glossary')
-    unique(glossary)
+    glossary = data.get('glossary')
+    glossary_check(glossary)
     for term in glossary:
-        text(term.get('name'), 'term.name')
-        text(term.get('definition'), 'term.definition')
-        need(isinstance(term.get('symbol', ''), str), 'term.symbol must be text')
         need(type(term.get('global_candidate', False)) is bool, 'global_candidate must be Boolean')
     regular_tree(root)
 
@@ -220,6 +227,9 @@ def audit_formal(instance, session, check, solution, candidate):
 
 
 def assessment_check(data, root, record, candidate, model, instance, sid):
+    for path in Path(root).iterdir():
+        need(path.name.casefold() != 'lean-evidence',
+             'review output top-level name lean-evidence is reserved for the broker evidence attached at publication')
     need(type(data.get('publish')) is bool, 'publish must be Boolean')
     text(data.get('reason'), 'assessment.reason')
     text(data.get('index_assessment'), 'index_assessment')
@@ -254,7 +264,9 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
         target = row.get('node')
         need(target is None or target == row['proposal'] or target in model['nodes'], 'node resolution must reuse an existing node or admit the proposal')
         text(row.get('reason'), 'node resolution reason')
-        if target:
+        if target == row['proposal']:
+            # Admitting the proposal needs its own supported connection; identifying it with an
+            # existing node reuses a node the research already connects (reference/review-output.md).
             need(nodes[row['proposal']]['connection'] in supported, 'new node needs supported connection')
         resolutions[row['proposal']] = target
     need(set(resolutions) == set(nodes), 'resolve every node proposal, with null for an unadmitted node')
@@ -328,7 +340,6 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
 
 def comprehensive_check(data, root, model):
     file(root, data.get('feedback'))
-    text(data.get('index_assessment'), 'index_assessment')
     findings_check(data.get('findings'), model)
     concerns_check(data.get('concerns', []), model)
     glossary_check(data.get('glossary', []))
@@ -377,6 +388,10 @@ def organization_check(data, model, batch):
         need(rid in model['records'], 'unknown shared-context record')
     filed = set(data['shared_context']) | {r for m in modules for r in m['records']}
     need(set(batch) <= filed, 'place each assigned batch record in shared context or a module')
+    # Unfiled marks a placement still pending, and no later batch lists a record already organized,
+    # so a complete layout that left one out would leave it looking unprocessed for good.
+    dropped = sorted(set(model['organized']) - filed)
+    need(not dropped, 'keep each record already organized in shared context or a module: ' + ', '.join(dropped))
     glossary_check(data.get('glossary', []))
     for key in data.get('promote', []):
         need(key in model['terms'], 'promotion needs a published local term')

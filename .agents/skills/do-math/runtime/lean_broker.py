@@ -28,6 +28,7 @@ import sys
 import time
 import uuid
 
+from coordination import ACTIVE_STATUSES, session_live
 from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
                     popen_options, process_identity, read_json, terminate_process, write_json)
 from settings import load_settings
@@ -121,12 +122,13 @@ def read_imports(path):
     return sorted(imports)
 
 
-def closure_key(version, imports, direct=False):
-    """One key per (Lean version, import set, launch mode); a new Lean makes old baselines invisible.
+def closure_key(environment, imports, direct=False):
+    """One key per (environment identity, import set, launch mode); a new Lean or a changed
+    environment_key makes old baselines invisible. `environment` is Broker.environment_identity().
 
     A compile launched directly, without `lake env` in front of it, costs about a gigabyte
     less on this machine, so its baselines are kept apart from those measured through lake."""
-    text = (version or "") + "\n" + "\n".join(imports) + ("\ndirect" if direct else "")
+    text = environment + "\n" + "\n".join(imports) + ("\ndirect" if direct else "")
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
@@ -174,15 +176,22 @@ def discover_modules(root, targets):
 
     for target in targets:
         visit(module_name(root, target))
-    external_roots = {i.split(".")[0] for m in modules.values() for i in m["external"]} | set(TOOLCHAIN_ROOTS)
+    external = sorted({i for m in modules.values() for i in m["external"]})
     for name in order:
-        if name.split(".")[0] in external_roots:
-            raise ValueError(f"local module {name} would shadow a library module of the same name")
+        first = name.split(".")[0]
+        if first in TOOLCHAIN_ROOTS:
+            raise ValueError(f"local module {name} would shadow the toolchain's {first} modules")
+        # An import with no file under the root is read as the library's, so a mistyped or missing
+        # module of the session's own lands here as well; the reason names both readings.
+        clash = next((i for i in external if i.split(".")[0] == first), None)
+        if clash:
+            raise ValueError(f"local module {name} would shadow the library's {first} modules, such as the import "
+                             f"{clash}; if {clash} is meant to be a module of yours, its file is missing under the root")
     return [(name, modules[name]) for name in order]
 
 
-def module_keys(version, modules):
-    """The cache key of each module: Lean version, module name, source bytes and the keys of its local imports.
+def module_keys(environment, modules):
+    """The cache key of each module: environment identity (Broker.environment_identity()), module name, source bytes and the keys of its local imports.
 
     A change anywhere below a module changes its key, so a stale .olean can never be
     reached; the same bytes built by two sessions get the same key and the same .olean."""
@@ -191,7 +200,7 @@ def module_keys(version, modules):
         digest = hashlib.sha256()
         source_bytes = Path(module['source']).read_bytes()
         module['source_sha256'] = hashlib.sha256(source_bytes).hexdigest()
-        for part in [version or "", name, source_bytes] + [keys[d] for d in module["local"]]:
+        for part in [environment, name, source_bytes] + [keys[d] for d in module["local"]]:
             digest.update(part if isinstance(part, bytes) else part.encode("utf-8"))
             digest.update(b"\n")
         keys[name] = digest.hexdigest()[:32]
@@ -348,7 +357,13 @@ def job_host(job_dir):
     job_dir = Path(job_dir)
     launch = read_json(job_dir / "launch.json")
     while not (job_dir / "GO").exists():
-        if (job_dir / "CANCEL").exists() or not alive(launch["broker"]):
+        if (job_dir / "CANCEL").exists():
+            return 1
+        if not alive(launch["broker"]):
+            # The broker writes GO once this host's identity is durable and can die right after it. A GO that
+            # appeared since the loop's test belongs to a job that the next broker adopts as started, so Lean runs.
+            if (job_dir / "GO").exists():
+                break
             return 1
         time.sleep(0.1)
     result = {"exit_code": None}
@@ -484,10 +499,8 @@ class Broker:
         self.config_error = None
         self.direct = None  # {"argv", "env"} to run lean without lake in front of it, once lake's environment is known
         self.settings_stamp = None
-        self.state = read_json(self.paths.state) if self.paths.state.exists() else {}
-        self.state.setdefault("jobs", {})
-        self.state.setdefault("builds", {})
-        self.state.setdefault("version", None)
+        # start() reads the saved state under the lock; this is the state of an instance that has none yet.
+        self.state = {"jobs": {}, "builds": {}, "version": None}
         self.calibration = Calibration(self.paths.calibration)
         self.hosts = {}
         self.dirty = False
@@ -524,7 +537,8 @@ class Broker:
         except OSError as exc:
             stamp = None
             error = str(exc)
-        if stamp == self.settings_stamp and self.config_error is None:
+        # Before the first read the recorded stamp is None, as is the stamp of a missing file.
+        if stamp is not None and stamp == self.settings_stamp and self.config_error is None:
             return
         self.settings_stamp = stamp
         try:
@@ -618,6 +632,10 @@ class Broker:
     def lean_env(self):
         return {**os.environ, **self.settings["lean"]["env"]}
 
+    def environment_identity(self):
+        """The Lean version and environment_key in one string: the environment that calibration closures and module cache keys belong to."""
+        return (self.state['version'] or '') + '\n' + self.state['environment_key']
+
     def runner_sessions(self):
         path = self.paths.instance / "runner/state.json"
         try:
@@ -635,8 +653,6 @@ class Broker:
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
             job_id = path.stem
             try:
-                if not JOB_ID.fullmatch(job_id) and not BUILD_ID.fullmatch(job_id):
-                    raise ValueError(f"not a job ID: {job_id}")
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 # Registration or a final outcome can be durable while its queue
                 # file remains after a crash. Acknowledge it without registering
@@ -646,18 +662,7 @@ class Broker:
                     path.unlink(missing_ok=True)
                     continue
                 request = read_json(path)
-                if request.get("id") != job_id:
-                    raise ValueError("the request's id does not match its file name")
                 expect = request["expect_mb"]
-                if type(expect) is not int or expect < 1:
-                    raise ValueError("expect_mb must be a positive integer")
-                # Fields kept in the broker state must have the shapes the scheduler and the orphan
-                # check rely on; a request that fails here is answered, not left to crash a later tick.
-                if request.get("session") is not None and not isinstance(request["session"], str):
-                    raise ValueError("session must be a session ID")
-                if "submitted_at" in request and (type(request["submitted_at"]) not in (int, float)
-                                                  or not math.isfinite(request["submitted_at"])):
-                    raise ValueError("submitted_at must be a finite number")
                 if (folder / "CANCEL").exists():
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
@@ -669,9 +674,7 @@ class Broker:
                     self.ingest_build(job_id, request)
                     path.unlink(missing_ok=True)
                     continue
-                source = request["source"]
-                if not isinstance(source, str):
-                    raise ValueError("source must be a path")
+                source, source_hash = request["source"], request["source_sha256"]  # hashed by the client at submission
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else \
@@ -684,17 +687,16 @@ class Broker:
                 continue
             job_dir = self.paths.job(job_id)
             job_dir.mkdir(exist_ok=True)
-            try:
-                source_hash = request.get("source_sha256") or hashlib.sha256(Path(source).read_bytes()).hexdigest()
-            except (OSError, ValueError):  # unreadable, or a path with a character the OS rejects
-                source_hash = None
             # A module compile of a build runs with -R, -o and the build's lib on the search path;
             # a single-file submission of the same bytes is a different compile, not its duplicate.
+            # Nor is a job whose cancellation has been requested: it ends cancelled, and a submission
+            # made after that request asks for the compile anew.
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
                               and j["source"] == source and j["kind"] == "compile" and not j.get("build")
-                              and source_hash is not None and j.get("source_sha256") == source_hash
-                              and j.get("environment_key") == self.state["environment_key"]), None)
+                              and j.get("source_sha256") == source_hash
+                              and j["environment_key"] == self.state["environment_key"]
+                              and not (self.paths.job(jid) / "CANCEL").exists()), None)
             if duplicate:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
                 if (job_dir / "CANCEL").exists():
@@ -707,7 +709,6 @@ class Broker:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
             job = self.new_job(job_id, request, source, imports, imports, source_sha256=source_hash)
-            write_json(job_dir / "job.json", job)
             self.state["jobs"][job_id] = job
             if (job_dir / "CANCEL").exists():
                 self.cancel(job, "cancelled on request")
@@ -735,12 +736,14 @@ class Broker:
         try:
             build["targets"] = [module_name(root, t) for t in targets]
             modules = discover_modules(root, targets)
-            keys = module_keys((self.state['version'] or '') + '\n' + self.state['environment_key'], modules)
+            keys = module_keys(self.environment_identity(), modules)
             build.update(module_keys=keys, fresh_targets=bool(request.get("fresh_targets")))
+            # A build whose cancellation has been requested ends cancelled; a request after it is new work.
             duplicate = next((b for b in self.state["builds"].values() if b["status"] in ACTIVE
                               and b["session"] == session and b["root"] == root
-                              and b["targets"] == build["targets"] and b.get("module_keys") == keys
-                              and b.get("fresh_targets", False) == build["fresh_targets"]), None)
+                              and b["targets"] == build["targets"] and b["module_keys"] == keys
+                              and b["fresh_targets"] == build["fresh_targets"]
+                              and not (self.paths.build(b["id"]) / "CANCEL").exists()), None)
             if duplicate:
                 write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
                 if (folder / "CANCEL").exists():
@@ -759,7 +762,6 @@ class Broker:
                                        build=build_id, module=name, root=root, lib=str(lib), olean=str(olean),
                                         deps=deps, key=keys[name], source_sha256=module['source_sha256'])
                     self.paths.job(job_id).mkdir(exist_ok=True)
-                    write_json(self.paths.job(job_id) / "job.json", job)
                     self.state["jobs"][job_id] = job
                     jobs[name] = job_id
                     entry.update(job=job_id, status="queued")
@@ -770,7 +772,6 @@ class Broker:
                 self.cancel(self.state["jobs"][job_id], f"build {build_id} failed: {exc}")
             self.log(event="build_failed", build=build_id, session=session, reason=str(exc))
         self.state["builds"][build_id] = build
-        write_json(folder / "build.json", build)
         self.dirty = True
         if build["status"] == "queued":
             if (folder / "CANCEL").exists():
@@ -812,14 +813,14 @@ class Broker:
     def new_job(self, job_id, request, source, imports, external, source_sha256, **extra):
         """A queued compile job; `external` imports alone key its calibration closure.
 
-        `source_sha256` is the hash the caller has already read, or None when the source
-        could not be read; the job does not read the source a second time."""
+        `source_sha256` is the hash of the source bytes, read by the client at submission for a
+        single file and at build expansion for a module; the job does not read the source again."""
         session = request.get("session") or "unknown"
         return {"id": job_id, "kind": "compile", "session": session, "source": source,
                 "source_sha256": source_sha256,
                 'lean_version': self.state['version'], 'environment_key': self.state['environment_key'],
                 "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
-                "external": external, "closure": closure_key((self.state['version'] or '') + '\n' + self.state['environment_key'], external, self.direct is not None),
+                "external": external, "closure": closure_key(self.environment_identity(), external, self.direct is not None),
                 "threads": self.config["threads"], "submitted_at": request.get("submitted_at", time.time()),
                 "status": "queued", "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None,
                 "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
@@ -838,7 +839,6 @@ class Broker:
                "lean": None, "pid": None, "measured": None, "reserve": None, "exit_code": None,
                "launch_error": None, "reason": None}
         self.paths.job(job_id).mkdir(exist_ok=True)
-        write_json(self.paths.job(job_id) / "job.json", job)
         self.state["jobs"][job_id] = job
         self.dirty = True
         self.log(event="calibration_queued", job=job_id, closure=closure, imports=imports)
@@ -859,6 +859,12 @@ class Broker:
             self.samples_dirty = True
 
     def collect(self):
+        # A host can end just after the poll that finished its job. Every ended host is reaped here,
+        # whatever became of its job, so that no Popen keeps a finished job's host process (a zombie
+        # on POSIX, an open handle on Windows) for the rest of the broker's life.
+        for job_id, host in list(self.hosts.items()):
+            if host.poll() is not None:
+                del self.hosts[job_id]
         for build in list(self.state["builds"].values()):
             if build["status"] in ACTIVE and (self.paths.build(build["id"]) / "CANCEL").exists():
                 build["cancel_requested"] = True
@@ -875,9 +881,6 @@ class Broker:
             if job["status"] != "running":
                 continue
             job_dir = self.paths.job(job_id)
-            host = self.hosts.get(job_id)
-            if host is not None and host.poll() is not None:
-                self.hosts.pop(job_id, None)
             receipt = job_dir / "process.json"
             if job.get("lean") is None and receipt.exists():
                 try:
@@ -896,7 +899,12 @@ class Broker:
             if (job_dir / "exit.json").exists():
                 self.finish(job, read_json(job_dir / "exit.json"))
             elif not alive(job.get("host")) and not alive(job.get("lean")):
-                self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
+                # The host writes exit.json just before it ends, so the exit may have appeared since the
+                # check above; only a host that ended without one fails the job.
+                if (job_dir / "exit.json").exists():
+                    self.finish(job, read_json(job_dir / "exit.json"))
+                else:
+                    self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
 
     def finish(self, job, exit_info):
         now = exit_info.get("finished_at") or time.time()
@@ -914,14 +922,16 @@ class Broker:
                         "environment_key": job["environment_key"], "direct": job["direct"]}
             if job["exit_code"] == 0:
                 self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"])
-            elif job["exit_code"] is not None and not job.get("cancel_requested"):
+            elif job["exit_code"] is not None and 0 < job["exit_code"] < 2 ** 31 and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
                 self.calibration.record_failure(job["closure"], identity, job["exit_code"],
                                                 "the calibration compile failed; see its stdout.log")
             else:
-                # A launch error or a cancellation records nothing, so the next compile calibrates again.
+                # A launch error, a cancellation or a crash records nothing, so the next compile calibrates
+                # again. A crash is a negative code (a POSIX signal) or a Windows code of 2**31 and above
+                # (0xC0000005 and the like): an execution failure, not Lean's verdict on the imports.
                 # The compiles that waited for this one go ahead on their own estimates rather than
-                # wait for another calibration that would fail the same way.
+                # wait for another calibration that might fail the same way.
                 for waiting in self.state["jobs"].values():
                     if waiting["status"] == "queued" and waiting.get("waiting_for") == job["id"]:
                         waiting["uncalibrated"] = job["id"]
@@ -964,14 +974,10 @@ class Broker:
         self.settle_build(build)
 
     def restore_module(self, key, olean):
-        """Restore every emitted file; an incomplete or old cache entry is a miss."""
+        """Restore every emitted file; an entry whose manifest was never published (its caching was cut short) or that lacks a listed file is a miss."""
         try:
-            suffixes = read_json(self.paths.cache / (key + ".artifacts.json")).get("artifacts")
-        except (OSError, ValueError, AttributeError):
-            return False
-        if not isinstance(suffixes, list) or ".olean" not in suffixes or not all(
-                isinstance(s, str) and len(s) > 1 and s.startswith(".")
-                and not any(c in s for c in ('/', '\\', ':', '\0')) for s in suffixes):
+            suffixes = read_json(self.paths.cache / (key + ".artifacts.json"))["artifacts"]
+        except (OSError, ValueError):
             return False
         if not all((self.paths.cache / (key + suffix)).is_file() for suffix in suffixes):
             return False
@@ -1017,10 +1023,7 @@ class Broker:
                         key=lambda b: b["finished_at"] or 0)
         for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
             del self.state["builds"][build["id"]]
-            target = Path(build['lib']).resolve()
-            if not target.is_relative_to(self.paths.builds.resolve()) or target.name != 'lib':
-                raise ValueError('build library cleanup escapes the broker build directory')
-            shutil.rmtree(target, ignore_errors=True)
+            shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 
     def deps_done(self, job):
         """True when every module this job imports has been compiled with exit code 0."""
@@ -1062,7 +1065,10 @@ class Broker:
         self.log(event="cancelling", job=job["id"], reason=reason)
 
     def cancel_orphans(self):
-        """A job whose session has ended has no reader; its compile only costs memory."""
+        """A job whose session has ended has no reader; its compile only costs memory.
+
+        A session has ended by the rule that coordination.session_live also applies to leases.
+        A job naming a session the runner has not recorded is kept."""
         now = time.monotonic()
         if now - self.last_sessions_check < 1.0:
             return
@@ -1075,26 +1081,24 @@ class Broker:
             if job["status"] not in ACTIVE or job["session"] == BROKER_SESSION or job.get("cancel_requested"):
                 continue
             session = sessions.get(job["session"])
-            if session is None:
+            if session is None or session_live(state, job["session"]):
                 continue
-            if session["status"] in ("ended", "integrated", "failed", "publishing"):
-                self.cancel(job, f"session {job['session']} ended ({session['status']})")
-            elif session["status"] == "running" and session.get("cli") is not None \
-                    and not alive(session.get("host")) and not alive(session.get("cli")):
+            if session["status"] in ("starting", "running"):
                 self.cancel(job, f"session {job['session']} is no longer alive")
+            else:
+                self.cancel(job, f"session {job['session']} ended ({session['status']})")
 
     # --- scheduling
 
-    def reserve(self, job, record=True):
+    def reserve(self, job):
         baseline = self.calibration.baseline(job["closure"]) if job["kind"] == "compile" else None
         expect = max(job["expect_mb"], baseline or 0)
         cv = (self.calibration.spread(job["closure"]) if baseline is not None else None) \
             or self.config["default_spread"]
         current = (job["measured"] or {}).get("current_mb", 0.0) if job["status"] == "running" else None
         certain, mean, sd = reservation(expect, baseline, cv, current)
-        if record:
-            job["reserve"] = {"expected_mb": round(expect, 1), "certain_mb": round(certain, 1),
-                              "mean_mb": round(mean, 1), "sd_mb": round(sd, 1)}
+        job["reserve"] = {"expected_mb": round(expect, 1), "certain_mb": round(certain, 1),
+                          "mean_mb": round(mean, 1), "sd_mb": round(sd, 1)}
         return certain, mean, sd
 
     def fits(self, job, running, free_mb):
@@ -1116,17 +1120,37 @@ class Broker:
     def schedule(self):
         """First fit in submission order, with aging: a job passed `max_passes` times closes the queue behind it."""
         jobs = self.state["jobs"]
-        queued = sorted((j for j in jobs.values() if j["status"] == "queued"),
-                        key=lambda j: (j["kind"] != "calibration", j["submitted_at"]))
-        stale = [j for j in queued if j.get('environment_key', self.state['environment_key']) != self.state['environment_key']]
+        def order(job):
+            return job["kind"] != "calibration", job["submitted_at"]
+        queued = sorted((j for j in jobs.values() if j["status"] == "queued"), key=order)
+        stale = [j for j in queued if j['environment_key'] != self.state['environment_key']]
         for job in stale:
             self.finish(job, {'exit_code': None, 'launch_error': 'Lean environment changed while queued; resubmit in the current environment'})
         queued = [j for j in queued if j['status'] == 'queued']
+        direct = self.direct is not None
+        for job in queued:
+            # A queued compile starts with the lean.threads in force, as it does with the priority;
+            # a running one keeps the threads it started with (reference/lean.md, Settings).
+            if job["kind"] == "compile" and job["threads"] != self.config["threads"]:
+                job["threads"] = self.config["threads"]
+                self.dirty = True
+            # A queued job is keyed by the launch mode in force as well. A settings change or a restart
+            # asks lake again (capture_environment) and can switch between lake and direct launch without
+            # changing environment_key; a baseline or an excess measured in one mode must not be recorded
+            # under the other mode's key. A queued calibration follows the compiles waiting for it.
+            imports = job["external"] if job["kind"] == "compile" else job["imports"]
+            closure = closure_key(self.environment_identity(), imports, direct)
+            if job["closure"] != closure:
+                job["closure"] = closure
+                if job["kind"] == "calibration":
+                    job["direct"] = direct
+                self.dirty = True
         running = [j for j in jobs.values() if j["status"] == "running"]
         if not queued:
             return
         pending_calibration = {j["closure"]: j["id"] for j in jobs.values()
                                if j["kind"] == "calibration" and j["status"] in ACTIVE}
+        created = []
         for job in queued:
             if job["kind"] != "compile" or self.calibration.known(job["closure"]) or job.get("uncalibrated"):
                 job["waiting_for"] = None
@@ -1134,10 +1158,13 @@ class Broker:
             if job["closure"] not in pending_calibration:
                 # Only the external imports are calibrated: a local module's .olean exists in no
                 # calibration, and its cost is small beside the library's and is measured as excess.
-                created = self.calibration_job(job["closure"], job.get("external", job["imports"]))
-                pending_calibration[job["closure"]] = created["id"]
-                queued.insert(0, created)
+                calibration = self.calibration_job(job["closure"], job["external"])
+                pending_calibration[job["closure"]] = calibration["id"]
+                created.append(calibration)
             job["waiting_for"] = pending_calibration[job["closure"]]
+        # Calibrations created here join the queue in creation order, behind those already waiting,
+        # as they will on the next tick.
+        queued = sorted(queued + created, key=order)
         eligible = [j for j in queued if not j.get("waiting_for") and self.deps_done(j)]
         if not eligible:
             return
@@ -1177,7 +1204,6 @@ class Broker:
         job["measured"] = {"peak_mb": 0.0, "current_mb": 0.0, "seconds": None}
         job["status"] = "running"
         job["started_at"] = time.time()
-        job['admitted_at'] = job['started_at']
         if job.get("build") in self.state["builds"]:
             build = self.state["builds"][job["build"]]
             build["modules"][job["module"]]["status"] = build["status"] = "running"
@@ -1213,7 +1239,7 @@ class Broker:
         state = self.runner_sessions()
         if not state or not state.get("finished"):
             return False
-        if any(s["status"] in ("starting", "running", "publishing") for s in state.get("sessions", {}).values()):
+        if any(s["status"] in ACTIVE_STATUSES for s in state.get("sessions", {}).values()):
             return False
         return not any(j["status"] in ACTIVE for j in self.state["jobs"].values())
 
@@ -1223,7 +1249,8 @@ class Broker:
         A running job is followed by identity and its exit read from the job host,
         never relaunched. A job whose host never received GO has not started Lean:
         its host exits on CANCEL and the job goes back to the queue."""
-        for job_id, job in self.state["jobs"].items():
+        # A copy: finishing a job below can prune older finished jobs from the state.
+        for job_id, job in list(self.state["jobs"].items()):
             if job["status"] != "running":
                 continue
             job_dir = self.paths.job(job_id)
@@ -1238,6 +1265,9 @@ class Broker:
                     continue
                 (job_dir / "launch.json").unlink(missing_ok=True)
                 job.update(status="queued", host=None, lean=None, pid=None, started_at=None, measured=None)
+                if job.get("build") in self.state["builds"]:
+                    # launch() marked the module running in its build; the build reports it queued again.
+                    self.state["builds"][job["build"]]["modules"][job["module"]]["status"] = "queued"
                 if cancelled:
                     self.cancel(job, "cancelled on request")
                     continue
@@ -1260,8 +1290,16 @@ class Broker:
     def start(self):
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
         self.state = read_json(self.paths.state) if self.paths.state.exists() else self.state
+        # The version a predecessor recorded belongs to the installation it ran. `version` and `status`
+        # read this file while this broker is still starting (restart-broker returns once it is alive),
+        # so nothing is reported as the version until this broker has run version_command itself.
+        self.state.update(version=None, version_error=None)
+        self.dirty = True
+        self.save()
         self.reload_settings()
         if self.config is None:
+            # This broker exits now; state.json keeps the rejection, which is where `status` reports it.
+            self.save()
             raise ValueError("settings.json rejected: " + str(self.config_error))
         self.read_version()
         self.adopt()
@@ -1292,22 +1330,28 @@ def broker_alive(paths):
         return None
 
 
+def launch_broker(paths, breakaway=False):
+    """Start a detached broker for the instance, its output going to broker.log, and return its Popen.
+
+    The runner and a session's client both start the broker this way; the lock settles a race between two starts."""
+    paths.ensure()
+    with paths.log.open("ab") as log:
+        return subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
+                                cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                **popen_options(detached=True, breakaway=breakaway))
+
+
 def ensure_broker(paths):
     """The live broker's receipt, launching one if none is alive; the lock settles any race."""
     info = broker_alive(paths)
     if info:
         return info
-    paths.ensure()
-    argv = [sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)]
-    with paths.log.open("ab") as log:
-        # A session's client may start the shared broker; it must not join that session's job and
-        # end with it. A caller in a job that forbids breakaway starts it as before.
-        try:
-            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                             **popen_options(detached=True, breakaway=True))
-        except PermissionError:
-            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                             **popen_options(detached=True))
+    # A session's client may start the shared broker; it must not join that session's job and
+    # end with it. A caller in a job that forbids breakaway starts it as before.
+    try:
+        launch_broker(paths, breakaway=True)
+    except PermissionError:
+        launch_broker(paths)
     deadline = time.monotonic() + READY_SECONDS
     while time.monotonic() < deadline:
         info = broker_alive(paths)
@@ -1369,13 +1413,17 @@ def job_record(paths, job_id):
     """The job's or build's current record from the result or the broker state, or None if unknown."""
     is_build = BUILD_ID.match(job_id) is not None
     result = (paths.build(job_id) if is_build else paths.job(job_id)) / "result.json"
+    # The broker records a request in its state, or answers it with a result, before it removes the
+    # request from the queue. So the queue is looked at first: a request that leaves it after this look
+    # has left its record for the reads below, and one already gone was recorded before this look.
+    submitted = (paths.queue / (job_id + ".json")).exists()
     if result.exists():
         return read_json(result)
     if paths.state.exists():
         record = read_json(paths.state).get("builds" if is_build else "jobs", {}).get(job_id)
         if record:
             return record
-    if (paths.queue / (job_id + ".json")).exists():
+    if submitted:
         return {"id": job_id, "status": "submitted"}
     return None
 

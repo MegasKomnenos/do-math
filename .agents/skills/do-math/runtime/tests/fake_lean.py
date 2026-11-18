@@ -6,9 +6,8 @@ the broker's sampling sees an imports-only peak. A line `-- fake: key=value ...`
 alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code),
 marker (text printed to stdout), stderr (text printed to stderr). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
-`--version` prints a version line; an import of a `Missing.*` module fails the way a
-nonexistent module would; and `sorry` in the source prints Lean's warning shape so
-that an exit code of 0 can still carry a warning. Build tests use the artifact profile
+`--version` prints a version line; and an import of a `Missing.*` module fails the way a
+nonexistent module would. Build tests use the artifact profile
 observed with Lean 4.32: .olean, .olean.private, .olean.server and .ir are emitted
 together and all are required for a local import. This models file transport only.
 """
@@ -65,8 +64,6 @@ def main(argv):
         print(options["marker"])
     if "stderr" in options:
         print(options["stderr"], file=sys.stderr)
-    if any("sorry" in line for line in lines):
-        print(f"{source}:1:0: warning: declaration uses 'sorry'")
     sys.stdout.flush()
     del held
     code = int(options.get("exit", 0))

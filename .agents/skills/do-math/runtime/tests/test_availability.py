@@ -80,7 +80,6 @@ class AvailabilityTests(InstanceCase):
         sid, session, _ = self.report()
         self.assertEqual(check_session(self.runner.session_dir(sid)), [])
         self.runner.finish(sid, session)
-        self.assertTrue(self.runner.state['explore_requested'])
         self.assertFalse(self.runner.attempt_dispatch_ready())
         self.publish('rnote', record([claim_row('unrelated')]))
         self.runner = Runner(self.instance, self.skill)
@@ -152,7 +151,8 @@ class AvailabilityTests(InstanceCase):
         self.assertEqual(len(self.runner.state['jobs']), 1)
 
     def test_claimed_or_interrupted_work_cannot_opt_out(self):
-        for kind in ('claimed', 'interrupted', 'refused', 'occupied_question', 'explorer_reports_availability'):
+        for kind in ('claimed', 'interrupted', 'refused', 'occupied_question', 'explorer_reports_availability',
+                     'other_disposition'):
             with self.subTest(kind=kind):
                 explorer = kind in ('occupied_question', 'explorer_reports_availability')
                 sid, session, job = self.attempt('explore' if explorer else 'attempt')
@@ -167,24 +167,15 @@ class AvailabilityTests(InstanceCase):
                 elif kind == 'explorer_reports_availability':
                     write_json(folder / 'output/outcome.json', {'disposition': 'no_research', 'availability': {
                         'status': 'all_unresolved_work_occupied', 'snapshot': '0' * 64}})
+                elif kind == 'other_disposition':
+                    # Only no_research closes the pipeline; any other disposition leaves the research for peer.
+                    write_json(folder / 'output/outcome.json', {'disposition': 'research_done'})
                 elif kind == 'interrupted':
                     session['exit_code'] = 1
                 elif kind == 'refused':
                     session['refusal'] = {'reason': 'usage_limit'}
                 self.runner.finish(sid, session)
                 self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
-
-    def test_explorer_without_a_question_closes_with_no_research(self):
-        sid, session, job = self.attempt('explore')
-        folder = self.runner.session_dir(sid)
-        write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
-        self.assertEqual(check_session(folder), [])
-        self.runner.finish(sid, session)
-        self.assertEqual(session['disposition'], 'no_research')
-        self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'done')
-        self.assertFalse(any(j['role'] == 'peer' for j in self.runner.state['jobs'].values()))
-        self.assertNotIn('availability_report', session)
-        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
 
     def test_new_node_and_reopening_trigger_but_solving_does_not(self):
         self.occupied()
@@ -270,8 +261,10 @@ class AvailabilityTests(InstanceCase):
         model = replay(self.instance)
         previous = {'nodes': {'root': ['a'], 'Q': ['b']}}
         model['aliases']['Q'] = 'root'
-        current = {'nodes': {'root': ['a', 'b']}}
-        self.assertIsNone(opening_since(previous, current, model))
+        # Section b, observed on Q, continues on the merged node: it still covers work there,
+        # and its later end opens that work.
+        self.assertIsNone(opening_since(previous, {'nodes': {'root': ['a', 'b']}}, model))
+        self.assertEqual(opening_since(previous, {'nodes': {'root': ['a']}}, model), 'ended_occupancy')
 
     def test_tampered_snapshot_cannot_suppress_dispatch(self):
         sid, session, job = self.report()

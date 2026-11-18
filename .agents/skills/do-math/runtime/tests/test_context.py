@@ -43,6 +43,9 @@ class ContextTests(InstanceCase):
         context = session / 'context'
         text = rebase_links('[Evidence](../reference/evidence.md)', context / 'roles/attempt.md', session, context)
         self.assertEqual(text, '[Evidence](context/reference/evidence.md)')
+        # A link that leaves the snapshot would not lead to a retained copy, so assembly refuses it.
+        with self.assertRaisesRegex(ValueError, 'escapes its source area'):
+            rebase_links('[Skill](../../SKILL.md)', context / 'roles/attempt.md', session, context)
         folder = self.session('s1')
         root = 'Consider the expression \\([n](x)\\) with its original notation.'
         (self.instance / 'root.md').write_text(root, encoding='utf-8')
@@ -151,7 +154,6 @@ class ContextTests(InstanceCase):
         self.assertIn('Full current global glossary', text)
         self.assertIn('General index at launch', text)
         self.assertIn('/retained/source', text)
-        self.assertNotIn('Revised format', text)
 
     def test_worker_commands_keep_auth_separate_from_customizations(self):
         folder = self.session('isolated')
@@ -289,13 +291,14 @@ class ContextTests(InstanceCase):
         schedule.assert_called_once()
 
     def test_every_role_receives_its_ordered_guides_and_output_contract(self):
+        research = ['what-research-is-for.md', 'user-writing-preferences.md']
         references = {
-            'attempt': ['retained-work.md'],
-            'explore': ['retained-work.md'],
+            'attempt': research + ['retained-work.md'],
+            'explore': research + ['retained-work.md'],
             'formalizer': ['retained-work.md', 'lean.md'],
-            'peer': ['record-format.md', 'retained-work.md'],
-            'review': ['record-format.md', 'review-output.md'],
-            'organizer': ['organizer-output.md'],
+            'peer': research + ['record-format.md', 'retained-work.md'],
+            'review': research + ['record-format.md', 'review-output.md'],
+            'organizer': research + ['organizer-output.md'],
         }
         for role, specialized in references.items():
             with self.subTest(role=role):

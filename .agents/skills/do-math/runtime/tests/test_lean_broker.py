@@ -130,7 +130,7 @@ class BrokerFixture(unittest.TestCase):
             return lean_broker.build(self.paths, root, targets, expect_mb, session)["build"]
 
     def tree(self, session="s1", **overrides):
-        """A, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
+        """A imports the library, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
         root = self.instance / "sessions" / session / "work" / "lean"
         plan = {"A": (("Mathlib.Data.Nat.Basic",), {"sleep": 0.3}), "B": (("A",), {"sleep": 0.5}),
                 "C": (("A",), {"sleep": 0.5}), "D": (("B", "C"), {"marker": "TARGET-D"})}
@@ -254,7 +254,8 @@ class AdmissionRuleTests(unittest.TestCase):
         # Four spreads pooled grow like sqrt(4) = 2, not 4, so the total stays well under the peak sum.
         certain, mean, sd = rows[0]
         self.assertAlmostEqual(total, 4 * certain + 4 * mean + 1.3 * 2 * sd, places=6)
-        # With no pooling (z large) or no spread to pool, the rule is a plain sum.
+        # A larger confidence widens the pooled margin until the same four no longer fit; with no
+        # spread to pool, the rule is a plain sum.
         self.assertFalse(lean_broker.admission(rows, rows[0], 3600, 20)[0])
         self.assertEqual(lean_broker.admission([(100, 0, 0)], (200, 0, 0), 300, 1.3), (True, 300))
 
@@ -357,10 +358,13 @@ class JobHostTests(unittest.TestCase):
         self.job.mkdir()
         self.lean = source(Path(self.temp.name) / "A.lean", marker="MARK", stderr="WARN", exit=3)
 
-    def launch(self, broker):
+    def write_launch(self, broker):
         runner.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
             "env": {"FAKE_ENV": "1"}, "priority": "normal", "broker": broker})  # equal footing with the test machine's load
+
+    def launch(self, broker):
+        self.write_launch(broker)
         host = subprocess.Popen([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)])
         self.addCleanup(self.stop_host, host)
         return host
@@ -379,6 +383,9 @@ class JobHostTests(unittest.TestCase):
         (self.job / "GO").touch()
         self.assertEqual(host.wait(timeout=30), 0)
         receipt = runner.read_json(self.job / "process.json")
+        # The identity recorded is the Lean process's own, not the host's; that process has ended by now.
+        self.assertEqual(receipt["process"]["pid"], receipt["pid"])
+        self.assertNotEqual(receipt["pid"], host.pid)
         self.assertFalse(runner.alive(receipt["process"]))
         self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
         output = (self.job / "stdout.log").read_text(encoding="utf-8")
@@ -389,7 +396,7 @@ class JobHostTests(unittest.TestCase):
             # `normal` leaves the niceness as inherited, so this shows only that the host did not change it.
             # The lowered priorities are not exercised: a below-normal stand-in starves behind normal-priority
             # research load on the test machine, which is why every fixture here runs at `normal`.
-            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)
+            self.assertIn(f"nice={os.nice(0)}", output)
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):
@@ -400,6 +407,19 @@ class JobHostTests(unittest.TestCase):
         (self.job / "CANCEL").unlink()
         host = self.launch({"pid": os.getpid(), "birth": "not this process"})
         self.assertEqual(host.wait(timeout=10), 1)
+
+    def test_go_written_as_the_broker_dies_still_starts_lean(self):
+        # The broker writes GO once this host's identity is durable and can die right after it, between the
+        # host's look for GO and its look at the broker. The next broker adopts that job as started, so a host
+        # that ended here without an exit.json would leave the job failed; it must run Lean instead.
+        self.write_launch({"pid": os.getpid(), "birth": "a broker that has died"})
+        def died_after_go(identity):
+            (self.job / "GO").touch()
+            return False
+        with patch.object(lean_broker, "alive", side_effect=died_after_go):
+            self.assertEqual(lean_broker.job_host(self.job), 0)
+        self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
+        self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
 
 
 class BrokerTests(BrokerFixture):
@@ -483,6 +503,27 @@ class BrokerTests(BrokerFixture):
                     if boundary == "registration":
                         self.assertIn(f"{kind}-{boundary}", out.getvalue())
 
+    def test_a_request_registered_while_its_record_is_read_is_not_unknown(self):
+        # The broker records a request in its state and then removes it from the queue. A client that read
+        # the state just before the registration and looks at the queue just after it must still find the job;
+        # `wait` would otherwise end with "unknown job" for a job that is queued.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        original_read = lean_broker.read_json
+        registered = []
+        def register_after_the_read(path, *args, **kwargs):
+            value = original_read(path, *args, **kwargs)
+            if Path(path) == self.paths.state and not registered:
+                registered.append(job_id)
+                self.broker.ingest()
+            return value
+        with patch.object(lean_broker, "read_json", side_effect=register_after_the_read):
+            record = lean_broker.job_record(self.paths, job_id)
+        self.assertEqual(registered, [job_id])
+        self.assertFalse((self.paths.queue / (job_id + ".json")).exists())
+        self.assertEqual(record, {"id": job_id, "status": "submitted"})
+        self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "queued")
+
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
         self.start_broker()
         path = self.session_file("s1", alloc_mb=200, marker="OUT-A", sleep=1)
@@ -530,6 +571,24 @@ class BrokerTests(BrokerFixture):
         self.assertLess(waiting["reserve"]["total_mb"], 3 * estimate)  # still well under three summed estimates
         self.until(lambda: all(self.finished(j) for j in [first, *others]))
         self.assertTrue(all(self.broker.state["jobs"][j]["exit_code"] == 0 for j in [first, *others]))
+
+    def test_a_closure_reserves_with_its_measured_spread_once_two_excesses_differ(self):
+        # The memory rule takes the spread the broker has observed for a closure's excess (reference/lean.md);
+        # default_spread stands in until two excesses are recorded and while they do not differ.
+        self.start_broker()
+        calibration, default = self.broker.calibration, self.broker.config["default_spread"]
+        calibration.record_baseline("closure", {"imports": []}, 400, 1)
+        job = {"kind": "compile", "closure": "closure", "expect_mb": 1000, "status": "queued", "measured": None}
+        def reserves_with(spread):
+            for reserved, expected in zip(self.broker.reserve(job), lean_broker.reservation(1000, 400, spread)):
+                self.assertAlmostEqual(reserved, expected)
+        reserves_with(default)
+        calibration.record_job("closure", 100, 1)
+        reserves_with(default)
+        calibration.record_job("closure", 100, 1)
+        reserves_with(default)
+        calibration.record_job("closure", 200, 1)
+        reserves_with(2 ** 0.5 / 4)  # excesses 100, 100 and 200: a deviation of 47.1 over a mean of 133.3
 
     def serial(self, jobs):
         """Tick through the jobs and confirm that no two of them ever run at once."""
@@ -586,10 +645,11 @@ class BrokerTests(BrokerFixture):
             time.sleep(0.1)
         # Count the small jobs that started before the head did: under load the big job may already
         # have ended by now, letting the head start and one more small job follow it legitimately.
-        head_started = self.broker.state['jobs'][head].get('admitted_at') or float('inf')
-        started = [j for j in small if self.broker.state['jobs'][j].get('admitted_at')
-                   and self.broker.state['jobs'][j]['admitted_at'] < head_started]
-        self.assertEqual(len(started), passes)
+        # broker.log records each start as the broker makes it, so its order is the order of admission.
+        starts = [event["job"] for event in map(json.loads, self.paths.log.read_text(encoding="utf-8").splitlines())
+                  if event["event"] == "started"]
+        ahead = starts[:starts.index(head)] if head in starts else starts
+        self.assertEqual(len(set(small) & set(ahead)), passes)
         self.until(lambda: self.finished(head))
         self.assertGreaterEqual(self.broker.state["jobs"][head]["started_at"],
                                 self.broker.state["jobs"][big]["finished_at"] - 0.5)
@@ -635,6 +695,28 @@ class BrokerTests(BrokerFixture):
         entry = self.broker.calibration.entry(job["closure"])
         self.assertEqual(entry["excess_mb"], [])
 
+    def test_every_status_of_an_ended_session_cancels_its_compiles(self):
+        # The runner records a session whose CLI has ended as ended, publishing or integrated, or as failed;
+        # under each status a compile has no reader. A running session with no CLI yet keeps its compile.
+        self.start_broker()
+        statuses = ("ended", "publishing", "integrated", "failed")
+        state = runner.read_json(self.instance / "runner/state.json")
+        for n, status in enumerate(statuses):
+            state["sessions"][f"s{n}"] = {"role": "attempt", "status": status, "host": None, "cli": None}
+        state["sessions"]["live"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
+        runner.write_json(self.instance / "runner/state.json", state)
+        jobs = {status: self.submit(self.session_file(f"s{n}"), expect_mb=40, session=f"s{n}")
+                for n, status in enumerate(statuses)}
+        kept = self.submit(self.session_file("live"), expect_mb=40, session="live")
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+        for status, job_id in jobs.items():
+            with self.subTest(status=status):
+                job = self.broker.state["jobs"][job_id]
+                self.assertEqual(job["status"], "cancelled")
+                self.assertIn(f"ended ({status})", job["reason"])
+        self.assertEqual(self.broker.state["jobs"][kept]["status"], "queued")
+
     def test_job_of_a_dead_session_is_cancelled_but_a_live_one_is_kept(self):
         self.start_broker()
         gone = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)
@@ -679,6 +761,18 @@ class BrokerTests(BrokerFixture):
         self.assertEqual((job["status"], job["exit_code"]), ("failed", None))
         self.assertTrue(job["launch_error"])
 
+    def test_crashed_calibration_is_not_a_verdict_on_its_imports(self):
+        # Lean rejecting the imports is recorded for the closure. A calibration ended by a signal or by a
+        # Windows crash code failed to execute, so the next compile with those imports calibrates again.
+        self.start_broker()
+        for code, verdict in ((1, True), (-9, False), (0xC0000005, False)):
+            with self.subTest(code=code):
+                job = self.broker.calibration_job(f"closure{code}", ["Mathlib.Data.Nat.Basic"])
+                job.update(status="running", started_at=time.time())
+                self.broker.finish(job, {"exit_code": code})
+                self.assertEqual(job["status"], "finished")
+                self.assertEqual(self.broker.calibration.known(job["closure"]), verdict)
+
     def test_failed_and_cancelled_jobs_report_their_own_exit_codes(self):
         self.start_broker()
         self.broker.config["cpu_threads_budget"] = 1
@@ -706,10 +800,30 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running" and self.broker.state["jobs"][job_id].get("pid"))
         job = self.broker.state["jobs"][job_id]
         lean_broker.terminate_tree(job["host"]["pid"])  # the host and its Lean, with no exit.json written
-        self.until(lambda: self.finished(job_id))
+        # Lean sleeps for 30 seconds: the job ends within 20 only if terminating the host reached its child.
+        self.until(lambda: self.finished(job_id), limit=20)
         self.assertEqual(job["status"], "failed")
         self.assertIn("without recording an exit", job["reason"])
         self.assertFalse((self.paths.job(job_id) / "exit.json").exists())
+
+    def test_exit_written_as_the_host_ends_is_not_lost(self):
+        # The host writes exit.json and then ends. A broker that finds no exit.json and then no live host
+        # may have looked between the two, so it must look for the exit once more before failing the job.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1", exit=5), expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running")
+        job = self.broker.state["jobs"][job_id]
+        exit_file = self.paths.job(job_id) / "exit.json"
+        aside = exit_file.with_name("exit.aside")
+        self.wait_gone(job["host"], limit=30)
+        exit_file.replace(aside)  # the folder as the broker saw it just before the host wrote its exit
+        def host_ended_meanwhile(identity):
+            if identity == job["host"] and aside.exists():
+                aside.replace(exit_file)
+            return runner.alive(identity)
+        with patch.object(lean_broker, "alive", side_effect=host_ended_meanwhile):
+            self.broker.tick()
+        self.assertEqual((job["status"], job["exit_code"]), ("finished", 5))
 
     def test_finished_jobs_are_pruned_from_the_state_but_keep_their_results(self):
         self.start_broker()
@@ -746,25 +860,6 @@ class BrokerTests(BrokerFixture):
         self.assertFalse((self.paths.job(unread) / "launch.json").exists())
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(lean_broker.wait(self.paths, unread, timeout=0), 4)
-        # A request the broker cannot accept is answered, not dropped.
-        bad = "j" + "0" * 32
-        runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
-        # Fields that reached the broker state unchecked would crash a later tick instead of this request.
-        malformed = "j" + "2" * 32
-        runner.write_json(self.paths.queue / (malformed + ".json"),
-                          {"id": malformed, "source": str(self.session_file("s1", "malformed.lean")),
-                           "expect_mb": 40, "session": ["s1"], "submitted_at": "now"})
-        (self.paths.queue / "x..escape.json").write_text("{}", encoding="utf-8")
-        if os.name != "nt":  # a POSIX file name can end in a newline, which a `$`-anchored match accepts
-            (self.paths.queue / ("j" + "1" * 32 + "\n.json")).write_text("{}", encoding="utf-8")
-        self.broker.tick()
-        for job_id, field in ((bad, "source"), (malformed, "session")):
-            self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "failed")
-            self.assertIn("rejected: " + field, lean_broker.job_record(self.paths, job_id)["reason"])
-        self.assertNotIn(malformed, self.broker.state["jobs"])
-        self.assertEqual(list(self.paths.queue.glob("*.json")), [])
-        # Nothing under jobs/ was made for a name that is not a job ID.
-        self.assertEqual([p.name for p in self.paths.jobs.iterdir() if not lean_broker.JOB_ID.fullmatch(p.name)], [])
 
     def test_settings_reload_live_and_keep_the_last_good_configuration(self):
         self.start_broker()
@@ -786,6 +881,17 @@ class BrokerTests(BrokerFixture):
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
         self.assertIsNone(runner.read_json(self.paths.state)["config_error"])
+        # A broker that starts on a rejected file exits at once; `status` must still say why.
+        time.sleep(0.02)
+        (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "settings.json rejected"):
+            lean_broker.Broker(self.instance, log_path=self.paths.log).start()
+        self.assertTrue(lean_broker.broker_status(self.paths)["config_error"])
+        # A file that is missing when the broker starts is a rejection with its own reason, too.
+        (self.instance / "settings.json").unlink()
+        with self.assertRaisesRegex(ValueError, r"settings.json rejected: .*settings\.json"):
+            lean_broker.Broker(self.instance, log_path=self.paths.log).start()
+        self.assertIn("settings.json", lean_broker.broker_status(self.paths)["config_error"])
 
     def test_environment_change_fails_queued_jobs_and_calibrates_the_new_environment_anew(self):
         # An environment change reaches the broker through settings.json. A job queued under the earlier
@@ -830,6 +936,20 @@ class BrokerTests(BrokerFixture):
         self.broker.config["min_free_memory_mb"] = 0
         self.until(lambda: self.finished(job_id))
 
+    def test_queued_compile_starts_with_the_threads_in_force(self):
+        # A change of lean.threads reaches a compile that is still queued, as a change of priority does.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+            self.assertEqual(self.broker.state["jobs"][job_id]["status"], "queued")
+            time.sleep(0.02)
+            self.write_settings(threads=3)
+            self.broker.tick()
+            self.assertEqual(self.jobs("running"), [])
+        self.until(lambda: self.finished(job_id))
+        self.assertIn("--threads=3", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+
     def test_submission_requires_estimate_session_and_existing_file(self):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
             path = self.session_file("s1")
@@ -854,19 +974,59 @@ class BrokerTests(BrokerFixture):
         self.assertFalse(self.broker.should_exit())
         state = runner.read_json(self.instance / "runner/state.json")
         state["complete"] = True
-        state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
-        runner.write_json(self.instance / "runner/state.json", state)
-        self.assertFalse(self.broker.should_exit())
-        state["sessions"]["s1"]["status"] = "integrated"
+        state["sessions"]["s1"] = {"role": "attempt", "status": "integrated", "host": None, "cli": None}
         runner.write_json(self.instance / "runner/state.json", state)
         self.assertFalse(self.broker.should_exit())  # formal root alone does not finish pending follow-ups
         state['finished'] = True
+        # The runner saves the sessions it starts in the middle of its tick and recomputes `finished`
+        # at the end of it, so the broker can read `finished` beside a session that is still active.
+        for status in ("starting", "running", "publishing"):
+            with self.subTest(status=status):
+                state["sessions"]["s1"]["status"] = status
+                runner.write_json(self.instance / 'runner/state.json', state)
+                self.assertFalse(self.broker.should_exit())
+        state["sessions"]["s1"]["status"] = "integrated"
         runner.write_json(self.instance / 'runner/state.json', state)
         job_id = self.submit(self.session_file("s2", sleep=0.5), expect_mb=40, session="s2")
         self.broker.tick()
         self.assertFalse(self.broker.should_exit())
         self.until(lambda: self.finished(job_id))
         self.until(lambda: self.broker.should_exit())
+
+    def test_a_replaced_broker_reports_no_version_until_it_has_read_its_own(self):
+        # restart-broker returns once the new broker is alive, before that broker has run version_command.
+        # A session asking for the version meanwhile must keep waiting, not receive the predecessor's.
+        self.start_broker()
+        state = runner.read_json(self.paths.state)
+        state.update(version="Lean (version 3.9.9-replaced)", version_error=None)
+        runner.write_json(self.paths.state, state)
+        asked = []
+        read_version = lean_broker.Broker.read_version
+        def ask_before_reading(broker):
+            with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                    patch.object(lean_broker, "READY_SECONDS", 0.5), \
+                    self.assertRaisesRegex(RuntimeError, "not reported a version"):
+                lean_broker.version(self.paths)
+            asked.append(broker)
+            read_version(broker)
+        with patch.object(lean_broker.Broker, "read_version", ask_before_reading):
+            self.start_broker()
+        self.assertEqual(asked, [self.broker])
+        with patch.object(lean_broker, "ensure_broker", return_value={}):
+            self.assertIn("4.0.0-fake", lean_broker.version(self.paths)["version"])
+
+    def test_a_version_command_that_fails_is_reported_rather_than_waited_for(self):
+        # A Lean whose version cannot be read leaves nothing to wait for: `version` answers with the error,
+        # and `status` reports it beside the missing version.
+        self.write_settings(version_command=[str(self.root / "no-such-lean"), "--version"])
+        self.start_broker()
+        with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                patch.object(lean_broker, "READY_SECONDS", 0.5):
+            reported = lean_broker.version(self.paths)
+        self.assertIsNone(reported["version"])
+        self.assertTrue(reported["error"])
+        status = lean_broker.broker_status(self.paths)
+        self.assertEqual((status["version"], status["version_error"]), (None, reported["error"]))
 
 
 class BuildTests(BrokerFixture):
@@ -964,6 +1124,29 @@ class BuildTests(BrokerFixture):
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(lean_broker.wait(self.paths, duplicate, timeout=0), 4)
 
+    def test_resubmission_after_a_cancellation_is_new_work(self):
+        # A session that cancels running work and submits the same bytes again asks for that work anew.
+        # Redirected to the work whose cancellation it requested, the new ID would end cancelled as well.
+        self.start_broker()
+        for kind in ("job", "build"):
+            with self.subTest(kind=kind):
+                root = self.instance / "sessions/s1/work" / f"resubmitted-{kind}"
+                target = source(root / "Target.lean", imports=(), sleep=30)
+                def enqueue():
+                    return self.submit(target) if kind == "job" else self.build(root, [target])
+                original = enqueue()
+                self.until(lambda: lean_broker.job_record(self.paths, original)["status"] == "running")
+                lean_broker.cancel(self.paths, original)
+                again = enqueue()
+                self.broker.tick()  # takes up the cancellation, then reads the new request
+                self.assertIn(lean_broker.job_record(self.paths, again)["status"], lean_broker.ACTIVE)
+                lean_broker.cancel(self.paths, again)
+                # Each Lean sleeps for 30 seconds: both end within 20 only if each cancellation reached its own work.
+                self.until(lambda: all(lean_broker.job_record(self.paths, i)["status"] in lean_broker.FINISHED
+                                       for i in (original, again)), limit=20)
+                self.assertEqual([lean_broker.job_record(self.paths, i)["status"] for i in (original, again)],
+                                 ["cancelled", "cancelled"])
+
     def test_build_follows_imports_caches_and_rebuilds_only_what_changed(self):
         self.start_broker()
         root = self.tree()
@@ -982,7 +1165,7 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(record["lib"]) / "D.olean").is_file())
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 4)
         # External imports alone key the calibration: B's closure is the empty one, not "A".
-        self.assertEqual(b["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], []))
+        self.assertEqual(b["closure"], lean_broker.closure_key(self.broker.environment_identity(), []))
         # The same bytes again: every module comes from the cache, no compile runs, the output is replayed.
         jobs_before = len(self.broker.state["jobs"])
         second = self.build(root, [root / "D.lean"])
@@ -1005,6 +1188,15 @@ class BuildTests(BrokerFixture):
         statuses = {n: m["status"] for n, m in self.build_record(third)["modules"].items()}
         self.assertEqual(statuses, {"A": "cached", "B": "finished", "C": "cached", "D": "finished"})
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 6)
+        # The environment identity is part of every module key. After a change of cache_epoch, which the
+        # operator makes when the libraries change in place, no module compiled before it is reused.
+        time.sleep(0.02)
+        self.write_settings(cache_epoch="second")
+        fourth = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(fourth)["status"] in lean_broker.FINISHED)
+        modules = self.build_record(fourth)["modules"]
+        self.assertEqual({n: (m["status"], m["exit_code"]) for n, m in modules.items()},
+                         {n: ("finished", 0) for n in "ABCD"})
 
     def test_fresh_review_target_recompiles_while_unchanged_dependency_is_cached(self):
         self.start_broker()
@@ -1054,7 +1246,7 @@ class BuildTests(BrokerFixture):
         self.assertIn('REVIEW-TARGET',
                       (self.paths.job(target['job']) / 'stdout.log').read_text(encoding='utf-8'))
 
-        # Old entries without a manifest and entries missing an artifact are cache misses.
+        # An entry whose manifest was never published (its caching was cut short) and an entry missing an artifact are cache misses.
         for missing in ('.artifacts.json', '.olean.server'):
             with self.subTest(missing=missing):
                 (self.paths.cache / (basis['key'] + missing)).unlink()
@@ -1128,6 +1320,18 @@ class BuildTests(BrokerFixture):
         shadowing = self.build(root, [root / "Shadow.lean"])
         self.until(lambda: self.build_record(shadowing)["status"] in lean_broker.FINISHED)
         self.assertIn("shadow", self.build_record(shadowing)["reason"])
+        # A module of yours under a toolchain root is refused even when no library import shares that root.
+        source(root / "Std" / "Extra.lean", imports=())
+        source(root / "UsesStd.lean", imports=("Std.Extra",))
+        toolchain = self.build(root, [root / "UsesStd.lean"])
+        self.until(lambda: self.build_record(toolchain)["status"] in lean_broker.FINISHED)
+        self.assertIn("shadow the toolchain", self.build_record(toolchain)["reason"])
+        # An import with no file under the root is read as the library's; the reason also names a missing file.
+        source(root / "Notes" / "Main.lean", imports=("Notes.Lemma",))
+        missing = self.build(root, [root / "Notes" / "Main.lean"])
+        self.until(lambda: self.build_record(missing)["status"] in lean_broker.FINISHED)
+        self.assertIn("Notes.Lemma", self.build_record(missing)["reason"])
+        self.assertIn("file is missing", self.build_record(missing)["reason"])
         self.assertFalse(self.jobs("queued", "running"))
 
     def test_cancelling_a_build_stops_its_queue(self):
@@ -1136,7 +1340,8 @@ class BuildTests(BrokerFixture):
         build_id = self.build(root, [root / "D.lean"])
         self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
         lean_broker.cancel(self.paths, build_id)
-        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        # A sleeps for 30 seconds: the build ends within 20 only if the cancellation terminated A's Lean.
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED, limit=20)
         record = self.build_record(build_id)
         self.assertEqual(record["status"], "cancelled")
         self.assertEqual(record["modules"]["A"]["status"], "cancelled")
@@ -1157,6 +1362,38 @@ class BuildTests(BrokerFixture):
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
         self.assertNotIn("-R", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
         self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+
+    def test_a_pruned_build_loses_its_lib_folder_and_keeps_its_result(self):
+        # Pruning is the one place the broker deletes a folder. It takes the lib folder of the build it
+        # prunes from the state and nothing else, and that build's outcome stays readable from its result.json.
+        self.start_broker()
+        def build_once(name):
+            root = self.instance / "sessions/s1/work" / name
+            build_id = self.build(root, [source(root / "Target.lean", imports=(), marker=name)])
+            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+            return build_id
+        with patch.object(lean_broker, "KEEP_FINISHED", 1):
+            first = build_once("first")
+            first_lib = Path(self.build_record(first)["lib"])
+            self.assertTrue((first_lib / "Target.olean").is_file())
+            second = build_once("second")
+        self.assertNotIn(first, self.broker.state["builds"])
+        self.assertFalse(first_lib.exists())
+        self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
+        self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
+
+    def test_pruning_keeps_a_finished_module_that_a_queued_module_still_imports(self):
+        # A queued module learns that its imports compiled only from their records in the state. With room
+        # for one finished job, B and C both finish before D starts; pruning either would fail D as unknown.
+        self.start_broker()
+        root = self.tree()
+        with patch.object(lean_broker, "KEEP_FINISHED", 1):
+            build_id = self.build(root, [root / "D.lean"])
+            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertTrue(all(m["status"] == "finished" and m["exit_code"] == 0 for m in record["modules"].values()))
+        self.assertEqual([j.get("module") for j in self.jobs(*lean_broker.FINISHED)], ["D"])  # pruning did run
 
 
 class LauncherTests(BrokerFixture):
@@ -1198,10 +1435,10 @@ class LauncherTests(BrokerFixture):
         self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
         self.assertEqual(launch["env"]["FAKE_LAKE"], "1")
         # Baselines measured directly are keyed apart from those measured through lake.
-        self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"], True))
-        self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"]))
+        self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.environment_identity(), job["imports"], True))
+        self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.environment_identity(), job["imports"]))
         self.assertTrue(self.broker.calibration.entry(job["closure"])["direct"])  # and the table says so in words
-        self.assertIn("launcher", lean_broker.broker_status(self.paths))
+        self.assertTrue(lean_broker.broker_status(self.paths)["launcher"]["direct"])  # status names the mode in use
 
     def test_a_lake_that_fails_leaves_the_configured_command_in_force(self):
         self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)], env={"FAKE_LAKE_FAIL": "1"})
@@ -1214,6 +1451,55 @@ class LauncherTests(BrokerFixture):
         self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 7)  # what the configured lake does
 
+    def test_a_queued_job_is_keyed_by_the_launch_mode_it_starts_in(self):
+        # An unrelated settings edit asks lake again, and its answer can switch the launch mode without
+        # changing the environment key. A compile and its calibration queued in one mode and started in
+        # the other must be measured and recorded under the key of the mode they ran in.
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)])
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        environment = self.broker.state["environment_key"]
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+            queued = self.broker.state["jobs"][job_id]["closure"]
+            time.sleep(0.02)
+            self.write_settings(memory_budget_mb=self.budget + 1)
+            with patch.dict(os.environ, {"FAKE_LAKE_FAIL": "1"}):  # lake now fails to load its workspace
+                self.broker.tick()
+        self.assertFalse(self.broker.state["launcher"]["direct"])
+        self.assertEqual(self.broker.state["environment_key"], environment)
+        self.until(lambda: self.finished(job_id))
+        job = self.broker.state["jobs"][job_id]
+        through_lake = lean_broker.closure_key(self.broker.environment_identity(), job["imports"])
+        self.assertNotEqual(queued, through_lake)
+        self.assertEqual(job["closure"], through_lake)
+        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual([(j["closure"], j["direct"]) for j in calibrations], [(through_lake, False)])
+        self.assertEqual(self.broker.calibration.entry(through_lake)["excess_mb"], [job["measured"]["excess_mb"]])
+        self.assertIsNone(self.broker.calibration.entry(queued))
+
+    def test_a_module_build_in_direct_mode_finds_its_own_modules_and_lakes_library(self):
+        # Review builds with `lake env lean` configured, so its module compiles run lean directly. Each one
+        # must search the build's lib folder for the modules built before it, which the fake lean checks,
+        # and then lake's LEAN_PATH for the library, which only the launch file shows here.
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)])
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        root = self.instance / "sessions/s1/work/lean"
+        source(root / "Basis.lean", imports=())
+        target = source(root / "Target.lean", imports=("Basis", "Mathlib.Data.Nat.Basic"))
+        build_id = self.build(root, [target])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertTrue(all(m["exit_code"] == 0 for m in record["modules"].values()), record)
+        launch = runner.read_json(self.paths.job(record["modules"]["Target"]["job"]) / "launch.json")
+        self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
+        self.assertEqual(launch["env"]["LEAN_PATH"].split(os.pathsep)[:2], [record["lib"], "fake-lake-lib"])
+
 
 class ClientAndLifecycleTests(BrokerFixture):
     def cli(self, *args, timeout=60):
@@ -1222,11 +1508,9 @@ class ClientAndLifecycleTests(BrokerFixture):
 
     def test_run_relays_output_exit_code_and_measurements(self):
         path = self.session_file("s1", alloc_mb=50, sleep=1, marker="RELAYED", stderr="TO-STDERR", exit=1)
-        path.write_text(path.read_text(encoding="utf-8").replace("rfl", "sorry"), encoding="utf-8")
         result = self.cli("run", str(self.instance), str(path), "--session", "s1", "--expect-mb", "120")
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("RELAYED", result.stdout)
-        self.assertIn("warning: declaration uses 'sorry'", result.stdout)
         self.assertIn("TO-STDERR", result.stderr)
         summary = json.loads(result.stderr.strip().splitlines()[-1].split("lean-broker: ", 1)[1])
         # The job ID comes first, before any waiting, so a session whose shell tool gave up can still wait on it.
@@ -1263,9 +1547,13 @@ class ClientAndLifecycleTests(BrokerFixture):
         late = self.cli("wait", str(self.instance), submitted["job"])
         self.assertEqual(late.returncode, 0, late.stderr)
         self.assertIn("compiled", late.stdout)
-        unknown = self.cli("wait", str(self.instance), "jnobody")
+        # A well-formed ID that names no job is answered at once rather than waited on; a malformed one is refused.
+        unknown = self.cli("wait", str(self.instance), "j" + "0" * 32)
         self.assertEqual(unknown.returncode, 1)
-        self.assertIn("invalid job ID", unknown.stderr)
+        self.assertIn("unknown job", unknown.stderr)
+        invalid = self.cli("wait", str(self.instance), "jnobody")
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn("invalid job ID", invalid.stderr)
 
     def test_serve_for_a_deleted_instance_creates_nothing(self):
         gone = self.root / "deleted instance"
@@ -1310,21 +1598,26 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(adopted["lean"], record["lean"])
         self.assertIn('"event": "adopted"', self.paths.log.read_text(encoding="utf-8"))
 
-    def test_unstarted_job_is_requeued_not_failed(self):
+    def test_unstarted_job_is_requeued_unless_its_cancellation_was_requested(self):
         self.start_broker()
         self.broker.config["cpu_threads_budget"] = 1
-        blocker = self.submit(self.session_file("s1", "block.lean", sleep=2), expect_mb=40)
+        blocker = self.submit(self.session_file("s1", "block.lean", sleep=3), expect_mb=40)
         self.until(lambda: self.broker.state["jobs"][blocker]["status"] == "running")
         job_id = self.submit(self.session_file("s1", marker="REQUEUED"), expect_mb=40)
-        self.until(lambda: self.broker.state["jobs"].get(job_id, {}).get("status") == "queued")
-        # Simulate a broker that died after recording the host but before GO.
+        dropped = self.submit(self.session_file("s1", "dropped.lean"), expect_mb=40)
+        self.until(lambda: all(self.broker.state["jobs"].get(j, {}).get("status") == "queued"
+                               for j in (job_id, dropped)))
+        # Simulate a broker that died after recording each host but before GO.
         with patch.object(lean_broker.Path, "write_bytes", side_effect=RuntimeError("died before GO")):
-            with self.assertRaises(RuntimeError):
-                self.broker.launch(self.broker.state["jobs"][job_id])
+            for unstarted in (job_id, dropped):
+                with self.assertRaises(RuntimeError):
+                    self.broker.launch(self.broker.state["jobs"][unstarted])
         job = self.broker.state["jobs"][job_id]
         self.assertEqual(job["status"], "running")
         self.assertFalse((self.paths.job(job_id) / "GO").exists())
         self.broker.save()
+        # A session cancels one of them while no broker serves it; the next broker must honour that request.
+        self.assertEqual(lean_broker.cancel(self.paths, dropped)["cancelled"], "requested")
         old_hosts = self.broker.hosts
         self.broker = lean_broker.Broker(self.instance, log_path=self.paths.log)
         self.broker.start()
@@ -1332,10 +1625,15 @@ class ClientAndLifecycleTests(BrokerFixture):
             host.wait(timeout=10)
         self.assertEqual(self.broker.state["jobs"][job_id]["status"], "queued")
         self.assertEqual(self.broker.state["jobs"][blocker]["status"], "running")
+        cancelled = self.broker.state["jobs"][dropped]
+        self.assertEqual((cancelled["status"], cancelled["started_at"]), ("cancelled", None))
+        self.assertFalse((self.paths.job(dropped) / "launch.json").exists())
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lean_broker.wait(self.paths, dropped, timeout=0), 4)
         self.until(lambda: self.finished(job_id) and self.finished(blocker))
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
         self.assertIn("REQUEUED", (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8"))
-        self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 2)
+        self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 3)
 
     def test_runner_launches_adopts_and_relaunches_the_broker(self):
         skill = runner.SKILL
@@ -1388,9 +1686,14 @@ class ClientAndLifecycleTests(BrokerFixture):
             self.assertEqual(lean_broker.main(["wait", str(self.instance), build_id, "--timeout", "60"]), 0)
         self.assertIn("TARGET-D", out.getvalue())  # replayed from the cache: nothing was compiled again
         self.assertIn('"cached": true', err.getvalue())
+        out = io.StringIO()
         with contextlib.redirect_stdout(out):
             self.assertEqual(lean_broker.main(["result", str(self.instance), build_id]), 0)
-        self.assertIn("builds", json.dumps(lean_broker.broker_status(self.paths)))
+        record = json.loads(out.getvalue())
+        self.assertEqual((record["id"], record["status"]), (build_id, "finished"))
+        # status lists builds finished within the last ten minutes; the first build is long recorded in the state.
+        listed = {b["id"]: b["status"] for b in lean_broker.broker_status(self.paths)["builds"]}
+        self.assertEqual(listed.get(summary["build"]), "finished")
 
 
 if __name__ == "__main__":

@@ -102,6 +102,60 @@ class DirectoryRenameTests(unittest.TestCase):
                     kernel.CloseHandle(handle)
 
 
+class StateFileSharingTests(unittest.TestCase):
+    # Every state and view file is written through write_json or write_text and read through read_json.
+    # On Windows a reader holding the destination without delete sharing fails the replacement, and one
+    # holding the file without read sharing fails the read; both calls wait for the handle instead.
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_replacement_waits_for_a_held_destination_and_keeps_the_complete_version(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'state.json'
+            support.write_json(path, {'version': 1})
+            replace = os.replace
+            held = [windows_error(5), windows_error(32)]
+
+            def held_destination(source, destination):
+                if held:
+                    # Meanwhile readers still see the complete earlier version.
+                    self.assertEqual(support.read_json(path), {'version': 1})
+                    raise held.pop(0)
+                replace(source, destination)
+
+            with patch('runtime_support.os.replace', side_effect=held_destination), \
+                    patch('runtime_support.time.sleep') as sleep:
+                support.write_json(path, {'version': 2})
+            self.assertEqual(sleep.call_count, 2)
+            self.assertEqual(support.read_json(path), {'version': 2})
+            self.assertEqual(list(Path(temp).iterdir()), [path])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_read_waits_for_a_held_file_and_does_not_retry_other_refusals(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'state.json'
+            support.write_json(path, {'version': 1})
+            read_text = Path.read_text
+            held = []
+
+            def held_source(self, *args, **kwargs):
+                if held:
+                    raise held.pop(0)
+                return read_text(self, *args, **kwargs)
+
+            sharing = PermissionError('injected sharing violation')
+            sharing.winerror = 32
+            refused = PermissionError('injected privilege refusal')
+            refused.winerror = 1314
+            with patch.object(Path, 'read_text', held_source), patch('runtime_support.time.sleep') as sleep:
+                held.append(sharing)
+                self.assertEqual(support.read_json(path), {'version': 1})
+                self.assertEqual(sleep.call_count, 1)
+                held.append(refused)
+                with self.assertRaises(PermissionError) as caught:
+                    support.read_json(path)
+                self.assertIs(caught.exception, refused)
+                self.assertEqual(sleep.call_count, 1)
+
+
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
         engine = runtime.Runner(self.instance, self.skill)
@@ -119,7 +173,7 @@ class PeerRecoveryTests(InstanceCase):
         engine.state['sessions']['speer'] = {
             'id': 'speer', 'role': 'peer', 'job': key, 'status': 'running',
             'provider': 'codex', 'model': 'codex/gpt-6.1-sol', 'started_at': 1,
-            'exit_code': 0, 'retained': True, 'retention': {},
+            'exit_code': 0, 'retained': True, 'retention': {'cli_activity': True, 'native_activity': False},
         }
         engine.state['jobs'][key].update(status='running', session='speer')
         engine.save()
@@ -140,6 +194,10 @@ class PeerRecoveryTests(InstanceCase):
         self.assertEqual(tick.call_count, 1)
         self.assertIn('Traceback (most recent call last)', stderr.getvalue())
         saved = support.read_json(engine.state_path)
+        # The runner state's top-level last_error holds the failure and its time for status,
+        # apart from the errors of individual jobs (reference/operations.md).
+        self.assertEqual(saved['last_error']['error'], 'injected persistent failure')
+        self.assertIsInstance(saved['last_error']['at'], float)
         self.assertEqual(saved['sessions']['speer']['status'], 'running')
         self.assertEqual(saved['jobs'][key]['status'], 'running')
         self.assertEqual(saved['pipelines'][pipeline]['stage'], 'peer')
@@ -160,3 +218,66 @@ class PeerRecoveryTests(InstanceCase):
 
     def test_rename_failure_is_fatal_and_restart_creates_one_review(self):
         self.check_fatal_then_recover('runner.rename_directory')
+
+
+class MemoryReserveTests(InstanceCase):
+    def test_lack_of_memory_pauses_every_pass_until_free_memory_returns(self):
+        # Running out of memory does not end the runner (reference/operations.md, Restarts, runner
+        # failures and installation updates). It releases its reserve and makes no pass while free memory
+        # stays below 512 MiB; once free memory reaches 512 MiB it takes the reserve back, reloads its
+        # saved state and the published research, and continues without recording last_error. Runner.run
+        # is the runner's own loop; only the failing pass and the machine's free memory are injected.
+        engine = runtime.Runner(self.instance, self.skill)
+        free = iter([256 * 1024 * 1024, 512 * 1024 * 1024])
+        passes = []
+
+        def tick():
+            passes.append((engine.reserve.buffer is not None, engine.state))
+            if len(passes) == 1:
+                engine.state['explore_requested'] = True  # an unsaved change of the pass that fails
+                raise MemoryError
+            return True
+
+        with patch.object(engine, 'tick', side_effect=tick), \
+                patch('runner.available_memory', side_effect=lambda: next(free)), \
+                patch('runner.replay', wraps=runtime.replay) as reload, \
+                patch('runner.time.sleep') as sleep, \
+                patch('runtime_support.os.write') as written, \
+                patch('builtins.print'):
+            engine.run()
+        written.assert_called_once_with(2, b'Runner memory reserve released; dispatch will wait for recovery.\n')
+        # No pass ran while free memory was below 512 MiB; the next one held the reserve again.
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [0.25, 5])
+        self.assertEqual([held for held, _ in passes], [True, True])
+        # The state and the published research were read again, so the failed pass's change is gone.
+        self.assertFalse(passes[1][1]['explore_requested'])
+        self.assertEqual(reload.call_count, 1)
+        self.assertIsNone(support.read_json(engine.state_path)['last_error'])
+
+
+class LaunchFailureTests(InstanceCase):
+    def test_a_cli_that_cannot_start_moves_the_retry_to_the_next_model(self):
+        # Nothing stands in for the CLI: its configured executable is missing, so the session host's
+        # launch fails as it would in operation. That is an operational failure of the selected model,
+        # unlike invalid output, so the job's replacement takes the role's next model while this one
+        # is blocked (reference/operations.md). Only the host's spawn is replaced; the host itself runs
+        # in this process, as in test_ending.
+        engine = runtime.Runner(self.instance, self.skill)
+        engine.settings['cli']['codex'] = str(self.root / 'missing' / 'codex.exe')
+        key = engine.enqueue('organizer', {})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        session = engine.state['sessions'][sid]
+        self.assertEqual(session['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(support.session_host(engine.session_dir(sid)), 0)
+        session['host'] = None  # the host ran in this process and has returned
+        engine.collect()
+        job = engine.state['jobs'][key]
+        self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
+        self.assertTrue(session['launch_error'])
+        self.assertEqual(job['last_error'], session['launch_error'])
+        self.assertEqual(support.read_json(engine.session_dir(sid) / 'termination.json')['cause'], 'launch_error')
+        self.assertEqual(engine.state['blocks']['model:codex/gpt-6.1-sol']['source'], 'retry')
+        self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')

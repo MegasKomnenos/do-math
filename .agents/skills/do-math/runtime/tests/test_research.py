@@ -11,11 +11,13 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, findings_check, organization_check
-from coordination import board, lease, lease_table, message, release, section, updates, wait
+from coordination import board, lease, lease_table, main as coordination_main, message, release, section, updates, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
-from runner import Runner, archive_finished, initialize, main
+from runner import Runner, archive_finished, initialize, main, uid
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
+
+POPEN = subprocess.Popen  # captured before any test patches it
 
 
 def record(claims=None, nodes=None, relations=None, solutions=None, glossary=None,
@@ -102,13 +104,22 @@ class InstanceCase(unittest.TestCase):
                    {'id': eid, 'sequence': self.seq, 'kind': kind, 'folder': sub + '/' + eid})
 
     def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
-        """An operator publication of questions, the form the migration script writes."""
-        self.seq += 1
-        folder = self.instance / 'knowledge/questions' / eid
-        folder.mkdir(parents=True)
-        write_json(folder / 'questions.json', {'source': 'operator', 'reason': reason, 'questions': items})
-        write_json(self.instance / 'knowledge/events' / (eid + '.json'),
-                   {'id': eid, 'sequence': self.seq, 'kind': 'questions', 'folder': 'questions/' + eid})
+        """An operator publication of questions, made as the operator makes it: the questions command
+        writes a request and the runner collects and publishes it (reference/operations.md). Only the
+        publication's identifier is fixed, to eid, so that a test can name it."""
+        source = self.root / ('questions-' + uuid.uuid4().hex + '.json')
+        write_json(source, {'reason': reason, 'questions': items})
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['questions', str(self.instance), '--file', str(source)]), 0, shown.call_args)
+        # A caller may stand in for session launches by patching subprocess.Popen, which Git also
+        # uses; the publication commits with the real Git, and the original patch returns afterwards.
+        with patch.object(subprocess, 'Popen', POPEN), \
+                patch('runner.uid', side_effect=lambda prefix: eid if prefix == 'q' else uid(prefix)):
+            engine = Runner(self.instance, self.skill)
+            engine.ingest_inputs()
+        event = self.instance / 'knowledge/events' / (eid + '.json')
+        self.assertTrue(event.is_file(), engine.state['last_error'])
+        self.seq = read_json(event)['sequence']
 
     def reduction(self):
         return record([claim_row('reduce')], [{'id': 'Q', 'statement': 'Q', 'connection': 'reduce'}],
@@ -258,14 +269,13 @@ class KnowledgeTests(InstanceCase):
         for pid in ('r2/q', 'r1/reduce', 'r3/next', 'r3/onward'):
             self.assertTrue(m['proofs'][pid]['concerned'])
             self.assertIn('v1/boundary', m['proofs'][pid]['concerns'])
-        render(self.instance, m, [{'pipeline': 'p', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': []}])
+        render(self.instance, m, [{'pipeline': 'p', 'session': 'sp', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': [], 'question': None}])
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         for nid in ('R', 'S'):
             section = frontier.split('## ' + nid + '\n', 1)[1].split('\n## ', 1)[0]
             self.assertIn('rests on a questioned claim', section)
             self.assertIn('v1/boundary', section)
             self.assertIn('reviews/v1/assessment.json', section)
-        self.assertNotIn('Possible dependency', frontier)
         self.assertIn('Concern: see [frontier](frontier.md) for S.',
                       (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
         # Only a finding changes standing: withdrawing q recomputes everything that rested on it.
@@ -311,8 +321,9 @@ class KnowledgeTests(InstanceCase):
         self.event('o2', 'organization', {'batch': [], 'modules': [], 'shared_context': [], 'promote': ['r1/t']})
         m = replay(self.instance)
         self.assertEqual(m['global_terms']['r1/t']['membership'], 'permanent')
-        with self.assertRaises(Invalid):
-            organization_check({'batch': [], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']}, m, [])
+        # r1 keeps its place, so the refusal itself is what the check rejects.
+        with self.assertRaisesRegex(Invalid, 'pending candidate'):
+            organization_check({'batch': [], 'modules': [], 'shared_context': ['r1'], 'refuse': ['r1/t']}, m, [])
 
     def test_refuting_a_necessary_condition_refutes_the_node(self):
         # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
@@ -349,8 +360,7 @@ class KnowledgeTests(InstanceCase):
             wrong = {**finding, 'dependency_updates': [{**finding['dependency_updates'][0], 'proof': proof}]}
             with self.subTest(proof=proof), self.assertRaisesRegex(Invalid, 'existing proof route'):
                 findings_check([wrong], m)
-        self.event('v1', 'review', {'feedback': 'feedback.md', 'index_assessment': 'Dependencies corrected.',
-                                    'findings': [finding]})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [finding]})
         self.assertEqual(replay(self.instance)['proofs']['r1/necessary~0']['formal_dependencies'], [])
 
     def test_multi_premise_relation_derives_in_every_direction(self):
@@ -434,13 +444,25 @@ class KnowledgeTests(InstanceCase):
             self.assertIn('A precise contribution with its limitations.', output)
             self.assertIn('Supported within its scope.', output)
 
+    def test_a_complete_layout_keeps_every_organized_record_placed(self):
+        # Unfiled marks a placement still pending (reference/common.md), and no later batch lists an
+        # organized record, so a layout that left r1 out would leave it looking unprocessed for good.
+        self.publish('r1', record())
+        self.event('o1', 'organization', {'batch': ['r1'], 'modules': [], 'shared_context': ['r1']})
+        self.publish('r2', record())
+        model = replay(self.instance)
+        with self.assertRaisesRegex(Invalid, 'already organized'):
+            organization_check({'batch': ['r2'], 'modules': [], 'shared_context': ['r2']}, model, ['r2'])
+        moved = {'id': 'm', 'title': 'Area', 'description': 'An area of the research.', 'records': ['r1']}
+        organization_check({'batch': ['r2'], 'modules': [moved], 'shared_context': ['r2']}, model, ['r2'])
+
     def test_speculative_node_is_not_admitted(self):
         data = record([claim_row('hunch')], [{'id': 'Q', 'statement': 'Q', 'connection': 'hunch'}])
         folder = self.root / 'candidate'; folder.mkdir()
         (folder / 'record.md').write_text('A hunch.', encoding='utf-8')
         review = assessment(data)
         out = self.root / 'review'; out.mkdir(); (out / 'feedback.md').write_text('Review.', encoding='utf-8')
-        with self.assertRaises(Invalid):
+        with self.assertRaisesRegex(Invalid, 'admitted nodes must connect to existing research'):
             assessment_check(review, out, data, folder, replay(self.instance), self.instance, 's1')
 
 
@@ -620,6 +642,22 @@ class RunnerTests(InstanceCase):
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertTrue(session['retention']['native_transcripts'])
 
+    def test_a_cancelled_producer_without_research_is_relaunched_without_blocking_its_model(self):
+        # kill-session ends a producer as an interruption; one that left no research material is
+        # launched again (reference/operations.md, Commands). The cancellation is not a refusal or a
+        # failed launch, so the role keeps its configured first model.
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (folder / 'CANCEL').touch()
+        runner.finish(sid, session)
+        self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        self.assertEqual(runner.state['blocks'], {})
+        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
+
     def test_archiver_keeps_producer_work_until_its_pipeline_is_done(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -680,7 +718,7 @@ class RunnerTests(InstanceCase):
         folder.mkdir(parents=True)
         (folder / 'inbox').mkdir()
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt',
-                                           'pipeline': job['pipeline'], 'task': {}})
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
         runner.state['pipelines'][job['pipeline']]['producer'] = sid
         runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
         job.update(status='running', session=sid)
@@ -731,6 +769,10 @@ class RunnerTests(InstanceCase):
         self.assertTrue(lease(a, 'root')['leased'])
         self.assertEqual(wait(b, 'root', timeout=0)['position'], 1)
         self.assertEqual(wait(c, 'root', timeout=0)['position'], 2)
+        # The board view shows who holds the node's lease and who waits, in order.
+        render(self.instance, replay(self.instance), board(self.instance), lease_table(self.instance))
+        self.assertIn('- root · lease: sa · waiting: sb, sc',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
         first = take(a, 'root', 'For every n, b is nondecreasing for l < n - 2.', leased=True)
         self.assertTrue(first['registered'], first)
         sid_a = first['section']['id']
@@ -750,6 +792,10 @@ class RunnerTests(InstanceCase):
         rows = {r['session']: [s['id'] for s in r['sections']] for r in board(self.instance)}
         self.assertEqual(rows, {'sa': [sid_a], 'sb': [second['section']['id']], 'sc': []})
         self.assertEqual(runner.available_nodes(), ['root'])
+        # A section's exact statement reaches board.md as written, as a node's statement reaches the frontier.
+        render(self.instance, replay(self.instance), board(self.instance))
+        self.assertIn(f'  Section {sid_a} on root (session sa): For every n, b is nondecreasing for l < n - 2.',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
 
     def test_lease_of_an_ended_session_passes_to_the_next_waiter(self):
         runner = self.runner()
@@ -766,6 +812,33 @@ class RunnerTests(InstanceCase):
         runner.state['sessions']['sb'].update(host=gone, cli=gone)
         runner.save()
         self.assertTrue(wait(c, 'root', timeout=0)['leased'])
+
+    def test_node_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
+        # Attempts and peers reach these commands only through the argv in input.json (reference/tools.md).
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        request = a / 'section.json'
+        write_json(request, {'statement': 'For every n, the last three terms decrease.'})
+
+        def run(*argv):
+            with patch('sys.argv', ['coordination.py', *argv]), patch('builtins.print') as shown:
+                code = coordination_main()
+            return code, json.loads(shown.call_args.args[0])
+
+        code, answer = run('section', str(a), 'root', '--file', str(request))
+        self.assertEqual((code, answer['registered']), (1, False))
+        code, answer = run('lease', str(a), 'root')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('wait', str(b), 'root', '--timeout', '0')
+        self.assertEqual((code, answer['timeout'], answer['position']), (124, True, 1))
+        code, answer = run('section', str(a), 'root', '--file', str(request))
+        self.assertEqual((code, answer['registered']), (0, True))
+        code, answer = run('wait', str(b), 'root', '--timeout', '0')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('release', str(b), 'root')
+        self.assertEqual((code, answer['released']), (0, True))
+        code, answer = run('lease', str(b), 'missing')
+        self.assertEqual((code, answer['error']), (1, 'unknown node'))
 
     def test_a_session_stands_in_one_lease_relation(self):
         self.publish('r1', self.reduction())
@@ -797,6 +870,27 @@ class RunnerTests(InstanceCase):
         runner.save()
         self.assertEqual(runner.available_nodes(), ['root'])
         self.assertTrue(lease(b, 'root')['leased'])
+
+    def test_a_node_settled_under_the_lease_refuses_registration_waiting_and_leasing(self):
+        self.publish('r1', self.reduction())
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'Q')['leased'])
+        self.assertFalse(wait(b, 'Q', timeout=0)['leased'])
+        # Q becomes informally proved while sa holds its lease and sb waits for it.
+        self.publish('r2', record([claim_row('q')], solutions=[solution('s', 'Q', 'q')]))
+        request = a / 'section.json'
+        write_json(request, {'whole': False, 'statement': 'Q for every even case.', 'reasons': {}})
+        refused = section(a, 'Q', request)
+        self.assertFalse(refused['registered'])
+        self.assertIn('not unresolved', refused['reason'])
+        self.assertEqual(refused['holders'], ['sa'])  # the refusal keeps the lease for its release
+        self.assertFalse((a / 'declaration.json').exists())
+        waiting = wait(b, 'Q', timeout=0)
+        self.assertFalse(waiting['leased'])
+        self.assertIn('not unresolved', waiting['reason'])
+        self.assertEqual(lease_table(self.instance)['Q']['queue'], [])  # the waiting place is given up
+        self.assertIn('not unresolved', lease(b, 'Q')['reason'])
 
     def test_sections_expand_through_the_lease_and_are_not_released(self):
         runner = self.runner()
@@ -936,9 +1030,6 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.settings['explore_every'], 1)
         runner.settings['explore_every'] = 3
         write_json(self.instance / 'settings.json', runner.settings)
-        # An instance whose state predates the launch counter starts it at zero.
-        runner.state.pop('attempt_launches')
-        runner.save()
         def launch_attempt():
             # The launch alone counts; whether the attempt later registers a section does not matter.
             self.assertTrue(runner.dispatch(runner.producer('attempt')))
@@ -1024,6 +1115,11 @@ class RunnerTests(InstanceCase):
         self.check_refusal_handoff({'type': 'error', 'message': 'Selected model is at capacity'},
                                    'model:codex/gpt-6.1-sol', 'codex/other')
 
+    def test_model_refusal_in_a_failed_turn_is_read_as_the_same_refusal(self):
+        # retention.refusal reads the capacity message from a turn.failed error as well as from an error event.
+        self.check_refusal_handoff({'type': 'turn.failed', 'error': {'message': 'Selected model is at capacity'}},
+                                   'model:codex/gpt-6.1-sol', 'codex/other')
+
     def test_claude_model_refusal_blocks_only_that_model_and_retains_work(self):
         # Claude's typed refusal for one model blocks that model, not the claude provider.
         self.check_refusal_handoff({'type': 'assistant', 'is_api_error_message': True,
@@ -1031,13 +1127,20 @@ class RunnerTests(InstanceCase):
                                    'model:claude/opus', 'claude/sonnet', model='claude/opus',
                                    peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
-    def test_waiting_review_blocks_fresh_attempt_even_when_other_provider_free(self):
+    def test_review_waiting_for_a_model_does_not_hold_attempts_while_slots_are_free(self):
+        # A freed slot goes to waiting review work first through the priority order, which the
+        # priority test below checks; a review that waits for a model rather than for capacity
+        # leaves the free slots to attempts (reference/operations.md).
         runner = self.runner()
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         runner.settings['roles']['review'] = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
-        runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
-        runner.schedule()
-        self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
+        review = runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertEqual(runner.state['jobs'][review]['status'], 'pending')
+        self.assertIn('attempt', [s['role'] for _, s in runner.active()])
 
     def test_waiting_organizer_does_not_block_attempt_while_another_organizer_runs(self):
         runner = self.runner()
@@ -1054,6 +1157,40 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
         self.assertCountEqual([s['role'] for _, s in runner.active()],
                               ['organizer', 'explore', 'attempt'])
+
+    def test_waiting_comprehensive_review_does_not_block_attempt_while_another_runs(self):
+        # As for organizers: the waiting review takes the slot the running one frees, ahead of any
+        # attempt, so holding attempts back for it would leave capacity idle without serving it sooner.
+        runner = self.runner()
+        runner.settings['max_sessions'] = 3
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        first = runner.enqueue('review', dict(task))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(first))
+            second = runner.enqueue('review', dict(task))
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            runner.schedule()
+        self.assertEqual(runner.state['jobs'][first]['status'], 'running')
+        self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
+        self.assertCountEqual([s['role'] for _, s in runner.active()],
+                              ['review', 'explore', 'attempt'])
+
+    def test_a_requested_comprehensive_review_waits_while_another_runs(self):
+        # Comprehensive reviews launch one at a time, as organizers do (reference/operations.md).
+        runner = self.runner()
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        first, second = runner.enqueue('review', dict(task)), runner.enqueue('review', dict(task))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][first]['status'], 'running')
+            self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
+            # Once the running review has finished, the waiting one launches.
+            runner.state['jobs'][first]['status'] = 'done'
+            runner.dispatch_pending()
+        self.assertEqual(runner.state['jobs'][second]['status'], 'running')
 
     def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
         self.publish('r1', self.reduction())  # Q remains available for the attempt.
@@ -1343,8 +1480,7 @@ class RunnerTests(InstanceCase):
         output = runner.session_dir(sid) / 'output'
         output.mkdir(parents=True)
         # The review could not settle the concern, so the concern itself stays open.
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'index_assessment': 'Still undetermined.',
-                                                'findings': [], 'concerns': []})
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
         (output / 'feedback.md').write_text('The boundary case remains undetermined.', encoding='utf-8')
         runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
         job.update(status='running', session=sid)
@@ -1353,6 +1489,45 @@ class RunnerTests(InstanceCase):
         runner.populate()
         self.assertEqual([j['id'] for j in runner.state['jobs'].values()
                           if j['task'].get('kind') == 'comprehensive'], [job['id']])
+
+    def test_published_comprehensive_review_is_not_reassigned_for_a_node_it_left_contested(self):
+        # A contested node's opposing routes are assigned once, as <node>:<proof IDs> (roles/review.md).
+        # A review that leaves the node contested is not assigned again; a changed set of routes is
+        # (reference/operations.md, Read progress and results).
+        self.publish('r1', self.reduction())
+        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+        self.publish('r3', record([claim_row('notq')], solutions=[solution('notq', 'Q', 'notq', 'refuted')]))
+        runner = self.runner()
+        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
+        runner.populate()
+        job = next(j for j in runner.state['jobs'].values() if j['task'].get('kind') == 'comprehensive')
+        self.assertEqual((job['task']['concerns'], len(job['task']['conflicts'])), ([], 1))
+        node, _, routes = job['task']['conflicts'][0].partition(':')
+        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq']))
+        sid = 'scomprehensive'
+        output = runner.session_dir(sid) / 'output'
+        output.mkdir(parents=True)
+        # The review could not locate the failure, so the node stays contested.
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
+        (output / 'feedback.md').write_text('Neither route could be shown defective.', encoding='utf-8')
+        runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
+        job.update(status='running', session=sid)
+        runner.prepare_publication(sid, job, 'review')
+        runner.publish()
+        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
+        runner.populate()
+        self.assertEqual([j['id'] for j in runner.state['jobs'].values()
+                          if j['task'].get('kind') == 'comprehensive'], [job['id']])
+        # A further accepted route changes the opposing set, which has not been assigned yet.
+        self.seq = runner.model['sequence']
+        self.publish('r4', record([claim_row('q2')], solutions=[solution('q2', 'Q', 'q2')]))
+        runner.model = replay(self.instance)
+        runner.populate()
+        pending = [j['task']['conflicts'] for j in runner.state['jobs'].values()
+                   if j['task'].get('kind') == 'comprehensive' and j['status'] == 'pending']
+        self.assertEqual([len(conflicts) for conflicts in pending], [1])
+        node, _, routes = pending[0][0].partition(':')
+        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq', 'r4/q2']))
 
     def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
@@ -1376,24 +1551,52 @@ class RunnerTests(InstanceCase):
 
     def test_restart_broker_admits_sessions_held_behind_stop(self):
         runner = self.runner()
-        (self.instance / 'control/STOP').touch()
         for sid in ('sheld', 'sturn'):
             runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'status': 'running', 'cli': None}
             runner.session_dir(sid).mkdir(parents=True, exist_ok=True)
         write_json(runner.session_dir('sheld') / 'end-check.json', {'status': 'waiting_dispatch'})
         runner.save()
-        idle = {'queued': 0, 'running': 0, 'broker_alive': False}
-        with patch('lean_broker.broker_status', return_value=idle), \
-                patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
-                patch('builtins.print') as shown:
-            # A session without a held turn is still an active turn and blocks replacement.
+        # The broker's own state file, which broker_status reads; no broker process is alive.
+        compiles = self.instance / 'runner/lean/state.json'
+        compiles.parent.mkdir(parents=True, exist_ok=True)
+        write_json(compiles, {'jobs': {'jrun': {'id': 'jrun', 'status': 'running', 'session': 'sheld'}}})
+
+        def refused(reason):
             self.assertEqual(main(['restart-broker', str(self.instance)]), 1)
-            start.assert_not_called()
+            self.assertIn(reason, json.loads(shown.call_args.args[0])['error'])
+
+        with patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
+                patch('builtins.print') as shown:
+            refused('stop new dispatch')
+            (self.instance / 'control/STOP').touch()
+            # A session without a held turn is still an active turn and blocks replacement.
+            refused('let active CLI turns finish')
             runner.state['sessions']['sturn']['status'] = 'ended'
             runner.save()
+            # A compile still running blocks it as well.
+            refused('Lean jobs')
+            start.assert_not_called()
+            write_json(compiles, {'jobs': {}})
             self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
         start.assert_called_once()
         self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
+
+    def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
+        # stop and resume write and remove control/STOP (reference/operations.md, Commands). The
+        # runner's own pass reads it: while it exists, neither a fresh attempt nor a queued follow-up
+        # launches, and after resume both do.
+        runner = self.runner()
+        peer = runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
+                                       'source_role': 'attempt'})
+        with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
+            host.return_value.pid = runner.identity['pid']
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            runner.tick()
+            self.assertEqual(runner.active(), [])
+            self.assertEqual(runner.state['jobs'][peer]['status'], 'pending')
+            self.assertEqual(main(['resume', str(self.instance)]), 0)
+            runner.tick()
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'attempt'])
 
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
@@ -1442,6 +1645,9 @@ class RunnerTests(InstanceCase):
         for name, config in (('legacy', legacy), ('misspelled', misspelled), ('executable', executable)):
             with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
                 validate(config)
+        role = defaults(); role['roles']['reviewer'] = role['roles'].pop('review')
+        with self.assertRaisesRegex(ValueError, r'unknown setting: roles\.reviewer'):
+            validate(role)
 
     def test_malformed_setting_structure_is_rejected_by_name(self):
         cli_path = defaults(); cli_path['cli']['codex'] = 5
@@ -1471,6 +1677,26 @@ class RunnerTests(InstanceCase):
         self.assertIn('· attempt · queued · nodes: (choosing)', visible)
         self.assertIn('· explore · queued · question: (choosing)', visible)
 
+    def test_board_view_lists_the_sections_an_exploration_peer_registers(self):
+        # Any peer may register a further section through the node's lease (roles/peer.md, Work the
+        # mathematics yourself). The board rows already count it as occupancy; board.md must show it under
+        # the exploration as well.
+        runner = self.runner()
+        pipeline = runner.state['jobs'][runner.producer('explore')]['pipeline']
+        peer = runner.session_dir('speer')
+        peer.mkdir()
+        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': 'speer', 'role': 'peer',
+                                         'pipeline': pipeline, 'task': {}})
+        runner.state['pipelines'][pipeline].update(producer='sexplore', peer='speer', stage='peer')
+        runner.state['sessions']['speer'] = {'id': 'speer', 'role': 'peer', 'status': 'running', 'job': 'peerjob'}
+        runner.save()
+        self.assertTrue(take(peer, 'root')['registered'])
+        self.assertEqual(runner.available_nodes(), [])
+        render(self.instance, replay(self.instance), board(self.instance, runner.state))
+        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+        self.assertIn('· explore · peer · question: (none)', visible)
+        self.assertIn('  Section speer-1 on root (session speer): the whole node', visible)
+
     def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
         views = [self.instance / 'knowledge' / name for name in ('frontier.md', 'index.md', 'board.md')]
@@ -1485,6 +1711,18 @@ class RunnerTests(InstanceCase):
         self.assertIn('State: informal_proved', frontier)
         self.assertIn('Investigation', index)
         self.assertIn('Research work and occupied sections', board_view)
+
+    def test_start_does_not_replace_a_live_runner(self):
+        # A live runner holds the instance lock. The runner that start launches cannot take it and exits,
+        # and start reports that exit, not a readiness it never reached (reference/operations.md).
+        from runner import start
+        with InstanceLock(self.instance / 'runner/lock'):
+            with self.assertRaisesRegex(RuntimeError, 'exited before readiness'):
+                start(self.instance)
+        # The refused runner wrote no start record that could stand in for the live runner's receipt.
+        self.assertFalse((self.instance / 'runner/process.json').exists())
+        [log] = (self.instance / 'runner').glob('start-*.stderr.log')
+        self.assertIn('already has a running runner', log.read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

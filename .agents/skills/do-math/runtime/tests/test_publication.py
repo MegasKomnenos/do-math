@@ -1,6 +1,8 @@
 import hashlib
+import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import unittest
 from unittest.mock import patch
@@ -61,6 +63,34 @@ class ProposalIdentityTests(InstanceCase):
         self.assertEqual(model['nodes'][first_id]['statement'], 'First question.')
         self.assertEqual(model['nodes'][second_id]['statement'], 'Different question.')
 
+    def test_identification_with_an_existing_node_reuses_it_while_admission_needs_a_supported_connection(self):
+        # Admitting a proposal creates a node, so review must support the claim connecting it; identifying
+        # the proposal with an existing node reuses a node the research already connects
+        # (reference/review-output.md). The proposal here restates the root through an unsupported claim.
+        sid = 's' + '1' * 32
+        node_id = sid + '-q'
+        folder, data = self.peer_candidate(sid, node_id, 'For every natural number n, n + 0 = n, restated.')
+        candidate = folder / 'output'
+        reviewer = self.instance / 'sessions/sreview'
+        output = reviewer / 'output'
+        output.mkdir(parents=True)
+        write_json(reviewer / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
+            'role': 'review', 'task': {'kind': 'candidate', 'candidate': str(candidate),
+                                     'candidate_hashes': runtime.tree_hashes(candidate)}})
+        (output / 'feedback.md').write_text('The proposal restates the root; its connecting argument has a gap.',
+                                            encoding='utf-8')
+        verdict = assessment(data)
+        verdict['claims'][0].update(status='unsupported', reason='The connecting argument has a gap.')
+        verdict['relations'][0].update(accepted=False, reason='Its claim is unsupported.')
+        write_json(output / 'assessment.json', verdict)
+        errors = check_session(reviewer)
+        self.assertTrue(any('new node needs supported connection' in error for error in errors), errors)
+        verdict['nodes'][0].update(node='root', reason='The proposal states the root itself.')
+        write_json(output / 'assessment.json', verdict)
+        self.assertEqual(check_session(reviewer), [])
+        self.publish('ridentified', data, verdict)
+        self.assertEqual(replay(self.instance)['aliases'][node_id], 'root')
+
 
 class PublicationTests(InstanceCase):
     def test_candidate_cannot_collide_with_publication_attachments(self):
@@ -91,6 +121,26 @@ class PublicationTests(InstanceCase):
         (evidence / 'review').mkdir()
         (evidence / 'provenance.json').write_text('Historical evidence.', encoding='utf-8')
         self.assertEqual(check_session(session), [])
+
+    def test_review_output_cannot_collide_with_the_formal_evidence_attachment(self):
+        # Publication adds a formal solution's broker evidence under review/lean-evidence/
+        # (Runner.copy_formal_evidence), as it adds review/ and provenance.json beside a candidate.
+        runner, _ = self.candidate_pipeline()
+        output = runner.session_dir('sreview') / 'output'
+        self.assertEqual(check_session(output.parent), [])
+        for name, directory in (('lean-evidence', True), ('Lean-Evidence', True), ('lean-evidence', False)):
+            with self.subTest(name=name, directory=directory):
+                path = output / name
+                if directory:
+                    path.mkdir()
+                else:
+                    path.write_text('Copied compile output.', encoding='utf-8')
+                try:
+                    errors = check_session(output.parent)
+                    self.assertTrue(errors)
+                    self.assertIn('reserved', errors[0])
+                finally:
+                    path.rmdir() if directory else path.unlink()
 
     def candidate_pipeline(self):
         runner = runtime.Runner(self.instance, self.skill)
@@ -171,6 +221,27 @@ class PublicationTests(InstanceCase):
         self.assertEqual(len(list((self.instance / 'knowledge/events').glob('*.json'))), 1)
         history = original(self.instance, 'log', '--format=%s')
         self.assertEqual(history.count('Publish ' + identity), 1)
+
+    def test_restart_replaces_a_stale_stage_that_holds_a_read_only_file(self):
+        # copytree keeps a read-only flag, which Git gives its object files, and Windows refuses to
+        # delete a read-only file. The stage an interrupted publication left is still replaced, and
+        # the restart completes the same publication from the frozen candidate.
+        runner, job = self.candidate_pipeline()
+        runner.prepare_publication('sreview', job, 'record')
+        stage = self.instance / 'runner' / ('stage-' + runner.state['publication']['event']['id'])
+        stored = stage / 'evidence/repo/.git/objects/ab/cdef'
+        stored.parent.mkdir(parents=True)
+        stored.write_bytes(b'A Git object')
+        os.chmod(stored, stat.S_IREAD)
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.publish()
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(recovered.state['jobs'][job['id']]['status'], 'done')
+        self.assertEqual(list((self.instance / 'runner').glob('stage-*')), [])
+        event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
+        published = self.instance / 'knowledge' / event['folder']
+        self.assertEqual((published / 'record.md').read_bytes(), b'The proof.')
+        self.assertFalse((published / 'evidence').exists())
 
     def test_review_finish_publishes_the_unchanged_assigned_candidate(self):
         runner, job = self.candidate_pipeline()
@@ -259,6 +330,20 @@ class PublicationTests(InstanceCase):
                           if j['role'] == 'review' and j['status'] == 'pending')
         self.assertNotEqual(review_job['id'], job['id'])
         self.assertEqual(Path(review_job['task']['candidate']), peer / 'candidate')
+        # A replacement for an interrupted review of the new candidate receives that review's partial
+        # work, not the assessment of the damaged candidate the new peer replaced.
+        cut_sid = 'sinterrupted'
+        cut_folder = runner.session_dir(cut_sid)
+        cut_folder.mkdir()
+        (cut_folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (cut_folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+        cut = {'id': cut_sid, 'role': 'review', 'status': 'running', 'job': review_job['id'],
+               'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2, 'exit_code': 1}
+        runner.state['sessions'][cut_sid] = cut
+        review_job.update(status='running', session=cut_sid)
+        runner.finish(cut_sid, cut)
+        self.assertEqual((review_job['status'], review_job['task']['previous_partial_sessions']),
+                         ('pending', [str(cut_folder)]))
         self.finish_replacement_review(runner, review_job)
         self.assertEqual(pipeline['stage'], 'done')
         event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
@@ -306,12 +391,7 @@ class PublicationTests(InstanceCase):
         verdict['claims'][0].update(status='unsupported', reason='The argument does not establish the claim.')
         verdict['solutions'][0].update(level='none', reason='No solution established.')
         write_json(session / 'output/assessment.json', verdict)
-        write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
-                                           'role': 'review', 'task': job['task']})
-        (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
-        (session / 'cli.stderr.log').write_text('', encoding='utf-8')
         reviewer = runner.state['sessions']['sreview']
-        reviewer.update(provider='codex', model='codex/gpt-6.1-sol', started_at=1)
         runner.finish('sreview', reviewer)
         self.assertEqual((reviewer['status'], job['status'], pipeline['stage']),
                          ('integrated', 'done', 'done'))

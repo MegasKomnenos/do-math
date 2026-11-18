@@ -1,6 +1,8 @@
 import json
 import os
 from pathlib import Path
+import stat
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -58,20 +60,73 @@ class ArchiveTests(unittest.TestCase):
             self.assertFalse(archive_work(session))
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
 
-    def test_existing_archive_mismatch_keeps_both_archive_and_remaining_work(self):
+    def test_existing_archive_finishes_an_interrupted_removal_and_keeps_mismatched_work(self):
         with tempfile.TemporaryDirectory() as tmp:
             session = Path(tmp)
             work = session / 'work'
-            work.mkdir()
+            (work / 'nested').mkdir(parents=True)
             (work / 'notes.md').write_bytes(b'Original mathematics')
+            (work / 'nested/table.csv').write_bytes(b'n,value')
             self.assertTrue(archive_work(session))
             saved = (session / 'work.tar.xz').read_bytes()
+            # A removal interrupted partway leaves part of work/, all of it already in the archive.
+            (work / 'nested').mkdir(parents=True)
+            (work / 'nested/table.csv').write_bytes(b'n,value')
+            self.assertTrue(archive_work(session))
+            self.assertFalse(work.exists())
+            self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
             work.mkdir()
             (work / 'notes.md').write_bytes(b'Work absent from the existing archive')
             with self.assertRaisesRegex(RuntimeError, 'does not match'):
                 archive_work(session)
             self.assertEqual((work / 'notes.md').read_bytes(), b'Work absent from the existing archive')
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
+
+    def test_read_only_work_files_are_removed_once_archived(self):
+        # Git creates its object files read-only, and Windows refuses to delete a read-only file;
+        # a session that used Git in work/ must still have that work replaced by its archive.
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            stored = session / 'work/repo/.git/objects/ab/cdef'
+            stored.parent.mkdir(parents=True)
+            stored.write_bytes(b'A Git object')
+            os.chmod(stored, stat.S_IREAD)
+            self.assertTrue(archive_work(session))
+            self.assertFalse((session / 'work').exists())
+            with tarfile.open(session / 'work.tar.xz', 'r:xz') as archive:
+                self.assertEqual(archive.extractfile('work/repo/.git/objects/ab/cdef').read(), b'A Git object')
+
+    def test_linked_work_is_refused_and_left_in_place(self):
+        # A link leads outside the session. Archiving through it and then removing work/ would
+        # record or remove files the session does not own, so both forms of link are refused.
+        def link(path, target):
+            try:
+                os.symlink(target, path, target_is_directory=True)
+            except OSError:
+                if os.name != 'nt':
+                    raise
+                # Without the symlink privilege, a junction is the directory link Windows allows.
+                subprocess.run(['cmd', '/c', 'mklink', '/J', str(path), str(target)],
+                               check=True, capture_output=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            outside = Path(tmp) / 'outside'
+            outside.mkdir()
+            (outside / 'shared.md').write_bytes(b'Mathematics outside the session')
+            inner = Path(tmp) / 'inner'
+            (inner / 'work').mkdir(parents=True)
+            (inner / 'work/notes.md').write_bytes(b'Original mathematics')
+            link(inner / 'work/linked', outside)
+            whole = Path(tmp) / 'whole'
+            whole.mkdir()
+            link(whole / 'work', outside)
+            for session, message in ((inner, 'contains a link'), (whole, 'inside its session directory')):
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(ValueError, message):
+                        archive_work(session)
+                    self.assertFalse((session / 'work.tar.xz').exists())
+                    self.assertFalse((session / 'work.tar.xz.part').exists())
+            self.assertEqual((inner / 'work/notes.md').read_bytes(), b'Original mathematics')
+            self.assertEqual((outside / 'shared.md').read_bytes(), b'Mathematics outside the session')
 
 
 class RetentionTests(unittest.TestCase):
@@ -284,6 +339,8 @@ class RetentionTests(unittest.TestCase):
                 self.assertEqual(capture(session, 'claude')['native_companions'], [copy.name])
             self.assertEqual((copy / 'tool-results/call1.txt').read_text(encoding='utf-8'), full_output)
             self.assertTrue((copy / 'subagents/agent-a1.jsonl').is_file())
+            # The readable conversation holds the preview and names the copy that holds the full output.
+            self.assertIn(copy.name + '/', (session / 'conversation.md').read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 """Live coordination information, node and question leases, and session-owned declarations.
 
-A section is an exact part of a node's question that an attempt or peer works on. A question is
+A section is an exact part of what a node asserts, which an attempt or peer works on. A question is
 an object of understanding that one explorer at a time occupies whole. Both are kept in the
 registering session's declaration.json and last until that session's pipeline finishes review.
 Choosing is serialized per node or question: one session at a time holds the lease, registers
@@ -21,6 +21,9 @@ CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
 SECTION_ROLES = ('attempt', 'peer')
 QUESTION_ROLES = ('explore',)
+# A session in one of these states holds a concurrency slot: launched and not yet ended, failed or integrated.
+# The runner counts its sessions by it, and the Lean broker does not exit while any session is in one.
+ACTIVE_STATUSES = ('starting', 'running', 'publishing')
 
 
 @contextmanager
@@ -56,7 +59,7 @@ def claims_lock(instance):
 
 def session_live(state, sid):
     """The broker's rule for an ended session: its stage is over, or its host and CLI are both gone."""
-    session = (state or {}).get('sessions', {}).get(sid)
+    session = state['sessions'].get(sid)
     if session is None or session['status'] not in ('starting', 'running'):
         return False
     return session.get('cli') is None or alive(session.get('host')) or alive(session.get('cli'))
@@ -97,12 +100,12 @@ def board(instance, state=None, model=None):
     for pid, pipeline in state['pipelines'].items():
         if pipeline['stage'] == 'done':
             continue
-        owners = [pipeline['producer'], *pipeline.get('previous_peers', []), pipeline.get('peer')]
+        owners = [pipeline['producer'], *pipeline['previous_peers'], pipeline['peer']]
         sections = [s for sid in dict.fromkeys(x for x in owners if x) for s in section_entries(instance, sid, model)]
         question = None
         if pipeline['role'] == 'explore':
             held = question_entry(instance, pipeline['producer'], model)
-            assigned = state['jobs'].get(pid + ':producer', {}).get('task', {}).get('question')
+            assigned = state['jobs'][pid + ':producer']['task'].get('question')
             if held:
                 question = held['id']
             elif assigned and (assigned in model['questions'] or assigned in model['question_aliases']):
@@ -153,10 +156,10 @@ def normalize(table, state):
     """Drop holders and waiters whose sessions ended and give a free lease to the longest waiter."""
     result = {}
     for node, entry in table.items():
-        holders = [h for h in entry.get('holders', []) if session_live(state, h['session'])]
+        holders = [h for h in entry['holders'] if session_live(state, h['session'])]
         present = {h['session'] for h in holders}
         queue = []
-        for waiter in sorted(entry.get('queue', []), key=lambda w: w['since']):
+        for waiter in sorted(entry['queue'], key=lambda w: w['since']):
             if session_live(state, waiter['session']) and waiter['session'] not in present:
                 present.add(waiter['session'])
                 queue.append(waiter)
@@ -178,8 +181,8 @@ def lease_table(instance, state=None, model=None):
     for node, entry in (read_json(path) if path.exists() else {}).items():
         if node in model['nodes'] or node in model['aliases']:
             target = merged.setdefault(canonical(model, node), {'holders': [], 'queue': []})
-            target['holders'] += entry.get('holders', [])
-            target['queue'] += entry.get('queue', [])
+            target['holders'] += entry['holders']
+            target['queue'] += entry['queue']
     return normalize(merged, state)
 
 
@@ -193,8 +196,8 @@ def question_lease_table(instance, state=None, model=None):
     for question, entry in (read_json(path) if path.exists() else {}).items():
         if question in model['questions'] or question in model['question_aliases']:
             target = merged.setdefault(canonical_question(model, question), {'holders': [], 'queue': []})
-            target['holders'] += entry.get('holders', [])
-            target['queue'] += entry.get('queue', [])
+            target['holders'] += entry['holders']
+            target['queue'] += entry['queue']
     return normalize(merged, state)
 
 
@@ -546,7 +549,7 @@ def updates(session):
         state = read_json(instance / 'runner/state.json')
         rows = board(instance, state, model)
         snapshot = (retain_snapshot(session, availability_view(
-            model, rows, state.get('attempt_availability_epoch', 0)))
+            model, rows, state['attempt_availability_epoch']))
             if inp['role'] == 'attempt' else None)
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     availability = question_availability(instance, state, model, rows)
@@ -559,9 +562,9 @@ def updates(session):
             'availability_snapshot': snapshot,
             'concerns': model['concerns'],
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
-                               for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive'],
+                               for j in state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive'],
             'messages': received,
-            'user_inputs': inp.get('user_inputs', [])}
+            'user_inputs': inp['user_inputs']}
 
 
 def message(session, target, message_file):

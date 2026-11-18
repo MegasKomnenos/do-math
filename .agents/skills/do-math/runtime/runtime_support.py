@@ -1,6 +1,6 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, os, shutil, signal, subprocess, tarfile, time, uuid
+import ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 
@@ -387,7 +387,13 @@ def session_host(session):
     """
     job = read_json(session / "launch.json")
     while not (session / "GO").exists():
-        if (session / "CANCEL").exists() or not alive(job["runner"]):
+        if (session / "CANCEL").exists():
+            return 1
+        if not alive(job["runner"]):
+            # The runner writes GO once this host's identity is durable and can die right after it. The host
+            # outlives the runner, so a GO that appeared since the loop's test still starts the session.
+            if (session / "GO").exists():
+                break
             return 1
         time.sleep(0.1)
     write_json(session / "process-job.json", {**contain_session_processes(), "at": time.time()})
@@ -440,6 +446,22 @@ def _archive_entries(archive):
 
 
 
+def remove_tree(path):
+    """Remove a directory tree whose contents the runtime keeps elsewhere.
+
+    Windows refuses to remove a read-only file or directory. Git creates its object files read-only,
+    and shutil.copytree keeps the flag in its copy. Every caller removes a tree whose contents remain
+    elsewhere: a finished work/ in its verified archive, or a stale staging copy in the files it was
+    copied from. The flag protects nothing there, so it is cleared where Windows refuses."""
+    def clear_read_only(function, name, error):
+        if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
+            raise error
+        os.chmod(name, stat.S_IWRITE)
+        function(name)
+    shutil.rmtree(path, onexc=clear_read_only)
+
+
+
 def archive_work(session):
     """Replace a finished session's work/ with work.tar.xz, verified file by file.
 
@@ -468,5 +490,5 @@ def archive_work(session):
             part.unlink(missing_ok=True)
     if any(stored.get(name, "missing") != value for name, value in entries.items()):
         raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
-    shutil.rmtree(work)
+    remove_tree(work)
     return True

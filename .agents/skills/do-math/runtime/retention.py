@@ -23,12 +23,16 @@ def readable(value):
     return json.dumps(value, ensure_ascii=False)
 
 
-def conversation(source, destination, native, *, append=False, label=None):
-    """Retain all canonical messages and tool contents without truncating their middles."""
+def conversation(source, destination, native, *, append=False, label=None, note=None):
+    """Retain all canonical messages and tool contents without truncating their middles.
+
+    A note, when given, follows the heading: where content the source holds only by reference is kept."""
     written = 0
     with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', newline='\n') as out:
         if not append:
             out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport remains in the named source files.\n\n')
+            if note:
+                out.write(note + '\n\n')
         for number, line in enumerate(inp, 1):
             try:
                 event = json.loads(line)
@@ -143,9 +147,16 @@ def capture(session, provider):
                            for stream in streams for path in (stream, stream.with_name('cli.stderr.log'))],
                'limitation': None if copied else 'No native transcript was located; retained CLI streams and artifacts are the available source.'}
     sources = [session / name for name in sorted(copied)] if copied else [p for p in streams if p.exists()]
+    # A Claude transcript keeps only a preview of a large tool result and names the file in the operator's
+    # profile that holds the rest; the readable conversation says where this session keeps its copy.
+    note = ("Where a tool result below shows only a preview, the full output is in the file it names, in the "
+            "Claude CLI's folder for this conversation. This session keeps a copy of that folder, with those "
+            "output files and any subagent conversations, as " + ', '.join(name + '/' for name in companions)
+            + '.') if companions else None
     if sources:
         receipt['conversation_items'] = sum(conversation(source, session / 'conversation.md', bool(copied),
-                                                        append=i > 0, label=source.relative_to(session).as_posix())
+                                                        append=i > 0, label=source.relative_to(session).as_posix(),
+                                                        note=note)
                                             for i, source in enumerate(sources))
         receipt['conversation'] = 'conversation.md'
     write_json(session / 'retention.json', receipt)

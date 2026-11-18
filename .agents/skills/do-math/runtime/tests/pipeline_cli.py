@@ -49,7 +49,7 @@ elif role == 'peer':
 elif role == 'review':
     (output / 'feedback.md').write_text('The precise argument was assessed.', encoding='utf-8')
     if task['kind'] == 'comprehensive':
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'index_assessment': 'No new verdict.', 'findings': [], 'concerns': []})
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
     else:
         candidate = Path(task['candidate'])
         data = read_json(candidate / 'record.json')
@@ -75,4 +75,7 @@ elif role == 'review':
             assessment['solutions'].append(verdict)
         write_json(output / 'assessment.json', assessment)
 elif role == 'organizer':
-    write_json(output / 'organization.json', {'batch': task['batch'], 'shared_context': task['batch'], 'modules': []})
+    # A complete layout carries the earlier placements forward and adds the batch (reference/organizer-output.md).
+    layout = read_json(Path(inp['instance']) / 'knowledge/state.json')
+    write_json(output / 'organization.json', {'batch': task['batch'], 'modules': layout['modules'],
+                                              'shared_context': sorted(set(layout['shared_context']) | set(task['batch']))})
