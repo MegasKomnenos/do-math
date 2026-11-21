@@ -239,6 +239,9 @@ class ContextTests(InstanceCase):
         with patch.dict(os.environ, {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '32000'}):
             # The worker's output cap is explicit, not the operator's or the CLI default.
             self.assertEqual(worker_environment()['CLAUDE_CODE_MAX_OUTPUT_TOKENS'], '128000')
+        # A configured MCP server that starts slowly under load must still be attached (reference/operations.md).
+        with patch.dict(os.environ, {'MCP_TIMEOUT': '5000'}):
+            self.assertEqual(worker_environment()['MCP_TIMEOUT'], '180000')
 
     def test_withdrawn_solution_keeps_its_explanation_visible(self):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
@@ -293,11 +296,11 @@ class ContextTests(InstanceCase):
     def test_every_role_receives_its_ordered_guides_and_output_contract(self):
         research = ['what-research-is-for.md', 'user-writing-preferences.md']
         references = {
-            'attempt': research + ['retained-work.md'],
-            'explore': research + ['retained-work.md'],
+            'attempt': research + ['literature.md', 'retained-work.md'],
+            'explore': research + ['literature.md', 'retained-work.md'],
             'formalizer': ['retained-work.md', 'lean.md'],
-            'peer': research + ['record-format.md', 'retained-work.md'],
-            'review': research + ['record-format.md', 'review-output.md'],
+            'peer': research + ['literature.md', 'record-format.md', 'retained-work.md'],
+            'review': research + ['literature.md', 'record-format.md', 'review-output.md'],
             'organizer': research + ['organizer-output.md'],
         }
         for role, specialized in references.items():

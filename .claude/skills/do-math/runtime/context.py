@@ -12,11 +12,11 @@ from runtime_support import write_json, write_text
 
 RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
 ROLE_REFERENCES = {
-    'attempt': RESEARCH_CONTEXT + ['retained-work.md'],
-    'explore': RESEARCH_CONTEXT + ['retained-work.md'],
+    'attempt': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md'],
+    'explore': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md'],
     'formalizer': ['retained-work.md', 'lean.md'],
-    'peer': RESEARCH_CONTEXT + ['record-format.md', 'retained-work.md'],
-    'review': RESEARCH_CONTEXT + ['record-format.md', 'review-output.md'],
+    'peer': RESEARCH_CONTEXT + ['literature.md', 'record-format.md', 'retained-work.md'],
+    'review': RESEARCH_CONTEXT + ['literature.md', 'record-format.md', 'review-output.md'],
     'organizer': RESEARCH_CONTEXT + ['organizer-output.md'],
 }
 

@@ -27,6 +27,8 @@ The assessment has these fields:
 
 An accepted relation or solution cites a supported claim. Admitting a node requires a supported connection through an accepted relation to the existing research. A solution assessment can include `formal_dependencies`, replacing the candidate's list with the signed nodes actually required by the accepted argument. Assess every proposal, using null, false or `none` for those not accepted.
 
+A solution or relation whose proof you found correct can still receive `none` or `false`, when the answer to either of the questions in the role guide's section "Two questions about a proof you have found correct" is yes. The claims keep the status your check gave them, so the claims of a correct proof remain `supported`. The `reason` of that solution or relation then states what your check of the proof found, and either where the proof can be simplified and how, or which part of the statement is established by which computation, so that a reader of the frontier can tell that the proof was not found defective.
+
 `declined` and `revise` record two different judgments behind a refusal, which later peers read differently; the role guide explains when each applies and what its reason says. An accepted resolution requires the cited claim to be supported; its reason says why the account settles the question rather than part of it.
 
 The feedback covers important mathematical assertions in the body as well as the structured list. Explain missing source content, defects, restrictions, unperformed checks and valuable supported work. The structured judgment does not limit the mathematical scope of review to what the peer happened to list.

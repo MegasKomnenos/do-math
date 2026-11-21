@@ -52,6 +52,9 @@ STORE = ArtifactStore(ROOT / "data")
 # ponytail: one worker owns browser sessions; use one server per independent research execution.
 WORKER = ThreadPoolExecutor(max_workers=1, thread_name_prefix="scholarly")
 ADAPTERS = {}
+# None serves every source. With --public-only it is the set of sources that use neither an
+# institutional login nor a browser, and every other source is refused before any adapter runs.
+ENABLED = None
 
 
 class ToolResult(BaseModel):
@@ -77,21 +80,28 @@ def run_call(function, *args, **kwargs):
 @mcp.tool()
 def list_sources() -> ToolResult:
     """지원·구현 중인 자료원과 기능 상태를 조회한다. 상세 사용법은 describe_source로 읽는다."""
-    return ToolResult(status="ok", sources=[s.summary() for s in SOURCES.values()])
+    return ToolResult(status="ok", sources=[s.summary() for s in SOURCES.values() if ENABLED is None or s.id in ENABLED])
 
 
 @mcp.tool()
 def describe_source(source: str) -> ToolResult:
     """자료원별 검색 문법·필드·필터·export·확보 범위와 예제를 반환한다."""
     def describe():
-        item = source_info(source)
+        item = enabled_source(source)
         return {"status": "ok", **item.summary(), "home": item.home, "usage": item.usage,
             "scope": "한 호출은 이 자료원에 한정된다. pending은 개발이 남았다는 뜻이며 자료원 자체의 기능 부재를 뜻하지 않는다."}
     return run_call(describe)
 
 
-def operation(source, name, *args, **kwargs):
+def enabled_source(source):
     info = source_info(source)
+    if ENABLED is not None and source not in ENABLED:
+        raise ServiceError("source_not_enabled", "This server was started with --public-only, which serves only the sources that need no institutional login and no browser; this source is not among them. list_sources shows the sources it serves.", status="unsupported", source=source)
+    return info
+
+
+def operation(source, name, *args, **kwargs):
+    info = enabled_source(source)
     if info.implementation == "deferred":
         raise ServiceError("source_deferred", "This source is deferred by the user's access requirements", status="unsupported", source=source)
     if source not in ADAPTERS:
@@ -133,10 +143,13 @@ def read_artifact(artifact_id: str) -> bytes:
 
 
 def main():
-    global STORE
+    global STORE, ENABLED
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
     parser.add_argument("--credential-root", type=Path, default=ROOT.parents[1] / ".credentials")
+    parser.add_argument("--public-only", action="store_true",
+        help="Serve only the sources that use neither an institutional login nor a browser. No login gateway is created, "
+             "so several servers can run at once without opening sessions on the institutional account.")
     args = parser.parse_args()
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
@@ -146,6 +159,15 @@ def main():
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
     ADAPTERS['general-web'] = GeneralWeb(STORE)
+    if args.public_only:
+        # Everything registered so far talks to public endpoints over HTTP. Stop here: the adapters
+        # below hold a login gateway or a browser, and this process creates neither.
+        ENABLED = frozenset(ADAPTERS)
+        try:
+            mcp.run(transport="stdio")
+        finally:
+            WORKER.shutdown(wait=True, cancel_futures=True)
+        return
     gateway = KudosGateway(args.credential_root, STORE.sanitizer)
     firefox_gateway = KudosGateway(args.credential_root, STORE.sanitizer, engine="firefox")
     native_gateway = NativeChromeGateway(args.credential_root, STORE.sanitizer)

@@ -35,6 +35,27 @@ class MCPContract(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(value['where']['file'],'test_mcp.py')
         self.assertIsInstance(value['where']['line'],int)
 
+    async def test_public_only_serves_the_login_free_sources_and_refuses_the_rest(self):
+        """do-math attaches one server to every research session. Sixteen servers that each logged in to the
+        institutional account would multiply its sessions, so this mode creates no login gateway at all."""
+        with tempfile.TemporaryDirectory() as tmp:
+            params = StdioServerParameters(command=sys.executable, args=[str(ROOT / "server.py"), "--data-dir", tmp, "--public-only"])
+            async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+                await session.initialize()
+                listed = {s["id"] for s in (await session.call_tool("list_sources", {})).structuredContent["sources"]}
+                self.assertLessEqual({"zbmath", "arxiv", "crossref", "openalex", "semantic-scholar"}, listed)
+                self.assertFalse(listed & {"mathscinet", "springer", "science-direct", "siam", "project-euclid", "jstor"})
+                for name, arguments in (("describe_source", {"source": "mathscinet"}),
+                                        ("search", {"source": "mathscinet", "query": "ti:(parking)"}),
+                                        ("fetch", {"source": "springer", "target": "10.1007/example"})):
+                    with self.subTest(name):
+                        refused = (await session.call_tool(name, arguments)).structuredContent
+                        self.assertEqual((refused["status"], refused["code"]), ("unsupported", "source_not_enabled"))
+                described = (await session.call_tool("describe_source", {"source": "zbmath"})).structuredContent
+                self.assertEqual(described["status"], "ok")
+                unknown = (await session.call_tool("describe_source", {"source": "no-such-source"})).structuredContent
+                self.assertEqual(unknown["code"], "unknown_source")
+
     async def test_stdio_client_can_discover_and_extract_without_internal_knowledge(self):
         self.assertTrue((ROOT / "server.py").exists(), "The five-tool stdio MCP entry point has not been implemented")
         with tempfile.TemporaryDirectory() as tmp:

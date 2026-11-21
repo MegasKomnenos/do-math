@@ -1649,6 +1649,21 @@ class RunnerTests(InstanceCase):
         with self.assertRaisesRegex(ValueError, r'unknown setting: roles\.reviewer'):
             validate(role)
 
+    def test_acceptance_criteria_apply_by_default_and_can_be_turned_off(self):
+        applied = {'decline_reducible_proofs': True, 'decline_uncomprehended_computation': True}
+        self.assertEqual(defaults()['acceptance'], applied)
+        self.assertEqual(validate({})['acceptance'], applied)
+        one_off = validate({'acceptance': {'decline_uncomprehended_computation': False}})['acceptance']
+        self.assertEqual(one_off, {**applied, 'decline_uncomprehended_computation': False})
+        cases = (('acceptance must be an object', {'acceptance': True}),
+                 (r'unknown setting: acceptance\.decline_computation',
+                  {'acceptance': {'decline_computation': False}}),
+                 ('acceptance.decline_reducible_proofs must be true or false',
+                  {'acceptance': {'decline_reducible_proofs': 0}}))
+        for pattern, config in cases:
+            with self.subTest(pattern), self.assertRaisesRegex(ValueError, pattern):
+                validate(config)
+
     def test_malformed_setting_structure_is_rejected_by_name(self):
         cli_path = defaults(); cli_path['cli']['codex'] = 5
         lean_cwd = defaults(); lean_cwd['lean']['cwd'] = 5

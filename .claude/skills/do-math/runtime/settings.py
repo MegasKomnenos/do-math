@@ -24,6 +24,9 @@ def defaults():
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
             'max_end_resumptions': 3,
+            # Two considerations review weighs before accepting a correct proof (roles/review.md).
+            'acceptance': {'decline_reducible_proofs': True,
+                           'decline_uncomprehended_computation': True},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
                      'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
@@ -32,16 +35,17 @@ def defaults():
 def validate(raw):
     if not isinstance(raw, dict) or raw.get('schema', 1) != 1:
         raise ValueError('settings must be a fresh-runtime schema 1 object')
-    for section in ('cli', 'lean'):
+    sections = ('cli', 'lean', 'acceptance')
+    for section in sections:
         if not isinstance(raw.get(section, {}), dict):
             raise ValueError(section + ' must be an object')
     value = defaults()
     value.update(raw)
-    value['cli'] = {**defaults()['cli'], **raw.get('cli', {})}
-    value['lean'] = {**defaults()['lean'], **raw.get('lean', {})}
+    for section in sections:
+        value[section] = {**defaults()[section], **raw.get(section, {})}
     known = defaults()
     unknown = [key for key in raw if key not in known]
-    for section in ('cli', 'lean'):
+    for section in sections:
         nested = raw.get(section, {})
         if isinstance(nested, dict):
             unknown += [section + '.' + key for key in nested if key not in known[section]]
@@ -59,6 +63,9 @@ def validate(raw):
         raise ValueError('launch_interval must be a nonnegative integer number of seconds')
     if type(value['max_end_resumptions']) is not int or value['max_end_resumptions'] < 0:
         raise ValueError('max_end_resumptions must be a nonnegative integer')
+    for key, applied in value['acceptance'].items():
+        if type(applied) is not bool:
+            raise ValueError(f'acceptance.{key} must be true or false')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
     if not isinstance(value['roles'], dict):
