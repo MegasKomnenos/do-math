@@ -98,7 +98,7 @@ def validate(raw):
             continue
         if type(lean[key]) is not int or lean[key] < 1:
             raise ValueError(f'lean.{key} must be positive')
-    for key in ('min_free_memory_mb', 'max_passes'):
+    for key in ('min_free_memory_mb', 'max_passes', 'header_snapshots'):
         if type(lean[key]) is not int or lean[key] < 0:
             raise ValueError(f'lean.{key} must be a nonnegative integer')
     for key in ('confidence', 'default_spread'):

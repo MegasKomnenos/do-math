@@ -1,474 +1,1139 @@
+"""Standing and the frontier, occupancy of elements, and the runner's scheduling and recovery.
+
+The canon of every test is built through the real candidate, build and publication path of
+tests/support.py; a test that only needs a research state starts from one of its scenarios.
+"""
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
-import uuid
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check import Invalid, assessment_check, findings_check, organization_check
-from coordination import board, lease, lease_table, main as coordination_main, message, release, section, updates, wait
-from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
-from runner import Runner, archive_finished, initialize, main, uid
+sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
+from canon import Canon
+from coordination import (board, lease, lease_table, main as coordination_main, message, release, section,
+                          updates, wait)
+from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
+from runner import Runner, archive_finished, initialize, main, start
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
-
-POPEN = subprocess.Popen  # captured before any test patches it
-
-
-def record(claims=None, nodes=None, relations=None, solutions=None, glossary=None,
-           questions=None, question_resolutions=None):
-    return {'title': 'Investigation', 'description': 'A precise contribution with its limitations.',
-            'exposition': 'record.md', 'claims': claims or [], 'nodes': nodes or [],
-            'relations': relations or [], 'solutions': solutions or [], 'glossary': glossary or [],
-            'questions': questions or [], 'question_resolutions': question_resolutions or []}
+from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, ScenarioCase,
+                     module_text, record_text, stop_broker, take, theorem, write_canon)
+from support import test_settings as fixture_settings  # renamed, so that no loader takes it for a test
 
 
-def claim_row(cid, dependencies=None):
-    return {'id': cid, 'statement': cid, 'evidence': 'record.md', 'by': 'producer', 'dependencies': dependencies or []}
+def finding(reason, status='confirmed', concerns=(), **changes):
+    return {'concerns': list(concerns), 'status': status, 'reason': reason, **changes}
 
 
-def assessment(data, formal=()):
-    return {'publish': True, 'reason': 'Useful work.', 'index_assessment': 'Supported within its scope.',
-            'feedback': 'feedback.md', 'glossary_approved': True,
-            'claims': [{'claim': c['id'], 'status': 'supported', 'reason': 'Argument checked.'} for c in data['claims']],
-            'nodes': [{'proposal': n['id'], 'node': n['id'], 'reason': 'Connection checked.'} for n in data['nodes']],
-            'relations': [{'proposal': r['id'], 'accepted': True, 'reason': 'Implication checked.'} for r in data['relations']],
-            'solutions': [{'proposal': s['id'], 'level': 'formal' if s['id'] in formal else 'informal', 'reason': 'Exact statement.'} for s in data['solutions']],
-            'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'Important and exactly stated.'}
-                          for q in data.get('questions', [])],
-            'question_resolutions': [{'proposal': r['id'], 'resolved': True, 'reason': 'The explanation settles the question.'}
-                                     for r in data.get('question_resolutions', [])],
-            'concerns': []}
+def comprehensive(findings=(), concerns=()):
+    """The assessment of a comprehensive review."""
+    return {'feedback': 'feedback.md', 'findings': list(findings), 'concerns': list(concerns)}
 
 
-def take(session, node, statement=None, reasons=None, leased=False):
-    """Register a section through the node's lease: the whole node unless a statement is given."""
-    session = Path(session)
-    request = session / ('section-' + uuid.uuid4().hex + '.json')
-    write_json(request, {'whole': statement is None, 'statement': statement, 'reasons': reasons or {}})
-    if not leased:
-        taken = lease(session, node)
-        if not taken['leased']:
-            return {'registered': False, **taken}
-    return section(session, node, request)
+def concern(cid, *targets):
+    return {'id': cid, 'targets': list(targets), 'reason': 'A boundary case needs checking.', 'evidence': 'The case n = 0.'}
 
 
-def implication(rid, premise, conclusion='root', outcome='proved'):
-    return {'id': rid, 'claim': rid, 'premises': [{'node': premise, 'outcome': outcome}],
-            'conclusion': {'node': conclusion, 'outcome': 'proved'}}
+def frontier_view(instance):
+    """The frontier part of frontier.md, without the questions that follow it."""
+    return (Path(instance) / 'knowledge/frontier.md').read_text(encoding='utf-8').split('# Questions')[0]
 
 
-def solution(sid, node, cid, outcome='proved', dependencies=None):
-    return {'id': sid, 'node': node, 'outcome': outcome, 'claim': cid, 'formal_dependencies': dependencies or [], 'lean': None}
+def second_proof(case):
+    """The root has no proof of its own; Small.rootAlt, another proof of its statement, is accepted."""
+    def build():
+        folder = case.candidate(
+            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[case.root_variant]))},
+            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
+                                                     proof='Count an n by n square in L-shaped layers.',
+                                                     proves='Small.root')})
+        case.publish(folder)
+    case.scenario('second', build)
 
 
-class InstanceCase(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        (self.root / 'goal.md').write_text('For every natural number n, n + 0 = n.', encoding='utf-8')
-        self.instance = self.root / 'instance'
-        initialize(self.instance, self.root / 'goal.md')
-        self.seq = 0
-        self.skill = self.root / 'skill'
-        installed = Path(__file__).resolve().parents[2]
-        for name in ('reference', 'roles', 'resume'):
-            shutil.copytree(installed / name, self.skill / name)
-        shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
-
-    def publish(self, rid, data, review=None, role='attempt'):
-        self.seq += 1
-        folder = self.instance / 'knowledge/records' / rid
-        (folder / 'review').mkdir(parents=True)
-        write_json(folder / 'record.json', data)
-        write_json(folder / 'review/assessment.json', review or assessment(data))
-        (folder / 'record.md').write_text('The complete argument.', encoding='utf-8')
-        (folder / 'review/feedback.md').write_text('Checked.', encoding='utf-8')
-        write_json(self.instance / 'knowledge/events' / (rid + '.json'),
-                   {'id': rid, 'sequence': self.seq, 'kind': 'record', 'producer_role': role, 'folder': 'records/' + rid})
-        return folder
-
-    def event(self, eid, kind, data):
-        self.seq += 1
-        sub = 'reviews' if kind == 'review' else 'organizations'
-        folder = self.instance / 'knowledge' / sub / eid
-        folder.mkdir(parents=True)
-        write_json(folder / ('assessment.json' if kind == 'review' else 'organization.json'), data)
-        write_json(self.instance / 'knowledge/events' / (eid + '.json'),
-                   {'id': eid, 'sequence': self.seq, 'kind': kind, 'folder': sub + '/' + eid})
-
-    def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
-        """An operator publication of questions, made as the operator makes it: the questions command
-        writes a request and the runner collects and publishes it (reference/operations.md). Only the
-        publication's identifier is fixed, to eid, so that a test can name it."""
-        source = self.root / ('questions-' + uuid.uuid4().hex + '.json')
-        write_json(source, {'reason': reason, 'questions': items})
-        with patch('builtins.print') as shown:
-            self.assertEqual(main(['questions', str(self.instance), '--file', str(source)]), 0, shown.call_args)
-        # A caller may stand in for session launches by patching subprocess.Popen, which Git also
-        # uses; the publication commits with the real Git, and the original patch returns afterwards.
-        with patch.object(subprocess, 'Popen', POPEN), \
-                patch('runner.uid', side_effect=lambda prefix: eid if prefix == 'q' else uid(prefix)):
-            engine = Runner(self.instance, self.skill)
-            engine.ingest_inputs()
-        event = self.instance / 'knowledge/events' / (eid + '.json')
-        self.assertTrue(event.is_file(), engine.state['last_error'])
-        self.seq = read_json(event)['sequence']
-
-    def reduction(self):
-        return record([claim_row('reduce')], [{'id': 'Q', 'statement': 'Q', 'connection': 'reduce'}],
-                      [implication('reduce', 'Q')])
+def initialized(base, name, root=ROOT, modules=None, records=None):
+    """An instance created through runner.initialize, as the operator creates one: the fixture's canon with
+    the given text of the root module, and further modules and records (which replace the fixture's own)."""
+    base = Path(base)
+    canon = base / (name + '-canon')
+    write_canon(canon, root)
+    for relative, text in [('lean/' + k, v) for k, v in (modules or {}).items()] + \
+                          [('records/' + k, v) for k, v in (records or {}).items()]:
+        path = canon / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding='utf-8', newline='\n')
+    (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
+                                  encoding='utf-8')
+    write_json(base / 'settings.json', fixture_settings())
+    initialize(base / name, base / 'goal.md', canon, 'Small.root', base / 'settings.json')
+    return base / name
 
 
-class KnowledgeTests(InstanceCase):
-    def test_node_merge_preserves_old_evidence_and_relation_references(self):
-        data = record(
-            [claim_row('from_a'), claim_row('from_b')],
-            [{'id': node, 'statement': 'The same precise proposition.', 'connection': link}
-             for node, link in (('A', 'from_a'), ('B', 'from_b'))],
-            [implication('from_a', 'A'), implication('from_b', 'B')])
-        nodes = self.publish('rnodes', data)
-        proof = self.publish('rproof', record([claim_row('p')],
-                                             solutions=[solution('p', 'A', 'p')]))
-        saved = {p: p.read_bytes() for folder in (nodes, proof)
-                 for p in folder.rglob('*') if p.is_file()}
-        before = replay(self.instance)
-        self.assertEqual(before['nodes']['B']['state'], 'unresolved')
-        self.assertNotIn('rnodes/from_b', before['proofs'])
-        organization = {'batch': ['rnodes', 'rproof'], 'modules': [],
-                        'shared_context': ['rnodes', 'rproof'],
-                        'merge_nodes': [{'from': 'A', 'into': 'B',
-                                         'reason': 'The statements and definitions are identical.'}]}
-        with self.assertRaisesRegex(Invalid, 'merge needs existing nodes'):
-            organization_check({**organization, 'merge_nodes': [
-                {'from': 'A', 'into': 'missing', 'reason': 'No such node.'}]},
-                before, organization['batch'])
-        organization_check(organization, before, organization['batch'])
-        self.event('omerge', 'organization', organization)
+def comprehensive_jobs(runner):
+    return [j for j in runner.state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
+
+
+def publish_comprehensive(runner, job, data, sid='scomprehensive'):
+    """Publish a comprehensive review's assessment as the runner does when its session ends."""
+    output = runner.session_dir(sid) / 'output'
+    output.mkdir(parents=True)
+    write_json(output / 'assessment.json', data)
+    (output / 'feedback.md').write_text('What the tracing found.', encoding='utf-8')
+    runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
+    job.update(status='running', session=sid)
+    runner.prepare_publication(sid, job, 'review')
+    runner.publish()
+
+
+class KnowledgeTests(ScenarioCase):
+    def elements(self):
+        return replay(self.instance)['elements']
+
+    def test_the_four_states_follow_the_proof_and_the_verdict_review_gave_it(self):
+        self.assertEqual(STANDINGS, {'no_proof': 'no proof', 'not_confirmed': 'proof not confirmed',
+                                     'held': 'correct, held back', 'accepted': 'accepted'})
+        written = ('caseGap', 'caseOpen', 'caseHeld', 'caseDone')
+        folder = self.candidate(
+            modules={'Small/Cases.lean': module_text('\n\n'.join([
+                theorem('caseNone', ': oddSum 1 = 1'), theorem('caseGap', ': oddSum 2 = 4'),
+                theorem('caseOpen', ': oddSum 3 = 9'), theorem('caseHeld', ': oddSum 4 = 16'),
+                theorem('caseDone', ': oddSum 5 = 25'), theorem('caseLean', SUM_ZERO, proof='rfl')]))},
+            records={'Small/caseNone.md': record_text('A statement left open.'),
+                     **{f'Small/{name}.md': record_text('A statement with a written proof.', proof='Add the terms.')
+                        for name in written},
+                     'Small/caseLean.md': record_text('A statement proved in Lean alone.')})
+        change, _ = self.publish(folder, self.verdicts(folder, **{
+            'Small.caseGap': {'correct': 'not_confirmed', 'accepted': False, 'reason': GAP_REASON},
+            'Small.caseOpen': {'correct': 'undetermined', 'accepted': False, 'reason': 'The source could not be read in full.'},
+            'Small.caseHeld': {'accepted': False, 'reason': HELD_REASON}}))
+        elements = self.elements()
+        self.assertEqual({name.removeprefix('Small.'): element['standing'] for name, element in elements.items()},
+                         {'oddSum': None, 'root': 'no_proof', 'caseNone': 'no_proof', 'caseGap': 'not_confirmed',
+                          'caseOpen': 'not_confirmed', 'caseHeld': 'held', 'caseDone': 'accepted', 'caseLean': 'accepted'})
+        # A proof is a complete Lean proof or a written one; the record of caseLean has no written proof.
+        self.assertEqual((elements['Small.caseLean']['lean_proof'], elements['Small.caseLean']['written_proof']),
+                         ('complete', False))
+        self.assertEqual((elements['Small.caseDone']['lean_proof'], elements['Small.caseDone']['written_proof']),
+                         ('sorry', True))
+        # The verdict stands with the element it judged, with review's reason and the change that carried it.
+        held = elements['Small.caseHeld']['verdict']
+        self.assertEqual((held['correct'], held['accepted'], held['reason'], held['change']),
+                         ('confirmed', False, HELD_REASON, change))
+        # A definition has none of the four states and is neither a proof nor settled.
+        definition = elements['Small.oddSum']
+        self.assertEqual((definition['kind'], definition['proofs'], definition['settled'], definition['statement_of']),
+                         ('def', [], False, None))
+
+    def test_a_verdict_belongs_to_the_proof_it_judged(self):
+        self.direct()
+        first = self.elements()['Small.root']['verdict']['change']
+        source = Canon(self.instance).lean / 'Small/Root.lean'
+        original = source.read_bytes()
+
+        def offer(proof, **verdict):
+            folder = self.candidate(replace={'Small.root': self.root_text(proof=proof)},
+                                    records={'Small/root.md': self.root_record('By cases on $n$.')})
+            assessment = self.verdicts(folder, **{'Small.root': verdict})
+            if not verdict:
+                assessment['elements'] = []
+            return self.publish(folder, assessment)[0]
+
+        # Review declined the replacement: the canon keeps its proof, and that proof keeps its verdict.
+        offer('cases n <;> sorry', correct='not_confirmed', accepted=False, replaces=False,
+              reason='No better than the proof the canon has.')
+        root = self.elements()['Small.root']
+        self.assertEqual(source.read_bytes(), original)
+        self.assertEqual((root['standing'], root['verdict']['change']), ('accepted', first))
+        # A proof that takes the place of the old one stands under review's judgment of it.
+        second = offer('cases n <;> sorry', accepted=False, reason=HELD_REASON)
+        root = self.elements()['Small.root']
+        self.assertNotEqual(source.read_bytes(), original)
+        self.assertEqual((root['standing'], root['verdict']['change'], root['verdict']['reason']),
+                         ('held', second, HELD_REASON))
+        # A later proof that nobody judged does not inherit the judgment of the proof it replaced.
+        offer('induction n <;> sorry')
         model = replay(self.instance)
-        self.assertEqual(canonical(model, 'A'), 'B')
-        self.assertEqual(model['proofs']['rproof/p']['node'], 'B')
-        for node in ('A', 'B', 'root'):
-            self.assertEqual(model['nodes'][node]['state'], 'informal_proved')
-        for link in ('from_a', 'from_b'):
-            self.assertEqual(model['proofs']['rnodes/' + link]['premise_proofs'], ['rproof/p'])
+        root = model['elements']['Small.root']
+        self.assertIsNone(root['verdict'])
+        self.assertEqual((root['standing'], root['settled'], model['root_state']), ('not_confirmed', False, 'unresolved'))
+        # Without a verdict the standing follows from the proof alone. A written proof waits for review, as
+        # above; for a proof that is complete in Lean, Lean's check stands where review's judgment would.
+        folder = self.candidate(replace={'Small.root': self.root_formal()})
+        assessment = self.verdicts(folder)
+        assessment['elements'] = []
+        self.publish(folder, assessment)
+        model = replay(self.instance)
+        root = model['elements']['Small.root']
+        self.assertIsNone(root['verdict'])
+        self.assertEqual((root['lean_proof'], root['standing'], root['settled'], model['root_state']),
+                         ('complete', 'accepted', True, 'formal_proved'))
+
+    def test_settled_is_a_least_fixed_point_and_a_held_proof_settles_nothing_that_uses_it(self):
+        folder = self.candidate(
+            modules={'Small/Chain.lean': module_text('\n\n'.join([
+                theorem('chainB', ': oddSum 2 = 4'), theorem('chainA', ': oddSum 1 = 1', uses=['chainB']),
+                theorem('heldQ', ': oddSum 3 = 9')]))},
+            replace={'Small.root': self.root_text(uses=['chainA', 'heldQ'])}, imports={'Small.root': ['Small.Chain']},
+            records={'Small/chainB.md': record_text('Two terms.'),
+                     'Small/chainA.md': record_text('One term, through two.', proof='Remove the second term.'),
+                     'Small/heldQ.md': record_text('Three terms.', proof='Add the terms one at a time.'),
+                     'Small/root.md': self.root_record()})
+        self.publish(folder, self.verdicts(folder, **{'Small.heldQ': {'accepted': False, 'reason': HELD_REASON}}))
+        model = replay(self.instance)
+        elements = model['elements']
+        # Accepted proofs above a statement without a proof are not settled, and neither is what a held proof carries.
+        self.assertEqual({n: elements['Small.' + n]['standing'] for n in ('root', 'chainA', 'chainB', 'heldQ')},
+                         {'root': 'accepted', 'chainA': 'accepted', 'chainB': 'no_proof', 'heldQ': 'held'})
+        self.assertFalse(any(elements[name]['settled'] for name in elements))
+        self.assertEqual(model['root_state'], 'unresolved')
+        # The held proof is used all the same: the root's proof names it, and Lean compiled that.
+        self.assertEqual(elements['Small.root']['uses'], ['Small.chainA', 'Small.heldQ'])
+        self.assertEqual(elements['Small.heldQ']['used_by'], ['Small.root'])
+
+        self.replace_proof('Small.chainB', theorem('chainB', ': oddSum 2 = 4', proof='unfold oddSum\n  sorry'),
+                           'Unfold the definition twice.', weight='step')
+        model = replay(self.instance)
+        elements = model['elements']
+        # A definition the proof uses has no standing and does not enter the computation.
+        self.assertIn('Small.oddSum', elements['Small.chainB']['uses'])
+        self.assertIsNone(elements['Small.oddSum']['standing'])
+        self.assertEqual({n: elements['Small.' + n]['settled'] for n in ('root', 'chainA', 'chainB', 'heldQ')},
+                         {'root': False, 'chainA': True, 'chainB': True, 'heldQ': False})
+        self.assertEqual(model['root_state'], 'unresolved')
+
+        self.replace_proof('Small.heldQ', theorem('heldQ', ': oddSum 3 = 9'), 'Add the three terms at once.', weight='step')
+        model = replay(self.instance)
+        self.assertTrue(all(model['elements']['Small.' + n]['settled'] for n in ('root', 'chainA', 'chainB', 'heldQ')))
+        self.assertEqual(model['root_state'], 'informal_proved')
+
+    def test_a_statement_is_settled_through_any_one_of_its_proofs_and_findings_withdraw_and_restore(self):
+        second_proof(self)
+        model = replay(self.instance)
+        root, other = model['elements']['Small.root'], model['elements']['Small.rootAlt']
+        # Which declarations prove one statement is declared in the record and confirmed by Lean.
+        self.assertTrue(model['pairs']['same|Small.rootAlt|Small.root'])
+        self.assertEqual((root['proofs'], other['statement_of'], other['proves']),
+                         (['Small.root', 'Small.rootAlt'], 'Small.root', 'Small.root'))
+        # Each proof keeps its own state; the statement is settled as soon as one of them is.
+        self.assertEqual((root['standing'], root['settled'], other['standing'], other['settled']),
+                         ('no_proof', False, 'accepted', True))
+        self.assertTrue(root['statement_settled'])
+        self.assertEqual(model['root_state'], 'informal_proved')
+
+        withdrawal = finding('The layers are counted twice.', invalidates=['Small.rootAlt'])
+        self.event('v1', 'review', comprehensive([withdrawal]))
+        model = replay(self.instance)
+        other = model['elements']['Small.rootAlt']
+        self.assertEqual((other['standing'], other['verdict']['later_review'], other['verdict']['reason']),
+                         ('not_confirmed', 'v1', 'The layers are counted twice.'))
+        self.assertEqual(model['root_state'], 'unresolved')
+        self.event('v2', 'review', comprehensive([finding('Each layer is counted once after all.', status='cleared',
+                                                          validates=['Small.rootAlt'])]))
+        model = replay(self.instance)
+        self.assertEqual((model['elements']['Small.rootAlt']['standing'], model['root_state']), ('accepted', 'informal_proved'))
+
+        # With a second accepted proof, the statement survives the withdrawal of either and not of both.
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        self.event('v3', 'review', comprehensive([withdrawal]))
+        model = replay(self.instance)
+        self.assertEqual({n: model['elements'][n]['standing'] for n in ('Small.root', 'Small.rootAlt')},
+                         {'Small.root': 'accepted', 'Small.rootAlt': 'not_confirmed'})
+        self.assertEqual(model['root_state'], 'informal_proved')
+        self.event('v4', 'review', comprehensive([finding('The induction step fails.', invalidates=['Small.root'])]))
+        self.assertEqual(replay(self.instance)['root_state'], 'unresolved')
+
+    def test_statements_whose_proofs_name_each_other_do_not_settle_each_other(self):
+        folder = self.candidate(
+            modules={'Small/Loop.lean': module_text(theorem('loopB', ': oddSum 2 = 4', uses=['root']),
+                                                    imports=('Small.Root',)),
+                     'Small/LoopAlt.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[self.root_variant], uses=['loopB']),
+                                                       imports=('Small.Loop',))},
+            records={'Small/loopB.md': record_text('Two terms, from the root.', weight='unit', proof='The case n = 2 of the root.'),
+                     'Small/rootAlt.md': record_text('The root, from two terms.', weight='unit',
+                                                     proof='Extend the case of two terms.', proves='Small.root')})
+        self.publish(folder)
+        model = replay(self.instance)
+        elements = model['elements']
+        # Both proofs are accepted, and each rests on the statement the other proves.
+        self.assertEqual((elements['Small.loopB']['standing'], elements['Small.rootAlt']['standing']), ('accepted', 'accepted'))
+        self.assertEqual((elements['Small.loopB']['uses'], elements['Small.rootAlt']['uses']), (['Small.root'], ['Small.loopB']))
+        self.assertFalse(any(elements[name]['settled'] for name in ('Small.root', 'Small.loopB', 'Small.rootAlt')))
+        self.assertFalse(elements['Small.root']['statement_settled'])
+        self.assertEqual(model['root_state'], 'unresolved')
+        # The descent of the frontier ends where the statement comes round again.
+        self.assertEqual([(row['name'], row['kind'], row['depth']) for row in model['frontier']],
+                         [('Small.root', 'statement', 0), ('Small.rootAlt', 'proof', 1),
+                          ('Small.loopB', 'statement', 2), ('Small.root', 'repeat', 3)])
+        self.assertEqual(model['remaining'], ['Small.root'])
+        # A proof of the root that rests on neither settles all three.
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        model = replay(self.instance)
+        self.assertTrue(all(model['elements'][name]['settled'] for name in ('Small.root', 'Small.loopB', 'Small.rootAlt')))
+        self.assertEqual(model['root_state'], 'informal_proved')
+
+    def test_formal_follows_the_axioms_through_everything_of_the_canon_a_proof_uses(self):
+        self.proved()
+        model = replay(self.instance)
+        self.assertFalse(any(model['elements']['Small.' + n]['formal'] for n in ('root', 'sumZero', 'sumSucc', 'sumTwo')))
+        # A proof that is complete in Lean is not formal while something it uses still rests on sorry.
+        self.replace_proof('Small.root', self.root_formal(uses=['sumZero', 'sumSucc']),
+                           'By induction on $n$, from the empty sum and the passage from $n$ to $n + 1$.')
+        model = replay(self.instance)
+        root = model['elements']['Small.root']
+        self.assertEqual((root['lean_proof'], root['axioms'], root['formal'], root['settled'], root['statement_formal']),
+                         ('complete', ['sorryAx'], False, True, False))
+        self.assertEqual((model['root_state'], root_solved(model)), ('informal_proved', False))
+        # Once what it uses is proved in Lean as well, the closure is within the allowed axioms.
+        folder = self.candidate(replace={'Small.sumZero': theorem('sumZero', SUM_ZERO, proof='rfl'),
+                                         'Small.sumSucc': theorem('sumSucc', SUM_SUCC, proof='rfl')})
+        self.publish(folder)
+        model = replay(self.instance)
+        elements = model['elements']
+        self.assertEqual({n: (elements['Small.' + n]['axioms'], elements['Small.' + n]['formal'])
+                          for n in ('root', 'sumZero', 'sumSucc')},
+                         {'root': ([], True), 'sumZero': ([], True), 'sumSucc': ([], True)})
+        self.assertEqual((elements['Small.sumTwo']['axioms'], elements['Small.sumTwo']['formal']), (['sorryAx'], False))
+        self.assertEqual((model['root_state'], root_solved(model)), ('formal_proved', True))
+
+    def test_the_root_question_is_resolved_only_by_the_roots_formal_settlement(self):
+        model = replay(self.instance)
+        self.assertEqual((model['root_state'], model['questions']['q0']['state']), ('unresolved', 'open'))
+        self.direct()
+        model = replay(self.instance)
+        self.assertEqual((model['root_state'], root_solved(model), model['questions']['q0']['state']),
+                         ('informal_proved', False, 'open'))
+        self.formal()
+        model = replay(self.instance)
+        settlement = {'state': 'formal_proved', 'proofs': ['Small.root']}
+        self.assertEqual((model['root_state'], root_solved(model), root_settlement(model)),
+                         ('formal_proved', True, settlement))
+        question = model['questions']['q0']
+        self.assertEqual((question['state'], question['root_settlement'], question['resolutions']),
+                         ('resolved', settlement, []))
+        # A finding that withdraws the root's proof withdraws the settlement, and the root question reopens.
+        self.event('v1', 'review', comprehensive([finding('The step fails at zero.', invalidates=['Small.root'])]))
+        model = replay(self.instance)
+        self.assertEqual((model['root_state'], root_solved(model), model['questions']['q0']['state']),
+                         ('unresolved', False, 'open'))
+
+    def test_nothing_rests_on_a_contested_statement_and_a_refuted_one_needs_another_proof_above_it(self):
+        self.proved()
+        self.assertEqual(replay(self.instance)['root_state'], 'informal_proved')
+        folder = self.candidate(
+            modules={'Small/Against.lean': module_text(theorem('notZero', ': ¬ (oddSum 0 = 0)'))},
+            records={'Small/notZero.md': record_text('The empty sum is not zero.', weight='unit',
+                                                     proof='A miscount of the empty sum.', refutes='Small.sumZero')})
+        self.publish(folder)
+        model = replay(self.instance)
+        elements = model['elements']
+        self.assertTrue(model['pairs']['negation|Small.notZero|Small.sumZero'])
+        self.assertEqual(elements['Small.notZero']['refutes'], 'Small.sumZero')
+        # The statement and its negation both carry settled proofs. Both are contested, and neither counts
+        # as settled, so the root's proof, which names one of them, is not settled any more.
+        self.assertEqual(model['contested'], ['Small.sumZero'])
+        for name in ('Small.sumZero', 'Small.notZero'):
+            element = elements[name]
+            self.assertEqual((element['contested'], element['settled'], element['statement_settled'],
+                              element['statement_formal'], element['refuted_by']), (True, True, False, False, []), name)
+        self.assertEqual((elements['Small.root']['standing'], elements['Small.root']['settled'], model['root_state']),
+                         ('accepted', False, 'unresolved'))
+        # A contested statement is not formalized, and what rests on it waits.
+        self.assertEqual(formalizable(model), ['Small.sumSucc'])
+        # The frontier opens it under the root and says so; it is review's to examine, not an attempt's to take on.
+        self.assertEqual([(row['name'], row['standing'], row['contested']) for row in model['frontier']],
+                         [('Small.root', 'accepted', False), ('Small.sumZero', 'accepted', True)])
+        self.assertEqual(model['remaining'], [])
+        view = frontier_view(self.instance)
+        self.assertIn('  - `Small.sumZero` — The empty sum is zero. — accepted · contested: it and its negation both carry '
+                      'settled proofs\n', view)
+        self.assertIn('Contested: a statement and its negation both carry settled proofs, and nothing rests on either '
+                      'until a comprehensive review locates the failure: `Small.sumZero`.', view)
+        runner = Runner(self.instance, self.skill)
+        session = self.session(runner, 'sa')
+        self.assertIn('contested', lease(session, 'Small.sumZero')['reason'])
+
+        # With the proof withdrawn the refutation stands alone: the statement is refuted, not contested.
+        self.event('v1', 'review', comprehensive([finding('The empty sum was miscounted.', invalidates=['Small.sumZero'])]))
+        model = replay(self.instance)
+        elements = model['elements']
+        self.assertEqual((model['contested'], elements['Small.sumZero']['contested'], elements['Small.sumZero']['refuted_by']),
+                         ([], False, ['Small.notZero']))
+        self.assertTrue(elements['Small.notZero']['settled'] and elements['Small.notZero']['statement_settled'])
+        # The refutation refutes that statement and not the root, whose proof only named it. That proof
+        # cannot become settled as it stands, so the root is work that remains, although its proof is accepted;
+        # no work remains on the refuted statement, and nothing is opened beneath it.
+        self.assertEqual((model['root_state'], elements['Small.root']['standing'], elements['Small.root']['names_refuted']),
+                         ('unresolved', 'accepted', ['Small.sumZero']))
+        self.assertEqual([(row['name'], row['refuted_by'], row['names_refuted']) for row in model['frontier']],
+                         [('Small.root', [], ['Small.sumZero']), ('Small.sumZero', ['Small.notZero'], [])])
+        self.assertEqual(model['remaining'], ['Small.root'])
         render(self.instance, model, [])
-        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
-        self.assertNotIn('\n## A\n', frontier)
-        self.assertIn('\n## B\n', frontier)
-        self.assertIn('Aliases: A', frontier)
-        self.assertEqual({p: p.read_bytes() for p in saved}, saved)
+        view = frontier_view(self.instance)
+        self.assertIn('- `Small.root` — odd numbers sum to a square — accepted · its proof names `Small.sumZero`, refuted since; '
+                      'the statement needs another proof\n', view)
+        self.assertIn('  - `Small.sumZero` — The empty sum is zero. — refuted by `Small.notZero`\n', view)
+        self.assertNotIn('Contested:', view)
+        self.assertIn('refuted by Small.notZero', lease(session, 'Small.sumZero')['reason'])
+        self.assertTrue(lease(session, 'Small.root')['leased'])
+
+    def test_a_concern_annotates_without_changing_standing_and_a_finding_changes_it(self):
+        self.half()
+        self.event('v1', 'review', comprehensive(concerns=[concern('boundary', 'Small.sumZero')]))
+        model = replay(self.instance)
+        element = model['elements']['Small.sumZero']
+        self.assertEqual(model['concerns']['v1/boundary']['status'], 'pending')
+        self.assertEqual((element['concerns'], element['standing'], element['settled']), (['v1/boundary'], 'accepted', True))
+        # The questioned proof is still accepted mathematics: its formalization goes ahead.
+        self.assertEqual(formalizable(model), ['Small.sumZero'])
+        render(self.instance, model, [])
+        self.assertIn('- v1/boundary on `Small.sumZero`: A boundary case needs checking. (pending); '
+                      'comprehensive review pending assignment', frontier_view(self.instance))
+        # Only a finding changes standing: it withdraws the confirmation, and what rested on it is recomputed.
+        self.event('v2', 'review', comprehensive([finding('The boundary case fails.', concerns=['v1/boundary'],
+                                                          invalidates=['Small.sumZero'])]))
+        model = replay(self.instance)
+        element = model['elements']['Small.sumZero']
+        self.assertEqual((element['standing'], element['settled'], element['verdict']['later_review']),
+                         ('not_confirmed', False, 'v2'))
+        self.assertEqual([model['findings'][number]['source'] for number in element['findings']], ['v2'])
+        self.assertEqual(model['concerns']['v1/boundary']['status'], 'confirmed')
+        self.assertEqual(model['concerns']['v1/boundary']['finding'], {'review': 'v2', 'reason': 'The boundary case fails.'})
+        self.assertEqual((formalizable(model), model['remaining']), ([], ['Small.sumSucc', 'Small.sumZero']))
+        # A finding that clears the concern and restores the confirmation closes it.
+        self.event('v3', 'review', comprehensive([finding('The boundary case holds on a second reading.', status='cleared',
+                                                          concerns=['v1/boundary'], validates=['Small.sumZero'])]))
+        model = replay(self.instance)
+        self.assertEqual((model['elements']['Small.sumZero']['standing'], model['concerns']['v1/boundary']['status']),
+                         ('accepted', 'cleared'))
+        render(self.instance, model, [])
+        self.assertNotIn('## Concerns', frontier_view(self.instance))
+
+    def test_a_finding_on_an_element_the_instance_began_with_judges_the_proof_it_began_with(self):
+        # No review has judged an element the instance began with. Lean's check of a complete proof stands
+        # where review's judgment would; a proof that is written only waits for a review.
+        self.instance = initialized(
+            self.root, 'began',
+            modules={'Small/Known.lean': module_text('\n\n'.join([theorem('knownLean', SUM_ZERO, proof='rfl'),
+                                                                  theorem('knownWritten', ': oddSum 1 = 1')]))},
+            records={'Small/knownLean.md': record_text('The empty sum is zero.', weight='unit'),
+                     'Small/knownWritten.md': record_text('The first odd number is one.', weight='unit',
+                                                          proof='The sum has the one term 1.')})
+        self.addCleanup(stop_broker, self.instance)
+        names = ('Small.knownLean', 'Small.knownWritten')
+
+        def standings():
+            elements = replay(self.instance)['elements']
+            return tuple(elements[name]['standing'] for name in names)
+
+        elements = replay(self.instance)['elements']
+        self.assertEqual([(elements[n]['lean_proof'], elements[n]['written_proof'], elements[n]['verdict']) for n in names],
+                         [('complete', False, None), ('sorry', True, None)])
+        self.assertEqual(standings(), ('accepted', 'not_confirmed'))
+        self.event('v1', 'review', comprehensive([finding('Both arguments skip the case of no terms.', invalidates=list(names))]))
+        self.assertEqual(standings(), ('not_confirmed', 'not_confirmed'))
+        # Restoring the confirmation restores what the proof stood on before: Lean's check for the complete
+        # proof, which stands accepted again, and no acceptance for the written one, which stands held.
+        self.event('v2', 'review', comprehensive([finding('The case of no terms is covered after all.', status='cleared',
+                                                          validates=list(names))]))
+        self.assertEqual(standings(), ('accepted', 'held'))
+        verdict = replay(self.instance)['elements']['Small.knownLean']['verdict']
+        self.assertEqual((verdict['correct'], verdict['accepted'], verdict['change'], verdict['later_review']),
+                         ('confirmed', True, None, 'v2'))
+
+    def test_a_status_alone_changes_no_standing(self):
+        self.half()
+        self.event('v1', 'review', comprehensive(concerns=[concern('boundary', 'Small.sumZero')]))
+        self.event('v2', 'review', comprehensive([finding('The boundary case could not be decided.', status='undetermined',
+                                                          concerns=['v1/boundary'])]))
+        model = replay(self.instance)
+        self.assertEqual(model['concerns']['v1/boundary']['status'], 'undetermined')
+        self.assertEqual((model['elements']['Small.sumZero']['standing'], model['elements']['Small.sumZero']['settled']),
+                         ('accepted', True))
+
+    def test_questions_are_resolved_by_an_accepted_resolution_reopened_by_a_finding_and_merged(self):
+        self.questions('qops', [{'id': 'scale', 'statement': 'Why do the methods stall at the same scale?',
+                                 'grounds': 'Several approaches stop there.'},
+                                {'id': 'block', 'statement': 'What does the common block say about the object?',
+                                 'grounds': 'The same obstruction recurs.'}])
+        folder = self.candidate(
+            understanding={'scale.md': 'The scale is the first place where two squares overlap.\n',
+                           'block.md': 'The block has not been explained.\n',
+                           'q0.md': 'The sum grows by one odd number at a time.\n'},
+            resolutions=[{'id': 'answer', 'question': 'scale'}, {'id': 'guess', 'question': 'block'},
+                         {'id': 'whole', 'question': 'q0'}])
+        assessment = self.verdicts(folder)
+        assessment['resolutions'][1].update(resolved=False, reason='The account does not say why the block recurs.')
+        change, _ = self.publish(folder, assessment, role='explore', question='scale')
+        model = replay(self.instance)
+        questions = model['questions']
+        self.assertEqual({qid: (q['state'], q['resolutions']) for qid, q in questions.items() if qid != 'q0'},
+                         {'scale': ('resolved', [change + '/answer']), 'block': ('open', [])})
+        # The root question asks the root problem itself, so no account resolves it, whatever review said of one.
+        self.assertEqual((questions['q0']['state'], questions['q0']['root_settlement']), ('open', None))
+
+        published = {path: path.read_bytes() for path in (self.instance / 'knowledge').rglob('*')
+                     if path.is_file() and 'changes' in path.parts}
+        # An organizer merges two questions that ask the same thing; the merged one keeps what resolved either.
+        self.organize(batch=[change], merge_questions=[{'from': 'scale', 'into': 'block', 'reason': 'Both ask about the block.'}])
+        model = replay(self.instance)
+        self.assertEqual((canonical_question(model, 'scale'), model['question_aliases']), ('block', {'scale': 'block'}))
+        self.assertEqual((model['questions']['block']['state'], model['questions']['block']['resolutions']),
+                         ('resolved', [change + '/answer']))
+        self.assertEqual(model['questions']['scale']['canonical'], 'block')
+        render(self.instance, model, [])
+        view = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        self.assertNotIn('\n## scale\n', view)
+        self.assertIn('\n## block\n', view)
+        self.assertIn('Aliases: scale', view)
+        self.assertIn(f'- Resolved by {change}/answer', view)
+        # A finding reopens the question, and stays beside it as a later review.
+        self.event('v1', 'review', comprehensive([finding('The overlap is not the cause.', reopens=['block'])]))
+        model = replay(self.instance)
+        self.assertEqual((model['questions']['block']['state'], model['questions']['block']['resolutions']), ('open', []))
+        render(self.instance, model, [])
+        self.assertIn('- Later review (confirmed): The overlap is not the cause. — v1',
+                      (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
+        # Publications are never rewritten, and replaying them gives the same model.
+        self.assertEqual({path: path.read_bytes() for path in published}, published)
         self.assertEqual(replay(self.instance), model)
 
-    def test_node_merge_keeps_both_attempts_occupied_until_both_pipelines_end(self):
-        self.publish('rnodes', record(
-            [claim_row('from_a'), claim_row('from_b')],
-            [{'id': node, 'statement': 'The same precise proposition.', 'connection': link}
-             for node, link in (('A', 'from_a'), ('B', 'from_b'))],
-            [implication('from_a', 'A'), implication('from_b', 'B')]))
-        engine = Runner(self.instance, self.skill)
-        sessions, pipelines, declarations = [], [], {}
-        with patch('runner.subprocess.Popen') as host:
-            host.return_value.pid = engine.identity['pid']
-            for node in ('A', 'B'):
-                key = engine.producer('attempt')
-                self.assertTrue(engine.dispatch(key))
-                job = engine.state['jobs'][key]
-                sid = job['session']
-                sessions.append(sid)
-                pipelines.append(job['pipeline'])
-                self.assertTrue(take(engine.session_dir(sid), node)['registered'])
-                path = engine.session_dir(sid) / 'declaration.json'
-                declarations[path] = path.read_bytes()
-        organization = {'batch': ['rnodes'], 'modules': [], 'shared_context': ['rnodes'],
-                        'merge_nodes': [{'from': 'A', 'into': 'B',
-                                         'reason': 'The statements and definitions are identical.'}]}
-        organization_check(organization, engine.model, ['rnodes'])
-        self.event('omerge', 'organization', organization)
-        engine = Runner(self.instance, self.skill)
-        self.assertCountEqual([sid for sid, _ in engine.active()], sessions)
-        self.assertEqual({row['session']: row['nodes'] for row in board(self.instance)},
-                         {sid: ['B'] for sid in sessions})
-        self.assertEqual(engine.available_nodes(), ['root'])
-        self.assertEqual({p: p.read_bytes() for p in declarations}, declarations)
-        # Publication and exclusion have lifecycle tests; here release each occupancy
-        # to check that the other pipeline still holds the merged identity.
-        engine.state['pipelines'][pipelines[0]]['stage'] = 'done'
-        engine.save()
-        self.assertEqual([(row['session'], row['nodes']) for row in board(self.instance)],
-                         [(sessions[1], ['B'])])
-        self.assertEqual(engine.available_nodes(), ['root'])
-        engine.state['pipelines'][pipelines[1]]['stage'] = 'done'
-        engine.save()
-        self.assertEqual(board(self.instance), [])
-        self.assertCountEqual(engine.available_nodes(), ['root', 'B'])
 
-    def test_informal_propagation_and_formal_readiness_are_separate(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('qproof', 'Q', 'q')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['root']['state'], 'informal_proved')
-        self.assertFalse(formal_ready(m, m['proofs']['r1/reduce']))
-        self.assertFalse(root_solved(m))
-        data = record([claim_row('qformal')], solutions=[solution('qformal', 'Q', 'qformal')])
-        self.publish('r3', data, assessment(data, ['qformal']), role='formalizer')
-        m = replay(self.instance)
-        self.assertTrue(formal_ready(m, m['proofs']['r1/reduce']))
-        self.assertEqual(m['nodes']['root']['state'], 'informal_proved')
+class RefutedRootCase(ScenarioCase):
+    """States in which a declaration refutes the root: its record says `refutes:` and Lean confirms the negation.
 
-    def test_refuting_sufficient_premise_does_not_settle_parent(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('notq')], solutions=[solution('refutation', 'Q', 'notq', 'refuted')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['Q']['state'], 'informal_refuted')
-        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
+    The root of these tests is the closed proposition of support.ROOT_CLOSED. The stand-in compiler
+    reads only the structure of a proof, so the "refutation" of a true statement compiles here."""
+    root_variant = 'closed'
+    NEGATION = ': ¬ (∀ n : Nat, oddSum n = n * n)'
 
-    def test_multiple_signed_premises(self):
-        data = record([claim_row('joint')], [{'id': n, 'statement': n, 'connection': 'joint'} for n in ('A', 'B')],
-                      [{'id': 'joint', 'claim': 'joint', 'premises': [{'node': 'A', 'outcome': 'proved'}, {'node': 'B', 'outcome': 'refuted'}],
-                        'conclusion': {'node': 'root', 'outcome': 'proved'}}])
-        self.publish('r1', data)
-        self.publish('r2', record([claim_row('a')], solutions=[solution('a', 'A', 'a')]))
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
-        self.publish('r3', record([claim_row('b')], solutions=[solution('b', 'B', 'b', 'refuted')]))
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'informal_proved')
+    def refuted(self):
+        def build():
+            folder = self.candidate(
+                modules={'Small/Against.lean': module_text(theorem('notRoot', self.NEGATION))},
+                records={'Small/notRoot.md': record_text('Some initial sum of odd numbers is not a square.', weight='unit',
+                                                         proof='The sum of the first two is taken to be five.',
+                                                         refutes='Small.root')})
+            self.publish(folder)
+        self.scenario('refuted', build)
 
-    def test_alternative_support_survives_a_withdrawal(self):
-        for i in (1, 2):
-            data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
-            self.publish('r' + str(i), data, assessment(data, ['p']))
-        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'First proof has wrong correspondence.',
-                                                'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
-        m = replay(self.instance)
-        self.assertTrue(root_solved(m))
-        self.assertEqual(m['nodes']['root']['proofs'], ['r2/p'])
-        self.event('v2', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Other support also withdrawn.',
-                                                'invalidates': [{'record': 'r2', 'claim': 'p'}]}]})
-        self.assertFalse(root_solved(replay(self.instance)))
+    def formally_refuted(self):
+        def build():
+            self.refuted()
+            folder = self.candidate(replace={'Small.notRoot': theorem(
+                'notRoot', self.NEGATION, proof='intro h\n  exact absurd (h 2) (by decide)')})
+            self.publish(folder)
+        self.scenario('formally refuted', build)
 
-    def test_concern_annotates_without_blocking_and_a_withdrawal_recomputes(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'boundary', 'targets': [{'record': 'r2', 'claim': 'q'}],
-                                                               'reason': 'Boundary needs checking.', 'evidence': 'A missing case.'}]})
-        data = record([claim_row('next'), claim_row('onward')],
-                      [{'id': 'R', 'statement': 'R', 'connection': 'next'},
-                       {'id': 'S', 'statement': 'S', 'connection': 'onward'}],
-                      [implication('next', 'Q', 'R'), implication('onward', 'R', 'S')])
-        self.publish('r3', data)
-        m = replay(self.instance)
-        # A pending concern changes nothing about what is held true; it annotates what rests on it.
-        for nid in ('root', 'Q', 'R', 'S'):
-            self.assertEqual(m['nodes'][nid]['state'], 'informal_proved')
-        for pid in ('r2/q', 'r1/reduce', 'r3/next', 'r3/onward'):
-            self.assertTrue(m['proofs'][pid]['concerned'])
-            self.assertIn('v1/boundary', m['proofs'][pid]['concerns'])
-        render(self.instance, m, [{'pipeline': 'p', 'session': 'sp', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': [], 'question': None}])
-        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
-        for nid in ('R', 'S'):
-            section = frontier.split('## ' + nid + '\n', 1)[1].split('\n## ', 1)[0]
-            self.assertIn('rests on a questioned claim', section)
-            self.assertIn('v1/boundary', section)
-            self.assertIn('reviews/v1/assessment.json', section)
-        self.assertIn('Concern: see [frontier](frontier.md) for S.',
-                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
-        # Only a finding changes standing: withdrawing q recomputes everything that rested on it.
-        self.event('v2', 'review', {'findings': [{'concerns': ['v1/boundary'], 'status': 'confirmed',
-                                                'reason': 'The missing case fails.', 'invalidates': [{'record': 'r2', 'claim': 'q'}]}]})
-        m = replay(self.instance)
-        for nid in ('root', 'Q', 'R', 'S'):
-            self.assertEqual(m['nodes'][nid]['state'], 'unresolved')
-        self.assertEqual(m['concerns']['v1/boundary']['status'], 'confirmed')
+    def contested(self):
+        def build():
+            self.formally_refuted()
+            self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        self.scenario('contested', build)
 
-    def test_concern_does_not_ban_formalizer_work_on_accepted_mathematics(self):
-        self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
-        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'question',
-            'targets': [{'record': 'r1', 'claim': 'p'}], 'reason': 'A use needs examination.', 'evidence': 'Source location.'}]})
+
+class RefutationTests(RefutedRootCase):
+    def test_a_settled_refutation_of_the_root_refutes_it_informally_then_formally(self):
+        self.refuted()
         model = replay(self.instance)
-        self.assertTrue(model['proofs']['r1/s']['concerned'])
-        self.assertTrue(formal_ready(model, model['proofs']['r1/s']))
-
-    def test_later_independent_premise_refreshes_a_concerned_relation_application(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'issue',
-            'targets': [{'record': 'r2', 'claim': 'q'}],
-            'reason': 'The original proof needs checking.', 'evidence': 'A questioned case.'}]})
-        self.publish('r3', record(
-            [claim_row('a'), claim_row('independent'), claim_row('onward')],
-            [{'id': 'A', 'statement': 'A', 'connection': 'independent'},
-             {'id': 'S', 'statement': 'S', 'connection': 'onward'}],
-            [implication('independent', 'A', 'Q'), implication('onward', 'root', 'S')],
-            [solution('a', 'A', 'a')]))
+        self.assertTrue(model['pairs']['negation|Small.notRoot|Small.root'])
+        self.assertEqual(model['elements']['Small.notRoot']['refutes'], 'Small.root')
+        self.assertEqual((model['root_state'], root_solved(model), model['contested']), ('informal_refuted', False, []))
+        self.assertEqual(model['questions']['q0']['state'], 'open')
+        self.formally_refuted()
         model = replay(self.instance)
-        self.assertTrue(model['proofs']['r2/q']['concerned'])
-        self.assertEqual(model['concerns']['v1/issue']['status'], 'pending')
-        self.assertEqual(model['proofs']['r1/reduce']['premise_proofs'], ['r3/independent'])
-        self.assertFalse(model['proofs']['r1/reduce']['concerned'])
-        self.assertEqual(model['nodes']['S']['state'], 'informal_proved')
+        settlement = {'state': 'formal_refuted', 'proofs': ['Small.notRoot']}
+        self.assertEqual((model['root_state'], root_solved(model), root_settlement(model)),
+                         ('formal_refuted', True, settlement))
+        self.assertEqual((model['questions']['q0']['state'], model['questions']['q0']['root_settlement']),
+                         ('resolved', settlement))
+        # A refutation whose confirmation is withdrawn refutes nothing.
+        self.event('v1', 'review', comprehensive([finding('The sum of the first two is four.', invalidates=['Small.notRoot'])]))
+        self.assertEqual(replay(self.instance)['root_state'], 'unresolved')
 
-    def test_glossary_refusal_does_not_reappear_on_replay(self):
-        term = {'id': 't', 'name': 'Shared object', 'symbol': 'X', 'definition': 'X := 1.', 'global_candidate': True}
-        self.publish('r1', record(glossary=[term]))
-        self.event('o1', 'organization', {'batch': ['r1'], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']})
-        self.assertNotIn('r1/t', replay(self.instance)['global_terms'])
-        self.event('o2', 'organization', {'batch': [], 'modules': [], 'shared_context': [], 'promote': ['r1/t']})
-        m = replay(self.instance)
-        self.assertEqual(m['global_terms']['r1/t']['membership'], 'permanent')
-        # r1 keeps its place, so the refusal itself is what the check rejects.
-        with self.assertRaisesRegex(Invalid, 'pending candidate'):
-            organization_check({'batch': [], 'modules': [], 'shared_context': ['r1'], 'refuse': ['r1/t']}, m, [])
+    def test_a_settled_informal_refutation_of_the_root_is_sent_for_its_formal_proof(self):
+        # The obligation to prove formally is unchanged (design record, section 5), and the instance is
+        # complete on a formal refutation as on a formal proof. A settled refutation of the root that has
+        # no formal proof is therefore work for a formalizer, as a settled proof of the root is.
+        self.refuted()
+        self.assertEqual(formalizable(replay(self.instance)), ['Small.notRoot'])
 
-    def test_refuting_a_necessary_condition_refutes_the_node(self):
-        # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
-        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
-        self.publish('r2', record([claim_row('notk')], solutions=[solution('refutation', 'K', 'notk', 'refuted')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['K']['state'], 'informal_refuted')
-        self.assertEqual(m['nodes']['root']['state'], 'informal_refuted')
-        proof = m['proofs']['r1/necessary~0']
-        self.assertEqual((proof['node'], proof['outcome'], proof['derivation']), ('root', 'refuted', 'backward'))
-        self.assertEqual(proof['premise_proofs'], ['r2/refutation'])
-        self.assertEqual(proof['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
-        # A proof of K beside its accepted refutation makes K contested, so the refutation
-        # of root that rested on K is no longer derived.
-        self.publish('r3', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['K']['state'], 'contested')
-        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
-
-    def test_dependency_update_can_name_a_backward_proof_route(self):
-        # The proofs object names a relation applied backward as <relation>~<premise position>.
-        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.publish('r2', record([claim_row('notk')], solutions=[solution('refutation', 'K', 'notk', 'refuted')]))
-        m = replay(self.instance)
-        self.assertEqual(m['proofs']['r1/necessary~0']['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
-        finding = {'concerns': [], 'status': 'undetermined', 'reason': 'The route was traced.',
-                   'dependency_updates': [{'proof': 'r1/necessary~0', 'dependencies': [],
-                                           'reason': 'A direct formalization of the refutation needs no Lean result for K.'}]}
-        findings_check([finding], m)
-        for proof in ('r1/necessary~1', 'r1/missing~0', 'r1/necessary~'):
-            wrong = {**finding, 'dependency_updates': [{**finding['dependency_updates'][0], 'proof': proof}]}
-            with self.subTest(proof=proof), self.assertRaisesRegex(Invalid, 'existing proof route'):
-                findings_check([wrong], m)
-        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [finding]})
-        self.assertEqual(replay(self.instance)['proofs']['r1/necessary~0']['formal_dependencies'], [])
-
-    def test_multi_premise_relation_derives_in_every_direction(self):
-        data = record([claim_row('joint')], [{'id': n, 'statement': n, 'connection': 'joint'} for n in ('A', 'B')],
-                      [{'id': 'joint', 'claim': 'joint', 'premises': [{'node': 'A', 'outcome': 'proved'}, {'node': 'B', 'outcome': 'proved'}],
-                        'conclusion': {'node': 'root', 'outcome': 'proved'}}])
-        self.publish('r1', data)
-        self.publish('r2', record([claim_row('notroot')], solutions=[solution('notroot', 'root', 'notroot', 'refuted')]))
-        self.assertEqual(replay(self.instance)['nodes']['B']['state'], 'unresolved')
-        self.publish('r3', record([claim_row('a')], solutions=[solution('a', 'A', 'a')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['B']['state'], 'informal_refuted')
-        proof = m['proofs']['r1/joint~1']
-        self.assertEqual(sorted(proof['premise_proofs']), ['r2/notroot', 'r3/a'])
-        self.assertCountEqual(proof['formal_dependencies'], [{'node': 'A', 'outcome': 'proved'}, {'node': 'root', 'outcome': 'refuted'}])
-
-    def test_contested_node_derives_nothing_further(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'informal_proved')
-        self.publish('r3', record([claim_row('notq')], solutions=[solution('notq', 'Q', 'notq', 'refuted')]))
-        m = replay(self.instance)
-        self.assertEqual(m['nodes']['Q']['state'], 'contested')
-        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
-        self.assertCountEqual(m['nodes']['Q']['proofs'], ['r2/q', 'r3/notq'])
-        render(self.instance, m, [])
-        self.assertIn('Opposing accepted outcomes', (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
-
-    def test_sufficient_closure_and_frontier_labels(self):
-        self.publish('r1', self.reduction())  # Q implies root
-        self.publish('r2', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        m = replay(self.instance)
-        closure = sufficient_closure(m)
-        self.assertIn(('Q', 'proved'), closure)
-        self.assertNotIn(('Q', 'refuted'), closure)
-        self.assertIn(('K', 'refuted'), closure)
-        self.assertNotIn(('K', 'proved'), closure)
-        render(self.instance, m, [])
-        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
-        q = frontier.split('## Q\n', 1)[1].split('\n## ', 1)[0]
-        k = frontier.split('## K\n', 1)[1].split('\n## ', 1)[0]
-        self.assertIn('on a sufficient path to the root', q)
-        self.assertIn('a necessary condition only', k)
-        self.assertNotIn('Path to root', frontier.split('## root\n', 1)[1].split('\n## ', 1)[0])
-
-    def test_frontier_shows_which_parts_of_a_split_are_established(self):
-        data = record([claim_row('cover')], [{'id': n, 'statement': n, 'connection': 'cover'} for n in ('L', 'R')],
-                      [{'id': 'cover', 'claim': 'cover', 'premises': [{'node': 'L', 'outcome': 'proved'}, {'node': 'R', 'outcome': 'proved'}],
-                        'conclusion': {'node': 'root', 'outcome': 'proved'}}])
-        self.publish('r1', data)
-        self.publish('r2', record([claim_row('left')], solutions=[solution('left', 'L', 'left')]))
-        m = replay(self.instance)
-        render(self.instance, m, [])
-        root = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8').split('## root\n', 1)[1].split('\n## ', 1)[0]
-        self.assertIn('proved L (established), proved R (open)', root)
-        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
-        self.publish('r3', record([claim_row('right')], solutions=[solution('right', 'R', 'right')]))
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'informal_proved')
-
-    def test_signed_cycle_exposes_contradiction_but_cannot_create_a_seed(self):
-        data = self.reduction()
-        data['claims'].append(claim_row('back'))
-        data['relations'].append({'id': 'back', 'claim': 'back', 'premises': [{'node': 'root', 'outcome': 'proved'}],
-                                  'conclusion': {'node': 'Q', 'outcome': 'refuted'}})
-        self.publish('r1', data)
-        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.assertEqual(replay(self.instance)['nodes']['Q']['state'], 'contested')
-
-    def test_modules_can_share_record_and_keep_description(self):
-        self.publish('r1', record())
-        data = {'batch': ['r1'], 'modules': [{'id': n, 'title': n, 'description': n, 'records': ['r1']} for n in ('a', 'b')],
-                'shared_context': ['r1']}
-        organization_check(data, replay(self.instance), ['r1'])
-        self.event('o1', 'organization', data)
-        m = replay(self.instance)
-        render(self.instance, m, [])
-        for name in ('a', 'b'):
-            output = (self.instance / 'knowledge/index' / (name + '.md')).read_text(encoding='utf-8')
-            self.assertIn('A precise contribution with its limitations.', output)
-            self.assertIn('Supported within its scope.', output)
-
-    def test_a_complete_layout_keeps_every_organized_record_placed(self):
-        # Unfiled marks a placement still pending (reference/common.md), and no later batch lists an
-        # organized record, so a layout that left r1 out would leave it looking unprocessed for good.
-        self.publish('r1', record())
-        self.event('o1', 'organization', {'batch': ['r1'], 'modules': [], 'shared_context': ['r1']})
-        self.publish('r2', record())
+    def test_a_root_with_settled_proofs_of_itself_and_of_its_negation_is_contested(self):
+        self.contested()
         model = replay(self.instance)
-        with self.assertRaisesRegex(Invalid, 'already organized'):
-            organization_check({'batch': ['r2'], 'modules': [], 'shared_context': ['r2']}, model, ['r2'])
-        moved = {'id': 'm', 'title': 'Area', 'description': 'An area of the research.', 'records': ['r1']}
-        organization_check({'batch': ['r2'], 'modules': [moved], 'shared_context': ['r2']}, model, ['r2'])
+        self.assertEqual((model['root_state'], model['contested']), ('contested', ['Small.root']))
+        for name in ('Small.root', 'Small.notRoot'):
+            element = model['elements'][name]
+            self.assertEqual((element['contested'], element['statement_settled'], element['statement_formal']),
+                             (True, False, False), name)
+        self.assertEqual((model['remaining'], formalizable(model)), ([], []))
+        # A contested root is not a solved one, although its refutation is formal, and it does not close q0.
+        self.assertEqual((root_solved(model), root_settlement(model), model['questions']['q0']['state']),
+                         (False, None, 'open'))
+        view = frontier_view(self.instance)
+        self.assertIn('State: contested', view)
+        self.assertIn('- `Small.root` — odd numbers sum to a square — accepted · contested: it and its negation both carry '
+                      'settled proofs\n', view)
+        self.assertIn('nothing rests on either until a comprehensive review locates the failure: `Small.root`.', view)
 
-    def test_speculative_node_is_not_admitted(self):
-        data = record([claim_row('hunch')], [{'id': 'Q', 'statement': 'Q', 'connection': 'hunch'}])
-        folder = self.root / 'candidate'; folder.mkdir()
-        (folder / 'record.md').write_text('A hunch.', encoding='utf-8')
-        review = assessment(data)
-        out = self.root / 'review'; out.mkdir(); (out / 'feedback.md').write_text('Review.', encoding='utf-8')
-        with self.assertRaisesRegex(Invalid, 'admitted nodes must connect to existing research'):
-            assessment_check(review, out, data, folder, replay(self.instance), self.instance, 's1')
+
+class FrontierTests(ScenarioCase):
+    def test_at_the_start_the_frontier_is_the_root_alone_without_a_proof(self):
+        model = replay(self.instance)
+        self.assertEqual([(row['name'], row['kind'], row['depth'], row['standing']) for row in model['frontier']],
+                         [('Small.root', 'statement', 0, 'no_proof')])
+        self.assertEqual(model['remaining'], ['Small.root'])
+
+    def test_the_frontier_descends_from_the_root_through_every_proof_and_opens_what_is_not_settled(self):
+        self.ways()
+        model = replay(self.instance)
+        rows = [(row['name'].removeprefix('Small.'), row['kind'], row['depth'], row['standing']) for row in model['frontier']]
+        self.assertEqual(rows, [
+            ('root', 'statement', 0, 'accepted'),      # opened: its own proof is accepted and rests on unsettled statements
+            ('colA', 'statement', 1, 'held'),
+            ('leafH', 'statement', 2, 'no_proof'),     # what the held proof names lies beneath it
+            ('monoB', 'statement', 1, 'no_proof'),     # reached through stepE, an accepted step, which is passed through
+            ('monoBAlt', 'proof', 2, 'not_confirmed'),  # every proof of a statement is shown, whatever its state
+            ('leafH', 'repeat', 3, 'no_proof'),
+            ('rootAlt', 'proof', 1, 'held'),           # the second way of proving the root
+            ('colA', 'repeat', 2, 'held'),             # shown again where another proof names it, and not opened twice
+            ('diagD', 'statement', 2, 'not_confirmed'),
+            ('stepF', 'statement', 3, 'no_proof'),     # a step that is itself work that remains is shown
+        ])
+        names = [row[0] for row in rows]
+        # unitG is settled and is not opened; stepE is passed through; nothing the root rests on names strayS.
+        self.assertFalse({'unitG', 'stepE', 'strayS'} & set(names))
+        self.assertEqual(names.count('leafH'), 2)
+        self.assertEqual([row for row in rows if row[0] == 'leafH' and row[1] == 'statement'], [('leafH', 'statement', 2, 'no_proof')])
+        # The reasons of review stand beside the proofs that remain work; the approaches tried are counted.
+        by_name = {row['name']: row for row in model['frontier'] if row['kind'] != 'repeat'}
+        self.assertEqual((by_name['Small.colA']['reason'], by_name['Small.diagD']['reason'], by_name['Small.root']['reason']),
+                         (HELD_REASON, GAP_REASON, None))
+        self.assertEqual((by_name['Small.monoB']['approaches'], by_name['Small.colA']['approaches']), (1, 0))
+        self.assertEqual((by_name['Small.stepF']['weight'], by_name['Small.colA']['short']), ('step', 'Col'))
+
+    def test_the_work_that_remains_is_what_the_frontier_shows_without_an_accepted_proof(self):
+        self.ways()
+        model = replay(self.instance)
+        self.assertEqual(model['remaining'], ['Small.colA', 'Small.diagD', 'Small.leafH', 'Small.monoB',
+                                              'Small.monoBAlt', 'Small.rootAlt', 'Small.stepF'])
+        # The root rests on more than the frontier shows as remaining, and on nothing that no proof of it names.
+        self.assertEqual(rests_on(model, 'Small.root'),
+                         {'Small.' + n for n in ('root', 'colA', 'leafH', 'stepE', 'monoB', 'unitG', 'diagD', 'stepF')})
+
+    def test_a_settled_part_is_not_opened_and_the_root_is_settled_when_every_part_is(self):
+        self.split()
+        model = replay(self.instance)
+        self.assertEqual([(row['name'], row['depth'], row['standing']) for row in model['frontier']],
+                         [('Small.root', 0, 'accepted'), ('Small.sumSucc', 1, 'no_proof'), ('Small.sumZero', 1, 'no_proof')])
+        self.assertEqual((model['remaining'], model['root_state']), (['Small.sumSucc', 'Small.sumZero'], 'unresolved'))
+        self.half()
+        model = replay(self.instance)
+        self.assertEqual([(row['name'], row['depth'], row['standing']) for row in model['frontier']],
+                         [('Small.root', 0, 'accepted'), ('Small.sumSucc', 1, 'no_proof')])
+        self.assertEqual((model['remaining'], model['root_state']), (['Small.sumSucc'], 'unresolved'))
+        self.proved()
+        model = replay(self.instance)
+        self.assertEqual([(row['name'], row['settled']) for row in model['frontier']], [('Small.root', True)])
+        self.assertEqual((model['remaining'], model['root_state']), ([], 'informal_proved'))
+
+    def test_a_root_settled_through_another_proof_leaves_no_work_that_remains(self):
+        # The frontier stops at statements that are settled, and a statement is settled when one of its
+        # proofs is (design record, sections 5 and 6). The root is such a statement here: its own
+        # declaration has no proof, and another declaration proves it.
+        second_proof(self)
+        model = replay(self.instance)
+        self.assertTrue(model['elements']['Small.root']['statement_settled'])
+        self.assertEqual(model['root_state'], 'informal_proved')
+        self.assertEqual(model['remaining'], [])
+
+    def test_a_settled_root_does_not_open_a_second_proof_that_is_not_accepted(self):
+        self.direct()
+        folder = self.candidate(
+            modules={'Small/Second.lean': module_text('\n\n'.join([
+                theorem('sideL', ': oddSum 1 = 1'), theorem('rootAlt', ROOT_STATEMENTS[self.root_variant], uses=['sideL'])]))},
+            records={'Small/sideL.md': record_text('The first odd number is one.', weight='unit'),
+                     'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
+                                                     proof='From the first odd number.', proves='Small.root')})
+        self.publish(folder, self.verdicts(folder, **{'Small.rootAlt': {
+            'correct': 'not_confirmed', 'accepted': False, 'reason': GAP_REASON}}))
+        model = replay(self.instance)
+        self.assertTrue(model['elements']['Small.root']['settled'])
+        # Nothing remains for a settled root: neither its unconfirmed second proof nor what that proof names.
+        self.assertEqual(model['remaining'], [])
 
 
-class RunnerTests(InstanceCase):
+class FormalizableTests(ScenarioCase):
+    def test_only_settled_statements_the_root_rests_on_are_formalized(self):
+        self.half()
+        model = replay(self.instance)
+        # sumSucc has no proof and the root is not settled; sumTwo is settled, and the root does not rest on it.
+        self.assertTrue(model['elements']['Small.sumTwo']['settled'])
+        self.assertEqual(formalizable(model), ['Small.sumZero'])
+
+    def test_a_proof_is_formalized_once_what_it_names_has_formal_proofs(self):
+        self.proved()
+        self.assertEqual(formalizable(replay(self.instance)), ['Small.sumSucc', 'Small.sumZero'])
+        folder = self.candidate(replace={'Small.sumZero': theorem('sumZero', SUM_ZERO, proof='rfl')})
+        self.publish(folder)
+        # sumZero has its formal proof; the root still waits for the other statement its proof names.
+        self.assertEqual(formalizable(replay(self.instance)), ['Small.sumSucc'])
+        folder = self.candidate(replace={'Small.sumSucc': theorem('sumSucc', SUM_SUCC, proof='rfl')})
+        self.publish(folder)
+        self.assertEqual(formalizable(replay(self.instance)), ['Small.root'])
+        self.formal()
+        self.assertEqual(formalizable(replay(self.instance)), [])
+
+    def test_a_complete_lean_proof_that_names_an_open_declaration_is_formalized_once_what_it_names_is_formal(self):
+        # The root's own Lean text is complete, but it names sumZero and sumSucc, whose declarations end in sorry,
+        # so the root is not formal. Each of the two statements comes to have a formal proof under another
+        # declaration; the declarations the root names keep their open Lean proofs.
+        self.proved()
+        self.replace_proof('Small.root', self.root_formal(uses=['sumZero', 'sumSucc']),
+                           'By induction on $n$, from the empty sum and the passage from $n$ to $n + 1$.')
+        model = replay(self.instance)
+        root = model['elements']['Small.root']
+        self.assertEqual((root['lean_proof'], root['formal'], root['settled']), ('complete', False, True))
+        self.assertEqual(formalizable(model), ['Small.sumSucc', 'Small.sumZero'])
+
+        def formal_alternative(name, statement, target):
+            folder = self.candidate(
+                modules={f'Small/{name}.lean': module_text(theorem(name, statement, proof='rfl'))},
+                records={f'Small/{name}.md': record_text('The same statement, proved in Lean.', weight='unit',
+                                                         proves=target)})
+            self.publish(folder)
+
+        formal_alternative('sumZeroAlt', SUM_ZERO, 'Small.sumZero')
+        model = replay(self.instance)
+        self.assertEqual((model['elements']['Small.sumZero']['lean_proof'], model['elements']['Small.sumZero']['statement_formal']),
+                         ('sorry', True))
+        # The root still names a statement without a formal proof, and waits.
+        self.assertEqual(formalizable(model), ['Small.sumSucc'])
+        formal_alternative('sumSuccAlt', SUM_SUCC, 'Small.sumSucc')
+        model = replay(self.instance)
+        root = model['elements']['Small.root']
+        self.assertEqual((root['lean_proof'], root['axioms'], root['formal']), ('complete', ['sorryAx'], False))
+        self.assertTrue(all(model['elements'][name]['statement_formal'] for name in ('Small.sumZero', 'Small.sumSucc')))
+        self.assertEqual(formalizable(model), ['Small.root'])
+
+    def test_one_proof_per_statement_is_formalized_the_statements_own_declaration_first(self):
+        self.direct()
+        folder = self.candidate(
+            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[self.root_variant]))},
+            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
+                                                     proof='Count an n by n square in L-shaped layers.',
+                                                     proves='Small.root')})
+        self.publish(folder)
+        model = replay(self.instance)
+        self.assertTrue(model['elements']['Small.root']['settled'] and model['elements']['Small.rootAlt']['settled'])
+        self.assertEqual(formalizable(model), ['Small.root'])
+        # When the statement is settled through the other proof alone, that proof is the one to formalize.
+        self.event('v1', 'review', comprehensive([finding('The induction step fails.', invalidates=['Small.root'])]))
+        self.assertEqual(formalizable(replay(self.instance)), ['Small.rootAlt'])
+
+
+class CoordinationTests(ScenarioCase):
     def runner(self):
         return Runner(self.instance, self.skill)
+
+    def table(self):
+        return {name: ([h['session'] for h in entry['holders']], [w['session'] for w in entry['queue']])
+                for name, entry in lease_table(self.instance).items()}
+
+    def test_lease_is_first_wins_and_a_refusal_records_nothing(self):
+        self.split()
+        runner = self.runner()
+        first, second = (self.session(runner, sid) for sid in ('sfirst', 'ssecond'))
+        self.assertTrue(lease(first, 'Small.sumZero')['leased'])
+        refused = lease(second, 'Small.sumZero')
+        self.assertFalse(refused['leased'])
+        self.assertEqual((refused['element'], refused['holders'], refused['queue']), ('Small.sumZero', ['sfirst'], []))
+        self.assertEqual(self.table(), {'Small.sumZero': (['sfirst'], [])})
+        self.assertFalse((second / 'declaration.json').exists())
+        # Repeating one's own lease is accepted; the refused attempt can take another element.
+        self.assertTrue(lease(first, 'Small.sumZero')['leased'])
+        self.assertTrue(lease(second, 'Small.sumSucc')['leased'])
+
+    def test_simultaneous_leases_from_separate_processes_admit_one_holder(self):
+        runner = self.runner()
+        folders = [self.session(runner, 's' + str(i)) for i in range(6)]
+        runtime = str(Path(__file__).resolve().parents[1])
+        begin = time.time() + 3  # every process imports first, then asks at the same instant
+        launcher = ('import sys, time; sys.path.insert(0, %r); import coordination; '
+                    'time.sleep(max(0, %r - time.time())); '
+                    'sys.argv = ["coordination.py", "lease", sys.argv[1], "Small.root"]; '
+                    'raise SystemExit(coordination.main())') % (runtime, begin)
+        processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
+        results = []
+        for process in processes:
+            # communicate() reads and closes both pipes; a child that printed no answer shows its traceback.
+            out, err = process.communicate(timeout=60)
+            self.assertTrue(out.strip(), err.decode('utf-8', 'replace'))
+            results.append((process.returncode, json.loads(out.decode('utf-8'))))
+        self.assertEqual(sorted(code for code, _ in results), [0, 1, 1, 1, 1, 1], results)
+        holders = lease_table(self.instance)['Small.root']['holders']
+        self.assertEqual(len(holders), 1)
+        self.assertEqual([r['holders'] for code, r in results if code == 0], [[holders[0]['session']]])
+
+    def test_waiters_are_served_in_order_and_registration_passes_the_lease(self):
+        runner = self.runner()
+        a, b, c = (self.session(runner, sid) for sid in ('sa', 'sb', 'sc'))
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+        self.assertEqual(wait(b, 'Small.root', timeout=0)['position'], 1)
+        self.assertEqual(wait(c, 'Small.root', timeout=0)['position'], 2)
+        # The board view shows who holds the element's lease and who waits, in order.
+        render(self.instance, replay(self.instance), board(self.instance), lease_table(self.instance))
+        self.assertIn('- Small.root · lease: sa · waiting: sb, sc',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
+        first = take(a, 'Small.root', 'The identity for every even n.', leased=True)
+        self.assertTrue(first['registered'], first)
+        sid_a = first['section']['id']
+        self.assertEqual(self.table(), {'Small.root': (['sb'], ['sc'])})
+        self.assertTrue(wait(b, 'Small.root', timeout=0)['leased'])
+        # The tool refuses what it can decide; overlap itself is the registering session's reasoned judgement.
+        self.assertIn('whole element cannot', take(b, 'Small.root', leased=True)['reason'])
+        self.assertIn('exact statement', take(b, 'Small.root', 'The identity  for every even n.', leased=True)['reason'])
+        missing = take(b, 'Small.root', 'The identity for every odd n.', leased=True)
+        self.assertIn(sid_a, missing['reason'])
+        self.assertFalse((b / 'declaration.json').exists())
+        second = take(b, 'Small.root', 'The identity for every odd n.',
+                      {sid_a: 'Mine concerns odd n only, where the other section does not apply.'}, leased=True)
+        self.assertTrue(second['registered'], second)
+        self.assertEqual(second['section']['reasons'], {sid_a: 'Mine concerns odd n only, where the other section does not apply.'})
+        self.assertEqual(self.table(), {'Small.root': (['sc'], [])})
+        rows = {r['session']: [s['id'] for s in r['sections']] for r in board(self.instance)}
+        self.assertEqual(rows, {'sa': [sid_a], 'sb': [second['section']['id']], 'sc': []})
+        self.assertEqual({r['session']: r['elements'] for r in board(self.instance)},
+                         {'sa': ['Small.root'], 'sb': ['Small.root'], 'sc': []})
+        # Parts of an element leave it available to a further attempt.
+        self.assertEqual(runner.available_elements(), ['Small.root'])
+        # A section's exact statement reaches board.md as written.
+        render(self.instance, replay(self.instance), board(self.instance))
+        self.assertIn(f'  Section {sid_a} on Small.root (session sa): The identity for every even n.',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
+
+    def test_lease_of_an_ended_session_passes_to_the_next_waiter(self):
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+        self.assertFalse(wait(b, 'Small.root', timeout=0)['leased'])
+        runner.state['sessions']['sa']['status'] = 'ended'
+        runner.save()
+        self.assertTrue(wait(b, 'Small.root', timeout=0)['leased'])
+        # A running session whose host and CLI are both gone has ended as well.
+        c = self.session(runner, 'sc')
+        self.assertFalse(wait(c, 'Small.root', timeout=0)['leased'])
+        gone = {'pid': 2 ** 22, 'birth': 'gone'}
+        runner.state['sessions']['sb'].update(host=gone, cli=gone)
+        runner.save()
+        self.assertTrue(wait(c, 'Small.root', timeout=0)['leased'])
+
+    def test_element_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
+        # Attempts and peers reach these commands only through the argv in input.json.
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        request = a / 'section.json'
+        write_json(request, {'statement': 'The identity for every even n.'})
+
+        def run(*argv):
+            with patch('sys.argv', ['coordination.py', *argv]), patch('builtins.print') as shown:
+                code = coordination_main()
+            return code, json.loads(shown.call_args.args[0])
+
+        code, answer = run('section', str(a), 'Small.root', '--file', str(request))
+        self.assertEqual((code, answer['registered']), (1, False))
+        code, answer = run('lease', str(a), 'Small.root')
+        self.assertEqual((code, answer['leased'], answer['element']), (0, True, 'Small.root'))
+        code, answer = run('wait', str(b), 'Small.root', '--timeout', '0')
+        self.assertEqual((code, answer['timeout'], answer['position']), (124, True, 1))
+        code, answer = run('section', str(a), 'Small.root', '--file', str(request))
+        self.assertEqual((code, answer['registered'], answer['section']['element']), (0, True, 'Small.root'))
+        code, answer = run('wait', str(b), 'Small.root', '--timeout', '0')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('release', str(b), 'Small.root')
+        self.assertEqual((code, answer['released']), (0, True))
+        code, answer = run('lease', str(b), 'Small.missing')
+        self.assertEqual((code, answer['error']), (1, 'unknown element; use the declaration name as the canon shows it'))
+        # A refusal is exit code 1 with its reason: a definition carries no section.
+        code, answer = run('lease', str(b), 'Small.oddSum')
+        self.assertEqual((code, answer['leased']), (1, False))
+        self.assertIn('definition', answer['reason'])
+        code, answer = run('wait', str(b), 'Small.oddSum', '--timeout', '0')
+        self.assertEqual((code, answer['leased']), (1, False))
+        code, answer = run('updates', str(b))
+        self.assertEqual((code, answer['root_state']), (0, 'unresolved'))
+
+    def test_a_session_stands_in_one_lease_relation(self):
+        self.split()
+        runner = self.runner()
+        holder, mover = (self.session(runner, sid) for sid in ('sholder', 'smover'))
+        self.assertTrue(lease(holder, 'Small.sumZero')['leased'])
+        self.assertFalse(wait(mover, 'Small.sumZero', timeout=0)['leased'])
+        self.assertTrue(lease(mover, 'Small.sumSucc')['leased'])
+        self.assertEqual(lease_table(self.instance)['Small.sumZero']['queue'], [])
+        # Leaving without registering frees the lease for everyone.
+        release(mover, 'Small.sumSucc')
+        self.assertNotIn('Small.sumSucc', lease_table(self.instance))
+        # A refused wait on an element held whole keeps the place already taken on another element.
+        self.assertFalse(wait(mover, 'Small.sumZero', timeout=0)['leased'])
+        blocked_by = self.session(runner, 'swhole')
+        self.assertTrue(take(blocked_by, 'Small.sumSucc')['registered'])
+        self.assertIn('whole element', wait(mover, 'Small.sumSucc', timeout=0)['reason'])
+        self.assertEqual(self.table()['Small.sumZero'], (['sholder'], ['smover']))
+        self.assertIn('already holds', take(blocked_by, 'Small.sumSucc')['reason'])
+
+    def test_whole_element_section_blocks_others_until_its_pipeline_is_done(self):
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        taken = take(a, 'Small.root')
+        self.assertTrue(taken['registered'])
+        self.assertEqual((taken['section']['whole'], taken['section']['statement'], taken['section']['new']), (True, None, None))
+        self.assertIn('holds this whole element', lease(b, 'Small.root')['reason'])
+        self.assertEqual(runner.available_elements(), [])
+        pipeline = runner.state['jobs'][runner.state['sessions']['sa']['job']]['pipeline']
+        runner.state['pipelines'][pipeline]['stage'] = 'done'
+        runner.save()
+        self.assertEqual(runner.available_elements(), ['Small.root'])
+        self.assertTrue(lease(b, 'Small.root')['leased'])
+
+    def test_a_statement_settled_under_the_lease_refuses_registration_waiting_and_leasing(self):
+        self.split()
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'Small.sumZero')['leased'])
+        self.assertFalse(wait(b, 'Small.sumZero', timeout=0)['leased'])
+        # The proof of sumZero is accepted, and it names nothing: sumZero is settled while sa holds its lease
+        # and sb waits for it.
+        self.replace_proof('Small.sumZero', theorem('sumZero', SUM_ZERO), 'A sum without terms is zero.', engine=runner)
+        request = a / 'section.json'
+        write_json(request, {'whole': False, 'statement': 'The empty sum, read from the definition.', 'reasons': {}})
+        refused = section(a, 'Small.sumZero', request)
+        self.assertFalse(refused['registered'])
+        self.assertIn('is settled', refused['reason'])
+        self.assertEqual(refused['holders'], ['sa'])  # the refusal keeps the lease for its release
+        self.assertFalse((a / 'declaration.json').exists())
+        waiting = wait(b, 'Small.sumZero', timeout=0)
+        self.assertFalse(waiting['leased'])
+        self.assertIn('is settled', waiting['reason'])
+        self.assertEqual(lease_table(self.instance)['Small.sumZero']['queue'], [])  # the waiting place is given up
+        self.assertIn('is settled', lease(b, 'Small.sumZero')['reason'])
+        # The root's own proof is accepted too, and it rests on sumSucc, which has no proof. The root is
+        # not settled, and an accepted proof alone is no reason to refuse work on its statement.
+        self.assertTrue(lease(b, 'Small.root')['leased'])
+
+    def test_a_definition_carries_no_section(self):
+        runner = self.runner()
+        a = self.session(runner, 'sa')
+        for command in (lease, lambda session, name: wait(session, name, timeout=0)):
+            refused = command(a, 'Small.oddSum')
+            self.assertFalse(refused['leased'])
+            self.assertIn('definition', refused['reason'])
+        self.assertEqual(lease_table(self.instance), {})
+        with self.assertRaisesRegex(ValueError, 'unknown element'):
+            lease(a, 'Small.absent')
+
+    def test_sections_expand_through_the_lease_and_are_not_released(self):
+        runner = self.runner()
+        a = self.session(runner, 'sa')
+        self.assertTrue(take(a, 'Small.root', 'The identity for every even n.')['registered'])
+        request = a / 'next.json'
+        write_json(request, {'whole': False, 'statement': 'The identity for n = 1 and n = 3.', 'reasons': {}})
+        self.assertIn('lease', section(a, 'Small.root', request)['reason'])
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+        # Its own earlier section needs no non-overlap reason.
+        self.assertTrue(section(a, 'Small.root', request)['registered'])
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+        release(a, 'Small.root')
+        self.assertEqual([s['id'] for s in read_json(a / 'declaration.json')['sections']], ['sa-1', 'sa-2'])
+        self.assertEqual([s['id'] for s in board(self.instance)[0]['sections']], ['sa-1', 'sa-2'])
+
+    def test_peers_register_within_their_pipeline_and_other_roles_cannot(self):
+        runner = self.runner()
+        a = self.session(runner, 'sa')
+        self.assertTrue(take(a, 'Small.root', 'The identity for every even n.')['registered'])
+        peer = self.peer_session(runner, 'sa', 'speer')
+        # The source's sections belong to the same pipeline, so the peer may take the rest of the element.
+        self.assertTrue(take(peer, 'Small.root')['registered'])
+        self.assertEqual([s['session'] for s in board(self.instance)[0]['sections']], ['sa', 'speer'])
+        for role in ('explore', 'formalizer', 'review', 'organizer'):
+            other = self.reader('s' + role, role)
+            with self.subTest(role=role), self.assertRaisesRegex(ValueError, 'only attempts and peers'):
+                lease(other, 'Small.root')
+
+    def test_a_statement_not_yet_in_the_canon_is_registered_on_the_element_it_is_aimed_at(self):
+        self.split()
+        runner = self.runner()
+        a, b, c = (self.session(runner, sid) for sid in ('sa', 'sb', 'sc'))
+        bridge = {'lean': 'theorem sumDouble (n : Nat) : oddSum (n + 2) = oddSum n + 4 * n + 4',
+                  'statement': 'Two more odd numbers add 4n + 4.'}
+        first = take(a, 'Small.sumSucc', new=bridge)
+        self.assertTrue(first['registered'], first)
+        entry = first['section']
+        self.assertEqual((entry['element'], entry['whole'], entry['statement'], entry['new']),
+                         ('Small.sumSucc', False, bridge['lean'], bridge))
+        self.assertEqual(self.table(), {})  # registration ends the lease
+        # Two attempts that hold different parts and aim at the same statement see each other on the board.
+        render(self.instance, replay(self.instance), board(self.instance))
+        self.assertIn(f"  Section {entry['id']} on Small.sumSucc (session sa): a new statement aimed at this element: "
+                      + bridge['lean'], (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
+        # The same Lean statement is not registered twice on the element, and another one needs its reason.
+        self.assertIn('exact statement', take(b, 'Small.sumSucc', new={**bridge, 'statement': 'The same, said otherwise.'})['reason'])
+        other = {'lean': 'theorem sumEven (n : Nat) : oddSum (2 * n) = 4 * n * n', 'statement': 'An even number of terms.'}
+        self.assertIn(entry['id'], take(b, 'Small.sumSucc', new=other, leased=True)['reason'])
+        second = take(b, 'Small.sumSucc', new=other, reasons={entry['id']: 'A different statement; neither implies the other.'},
+                      leased=True)
+        self.assertTrue(second['registered'], second)
+        # The whole element cannot be taken beside them, and a new statement is not the whole element.
+        self.assertIn('whole element cannot', take(c, 'Small.sumSucc')['reason'])
+        request = c / 'malformed.json'
+        for wrong in ({'new': bridge, 'whole': True}, {'new': {'lean': bridge['lean']}}, {'new': {**bridge, 'statement': ' '}},
+                      {'new': 'theorem sumDouble'}, {'statement': ' '}, {'whole': 'yes'}):
+            write_json(request, wrong)
+            with self.subTest(wrong=wrong), self.assertRaises(ValueError):
+                section(c, 'Small.sumSucc', request)
+        # The peer's assignment and the availability report carry the section like any other.
+        self.assertEqual(runner.producer_sections('sa'), [{'id': entry['id'], 'element': 'Small.sumSucc', 'whole': False,
+                                                          'statement': bridge['lean'], 'new': bridge}])
+        self.assertEqual(runner.current_availability()['elements'],
+                         {'Small.sumSucc': sorted([entry['id'], second['section']['id']]), 'Small.sumZero': []})
+
+    def test_a_declaration_that_is_another_proof_is_held_under_the_statement_it_proves(self):
+        self.ways()
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        # monoBAlt is another proof of monoB: its lease is the statement's, and so is its section.
+        taken = lease(a, 'Small.monoBAlt')
+        self.assertEqual((taken['leased'], taken['element']), (True, 'Small.monoB'))
+        self.assertEqual(self.table(), {'Small.monoB': (['sa'], [])})
+        refused = lease(b, 'Small.monoB')
+        self.assertEqual((refused['leased'], refused['holders']), (False, ['sa']))
+        registered = take(a, 'Small.monoBAlt', leased=True)
+        self.assertEqual((registered['registered'], registered['section']['element']), (True, 'Small.monoB'))
+        self.assertEqual(board(self.instance)[0]['elements'], ['Small.monoB'])
+        # The whole statement is held, under either name.
+        for name in ('Small.monoB', 'Small.monoBAlt'):
+            self.assertIn('holds this whole element', lease(b, name)['reason'])
+
+    def test_a_second_proof_that_remains_work_can_be_taken_on_when_the_statements_own_proof_is_accepted(self):
+        # rootAlt is correct and held back, so the frontier lists it as work that remains, and replacing
+        # its proof requires a section on the statement (design record, sections 5 and 9). The root's own
+        # proof is accepted and the root is not settled, which is no reason to refuse the work on the other proof.
+        self.ways()
+        runner = self.runner()
+        self.assertIn('Small.rootAlt', runner.model['remaining'])
+        a = self.session(runner, 'sa')
+        taken = lease(a, 'Small.rootAlt')
+        self.assertTrue(taken['leased'], taken.get('reason'))
+        self.assertEqual(taken['element'], 'Small.root')
+        self.assertTrue(take(a, 'Small.rootAlt', 'The case split of way 2.', leased=True)['registered'])
+
+    def test_a_second_proof_is_not_available_while_its_statement_is_held_whole(self):
+        # Sections attach to the statement, so a whole section on monoB covers monoBAlt as well, and the
+        # runner launches no attempt for it. The elements left are those no session holds whole.
+        self.ways()
+        runner = self.runner()
+        a = self.session(runner, 'sa')
+        self.assertTrue(take(a, 'Small.monoB')['registered'])
+        available = runner.available_elements()
+        self.assertNotIn('Small.monoB', available)
+        self.assertNotIn('Small.monoBAlt', available)
+
+    def test_messages_reach_the_recipient_inbox_and_its_updates(self):
+        runner = self.runner()
+        sender, recipient = (self.session(runner, sid) for sid in ('ssender', 'srecipient'))
+        note = sender / 'note.md'
+        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8')
+        delivered = Path(message(sender, 'srecipient', note)['delivered'])
+        self.assertEqual(delivered.resolve().parent, (recipient / 'inbox').resolve())
+        with self.assertRaisesRegex(ValueError, 'unknown recipient'):
+            message(sender, 'snobody', note)
+        (sender / 'blank.md').write_text(' \n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'empty coordination message'):
+            message(sender, 'srecipient', sender / 'blank.md')
+        # A publication leaves a notice in every running session's inbox; it names no sender.
+        runner.notify({'id': 'c9', 'kind': 'change', 'sequence': 1})
+        received = updates(recipient)['messages']
+        self.assertEqual(sorted(m.get('from') or m.get('event') for m in received), ['c9', 'ssender'])
+        self.assertEqual([m['text'] for m in received if m.get('from') == 'ssender'],
+                         ['Our sections meet at n = 7; I leave that case to you.'])
+        self.assertEqual([(m['event'], m['kind'], m['revision']) for m in updates(sender)['messages']], [('c9', 'change', 1)])
+
+    def test_updates_report_the_board_the_leases_and_the_work_that_remains(self):
+        self.split()
+        self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.sumTwo')]))
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        part = take(a, 'Small.sumZero', 'The empty sum, read from the definition.')['section']
+        self.assertTrue(lease(b, 'Small.sumSucc')['leased'])
+        runner.populate()
+        peer = self.peer_session(runner, 'sa', 'speer')
+        seen = updates(b)
+        self.assertEqual((seen['revision'], seen['root_state']), (runner.model['sequence'], 'unresolved'))
+        rows = {row['session']: row for row in seen['board']}
+        self.assertEqual((rows['sa']['role'], rows['sa']['stage'], rows['sa']['elements'], rows['sa']['question']),
+                         ('attempt', 'peer', ['Small.sumZero'], None))
+        self.assertEqual([(s['id'], s['element'], s['whole'], s['statement'], s['session']) for s in rows['sa']['sections']],
+                         [(part['id'], 'Small.sumZero', False, 'The empty sum, read from the definition.', 'sa')])
+        self.assertEqual((rows['sb']['stage'], rows['sb']['elements'], rows['sb']['sections']), ('producing', [], []))
+        self.assertEqual({name: [h['session'] for h in entry['holders']] for name, entry in seen['leases'].items()},
+                         {'Small.sumSucc': ['sb']})
+        self.assertEqual(seen['questions'], [{'id': 'q0', 'statement': 'The root problem itself, taken as a whole.',
+                                              'state': 'open', 'occupied_by': [], 'free': True}])
+        self.assertEqual({cid: (c['targets'], c['status']) for cid, c in seen['concerns'].items()},
+                         {'v1/gap': (['Small.sumTwo'], 'pending')})
+        self.assertEqual([(r['status'], r['task']['concerns']) for r in seen['comprehensive_reviews']],
+                         [('pending', ['v1/gap'])])
+        # An attempt receives the token of what it saw: the elements that remain and the sections on each.
+        snapshot = read_json(b / 'availability' / (seen['availability_snapshot'] + '.json'))
+        self.assertEqual(snapshot, {'epoch': 0, 'elements': {'Small.sumSucc': [], 'Small.sumZero': [part['id']]}})
+        self.assertEqual(updates(b)['availability_snapshot'], seen['availability_snapshot'])
+        # Only attempts judge whether the remaining work is occupied; a peer receives no token.
+        self.assertIsNone(updates(peer)['availability_snapshot'])
+        self.assertFalse((peer / 'availability').exists())
+
+
+class RunnerTests(ScenarioCase):
+    def setUp(self):
+        super().setUp()
+        # The scheduling settings as installed; the shared fixture shortens them for tests that wait on them.
+        installed = defaults()
+        self.configure(**{key: installed[key] for key in (
+            'max_sessions', 'explore_every', 'organizer_every_records', 'launch_interval', 'roles',
+            'retry_seconds', 'retry_max_seconds')})
+
+    def runner(self):
+        return Runner(self.instance, self.skill)
+
+    def ended(self, runner, role, exit_code=42):
+        """A producing session that has ended with retained research material."""
+        key = runner.producer(role)
+        job = runner.state['jobs'][key]
+        sid = 's' + role
+        folder = runner.session_dir(sid)
+        for name in ('output', 'work', 'inbox'):
+            (folder / name).mkdir(parents=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
+        (folder / 'cli.stdout.jsonl').write_text(json.dumps(
+            {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'A retained observation.'}}), encoding='utf-8')
+        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+        (folder / 'work/notes.md').write_text('An unfinished mathematical argument.', encoding='utf-8')
+        session = {'id': sid, 'role': role, 'job': key, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex',
+                   'started_at': 1, 'status': 'running', 'exit_code': exit_code, 'host': None, 'cli': None}
+        runner.state['sessions'][sid] = session
+        runner.state['pipelines'][job['pipeline']]['producer'] = sid
+        job.update(status='running', session=sid)
+        runner.save()
+        return sid, session, job
+
+    def launched(self, runner, role):
+        return [sid for sid, s in runner.active() if s['role'] == role]
+
+    # -- retries, blocks and refusals ------------------------------------------------------------------
 
     def test_invalid_processing_output_delays_only_its_job(self):
         runner = self.runner()
@@ -532,26 +1197,6 @@ class RunnerTests(InstanceCase):
             runner.finish(sid, session)
         self.assertEqual(runner.state['blocks'], expected)
 
-    def ended(self, runner, role, output=None, exit_code=42):
-        key = runner.producer(role)
-        job = runner.state['jobs'][key]
-        sid = 's' + role
-        folder = runner.session_dir(sid)
-        (folder / 'output').mkdir(parents=True)
-        (folder / 'work').mkdir()
-        (folder / 'inbox').mkdir()
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role, 'task': {}})
-        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'A retained observation.'}}), encoding='utf-8')
-        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
-        (folder / 'work/notes.md').write_text('An unfinished mathematical argument.', encoding='utf-8')
-        session = {'id': sid, 'role': role, 'job': key, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex',
-                   'started_at': 1, 'status': 'running', 'exit_code': exit_code, 'host': None, 'cli': None}
-        runner.state['sessions'][sid] = session
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        job.update(status='running', session=sid)
-        runner.save()
-        return sid, session, job
-
     def test_interrupted_work_without_output_manifest_reaches_peer(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -581,10 +1226,12 @@ class RunnerTests(InstanceCase):
     def test_termination_file_error_does_not_persist_a_retained_marker(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
+
         def fail_termination(path, value):
             if Path(path).name == 'termination.json':
                 raise OSError('termination receipt temporarily unwritable')
             return write_json(path, value)
+
         with patch('runner.write_json', side_effect=fail_termination):
             with self.assertRaisesRegex(OSError, 'temporarily unwritable'):
                 runner.finish(sid, session)
@@ -597,21 +1244,26 @@ class RunnerTests(InstanceCase):
         self.assertEqual(read_json(runner.session_dir(sid) / 'termination.json')['exit_code'], 42)
         self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['status'], 'pending')
 
+    def native_profile(self, folder, rows):
+        """A Codex profile holding the native transcript of the session in folder."""
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'thread.started', 'thread_id': identity}), encoding='utf-8')
+        profile = self.root / 'native-profile'
+        (profile / 'sessions').mkdir(parents=True)
+        prompt = {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user',
+                                                      'content': [{'type': 'input_text', 'text': 'Study the root.'}]}}
+        (profile / 'sessions' / (identity + '.jsonl')).write_text(
+            '\n'.join(json.dumps(row) for row in [prompt, *rows]), encoding='utf-8')
+        return profile
+
     def test_native_only_research_reaches_peer(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
         folder = runner.session_dir(sid)
-        (folder / 'work/notes.md').unlink()
-        identity = '01234567-89ab-cdef-0123-456789abcdef'
-        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'thread.started', 'thread_id': identity}), encoding='utf-8')
-        profile = self.root / 'native-profile'
-        (profile / 'sessions').mkdir(parents=True)
         observation = 'A mathematical observation retained before interruption.'
-        rows = [
-            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': 'Study the root.'}]}},
-            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': observation}]}},
-        ]
-        (profile / 'sessions' / (identity + '.jsonl')).write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+        profile = self.native_profile(folder, [{'type': 'response_item', 'payload': {
+            'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': observation}]}}])
         with patch.dict('os.environ', {'CODEX_HOME': str(profile)}):
             runner.finish(sid, session)
         pipeline = runner.state['pipelines'][job['pipeline']]
@@ -624,17 +1276,8 @@ class RunnerTests(InstanceCase):
     def test_native_prompt_without_research_remains_a_launch_retry(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
-        folder = runner.session_dir(sid)
-        (folder / 'work/notes.md').unlink()
-        identity = '01234567-89ab-cdef-0123-456789abcdef'
-        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'thread.started', 'thread_id': identity}), encoding='utf-8')
-        profile = self.root / 'native-profile'
-        (profile / 'sessions').mkdir(parents=True)
-        rows = [
-            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': 'Study the root.'}]}},
-            {'type': 'response_item', 'payload': {'type': 'reasoning', 'summary': [], 'encrypted_content': 'OPAQUE_TRANSPORT'}},
-        ]
-        (profile / 'sessions' / (identity + '.jsonl')).write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+        profile = self.native_profile(runner.session_dir(sid), [{'type': 'response_item', 'payload': {
+            'type': 'reasoning', 'summary': [], 'encrypted_content': 'OPAQUE_TRANSPORT'}}])
         with patch.dict('os.environ', {'CODEX_HOME': str(profile)}):
             runner.finish(sid, session)
         self.assertEqual(job['status'], 'pending')
@@ -642,421 +1285,36 @@ class RunnerTests(InstanceCase):
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertTrue(session['retention']['native_transcripts'])
 
-    def test_a_cancelled_producer_without_research_is_relaunched_without_blocking_its_model(self):
-        # kill-session ends a producer as an interruption; one that left no research material is
-        # launched again (reference/operations.md, Commands). The cancellation is not a refusal or a
-        # failed launch, so the role keeps its configured first model.
-        runner = self.runner()
-        sid, session, job = self.ended(runner, 'attempt')
+    def without_material(self, runner, role='attempt'):
+        """A producer that ended without any research material; its job waits to be launched again."""
+        sid, session, job = self.ended(runner, role)
         folder = runner.session_dir(sid)
         (folder / 'work/notes.md').unlink()
         (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
-        (folder / 'CANCEL').touch()
+        return sid, session, job
+
+    def test_a_cancelled_producer_without_research_is_relaunched_without_blocking_its_model(self):
+        # kill-session ends a producer as an interruption; one that left no research material is
+        # launched again. The cancellation is not a refusal or a failed launch, so the role keeps
+        # its configured first model.
+        runner = self.runner()
+        sid, session, job = self.without_material(runner)
+        (runner.session_dir(sid) / 'CANCEL').touch()
         runner.finish(sid, session)
         self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertEqual(runner.state['blocks'], {})
         self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
 
-    def test_archiver_keeps_producer_work_until_its_pipeline_is_done(self):
+    def test_a_producer_that_ended_without_work_counts_against_its_model(self):
         runner = self.runner()
-        sid, session, job = self.ended(runner, 'attempt')
-        runner.finish(sid, session)
-        work = runner.session_dir(sid) / 'work'
-        # The producer has ended, but its peer still has to read the retained work.
-        archive_finished(self.instance)
-        self.assertTrue((work / 'notes.md').is_file())
-        runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
-        runner.save()
-        archive_finished(self.instance)
-        self.assertFalse(work.exists())
-        self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
-
-    def test_final_archive_request_is_dispatched_before_runner_exit(self):
-        data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
-        self.publish('rfinal', data, assessment(data, ['p']))
-        runner = self.runner()
-        self.assertTrue(root_solved(runner.model))
-        with patch('runner.subprocess.Popen') as launch:
-            # An earlier archiver is still processing its older state snapshot
-            # when the final publication requests another archive pass.
-            runner.archiver = launch.return_value
-            runner.archiver.poll.return_value = None
-            runner.archive_due = True
-            self.assertFalse(runner.tick())
-            self.assertTrue(runner.state['finished'])
-            self.assertTrue(runner.archive_due)
-            launch.assert_not_called()
-
-            runner.archiver.poll.return_value = 0
-            self.assertTrue(runner.tick())
-            self.assertFalse(runner.archive_due)
-            launch.assert_called_once()
-            self.assertEqual(launch.call_args.args[0][-2:],
-                             ['_archive', str(self.instance)])
-
-    def test_occupancy_survives_producer_exit(self):
-        runner = self.runner()
-        sid, session, job = self.ended(runner, 'attempt')
-        self.assertTrue(take(runner.session_dir(sid), 'root')['registered'])
-        for stage in ('producing', 'peer'):
-            if stage == 'peer':
-                runner.finish(sid, session)
-            rows = board(self.instance, runner.state)
-            self.assertEqual(rows[0]['nodes'], ['root'])
-            self.assertEqual(rows[0]['stage'], stage)
-            render(self.instance, replay(self.instance), rows)
-            visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
-            self.assertIn(f'producer: {sid}', visible)
-            self.assertIn(f'· {stage} · nodes: root', visible)
-
-    def running_attempt(self, runner, sid):
-        """A producing attempt whose session the board lists, as dispatch would leave it."""
-        key = runner.producer('attempt')
-        job = runner.state['jobs'][key]
-        folder = runner.session_dir(sid)
-        folder.mkdir(parents=True)
-        (folder / 'inbox').mkdir()
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt',
-                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
-        job.update(status='running', session=sid)
-        runner.save()
-        return folder
-
-    def test_lease_is_first_wins_and_a_refusal_records_nothing(self):
-        self.publish('r1', self.reduction())  # Q stays available
-        runner = self.runner()
-        first, second = (self.running_attempt(runner, sid) for sid in ('sfirst', 'ssecond'))
-        self.assertTrue(lease(first, 'root')['leased'])
-        refused = lease(second, 'root')
-        self.assertFalse(refused['leased'])
-        self.assertEqual(refused['holders'], ['sfirst'])
-        self.assertEqual(refused['queue'], [])
-        self.assertEqual({n: [h['session'] for h in e['holders']] for n, e in lease_table(self.instance).items()},
-                         {'root': ['sfirst']})
-        self.assertFalse((second / 'declaration.json').exists())
-        # Repeating one's own lease is accepted; the refused attempt can take another node.
-        self.assertTrue(lease(first, 'root')['leased'])
-        self.assertTrue(lease(second, 'Q')['leased'])
-
-    def test_simultaneous_leases_from_separate_processes_admit_one_holder(self):
-        runner = self.runner()
-        folders = [self.running_attempt(runner, 's' + str(i)) for i in range(6)]
-        runtime = str(Path(__file__).resolve().parents[1])
-        start = time.time() + 3  # every process imports first, then asks at the same instant
-        launcher = ('import sys, time; sys.path.insert(0, %r); import coordination; '
-                    'time.sleep(max(0, %r - time.time())); '
-                    'sys.argv = ["coordination.py", "lease", sys.argv[1], "root"]; '
-                    'raise SystemExit(coordination.main())') % (runtime, start)
-        processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
-        results = []
-        for process in processes:
-            # communicate() reads and closes both pipes; a child that printed no answer shows its traceback.
-            out, err = process.communicate(timeout=60)
-            self.assertTrue(out.strip(), err.decode('utf-8', 'replace'))
-            results.append((process.returncode, json.loads(out.decode('utf-8'))))
-        self.assertEqual(sorted(code for code, _ in results), [0, 1, 1, 1, 1, 1], results)
-        holders = lease_table(self.instance)['root']['holders']
-        self.assertEqual(len(holders), 1)
-        self.assertEqual([r['holders'] for code, r in results if code == 0], [[holders[0]['session']]])
-
-    def test_waiters_are_served_in_order_and_registration_passes_the_lease(self):
-        runner = self.runner()
-        a, b, c = (self.running_attempt(runner, sid) for sid in ('sa', 'sb', 'sc'))
-        self.assertTrue(lease(a, 'root')['leased'])
-        self.assertEqual(wait(b, 'root', timeout=0)['position'], 1)
-        self.assertEqual(wait(c, 'root', timeout=0)['position'], 2)
-        # The board view shows who holds the node's lease and who waits, in order.
-        render(self.instance, replay(self.instance), board(self.instance), lease_table(self.instance))
-        self.assertIn('- root · lease: sa · waiting: sb, sc',
-                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
-        first = take(a, 'root', 'For every n, b is nondecreasing for l < n - 2.', leased=True)
-        self.assertTrue(first['registered'], first)
-        sid_a = first['section']['id']
-        self.assertEqual([h['session'] for h in lease_table(self.instance)['root']['holders']], ['sb'])
-        self.assertTrue(wait(b, 'root', timeout=0)['leased'])
-        # The tool refuses what it can decide; overlap itself is the registering session's reasoned judgement.
-        self.assertIn('whole node cannot', take(b, 'root', leased=True)['reason'])
-        self.assertIn('exact statement',
-                      take(b, 'root', 'For every n,  b is nondecreasing for l < n - 2.', leased=True)['reason'])
-        missing = take(b, 'root', 'For every n, the last three terms decrease.', leased=True)
-        self.assertIn(sid_a, missing['reason'])
-        self.assertFalse((b / 'declaration.json').exists())
-        second = take(b, 'root', 'For every n, the last three terms decrease.',
-                      {sid_a: 'Mine concerns l >= n - 3 only, where the other section does not apply.'}, leased=True)
-        self.assertTrue(second['registered'], second)
-        self.assertEqual([h['session'] for h in lease_table(self.instance)['root']['holders']], ['sc'])
-        rows = {r['session']: [s['id'] for s in r['sections']] for r in board(self.instance)}
-        self.assertEqual(rows, {'sa': [sid_a], 'sb': [second['section']['id']], 'sc': []})
-        self.assertEqual(runner.available_nodes(), ['root'])
-        # A section's exact statement reaches board.md as written, as a node's statement reaches the frontier.
-        render(self.instance, replay(self.instance), board(self.instance))
-        self.assertIn(f'  Section {sid_a} on root (session sa): For every n, b is nondecreasing for l < n - 2.',
-                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
-
-    def test_lease_of_an_ended_session_passes_to_the_next_waiter(self):
-        runner = self.runner()
-        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
-        self.assertTrue(lease(a, 'root')['leased'])
-        self.assertFalse(wait(b, 'root', timeout=0)['leased'])
-        runner.state['sessions']['sa']['status'] = 'ended'
-        runner.save()
-        self.assertTrue(wait(b, 'root', timeout=0)['leased'])
-        # A running session whose host and CLI are both gone has ended as well.
-        c = self.running_attempt(runner, 'sc')
-        self.assertFalse(wait(c, 'root', timeout=0)['leased'])
-        gone = {'pid': 2 ** 22, 'birth': 'gone'}
-        runner.state['sessions']['sb'].update(host=gone, cli=gone)
-        runner.save()
-        self.assertTrue(wait(c, 'root', timeout=0)['leased'])
-
-    def test_node_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
-        # Attempts and peers reach these commands only through the argv in input.json (reference/tools.md).
-        runner = self.runner()
-        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
-        request = a / 'section.json'
-        write_json(request, {'statement': 'For every n, the last three terms decrease.'})
-
-        def run(*argv):
-            with patch('sys.argv', ['coordination.py', *argv]), patch('builtins.print') as shown:
-                code = coordination_main()
-            return code, json.loads(shown.call_args.args[0])
-
-        code, answer = run('section', str(a), 'root', '--file', str(request))
-        self.assertEqual((code, answer['registered']), (1, False))
-        code, answer = run('lease', str(a), 'root')
-        self.assertEqual((code, answer['leased']), (0, True))
-        code, answer = run('wait', str(b), 'root', '--timeout', '0')
-        self.assertEqual((code, answer['timeout'], answer['position']), (124, True, 1))
-        code, answer = run('section', str(a), 'root', '--file', str(request))
-        self.assertEqual((code, answer['registered']), (0, True))
-        code, answer = run('wait', str(b), 'root', '--timeout', '0')
-        self.assertEqual((code, answer['leased']), (0, True))
-        code, answer = run('release', str(b), 'root')
-        self.assertEqual((code, answer['released']), (0, True))
-        code, answer = run('lease', str(b), 'missing')
-        self.assertEqual((code, answer['error']), (1, 'unknown node'))
-
-    def test_a_session_stands_in_one_lease_relation(self):
-        self.publish('r1', self.reduction())
-        runner = self.runner()
-        holder, mover = (self.running_attempt(runner, sid) for sid in ('sholder', 'smover'))
-        self.assertTrue(lease(holder, 'root')['leased'])
-        self.assertFalse(wait(mover, 'root', timeout=0)['leased'])
-        self.assertTrue(lease(mover, 'Q')['leased'])
-        self.assertEqual(lease_table(self.instance)['root']['queue'], [])
-        # Leaving without registering frees the lease for everyone.
-        release(mover, 'Q')
-        self.assertNotIn('Q', lease_table(self.instance))
-        # A refused wait on a node held whole keeps the place already taken on another node.
-        self.assertFalse(wait(mover, 'root', timeout=0)['leased'])
-        blocked_by = self.running_attempt(runner, 'swhole')
-        self.assertTrue(take(blocked_by, 'Q')['registered'])
-        self.assertIn('whole node', wait(mover, 'Q', timeout=0)['reason'])
-        self.assertEqual([w['session'] for w in lease_table(self.instance)['root']['queue']], ['smover'])
-        self.assertIn('already holds', take(blocked_by, 'Q')['reason'])
-
-    def test_whole_node_section_blocks_others_until_its_pipeline_is_done(self):
-        runner = self.runner()
-        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
-        self.assertTrue(take(a, 'root')['registered'])
-        self.assertIn('whole node', lease(b, 'root')['reason'])
-        self.assertEqual(runner.available_nodes(), [])
-        pipeline = runner.state['jobs'][runner.state['sessions']['sa']['job']]['pipeline']
-        runner.state['pipelines'][pipeline]['stage'] = 'done'
-        runner.save()
-        self.assertEqual(runner.available_nodes(), ['root'])
-        self.assertTrue(lease(b, 'root')['leased'])
-
-    def test_a_node_settled_under_the_lease_refuses_registration_waiting_and_leasing(self):
-        self.publish('r1', self.reduction())
-        runner = self.runner()
-        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
-        self.assertTrue(lease(a, 'Q')['leased'])
-        self.assertFalse(wait(b, 'Q', timeout=0)['leased'])
-        # Q becomes informally proved while sa holds its lease and sb waits for it.
-        self.publish('r2', record([claim_row('q')], solutions=[solution('s', 'Q', 'q')]))
-        request = a / 'section.json'
-        write_json(request, {'whole': False, 'statement': 'Q for every even case.', 'reasons': {}})
-        refused = section(a, 'Q', request)
-        self.assertFalse(refused['registered'])
-        self.assertIn('not unresolved', refused['reason'])
-        self.assertEqual(refused['holders'], ['sa'])  # the refusal keeps the lease for its release
-        self.assertFalse((a / 'declaration.json').exists())
-        waiting = wait(b, 'Q', timeout=0)
-        self.assertFalse(waiting['leased'])
-        self.assertIn('not unresolved', waiting['reason'])
-        self.assertEqual(lease_table(self.instance)['Q']['queue'], [])  # the waiting place is given up
-        self.assertIn('not unresolved', lease(b, 'Q')['reason'])
-
-    def test_sections_expand_through_the_lease_and_are_not_released(self):
-        runner = self.runner()
-        a = self.running_attempt(runner, 'sa')
-        self.assertTrue(take(a, 'root', 'For every n, the last three terms decrease.')['registered'])
-        request = a / 'next.json'
-        write_json(request, {'whole': False, 'statement': 'For every n >= 4, b_(n,n-4) > b_(n,n-3).', 'reasons': {}})
-        self.assertIn('lease', section(a, 'root', request)['reason'])
-        self.assertTrue(lease(a, 'root')['leased'])
-        # Its own earlier section needs no non-overlap reason.
-        self.assertTrue(section(a, 'root', request)['registered'])
-        self.assertTrue(lease(a, 'root')['leased'])
-        release(a, 'root')
-        self.assertEqual([s['id'] for s in read_json(a / 'declaration.json')['sections']], ['sa-1', 'sa-2'])
-
-    def test_peers_register_within_their_pipeline_and_other_roles_cannot(self):
-        runner = self.runner()
-        a = self.running_attempt(runner, 'sa')
-        self.assertTrue(take(a, 'root', 'For every n, the last three terms decrease.')['registered'])
-        job = runner.state['jobs'][runner.state['sessions']['sa']['job']]
-        peer = runner.session_dir('speer')
-        peer.mkdir()
-        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': 'speer', 'role': 'peer',
-                                         'pipeline': job['pipeline'], 'task': {}})
-        runner.state['pipelines'][job['pipeline']].update(peer='speer', stage='peer')
-        runner.state['sessions']['speer'] = {'id': 'speer', 'role': 'peer', 'status': 'running', 'job': 'peerjob'}
-        runner.save()
-        # The source's sections belong to the same pipeline, so the peer may take the rest of the node.
-        self.assertTrue(take(peer, 'root')['registered'])
-        self.assertEqual([s['session'] for s in board(self.instance)[0]['sections']], ['sa', 'speer'])
-        explorer = runner.session_dir('sexplore')
-        explorer.mkdir()
-        write_json(explorer / 'input.json', {'instance': str(self.instance), 'session': 'sexplore', 'role': 'explore'})
-        with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
-            lease(explorer, 'root')
-
-    def test_messages_reach_the_recipient_inbox_and_its_updates(self):
-        runner = self.runner()
-        sender, recipient = (self.running_attempt(runner, sid) for sid in ('ssender', 'srecipient'))
-        note = sender / 'note.md'
-        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8')
-        delivered = Path(message(sender, 'srecipient', note)['delivered'])
-        self.assertEqual(delivered.resolve().parent, (recipient / 'inbox').resolve())
-        with self.assertRaisesRegex(ValueError, 'unknown recipient'):
-            message(sender, 'snobody', note)
-        (sender / 'blank.md').write_text(' \n', encoding='utf-8')
-        with self.assertRaisesRegex(ValueError, 'empty coordination message'):
-            message(sender, 'srecipient', sender / 'blank.md')
-        # A publication leaves a notice in every running session's inbox; it names no sender.
-        runner.notify({'id': 'r9', 'kind': 'record', 'sequence': 1})
-        received = updates(recipient)['messages']
-        self.assertEqual(sorted(m.get('from') or m.get('event') for m in received), ['r9', 'ssender'])
-        self.assertEqual([m['text'] for m in received if m.get('from') == 'ssender'],
-                         ['Our sections meet at n = 7; I leave that case to you.'])
-        self.assertEqual([(m['event'], m['revision']) for m in updates(sender)['messages']], [('r9', 1)])
-
-    def test_attempts_and_explorations_share_one_spacing_and_a_queued_node_launches_none(self):
-        self.publish('r1', self.reduction())  # root and Q are both available
-        runner = self.runner()
-        self.assertEqual(runner.settings['launch_interval'], 180)
-        def launched(role):
-            return [sid for sid, s in runner.active() if s['role'] == role]
-        with patch('runner.subprocess.Popen') as host:
-            host.return_value.pid = runner.identity['pid']
-            runner.schedule()
-            runner.schedule()
-            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 0))
-            # The attempt launch requested an exploration, which waits for the same interval.
-            self.assertTrue(runner.state['explore_requested'])
-            # The spacing survives a restart.
-            runner = self.runner()
-            runner.schedule()
-            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 0))
-            runner.state['last_launch'] -= 181
-            runner.schedule()
-            # The requested exploration goes ahead of the next attempt and restarts the interval.
-            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 1))
-            self.assertFalse(runner.state['explore_requested'])
-            runner.state['last_launch'] -= 181
-            runner.schedule()
-            attempts = launched('attempt')
-            self.assertEqual((len(attempts), len(launched('explore'))), (2, 1))
-        first, second = (runner.session_dir(sid) for sid in attempts)
-        self.assertTrue(lease(first, 'root')['leased'])
-        self.assertCountEqual(runner.available_nodes(), ['root', 'Q'])
-        self.assertFalse(wait(second, 'root', timeout=0)['leased'])
-        self.assertEqual(runner.available_nodes(), ['Q'])
-
-    def test_waiting_attempt_and_exploration_jobs_also_keep_the_shared_spacing(self):
-        # Pending or retried jobs launch from dispatch_pending(), not schedule(); they wait too.
-        self.publish('r1', self.reduction())
-        runner = self.runner()
-        def launched(role):
-            return [sid for sid, s in runner.active() if s['role'] == role]
-        with patch('runner.subprocess.Popen') as host:
-            host.return_value.pid = runner.identity['pid']
-            self.assertTrue(runner.dispatch(runner.producer('attempt')))
-            explore = runner.producer('explore')
-            runner.dispatch_pending()
-            self.assertEqual(runner.state['jobs'][explore]['status'], 'pending')
-            runner.state['last_launch'] -= 181
-            runner.dispatch_pending()
-            self.assertEqual(runner.state['jobs'][explore]['status'], 'running')
-            attempt = runner.producer('attempt')
-            runner.dispatch_pending()
-            self.assertEqual(runner.state['jobs'][attempt]['status'], 'pending')
-            runner.state['last_launch'] -= 181
-            runner.dispatch_pending()
-            self.assertEqual(runner.state['jobs'][attempt]['status'], 'running')
-        self.assertEqual((len(launched('attempt')), len(launched('explore'))), (2, 1))
-
-    def test_launch_interval_must_be_nonnegative_seconds(self):
-        for bad in (-1, 1.5, '180'):
-            config = defaults()
-            config['launch_interval'] = bad
-            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'launch_interval'):
-                validate(config)
-
-    def test_default_pool_and_provider_fallback(self):
-        runner = self.runner()
-        self.assertEqual(runner.settings['max_sessions'], 8)
-        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
-        for role in ('peer', 'review'):
-            self.assertEqual(runner.selection(role)['model'], 'claude/opus')
-        runner.state['blocks']['provider:codex'] = {'until': 10**12}
-        self.assertEqual(runner.selection('attempt')['model'], 'claude/opus')
-        self.assertEqual(runner.selection('review')['model'], 'claude/opus')
-        runner.state['blocks']['provider:claude'] = {'until': 10**12}
-        self.assertIsNone(runner.selection('review'))
-        del runner.state['blocks']['provider:codex']
-        self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
-        self.assertEqual(defaults()['roles']['peer'], defaults()['roles']['review'])
-
-    def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
-        runner = self.runner()
-        # Every attempt launch requests exploration by default; a longer cadence shows the counting.
-        self.assertEqual(runner.settings['explore_every'], 1)
-        runner.settings['explore_every'] = 3
-        write_json(self.instance / 'settings.json', runner.settings)
-        def launch_attempt():
-            # The launch alone counts; whether the attempt later registers a section does not matter.
-            self.assertTrue(runner.dispatch(runner.producer('attempt')))
-        self.assertIs(runner.state['explore_requested'], False)
-        with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
-            for expected in (1, 2):
-                launch_attempt()
-                self.assertEqual(runner.state['attempt_launches'], expected)
-                self.assertIs(runner.state['explore_requested'], False)
-
-            runner = self.runner()
-            self.assertEqual(runner.state['attempt_launches'], 2)
-            self.assertIs(runner.state['explore_requested'], False)
-            for expected in (3, 4, 5, 6):
-                launch_attempt()
-                self.assertEqual(runner.state['attempt_launches'], expected)
-                self.assertIs(runner.state['explore_requested'], True)
-
-            runner = self.runner()
-            self.assertEqual(runner.state['attempt_launches'], 6)
-            self.assertIs(runner.state['explore_requested'], True)
-            self.assertTrue(runner.dispatch(runner.producer('explore')))
-            self.assertEqual(runner.state['attempt_launches'], 6)
-            self.assertIs(runner.state['explore_requested'], False)
-            launch_attempt()
-            self.assertEqual(runner.state['attempt_launches'], 7)
-            self.assertIs(runner.state['explore_requested'], False)
+        sid, session, job = self.without_material(runner)
+        with patch('runner.time.time', return_value=1000):
+            runner.finish(sid, session)
+            self.assertEqual((session['status'], job['status'], job['retries']), ('failed', 'pending', 1))
+            self.assertEqual(job['not_before'], 1001)  # the next model takes the job without the backoff
+            self.assertEqual(runner.state['blocks']['model:codex/gpt-6.1-sol']['until'], 1060)
+            self.assertEqual(runner.selection('attempt')['model'], 'claude/opus')
 
     def test_retry_extends_short_blocks_and_preserves_long_blocks(self):
         for deadline, expected_until, expected_model in (
@@ -1077,6 +1335,22 @@ class RunnerTests(InstanceCase):
                     self.assertEqual(runner.state['blocks'][block_key], previous)
                 with patch('runner.time.time', return_value=1061):
                     self.assertEqual(runner.selection('attempt')['model'], expected_model)
+
+    def test_the_retry_wait_doubles_up_to_its_limit(self):
+        runner = self.runner()
+        self.assertEqual([runner.backoff(attempts) for attempts in (1, 2, 3, 5, 6, 30)], [60, 120, 240, 960, 1800, 1800])
+
+    def test_standalone_processing_retry_receives_its_partial_work(self):
+        runner = self.runner()
+        for role, task in [('organizer', {'batch': []}), ('review', {'kind': 'comprehensive', 'concerns': []})]:
+            with self.subTest(role=role):
+                key = runner.enqueue(role, task)
+                session = {'id': 's' + role, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'status': 'running'}
+                runner.retry(runner.state['jobs'][key], session, 'incomplete output', availability=False)
+                self.assertEqual(runner.state['jobs'][key]['task']['previous_partial_sessions'],
+                                 [str(runner.session_dir('s' + role))])
+                self.assertEqual(runner.state['jobs'][key]['task']['previous_error'], 'incomplete output')
+                self.assertEqual(runner.state['jobs'][key]['status'], 'pending')
 
     def check_refusal_handoff(self, row, expected_key, expected_model, model='codex/gpt-6.1-sol',
                               peers=('codex/gpt-6.1-sol', 'codex/other', 'claude/opus')):
@@ -1127,10 +1401,178 @@ class RunnerTests(InstanceCase):
                                    'model:claude/opus', 'claude/sonnet', model='claude/opus',
                                    peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
+    def test_default_pool_and_provider_fallback(self):
+        runner = self.runner()
+        self.assertEqual(runner.settings['max_sessions'], 8)
+        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
+        for role in ('peer', 'review'):
+            self.assertEqual(runner.selection(role)['model'], 'claude/opus')
+        runner.state['blocks']['provider:codex'] = {'until': 10**12}
+        self.assertEqual(runner.selection('attempt')['model'], 'claude/opus')
+        self.assertEqual(runner.selection('review')['model'], 'claude/opus')
+        runner.state['blocks']['provider:claude'] = {'until': 10**12}
+        self.assertIsNone(runner.selection('review'))
+        del runner.state['blocks']['provider:codex']
+        self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(defaults()['roles']['peer'], defaults()['roles']['review'])
+
+    # -- retained work and the archive ------------------------------------------------------------------
+
+    def test_archiver_keeps_producer_work_until_its_pipeline_is_done(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        runner.finish(sid, session)
+        work = runner.session_dir(sid) / 'work'
+        # The producer has ended, but its peer still has to read the retained work.
+        archive_finished(self.instance)
+        self.assertTrue((work / 'notes.md').is_file())
+        runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
+        runner.save()
+        archive_finished(self.instance)
+        self.assertFalse(work.exists())
+        self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
+
+    def test_final_archive_request_is_dispatched_before_runner_exit(self):
+        self.formal()
+        runner = self.runner()
+        self.assertTrue(root_solved(runner.model))
+        with patch('runner.subprocess.Popen') as launch:
+            # An earlier archiver is still processing its older state snapshot
+            # when the final publication requests another archive pass.
+            runner.archiver = launch.return_value
+            runner.archiver.poll.return_value = None
+            runner.archive_due = True
+            self.assertFalse(runner.tick())
+            self.assertTrue(runner.state['finished'])
+            self.assertTrue(runner.archive_due)
+            launch.assert_not_called()
+
+            runner.archiver.poll.return_value = 0
+            self.assertTrue(runner.tick())
+            self.assertFalse(runner.archive_due)
+            launch.assert_called_once()
+            self.assertEqual(launch.call_args.args[0][-2:], ['_archive', str(self.instance)])
+
+    def test_occupancy_survives_producer_exit(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        self.assertTrue(take(runner.session_dir(sid), 'Small.root')['registered'])
+        for stage in ('producing', 'peer'):
+            if stage == 'peer':
+                runner.finish(sid, session)
+            rows = board(self.instance, runner.state)
+            self.assertEqual(rows[0]['elements'], ['Small.root'])
+            self.assertEqual(rows[0]['stage'], stage)
+            render(self.instance, replay(self.instance), rows)
+            visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+            self.assertIn(f'producer: {sid}', visible)
+            self.assertIn(f'· {stage} · elements: Small.root', visible)
+
+    def test_peer_task_carries_the_producers_sections(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        taken = take(runner.session_dir(sid), 'Small.root', 'The identity for every even n.')
+        self.assertTrue(taken['registered'])
+        runner.finish(sid, session)
+        task = runner.state['jobs'][job['pipeline'] + ':peer']['task']
+        self.assertEqual(task['sections'], [{'id': taken['section']['id'], 'element': 'Small.root', 'whole': False,
+                                             'statement': 'The identity for every even n.', 'new': None}])
+        self.assertEqual((task['source_role'], task['element'], task['question']), ('attempt', None, None))
+
+    # -- launch spacing, exploration requests and priority ----------------------------------------------
+
+    def test_attempts_and_explorations_share_one_spacing_and_a_queued_element_launches_none(self):
+        self.split()  # sumZero and sumSucc are both available
+        runner = self.runner()
+        self.assertEqual(runner.settings['launch_interval'], 180)
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+            runner.schedule()
+            self.assertEqual((len(self.launched(runner, 'attempt')), len(self.launched(runner, 'explore'))), (1, 0))
+            # The attempt launch requested an exploration, which waits for the same interval.
+            self.assertTrue(runner.state['explore_requested'])
+            # The spacing survives a restart.
+            runner = self.runner()
+            runner.schedule()
+            self.assertEqual((len(self.launched(runner, 'attempt')), len(self.launched(runner, 'explore'))), (1, 0))
+            runner.state['last_launch'] -= 181
+            runner.schedule()
+            # The requested exploration goes ahead of the next attempt and restarts the interval.
+            self.assertEqual((len(self.launched(runner, 'attempt')), len(self.launched(runner, 'explore'))), (1, 1))
+            self.assertFalse(runner.state['explore_requested'])
+            runner.state['last_launch'] -= 181
+            runner.schedule()
+            attempts = self.launched(runner, 'attempt')
+            self.assertEqual((len(attempts), len(self.launched(runner, 'explore'))), (2, 1))
+        first, second = (runner.session_dir(sid) for sid in attempts)
+        self.assertTrue(lease(first, 'Small.sumZero')['leased'])
+        self.assertEqual(runner.available_elements(), ['Small.sumSucc', 'Small.sumZero'])
+        self.assertFalse(wait(second, 'Small.sumZero', timeout=0)['leased'])
+        # Another attempt launched for an element with a waiting session would only lengthen its queue.
+        self.assertEqual(runner.available_elements(), ['Small.sumSucc'])
+
+    def test_waiting_attempt_and_exploration_jobs_also_keep_the_shared_spacing(self):
+        # Pending or retried jobs launch from dispatch_pending(), not schedule(); they wait too.
+        self.split()
+        runner = self.runner()
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(runner.producer('attempt')))
+            explore = runner.producer('explore')
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][explore]['status'], 'pending')
+            runner.state['last_launch'] -= 181
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][explore]['status'], 'running')
+            attempt = runner.producer('attempt')
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][attempt]['status'], 'pending')
+            runner.state['last_launch'] -= 181
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][attempt]['status'], 'running')
+        self.assertEqual((len(self.launched(runner, 'attempt')), len(self.launched(runner, 'explore'))), (2, 1))
+
+    def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
+        runner = self.runner()
+        # Every attempt launch requests exploration by default; a longer cadence shows the counting.
+        self.assertEqual(runner.settings['explore_every'], 1)
+        runner.settings['explore_every'] = 3
+        write_json(self.instance / 'settings.json', runner.settings)
+
+        def launch_attempt():
+            # The launch alone counts; whether the attempt later registers a section does not matter.
+            self.assertTrue(runner.dispatch(runner.producer('attempt')))
+
+        self.assertIs(runner.state['explore_requested'], False)
+        with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
+            for expected in (1, 2):
+                launch_attempt()
+                self.assertEqual(runner.state['attempt_launches'], expected)
+                self.assertIs(runner.state['explore_requested'], False)
+
+            runner = self.runner()
+            self.assertEqual(runner.state['attempt_launches'], 2)
+            self.assertIs(runner.state['explore_requested'], False)
+            for expected in (3, 4, 5, 6):
+                launch_attempt()
+                self.assertEqual(runner.state['attempt_launches'], expected)
+                self.assertIs(runner.state['explore_requested'], True)
+
+            runner = self.runner()
+            self.assertEqual(runner.state['attempt_launches'], 6)
+            self.assertIs(runner.state['explore_requested'], True)
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            self.assertEqual(runner.state['attempt_launches'], 6)
+            self.assertIs(runner.state['explore_requested'], False)
+            launch_attempt()
+            self.assertEqual(runner.state['attempt_launches'], 7)
+            self.assertIs(runner.state['explore_requested'], False)
+
     def test_review_waiting_for_a_model_does_not_hold_attempts_while_slots_are_free(self):
         # A freed slot goes to waiting review work first through the priority order, which the
         # priority test below checks; a review that waits for a model rather than for capacity
-        # leaves the free slots to attempts (reference/operations.md).
+        # leaves the free slots to attempts.
         runner = self.runner()
         runner.settings['launch_interval'] = 0  # launch spacing has its own test
         runner.settings['roles']['review'] = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
@@ -1146,17 +1588,16 @@ class RunnerTests(InstanceCase):
         runner = self.runner()
         runner.settings['max_sessions'] = 3
         runner.settings['launch_interval'] = 0  # launch spacing has its own test
-        first = runner.enqueue('organizer', {'batch': []})
+        first = runner.enqueue('organizer', {})
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             self.assertTrue(runner.dispatch(first))
-            second = runner.enqueue('organizer', {'batch': []})
+            second = runner.enqueue('organizer', {})
             self.assertTrue(runner.dispatch(runner.producer('explore')))
             runner.schedule()
         self.assertEqual(runner.state['jobs'][first]['status'], 'running')
         self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
-        self.assertCountEqual([s['role'] for _, s in runner.active()],
-                              ['organizer', 'explore', 'attempt'])
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['organizer', 'explore', 'attempt'])
 
     def test_waiting_comprehensive_review_does_not_block_attempt_while_another_runs(self):
         # As for organizers: the waiting review takes the slot the running one frees, ahead of any
@@ -1174,11 +1615,10 @@ class RunnerTests(InstanceCase):
             runner.schedule()
         self.assertEqual(runner.state['jobs'][first]['status'], 'running')
         self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
-        self.assertCountEqual([s['role'] for _, s in runner.active()],
-                              ['review', 'explore', 'attempt'])
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['review', 'explore', 'attempt'])
 
     def test_a_requested_comprehensive_review_waits_while_another_runs(self):
-        # Comprehensive reviews launch one at a time, as organizers do (reference/operations.md).
+        # Comprehensive reviews launch one at a time, as organizers do.
         runner = self.runner()
         task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
         first, second = runner.enqueue('review', dict(task)), runner.enqueue('review', dict(task))
@@ -1193,33 +1633,27 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.state['jobs'][second]['status'], 'running')
 
     def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
-        self.publish('r1', self.reduction())  # Q remains available for the attempt.
-        self.publish('r2', record([claim_row('p')],
-                                 solutions=[solution('p', 'root', 'p')]))
+        self.half()  # sumZero waits for its formal proof, and sumSucc remains for the attempt
         runner = self.runner()
         runner.settings['max_sessions'] = 1
         runner.settings['launch_interval'] = 0  # launch spacing has its own test
+        before = len(runner.state['sessions'])
         # Reverse insertion order makes dictionary order an incorrect scheduler.
         runner.producer('attempt')
         runner.producer('explore')
-        runner.enqueue('organizer', {'batch': ['r1', 'r2']})
-        runner.producer('formalizer', {'node': 'root', 'proofs': ['r2/p'],
-                                      'previous_records': []})
-        runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
-                                'source_role': 'attempt'})
-        runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [],
-                                  'conflicts': []})
+        runner.enqueue('organizer', {})
+        runner.producer('formalizer', {'element': 'Small.sumZero', 'previous_changes': []})
+        runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'), 'source_role': 'attempt'})
+        runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
-            for expected in ('review', 'peer', 'formalizer', 'organizer',
-                             'explore', 'attempt'):
+            for expected in ('review', 'peer', 'formalizer', 'organizer', 'explore', 'attempt'):
                 with self.subTest(role=expected):
                     runner.dispatch_pending()
                     active = runner.active()
                     self.assertEqual([s['role'] for _, s in active], [expected])
                     sid, session = active[0]
-                    self.assertEqual(read_json(runner.session_dir(sid) / 'input.json')['role'],
-                                     expected)
+                    self.assertEqual(read_json(runner.session_dir(sid) / 'input.json')['role'], expected)
                     count = len(runner.state['sessions'])
                     runner.dispatch_pending()
                     self.assertEqual(len(runner.state['sessions']), count)
@@ -1230,7 +1664,7 @@ class RunnerTests(InstanceCase):
                     if job['pipeline']:
                         runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
                     runner.save()
-        self.assertEqual(len(runner.state['sessions']), 6)
+        self.assertEqual(len(runner.state['sessions']) - before, 6)
         self.assertTrue(all(j['status'] == 'done' for j in runner.state['jobs'].values()))
         # The last launch, the attempt, requests the next exploration (explore_every 1).
         self.assertTrue(runner.state['explore_requested'])
@@ -1278,69 +1712,64 @@ class RunnerTests(InstanceCase):
         self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
                              for p in runner.state['pipelines'].values()), 1)
 
-    def test_attempt_retry_respects_lease_queue_and_whole_node_occupancy(self):
+    # -- attempts launch only where an element can still be taken on ------------------------------------
+
+    def test_attempt_retry_respects_lease_queue_and_whole_element_occupancy(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 3
-        sid, session, job = self.ended(runner, 'attempt')
-        folder = runner.session_dir(sid)
-        (folder / 'work/notes.md').unlink()
-        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        sid, session, job = self.without_material(runner)
         runner.finish(sid, session)
         self.assertEqual(job['status'], 'pending')
         job['not_before'] = 0
         runner.state['blocks'].clear()
-        holder = self.running_attempt(runner, 'sholder')
-        waiter = self.running_attempt(runner, 'swaiter')
-        self.assertTrue(lease(holder, 'root')['leased'])
-        self.assertTrue(wait(waiter, 'root', timeout=0)['waiting'])
+        holder = self.session(runner, 'sholder')
+        waiter = self.session(runner, 'swaiter')
+        self.assertTrue(lease(holder, 'Small.root')['leased'])
+        self.assertTrue(wait(waiter, 'Small.root', timeout=0)['waiting'])
         exploration = runner.producer('explore')
         runner.state['jobs'][exploration]['status'] = 'done'
         pipeline = runner.state['pipelines'][runner.state['jobs'][exploration]['pipeline']]
         pipeline.update(stage='peer', producer='sprevious')
         runner.save()
-        self.assertEqual(runner.model['nodes']['root']['state'], 'unresolved')
+        self.assertEqual(runner.model['remaining'], ['Small.root'])
         self.assertLess(len(runner.active()), runner.settings['max_sessions'])
         self.assertTrue(runner.launch_due())
         self.assertIsNotNone(runner.selection('attempt'))
         before = set(runner.state['sessions'])
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
-            self.assertEqual(runner.available_nodes(), [])
+            self.assertEqual(runner.available_elements(), [])
             runner.dispatch_pending()
             self.assertEqual(job['status'], 'pending')
             self.assertEqual(set(runner.state['sessions']), before)
-            release(waiter, 'root')
-            self.assertTrue(take(holder, 'root', leased=True)['registered'])
+            release(waiter, 'Small.root')
+            self.assertTrue(take(holder, 'Small.root', leased=True)['registered'])
             holder_job = runner.state['sessions']['sholder']['job']
             holder_pipeline = runner.state['pipelines'][runner.state['jobs'][holder_job]['pipeline']]
             holder_pipeline['stage'] = 'peer'
             runner.save()
-            self.assertEqual(runner.available_nodes(), [])
+            self.assertEqual(runner.available_elements(), [])
             runner.dispatch_pending()
             self.assertEqual(job['status'], 'pending')
             self.assertEqual(set(runner.state['sessions']), before)
             holder_pipeline['stage'] = 'done'
             runner.save()
-            self.assertEqual(runner.available_nodes(), ['root'])
+            self.assertEqual(runner.available_elements(), ['Small.root'])
             runner.dispatch_pending()
         self.assertEqual(job['status'], 'running')
         self.assertEqual(set(runner.state['sessions']) - before, {job['session']})
 
-    def test_attempt_retry_waits_when_all_nodes_are_informally_solved(self):
+    def test_attempt_retry_waits_when_no_work_remains_for_the_root(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 2
-        sid, session, job = self.ended(runner, 'attempt')
-        folder = runner.session_dir(sid)
-        (folder / 'work/notes.md').unlink()
-        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        sid, session, job = self.without_material(runner)
         runner.finish(sid, session)
         self.assertEqual(job['status'], 'pending')
         job['not_before'] = 0
         runner.state['blocks'].clear()
-        self.publish('rsolved', record([claim_row('p')],
-                                      solutions=[solution('p', 'root', 'p')]))
-        runner.model = replay(self.instance)
-        self.assertEqual(runner.model['nodes']['root']['state'], 'informal_proved')
+        runner.save()
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.', engine=runner)
+        self.assertEqual((runner.model['root_state'], runner.model['remaining']), ('informal_proved', []))
         self.assertFalse(runner.state['complete'])
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
@@ -1351,203 +1780,198 @@ class RunnerTests(InstanceCase):
         self.assertEqual(job['status'], 'pending')
         self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
 
-    def test_spare_capacity_explores_when_every_node_is_informally_solved(self):
-        # Spare capacity requests exploration whether nodes are occupied or none remain unresolved.
-        self.publish('rsolved', record([claim_row('p')],
-                                      solutions=[solution('p', 'root', 'p')]))
+    def test_spare_capacity_explores_and_formalizes_when_no_work_remains_for_the_root(self):
+        # Spare capacity requests exploration whether elements are occupied or none remains.
+        self.direct()
         runner = self.runner()
         runner.settings['max_sessions'] = 2
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.schedule()
         self.assertCountEqual([s['role'] for _, s in runner.active()], ['formalizer', 'explore'])
-        self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
+        self.assertFalse(any(p['role'] == 'attempt' and p['stage'] != 'done' for p in runner.state['pipelines'].values()))
         self.assertFalse(runner.state['explore_requested'])
 
-    def test_organizer_batch_excludes_arrivals_during_processing(self):
-        for i in range(3): self.publish('r' + str(i), record())
-        runner = self.runner(); runner.populate()
-        # The settled default waits for the fourth new research record.
+    def test_a_solved_root_cancels_waiting_attempts_and_explorations(self):
+        self.formal()
+        runner = self.runner()
+        attempt, explore = runner.producer('attempt'), runner.producer('explore')
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.tick()
+        self.assertTrue(runner.state['complete'])
+        self.assertEqual([runner.state['jobs'][key]['status'] for key in (attempt, explore)], ['cancelled', 'cancelled'])
+        self.assertEqual(runner.active(), [])
+        self.assertTrue(all(p['stage'] == 'done' for p in runner.state['pipelines'].values()))
+
+    # -- organizer batches -----------------------------------------------------------------------------
+
+    def test_organizer_batch_is_the_changes_published_and_not_yet_organized(self):
+        self.configure(organizer_every_records=2)
+        first, _ = self.note('The sum grows by one odd number at a time.')
+        runner = self.runner()
+        runner.populate()
+        # The organizer is due after the configured number of changes not yet in a batch.
         self.assertFalse(any(j['role'] == 'organizer' for j in runner.state['jobs'].values()))
-        self.publish('r3', record())
-        runner.model = replay(self.instance); runner.populate()
+        second, _ = self.note('Each step completes a square.', engine=runner)
+        runner.populate()
         job = next(j for j in runner.state['jobs'].values() if j['role'] == 'organizer')
+        runner.populate()
+        self.assertEqual(sum(j['role'] == 'organizer' for j in runner.state['jobs'].values()), 1)
         runner.session_dir('sorganizer').mkdir()
         runner.make_pack('sorganizer', job)
-        self.assertEqual(len(job['task']['batch']), 4)
-        for i in range(4, 6): self.publish('r' + str(i), record())
-        self.event('o1', 'organization', {'batch': job['task']['batch'], 'modules': [], 'shared_context': []})
-        m = replay(self.instance)
-        self.assertEqual(set(m['records']) - set(m['organized']), {'r4', 'r5'})
+        self.assertEqual(job['task']['batch'], [first, second])
+        self.assertEqual(read_json(runner.session_dir('sorganizer') / 'input.json')['task']['batch'], [first, second])
+        # A change that arrives while the organizer works belongs to the next batch.
+        third, _ = self.note('The squares are consecutive.', engine=runner)
+        job['status'] = 'done'
+        self.organize(batch=job['task']['batch'], engine=runner)
+        self.assertEqual(runner.model['organized'], sorted([first, second]))
+        self.assertEqual([cid for cid in runner.model['changes'] if cid not in runner.model['organized']], [third])
+        runner.populate()
+        self.assertFalse(any(j['role'] == 'organizer' and j['status'] == 'pending' for j in runner.state['jobs'].values()))
 
     def test_organizer_freezes_arrivals_at_launch_not_queue_time(self):
-        for i in range(4): self.publish('r' + str(i), record())
-        runner = self.runner(); runner.populate()
+        self.configure(organizer_every_records=1)
+        first, _ = self.note('The sum grows by one odd number at a time.')
+        runner = self.runner()
+        runner.populate()
         job = next(j for j in runner.state['jobs'].values() if j['role'] == 'organizer')
-        self.publish('r4', record())
-        runner.model = replay(self.instance)
+        self.assertEqual(job['task'], {})
+        second, _ = self.note('Each step completes a square.', engine=runner)
         runner.session_dir('sorganizer').mkdir()
         runner.make_pack('sorganizer', job)
-        self.assertEqual(job['task']['batch'], ['r0', 'r1', 'r2', 'r3', 'r4'])
-        self.publish('r5', record())
-        runner.model = replay(self.instance)
+        self.assertEqual(job['task']['batch'], [first, second])
+        third, _ = self.note('The squares are consecutive.', engine=runner)
         runner.session_dir('sretry').mkdir()
         runner.make_pack('sretry', job)
-        self.assertEqual(job['task']['batch'], ['r0', 'r1', 'r2', 'r3', 'r4'])
+        self.assertEqual(job['task']['batch'], [first, second])
 
-    def test_formalizer_is_sent_only_for_outcomes_that_reach_the_root(self):
-        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.publish('r2', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
+    # -- formalizers ------------------------------------------------------------------------------------
+
+    def formalizers(self, runner):
+        return [(p['element'], p['stage']) for p in runner.state['pipelines'].values() if p['role'] == 'formalizer']
+
+    def test_a_formalizer_is_sent_for_each_statement_ready_for_its_formal_proof(self):
+        self.half()
         runner = self.runner()
-        self.assertEqual(runner.model['nodes']['K']['state'], 'informal_proved')
         runner.populate()
-        self.assertFalse(any(p['role'] == 'formalizer' for p in runner.state['pipelines'].values()))
-        # A formalizer job enqueued for such an outcome is cancelled at dispatch.
-        key = runner.producer('formalizer', {'node': 'K', 'proofs': ['r2/k'], 'previous_records': []})
-        with patch('runner.subprocess.Popen'):
+        runner.populate()
+        # sumTwo is settled, and the root does not rest on it; the root itself is not settled yet.
+        self.assertEqual(self.formalizers(runner), [('Small.sumZero', 'producing')])
+        job = next(j for j in runner.state['jobs'].values() if j['role'] == 'formalizer')
+        self.assertEqual(job['task'], {'element': 'Small.sumZero', 'previous_changes': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
             runner.dispatch_pending()
-        self.assertEqual(runner.state['jobs'][key]['status'], 'cancelled')
-        # The same node refuted reaches the root, so its refutation is formalized.
-        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Wrong object.',
-                                                'invalidates': [{'record': 'r2', 'claim': 'k'}]}]})
-        self.publish('r3', record([claim_row('notk')], solutions=[solution('notk', 'K', 'notk', 'refuted')]))
-        runner.model = replay(self.instance)
-        self.assertEqual(runner.model['nodes']['root']['state'], 'informal_refuted')
-        runner.populate()
-        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
-        self.assertEqual(nodes, ['K'])  # root's own refutation waits for K's formal refutation
+        self.assertEqual(job['status'], 'running')
+        # The assigned element is the formalizer's whole section; it registers nothing itself.
+        declared = read_json(runner.session_dir(job['session']) / 'declaration.json')['sections']
+        self.assertEqual([(s['id'], s['element'], s['whole'], s['statement'], s['new']) for s in declared],
+                         [(job['session'] + '-1', 'Small.sumZero', True, None, None)])
+        row = next(r for r in board(self.instance, runner.state) if r['role'] == 'formalizer')
+        self.assertEqual((row['elements'], row['stage']), (['Small.sumZero'], 'producing'))
+        self.assertEqual(read_json(runner.session_dir(job['session']) / 'input.json')['task']['element'], 'Small.sumZero')
 
-    def test_sufficient_premise_proved_is_formalized_and_an_inconsistent_set_sends_nothing(self):
-        self.publish('r1', self.reduction())  # Q implies root
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+    def test_a_formalizer_whose_element_is_no_longer_ready_is_cancelled_at_dispatch(self):
+        self.half()
         runner = self.runner()
         runner.populate()
-        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
-        self.assertEqual(nodes, ['Q'])  # root proved through Q waits for Q's formal proof
-        # Accepting root implies K and a refutation of K now makes the accepted set inconsistent:
-        # root, Q and K are each derivable both ways, so all three are contested and nothing new is sent.
-        self.publish('r3', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.publish('r4', record([claim_row('notk')], solutions=[solution('notk', 'K', 'notk', 'refuted')]))
+        ready = next(j for j in runner.state['jobs'].values() if j['role'] == 'formalizer')
+        # A job for a settled statement the root does not rest on, and one whose proof a finding withdrew.
+        stray = runner.producer('formalizer', {'element': 'Small.sumTwo', 'previous_changes': []})
+        self.event('v1', 'review', comprehensive([finding('The empty sum was miscounted.', invalidates=['Small.sumZero'])]))
         runner.model = replay(self.instance)
-        self.assertEqual({n: runner.model['nodes'][n]['state'] for n in ('root', 'Q', 'K')},
-                         {'root': 'contested', 'Q': 'contested', 'K': 'contested'})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual((runner.state['jobs'][stray]['status'], ready['status']), ('cancelled', 'cancelled'))
+        self.assertEqual(sorted(self.formalizers(runner)), [('Small.sumTwo', 'done'), ('Small.sumZero', 'done')])
+        self.assertFalse(self.launched(runner, 'formalizer'))
         runner.populate()
-        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
-        self.assertEqual(nodes, ['Q'])
-        self.assertTrue(any(j['task'].get('kind') == 'comprehensive' and j['task']['conflicts'] for j in runner.state['jobs'].values()))
+        self.assertFalse([j for j in runner.state['jobs'].values() if j['role'] == 'formalizer' and j['status'] == 'pending'])
 
-    def test_peer_task_carries_the_producers_sections(self):
+    def test_a_formalizer_of_another_proof_holds_the_statement_that_proof_proves(self):
+        second_proof(self)  # the root is settled through rootAlt alone, which has no formal proof
         runner = self.runner()
-        sid, session, job = self.ended(runner, 'attempt')
-        taken = take(runner.session_dir(sid), 'root', 'For every n, the last three terms decrease.')
-        self.assertTrue(taken['registered'])
-        runner.finish(sid, session)
-        peer = runner.state['jobs'][job['pipeline'] + ':peer']
-        self.assertEqual(peer['task']['sections'], [{'id': taken['section']['id'], 'node': 'root', 'whole': False,
-                                                     'statement': 'For every n, the last three terms decrease.'}])
+        runner.populate()
+        job = next(j for j in runner.state['jobs'].values() if j['role'] == 'formalizer')
+        self.assertEqual(job['task'], {'element': 'Small.rootAlt', 'previous_changes': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual(job['status'], 'running')
+        # Sections attach to the statement, so the formalizer's whole section is on the root.
+        declared = read_json(runner.session_dir(job['session']) / 'declaration.json')['sections']
+        self.assertEqual([(s['element'], s['whole']) for s in declared], [('Small.root', True)])
+        row = next(r for r in board(self.instance, runner.state) if r['role'] == 'formalizer')
+        self.assertEqual(row['elements'], ['Small.root'])
 
-    def test_formalization_has_no_round_cap(self):
-        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
+    def test_the_root_waits_for_the_formal_proofs_of_what_its_proof_names(self):
+        self.proved()
+        runner = self.runner()
+        runner.populate()
+        self.assertEqual(sorted(self.formalizers(runner)), [('Small.sumSucc', 'producing'), ('Small.sumZero', 'producing')])
+
+    def test_formalization_has_no_round_cap_and_carries_the_earlier_changes(self):
+        self.direct()
         runner = self.runner()
         for i in range(30):
-            runner.state['pipelines']['old' + str(i)] = {'id': 'old' + str(i), 'role': 'formalizer', 'stage': 'done', 'node': 'root', 'record': 'r1'}
+            runner.state['pipelines']['old' + str(i)] = {'id': 'old' + str(i), 'role': 'formalizer', 'stage': 'done',
+                                                         'element': 'Small.root', 'record': 'c' + str(i)}
+        runner.state['pipelines']['other'] = {'id': 'other', 'role': 'formalizer', 'stage': 'done',
+                                              'element': 'Small.sumZero', 'record': 'cother'}
         runner.populate()
-        self.assertTrue(any(p['role'] == 'formalizer' and p['stage'] == 'producing' for p in runner.state['pipelines'].values()))
+        job = next(j for j in runner.state['jobs'].values() if j['role'] == 'formalizer' and j['status'] == 'pending')
+        self.assertEqual(job['task'], {'element': 'Small.root', 'previous_changes': ['c' + str(i) for i in range(30)]})
 
-    def test_standalone_processing_retry_receives_its_partial_work(self):
-        runner = self.runner()
-        for role, task in [('organizer', {'batch': []}), ('review', {'kind': 'comprehensive', 'concerns': []})]:
-            with self.subTest(role=role):
-                key = runner.enqueue(role, task)
-                session = {'id': 's' + role, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'status': 'running'}
-                runner.retry(runner.state['jobs'][key], session, 'incomplete output', availability=False)
-                self.assertEqual(runner.state['jobs'][key]['task']['previous_partial_sessions'],
-                                 [str(runner.session_dir('s' + role))])
-                self.assertEqual(runner.state['jobs'][key]['status'], 'pending')
+    # -- comprehensive review ---------------------------------------------------------------------------
 
     def test_published_comprehensive_review_is_not_reassigned_for_its_open_concern(self):
-        self.publish('r1', record([claim_row('p')]))
-        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'gap',
-            'targets': [{'record': 'r1', 'claim': 'p'}], 'reason': 'A boundary case needs checking.',
-            'evidence': 'The case n = 0.'}]})
+        self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
         runner = self.runner()
         runner.populate()
-        job = next(j for j in runner.state['jobs'].values() if j['task'].get('kind') == 'comprehensive')
-        self.assertEqual(job['task']['concerns'], ['v1/gap'])
-        sid = 'scomprehensive'
-        output = runner.session_dir(sid) / 'output'
-        output.mkdir(parents=True)
+        runner.populate()
+        [job] = comprehensive_jobs(runner)
+        self.assertEqual((job['task']['concerns'], job['task']['conflicts']), (['v1/gap'], []))
         # The review could not settle the concern, so the concern itself stays open.
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
-        (output / 'feedback.md').write_text('The boundary case remains undetermined.', encoding='utf-8')
-        runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
-        job.update(status='running', session=sid)
-        runner.prepare_publication(sid, job, 'review')
-        runner.publish()
+        publish_comprehensive(runner, job, comprehensive())
+        self.assertEqual(runner.model['concerns']['v1/gap']['status'], 'pending')
+        self.assertEqual(runner.state['processed_concerns'], ['v1/gap'])
         runner.populate()
-        self.assertEqual([j['id'] for j in runner.state['jobs'].values()
-                          if j['task'].get('kind') == 'comprehensive'], [job['id']])
-
-    def test_published_comprehensive_review_is_not_reassigned_for_a_node_it_left_contested(self):
-        # A contested node's opposing routes are assigned once, as <node>:<proof IDs> (roles/review.md).
-        # A review that leaves the node contested is not assigned again; a changed set of routes is
-        # (reference/operations.md, Read progress and results).
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.publish('r3', record([claim_row('notq')], solutions=[solution('notq', 'Q', 'notq', 'refuted')]))
-        runner = self.runner()
-        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
-        runner.populate()
-        job = next(j for j in runner.state['jobs'].values() if j['task'].get('kind') == 'comprehensive')
-        self.assertEqual((job['task']['concerns'], len(job['task']['conflicts'])), ([], 1))
-        node, _, routes = job['task']['conflicts'][0].partition(':')
-        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq']))
-        sid = 'scomprehensive'
-        output = runner.session_dir(sid) / 'output'
-        output.mkdir(parents=True)
-        # The review could not locate the failure, so the node stays contested.
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
-        (output / 'feedback.md').write_text('Neither route could be shown defective.', encoding='utf-8')
-        runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
-        job.update(status='running', session=sid)
-        runner.prepare_publication(sid, job, 'review')
-        runner.publish()
-        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
-        runner.populate()
-        self.assertEqual([j['id'] for j in runner.state['jobs'].values()
-                          if j['task'].get('kind') == 'comprehensive'], [job['id']])
-        # A further accepted route changes the opposing set, which has not been assigned yet.
-        self.seq = runner.model['sequence']
-        self.publish('r4', record([claim_row('q2')], solutions=[solution('q2', 'Q', 'q2')]))
+        self.assertEqual([j['id'] for j in comprehensive_jobs(runner)], [job['id']])
+        # A concern raised afterwards is a new cause.
+        self.event('v2', 'review', comprehensive(concerns=[concern('later', 'Small.root')]))
         runner.model = replay(self.instance)
         runner.populate()
-        pending = [j['task']['conflicts'] for j in runner.state['jobs'].values()
-                   if j['task'].get('kind') == 'comprehensive' and j['status'] == 'pending']
-        self.assertEqual([len(conflicts) for conflicts in pending], [1])
-        node, _, routes = pending[0][0].partition(':')
-        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq', 'r4/q2']))
+        self.assertEqual([j['task']['concerns'] for j in comprehensive_jobs(runner) if j['status'] == 'pending'],
+                         [['v2/later']])
 
-    def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
-        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
-        later = record([claim_row('check')])
-        review = assessment(later)
-        review['findings'] = [{'concerns': [], 'status': 'confirmed', 'reason': 'The case n = 0 fails.',
-                               'invalidates': [{'record': 'r1', 'claim': 'p'}]}]
-        self.publish('r2', later, review)
-        model = replay(self.instance)
-        self.assertEqual(model['nodes']['root']['state'], 'unresolved')
-        concern = model['concerns']['r2/withdrawal-0']
-        self.assertEqual((concern['targets'], concern['status'], concern['source']), (['r1/p'], 'pending', 'r2'))
+    def test_a_cleared_concern_is_not_assigned(self):
+        self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
+        self.event('v2', 'review', comprehensive([finding('The case holds.', status='cleared', concerns=['v1/gap'])]))
         runner = self.runner()
         runner.populate()
-        self.assertEqual([j['task']['concerns'] for j in runner.state['jobs'].values()
-                          if j['task'].get('kind') == 'comprehensive'], [['r2/withdrawal-0']])
+        self.assertEqual(comprehensive_jobs(runner), [])
+
+    def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
+        self.direct()
+        folder = self.candidate(understanding={'q0.md': 'The induction was read again.\n'})
+        assessment = self.verdicts(folder)
+        assessment['findings'] = [finding('The case n = 0 fails.', invalidates=['Small.root'])]
+        change, _ = self.publish(folder, assessment, role='explore', question='q0')
+        model = replay(self.instance)
+        self.assertEqual((model['root_state'], model['elements']['Small.root']['standing']), ('unresolved', 'not_confirmed'))
+        raised = model['concerns'][change + '/withdrawal-0']
+        self.assertEqual((raised['targets'], raised['status'], raised['source']), (['Small.root'], 'pending', change))
+        runner = self.runner()
+        runner.populate()
+        self.assertEqual([j['task']['concerns'] for j in comprehensive_jobs(runner)], [[change + '/withdrawal-0']])
         # A comprehensive review's own withdrawal ends that tracing; it does not open another one.
-        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Traced.',
-                                                'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
+        self.event('v1', 'review', comprehensive([finding('Traced.', invalidates=['Small.root'])]))
         self.assertEqual([cid for cid in replay(self.instance)['concerns'] if cid.startswith('v1/')], [])
+
+    # -- operator commands ------------------------------------------------------------------------------
 
     def test_restart_broker_admits_sessions_held_behind_stop(self):
         runner = self.runner()
@@ -1565,7 +1989,7 @@ class RunnerTests(InstanceCase):
             self.assertEqual(main(['restart-broker', str(self.instance)]), 1)
             self.assertIn(reason, json.loads(shown.call_args.args[0])['error'])
 
-        with patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
+        with patch('lean_broker.ensure_broker', return_value={'started': True}) as begin, \
                 patch('builtins.print') as shown:
             refused('stop new dispatch')
             (self.instance / 'control/STOP').touch()
@@ -1575,19 +1999,17 @@ class RunnerTests(InstanceCase):
             runner.save()
             # A compile still running blocks it as well.
             refused('Lean jobs')
-            start.assert_not_called()
+            begin.assert_not_called()
             write_json(compiles, {'jobs': {}})
             self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
-        start.assert_called_once()
+        begin.assert_called_once()
         self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
 
     def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
-        # stop and resume write and remove control/STOP (reference/operations.md, Commands). The
-        # runner's own pass reads it: while it exists, neither a fresh attempt nor a queued follow-up
-        # launches, and after resume both do.
+        # stop and resume write and remove control/STOP. The runner's own pass reads it: while it
+        # exists, neither a fresh attempt nor a queued follow-up launches, and after resume both do.
         runner = self.runner()
-        peer = runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
-                                       'source_role': 'attempt'})
+        peer = runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'), 'source_role': 'attempt'})
         with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
             host.return_value.pid = runner.identity['pid']
             self.assertEqual(main(['stop', str(self.instance)]), 0)
@@ -1599,27 +2021,51 @@ class RunnerTests(InstanceCase):
         self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'attempt'])
 
     def test_operator_review_and_organize_requests_become_assignments(self):
-        self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
+        self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
         with patch('builtins.print'):
-            self.assertEqual(main(['review', str(self.instance), '--record', 'missing']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--element', 'Small.missing']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--concern', 'v1/absent']), 1)
             self.assertEqual(main(['review', str(self.instance), '--reason', 'Look again.']), 1)
-            self.assertEqual(main(['review', str(self.instance), '--record', 'r1', '--node', 'root',
-                                   '--reason', 'Check the base case.']), 0)
+            self.assertEqual(list((self.instance / 'control/requests').glob('*.json')), [])
+            self.assertEqual(main(['review', str(self.instance), '--element', 'Small.root', '--element', 'Small.oddSum',
+                                   '--concern', 'v1/gap', '--reason', 'Check the base case.']), 0)
             self.assertEqual(main(['organize', str(self.instance)]), 0)
         runner = self.runner()
         runner.ingest_inputs()
         runner.ingest_inputs()
-        reviews = [j['task'] for j in runner.state['jobs'].values() if j['role'] == 'review']
-        self.assertEqual([(t['kind'], t['requested_records'], t['requested_nodes'], t['purpose']) for t in reviews],
-                         [('comprehensive', ['r1'], ['root'], 'Check the base case.')])
+        requested = [j for j in comprehensive_jobs(runner) if j['id'].startswith('operator:')]
+        self.assertEqual([j['task'] for j in requested], [{
+            'kind': 'comprehensive', 'concerns': ['v1/gap'], 'conflicts': [],
+            'requested_elements': ['Small.root', 'Small.oddSum'], 'purpose': 'Check the base case.'}])
         organizers = [j for j in runner.state['jobs'].values() if j['role'] == 'organizer'
                       and j['id'].startswith('operator:')]
         self.assertEqual([j['status'] for j in organizers], ['pending'])
+        # The requests are collected once, also by a restarted runner.
+        restarted = self.runner()
+        restarted.ingest_inputs()
+        self.assertEqual(len(restarted.state['jobs']), len(runner.state['jobs']))
 
     def test_root_change_requires_new_instance(self):
+        self.runner()
         (self.instance / 'root.md').write_text('A different proposition.', encoding='utf-8')
         with self.assertRaisesRegex(ValueError, 'new instance'):
             self.runner()
+
+    def test_a_changed_lean_statement_of_the_root_requires_a_new_instance(self):
+        # The root is fixed in Lean as well: its statement hash is recorded when the instance is created.
+        index = self.instance / 'canon/index.json'
+        data = read_json(index)
+        data['entries']['Small.root']['statement_hash'] = 'another-statement'
+        write_json(index, data)
+        with self.assertRaisesRegex(ValueError, 'new instance'):
+            self.runner()
+
+    def test_commands_refuse_an_instance_of_an_earlier_schema(self):
+        meta = read_json(self.instance / 'instance.json')
+        write_json(self.instance / 'instance.json', {**meta, 'schema': 1})
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['status', str(self.instance)]), 1)
+        self.assertIn('instance schema 2', json.loads(shown.call_args.args[0])['error'])
 
     def test_rejected_settings_edit_keeps_the_last_valid_settings(self):
         runner = self.runner()
@@ -1628,24 +2074,103 @@ class RunnerTests(InstanceCase):
         runner.reload_settings()
         self.assertEqual(runner.settings['max_sessions'], 8)
         self.assertIn('error', runner.state['settings_error'])
-        config = defaults(); config['max_sessions'] = 3
+        config = defaults()
+        config['max_sessions'] = 3
         write_json(self.instance / 'settings.json', config)
         runner.reload_settings()
         self.assertEqual(runner.settings['max_sessions'], 3)
         self.assertIsNone(runner.state['settings_error'])
 
+    def test_start_does_not_replace_a_live_runner(self):
+        # A live runner holds the instance lock. The runner that start launches cannot take it and exits,
+        # and start reports that exit, not a readiness it never reached.
+        with InstanceLock(self.instance / 'runner/lock'):
+            with self.assertRaisesRegex(RuntimeError, 'exited before readiness'):
+                start(self.instance)
+        # The refused runner wrote no start record that could stand in for the live runner's receipt.
+        self.assertFalse((self.instance / 'runner/process.json').exists())
+        [log] = (self.instance / 'runner').glob('start-*.stderr.log')
+        self.assertIn('already has a running runner', log.read_text(encoding='utf-8'))
+
+
+class ContestedReviewTests(RefutedRootCase):
+    """The runner's assignment of comprehensive review for a contested statement."""
+
+    def test_published_comprehensive_review_is_not_reassigned_for_a_statement_it_left_contested(self):
+        # A contested statement's opposing judgments are assigned once, as <statement>:<change IDs>.
+        # A review that leaves the statement contested is not assigned again; a changed opposition is.
+        self.contested()
+        runner = Runner(self.instance, self.skill)
+        elements = runner.model['elements']
+        sides = sorted(elements[name]['verdict']['change'] for name in ('Small.root', 'Small.notRoot'))
+        runner.populate()
+        [job] = comprehensive_jobs(runner)
+        self.assertEqual((job['task']['concerns'], job['task']['conflicts']), ([], ['Small.root:' + ','.join(sides)]))
+        # The review could not locate the failure, so the statement stays contested.
+        publish_comprehensive(runner, job, comprehensive())
+        self.assertEqual(runner.model['root_state'], 'contested')
+        self.assertEqual(runner.state['processed_conflicts'], job['task']['conflicts'])
+        runner.populate()
+        self.assertEqual([j['id'] for j in comprehensive_jobs(runner)], [job['id']])
+        # A proof on either side that is judged again changes the opposition, which has not been assigned yet.
+        again, _ = self.replace_proof('Small.root', self.root_text(proof='intro n\n  sorry'),
+                                      'By induction on $n$, written out for each step.', engine=runner)
+        self.assertEqual(runner.model['root_state'], 'contested')
+        runner.populate()
+        pending = [j['task']['conflicts'] for j in comprehensive_jobs(runner) if j['status'] == 'pending']
+        self.assertEqual(pending, [['Small.root:' + ','.join(sorted([again, elements['Small.notRoot']['verdict']['change']]))]])
+
+
+class InitializeTests(unittest.TestCase):
+    """runner.initialize: the root is fixed without a proof, since the research is what proves or refutes it."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+
+    def test_a_root_that_already_has_a_proof_is_refused(self):
+        complete = ROOT.replace('  sorry', '  rfl')
+        written = RECORDS['Small/root.md'] + '\n## Proof\n\nBy induction on $n$, comparing consecutive squares.\n'
+        for name, root, records in (('lean', complete, None), ('written', ROOT, {'Small/root.md': written})):
+            with self.subTest(name):
+                with self.assertRaisesRegex(ValueError, 'the root declaration Small.root already has a proof'):
+                    initialized(self.root, name, root=root, records=records)
+                self.assertFalse((self.root / name / 'instance.json').exists())
+
+
+class SettingsTests(unittest.TestCase):
+    def test_launch_interval_must_be_nonnegative_seconds(self):
+        for bad in (-1, 1.5, '180'):
+            config = defaults()
+            config['launch_interval'] = bad
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'launch_interval'):
+                validate(config)
+
+    def test_the_installed_scheduling_defaults(self):
+        config = defaults()
+        self.assertEqual({key: config[key] for key in ('max_sessions', 'explore_every', 'organizer_every_records',
+                                                       'launch_interval', 'retry_seconds', 'retry_max_seconds')},
+                         {'max_sessions': 8, 'explore_every': 1, 'organizer_every_records': 4,
+                          'launch_interval': 180, 'retry_seconds': 60, 'retry_max_seconds': 1800})
+
     def test_sorry_axiom_cannot_be_enabled(self):
-        config = defaults(); config['lean']['allowed_axioms'].append('sorryAx')
-        with self.assertRaises(ValueError): validate(config)
+        config = defaults()
+        config['lean']['allowed_axioms'].append('sorryAx')
+        with self.assertRaises(ValueError):
+            validate(config)
 
     def test_legacy_or_misspelled_settings_are_rejected(self):
         legacy = {**defaults(), 'limit_wait_seconds': 5}
-        misspelled = defaults(); misspelled['lean']['memory_budget'] = 4096
-        executable = defaults(); executable['cli']['Codex'] = 'C:/tools/codex.exe'
+        misspelled = defaults()
+        misspelled['lean']['memory_budget'] = 4096
+        executable = defaults()
+        executable['cli']['Codex'] = 'C:/tools/codex.exe'
         for name, config in (('legacy', legacy), ('misspelled', misspelled), ('executable', executable)):
             with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
                 validate(config)
-        role = defaults(); role['roles']['reviewer'] = role['roles'].pop('review')
+        role = defaults()
+        role['roles']['reviewer'] = role['roles'].pop('review')
         with self.assertRaisesRegex(ValueError, r'unknown setting: roles\.reviewer'):
             validate(role)
 
@@ -1665,8 +2190,10 @@ class RunnerTests(InstanceCase):
                 validate(config)
 
     def test_malformed_setting_structure_is_rejected_by_name(self):
-        cli_path = defaults(); cli_path['cli']['codex'] = 5
-        lean_cwd = defaults(); lean_cwd['lean']['cwd'] = 5
+        cli_path = defaults()
+        cli_path['cli']['codex'] = 5
+        lean_cwd = defaults()
+        lean_cwd['lean']['cwd'] = 5
         cases = (('cli must be an object', {**defaults(), 'cli': 'C:/tools/codex.exe'}),
                  ('lean must be an object', {**defaults(), 'lean': []}),
                  ('model entries need exactly', {**defaults(), 'models': ['codex/gpt-6.1-sol']}),
@@ -1676,68 +2203,6 @@ class RunnerTests(InstanceCase):
         for pattern, config in cases:
             with self.subTest(pattern), self.assertRaisesRegex(ValueError, pattern):
                 validate(config)
-
-    def test_board_can_show_a_producer_waiting_for_its_first_model(self):
-        runner = self.runner()
-        runner.producer('attempt')
-        rows = board(self.instance, runner.state)
-        self.assertEqual(rows[0]['stage'], 'queued')
-        self.assertIsNone(rows[0]['session'])
-        self.assertEqual(runner.available_nodes(), ['root'])
-        runner.producer('explore')
-        render(self.instance, replay(self.instance), board(self.instance, runner.state))
-        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
-        self.assertIn('producer: (not launched)', visible)
-        # The attempt is still choosing a node; the exploration is still choosing a question.
-        self.assertIn('· attempt · queued · nodes: (choosing)', visible)
-        self.assertIn('· explore · queued · question: (choosing)', visible)
-
-    def test_board_view_lists_the_sections_an_exploration_peer_registers(self):
-        # Any peer may register a further section through the node's lease (roles/peer.md, Work the
-        # mathematics yourself). The board rows already count it as occupancy; board.md must show it under
-        # the exploration as well.
-        runner = self.runner()
-        pipeline = runner.state['jobs'][runner.producer('explore')]['pipeline']
-        peer = runner.session_dir('speer')
-        peer.mkdir()
-        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': 'speer', 'role': 'peer',
-                                         'pipeline': pipeline, 'task': {}})
-        runner.state['pipelines'][pipeline].update(producer='sexplore', peer='speer', stage='peer')
-        runner.state['sessions']['speer'] = {'id': 'speer', 'role': 'peer', 'status': 'running', 'job': 'peerjob'}
-        runner.save()
-        self.assertTrue(take(peer, 'root')['registered'])
-        self.assertEqual(runner.available_nodes(), [])
-        render(self.instance, replay(self.instance), board(self.instance, runner.state))
-        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
-        self.assertIn('· explore · peer · question: (none)', visible)
-        self.assertIn('  Section speer-1 on root (session speer): the whole node', visible)
-
-    def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
-        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
-        views = [self.instance / 'knowledge' / name for name in ('frontier.md', 'index.md', 'board.md')]
-        for path in views:
-            path.unlink()
-        with InstanceLock(self.instance / 'runner/lock'), patch('builtins.print'):
-            self.assertEqual(main(['render', str(self.instance)]), 1)
-        self.assertFalse(any(path.exists() for path in views))
-        with patch('builtins.print'):
-            self.assertEqual(main(['render', str(self.instance)]), 0)
-        frontier, index, board_view = (path.read_text(encoding='utf-8') for path in views)
-        self.assertIn('State: informal_proved', frontier)
-        self.assertIn('Investigation', index)
-        self.assertIn('Research work and occupied sections', board_view)
-
-    def test_start_does_not_replace_a_live_runner(self):
-        # A live runner holds the instance lock. The runner that start launches cannot take it and exits,
-        # and start reports that exit, not a readiness it never reached (reference/operations.md).
-        from runner import start
-        with InstanceLock(self.instance / 'runner/lock'):
-            with self.assertRaisesRegex(RuntimeError, 'exited before readiness'):
-                start(self.instance)
-        # The refused runner wrote no start record that could stand in for the live runner's receipt.
-        self.assertFalse((self.instance / 'runner/process.json').exists())
-        [log] = (self.instance / 'runner').glob('start-*.stderr.log')
-        self.assertIn('already has a running runner', log.read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

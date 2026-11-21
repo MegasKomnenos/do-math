@@ -7,18 +7,32 @@ import shutil
 import sys
 from urllib.parse import quote, unquote
 
-from runtime_support import write_json, write_text
+from canon import Canon, declaration_text
+from runtime_support import read_json, write_json, write_text
 
 
 RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
+# Every role states mathematics in Lean and reads the canon, so each receives the canon and Lean guides.
 ROLE_REFERENCES = {
     'attempt': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md'],
     'explore': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md'],
-    'formalizer': ['retained-work.md', 'lean.md'],
-    'peer': RESEARCH_CONTEXT + ['literature.md', 'record-format.md', 'retained-work.md'],
-    'review': RESEARCH_CONTEXT + ['literature.md', 'record-format.md', 'review-output.md'],
-    'organizer': RESEARCH_CONTEXT + ['organizer-output.md'],
+    'formalizer': ['retained-work.md'],
+    'peer': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md', 'change-format.md'],
+    'review': RESEARCH_CONTEXT + ['literature.md', 'change-format.md', 'review-output.md'],
+    'organizer': RESEARCH_CONTEXT + ['change-format.md', 'organizer-output.md'],
 }
+
+
+def root_in_lean(instance):
+    """The root as it is fixed in Lean: its declaration and the file it stands in."""
+    canon = Canon(instance)
+    meta = read_json(Path(instance) / 'instance.json')
+    entry = canon.load_index()['entries'][meta['root']]
+    source = (canon.lean / entry['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
+    return (f"The root is the declaration `{meta['root']}` of the library `{meta['library']}`, in "
+            f"`canon/lean/{entry['file']}`. Its statement is fixed for the life of the instance.\n\n"
+            '```lean\n' + declaration_text(source, entry['span']) + '\n```\n\n'
+            f"As Lean prints it: `{entry['statement']}`\n")
 
 
 def rebase_links(body, source, session, scope):
@@ -54,10 +68,13 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     runtime = skill / 'runtime'
     commands = {
         'updates': [sys.executable, str(runtime / 'coordination.py'), 'updates', str(session)],
-        'lease': [sys.executable, str(runtime / 'coordination.py'), 'lease', str(session), '<node>'],
-        'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<node>', '--timeout', '50'],
-        'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<node>', '--file', '<file>'],
-        'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<node>'],
+        'canon': [sys.executable, str(runtime / 'canon_tool.py'), '<command>', str(session)],
+        'prepare': [sys.executable, str(runtime / 'canon_tool.py'), 'prepare', str(session)],
+        'verify': [sys.executable, str(runtime / 'canon_tool.py'), 'verify', str(session)],
+        'lease': [sys.executable, str(runtime / 'coordination.py'), 'lease', str(session), '<element>'],
+        'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<element>', '--timeout', '50'],
+        'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<element>', '--file', '<file>'],
+        'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<element>'],
         'question_lease': [sys.executable, str(runtime / 'coordination.py'), 'question-lease', str(session), '<question>'],
         'question_wait': [sys.executable, str(runtime / 'coordination.py'), 'question-wait', str(session), '<question>', '--timeout', '50'],
         'question_take': [sys.executable, str(runtime / 'coordination.py'), 'question-take', str(session), '<question>'],
@@ -66,7 +83,8 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
         'check': [sys.executable, str(runtime / 'check.py'), str(session)],
         'lean': [sys.executable, str(runtime / 'lean_broker.py'), '<command>', str(instance)],
     }
-    documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/tools.md']
+    documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/canon.md',
+                 'reference/lean.md', 'reference/tools.md']
     documents += ['reference/' + name for name in ROLE_REFERENCES[role]]
     inp = {'schema': 1, 'instance': str(instance), 'session': session.name, 'role': role,
            'pipeline': pipeline, 'task': task, 'revision': revision,
@@ -82,14 +100,19 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
         body = source.read_text(encoding='utf-8-sig')
         body = rebase_links(body, source, session, context)
         parts += [f'<!-- begin {name} -->', body, f'<!-- end {name} -->', '']
-    for name, path in [('Root statement', instance / 'root.md'), ('Full current global glossary', instance / 'knowledge/glossary.md'),
-                       ('Frontier at launch', instance / 'knowledge/frontier.md'), ('Board at launch', instance / 'knowledge/board.md'),
-                       ('General index at launch', instance / 'knowledge/index.md')]:
+    understanding = instance / 'canon/questions/q0.md'
+    views = [('Root statement', instance / 'root.md', None),
+             ('The root in Lean', instance / 'canon/index.json', root_in_lean(instance)),
+             ('Frontier at launch', instance / 'knowledge/frontier.md', None),
+             ('Understanding so far of the root problem as a whole (question q0)', understanding,
+              None if understanding.is_file() else 'No exploration has written it yet.\n'),
+             ('Board at launch', instance / 'knowledge/board.md', None)]
+    for name, path, text in views:
         # Preserve mathematical text verbatim. Its relative references retain the
         # original source base, rather than rewriting arbitrary mathematical prose.
         parts += ['# ' + name, '', 'Source: ' + str(path),
                   'Relative references in this research view use ' + str(path.parent) + ' as their base.',
-                  '', path.read_text(encoding='utf-8-sig'), '']
+                  '', text if text is not None else path.read_text(encoding='utf-8-sig'), '']
     parts += ['# User conditions supplied at launch', '',
               'The following inputs apply in listed order. Later conditions override earlier conditions on the same matter. '
               'Mathematical suggestions remain suggestions; they do not certify claims.']

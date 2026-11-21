@@ -8,13 +8,14 @@ WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
 ARCHIVE_PRESET = 6
-LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5}
+LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5, "header_snapshots": 8}
 
 def memory_status():
     """(total physical, headroom) in bytes: commit headroom on Windows, MemAvailable on Linux.
 
-    Both headroom figures count private memory only; file-backed mappings such as
-    Lean's .olean files are page cache and never reduce them (reference/lean.md)."""
+    The Windows figure is what the system can still commit. A Lean process is charged there for
+    the whole size of the .olean files it maps, although it touches a part of them, so imports
+    reduce it (reference/lean-broker.md). MemAvailable on Linux does not count such mappings."""
     if os.name != "nt":
         fields = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         return (int(fields["MemTotal"].split()[0]) * 1024,
@@ -331,7 +332,7 @@ def lean_config(settings):
 
     A null memory budget is the physical memory minus the machine gate and a
     512 MiB allowance per AI session; a null thread budget is twice the logical
-    core count, since a compile is CPU-bound only during elaboration (reference/lean.md)."""
+    core count, since a compile is CPU-bound only during elaboration (reference/lean-broker.md)."""
     lean = settings["lean"]
     config = {key: lean[key] for key in LEAN_DEFAULTS}
     total_mb = memory_status()[0] // (1024 * 1024)

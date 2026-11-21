@@ -8,10 +8,39 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import runner as runtime
 import runtime_support as support
-from test_research import InstanceCase, record
+from support import InstanceCase
+
+
+APPROACH = '''---
+title: Induction on the number of terms
+sessions: sauthor
+---
+## Idea
+
+Compare the sum for n + 1 with the sum for n.
+
+## Where it stops
+
+The arithmetic identity of the inductive step has not been checked.
+'''
+
+
+# LaunchFailureTests runs a session host inside the test process. The real host puts its own process into
+# a job that nothing can leave, after which this process could no longer start a Lean broker for the tests
+# that follow in the same run (lean_broker.ensure_broker). A stand-in answers for the containment here;
+# the containment itself is tested on real host processes in test_containment.
+CONTAINMENT = patch('runtime_support.contain_session_processes', return_value={'contained': True})
+
+
+def setUpModule():
+    CONTAINMENT.start()
+
+
+def tearDownModule():
+    CONTAINMENT.stop()
 
 
 def windows_error(code):
@@ -164,11 +193,13 @@ class PeerRecoveryTests(InstanceCase):
         engine.state['pipelines'][pipeline].update(producer='sauthor', peer='speer', stage='peer')
         key = engine.enqueue('peer', {}, pipeline, pipeline + ':peer')
         folder = engine.session_dir('speer')
-        (folder / 'output').mkdir(parents=True)
-        support.write_json(folder / 'output/record.json', record())
-        (folder / 'output/record.md').write_text('The original evidence.')
+        # The peer's change holds an approach entry and no Lean, so its receipt needs no build.
+        candidate = self.candidate(approaches={'Small/root/induction.md': APPROACH}, prepare=False)
+        folder.mkdir(parents=True)
+        candidate.rename(folder / 'output')
+        self.prepare(folder / 'output')
         support.write_json(folder / 'input.json', {
-            'instance': str(self.instance), 'session': 'speer', 'role': 'peer', 'task': {},
+            'instance': str(self.instance), 'session': 'speer', 'role': 'peer', 'pipeline': pipeline, 'task': {},
         })
         engine.state['sessions']['speer'] = {
             'id': 'speer', 'role': 'peer', 'job': key, 'status': 'running',
@@ -210,7 +241,8 @@ class PeerRecoveryTests(InstanceCase):
         self.assertEqual(len(reviews), 1)
         candidate = recovered.session_dir('speer') / 'candidate'
         self.assertEqual(reviews[0]['task']['candidate_hashes'], runtime.tree_hashes(candidate))
-        self.assertEqual((candidate / 'record.md').read_text(), 'The original evidence.')
+        self.assertEqual(runtime.tree_hashes(candidate), runtime.tree_hashes(recovered.session_dir('speer') / 'output'))
+        self.assertEqual((candidate / 'approaches/Small/root/induction.md').read_text(encoding='utf-8'), APPROACH)
         self.assertEqual(recovered.state['jobs'][key]['status'], 'done')
 
     def test_hash_read_failure_is_fatal_and_does_not_strand_peer(self):

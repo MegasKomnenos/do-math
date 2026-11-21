@@ -1,81 +1,176 @@
-"""Scripted session outputs for testing the real orchestration and publication path."""
-import hashlib
+"""Scripted session outputs for testing the real orchestration and publication path.
+
+The scripted research is small and real: the sum of the first n odd numbers is n * n. The Lean it
+writes is valid Lean 4, so the same script runs against the stand-in compiler in the unit tests and
+against the real one when the pipeline is tried end to end."""
 import json
 from pathlib import Path
-import shutil
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from canon_tool import build_candidate
 from coordination import lease, section
-from lean_broker import Paths, submit, wait
 from runtime_support import read_json, write_json
 
 session = Path.cwd()
 inp = read_json(session / 'input.json')
 role, task = inp['role'], inp['task']
+instance = Path(inp['instance'])
 output = session / 'output'
 print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Scripted test activity.'}}), flush=True)
 
+STEP = '''module
+
+public import Small.Defs
+
+@[expose] public section
+
+namespace Small
+
+/-- Adding the next odd number. -/
+theorem oddSum_succ (n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1) := by
+  rfl
+
+end Small
+'''
+INFORMAL = '''/-- The sum of the first `n` odd numbers is the square of `n`. -/
+theorem root (n : Nat) : oddSum n = n * n := by
+  have step := oddSum_succ
+  sorry'''
+FORMAL = '''/-- The sum of the first `n` odd numbers is the square of `n`. -/
+theorem root (n : Nat) : oddSum n = n * n := by
+  induction n with
+  | zero => rfl
+  | succ k ih =>
+    rw [oddSum_succ, ih]
+    simp only [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]
+    omega'''
+ROOT_RECORD = '''---
+short: sum of odd numbers
+weight: unit
+---
+## Description
+
+The sum of the first n odd numbers equals n times n.
+
+## Statement
+
+For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.
+
+## Proof
+
+By induction on $n$. The case $n = 0$ is the empty sum. If the sum of the first $k$ odd numbers is $k^2$,
+adding the next one, $2k + 1$, gives $k^2 + 2k + 1 = (k + 1)^2$; the step uses `Small.oddSum_succ`.
+'''
+STEP_RECORD = '''---
+short: next odd number
+weight: step
+---
+## Description
+
+Passing from n to n + 1 adds the odd number 2n + 1 to the sum.
+
+## Statement
+
+For every natural number $n$, the sum of the first $n + 1$ odd numbers is the sum of the first $n$ plus $2n + 1$.
+'''
+APPROACH = '''---
+title: Induction on the number of terms
+sessions: {sessions}
+---
+## Idea
+
+Compare the sum for n + 1 with the sum for n.
+
+## Established
+
+Small.oddSum_succ
+
+## Where it stops
+
+The inductive step is stated; the arithmetic identity has not been checked in Lean.
+'''
+
+
+def write(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding='utf-8', newline='\n')
+
+
+def prepared(folder, name):
+    result = build_candidate(instance, inp['session'], folder, session / 'work' / name, 64, None,
+                             'peer' if role != 'organizer' else 'organizer', fresh=role == 'review')
+    if not result['ok']:
+        raise RuntimeError('scripted candidate did not build: ' + json.dumps(result['errors']))
+    return result
+
+
 if role in ('attempt', 'explore', 'formalizer'):
     if role == 'attempt':
-        lease(session, 'root')
-        (session / 'work').mkdir(exist_ok=True)
-        (session / 'work/section.json').write_text(json.dumps({'whole': True}), encoding='utf-8')
-        if not section(session, 'root', session / 'work/section.json')['registered']:
+        lease(session, 'Small.root')
+        write(session / 'work/section.json', json.dumps({'whole': True}))
+        if not section(session, 'Small.root', session / 'work/section.json')['registered']:
             raise RuntimeError('scripted attempt could not register the whole root')
-    (output / 'report.md').write_text('For every natural number n, n + 0 = n by the defining equation of addition.', encoding='utf-8')
+    write(output / 'report.md', 'The sum of the first n odd numbers is n * n, by induction through Small.oddSum_succ.')
     if role == 'formalizer':
-        (output / 'Proof.lean').write_text('theorem add_zero_example (n : Nat) : n + 0 = n := by rfl\n', encoding='utf-8')
+        write(output / 'root.lean', FORMAL)
 elif role == 'peer':
-    producer = Path(task['source'])
     source_role = task['source_role']
-    (output / 'record.md').write_text('Natural numbers include zero. Right addition of zero reduces to its left argument by definition.', encoding='utf-8')
-    data = {'title': 'Right addition of zero', 'description': 'A proof or observation about right addition of zero.',
-            'exposition': 'record.md', 'claims': [{'id': 'c1', 'statement': 'For every natural number n, n + 0 = n.',
-                                                'by': 'producer', 'evidence': 'record.md', 'dependencies': []}],
-            'nodes': [], 'relations': [], 'solutions': [], 'glossary': []}
-    if source_role != 'explore':
-        lean = None
-        if source_role == 'formalizer':
-            shutil.copyfile(producer / 'output/Proof.lean', output / 'Proof.lean')
-            lean = {'theorem': 'add_zero_example', 'sources': ['Proof.lean']}
-        data['solutions'] = [{'id': 'solution', 'node': 'root', 'outcome': 'proved', 'claim': 'c1', 'formal_dependencies': [], 'lean': lean}]
-    if source_role == 'explore' and task.get('question') == 'q0':
-        # An exploration of the whole problem leaves a question that later explorers can take up.
-        data['questions'] = [{'id': session.name + '-definitional',
-                              'statement': 'Why does right addition of zero need nothing beyond the defining equation of addition?',
-                              'grounds': 'Every scripted record proves n + 0 = n from that equation alone.'}]
-    write_json(output / 'record.json', data)
+    change = {'title': 'The sum of the first odd numbers', 'description': 'An induction that proves the root.',
+              'replace': [], 'questions': [], 'resolutions': []}
+    if source_role == 'attempt':
+        write(output / 'lean/Small/Step.lean', STEP)
+        write(output / 'replace/root.lean', INFORMAL)
+        change['replace'] = [{'declaration': 'Small.root', 'file': 'replace/root.lean', 'imports': ['Small.Step']}]
+        write(output / 'records/Small/root.md', ROOT_RECORD)
+        write(output / 'records/Small/oddSum_succ.md', STEP_RECORD)
+        write(output / 'approaches/Small/root/induction.md', APPROACH.format(sessions=Path(task['source']).name))
+    elif source_role == 'formalizer':
+        write(output / 'replace/root.lean', FORMAL)
+        change.update(title='The root proved in Lean', description='The induction written as a Lean proof.',
+                      replace=[{'declaration': 'Small.root', 'file': 'replace/root.lean'}])
+    else:
+        question = task.get('question')
+        change.update(title='What the sum of odd numbers shows', description='An account of the root problem as a whole.')
+        if question:
+            write(output / 'questions' / (question + '.md'),
+                  'The sum grows by one odd number at a time, and each step completes a square. '
+                  'The elements `Small.oddSum` and `Small.root` carry the exact statements.\n')
+        if question == 'q0':
+            # An exploration of the whole problem leaves a question that later explorers can take up.
+            change['questions'] = [{'id': session.name + '-squares',
+                                    'statement': 'Why does adding consecutive odd numbers complete a square at every step?',
+                                    'grounds': 'The scripted proof uses the identity without saying what it shows.'}]
+    write_json(output / 'change.json', change)
+    write_json(output / 'prepared.json', prepared(output, 'prepare'))
 elif role == 'review':
-    (output / 'feedback.md').write_text('The precise argument was assessed.', encoding='utf-8')
+    write(output / 'feedback.md', 'The precise argument was assessed.')
     if task['kind'] == 'comprehensive':
         write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
     else:
         candidate = Path(task['candidate'])
-        data = read_json(candidate / 'record.json')
-        assessment = {'publish': True, 'reason': 'Useful retained mathematics.', 'index_assessment': 'Supported within its exact scope.',
-                      'feedback': 'feedback.md', 'glossary_approved': True,
-                      'claims': [{'claim': c['id'], 'status': 'supported', 'reason': 'Definitional equality.'} for c in data['claims']],
-                      'nodes': [], 'relations': [], 'solutions': [], 'concerns': [],
+        change = read_json(candidate / 'change.json')
+        receipt = read_json(candidate / 'prepared.json')
+        assessment = {'publish': True, 'reason': 'Useful retained mathematics.',
+                      'contribution': 'Closed the step it took on within its exact scope.', 'feedback': 'feedback.md',
+                      'elements': [], 'concerns': [], 'findings': [],
                       'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'A question later explorers can take up.'}
-                                    for q in data.get('questions', [])]}
-        for solution in data['solutions']:
-            verdict = {'proposal': solution['id'], 'level': 'informal', 'reason': 'Exact statement.'}
-            if solution['lean']:
-                source = candidate / 'Proof.lean'
-                copied = session / 'work/Proof.lean'
-                copied.write_bytes(source.read_bytes() + b'\n#print axioms add_zero_example\n')
-                receipt = submit(Paths(inp['instance']), copied, 64, inp['session'])
-                if wait(Paths(inp['instance']), receipt['job'], timeout=30) != 0:
-                    raise RuntimeError('test compile failed')
-                verdict.update(level='formal', formal_check={'job': receipt['job'], 'theorem': 'add_zero_example', 'axioms': [],
-                               'alignment': 'matches', 'reason': 'Same proposition.',
-                               'source_hashes': {'Proof.lean': hashlib.sha256(source.read_bytes()).hexdigest()},
-                               'source_files': {'Proof.lean': 'work/Proof.lean'}})
-            assessment['solutions'].append(verdict)
+                                    for q in change['questions']],
+                      'resolutions': []}
+        formal = False
+        for name in receipt['added'] + receipt['replaced']:
+            entry = receipt['entries'][name]
+            proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
+            formal = formal or (proved and entry['lean_proof'] == 'complete')
+            verdict = {'element': name, 'correct': 'confirmed' if proved else 'not_applicable',
+                       'accepted': proved, 'reason': 'The argument was followed step by step.'}
+            if name in receipt['replaced']:
+                verdict['replaces'] = True
+            assessment['elements'].append(verdict)
+        if formal:
+            result = prepared(candidate, 'verify')
+            write_json(session / 'work/verify/outcome.json', result)
+            assessment['formal_check'] = {'build': result['build']}
         write_json(output / 'assessment.json', assessment)
 elif role == 'organizer':
-    # A complete layout carries the earlier placements forward and adds the batch (reference/organizer-output.md).
-    layout = read_json(Path(inp['instance']) / 'knowledge/state.json')
-    write_json(output / 'organization.json', {'batch': task['batch'], 'modules': layout['modules'],
-                                              'shared_context': sorted(set(layout['shared_context']) | set(task['batch']))})
+    write_json(output / 'organization.json', {'batch': task['batch'], 'merge_questions': []})

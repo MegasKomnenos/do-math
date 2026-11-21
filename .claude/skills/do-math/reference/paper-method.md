@@ -1,0 +1,180 @@
+# How the paper is written
+
+## What this document is for
+
+When a do-math research instance has settled its root proposition by a formal proof, one command writes a paper about the result: a mathematical paper in English, as a LaTeX manuscript and a PDF. The command runs to the end without asking anyone anything. It does the work by launching AI sessions one after another. One session plans the paper, several write its sections, and others read the manuscript and repair it. A script gives each session its files, assembles what the sessions leave, and checks it.
+
+Sessions that cannot talk to each other write one paper only if they share the decisions that shape it: who the paper is for, what each of its parts does, which results receive a number, in what order they come, and how the text is written. These decisions are also not the sessions' to make. They belong to the user who runs the research. The user made them once, before any paper was written, so that every paper comes out in the same way and no run has to stop and ask. This document records those decisions and the reason for each.
+
+If you are one of the sessions, the decisions below are made, and your work applies them to the research in front of you. What remains yours is everything that a decision made in advance cannot contain: how this particular mathematics is explained so that the reader described below understands it and can check it. The reasons are written out because a research will always present cases that this document did not foresee. In such a case the reason tells you what the decision was meant to achieve, and you act for that.
+
+The prompt of your session says which files you receive and which files you leave. This document says what the paper is.
+
+Three things that pass between the sessions are named throughout. The *materials* are what the script takes from the research; the next section describes them. The *plan* is what the planning session writes, and the script checks it before any section is written. The plan holds the title; a short outline of how the proof goes and where its difficulty lies; the sections in their order; the numbered statements in their order, each with the element it states, its kind, its label, the section that states it and the section that proves it; for every other element of the materials the way it is treated, with the reason; and the notation. Every choice that this document gives to the planning session is recorded there, and the sessions that write and repair follow the plan as it stands. A *part* is the LaTeX of one section. A session that writes a part receives the plan and the parts written before its own.
+
+## Where the paper comes from
+
+The research is kept as a library written in Lean, a proof assistant. The library is called the canon. Each declaration of the library is an element: a definition, or a statement, which Lean calls a theorem. Beside each element is a written record. The record holds what Lean cannot hold: a short description of the element, its statement in natural language, an explanation of what it says and why it holds, a proof in natural language, and, for a result taken from the literature, its source and how much of the source was read. The record also gives the element a weight, which is either *unit* or *step*. A unit is a result that someone describing the structure of the proof would name. A step is a move inside one proof. A definition has a weight in the same sense: an object that such a description would name is a unit, and an auxiliary notion that serves one argument is a step.
+
+The root is the proposition the research was started to settle. It was fixed at the beginning, in words and in Lean, and it does not change. The paper is written when the root has a formal proof, that is, a proof that Lean has checked completely and that review has accepted. Everything that this proof rests on has then been proved in Lean as well, the results taken from the literature included, from no axioms other than those the instance allows. The materials list them; unless the user changed them, they are the three standard axioms of Lean. When the research refuted the root, the formal proof is a proof of its negation, and the main result of the paper is that negation.
+
+The script takes from the canon the materials of the paper: every element that the formal proof of the root rests on, with its record, in an order in which each element comes after everything it depends on; the root in words; the account of the problem as a whole that the research kept while it ran; and the bibliography. The body of the paper is what the proof rests on, and nothing else. Results that the research found and the proof does not use, approaches that were abandoned, and questions that stayed open are not in the materials and are not in the paper. The user decided this because the paper is to state the mathematics of the result cleanly, accurately and concisely. It is not a report on the research.
+
+The canon was not made to be read from beginning to end. It grows by addition, it is cut into the small declarations that a proof assistant needs, and its proofs were written by many sessions, each for one element by itself. A coherent exposition does not exist inside it. The paper is where that exposition is made. The paper is therefore not the canon carried over declaration by declaration. It is a new exposition of the same mathematics for a reader who will never see the canon, and most of this document is about the differences between the two.
+
+## The reader
+
+The paper is a research article in mathematics. Its reader is a mathematician who works in the area of the main result or in a neighbouring one, at the level of a doctoral student or above. This reader knows what the graduate textbooks of the area contain and is used to reading proofs. The reader has not necessarily met the particular objects of this paper or the vocabulary that grew around them, and expects every notion that is not textbook material to be defined, or cited, at the place where it is first used.
+
+The reader has the paper and the public literature, and nothing else. The reader has no access to the work from which the paper was drawn, cannot ask its authors, and does not know how the paper was produced.
+
+The reader comes to the paper to learn exactly what is proved, with every hypothesis, and to decide from the introduction whether to read on. A reader who goes on checks proofs line by line and will want to cite statements by their numbers. Some readers read only the abstract, the introduction and the statements. Some read one proof closely. Many arrive in the middle of the paper through a cross-reference and have to understand a statement at the place where it stands.
+
+The paper is read in several sittings by someone who has time, who can search the text and turn back, and who will stop at the first step that does not follow.
+
+## The parts of the paper
+
+The paper has the parts that the reader expects of a research article, and each part has one job.
+
+The **title** names the object and the result as specifically as a title can. It does not describe how the result was obtained.
+
+The **abstract** is one paragraph that states the main result in words, with as little notation as the statement allows. It circulates apart from the paper, so it has to stand by itself: it contains no citation and no reference to a numbered statement.
+
+The **introduction** does four things, in this order. First it states the problem: the objects are introduced, briefly and exactly, and the question about them is asked, so that a reader from a neighbouring area understands what is at stake before any result appears. Second, it states the main result as a numbered theorem with every hypothesis. A reader who reads no further must leave with the exact statement. After the main theorem and the sentences that explain it stands the one remark about formal verification, which the section "The implementation does not show" describes. Third, it places the result relative to earlier work, as far as the materials support this and no further. Fourth, it outlines the proof: the strategy, the step at which the difficulty lies, and the idea that overcomes it. The outline is what lets a reader follow a long argument without losing the thread, and it is where the reader learns which of the many steps carries the proof. The introduction draws on the account of the problem as a whole and on the explanations in the records of the main result and of the elements that its proof names directly. Those are the places where the research wrote down how the proof goes and where it was hard. A short paragraph on how the paper is organised may close the introduction when the paper has enough sections to need one.
+
+The **preliminaries** fix the notation and recall the definitions and the cited results that the proofs use. They contain what the reader needs in order to read the rest and nothing that the rest does not use. A short paper may have no separate section of preliminaries; the plan decides.
+
+The **results with their proofs** are the body: one section or several, in which every result that the main theorem rests on is stated and proved, and the main theorem is proved at the end. Each of these sections begins by saying what it establishes and what that will be used for.
+
+The **references** list the works cited, and only those.
+
+The paper has no section of open problems, no account of other approaches, and no acknowledgements. The first two are excluded by what the paper is, as the section "Where the paper comes from" said. The script leaves the author out of the manuscript as well. Who signs the paper is the user's decision, to be made when the paper exists.
+
+## Which elements receive a number
+
+A numbered statement is a promise to the reader that the statement is worth finding again: it will be referred to, or it is a result that the reader may want to cite. A paper that numbers everything breaks that promise and hides its structure. A paper that numbers too little forces long proofs to carry results that deserved a name. The canon has already recorded, for each element, on which side of this line its author and its reviewer saw it. That record is the weight, and the weight is the material for the choice.
+
+**An element whose weight is unit becomes a numbered statement. An element whose weight is step is absorbed into the proof that uses it.** A numbered statement is a theorem, a proposition, a lemma, a corollary or a definition, and the choice among them follows the ordinary meaning of the words. The main result is a theorem. A unit that a reader might cite for its own sake is a proposition, or a theorem if it stands beside the main result in importance. A unit whose value lies in the proof that it serves is a lemma. A unit that follows in a few lines from a statement already numbered is a corollary. A definition whose weight is unit is given either as a numbered definition or in the running text, and the plan says which. It is numbered when later text has to refer back to it by its number. The objects of the problem are defined in the introduction, where the problem is stated. A definition whose weight is step is introduced where it is needed: inside the proof that uses it, or, when a numbered statement mentions it, in that statement or in the text before it. In every case an object is defined exactly once, before its first use.
+
+To absorb a step is not to drop it. Its content is written, in the notation of the paper, at the place in a proof where it is used, as part of that proof's argument and without a statement of its own. If the step is routine for the reader, a clause is enough. If it is not, its argument is given in full at that place.
+
+The proofs of the paper come from the proofs in the records. Where a record gives no proof in words, the statement has nevertheless been proved in Lean. The writer then gives the argument, which in such cases is usually short, and writes only an argument that it has checked step by step. A fact that the reader knows from the textbooks is used with an ordinary phrase and needs neither a citation nor a proof.
+
+The weight was assigned inside the canon, and the paper sometimes needs a different choice. A step that several numbered proofs use is better stated once as a lemma than repeated. A step whose argument is so long that it would break the proof around it is better taken out of that proof and numbered. In the other direction, some units are not numbered: a unit that falls under one of the cases of the section "What of the canon the paper leaves out", a result from the literature that is only cited in the running text, a definition that is given in the running text. These are the usual cases and not a closed list; what decides is the promise described at the start of this section. The planning session makes these choices, and for every element that departs from its weight the plan records the reason, so that the departure can be seen and judged afterwards.
+
+One numbered statement states one element, and every numbered statement states an element. The paper does not combine two elements into one statement, and no session adds a numbered statement of its own. The reason is the correspondence that the section "Every numbered statement says what its element says" describes: for each numbered statement it must be possible to point to the formally proved statement that it expresses.
+
+## The order
+
+Two demands fix the order, and they pull in different directions. The reader needs to know the destination first, so the main result is stated in the introduction, before any other theorem, proposition, lemma or corollary. And a proof may use only what has already been stated, so every object is defined before the first statement that mentions it, and every numbered statement is stated before the first proof that uses it.
+
+The two are reconciled in the standard way. The main theorem is *stated* first and *proved* last. The introduction therefore has to define the objects of which the main statement speaks. The sections after it build up, in order of dependence, what the proof needs. Each proof follows its statement directly. The main theorem is the exception: its proof comes when everything it rests on is available. Where the order of the paper requires it, the plan can defer another proof in the same way, and it then names the section that carries the proof.
+
+Among the orders that respect dependence, the paper takes the one in which a reader reads. The materials arrive in one valid order of dependence, but that order comes from the arrangement of the library into modules and from the sequence in which the research happened to add declarations, and the user decided that neither is followed. Results that belong to one idea stand together. A lemma stands close to the proof that uses it, when dependence allows. The section boundaries follow the mathematics.
+
+## What of the canon the paper leaves out
+
+Some things are in the canon only because of the way a canon is built and kept. The user listed them and decided for each what the paper shows instead. The planning session recognises these cases from the materials, which show for every element what its proof names and what its statement mentions. For each element that the paper does not state, the plan records the element that stands in its place.
+
+*The consequence left behind by a superseded statement.* The canon never deletes a statement. When the research replaces a statement by a better one, the old statement stays under its name, and its proof becomes a one-line derivation from the new statement, so that everything that used the old one still compiles. The paper does not state the old statement. Where a proof used it, the paper calls the new statement, and adds a clause on how the case that is needed follows if that is not immediate.
+
+*Several proofs of one statement.* The canon can hold more than one proof of a statement. The paper gives one: the proof that the formal proof of the root rests on. The materials already contain only that one. If the same statement nevertheless reaches the materials under two declarations, the paper states it once, for the declaration whose proof it gives, and the plan records the other as not stated.
+
+*Two definitions and an element stating that they agree.* A session that found the original definition inconvenient for a proof may have introduced a second definition of the same object, together with an element stating that the two agree. The paper has one definition of each object, namely the one that fits the root as it is stated in words, and every statement about the other definition is restated with it. What becomes of the element that states the agreement depends on what it says mathematically. If the two definitions differ only in how the object is represented in Lean, the paper has nothing to say and the element is not stated. If they describe the object in two mathematically different ways, for example by a recursion and by a closed formula, the second description is a result about the one object, and it is stated or absorbed like any other element.
+
+*Conventions of the Lean form.* A statement in Lean often carries conventions that come from the proof assistant: indices that start at zero, quantities that are normalised, functions that are defined everywhere and take an arbitrary value where the mathematical function is undefined, subtraction of natural numbers that stops at zero. The paper uses the conventions of mathematics, and where there is a choice it uses those of the root as stated in words, because that statement is the user's own formulation of the problem. Statements are carried over into these conventions, as the section "Every numbered statement says what its element says" describes.
+
+*The course of the research.* The canon records which proofs are held back and why, which approaches were tried, and what earlier versions of a record said. None of this is mathematics about the objects, and none of it is stated.
+
+*The arrangement of the library.* The division into modules and the order of declarations are not followed, as the section "The order" said.
+
+*Results taken from the literature.* They are cited and not proved again, as the section "Results from the literature" describes.
+
+## Every numbered statement says what its element says
+
+Each numbered statement of the paper says exactly what the natural-language statement of its element says: the same objects, the same hypotheses, the same quantifiers and ranges, the same conclusion. It is neither stronger nor weaker. This is the property on which the worth of the paper rests. What stands behind each statement is a proof checked by Lean and a review that judged whether the statement in words expresses the statement in Lean. If a statement of the paper drifts from the statement of its element, that chain is cut at the last link, and nothing in the paper would show it.
+
+The property is kept by the way a statement is written. The writer starts from the statement in the record, and not from the theorem as it is usually remembered or as it would be most convenient. The writer changes only what the paper requires:
+
+- the notation, which becomes the notation that the plan fixed for the whole paper;
+- the conventions, which become those described under "Conventions of the Lean form" above; when a convention changes, the statement is carried over, and the boundary cases are checked one by one, because an index that moves by one or a quantity that is rescaled changes the range of every variable it touches;
+- the names of other elements, which become references to numbered statements or the ordinary mathematical names of the objects;
+- a definition that the paper does not use, which is replaced by the one it uses.
+
+Exactness comes before convention. If a statement cannot be carried into the conventions of the paper without changing what it says, it keeps its own convention and says so in words.
+
+Each numbered statement also carries its own hypotheses. A hypothesis is not moved into a sentence at the head of a section, because a reader who arrives at the statement through a cross-reference would not see it there. A standing assumption, such as a sentence saying that a group is finite throughout, is a hypothesis in this sense. Notation fixed in the preliminaries is the exception.
+
+Where a record gives no statement in words, the Lean statement is the source. Where the statement in words and the Lean statement of an element seem to disagree about a hypothesis or a boundary case, the Lean statement is the one that was proved, and the paper says what it says.
+
+The main theorem is held to one thing more. It says what the root says in words, in the conventions of that statement; when the root was refuted, it says the negation of that.
+
+The property is checked in two ways. The script writes a correspondence file beside the paper, not inside it. For every numbered statement the file names the element, and it gives the statement in the record, the Lean statement, and the statement as the manuscript has it, so that anyone can read the three side by side. And after the manuscript has been assembled, a session whose only task is this comparison judges for each numbered statement whether it says what the statement in words of its element says, with the Lean statement beside it to settle a doubt. If that session finds that the words and the Lean statement of an element disagree with each other, it reports this as well; the writer has no other way to make such a finding known. A difference goes to a repair session, and the statements are compared again. A difference that remains is reported in the log and in the correspondence file.
+
+## Results from the literature
+
+A result that the canon took from the literature is cited and is not proved again. When it is numbered, it is stated in the form in which the canon states it, with its attribution and with the exact place in the source that the record gives, for example the number of the theorem, and no proof follows it. It is written in the notation and the conventions of the paper like every other statement. When the plan only cites it, the running text says what it is and where it is found. The reader can then tell at every statement whether the paper proves it or relies on someone else's proof.
+
+The paper says no more about the literature than was read. The records say, for each source, how much of it was read: the full text, named parts, or the abstract only, and whether the proof was read or only the statement. The paper describes a source to that depth and not beyond. It cites only works that are in the bibliography of the materials. A session may well remember other relevant work. It does not add it, because nobody in the research read it for this purpose, and nobody could vouch for what the paper would then say about it.
+
+For the same reason the paper does not say that a result is new. Whether something is new is a claim about the whole literature, and the research can only report where it looked. Where the records say what the sources that were read contain and do not contain, the introduction may say exactly that, with the scope that the records give. Where the materials say nothing about earlier work, the introduction says nothing about it either; it does not fill the place from memory.
+
+## The implementation does not show
+
+The canon is the means by which the result was obtained and verified. The user decided that it does not appear in the paper: the paper states the mathematics, and a reader who has never heard of the canon misses nothing.
+
+This excludes the following from the text, from comments in the LaTeX source, and from labels alike. No Lean name of an element or of a module is written; an object is called by its mathematical name, for which the short name in its record is the starting point. The paper has no statement of the form "A is proved by B", that is, no theorem and no list whose content is which declaration proves or uses which. A sentence saying that a lemma will be used in a later proof, or that a proof uses Lemma 3.2, is ordinary mathematics and is wanted; what is excluded is an account of the declarations of the library. The paper does not speak of sessions, records, reviews, weights, units, steps, or of the way the paper itself was produced. These words are excluded as names for the bookkeeping of the research, and their ordinary mathematical uses, such as the step of an induction, are untouched. The script checks the first of these exclusions by machine. It searches the manuscript for the full Lean names of the canon and for those last components of names that no ordinary word resembles, such as a name with an underscore or with a capital letter inside it.
+
+One thing about the implementation is worth the reader's knowing, and it has one standard place. That the main theorem has been formally verified is a fact about how far the result can be trusted, and papers that accompany a formalisation report it in a remark. The introduction therefore carries, directly after the main theorem and the sentences that explain it, one short remark, written in the `verification` environment. The remark says that the main theorem has been formally verified in the proof assistant Lean 4, and it shows the formal statement. The script supplies the formal statement exactly as the canon has it, through the command `\LeanStatement`, which the remark uses once. The command prints the statement as a displayed block, so it stands on a line of its own. If the formal statement follows a convention that differs from the paper's, the remark says in a sentence or two how it is to be read, and it may name Lean identifiers for that purpose. It may also say on which axioms the formal proof depends, as the materials list them. It says nothing else about the formal development, and formal verification is mentioned nowhere else in the paper.
+
+## The manner of writing
+
+The paper follows the conventions of mathematical writing that its reader is used to. The authors are "we", and the tense is the present. A formula is part of a sentence and is punctuated as such. A sentence does not begin with a symbol, and two formulas are separated by words. Every symbol is defined before it is used or at the place where it is first used, and it keeps one meaning throughout; one object has one name and one notation, which the plan fixes for all sections. Quantifiers in running text are written in words. A displayed formula receives a number only if the text refers to it. A statement is referred to by its kind and number. A proof that is longer than a paragraph says at its start how it will proceed. Words such as "clearly" and "it is easy to see" are used only where the step is in fact immediate for the reader described above; where it is not, the step is written out.
+
+Beyond these conventions the paper is written in the way its first reader, the user, prefers. The document `user-writing-preferences.md` describes those preferences together with the occasions on which they came to light, and it is given to every session that writes. It asks not to be reduced to rules, and what follows is not a set of rules. It describes how each of those preferences bears on a mathematical paper.
+
+*The purpose comes before the content.* The reader of a paper should know why something is there before reading it. The introduction asks the question before it gives the answer. A section says at its start what it establishes and where that will be used. A lemma is introduced by a sentence on what it is for. A long proof begins with its strategy. A reader who knows where an argument is going can check each step against that, and a reader who does not can only verify the steps one by one without seeing what they amount to.
+
+*Plain, and fully explained.* The paper does not try to impress. It has no figures of speech, no announcements that something is remarkable or surprising, and no sentence that stages a turn. But plain does not mean short. The user's objection to ornament and the user's objection to compression turned out to have the same cause: both put an impression in the place of an explanation. Every step that the reader needs is written out in ordinary sentences, at the length that its content requires.
+
+*What matters shows in how the paper is built.* The proofs of a paper do not all carry the same weight. One or two steps are where the argument could fail, and they are the reason the result was not obvious. Those steps receive the room. For such a step the paper says what the difficulty is, what idea meets it, and why that idea works, and then gives the argument in full. A routine verification is brief and is called routine. The outline in the plan names the step or the steps at which the difficulty lies, so that the outline in the introduction and the proofs in the body give it the same place. The weight is shown by position and development. A sentence that announces importance does not show it.
+
+*One step at a time.* Each paragraph takes one step, and the reader is not asked to hold something that has not yet been explained. Between steps, and between sections, a sentence says how what was just shown leads to what comes next. This is a matter of order and connection. It is not a call for short paragraphs or clipped sentences.
+
+*Detail is there to carry the idea.* Where the materials contain a small case or an example that makes an idea graspable, the paper can use it at the place where the idea is introduced. An example is included because it helps the reader to see the idea, and for no other reason. It stands in the running text or in a remark. The paper adds no mathematical claim that the materials do not support.
+
+*Reasons, and not bare assertions.* Where a hypothesis is needed, the paper says where it is used. Where a definition could have been made differently, the paper says why it is made as it is. The explanations in the records are the source for this. The reader is then in a position to judge the argument and is not merely asked to accept it.
+
+Two cautions from the same document apply to every session. A session does not adopt a policy that this method does not contain, such as a house style of its own or a section that it thinks a paper ought to have. And a session does not present a division of the material as if it were the only possible one when the mathematics does not impose it.
+
+## The LaTeX of a part
+
+The manuscript is one file in the `amsart` class of the American Mathematical Society, which is what a journal in mathematics expects. The script writes everything that the parts have in common, so that the parts fit together whoever wrote them. It supplies:
+
+- the preamble: the class, the package `amssymb`, and the environments. `amsart` itself brings the mathematics of `amsmath` and the `proof` environment;
+- the environments `theorem`, `proposition`, `lemma`, `corollary` and `definition`, which share one counter within each section, so that a reader finds "Lemma 3.4" by its number alone; the unnumbered environment `remark`; and the unnumbered environment `verification` for the remark on formal verification;
+- equation numbers within sections;
+- the title from the plan, the `abstract` environment around the text of the abstract, and `\maketitle`;
+- the heading of each section, with the label `sec:` followed by the id of the section in the plan;
+- the bibliography commands, and `references.bib`, which is the bibliography of the materials;
+- the command `\LeanStatement`.
+
+A part is the body of one section, from the first line after its heading. It may contain subsections. It does not repeat what the script supplies: it has no preamble, no title, no section heading of its own and no bibliography command. It also defines no macro and no environment and loads no package. A macro that one part defined would be unknown to the others or would collide with theirs, so every formula is written out with the commands of LaTeX and of the AMS packages; a named operator is written with `\operatorname`.
+
+Each numbered statement of the plan appears once, in the environment of its kind, in the section and at the position that the plan gives it, with the plan's label directly after the opening of the environment. A proof stands in the `proof` environment. It follows its statement, or, for a statement that the plan proves in a later section, it opens as `\begin{proof}[Proof of Theorem~\ref{...}]`. A numbered result from the literature carries its citation in the optional argument of its environment, as in `\begin{theorem}[{\cite[Theorem 2.1]{key}}]`, and has no proof. A proof that ends in a displayed formula places its end mark with `\qedhere`. Remarks are unnumbered, and a remark makes no claim that needs a proof.
+
+A reference is written with its kind and a tie, as in `Theorem~\ref{thm:main}`, and a reference to an equation with `\eqref`. A citation gives the place in the source in the optional argument, as in `\cite[Theorem 2.1]{key}`, and the key is a key of the bibliography in the materials. A label names the mathematics and never the element. The prefix `sec:` belongs to the script; an equation takes `eq:` and a subsection `subsec:`.
+
+A displayed formula that the text does not refer to is written with `\[ ... \]` or with a starred environment such as `align*`. One that the text refers to is written with `equation` or `align` and a label, with `\notag` on the lines of an `align` that are not referred to. A defined term is set with `\emph` at its definition. Text inside a formula is set with `\text`. A statement with several parts uses `enumerate`. The source is plain ASCII, with accented letters written by TeX's accent commands, so that every TeX engine typesets it. The part leaves spacing and fonts to the class.
+
+## What is checked after writing
+
+The sessions write without being able to see the whole, so the whole is checked afterwards, and each check returns what it finds to a session that can repair it.
+
+The script checks by machine what a machine can check. Every numbered statement of the manuscript is one that the plan names, of the planned kind, in the planned place. Its proof stands where the plan puts it, and a result from the literature carries its citation and has no proof. Every reference and every citation resolves. The remark on formal verification is present once and contains the formal statement. No Lean name of the canon appears outside that remark. The parts keep to the form that the section "The LaTeX of a part" describes. Then the script typesets the manuscript with TeX. Failures of either kind go to a repair session, and the manuscript is assembled and checked again. A repair changes the text of the parts and keeps the plan.
+
+After that, a session that has the manuscript and the section "The reader" of this document, and nothing else, reads the paper as that reader. It reports what it understood the paper to prove and every place where the reading failed. A repair session, which has the materials, compares that understanding with what the materials say and takes up the findings. A reader who has seen nothing but the paper is the only test of whether the paper stands by itself, because every session that wrote it knew more than the paper says.
+
+Last, the comparison described in the section "Every numbered statement says what its element says" is made.
+
+Each of these loops runs a fixed number of times. What is still open at the end is not hidden: the log that the command leaves beside the paper lists every session that was launched and what every check found, and the command reports findings that remain. The paper, the plan, the correspondence file and the log are what the user receives, and the user confirms the result by reading them.

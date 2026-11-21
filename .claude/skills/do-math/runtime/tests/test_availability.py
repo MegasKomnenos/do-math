@@ -4,25 +4,28 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from availability import opening_since
+sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
+from availability import availability_view, opening_since, snapshot_token
 from check import check_session
-from coordination import updates
+from coordination import board, updates
 from knowledge import replay
 from runner import Runner, main
 from runtime_support import read_json, write_json
-from test_research import InstanceCase, take, record, claim_row
+from support import SUM_SUCC, SUM_ZERO, ScenarioCase, module_text, record_text, take, theorem
 
 
-class AvailabilityTests(InstanceCase):
+class AvailabilityTests(ScenarioCase):
     def setUp(self):
         super().setUp()
+        self.configure(max_sessions=8)  # the occupying attempts of these tests leave room for further launches
         self.runner = Runner(self.instance, self.skill)
         self.serial = 0
 
     def attempt(self, role='attempt'):
+        """A producing session that has ended cleanly after some activity."""
         self.serial += 1
         runner = self.runner
         key = runner.producer(role)
@@ -44,16 +47,18 @@ class AvailabilityTests(InstanceCase):
         return sid, session, job
 
     def occupied(self):
+        """Two attempts hold two parts of the root, the only element that remains."""
         first, _, job = self.attempt()
-        a = take(self.runner.session_dir(first), 'root', 'Left cases')
+        a = take(self.runner.session_dir(first), 'Small.root', 'Left cases')
         self.assertTrue(a['registered'])
         second, _, _ = self.attempt()
-        b = take(self.runner.session_dir(second), 'root', 'Right cases',
+        b = take(self.runner.session_dir(second), 'Small.root', 'Right cases',
                  {a['section']['id']: 'Different cases'})
         self.assertTrue(b['registered'])
         return job['pipeline'], a['section']['id'], b['section']['id']
 
     def report(self, availability=True):
+        """An attempt that found nothing to take on, with or without the report that everything is occupied."""
         sid, session, job = self.attempt()
         folder = self.runner.session_dir(sid)
         value = {'disposition': 'no_research'}
@@ -62,6 +67,16 @@ class AvailabilityTests(InstanceCase):
                                      'snapshot': updates(folder)['availability_snapshot']}
         write_json(folder / 'output/outcome.json', value)
         return sid, session, job
+
+    def reduce(self):
+        """Publish a proof of the root that names two statements without a proof: new work that remains."""
+        folder = self.candidate(
+            modules={'Small/Parts.lean': module_text(theorem('sumZero', SUM_ZERO) + '\n\n' + theorem('sumSucc', SUM_SUCC))},
+            replace={'Small.root': self.root_text(uses=['sumZero', 'sumSucc'])}, imports={'Small.root': ['Small.Parts']},
+            records={'Small/sumZero.md': record_text('The empty sum is zero.', weight='unit'),
+                     'Small/sumSucc.md': record_text('Passing from n to n + 1 adds the odd number 2n + 1.', weight='unit'),
+                     'Small/root.md': self.root_record()})
+        self.publish(folder, engine=self.runner)
 
     def test_no_research_closes_once_without_peer_or_review(self):
         sid, session, job = self.report(False)
@@ -75,20 +90,75 @@ class AvailabilityTests(InstanceCase):
         self.assertEqual(len(restarted.state['jobs']), 1)
         self.assertIsNone(restarted.state['attempt_dispatch_gate'])
 
+    def test_an_explorer_without_a_free_question_closes_the_same_way(self):
+        sid, session, job = self.attempt('explore')
+        write_json(self.runner.session_dir(sid) / 'output/outcome.json', {'disposition': 'no_research'})
+        self.assertEqual(check_session(self.runner.session_dir(sid)), [])
+        self.runner.finish(sid, session)
+        self.assertEqual((session['status'], session['disposition']), ('ended', 'no_research'))
+        self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'done')
+        self.assertEqual(len(self.runner.state['jobs']), 1)
+        # Only an attempt judges whether the remaining work is occupied; an explorer's exit sets no gate.
+        self.assertNotIn('availability_report', session)
+        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
+
+    def test_the_report_names_the_elements_that_remain_and_the_sections_on_each(self):
+        _, left, right = self.occupied()
+        sid, session, _ = self.report()
+        folder = self.runner.session_dir(sid)
+        token = read_json(folder / 'output/outcome.json')['availability']['snapshot']
+        observed = read_json(folder / 'availability' / (token + '.json'))
+        self.assertEqual(observed, {'epoch': 0, 'elements': {'Small.root': sorted([left, right])}})
+        self.assertEqual(snapshot_token(observed), token)
+        self.assertEqual(observed, self.runner.current_availability())
+        self.runner.finish(sid, session)
+        gate = self.runner.state['attempt_dispatch_gate']
+        self.assertEqual((gate['mode'], gate['reported_by'], gate['snapshot'], gate['reason'], gate['baseline']),
+                         ('suppressed', sid, token, 'all_unresolved_work_occupied', observed))
+        self.assertEqual(session['availability_report'], {'status': 'accepted'})
+
+    def test_the_view_holds_only_the_work_that_remains(self):
+        self.split()
+        self.runner = Runner(self.instance, self.skill)
+        first, _, _ = self.attempt()
+        part = take(self.runner.session_dir(first), 'Small.sumZero', 'The empty sum, read from the definition.')['section']
+        view = availability_view(self.runner.model, board(self.instance, self.runner.state, self.runner.model), 3)
+        # The root's proof is accepted and sumTwo is not on the way to the root; neither is work that remains.
+        self.assertEqual(view, {'epoch': 3, 'elements': {'Small.sumSucc': [], 'Small.sumZero': [part['id']]}})
+
+    def test_a_section_on_a_statement_is_listed_under_each_of_its_proofs_that_remains(self):
+        # A section stands on the statement, so it occupies every proof of that statement that is work that remains.
+        self.ways()
+        self.runner = Runner(self.instance, self.skill)
+        remaining = self.runner.model['remaining']
+        # monoB and its other proof monoBAlt both remain; of the root, only its other proof rootAlt does.
+        self.assertLessEqual({'Small.monoB', 'Small.monoBAlt', 'Small.rootAlt'}, set(remaining))
+        self.assertNotIn('Small.root', remaining)
+        first, _, _ = self.attempt()
+        mono = take(self.runner.session_dir(first), 'Small.monoB', 'Three terms, added one at a time.')['section']
+        second, _, _ = self.attempt()
+        root = take(self.runner.session_dir(second), 'Small.rootAlt', 'The case split of way 2.')['section']
+        self.assertEqual((mono['element'], root['element']), ('Small.monoB', 'Small.root'))
+        view = availability_view(self.runner.model, board(self.instance, self.runner.state, self.runner.model), 0)
+        self.assertEqual(sorted(view['elements']), remaining)
+        self.assertEqual({name: ids for name, ids in view['elements'].items() if ids},
+                         {'Small.monoB': [mono['id']], 'Small.monoBAlt': [mono['id']], 'Small.rootAlt': [root['id']]})
+
     def test_valid_coverage_survives_restart_time_and_unrelated_publication(self):
         self.occupied()
         sid, session, _ = self.report()
         self.assertEqual(check_session(self.runner.session_dir(sid)), [])
         self.runner.finish(sid, session)
         self.assertFalse(self.runner.attempt_dispatch_ready())
-        self.publish('rnote', record([claim_row('unrelated')]))
+        self.note('The sum grows by one odd number at a time.')
         self.runner = Runner(self.instance, self.skill)
+        self.assertEqual(self.runner.model['sequence'], 1)
         with patch('runner.time.time', return_value=time.time() + 10**6):
             self.assertFalse(self.runner.attempt_dispatch_ready())
         third, _, _ = self.attempt()
         # Adding a section does not open work, even if a worker mistakenly reports overlap.
         write_json(self.runner.session_dir(third) / 'declaration.json',
-                   {'sections': [{'id': 'new', 'node': 'root', 'whole': False,
+                   {'sections': [{'id': 'new', 'element': 'Small.root', 'whole': False,
                                   'statement': 'More occupied cases', 'at': 1}]})
         self.assertFalse(self.runner.attempt_dispatch_ready())
 
@@ -99,6 +169,7 @@ class AvailabilityTests(InstanceCase):
         self.runner.state['pipelines'][pipeline]['stage'] = 'done'
         self.runner.save()
         self.assertTrue(self.runner.attempt_dispatch_ready())
+        self.assertEqual(self.runner.state['attempt_dispatch_gate']['reason'], 'ended_occupancy')
         key = self.runner.producer('attempt')
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = self.runner.identity['pid']
@@ -108,7 +179,7 @@ class AvailabilityTests(InstanceCase):
         probe = self.runner.state['jobs'][key]['session']
         self.runner = Runner(self.instance, self.skill)
         self.assertFalse(self.runner.attempt_dispatch_ready())
-        self.assertTrue(take(self.runner.session_dir(probe), 'root', 'Left cases',
+        self.assertTrue(take(self.runner.session_dir(probe), 'Small.root', 'Left cases',
                              {other: 'Different cases'})['registered'])
         self.assertTrue(self.runner.attempt_dispatch_ready())
         self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
@@ -160,8 +231,8 @@ class AvailabilityTests(InstanceCase):
                 write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
                 if kind == 'claimed':
                     write_json(folder / 'declaration.json', {'sections': [
-                        {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
-                         'reasons': {}, 'at': 1}], 'at': 1})
+                        {'id': sid + '-1', 'element': 'Small.root', 'whole': True, 'statement': None,
+                         'new': None, 'reasons': {}, 'at': 1}], 'at': 1})
                 elif kind == 'occupied_question':
                     write_json(folder / 'declaration.json', {'question': {'id': 'q0', 'at': 1, 'by': 'runner'}, 'at': 1})
                 elif kind == 'explorer_reports_availability':
@@ -177,26 +248,49 @@ class AvailabilityTests(InstanceCase):
                 self.runner.finish(sid, session)
                 self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
 
-    def test_new_node_and_reopening_trigger_but_solving_does_not(self):
+    def test_new_work_and_reopening_trigger_but_an_accepted_proof_does_not(self):
         self.occupied()
         sid, session, _ = self.report()
         self.runner.finish(sid, session)
-        self.runner.model['nodes']['root']['state'] = 'informal_proved'
+        # The root's proof is accepted. Nothing remains, and work that went away opens nothing.
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.',
+                           engine=self.runner)
+        self.assertEqual(self.runner.model['remaining'], [])
         self.assertFalse(self.runner.attempt_dispatch_ready())
-        self.runner.model['nodes']['root']['state'] = 'unresolved'
-        self.assertTrue(self.runner.attempt_dispatch_ready())
-        self.runner.state['attempt_dispatch_gate']['mode'] = 'suppressed'
-        self.publish('rnew', self.reduction())
+        # A finding withdraws that proof. The root is work that remains again, which is a new opportunity
+        # although the same sections still stand on it.
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'concerns': [], 'findings': [{
+            'concerns': [], 'status': 'confirmed', 'reason': 'The step fails at zero.', 'invalidates': ['Small.root']}]})
         self.runner.model = replay(self.instance)
+        self.assertEqual(self.runner.model['remaining'], ['Small.root'])
         self.assertTrue(self.runner.attempt_dispatch_ready())
+        self.assertEqual(self.runner.state['attempt_dispatch_gate']['reason'], 'new_or_reopened_element')
+        # A proof of the root that names statements without a proof brings new work.
+        self.runner.state['attempt_dispatch_gate']['mode'] = 'suppressed'
+        self.reduce()
+        self.assertEqual(self.runner.model['remaining'], ['Small.sumSucc', 'Small.sumZero'])
+        self.assertTrue(self.runner.attempt_dispatch_ready())
+        self.assertEqual(self.runner.state['attempt_dispatch_gate']['reason'], 'new_or_reopened_element')
 
-    def test_new_node_makes_a_delayed_report_stale(self):
+    def test_new_work_makes_a_delayed_report_stale(self):
         self.occupied()
         sid, session, _ = self.report()
-        self.publish('rnew', self.reduction())
-        self.runner.model = replay(self.instance)
+        self.reduce()
         self.runner.finish(sid, session)
         self.assertEqual(session['availability_report']['status'], 'stale')
+        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
+
+    def test_opening_is_new_remaining_work_or_an_ended_occupation(self):
+        observed = {'elements': {'Small.root': ['a', 'b'], 'Small.sumZero': ['c']}}
+        model = self.runner.model
+        self.assertIsNone(opening_since(observed, observed, model))
+        # A further section, or an element that is no longer work that remains, opens nothing.
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b', 'd'], 'Small.sumZero': ['c']}}, model))
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b']}}, model))
+        self.assertEqual(opening_since(observed, {'elements': {'Small.root': ['a'], 'Small.sumZero': ['c']}}, model),
+                         'ended_occupancy')
+        self.assertEqual(opening_since(observed, {'elements': {**observed['elements'], 'Small.sumSucc': ['e']}}, model),
+                         'new_or_reopened_element')
 
     def test_operator_reconsideration_rejects_older_reports_and_preserves_stop(self):
         self.occupied()
@@ -206,15 +300,17 @@ class AvailabilityTests(InstanceCase):
             self.assertEqual(main(['reconsider-attempts', str(self.instance)]), 0)
         self.runner.ingest_inputs()
         epoch = self.runner.state['attempt_availability_epoch']
+        self.assertEqual(epoch, 1)
         self.runner.ingest_inputs()
         self.assertEqual(self.runner.state['attempt_availability_epoch'], epoch)
         self.runner.finish(sid, session)
         self.assertEqual(session['availability_report']['status'], 'stale')
         self.assertEqual(self.runner.state['attempt_dispatch_gate']['mode'], 'reassess')
+        self.assertEqual(self.runner.state['attempt_dispatch_gate']['reason'], 'operator_request')
         self.assertTrue((self.instance / 'control/STOP').exists())
 
     def test_suppression_stops_pending_attempt_and_fills_free_questions_with_explorers(self):
-        self.runner.settings['launch_interval'] = 0  # launch spacing has its own test
+        self.assertEqual(self.runner.settings['launch_interval'], 0)  # launch spacing has its own test
         self.occupied()
         sid, session, _ = self.report()
         self.runner.finish(sid, session)
@@ -227,10 +323,10 @@ class AvailabilityTests(InstanceCase):
         explorers = [sid for sid, a in self.runner.active() if a['role'] == 'explore']
         self.assertEqual(len(explorers), 1)  # the root question is the only free question
         self.assertEqual(read_json(self.runner.session_dir(explorers[0]) / 'declaration.json')['question']['id'], 'q0')
-        # Occupied nodes renew the request after each launch; it waits for a free question.
+        # Occupied elements renew the request after each launch; it waits for a free question.
         self.assertTrue(self.runner.state['explore_requested'])
         self.questions('qops', [{'id': 'op-scale', 'statement': 'Why do the methods stall at the same scale?',
-                                 'grounds': 'Several records stop there.'},
+                                 'grounds': 'Several approaches stop there.'},
                                 {'id': 'op-block', 'statement': 'What does the common block tell about the object?',
                                  'grounds': 'The same obstruction recurs.'}])
         self.runner.model = replay(self.instance)
@@ -256,22 +352,12 @@ class AvailabilityTests(InstanceCase):
             self.assertEqual(self.runner.state['attempt_dispatch_gate']['probe_session'], probe)
             self.assertFalse(self.runner.dispatch(self.runner.producer('attempt')))
 
-    def test_merged_nodes_preserve_coverage(self):
-        self.publish('rnew', self.reduction())
-        model = replay(self.instance)
-        previous = {'nodes': {'root': ['a'], 'Q': ['b']}}
-        model['aliases']['Q'] = 'root'
-        # Section b, observed on Q, continues on the merged node: it still covers work there,
-        # and its later end opens that work.
-        self.assertIsNone(opening_since(previous, {'nodes': {'root': ['a', 'b']}}, model))
-        self.assertEqual(opening_since(previous, {'nodes': {'root': ['a']}}, model), 'ended_occupancy')
-
     def test_tampered_snapshot_cannot_suppress_dispatch(self):
         sid, session, job = self.report()
         folder = self.runner.session_dir(sid)
         value = read_json(folder / 'output/outcome.json')
         snapshot = folder / 'availability' / (value['availability']['snapshot'] + '.json')
-        write_json(snapshot, {'epoch': 0, 'nodes': {}})
+        write_json(snapshot, {'epoch': 0, 'elements': {}})
         self.runner.finish(sid, session)
         self.assertEqual(session['availability_report']['status'], 'invalid')
         self.assertEqual(job['status'], 'done')
@@ -305,5 +391,4 @@ class AvailabilityTests(InstanceCase):
 
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

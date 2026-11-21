@@ -11,15 +11,19 @@ import time
 import traceback
 import uuid
 
-from check import IDENTIFIER, check_session, regular_tree, taken_question_ids, tree_hashes
+from canon import (EXTRACT_MODULE, Canon, CanonError, apply_lean, apply_rearrangement, apply_written,
+                   build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
+                   empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_record,
+                   record_file, required_pairs, retire_approaches, sha256_text, start_build, sync_tree,
+                   update_index, wait_build)
+from check import IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from knowledge import (ROOT_QUESTION, canonical, formal_ready, render, replay, root_solved,
-                       sufficient_closure)
+from knowledge import ROOT_QUESTION, canonical_question, formalizable, record_summary, render, replay, root_solved
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
@@ -41,7 +45,7 @@ def operator_questions(data, model):
     """The reason and questions of an operator publication, checked against the current research.
 
     The questions command checks its file with this, and the runner checks the request again when it
-    collects it, because a question or node with the same ID can be published in between."""
+    collects it, because a question with the same ID can be published in between."""
     if not isinstance(data, dict):
         raise ValueError('a questions file is an object with "reason" and "questions"')
     extra = sorted(set(data) - {'reason', 'questions'})
@@ -68,7 +72,7 @@ def operator_questions(data, model):
         if qid in seen:
             raise ValueError('duplicate question id: ' + qid)
         if qid in taken:
-            raise ValueError('question id already names a question, question alias, node or node alias: ' + qid)
+            raise ValueError('question id already names a question or a question alias: ' + qid)
         for key in ('statement', 'grounds'):
             if not isinstance(item.get(key), str) or not item[key].strip():
                 raise ValueError(f'question {qid} needs a nonempty "{key}"')
@@ -76,30 +80,87 @@ def operator_questions(data, model):
     return reason, [{'id': q['id'], 'statement': q['statement'], 'grounds': q['grounds']} for q in items]
 
 
-def initialize(instance, root_file, settings_file=None):
+def initialize(instance, root_file, canon_folder, root_declaration, settings_file=None):
+    """Create an instance whose root is fixed in Lean.
+
+    canon_folder holds what the operator wrote with the user: lean/ with the modules that define the
+    root's objects and state the root, records/ with a record for every declaration in them, and
+    optionally bibliography.bib. The library is compiled here, through the instance's own broker, and
+    its structural index extracted; an instance whose root does not compile is not created."""
+    from lean_broker import Paths, broker_alive
     instance = Path(instance).resolve()
     root = Path(root_file).read_bytes()
     if not root.decode('utf-8-sig').strip():
         raise ValueError('the root statement must be nonempty UTF-8')
+    source = Path(canon_folder).resolve()
+    if not (source / 'lean').is_dir():
+        raise ValueError('the canon folder needs lean/ with the modules that state the root')
+    tops = sorted({p.relative_to(source / 'lean').parts[0].removesuffix('.lean')
+                   for p in (source / 'lean').rglob('*.lean')})
+    if len(tops) != 1:
+        raise ValueError('the modules of the canon share one top-level name, the library; found: ' + ', '.join(tops))
+    library = tops[0]
     config = validate(read_json(settings_file)) if settings_file else defaults()
     instance.mkdir(parents=True, exist_ok=False)
-    for name in ('knowledge/events', 'knowledge/records', 'knowledge/reviews', 'knowledge/organizations',
-                 'sessions', 'runner', 'control/inputs', 'control/requests'):
+    for name in ('knowledge/events', 'knowledge/changes', 'knowledge/reviews', 'knowledge/organizations',
+                 'sessions', 'runner', 'control/inputs', 'control/requests', 'canon'):
         (instance / name).mkdir(parents=True)
+    canon = Canon(instance)
+    shutil.copytree(source / 'lean', canon.lean)
+    if (source / 'records').is_dir():
+        shutil.copytree(source / 'records', canon.records)
+    if (source / 'bibliography.bib').is_file():
+        shutil.copyfile(source / 'bibliography.bib', canon.bibliography)
     (instance / 'root.md').write_bytes(root)
-    write_json(instance / 'instance.json', {'schema': 1, 'root_sha256': hashlib.sha256(root).hexdigest()})
     write_json(instance / 'settings.json', config)
     write_text(instance / '.gitignore', '/sessions/\n/runner/\n/control/\n')
-    state = {'schema': 1, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
+    state = {'schema': 2, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
              'attempt_launches': 0,
              'attempt_availability_epoch': 0, 'attempt_dispatch_gate': None,
              'explore_requested': False, 'complete': False,
-             'processed_concerns': [], 'processed_conflicts': [], 'publication': None,
+             'processed_concerns': [], 'processed_conflicts': [], 'publication': None, 'publish_queue': [],
              'seen_requests': [], 'last_error': None, 'finished': False}
     write_json(instance / 'runner/state.json', state)
+    records = {p.relative_to(canon.records).as_posix()[:-3]:
+               parse_record(p.read_text(encoding='utf-8-sig'), p.relative_to(canon.records).as_posix())
+               for p in sorted(canon.records.rglob('*.md'))} if canon.records.is_dir() else {}
+    stage = instance / 'runner/stage-genesis/lean'
+    copy_tree(canon.lean, stage)
+    modules = [module for module, _ in library_modules(stage, library)]
+    paths = Paths(instance)
+    try:
+        build = start_build(instance, stage, library, 'operator', config['lean']['calibration_expect_mb'],
+                            modules, required_pairs(records))
+        outcome = wait_build(instance, build)
+    finally:
+        # No session exists yet; the runner starts the broker it needs when it runs.
+        info = broker_alive(paths)
+        if info:
+            terminate_process(info['process'])
+    if not outcome['ok']:
+        raise ValueError('the canon does not compile: ' + '; '.join(
+            f"{e['module']}: {e['status']} {e.get('reason') or ''} {e['output']}" for e in outcome['errors']))
+    index = update_index(empty_index(), outcome['rows'], outcome['pairs'], stage, 0)
+    checked = check_applied(empty_index(), index, {'replace': [], 'retire': []}, records, lambda name: False,
+                            config['lean']['allowed_axioms'])
+    entry = index['entries'].get(root_declaration)
+    if entry is None or entry['kind'] != 'theorem' or not entry['prop']:
+        checked['errors'].append(f'the root declaration {root_declaration} is not a theorem of the canon')
+    elif entry['lean_proof'] != 'sorry' or (records.get(name_path(root_declaration)) or {}).get('sections', {}).get('Proof'):
+        # The research is what proves or refutes the root, and the frontier begins at a root without a proof.
+        checked['errors'].append(f'the root declaration {root_declaration} already has a proof; the root enters with '
+                                 'its Lean proof left as `by sorry` and no "## Proof" in its record')
+    if checked['errors']:
+        raise ValueError('the canon cannot be fixed as it is: ' + '; '.join(checked['errors']))
+    remove_tree(instance / 'runner/stage-genesis')
+    write_json(canon.index, index)
+    write_json(canon.root / 'records.json', record_summary(instance, index))
+    write_json(instance / 'instance.json', {'schema': 2, 'root_sha256': hashlib.sha256(root).hexdigest(),
+                                            'root': root_declaration, 'library': library,
+                                            'root_statement_hash': entry['statement_hash']})
     render(instance, replay(instance), [])
     git(instance, 'init')
-    git(instance, 'add', '--', 'root.md', 'settings.json', 'instance.json', '.gitignore', 'knowledge')
+    git(instance, 'add', '--', 'root.md', 'settings.json', 'instance.json', '.gitignore', 'knowledge', 'canon')
     git(instance, 'commit', '-m', 'Initialize autonomous mathematical research')
 
 
@@ -110,7 +171,9 @@ class Runner:
         if not (self.instance / '.git').is_dir():
             raise ValueError('fresh instance with its own Git required')
         metadata = read_json(self.instance / 'instance.json')
-        if metadata.get('schema') != 1 or hashlib.sha256((self.instance / 'root.md').read_bytes()).hexdigest() != metadata['root_sha256']:
+        fixed = Canon(self.instance).load_index()['entries'].get(metadata.get('root'), {}).get('statement_hash')
+        if (metadata.get('schema') != 2 or fixed != metadata['root_statement_hash']
+                or hashlib.sha256((self.instance / 'root.md').read_bytes()).hexdigest() != metadata['root_sha256']):
             raise ValueError('root statement changed; a changed mathematical problem requires a new instance')
         self.settings = load_settings(self.instance)
         self.state_path = self.instance / 'runner/state.json'
@@ -153,7 +216,7 @@ class Runner:
         pid = uid('p')
         self.state['pipelines'][pid] = {'id': pid, 'role': role, 'stage': 'producing', 'producer': None,
                                          'peer': None, 'review': None, 'record': None,
-                                         'node': (task or {}).get('node'), 'previous_peers': []}
+                                         'element': (task or {}).get('element'), 'previous_peers': []}
         key = self.enqueue(role, task or {}, pid, pid + ':producer')
         self.save()
         return key
@@ -170,7 +233,7 @@ class Runner:
     def make_pack(self, sid, job):
         from context import assemble
         if job['role'] == 'organizer' and not job['task'].get('batch_frozen'):
-            job['task']['batch'] = [r for r in self.model['records'] if r not in self.model['organized']]
+            job['task']['batch'] = [c for c in self.model['changes'] if c not in self.model['organized']]
             job['task']['batch_frozen'] = True
         return assemble(self.skill, self.instance, self.session_dir(sid), job['role'],
                         job['task'], job['pipeline'], self.model['sequence'], self.settings)
@@ -223,11 +286,14 @@ class Runner:
             if job['role'] in PRODUCERS:
                 pipeline['producer'] = sid
                 if job['role'] == 'formalizer':
-                    # The assigned node is the formalizer's whole section; it registers nothing itself.
+                    # The assigned element is the formalizer's whole section; it registers nothing itself.
                     now = time.time()
                     write_json(session / 'declaration.json', {'sections': [
-                        {'id': sid + '-1', 'node': job['task']['node'], 'whole': True, 'statement': None,
-                         'reasons': {}, 'at': now}], 'at': now})
+                        # Sections attach to the statement, also when the proof to formalize is another declaration of it.
+                        {'id': sid + '-1',
+                         'element': self.model['elements'][job['task']['element']]['statement_of'],
+                         'whole': True, 'statement': None,
+                         'new': None, 'reasons': {}, 'at': now}], 'at': now})
             else:
                 pipeline[job['role']] = sid
         if job['role'] in ('attempt', 'explore'):
@@ -380,7 +446,7 @@ class Runner:
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'node': pipeline['node'], 'sections': self.producer_sections(sid),
+                                  'element': pipeline['element'], 'sections': self.producer_sections(sid),
                                   'question': self.producer_question(sid)},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
@@ -439,17 +505,20 @@ class Runner:
                 self.archive_due = True
                 self.save()
                 return
-            kind = 'record'
+            kind = 'change'
         elif s['role'] == 'review':
             kind = 'review'
         else:
             kind = 'organization'
-        self.prepare_publication(sid, job, kind)
+        # One publication at a time changes the canon; a build can take minutes, so later ones wait in order.
+        self.state['publish_queue'].append({'session': sid, 'job': job['id'], 'kind': kind})
+        s['status'] = 'publishing'
+        self.save()
         self.publish()
 
     def producer_sections(self, sid):
         """The sections a producer registered, as a peer assignment lists them."""
-        return [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
+        return [{key: entry.get(key) for key in ('id', 'element', 'whole', 'statement', 'new')}
                 for entry in section_entries(self.instance, sid, self.model)]
 
     def producer_question(self, sid):
@@ -484,8 +553,14 @@ class Runner:
             task['candidate'] = str(restored)
             self.retry(job, session, reason, availability=False)
             return
-        # A new peer gets the original research and earlier peer work. The cancelled
-        # review remains in history; the new peer's own review receives a distinct job.
+        self.replace_peer(job, session, reason)
+
+    def replace_peer(self, job, session, reason):
+        """A new peer gets the original research, the earlier peer work and the reason, and makes a new candidate.
+
+        The cancelled review remains in history; the new peer's own review receives a distinct job."""
+        task = job['task']
+        peer = Path(task['peer'])
         self.retry(job, session, reason, availability=False)
         job['status'] = 'cancelled'
         pipeline = self.state['pipelines'][job['pipeline']]
@@ -493,7 +568,7 @@ class Runner:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
-                             'node': pipeline['node'], 'sections': self.producer_sections(pipeline['producer']),
+                             'element': pipeline['element'], 'sections': self.producer_sections(pipeline['producer']),
                              'question': self.producer_question(pipeline['producer']),
                              'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
@@ -501,64 +576,306 @@ class Runner:
         self.save()
 
     def prepare_publication(self, sid, job, kind):
-        rid = uid({'record': 'r', 'review': 'v', 'organization': 'o'}[kind])
-        folder = {'record': 'records/', 'review': 'reviews/', 'organization': 'organizations/'}[kind] + rid
+        rid = uid({'change': 'c', 'review': 'v', 'organization': 'o'}[kind])
+        folder = {'change': 'changes/', 'review': 'reviews/', 'organization': 'organizations/'}[kind] + rid
         event = {'id': rid, 'kind': kind, 'sequence': self.model['sequence'] + 1, 'folder': folder,
                  'session': sid, 'at': time.time()}
-        if kind == 'record':
+        if kind == 'change':
             pipeline = self.state['pipelines'][job['pipeline']]
-            event.update(producer_role=pipeline['role'], pipeline=pipeline['id'], node=pipeline['node'])
-        self.state['publication'] = {'event': event, 'job': job['id'], 'session': sid}
+            event.update(producer_role=pipeline['role'], pipeline=pipeline['id'], element=pipeline['element'],
+                         question=self.producer_question(pipeline['producer']))
+        self.state['publication'] = {'event': event, 'job': job['id'], 'session': sid, 'stage': 'apply'}
         self.state['sessions'][sid].update(status='publishing', record=rid)
         self.save()
 
-    def prepare_questions(self, request, reason, questions):
+    def prepare_questions(self, item):
         """An operator publication of questions, which has no session or job behind it.
 
-        Its content is saved with the publication's identity, so a restart writes the same files, and
-        the request counts as collected in the same save, so it is never published twice."""
+        Its content is saved with the publication's identity, so a restart writes the same files."""
         eid = uid('q')
-        now = time.time()
         event = {'id': eid, 'kind': 'questions', 'sequence': self.model['sequence'] + 1,
-                 'folder': 'questions/' + eid, 'at': now, 'source': 'operator'}
-        self.state['publication'] = {'event': event, 'job': None, 'session': None,
-                                     'questions': {'source': 'operator', 'reason': reason,
-                                                   'questions': questions, 'at': now}}
-        self.state['seen_requests'].append(request)
+                 'folder': 'questions/' + eid, 'at': item['at'], 'source': 'operator'}
+        self.state['publication'] = {'event': event, 'job': None, 'session': None, 'stage': 'commit',
+                                     'questions': {'source': 'operator', 'reason': item['reason'],
+                                                   'questions': item['questions'], 'at': item['at']}}
         self.save()
 
+    def record_declined(self, publication, candidate, assessment):
+        """A proof that review declined to put in place of the canon's stays among the approaches tried.
+
+        The peer's own approach entry for the statement serves when the candidate carries one. Where it
+        carries none, the entry is made here from the candidate's description, the declined written
+        proof and review's reason, each taken as it stands."""
+        canon = Canon(self.instance)
+        event = publication['event']
+        elements = self.model['elements']
+        job = self.state['jobs'][publication['job']]
+        peer = self.state['pipelines'][job['pipeline']]['peer']
+        change = None
+        for verdict in assessment['elements']:
+            if verdict.get('replaces') is not False:
+                continue
+            name = verdict['element']
+            folder = name_path(elements[name]['statement_of'] if name in elements else name)
+            carried = candidate / 'approaches' / folder
+            target = canon.approaches / folder / ('declined-' + event['id'] + '.md')
+            if (carried.is_dir() and any(carried.glob('*.md'))) or target.exists():
+                continue
+            change = change or load_change(candidate)
+            record = candidate / 'records' / (name_path(name) + '.md')
+            proof = parse_record(record.read_text(encoding='utf-8-sig'))['sections'].get('Proof') if record.is_file() else ''
+            offered = f'\n\nThe proof as it was offered:\n\n{proof}' if proof else ''
+            target.parent.mkdir(parents=True, exist_ok=True)
+            write_text(target, f"---\ntitle: Proof offered by change {event['id']} and not put in place\n"
+                               f"sessions: {peer or ''}\n---\n\n"
+                               f"## Idea\n\n{change['title'].strip()}. {change['description'].strip()}{offered}\n\n"
+                               '## Established\n\nNothing of it took the place of the proof the canon has.\n\n'
+                               f"## Where it stops\n\n{verdict['reason'].strip()}\n")
+
+    def join_question_texts(self, publication):
+        """When an organizer merges questions, the surviving question keeps one understanding text.
+
+        The absorbed question's text becomes the surviving one's when that has none. Otherwise it
+        goes to the surviving question's history, where the question's view shows it on request."""
+        canon = Canon(self.instance)
+        data = read_json(self.session_dir(publication['session']) / 'output/organization.json')
+        for merge in data.get('merge_questions', []):
+            source = canon.questions / (canonical_question(self.model, merge['from']) + '.md')
+            into = canonical_question(self.model, merge['into'])
+            target = canon.questions / (into + '.md')
+            if not source.is_file() or source == target:
+                continue
+            if target.is_file():
+                target = (canon.history / 'questions' / into
+                          / f"{publication['event']['sequence']:06d}-merged-{source.stem}.md")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(target))
+
+    def publication_candidate(self, publication):
+        """The folder a publication applies to the canon: a peer's frozen candidate, or an organizer's output."""
+        job = self.state['jobs'][publication['job']]
+        if publication['event']['kind'] == 'change':
+            return Path(job['task']['candidate'])
+        return self.session_dir(publication['session']) / 'output'
+
+    def effective_change(self, publication):
+        """The candidate's change without the replacements that review declined, and its records.
+
+        Review says for each proof a candidate would replace whether the new proof takes the place of
+        the old one. A declined replacement leaves the declaration and its record as the canon has them."""
+        candidate = self.publication_candidate(publication)
+        change = load_change(candidate)
+        declined = set()
+        if publication['event']['kind'] == 'change':
+            assessment = read_json(self.session_dir(publication['session']) / 'output/assessment.json')
+            replaced = {item['declaration'] for item in change['replace']}
+            declined = {v['element'] for v in assessment['elements']
+                        if v.get('replaces') is False and v['element'] in replaced}
+        change['replace'] = [item for item in change['replace'] if item['declaration'] not in declined]
+        skipped = {name_path(name) for name in declined}
+        records = {path: record for path, record in candidate_records(candidate, change).items() if path not in skipped}
+        return change, records
+
+    def publication_failed(self, publication, reason):
+        """A candidate that cannot be applied or does not build on the canon as it now is.
+
+        A build that failed would break the canon for every session, and the peer could not know what
+        was published after its session ended. A replacement peer therefore receives the original work,
+        the earlier peer's work and the reason, and its candidate receives a new review. An organizer's
+        change is made again by a replacement organizer."""
+        stage = self.instance / 'runner' / ('stage-' + publication['event']['id'])
+        if stage.exists():
+            remove_tree(stage)
+        job = self.state['jobs'][publication['job']]
+        session = self.state['sessions'][publication['session']]
+        session['record'] = None
+        self.state['publication'] = None
+        if publication['event']['kind'] == 'change':
+            self.replace_peer(job, session, 'the candidate could not be published on the current canon: ' + reason)
+        else:
+            self.retry(job, session, 'the change could not be published on the current canon: ' + reason,
+                       availability=False)
+        return False
+
+    def advance_build(self, publication):
+        """Apply a candidate to a copy of the canon, build it through the broker and check what it changed.
+
+        Returns True when the publication is ready to be committed and False while it waits for the
+        build or after it failed. Each stage is saved, so a restarted runner continues the same build."""
+        event = publication['event']
+        organizer = event['kind'] == 'organization'
+        candidate = self.publication_candidate(publication)
+        canon = Canon(self.instance)
+        index = canon.load_index()
+        stage = self.instance / 'runner' / ('stage-' + event['id'])
+        if organizer and not (candidate / 'change.json').exists():
+            publication.update(stage='commit', applied=None)
+            self.save()
+            return True
+        if publication['stage'] == 'apply':
+            job = self.state['jobs'][publication['job']]
+            if not organizer and tree_hashes(candidate) != job['task']['candidate_hashes']:
+                self.state['publication'] = None
+                session = self.state['sessions'][publication['session']]
+                session['record'] = None
+                self.recover_candidate(job, session, 'candidate changed after review assignment')
+                return False
+            if stage.exists():
+                remove_tree(stage)
+            copy_tree(canon.lean, stage / 'lean')
+            try:
+                change, records = self.effective_change(publication)
+                receipt = read_json(candidate / PREPARED)
+                changed = apply_lean(stage / 'lean', candidate, change, index, receipt.get('bases'),
+                                     self.model['library'])
+                removed = []
+                if organizer:
+                    written, removed = apply_rearrangement(
+                        stage / 'lean', candidate, read_json(candidate / 'organization.json').get('delete', []))
+                    changed = sorted(set(changed) | set(written))
+            except (CanonError, OSError, ValueError, KeyError) as exc:
+                return self.publication_failed(publication, str(exc))
+            publication.update(changed=changed, removed=removed)
+            if changed or removed:
+                publication.update(stage='build', build=start_build(
+                    self.instance, stage / 'lean', self.model['library'], 'runner',
+                    self.settings['lean']['calibration_expect_mb'], changed, required_pairs(records)))
+            else:
+                publication['stage'] = 'check'
+            self.save()
+        if publication['stage'] == 'build':
+            outcome = build_outcome(self.instance, publication['build'])
+            if outcome is None:
+                return False
+            if not outcome['ok']:
+                return self.publication_failed(publication, '; '.join(
+                    f"{e['module'] or 'build'}: {e['status']} {e.get('reason') or ''}\n{e['output']}"
+                    for e in outcome['errors']))
+            write_json(stage / 'index.json', update_index(
+                drop_modules(index, publication['removed']), outcome['rows'], outcome['pairs'],
+                stage / 'lean', event['sequence'], publication['changed']))
+            publication['stage'] = 'check'
+            self.save()
+        if publication['stage'] == 'check':
+            change, records = self.effective_change(publication)
+            new = read_json(stage / 'index.json') if (stage / 'index.json').exists() else {**index, 'revision': event['sequence']}
+            checked = check_applied(index, new, change, records,
+                                    lambda name: read_record(canon, name),
+                                    self.settings['lean']['allowed_axioms'], organizer=organizer)
+            if checked['errors']:
+                return self.publication_failed(publication, '; '.join(checked['errors']))
+            write_json(stage / 'index.json', new)
+            publication.update(stage='commit', applied={key: checked[key] for key in ('added', 'replaced', 'records', 'retired')})
+            self.save()
+        return True
+
+    def keep_replaced_proofs(self, publication):
+        """Leave in the history the Lean text of every proof this publication takes out of the source.
+
+        It runs before the new sources are installed. A repeat after a crash finds either the entry
+        already written or sources that no longer match the old index, and writes nothing then."""
+        event, applied = publication['event'], publication['applied']
+        canon = Canon(self.instance)
+        stage = self.instance / 'runner' / ('stage-' + event['id'])
+        if not (stage / 'index.json').exists() or not (stage / 'lean').exists():
+            return
+        old, new = canon.load_index()['entries'], read_json(stage / 'index.json')['entries']
+        for name in applied['replaced'] + [item['into'] for item in applied['retired']]:
+            if name not in old or name not in new:
+                continue
+            if (canon.history / name_path(name) / f"{event['sequence']:06d}-proof.md").exists():
+                continue
+            source = canon.lean / old[name]['file']
+            if not source.is_file():
+                continue
+            before = declaration_text(source.read_text(encoding='utf-8').replace('\r\n', '\n'), old[name]['span'])
+            after = declaration_text((stage / 'lean' / new[name]['file']).read_text(encoding='utf-8').replace('\r\n', '\n'),
+                                     new[name]['span'])
+            if sha256_text(before) == old[name]['source_sha'] and before != after:
+                history_entry(canon, name, 'proof', event['sequence'], event['id'], before, after,
+                              'lean/' + new[name]['file'])
+
+    def install_canon(self, publication):
+        """Put the built module root and its index in place of the canon's. Each step can be repeated after a crash."""
+        event = publication['event']
+        canon = Canon(self.instance)
+        stage = self.instance / 'runner' / ('stage-' + event['id'])
+        if (stage / 'lean').exists():
+            (stage / 'lean' / (EXTRACT_MODULE + '.lean')).unlink(missing_ok=True)
+            sync_tree(stage / 'lean', canon.lean)
+        if (stage / 'index.json').exists():
+            write_json(canon.index, read_json(stage / 'index.json'))
+        if stage.exists():
+            remove_tree(stage)
+
     def publish(self):
+        """Carry the current publication forward, and start the next one in the queue when none is underway."""
+        if not self.state['publication'] and self.state['publish_queue']:
+            item = self.state['publish_queue'].pop(0)
+            if item['kind'] == 'questions':
+                self.prepare_questions(item)
+            else:
+                self.prepare_publication(item['session'], self.state['jobs'][item['job']], item['kind'])
         publication = self.state['publication']
         if not publication:
             return
         event = publication['event']
+        kind = event['kind']
         sid = publication['session']
         job = self.state['jobs'][publication['job']] if publication['job'] else None
+        if kind in ('change', 'organization') and publication['stage'] != 'commit' and not self.advance_build(publication):
+            return
+        canon = Canon(self.instance)
         destination = self.instance / 'knowledge' / event['folder']
+        applied = publication.get('applied')
+        if not publication.get('installed'):
+            if applied is not None:
+                candidate = self.publication_candidate(publication)
+                change = load_change(candidate)
+                self.keep_replaced_proofs(publication)
+                self.install_canon(publication)
+                assessment = (read_json(self.session_dir(sid) / 'output/assessment.json') if kind == 'change' else None)
+                apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
+                              assessment['contribution'] if assessment else None,
+                              lambda qid: canonical_question(self.model, qid))
+                if assessment:
+                    self.record_declined(publication, candidate, assessment)
+                for item in applied['retired']:
+                    # The alternative's record goes with its declaration; the statement's own record stays.
+                    old = record_file(canon, item['alternative'])
+                    if old.is_file():
+                        target = canon.history / name_path(item['alternative']) / f"{event['sequence']:06d}-retired.md"
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(old), str(target))
+                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
+            if kind == 'organization':
+                self.join_question_texts(publication)
+            publication['installed'] = True
+            self.save()
         if not destination.exists():
-            stage = self.instance / 'runner' / ('stage-' + event['id'])
+            stage = self.instance / 'runner' / ('event-' + event['id'])
             if stage.exists():
                 remove_tree(stage)
-            if event['kind'] == 'record':
-                candidate = Path(job['task']['candidate'])
-                regular_tree(candidate)
-                shutil.copytree(candidate, stage)
-                if tree_hashes(stage) != job['task']['candidate_hashes']:
-                    # The damaged candidate stays where review read it; its staged copy is not evidence.
-                    remove_tree(stage)
-                    self.state['publication'] = None
-                    session = self.state['sessions'][sid]
-                    session['record'] = None
-                    self.recover_candidate(job, session, 'candidate changed after review assignment')
-                    return
-                shutil.copytree(self.session_dir(sid) / 'output', stage / 'review')
+            if kind == 'change':
+                shutil.copytree(self.session_dir(sid) / 'output', stage)
+                shutil.copyfile(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
+                write_json(stage / 'applied.json', applied)
                 pipeline = self.state['pipelines'][job['pipeline']]
                 write_json(stage / 'provenance.json', {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
                                                       'review_session': sid, 'pipeline': pipeline['id']})
-                self.copy_formal_evidence(stage, sid)
-            elif event['kind'] == 'questions':
+                verified = self.session_dir(sid) / 'work/verify/outcome.json'
+                if verified.is_file():
+                    shutil.copyfile(verified, stage / 'verify.json')
+            elif kind == 'questions':
                 stage.mkdir()
                 write_json(stage / 'questions.json', publication['questions'])
+            elif kind == 'organization':
+                stage.mkdir()
+                output = self.session_dir(sid) / 'output'
+                for name in ('organization.json', 'change.json'):
+                    if (output / name).is_file():
+                        shutil.copyfile(output / name, stage / name)
+                write_json(stage / 'applied.json', applied or {'added': [], 'replaced': [], 'records': [], 'retired': []})
             else:
                 shutil.copytree(self.session_dir(sid) / 'output', stage)
             # knowledge/questions/ appears with an instance's first operator publication of questions.
@@ -568,12 +885,25 @@ class Runner:
         if not event_path.exists():
             write_json(event_path, event)
         self.model = replay(self.instance)
+        if applied is not None:
+            # When a statement has an accepted proof, under any of its declarations, the approaches tried
+            # on it go to its history. Read from the model, so that a repeat after a crash finds them gone.
+            elements = self.model['elements']
+            moved = False
+            for name in applied['added'] + applied['replaced']:
+                element = elements.get(name)
+                if element and element['standing'] == 'accepted':
+                    for target in {name, element['statement_of']}:
+                        moved = retire_approaches(canon, target, event['sequence']) or moved
+            if moved:
+                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
+                self.model = replay(self.instance)
         self.attempt_dispatch_ready()
         render(self.instance, self.model, board(self.instance, self.state, self.model),
                lease_table(self.instance, self.state, self.model))
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
-            git(self.instance, 'add', '-A', '--', 'knowledge')
-            git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge')
+            git(self.instance, 'add', '-A', '--', 'knowledge', 'canon')
+            git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge', 'canon')
         if sid:
             self.state['sessions'][sid]['status'] = 'integrated'
         if job:
@@ -589,47 +919,21 @@ class Runner:
         self.archive_due = True
         self.save()
 
-    def copy_formal_evidence(self, stage, sid):
-        assessment = read_json(stage / 'review/assessment.json')
-        from lean_broker import Paths, job_record, BUILD_ID
-        paths = Paths(self.instance)
-        for item in assessment['solutions']:
-            if item['level'] != 'formal':
-                continue
-            jid = item['formal_check']['job']
-            receipt = job_record(paths, jid)
-            if receipt['status'] == 'duplicate':  # the audit followed it to the original submission
-                receipt = job_record(paths, receipt['duplicate_of'])
-            # The folder keeps the ID the reviewer recorded, so formal_check.job still leads here.
-            directory = stage / 'review/lean-evidence' / jid
-            directory.mkdir(parents=True, exist_ok=True)
-            write_json(directory / 'result.json', receipt)
-            jobs = [m['job'] for m in receipt['modules'].values() if m.get('job')] if BUILD_ID.match(jid) else [receipt['id']]
-            for job_id in jobs:
-                target = directory / job_id
-                target.mkdir(exist_ok=True)
-                for name in ('result.json', 'stdout.log', 'stderr.log', 'launch.json'):
-                    source = paths.job(job_id) / name
-                    if source.exists():
-                        # launch.json includes the environment; preserve command evidence without environment values.
-                        if name == 'launch.json':
-                            launch = read_json(source)
-                            write_json(target / name, {k: launch[k] for k in ('argv', 'cwd') if k in launch})
-                        else:
-                            shutil.copyfile(source, target / name)
-
     def notify(self, event):
         for sid, session in self.active():
             directory = self.session_dir(sid) / 'inbox'
             directory.mkdir(exist_ok=True)
             write_json(directory / (event['id'] + '.json'), {'event': event['id'], 'kind': event['kind'],
                                                             'revision': event['sequence'],
-                                                            'text': 'Shared research changed. Read the frontier, index and relevant evidence before relying on the change.'})
+                                                            'text': 'The canon changed. Read the frontier and the elements concerned before relying on the change.'})
 
     def collect(self):
-        if self.state['publication']:
+        if self.state['publication'] or self.state['publish_queue']:
             self.publish()
         for sid, s in list(self.active()):
+            if s['status'] == 'publishing':
+                # Its work is done and waits in the publication queue; publish() carries it from here.
+                continue
             session = self.session_dir(sid)
             ending = session / 'end-check.json'
             if ending.exists():
@@ -668,42 +972,37 @@ class Runner:
         self.broker_attempt = time.monotonic()
         self.broker = launch_broker(paths)
 
-    def formalizable(self, nid, closure):
-        """The proofs a formalizer is sent to formalize on canonical node nid, or none.
+    def conflicts(self):
+        """Contested statements, each with the judgments that currently oppose one another.
 
-        A node qualifies while it is informally proved or refuted and an accepted relation carries that
-        outcome to the root (closure, from sufficient_closure); a settled node off every such path is not
-        formalized. Its qualifying proofs are those formal_ready accepts."""
-        node = self.model['nodes'][nid]
-        if node['state'] not in ('informal_proved', 'informal_refuted'):
-            return []
-        if (nid, node['state'].split('_', 1)[1]) not in closure:
-            return []
-        return [p for p in node['proofs'] if formal_ready(self.model, self.model['proofs'][p])]
+        The key changes when a proof on either side is judged again, so the same opposition is
+        examined once and a new one is a new cause."""
+        elements = self.model['elements']
+        keys = []
+        for name in self.model['contested']:
+            sides = [p for p in elements[name]['proofs'] if elements[p]['settled']]
+            sides += [n for n, e in elements.items() if e['refutes'] == name and e['settled']]
+            keys.append(name + ':' + ','.join(sorted(str((elements[p]['verdict'] or {}).get('change')) for p in sides)))
+        return keys
 
     def populate(self):
         model = self.model
         pending = [j for j in self.state['jobs'].values() if j['status'] in ('pending', 'running')]
         if not any(j['role'] == 'review' and j['task']['kind'] == 'comprehensive' for j in pending):
             concerns = [key for key, value in model['concerns'].items() if value['status'] != 'cleared' and key not in self.state['processed_concerns']]
-            conflicts = [nid + ':' + ','.join(n['proofs']) for nid, n in model['nodes'].items()
-                         if n['canonical'] == nid and n['contested'] and nid + ':' + ','.join(n['proofs']) not in self.state['processed_conflicts']]
+            conflicts = [key for key in self.conflicts() if key not in self.state['processed_conflicts']]
             if concerns or conflicts:
                 self.enqueue('review', {'kind': 'comprehensive', 'concerns': concerns, 'conflicts': conflicts,
-                                        'purpose': 'Trace the questioned claims to their evidence and through actual dependent uses; report precise findings.'})
-        closure = sufficient_closure(model)
-        for nid, node in model['nodes'].items():
-            if node['canonical'] != nid:
-                continue
-            if any(p['role'] == 'formalizer' and p['stage'] != 'done' and canonical(model, p['node']) == nid for p in self.state['pipelines'].values()):
-                continue
-            proofs = self.formalizable(nid, closure)
-            if proofs:
-                previous = [p['record'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p['record'] and canonical(model, p['node']) == nid]
-                self.producer('formalizer', {'node': nid, 'proofs': proofs, 'previous_records': previous})
-        due = [rid for rid in model['records'] if rid not in model['organized']]
+                                        'purpose': 'Trace the questioned proofs to their evidence and through the elements that actually use them; report precise findings.'})
+        active = {p['element'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done'}
+        for name in formalizable(model):
+            if name not in active:
+                previous = [p['record'] for p in self.state['pipelines'].values()
+                            if p['role'] == 'formalizer' and p['record'] and p['element'] == name]
+                self.producer('formalizer', {'element': name, 'previous_changes': previous})
+        due = [cid for cid, change in model['changes'].items() if cid not in model['organized']]
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):
-            # make_pack fixes the batch from the published records when the organizer launches.
+            # make_pack fixes the batch from the published changes when the organizer launches.
             self.enqueue('organizer', {})
 
     def current_availability(self):
@@ -748,7 +1047,7 @@ class Runner:
             reason = opening_since(gate['baseline'], current, self.model)
             if reason:
                 gate.update(mode='reassess', reason=reason, probe_session=None)
-        # Track solved nodes disappearing, so a later reopening is a new opportunity.
+        # Track settled elements leaving the work that remains, so a later reopening is a new opportunity.
         # Additions and publication revisions alone do not release suppression.
         gate['baseline'] = current
         sid = gate['probe_session']
@@ -763,17 +1062,20 @@ class Runner:
             self.save()
         return gate['mode'] == 'reassess' and gate['probe_session'] is None
 
-    def available_nodes(self):
-        """Unresolved nodes where another attempt could still register a section.
+    def available_elements(self):
+        """Elements of the work that remains where another attempt could still register a section.
 
-        A node is unavailable while any pipeline holds it whole, or while a session already waits
-        for its lease: launching another attempt there would only lengthen that queue."""
+        The runner does not judge whether mathematical work remains; it only refrains from launching
+        an attempt when every element the frontier shows as remaining is held whole or already has a
+        session waiting for its lease, since launching another attempt there would only lengthen that
+        queue. Whether anything can be taken on is the attempt's judgment (reference/retained-work.md)."""
         rows = board(self.instance, self.state, self.model)
-        whole = {s['node'] for r in rows for s in r['sections'] if s['whole']}
+        whole = {s['element'] for r in rows for s in r['sections'] if s['whole']}
         leases = lease_table(self.instance, self.state, self.model)
         queued = {n for n, entry in leases.items() if entry['queue']}
-        return [n for n, v in self.model['nodes'].items()
-                if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
+        # Sections and leases stand on the statement, so another proof of it is held with it.
+        statement = lambda name: self.model['elements'][name]['statement_of'] or name
+        return [n for n in self.model['remaining'] if statement(n) not in whole and statement(n) not in queued]
 
     def launch_due(self):
         """Attempt and exploration launches share one spacing, so each new attempt or explorer can
@@ -836,18 +1138,15 @@ class Runner:
             if job['role'] == 'explore' and (not self.launch_due()
                                              or not self.question_slot(launching=True)):
                 continue
-            if job['role'] == 'formalizer':
-                ready = self.formalizable(canonical(self.model, job['task']['node']), sufficient_closure(self.model))
-                if not ready:
-                    job['status'] = 'cancelled'
-                    self.state['pipelines'][job['pipeline']]['stage'] = 'done'
-                    changed = True
-                    continue
-                job['task']['proofs'] = ready
+            if job['role'] == 'formalizer' and job['task']['element'] not in formalizable(self.model):
+                job['status'] = 'cancelled'
+                self.state['pipelines'][job['pipeline']]['stage'] = 'done'
+                changed = True
+                continue
             if job['role'] == 'attempt':
                 if not self.attempt_dispatch_ready():
                     continue
-                if not self.available_nodes():
+                if not self.available_elements():
                     continue
                 if not self.launch_due():
                     continue
@@ -869,10 +1168,10 @@ class Runner:
         if self.state['complete']:
             return
         while len(self.active()) < self.settings['max_sessions']:
-            nodes = self.available_nodes()
+            available = self.available_elements()
             self.attempt_dispatch_ready()
             suppressed = (self.state['attempt_dispatch_gate'] or {}).get('mode') == 'suppressed'
-            if not nodes or suppressed:
+            if not available or suppressed:
                 # Capacity that no attempt can use goes to understanding. The request is renewed
                 # after every exploration launched here, so free questions fill one by one.
                 if not self.state['explore_requested']:
@@ -891,7 +1190,7 @@ class Runner:
             # dispatch_pending() above has already filled free capacity in priority order, so a slot that
             # opened went to waiting review or peer work before any attempt. Work still pending waits for
             # its retry time, a model or another of its kind, not for capacity, and holds no attempt back.
-            if (not nodes or not self.launch_due()
+            if (not available or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break
             key = self.producer('attempt')
@@ -915,26 +1214,29 @@ class Runner:
                 continue
             request = read_json(path)
             if request['kind'] == 'questions':
-                # collect() has completed any saved publication earlier in this pass, so this
-                # publication takes the next sequence number.
                 try:
                     reason, questions = operator_questions(
                         {key: value for key, value in request.items() if key != 'kind'}, self.model)
                 except ValueError as exc:
-                    # A question or node published since the command checked the file can take an ID.
+                    # A question published since the command checked the file can take an ID.
                     # The refusal is left in status for the operator, and the runner continues.
                     self.state['last_error'] = {'at': time.time(),
                                                 'error': f'questions request {path.name} refused: {exc}'}
                     self.state['seen_requests'].append(path.name)
                     self.save()
                     continue
-                self.prepare_questions(path.name, reason, questions)
+                # Another publication can be underway, waiting for its build. The questions take their
+                # turn in the same queue, and the request counts as collected in the same save, so it is
+                # never published twice.
+                self.state['publish_queue'].append({'kind': 'questions', 'reason': reason, 'questions': questions,
+                                                    'at': time.time()})
+                self.state['seen_requests'].append(path.name)
+                self.save()
                 self.publish()
                 continue
             if request['kind'] == 'review':
                 task = {'kind': 'comprehensive', 'concerns': request['concerns'], 'conflicts': [],
-                        'requested_records': request['records'], 'requested_nodes': request['nodes'],
-                        'purpose': request['reason']}
+                        'requested_elements': request['elements'], 'purpose': request['reason']}
                 self.enqueue('review', task, key='operator:' + path.stem)
             elif request['kind'] == 'organize':
                 self.enqueue('organizer', {}, key='operator:' + path.stem)
@@ -1072,7 +1374,7 @@ def status(instance):
     from lean_broker import Paths, broker_status
     rows = board(instance, state, model)
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
-            'root_state': model['nodes'][canonical(model, 'root')]['state'], 'finished': state['finished'],
+            'root_state': model['root_state'], 'finished': state['finished'],
             'stopped': (instance / 'control/STOP').exists(), 'board': rows,
             'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),
@@ -1107,7 +1409,10 @@ def main(argv=None):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
-            p.add_argument('--root', required=True, type=Path)
+            p.add_argument('--root', required=True, type=Path, help='the root statement in words')
+            p.add_argument('--canon', required=True, type=Path,
+                           help='a folder with lean/ and records/ for the root and the objects it speaks of')
+            p.add_argument('--root-declaration', required=True, help='the Lean name of the root statement')
             p.add_argument('--settings', type=Path)
         if name == 'run':
             p.add_argument('--token')
@@ -1116,8 +1421,7 @@ def main(argv=None):
         if name == 'kill-session':
             p.add_argument('session')
         if name == 'review':
-            p.add_argument('--record', action='append', default=[])
-            p.add_argument('--node', action='append', default=[])
+            p.add_argument('--element', action='append', default=[])
             p.add_argument('--concern', action='append', default=[])
             p.add_argument('--reason', default='Operator requested renewed examination.')
     args = parser.parse_args(argv)
@@ -1128,10 +1432,10 @@ def main(argv=None):
             return session_host(instance)
         if args.command == '_archive':
             return archive_finished(instance)
-        if args.command != 'init' and read_json(instance / 'instance.json').get('schema') != 1:
-            raise ValueError('a fresh-runtime instance is required')
+        if args.command != 'init' and read_json(instance / 'instance.json').get('schema') != 2:
+            raise ValueError('this runtime operates instances whose canon is a Lean library (instance schema 2)')
         if args.command == 'init':
-            initialize(instance, args.root, args.settings)
+            initialize(instance, args.root, args.canon, args.root_declaration, args.settings)
         elif args.command == 'run':
             Runner(instance).run(args.token)
         elif args.command == 'start':
@@ -1169,12 +1473,12 @@ def main(argv=None):
         elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}
             if args.command == 'review':
-                if not (args.record or args.node or args.concern):
-                    raise ValueError('name the evidence to review with --record, --node or --concern')
+                if not (args.element or args.concern):
+                    raise ValueError('name the evidence to review with --element or --concern')
                 model = replay(instance)
-                if any(r not in model['records'] for r in args.record) or any(n not in model['nodes'] for n in args.node) or any(c not in model['concerns'] for c in args.concern):
+                if any(e not in model['elements'] for e in args.element) or any(c not in model['concerns'] for c in args.concern):
                     raise ValueError('unknown review target')
-                request.update(records=args.record, nodes=args.node, concerns=args.concern, reason=args.reason)
+                request.update(elements=args.element, concerns=args.concern, reason=args.reason)
             path = instance / 'control/requests' / (uid('request') + '.json')
             write_json(path, request)
             result['request'] = str(path)

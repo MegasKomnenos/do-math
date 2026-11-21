@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<!--
+  The page of a dependency map: the drawing inline, with zoom, drag, and a focus on one unit.
+  Adapted from the click viewer of the dependency-map generator of the previous research (its build
+  stage, `뷰어.py`). Kept: the view changes only the SVG viewBox; one click on a unit keeps everything
+  it rests on and everything that rests on it, a second click keeps its direct neighbours, a third
+  click, a click on empty space or Esc restores the map; `#node=<Lean name>` opens with that focus;
+  opacity changes without a transition. Changed: the wording is English, the unit is identified by
+  its Lean name, and a panel beside the drawing shows the selected unit from the map's data.
+  The drawing marks what this script reads: g.node[data-node], g.edge[id][data-source][data-target],
+  and [data-edge] on the parts of an edge that are drawn outside its group (its label).
+-->
+<style>
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; color: #203549; }
+body { display: flex; }
+#stage { flex: 1 1 auto; min-width: 0; height: 100vh; }
+#stage svg { display: block; width: 100%; height: 100%; cursor: grab; }
+#stage svg.dragging { cursor: grabbing; }
+g.node { cursor: pointer; }
+body.focus g.node:not(.hi), body.focus g.edge:not(.hi), body.focus g.route-label:not(.hi) { opacity: .13; }
+body.focus g.node.pick > rect.card { stroke-width: 3.4; }
+#panel { flex: 0 0 380px; height: 100vh; overflow-y: auto; box-sizing: border-box; padding: 18px 20px;
+  border-left: 1px solid #BECBD6; background: #F8FAFC; font-size: 14px; line-height: 1.45; }
+#panel h1 { font-size: 16px; margin: 0 0 6px; }
+#panel h2 { font-size: 19px; margin: 0 0 2px; }
+#panel h3 { font-size: 12px; margin: 16px 0 4px; text-transform: uppercase; letter-spacing: .05em; color: #526A7D; }
+#panel p { margin: 6px 0; }
+#panel code, #panel pre { font-family: Consolas, 'DejaVu Sans Mono', Menlo, monospace; font-size: 12.5px; }
+#panel pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; padding: 8px 10px; background: white;
+  border: 1px solid #DDE5EB; border-radius: 6px; }
+#panel .name { color: #60788B; word-break: break-all; }
+#panel .chips { margin: 8px 0; }
+#panel .chip { display: inline-block; margin: 0 6px 4px 0; padding: 1px 8px; border: 1px solid #BECBD6; border-radius: 10px;
+  background: white; font-size: 12.5px; }
+#panel ul { margin: 4px 0; padding-left: 18px; }
+#panel li { margin: 3px 0; }
+#panel a { color: #256D9D; cursor: pointer; text-decoration: none; }
+#panel a:hover { text-decoration: underline; }
+#panel .how { color: #526A7D; }
+#panel .help { color: #526A7D; }
+</style>
+</head>
+<body>
+<div id="stage">
+__SVG__
+</div>
+<div id="panel"></div>
+<script type="application/json" id="map-data">__DATA__</script>
+<script>
+(function () {
+  var svg = document.querySelector('#stage svg');
+  if (!svg) return;
+  var data = JSON.parse(document.getElementById('map-data').textContent);
+  var panel = document.getElementById('panel');
+
+  // ---- the view: fit, zoom and drag by changing the viewBox only
+  var W = parseFloat(svg.getAttribute('width')), H = parseFloat(svg.getAttribute('height'));
+  var vb = { x: 0, y: 0, w: W, h: H };
+  function apply() { svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h); }
+  function fit() { vb = { x: 0, y: 0, w: W, h: H }; apply(); }
+  function unitsPerPx() {       // how many SVG units one screen pixel covers (the scale of preserveAspectRatio meet)
+    var r = svg.getBoundingClientRect();
+    return Math.max(vb.w / r.width, vb.h / r.height);
+  }
+  function svgPoint(ev) {
+    var r = svg.getBoundingClientRect(), u = unitsPerPx();
+    var cx = vb.x + vb.w / 2, cy = vb.y + vb.h / 2;        // the centre of the visible region is at the centre of the element
+    return { x: cx + (ev.clientX - (r.left + r.width / 2)) * u, y: cy + (ev.clientY - (r.top + r.height / 2)) * u };
+  }
+  svg.addEventListener('wheel', function (ev) {
+    ev.preventDefault();
+    var f = ev.deltaY < 0 ? 1 / 1.2 : 1.2;
+    var minW = W / 40, maxW = W * 1.5;
+    var nw = Math.min(maxW, Math.max(minW, vb.w * f)); f = nw / vb.w;
+    var p = svgPoint(ev);
+    vb = { x: p.x - (p.x - vb.x) * f, y: p.y - (p.y - vb.y) * f, w: vb.w * f, h: vb.h * f };
+    apply();
+  }, { passive: false });
+  var drag = null, moved = false;
+  svg.addEventListener('mousedown', function (ev) {
+    if (ev.button !== 0) return;
+    drag = { x: ev.clientX, y: ev.clientY, vx: vb.x, vy: vb.y, u: unitsPerPx() }; moved = false;
+  });
+  window.addEventListener('mousemove', function (ev) {
+    if (!drag) return;
+    var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+    if (!moved && Math.abs(dx) + Math.abs(dy) > 3) { moved = true; svg.classList.add('dragging'); }
+    if (moved) { vb.x = drag.vx - dx * drag.u; vb.y = drag.vy - dy * drag.u; apply(); }
+  });
+  window.addEventListener('mouseup', function () { drag = null; svg.classList.remove('dragging'); });
+  svg.addEventListener('dblclick', function (ev) { if (!(ev.target.closest && ev.target.closest('g.node'))) fit(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === '0') fit(); });
+  fit();
+
+  // ---- the panel: the selected unit, from the map's data
+  var unit = {}, into = {}, out = {};
+  data.units.forEach(function (u) { unit[u.id] = u; into[u.id] = []; out[u.id] = []; });
+  data.edges.forEach(function (e) { into[e.target].push(e); out[e.source].push(e); });
+  var STANDING = { no_proof: 'no proof', not_confirmed: 'proof not confirmed', held: 'correct, held back', accepted: 'accepted' };
+  var KIND = { theorem: 'statement', def: 'definition', opaque: 'opaque definition', inductive: 'inductive type' };
+  function el(tag, text, cls) {
+    var node = document.createElement(tag);
+    if (text !== undefined && text !== null) node.textContent = text;
+    if (cls) node.className = cls;
+    return node;
+  }
+  function foldedNames(names) {
+    return names.map(function (n) { return (data.folded[n] || {}).label || n; }).join(', ');
+  }
+  function how(e) {
+    if (e.kind === 'alternative') return 'another proof of the statement';
+    var body = unit[e.target].role === 'definition' ? 'definition' : 'proof';
+    if (e.kind === 'direct') return 'named in the ' + body + (e.proof.via.length ? ', and reached through ' + foldedNames(e.proof.via) : '');
+    if (e.kind === 'contracted') return 'the ' + body + ' reaches it through ' + foldedNames(e.via);
+    var text = 'mentioned in the statement' + (e.via.length ? ' through ' + foldedNames(e.via) : '');
+    if (e.proof) text += e.proof.direct ? '; named in the ' + body : '; the ' + body + ' reaches it through ' + foldedNames(e.proof.via);
+    return text;
+  }
+  function list(title, edges, other) {
+    if (!edges.length) return;
+    panel.appendChild(el('h3', title + ' (' + edges.length + ')'));
+    var ul = el('ul');
+    edges.forEach(function (e) {
+      var li = el('li'), a = el('a', unit[e[other]].label);
+      a.title = e[other];
+      a.addEventListener('click', function () { focus(e[other], 'all'); });
+      li.appendChild(a);
+      li.appendChild(el('span', ' — ' + how(e), 'how'));
+      ul.appendChild(li);
+    });
+    panel.appendChild(ul);
+  }
+  function overview() {
+    panel.innerHTML = '';
+    panel.appendChild(el('h1', data.title));
+    panel.appendChild(el('p', data.counts.units + ' units, ' + data.counts.edges + ' edges, ' + data.counts.groups + ' groups. ' +
+      (data.scope === 'all' ? 'Every unit of the canon.' : 'The units the proof of the root rests on.'), 'help'));
+    panel.appendChild(el('p', 'Click a unit to keep what it rests on and what rests on it; click it again for its direct ' +
+      'neighbours only; click empty space or press Esc to restore the map. The wheel zooms, dragging moves, ' +
+      'a double click on empty space or the key 0 shows the whole map.', 'help'));
+    panel.appendChild(el('p', 'An arrow runs from what is used to what uses it. A dashed line reaches its source only ' +
+      'through folded steps, which are written on it. A dotted line joins a statement to something it mentions. ' +
+      'A heavy line joins another proof to the statement it proves; each proof is complete by itself.', 'help'));
+  }
+  function show(n) {
+    var u = unit[n];
+    panel.innerHTML = '';
+    panel.appendChild(el('h2', u.label));
+    panel.appendChild(el('code', u.id, 'name'));
+    var chips = el('div', null, 'chips');
+    var kind = u.role === 'proof' ? 'another proof' : (KIND[u.kind] || u.kind);
+    [u.root ? 'root' : null, kind, u.standing ? STANDING[u.standing] : null,
+     u.settled === true ? 'settled' : u.settled === false ? 'not settled' : null,
+     u.formal ? 'formal' : null, u.source ? 'from the literature: ' + u.source : null].forEach(function (text) {
+      if (text) chips.appendChild(el('span', text, 'chip'));
+    });
+    panel.appendChild(chips);
+    if (u.description) panel.appendChild(el('p', u.description));
+    panel.appendChild(el('p', 'Module ' + u.module + (u.proves ? ' · proves ' + u.proves : ''), 'help'));
+    panel.appendChild(el('h3', 'Lean'));
+    panel.appendChild(el('pre', u.lean));
+    if (u.statement) { panel.appendChild(el('h3', 'Statement')); panel.appendChild(el('pre', u.statement)); }
+    list('Rests on', into[n], 'source');
+    list('Used by', out[n], 'target');
+  }
+
+  // ---- the focus: everything upstream and downstream, then direct neighbours, then nothing
+  var edgeEl = {}, byNode = {}, nodeEl = {};
+  function adj(n) { return byNode[n] || (byNode[n] = { into: [], out: [] }); }
+  svg.querySelectorAll('g.edge').forEach(function (g) {
+    edgeEl[g.id] = g;
+    adj(g.dataset.source).out.push(g.id);
+    adj(g.dataset.target).into.push(g.id);
+  });
+  svg.querySelectorAll('g.node').forEach(function (g) { nodeEl[g.dataset.node] = g; });
+  var tagged = Array.prototype.slice.call(svg.querySelectorAll('[data-edge]'));
+  var state = { node: null, mode: null };   // mode: 'all' | 'direct'
+
+  function clear() {
+    state = { node: null, mode: null };
+    document.body.classList.remove('focus');
+    svg.querySelectorAll('.hi, .pick').forEach(function (g) { g.classList.remove('hi'); g.classList.remove('pick'); });
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    overview();
+  }
+  // Upstream follows incoming edges to the end, downstream follows outgoing edges; only the edges on those chains are kept.
+  function walk(start, dir, N, E) {
+    var queue = [start], seen = {};
+    seen[start] = true;
+    while (queue.length) {
+      var n = queue.shift();
+      var ids = dir === 'up' ? adj(n).into : adj(n).out;
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        E[id] = true;
+        var m = dir === 'up' ? edgeEl[id].dataset.source : edgeEl[id].dataset.target;
+        N[m] = true;
+        if (!seen[m]) { seen[m] = true; queue.push(m); }
+      }
+    }
+  }
+  function focus(n, mode) {
+    if (!nodeEl[n]) return;
+    clear();
+    state = { node: n, mode: mode };
+    var E = {}, N = {};
+    N[n] = true;
+    if (mode === 'direct') {
+      adj(n).into.forEach(function (id) { E[id] = true; N[edgeEl[id].dataset.source] = true; });
+      adj(n).out.forEach(function (id) { E[id] = true; N[edgeEl[id].dataset.target] = true; });
+    } else {
+      walk(n, 'up', N, E);
+      walk(n, 'down', N, E);
+    }
+    Object.keys(N).forEach(function (m) { if (nodeEl[m]) nodeEl[m].classList.add('hi'); });
+    nodeEl[n].classList.add('pick');
+    Object.keys(E).forEach(function (id) { edgeEl[id].classList.add('hi'); });
+    tagged.forEach(function (g) { if (E[g.dataset.edge]) g.classList.add('hi'); });
+    document.body.classList.add('focus');
+    history.replaceState(null, '', '#node=' + encodeURIComponent(n) + (mode === 'direct' ? '&mode=direct' : ''));
+    show(n);
+  }
+  svg.addEventListener('click', function (ev) {
+    if (moved) { moved = false; return; }                   // it was a drag
+    var g = ev.target.closest ? ev.target.closest('g.node') : null;
+    if (!g) { clear(); return; }
+    var n = g.dataset.node;
+    if (state.node !== n) focus(n, 'all');
+    else if (state.mode === 'all') focus(n, 'direct');
+    else clear();
+  });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') clear(); });
+  overview();
+  var m = /[#&]node=([^&]+)/.exec(location.hash);
+  if (m) focus(decodeURIComponent(m[1]), /[#&]mode=direct(?:&|$)/.test(location.hash) ? 'direct' : 'all');
+})();
+</script>
+</body>
+</html>
