@@ -33,7 +33,7 @@ Edges. An edge runs from what is used to what uses it, and there is at most one 
     contracted   the proof reaches the source only through folded items; `via` lists every folded
                  item on some such path, and the drawing writes them on the line
     mention      the statement of the target mentions the source, itself or through folded definitions
-    alternative  the source is another proof of the target statement; each proof is complete by itself
+    alternative  the source is another proof of the target statement; the two proofs are separate arguments, not joint inputs
 A folded item passes on everything it rests on: what each of its proofs names and what its
 statement mentions. A pair related in both ways gets the relation that says more about it: a
 definition that the statement mentions is a `mention` whatever the proof does with it, and a

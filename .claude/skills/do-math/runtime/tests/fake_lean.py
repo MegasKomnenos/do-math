@@ -23,8 +23,8 @@ do. `--incr-header-save=<file>` writes <file> and <file>.deps at the end of a ru
 imports resolved, whatever the run's exit code; `-- fake: save_fails=1` makes that write
 fail as an unwritable path does, with a message on stderr, exit code 1 and no file.
 `--incr-load=<file>` reads the two files. A missing or unreadable one ends the run with a
-message on stderr and exit code 1, and a snapshot holding the text `crash` ends it as a
-crashed process. A snapshot of another header is ignored and the import done in full
+message on stderr and exit code 1. A snapshot of another header is ignored and the import
+done in full
 (`snapshot=mismatch`). A snapshot saved under another main module name is used all the
 same (`snapshot=WRONG-MODULE`): the real compiler then names the file's declarations
 after the other module, which is why the broker keys a snapshot by that name. The
@@ -34,7 +34,6 @@ after the other module, which is why the broker keys a snapshot by that name. Th
 import json
 import os
 import re
-import signal
 import sys
 import time
 
@@ -68,12 +67,6 @@ def header(lines):
     last = max((n for n, line in enumerate(lines) if IMPORT.match(line) or line.strip() in ("module", "prelude")),
                default=-1)
     return "\n".join(lines[:last + 1])
-
-
-def crash():
-    if os.name == "nt":
-        return -1073741819  # Windows reports it as 0xC0000005, the code of an access violation
-    os.kill(os.getpid(), signal.SIGSEGV)
 
 
 def main(argv):
@@ -113,8 +106,6 @@ def main(argv):
                 text = stream.read()
             with open(load + ".deps", encoding="utf-8"):
                 pass
-            if text.strip() == "crash":
-                return crash()
             saved = json.loads(text)
         except (OSError, ValueError) as exc:
             print(f"failed to read file '{load}': {exc}", file=sys.stderr)

@@ -465,6 +465,18 @@ class CanonToolTests(ScenarioCase):
         self.assertNotIn('record replaced', self.tool('view', 'Small.root', '--full'))
         self.assertEqual(self.tool('view', 'Small.leafH', '--part', 'history'), 'No history.\n')
 
+    def test_the_history_of_an_element_leaves_out_the_elements_whose_names_extend_the_name(self):
+        # `Small.root.even` is an element of its own, and its history folder lies inside that of `Small.root`.
+        self.ways()
+        even = ': oddSum 2 = 4'
+        self.publish(self.candidate(modules={'Small/Even.lean': module_text(theorem('root.even', even))},
+                                    records={'Small/root/even.md': record_text('The first two odd numbers sum to four.')}))
+        self.publish(self.candidate(replace={'Small.root.even': theorem('root.even', even, proof='rfl')}))
+        self.assertIn('# Small.root.even: proof replaced', self.tool('view', 'Small.root.even', '--part', 'history'))
+        history = self.tool('view', 'Small.root', '--part', 'history')
+        self.assertIn('# Small.root: proof replaced', history)
+        self.assertNotIn('Small.root.even', history)
+
     def test_view_marks_a_contested_statement_a_refuted_one_and_a_proof_that_names_it(self):
         self.proved()
         folder = self.candidate(

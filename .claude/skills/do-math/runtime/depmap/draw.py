@@ -65,7 +65,7 @@ MONO = "Consolas, 'DejaVu Sans Mono', Menlo, monospace"
 INK, SUBTLE, FAINT = '#203549', '#526A7D', '#60788B'
 LINES = {'direct': ('', 2.4), 'contracted': ('12 7', 2.4), 'mention': ('2 7', 2.4), 'alternative': ('', 5.0)}
 LEGEND = {'direct': 'named in the proof', 'contracted': 'through folded steps (named on the line)',
-          'mention': 'mentioned in the statement', 'alternative': 'another proof: each complete'}
+          'mention': 'mentioned in the statement', 'alternative': 'another proof of the same statement'}
 ARROWS = {'alternative': (11, 4.6)}
 ARROW = (8.2, 3.5)
 CASING = 6

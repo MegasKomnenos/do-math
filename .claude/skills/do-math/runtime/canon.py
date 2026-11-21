@@ -1150,14 +1150,21 @@ def merge_bibliography(path, addition):
 
 
 def retire_approaches(canon, name, revision):
-    """When an element's proof is accepted, the approaches tried on it go to its history."""
+    """When an element's proof is accepted, the approaches tried on it go to its history.
+
+    The folder of an element also holds the folders of the elements whose names extend its name,
+    such as `A.b` under `A`. Those are other elements, and their approaches stay where they are."""
     folder = canon.approaches / name_path(name)
-    if folder.is_dir() and any(folder.iterdir()):
-        target = canon.history / name_path(name) / f'{revision:06d}-approaches'
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(folder), str(target))
-        return True
-    return False
+    entries = sorted(folder.glob('*.md')) if folder.is_dir() else []
+    if not entries:
+        return False
+    target = canon.history / name_path(name) / f'{revision:06d}-approaches'
+    target.mkdir(parents=True, exist_ok=True)
+    for path in entries:
+        shutil.move(str(path), str(target / path.name))
+    if not any(folder.iterdir()):
+        folder.rmdir()
+    return True
 
 
 def read_record(canon, name):

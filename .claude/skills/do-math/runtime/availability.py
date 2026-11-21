@@ -37,7 +37,7 @@ def retain_snapshot(session, view):
     return token
 
 
-def opening_since(observed, current, model):
+def opening_since(observed, current):
     """Why work may have opened since a report of full occupancy: new remaining work, or an occupation that ended."""
     for name, sections in current['elements'].items():
         if name not in observed['elements']:

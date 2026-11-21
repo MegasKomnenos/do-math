@@ -65,7 +65,8 @@ NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
 ENVIRONMENT = re.compile(r'\\begin\{(' + '|'.join(NUMBERED) + r')\}(.*?)\\end\{\1\}', re.S)
 VERIFICATION = re.compile(r'\\begin\{verification\}(.*?)\\end\{verification\}', re.S)
 FORBIDDEN = re.compile(r'\\(documentclass|usepackage|newcommand|renewcommand|providecommand|def|newtheorem|section|'
-                       r'bibliography|bibliographystyle|maketitle|title|author|input|include|setcounter|numberwithin)\b')
+                       r'bibliography|bibliographystyle|maketitle|title|author|input|include|setcounter|numberwithin|'
+                       r'newenvironment|renewenvironment|DeclareMathOperator|let)\b')
 CITE = re.compile(r'\\cite(?:\[[^\]]*\])?\{([^}]*)\}')
 REF = re.compile(r'\\(?:eq|page)?ref\{([^}]*)\}')
 LABEL = re.compile(r'\\label\{([^}]*)\}')
@@ -849,11 +850,13 @@ same objects, the same hypotheses, the same quantifiers and ranges, the same con
 read with the definitions and the notation of the manuscript. A difference the method permits is no difference as long \
 as the mathematical content is the same. Where a convention changed, for example an index that now starts at one, check \
 that the statement was carried over correctly, case by case at the boundary. Where the statement in words and the Lean \
-statement of an element disagree with each other, say so: the Lean statement is the one that was proved.
+statement of an element disagree with each other, say so in "record_disagreement": the Lean statement is the one that \
+was proved, and such a disagreement lies in the element's record, which no repair of the manuscript can change.
 
 Write `output/comparison.json`: an array with one object for each entry, {"label": "...", "verdict": "same" or \
-"differs", "difference": "<what differs, exactly; empty when the verdict is same>"}. Use no source other than the files \
-in this folder.
+"differs", "difference": "<what differs, exactly; empty when the verdict is same>", "record_disagreement": "<where the \
+statement in words and the Lean statement of the element disagree, exactly; empty when they agree>"}. Use no source \
+other than the files in this folder.
 '''
 
 AGAIN = '''
@@ -1021,7 +1024,8 @@ class Paper:
                          'record_statement': element['statement'], 'record_statement_from': element['statement_from'],
                          'lean_statement': element['lean'], 'paper_statement': found['text'],
                          'paper_statement_sha256': digest,
-                         'comparison': ({'verdict': judged['verdict'], 'difference': judged['difference']}
+                         'comparison': ({'verdict': judged['verdict'], 'difference': judged['difference'],
+                                         'record_disagreement': judged['record_disagreement']}
                                         if judged and judged['sha256'] == digest else {'verdict': 'not compared'})})
         write_json(self.out / 'correspondence.json', {
             'root': self.materials['root']['name'], 'main_result': self.materials['main'],
@@ -1133,9 +1137,14 @@ class Paper:
             verdicts = self.session('compare', COMPARE_PROMPT, files, read, self.assessor)
             digests = {row['label']: row['paper_statement_sha256'] for row in rows}
             self.compared = {v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
+                                          'record_disagreement': v['record_disagreement']
+                                          if is_text(v.get('record_disagreement')) else '',
                                           'sha256': digests[v['label']]} for v in verdicts}
             differing = [{'label': v['label'], 'difference': v['difference']} for v in verdicts if v['verdict'] == 'differs']
-            self.event('comparison', round=round_number, differing=differing)
+            # A disagreement inside an element's record is reported beside the paper; no repair of the manuscript removes it.
+            disagreements = [{'label': label, 'record_disagreement': judged['record_disagreement']}
+                             for label, judged in self.compared.items() if judged['record_disagreement']]
+            self.event('comparison', round=round_number, differing=differing, record_disagreements=disagreements)
             self.assemble()
             if not differing:
                 return True
@@ -1196,7 +1205,10 @@ def produce(instance, out, tex=None, choice=None):
 
 
 def typeset_only(instance, out, tex=None, choice=None):
-    """Typeset the manuscript a previous run left in `out`, with the same checks and repairs."""
+    """Typeset the manuscript a previous run left in `out`, with the same checks and repairs.
+
+    The run that wrote the manuscript has to have carried its reading and its comparison to their end,
+    since typesetting does not repeat them, and what that comparison left open stays open."""
     out = Path(out)
     needed = [out / 'materials.json', out / 'plan.json', out / 'parts' / 'abstract.tex']
     if not all(path.is_file() for path in needed):
@@ -1204,6 +1216,15 @@ def typeset_only(instance, out, tex=None, choice=None):
     run = Paper(instance, out, tex, choice or {})
     if run.recipe is None:
         raise Stop('no TeX command is available: none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given')
+    # The first end in the log is that of the run that wrote the manuscript. The machine checks and the
+    # typesetting are made again here, and nothing else is.
+    produced = next((event for event in run.log if event['event'] == 'end'), {})
+    left = produced.get('open', [])
+    if produced.get('status') not in ('complete', 'no_tex', 'open_findings') \
+            or any(item['check'] in ('machine checks of the manuscript', 'typesetting') for item in left):
+        raise Stop(f'{out} holds a manuscript whose reading and comparison did not run to their end; --typeset-only '
+                   'typesets only a manuscript that an earlier run finished apart from the typesetting')
+    run.open = list(left)
     run.materials, run.plan = read_json(out / 'materials.json'), read_json(out / 'plan.json')
     run.parts = {name: read_file(out / 'parts' / (name + '.tex')) for name in ['abstract'] + [s['id'] for s in run.plan['sections']]}
     if (out / 'correspondence.json').is_file():
@@ -1223,8 +1244,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('instance', type=Path)
     parser.add_argument('--out', type=Path, required=True, help='the folder that receives the paper; new or empty')
-    parser.add_argument('--model', help='<provider>/<model> for every session; default: the first of the instance\'s models')
-    parser.add_argument('--effort', help='the effort of every session; default: that of the instance\'s first model')
+    parser.add_argument('--model', help='<provider>/<model> for every session, the reading and the comparison included; '
+                                        'default: the first of the instance\'s models for planning, writing and repair, '
+                                        'and the first model of the review role for the reading and the comparison')
+    parser.add_argument('--effort', help='the effort of planning, writing and repair, and of every session when --model '
+                                         'is given; default: that of the instance\'s first model, and, for the reading '
+                                         'and the comparison without --model, that of the review role\'s first model')
     parser.add_argument('--typeset-only', action='store_true', help='typeset the manuscript that --out already holds')
     parser.add_argument('--tex', nargs=argparse.REMAINDER, help='the TeX command; takes the rest of the command line')
     args = parser.parse_args(argv)

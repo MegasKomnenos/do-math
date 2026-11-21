@@ -1965,6 +1965,17 @@ class WrittenPartTests(TempCase):
         self.assertFalse(self.canon.history.exists())
         self.assertTrue((self.canon.approaches / 'Small/empty').is_dir())
 
+    def test_retire_approaches_leaves_the_approaches_of_an_element_whose_name_extends_the_name(self):
+        # `Small.root.even` is an element of its own, and its folder lies inside the folder of `Small.root`.
+        # Accepting the root's proof sets aside the root's approaches only (design record, section 7).
+        write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
+        write(self.canon.approaches / 'Small/root/even/cases.md', APPROACH)
+        self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
+        self.assertEqual(self.files(self.canon.history), ['Small/root/000015-approaches/induction.md'])
+        self.assertEqual(self.files(self.canon.approaches), ['Small/root/even/cases.md'])
+        self.assertEqual(list(read_approaches(self.canon, 'Small.root.even')), ['cases'])
+        self.assertEqual(read_approaches(self.canon, 'Small.root'), {})
+
     def test_retire_approaches_says_whether_it_moved_anything(self):
         # The runner regenerates records.json, which lists the approaches of each element, when this
         # says that approaches were moved (runner.py, publish).

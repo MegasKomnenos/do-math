@@ -1255,8 +1255,7 @@ class Broker:
         """A complete cache entry's emitted suffixes and output identities, or None.
 
         An entry is complete when its manifest names the files and the two identities and every
-        named file is there. One whose caching was cut short, one that lost a file, and one stored
-        before the identities were kept are all misses."""
+        named file is there. One whose caching was cut short and one that lost a file are misses."""
         try:
             manifest = read_json(self.paths.cache / (key + ".artifacts.json"))
             suffixes, identities = manifest["artifacts"], {"public": manifest["public"], "full": manifest["full"]}
@@ -1500,7 +1499,12 @@ class Broker:
         """The memory rule, the thread budget and the machine gate, all at once.
 
         A job that exceeds a budget on its own still runs, alone: refusing it
-        forever would be a kill policy by another name (reference/lean-broker.md)."""
+        forever would be a kill policy by another name (reference/lean-broker.md).
+
+        `free_mb` shows what each running compile has taken so far. One started a tick ago is
+        still loading its imports, so the gate counts the rest of every running compile's certain
+        part as taken already; otherwise compiles started a tick apart would each be admitted
+        against the same free memory."""
         config = self.config
         rows = [self.reserve(r) for r in running]
         certain, mean, sd = self.reserve(job)
@@ -1510,7 +1514,8 @@ class Broker:
             return False
         if running and sum(r["threads"] for r in running) + job["threads"] > config["cpu_threads_budget"]:
             return False
-        return free_mb - certain >= config["min_free_memory_mb"]
+        owed = sum(row[0] - (r["measured"] or {}).get("current_mb", 0.0) for r, row in zip(running, rows))
+        return free_mb - owed - certain >= config["min_free_memory_mb"]
 
     def schedule(self):
         """First fit in submission order, with aging: a job passed `max_passes` times closes the queue behind it."""
@@ -1644,21 +1649,7 @@ class Broker:
 
         A running job is followed by identity and its exit read from the job host,
         never relaunched. A job whose host never received GO has not started Lean:
-        its host exits on CANCEL and the job goes back to the queue.
-
-        A build that an earlier version of the broker left unfinished is cancelled with the
-        reason. That version computed every module's key in advance and chained the compiles by
-        job ID; this one settles modules from the build's own record (advance_build), which such
-        a build does not have."""
-        for build in self.state["builds"].values():
-            if build["status"] in ACTIVE and "sources" not in build:
-                build["cancel_requested"] = True
-                build["reason"] = "the broker was replaced by a version that keys modules differently; submit the build again"
-                for module in build["modules"].values():
-                    job = self.state["jobs"].get(module.get("job"))
-                    if job and job["status"] in ACTIVE and not job.get("cancel_requested"):
-                        self.cancel(job, build["reason"])
-                self.settle_build(build)
+        its host exits on CANCEL and the job goes back to the queue."""
         # A copy: finishing a job below can prune older finished jobs from the state.
         for job_id, job in list(self.state["jobs"].items()):
             if job["status"] != "running":
@@ -1765,7 +1756,8 @@ def ensure_broker(paths):
     except PermissionError:
         missing = (f"No Lean broker is alive, and none appeared within {READY_SECONDS:g} seconds. This process "
                    "cannot start one outside its job, as inside a session; the runner starts the instance's "
-                   "broker while it runs. Submit again later.")
+                   "broker while it runs. Submit again later; a job already submitted keeps its place, so "
+                   "wait on it again instead of submitting it anew.")
     deadline = time.monotonic() + READY_SECONDS
     while time.monotonic() < deadline:
         info = broker_alive(paths)

@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 from cli_adapter import Command
-from coordination import board, lease, section, session_live
+from coordination import board, session_live
 from ending import request_prompt, run_turn
 from launch import worker_command
 from runner import Runner, main
 from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
-from support import InstanceCase
+from support import InstanceCase, take
 
 RUNTIME = Path(__file__).resolve().parents[1]
 
@@ -110,17 +110,6 @@ def setUpModule():
 
 def tearDownModule():
     CONTAINMENT.stop()
-
-
-def take(session, element):
-    """Register the whole element as a section through its lease, as an attempt does."""
-    session = Path(session)
-    request = session / 'work/section.json'
-    write_json(request, {'whole': True})
-    taken = lease(session, element)
-    if not taken['leased']:
-        return {'registered': False, **taken}
-    return section(session, element, request)
 
 
 class EndingTests(InstanceCase):

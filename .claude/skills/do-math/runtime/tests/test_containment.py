@@ -202,6 +202,7 @@ class BrokerClientTests(unittest.TestCase):
             lean_broker.ensure_broker(paths)
         self.assertEqual(len(requests), 1)
         self.assertIn('the runner starts', str(raised.exception))
+        self.assertIn('wait on it again', str(raised.exception))
 
 
 if __name__ == '__main__':

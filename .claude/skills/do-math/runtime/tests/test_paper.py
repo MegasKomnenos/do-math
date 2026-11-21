@@ -467,6 +467,9 @@ class ManuscriptTests(PaperCase):
         # The form of a part.
         self.assertIn('a part does not use \\newcommand, \\section',
                       self.problems(proof='\\section{More}\n\\newcommand{\\S}{S}\n' + PROOF))
+        self.assertIn('a part does not use \\DeclareMathOperator, \\let, \\newenvironment',
+                      self.problems(proof='\\newenvironment{claim}{}{}\n\\DeclareMathOperator{\\rk}{rk}\n\\let\\phi\\varphi\n'
+                                    + PROOF))
         self.assertIn('written in ASCII', self.problems(proof=PROOF + 'Erdős.\n'))
         self.assertIn('the abstract stands by itself', self.problems(abstract='As in \\cite{euclid}, squares appear.\n'))
 
@@ -642,8 +645,23 @@ class RunTests(PaperCase):
         self.assertEqual(len(self.calls('compare')), paper.COMPARISON_ROUNDS)
         self.assertEqual(len(self.calls('repair')), paper.COMPARISON_ROUNDS - 1)
         rows = read_json(self.out / 'correspondence.json')['statements']
-        self.assertEqual(rows[2]['comparison'], {'verdict': 'differs', 'difference': differs[2]['difference']})
+        self.assertEqual(rows[2]['comparison'], {'verdict': 'differs', 'difference': differs[2]['difference'],
+                                                 'record_disagreement': ''})
         self.assertEqual(self.events('end')[0]['open'][0]['problems'][0]['label'], 'lem:square')
+
+    def test_a_disagreement_inside_the_record_of_an_element_is_reported_beside_the_paper(self):
+        script = good()
+        noted = [dict(row) for row in SAME]
+        noted[1]['record_disagreement'] = 'The record states the inequality for n >= 1; the Lean statement holds for every n.'
+        script['compare'] = [{'output/comparison.json': json.dumps(noted)}]
+        self.assertEqual(self.run_paper(script), 0)
+        self.assertIn('"record_disagreement"', self.calls('compare')[0]['prompt'])
+        # The manuscript is not repaired for it; the correspondence file and the log carry it.
+        self.assertEqual(self.calls('repair'), [])
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['record_disagreement'] for r in rows], ['', noted[1]['record_disagreement'], ''])
+        self.assertEqual(self.events('comparison')[0]['record_disagreements'],
+                         [{'label': 'lem:increasing', 'record_disagreement': noted[1]['record_disagreement']}])
 
     def test_without_a_tex_command_everything_else_is_done_and_the_manuscript_is_typeset_later(self):
         with patch('paper.shutil.which', return_value=None):
@@ -669,6 +687,36 @@ class RunTests(PaperCase):
         self.assertEqual([e['status'] for e in self.events('end')], ['no_tex', 'complete'])
         with self.assertRaises(paper.Stop):
             paper.tex_recipe(['no-such-tex-command'])
+
+    def test_typesetting_later_keeps_what_stayed_open_and_needs_a_run_that_finished_its_checks(self):
+        script = good()
+        differs = [dict(row) for row in SAME]
+        differs[2].update(verdict='differs', difference='The manuscript has k^2 + 2k = (k + 1)^2.')
+        script['write:tools'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')}]
+        script['compare'] = [{'output/comparison.json': json.dumps(differs)}]
+        script['repair:comparison'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k + 0'),
+                                        'output/response.json': json.dumps(
+                                            [{'finding': 1, 'action': 'revised', 'note': 'A term was added.'}])}]
+        with patch('paper.shutil.which', return_value=None):
+            self.assertEqual(self.run_paper(script, tex=None), 2)
+        self.assertFalse((self.out / 'paper.pdf').exists())
+        # Typesetting does not compare again, so the difference the comparison left stays open.
+        self.assertEqual(self.run_paper(script, only=True), 2)
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open'][0]['problems'][0]['label']), ('open_findings', 'lem:square'))
+        # A manuscript whose machine checks stayed open was neither read nor compared, and is not typeset alone.
+        self.out = self.root / 'paper-unread'
+        script = good()
+        script['write:tools'] = [{'output/tools.tex': TOOLS + 'This is Small.oddSum_succ.\n'}]
+        script['repair:machine'] = [{'output/tools.tex': TOOLS + f'This is Small.oddSum_succ, version {n}.\n'}
+                                    for n in range(9)]
+        readings = len(self.calls('read'))
+        with patch('paper.shutil.which', return_value=None):
+            self.assertEqual(self.run_paper(script, tex=None), 2)
+        self.assertEqual(len(self.calls('read')), readings)
+        with self.assertRaises(paper.Stop):
+            self.run_paper(script, only=True)
 
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
         found = {'latexmk': 'C:/tex/latexmk.exe', 'pdflatex': 'C:/tex/pdflatex.exe', 'C:/tex/pdflatex.exe': 'C:/tex/pdflatex.exe',

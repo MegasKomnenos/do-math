@@ -282,14 +282,13 @@ class AvailabilityTests(ScenarioCase):
 
     def test_opening_is_new_remaining_work_or_an_ended_occupation(self):
         observed = {'elements': {'Small.root': ['a', 'b'], 'Small.sumZero': ['c']}}
-        model = self.runner.model
-        self.assertIsNone(opening_since(observed, observed, model))
+        self.assertIsNone(opening_since(observed, observed))
         # A further section, or an element that is no longer work that remains, opens nothing.
-        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b', 'd'], 'Small.sumZero': ['c']}}, model))
-        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b']}}, model))
-        self.assertEqual(opening_since(observed, {'elements': {'Small.root': ['a'], 'Small.sumZero': ['c']}}, model),
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b', 'd'], 'Small.sumZero': ['c']}}))
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b']}}))
+        self.assertEqual(opening_since(observed, {'elements': {'Small.root': ['a'], 'Small.sumZero': ['c']}}),
                          'ended_occupancy')
-        self.assertEqual(opening_since(observed, {'elements': {**observed['elements'], 'Small.sumSucc': ['e']}}, model),
+        self.assertEqual(opening_since(observed, {'elements': {**observed['elements'], 'Small.sumSucc': ['e']}}),
                          'new_or_reopened_element')
 
     def test_operator_reconsideration_rejects_older_reports_and_preserves_stop(self):

@@ -11,12 +11,12 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 from canon_tool import view
 from context import assemble, rebase_links
-from coordination import lease, section, updates
+from coordination import updates
 from knowledge import render, replay
 from launch import worker_command, worker_environment
 from runner import Runner, main
 from runtime_support import read_json, write_json
-from support import InstanceCase, module_text, record_text
+from support import InstanceCase, module_text, record_text, take
 
 INSTALLED = Path(__file__).resolve().parents[2]
 ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
@@ -42,17 +42,6 @@ theorem lead (n : Nat) : oddSum (n + n) = 4 * oddSum n := by
   sorry''')
 UNDERSTANDING = ('The sum grows by one odd number at a time, and each step completes a square. '
                  'The elements `Small.oddSum` and `Small.root` carry the exact statements.\n')
-
-
-def take(session, element):
-    """Register the whole element as a section through its lease, as an attempt does."""
-    session = Path(session)
-    request = session / 'section.json'
-    write_json(request, {'whole': True})
-    taken = lease(session, element)
-    if not taken['leased']:
-        return {'registered': False, **taken}
-    return section(session, element, request)
 
 
 class ContextTests(InstanceCase):

@@ -1107,6 +1107,22 @@ class BrokerTests(BrokerFixture):
         self.broker.config["min_free_memory_mb"] = 0
         self.until(lambda: self.finished(job_id))
 
+    def test_machine_gate_counts_what_running_compiles_have_still_to_take(self):
+        # Free memory shows what a running compile has taken so far. One started a tick ago is still
+        # loading its imports, so the gate counts the rest of its certain part as taken already.
+        self.start_broker()
+        self.broker.config.update(memory_budget_mb=100000, min_free_memory_mb=100)
+        self.broker.calibration.record_baseline("closure", {"imports": []}, 400, 1)
+        def job(status, current_mb=None):
+            return {"kind": "compile", "closure": "closure", "expect_mb": 400, "threads": 1, "status": status,
+                    "measured": None if current_mb is None else {"current_mb": current_mb}}
+        candidate = job("queued")
+        # 550 MiB free leaves 150 after the candidate's 400, above the gate's 100.
+        self.assertTrue(self.broker.fits(candidate, [job("running", current_mb=400)], 550))
+        # A running compile that has taken 50 of its 400 still owes 350 of them.
+        self.assertFalse(self.broker.fits(candidate, [job("running", current_mb=50)], 550))
+        self.assertTrue(self.broker.fits(candidate, [job("running", current_mb=50)], 900))
+
     def test_queued_compile_starts_with_the_threads_in_force(self):
         # A change of lean.threads reaches a compile that is still queued, as a change of priority does.
         self.start_broker()
@@ -1651,21 +1667,6 @@ class OutputKeyTests(BrokerFixture):
         self.assertEqual((after["Uses"]["public"], after["Uses"]["full"]), (before["Uses"]["public"], before["Uses"]["full"]))
         self.assertNotEqual(after["Top"]["key"], before["Top"]["key"])
 
-    def test_entries_stored_without_identities_are_misses(self):
-        self.start_broker()
-        root, _ = self.library()
-        first = self.built(root, [root / "Uses.lean"])
-        self.assertEqual(self.statuses(first), {"Basis": "finished", "Uses": "finished"})
-        manifests = [self.paths.cache / (module["key"] + ".artifacts.json") for module in first["modules"].values()]
-        for manifest in manifests:  # as a broker before this change stored them
-            runtime_support.write_json(manifest, {"artifacts": runtime_support.read_json(manifest)["artifacts"]})
-        second = self.built(root, [root / "Uses.lean"])
-        self.assertEqual(self.statuses(second), {"Basis": "finished", "Uses": "finished"})
-        self.assertEqual({n: m["key"] for n, m in second["modules"].items()}, {n: m["key"] for n, m in first["modules"].items()})
-        for manifest in manifests:
-            self.assertEqual(set(runtime_support.read_json(manifest)), {"artifacts", "public", "full"})
-        self.assertEqual(self.statuses(self.built(root, [root / "Uses.lean"])), {"Basis": "cached", "Uses": "cached"})
-
     def test_an_environment_change_fails_the_modules_still_waiting(self):
         # A waiting module's key would name the new environment while its imports were compiled in the old one.
         self.start_broker()
@@ -1681,37 +1682,6 @@ class OutputKeyTests(BrokerFixture):
         self.assertEqual((uses["status"], uses["job"], uses["key"]), ("failed", None, None))
         self.assertIn("environment changed", uses["reason"])
         self.assertEqual(record["status"], "failed")
-
-    def test_a_build_left_by_an_earlier_broker_is_cancelled_with_the_reason(self):
-        # That broker keyed every module in advance and chained the compiles by job ID. A module of such a
-        # build, started by this broker before the module it imports, would fail as if Lean had rejected it.
-        self.start_broker()
-        root = self.instance / "sessions/s1/work/lean"
-        target = source(root / "Target.lean", imports=("Basis",))
-        build_id, job_id = "b" + "1" * 32, "j" + "1" * 32
-        lib = self.paths.build(build_id) / "lib"
-        job = self.broker.new_job(job_id, {"session": "s1", "expect_mb": 60}, str(target), ["Basis"], [],
-                                  source_sha256="unused", build=build_id, module="Target", root=str(root),
-                                  lib=str(lib), olean=str(lib / "Target.olean"), deps=["j" + "2" * 32], key="k")
-        self.paths.job(job_id).mkdir()
-        self.paths.build(build_id).mkdir()
-        self.broker.state["jobs"][job_id] = job
-        self.broker.state["builds"][build_id] = {
-            "id": build_id, "session": "s1", "root": str(root), "targets": ["Target"], "lib": str(lib), "expect_mb": 60,
-            "submitted_at": time.time(), "status": "queued", "finished_at": None, "reason": None,
-            "module_keys": {"Target": "k"}, "fresh_targets": False,
-            "modules": {"Target": {"key": "k", "source": str(target), "source_sha256": "unused", "job": job_id,
-                                   "status": "queued", "exit_code": None, "olean": str(lib / "Target.olean")}}}
-        self.broker.dirty = True
-        self.broker.save()
-        self.start_broker()
-        record = lean_broker.job_record(self.paths, build_id)
-        self.assertEqual(record["status"], "cancelled")
-        self.assertIn("submit the build again", record["reason"])
-        self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "cancelled")
-        self.assertFalse((self.paths.job(job_id) / "launch.json").exists())
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            self.assertEqual(lean_broker.wait(self.paths, build_id, timeout=0), 4)
 
 
 class SnapshotTests(BrokerFixture):

@@ -1022,7 +1022,7 @@ class Runner:
         if observed is not None:
             current = self.current_availability()
             if (observed['epoch'] != current['epoch']
-                    or opening_since(observed, current, self.model)):
+                    or opening_since(observed, current)):
                 session['availability_report'] = {'status': 'stale'}
             else:
                 self.state['attempt_dispatch_gate'] = {
@@ -1044,7 +1044,7 @@ class Runner:
         before = json.dumps(gate, sort_keys=True)
         current = self.current_availability()
         if gate['mode'] == 'suppressed':
-            reason = opening_since(gate['baseline'], current, self.model)
+            reason = opening_since(gate['baseline'], current)
             if reason:
                 gate.update(mode='reassess', reason=reason, probe_session=None)
         # Track settled elements leaving the work that remains, so a later reopening is a new opportunity.

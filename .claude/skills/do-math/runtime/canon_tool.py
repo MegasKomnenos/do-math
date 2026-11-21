@@ -76,7 +76,8 @@ def view(instance, model, name, part=None, full=False):
         return declaration_text(text, index['span'])
     if part == 'history':
         folder = canon.history / name_path(name)
-        files = sorted(p for p in folder.rglob('*.md')) if folder.is_dir() else []
+        # The folder also holds the folders of the elements whose names extend this name; those are not read.
+        files = sorted([*folder.glob('*.md'), *folder.glob('[0-9]*-approaches/*.md')]) if folder.is_dir() else []
         return '\n\n'.join(p.read_text(encoding='utf-8') for p in files) or 'No history.'
     if part == 'approaches':
         entries = read_approaches(canon, name)

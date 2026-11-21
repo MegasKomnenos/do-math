@@ -115,7 +115,7 @@ To coordinate an unexpected overlap, write a short message file in your director
 
 ### The availability snapshot
 
-When an attempt runs `commands.updates`, the command saves, in the session's `availability/` directory, the elements that remain, that is, the frontier's elements whose proof is not accepted, together with the sections registered on each. It returns an `availability_snapshot` token identifying that snapshot. The attempt can use the token in the availability report described in [Retained work](retained-work.md). The token identifies what the attempt inspected; the attempt still judges whether all the work that remains is occupied.
+When an attempt runs `commands.updates`, the command saves, in the session's `availability/` directory, the elements of the work that remains together with the sections registered on each. These are the elements that `list --remaining` returns: the frontier's elements whose proof is not accepted, and those whose proof names a statement that has since been refuted. It returns an `availability_snapshot` token identifying that snapshot. The attempt can use the token in the availability report described in [Retained work](retained-work.md). The token identifies what the attempt inspected; the attempt still judges whether all the work that remains is occupied.
 
 ## Lean compilation
 

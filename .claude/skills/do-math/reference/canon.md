@@ -198,9 +198,9 @@ The canon is read with one command, `commands.canon` in your `input.json`. It is
 
 A `list` takes at most one of the selectors `--module`, `--uses`, `--used-by`, `--about` and `--remaining`. With `--uses` or `--used-by`, the option `--deep` follows the use all the way, so `list --uses <element> --deep` returns everything the statement rests on within the canon, at any depth. The option `--units` restricts any list to the units.
 
-A list returns one line for each element it selects and ends with the count. The lines come in a fixed order, by name, or in the order in which the elements are reached from the starting element, so the same command on the same canon returns the same lines. These commands start no Lean process.
+A list returns one line for each element it selects and ends with the count. The lines come in a fixed order, by name, or in the order in which the elements are reached from the starting element, so the same command on the same canon returns the same lines. These commands start no Lean process. They read the structural index and the records, which describe the canon as of its latest publication.
 
-The same array has one further command, `checkout`, which copies the library for your own Lean work; [Retained work](retained-work.md) describes it. They read the structural index and the records, which describe the canon as of its latest publication.
+The same array has one further command, `checkout`, which copies the library for your own Lean work; [Retained work](retained-work.md) describes it.
 
 The commands correspond to the directions of traversal that the common introduction names. Containment is `list --module`. Use is `list --uses` and `list --used-by`, and the view of an element shows one step of each. Object is `list --about` with a definition. Standing is `frontier` and `list --remaining`.
 
