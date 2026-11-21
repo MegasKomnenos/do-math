@@ -63,6 +63,10 @@ Use the CLI's available shell, file and search tools for the mathematics. For a 
 
 The available external tools are the servers explicitly configured in this instance. If scholarly-mcp is present, its source descriptions explain which databases and operations are supported. If a tool or source is unavailable, record the limitation and use another available source where appropriate. The fact that the operator has a personal tool configuration does not make that tool part of your session.
 
+## Delegating to sub-agents
+
+A Claude session has the CLI's own tool for launching delegated agents; its general-purpose agent is available, and the agent's model and effort can be chosen when it is launched. A Codex session is launched with its multi-agent feature disabled, so it cannot delegate. A delegated agent runs as part of your session: it works in your session directory, its files belong to your retained work, and a Lean compile it submits carries your session ID at the broker, so it shares your session's memory and job accounting there. Its conversation is not retained separately; have it write what must be kept to files under `work/`. The review role guide specifies the one delegation that a role requires, the three independent sub-reviews; other roles may delegate when it serves their work, and remain responsible for everything a delegated agent produces.
+
 ## Checking and ending
 
 Run the transport check, `commands.check`, against your own session directory before finishing. Exit code 0 with `ok: true` means the transport structure and references passed. A failure identifies a field or missing file to fix. The check does not prove mathematical claims or evaluate the quality of the exposition.

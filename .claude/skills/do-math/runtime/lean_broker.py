@@ -1333,7 +1333,8 @@ def broker_alive(paths):
 def launch_broker(paths, breakaway=False):
     """Start a detached broker for the instance, its output going to broker.log, and return its Popen.
 
-    The runner and a session's client both start the broker this way; the lock settles a race between two starts."""
+    The runner starts the broker this way, and so does a client outside a session (ensure_broker); the
+    lock settles a race between two starts."""
     paths.ensure()
     with paths.log.open("ab") as log:
         return subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
@@ -1342,23 +1343,31 @@ def launch_broker(paths, breakaway=False):
 
 
 def ensure_broker(paths):
-    """The live broker's receipt, launching one if none is alive; the lock settles any race."""
+    """The live broker's receipt. When none is alive, a caller outside a session starts one, and a
+    session's client waits for the runner's.
+
+    The broker is shared: one started inside a session's job would end with that session and take
+    the other sessions' compiles with it. So the start asks to leave the caller's job. Outside any
+    job the request changes nothing. A session's job refuses it, and the client then starts nothing:
+    the runner keeps a broker alive (runner.ensure_broker), so the client waits for that one and
+    otherwise says why none came. The lock settles a race between two starts."""
     info = broker_alive(paths)
     if info:
         return info
-    # A session's client may start the shared broker; it must not join that session's job and
-    # end with it. A caller in a job that forbids breakaway starts it as before.
     try:
         launch_broker(paths, breakaway=True)
+        missing = f"No Lean broker became ready; read {paths.log}"
     except PermissionError:
-        launch_broker(paths)
+        missing = (f"No Lean broker is alive, and none appeared within {READY_SECONDS:g} seconds. This process "
+                   "cannot start one outside its job, as inside a session; the runner starts the instance's "
+                   "broker while it runs. Submit again later.")
     deadline = time.monotonic() + READY_SECONDS
     while time.monotonic() < deadline:
         info = broker_alive(paths)
         if info:
             return info
         time.sleep(0.1)
-    raise RuntimeError(f"No Lean broker became ready; read {paths.log}")
+    raise RuntimeError(missing)
 
 
 def submit(paths, source, expect_mb, session):

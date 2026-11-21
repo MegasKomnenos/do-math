@@ -298,8 +298,10 @@ def terminate_process(identity):
 
 
 def popen_options(detached=False, breakaway=False):
-    """breakaway: on Windows, start the process outside the caller's job (contain_session_processes);
-    for shared infrastructure such as the Lean broker that must not end with one session."""
+    """breakaway: on Windows, ask to start the process outside the caller's job, for shared
+    infrastructure such as the Lean broker that must not end with one session. The request changes
+    nothing for a caller outside any job, and a job that forbids leaving, as a session's does
+    (contain_session_processes), refuses it with PermissionError."""
     if os.name == "nt":
         flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
                  if detached else subprocess.CREATE_NO_WINDOW)
@@ -355,9 +357,12 @@ def contain_session_processes():
     and their parent link is then gone, so following the process tree at the end misses them.
     Job membership is inherited regardless, so the whole session ends with its host: after its
     last turn, through kill-session, or when the host itself dies. Turns do not end the host, so
-    work a session waits on across turns keeps running. Only a process started with an explicit
-    breakaway request leaves the job: the Lean broker a session's client may start
-    (popen_options(breakaway=True)), and tools that ask for it, which would otherwise fail to start.
+    work a session waits on across turns keeps running. The job grants no breakaway, so nothing
+    the session starts can leave it. A job that permits breakaway does not hold a session's
+    computations: Git Bash asks to leave on every program it starts whenever its job permits that,
+    so the job that once let the Lean broker leave let every computation run from the session's
+    shell leave too. The shared broker is therefore never started from inside a session
+    (lean_broker.ensure_broker); the runner starts it outside every session's job.
     Returns a short status for the session folder; failure leaves the session uncontained."""
     global _SESSION_JOB
     if os.name != "nt":
@@ -368,8 +373,9 @@ def contain_session_processes():
     if not handle:
         return {"contained": False, "reason": str(ctypes.WinError(ctypes.get_last_error()))}
     info = _ExtendedLimits()
-    # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK (explicit requests only)
-    info.BasicLimitInformation.LimitFlags = 0x2000 | 0x800
+    # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE alone: without JOB_OBJECT_LIMIT_BREAKAWAY_OK a request to
+    # leave the job is refused, and Git Bash, which asks only where it is permitted, does not ask.
+    info.BasicLimitInformation.LimitFlags = 0x2000
     if (not WIN.SetInformationJobObject(handle, 9, ctypes.byref(info), ctypes.sizeof(info))
             or not WIN.AssignProcessToJobObject(handle, WIN.GetCurrentProcess())):
         error = ctypes.get_last_error()
