@@ -5,7 +5,8 @@ command the script starts is this file itself, which then plays the session. Run
 `test_paper.py session <scenario folder>` it reads session.json in its working folder, writes the
 files the scenario scripts for that kind of session, and records what the session was given. Run
 as `test_paper.py tex paper.tex` it is the TeX command: it fails on `\\undefinedmacro` and otherwise
-leaves paper.pdf.
+leaves paper.pdf and paper.log. In the log, a line of the manuscript with `% wide` is reported as set
+69pt wider than the text block and one with `% nearly` as 2.5pt wider, in the words of TeX.
 """
 import json
 from pathlib import Path
@@ -42,6 +43,13 @@ def stand_in_tex(arguments):
         if '\\undefinedmacro' in line:
             print(f'./paper.tex:{number}: Undefined control sequence.\nl.{number} \\undefinedmacro')
             return 1
+    log = ['This is a stand-in for TeX.']
+    for number, line in enumerate(text.splitlines(), 1):
+        if '% wide' in line:
+            log += [f'Overfull \\hbox (69.23543pt too wide) detected at line {number}', '[]']
+        if '% nearly' in line:
+            log += [f'Overfull \\hbox (2.5pt too wide) in paragraph at lines {number}--{number + 1}', '[]']
+    Path('paper.log').write_text('\n'.join(log) + '\n', encoding='utf-8')
     Path('paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
     return 0
 
@@ -499,6 +507,31 @@ class ManuscriptTests(PaperCase):
         self.assertIn(r'~~~~\ensuremath{\forall} n \ensuremath{\le} 3', tex)
         self.assertIn(r'x\ensuremath{_{1}} \ensuremath{\wedge} a\_b \ensuremath{\in} \{y\}', tex)
         self.assertIn(r'\mathrm{U{+}229B}', tex)
+        # A circumflex and a tilde are the characters, where \^{} and \~{} would print an accent.
+        self.assertEqual(paper.lean_tex('n ^ 2 ~ m')[0], r'n \textasciicircum{} 2 \textasciitilde{} m')
+
+    def test_the_running_head_is_the_title_with_its_formulas_left_as_they_are(self):
+        # amsart capitalizes the title for the head, and with no author it does so twice, formulas included.
+        tex = paper.assemble(self.materials(), PLAN, PARTS)[0]
+        title = PLAN['title'].strip()
+        self.assertIn('\\newcommand{\\RunningHead}{' + title + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n'
+                      '\\title{' + title + '}\n', tex)
+        self.assertIn('\\maketitle\n\\markboth{\\RunningHead}{\\RunningHead}\n', tex)
+
+    def test_the_lines_wider_than_the_text_block_are_read_from_the_log_of_tex(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / 'paper.log'
+            self.assertEqual(paper.wide_lines(log), [])  # no log, nothing to report
+            log.write_text('Overfull \\hbox (69.23543pt too wide) detected at line 31\n[]\n'
+                           'Overfull \\hbox (12.4pt too wide) in paragraph at lines 40--44\n'
+                           'Overfull \\hbox (7.0pt too wide) in alignment at lines 50--53\n'
+                           'Overfull \\hbox (2.5pt too wide) in paragraph at lines 60--61\n'
+                           'Underfull \\vbox (badness 6575) has occurred while \\output is active\n'
+                           'Overfull \\hbox (69.23543pt too wide) detected at line 31\n', encoding='utf-8')
+            self.assertEqual(paper.wide_lines(log),
+                             ['paper.tex, line 31: TeX set a line 69pt wider than the text block',
+                              'paper.tex, lines 40 to 44: TeX set a line 12pt wider than the text block',
+                              'paper.tex, lines 50 to 53: TeX set a line 7pt wider than the text block'])
 
 
 class RunTests(PaperCase):
@@ -579,6 +612,40 @@ class RunTests(PaperCase):
                                       ('machine checks of the manuscript', False), ('typesetting', False)])
         self.assertEqual((self.out / 'parts/proof.tex').read_text(encoding='utf-8'), PROOF)
         self.assertTrue((self.out / 'paper.pdf').is_file())
+
+    def test_a_line_wider_than_the_text_block_goes_to_a_repair_session(self):
+        script = good()
+        script['write:proof'] = [{'output/proof.tex': PROOF + '\\[ a = b \\] % wide\nA sentence. % nearly\n'}]
+        script['repair:wide'] = [{'output/proof.tex': PROOF + '\\[ a = b \\]\nA sentence. % nearly\n'}]
+        self.assertEqual(self.run_paper(script), 0)
+        repair = self.calls('repair')
+        self.assertEqual([c['section'] for c in repair], ['wide'])
+        findings = read_json(self.out / 'sessions' / repair[0]['folder'] / 'findings.json')
+        self.assertEqual(len(findings), 1)  # the line that is 2.5pt too wide is left as it is
+        self.assertRegex(findings[0], r'^paper\.tex, line \d+: TeX set a line 69pt wider than the text block$')
+        self.assertIn('stand out into the margin', repair[0]['prompt'])
+        self.assertIn('are `parts/proof.tex`', repair[0]['prompt'])
+        checks = [(e['check'], bool(e['problems'])) for e in self.events('check')]
+        self.assertEqual(checks[:6], [('machine checks of the manuscript', False), ('typesetting', False), (paper.WIDE, True),
+                                      ('machine checks of the manuscript', False), ('typesetting', False), (paper.WIDE, False)])
+        self.assertEqual(self.events('end')[0]['open'], [])
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+
+    def test_a_wide_line_that_stays_is_reported_and_the_paper_is_typeset_with_it(self):
+        script = good()
+        script['write:proof'] = [{'output/proof.tex': PROOF + '\\[ a = b \\] % wide\n'}]
+        script['repair:wide'] = [{'output/proof.tex': PROOF + f'\\[ a = b \\] % wide, attempt {n}\n'} for n in range(9)]
+        write_json(self.scenario / 'script.json', script)
+        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+            self.assertEqual(paper.produce(self.instance, self.out, TEX), 2)
+        self.assertEqual(len(self.calls('repair')), paper.REPAIR_ROUNDS)
+        # The paper is typeset, so the reading and the comparison are made as for any other manuscript.
+        self.assertEqual((len(self.calls('read')), len(self.calls('compare'))), (1, 1))
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], [item['check'] for item in end['open']]), ('open_findings', [paper.WIDE]))
+        self.assertIn('69pt wider than the text block', end['open'][0]['problems'][0])
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        self.assertIn('paper.pdf', ' '.join(str(call.args[0]) for call in shown.call_args_list if call.args))
 
     def test_repairs_are_bounded_and_what_stays_open_is_reported(self):
         script = good()

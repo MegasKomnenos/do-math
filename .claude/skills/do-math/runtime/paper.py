@@ -59,6 +59,8 @@ READING_ROUNDS = 2     # independent readings, each followed by a repair of what
 COMPARISON_ROUNDS = 2  # comparisons of the statements; a repair follows every one but the last
 LIMIT_WAITS = 12       # times one session is started again after the account's usage limit
 TEX_SECONDS = 600      # one TeX command
+WIDE_PT = 5.0          # a line this many points wider than the text block is sent back to be broken
+WIDE = 'lines wider than the text block'
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
 NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
@@ -72,6 +74,8 @@ REF = re.compile(r'\\(?:eq|page)?ref\{([^}]*)\}')
 LABEL = re.compile(r'\\label\{([^}]*)\}')
 SECTION_ID = re.compile(r'[a-z][a-z0-9-]*')
 LABEL_FORM = re.compile(r'[a-z]+:[a-z0-9-]+')
+OVERFULL = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) '
+                      r'(?:detected at line (\d+)|in (?:paragraph|alignment) at lines (\d+)--(\d+))')
 
 PREAMBLE = r'''\documentclass{amsart}
 \usepackage{amssymb}
@@ -87,7 +91,7 @@ PREAMBLE = r'''\documentclass{amsart}
 \numberwithin{equation}{section}
 '''
 TEX_SPECIAL = {'\\': r'\textbackslash{}', '{': r'\{', '}': r'\}', '$': r'\$', '&': r'\&', '#': r'\#', '%': r'\%',
-               '_': r'\_', '^': r'\^{}', '~': r'\~{}'}
+               '_': r'\_', '^': r'\textasciicircum{}', '~': r'\textasciitilde{}'}  # \^{} and \~{} print an accent
 LEAN_SYMBOLS = {
     '→': r'\to', '←': r'\leftarrow', '↔': r'\leftrightarrow', '↦': r'\mapsto', '↑': r'\uparrow', '∀': r'\forall',
     '∃': r'\exists', '¬': r'\neg', '∧': r'\wedge', '∨': r'\vee', '≤': r'\le', '≥': r'\ge', '≠': r'\ne', '≡': r'\equiv',
@@ -497,9 +501,13 @@ def uncommented(text):
 def assemble(materials, plan, parts):
     """paper.tex from the parts, in the order of the plan, and the lines each part occupies in it."""
     cites = any(CITE.search(uncommented(text)) for text in parts.values())
+    title = plan['title'].strip()
+    # The manuscript names no author. amsart then takes the title for the running head of the even pages and
+    # puts it in capitals a second time, the letters of its formulas included. The head is set here instead.
     lines = (PREAMBLE + '\\newcommand{\\LeanStatement}{\\begin{quote}\\ttfamily\\raggedright\ntheorem '
-             + lean_tex(main_element(materials)['lean'])[0] + '\n\\end{quote}}\n\\begin{document}\n\\title{'
-             + plan['title'].strip() + '}\n\\begin{abstract}').split('\n')
+             + lean_tex(main_element(materials)['lean'])[0] + '\n\\end{quote}}\n\\newcommand{\\RunningHead}{' + title
+             + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n\\title{' + title
+             + '}\n\\begin{abstract}').split('\n')
     spans = []
 
     def add(name):
@@ -508,7 +516,7 @@ def assemble(materials, plan, parts):
         lines.extend(body)
 
     add('abstract')
-    lines += ['\\end{abstract}', '\\maketitle']
+    lines += ['\\end{abstract}', '\\maketitle', '\\markboth{\\RunningHead}{\\RunningHead}']
     for section in plan['sections']:
         lines += ['', '\\section{' + section['title'].strip() + '}\\label{sec:' + section['id'] + '}']
         add(section['id'])
@@ -682,6 +690,22 @@ def typeset(folder, recipe):
     return []
 
 
+def wide_lines(log):
+    """The lines that TeX set wider than the text block by more than WIDE_PT, as its log reports them.
+
+    TeX reports such a line as a warning and typesets the paper all the same, with the line standing
+    out into the margin."""
+    log = Path(log)
+    if not log.is_file():
+        return []
+    found = []
+    for width, single, first, last in OVERFULL.findall(log.read_text(encoding='utf-8', errors='replace')):
+        if float(width) > WIDE_PT:
+            where = f'line {single}' if single else f'lines {first} to {last}'
+            found.append(f'paper.tex, {where}: TeX set a line {float(width):.0f}pt wider than the text block')
+    return list(dict.fromkeys(found))
+
+
 # ----------------------------------------------------------------------------- prompts
 
 CONTEXT = '''A script is turning a finished piece of mathematical research into a paper. The research is a Lean library, \
@@ -772,6 +796,11 @@ REPAIR_KINDS = {
 requirement of the method or of the plan. Correct every one.''',
     'typeset': '''TeX could not typeset the manuscript. `findings.json` holds the errors of the TeX run; line numbers in \
 them are lines of `paper.tex`. Correct the cause of each error in the part where it lies.''',
+    'wide': '''TeX typeset the manuscript, and some lines came out wider than the text block, so that they stand out into \
+the margin of the printed page. `findings.json` lists them, with the lines of `paper.tex` they come from and by how much \
+each is too wide. Where the line is a displayed formula, break the formula over two or more lines, with an environment \
+such as `multline*` or `align*`. Where it is a line of a paragraph, TeX found no place to break it: display the long \
+formula, or reword the sentence. Change nothing in what the text says.''',
     'reading': '''A session that had the manuscript and nothing else read it as the reader the method describes. \
 `findings.json` holds its report: "understanding" is what that reader took the paper to prove and how; "findings" are the \
 places where the reader could not follow, missed something, found an error, or met text that does not belong in a paper.
@@ -1049,10 +1078,18 @@ class Paper:
                 self.event('check', check='typesetting', command=self.recipe[0], problems=problems)
                 if not problems:
                     shutil.copyfile(folder / 'paper.pdf', self.out / 'paper.pdf')
+                    kind, problems = 'wide', wide_lines(folder / 'paper.log')
+                    self.event('check', check=WIDE, problems=problems)
+            # What an earlier pass left open about wide lines is replaced by what this pass finds.
+            self.open = [item for item in self.open if item['check'] != WIDE]
             if not problems:
                 return True
             if round_number < REPAIR_ROUNDS:
                 self.repair(kind, problems, tex, spans)
+        if kind == 'wide':
+            # The paper is typeset. A line that still stands out into the margin is reported and stops nothing.
+            self.open.append({'check': WIDE, 'after_repairs': REPAIR_ROUNDS, 'problems': problems})
+            return True
         self.open.append({'check': 'typesetting' if kind == 'typeset' else 'machine checks of the manuscript',
                           'after_repairs': REPAIR_ROUNDS, 'problems': problems})
         return False
@@ -1170,7 +1207,7 @@ class Paper:
             print('No TeX command was available (none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given), '
                   'so paper.pdf was not typeset. Everything else is done. When a TeX command is available, run this '
                   'command again with --typeset-only and the same --out.')
-        elif not self.open:
+        elif (self.out / 'paper.pdf').is_file():
             print(f'The paper is {self.out / "paper.pdf"}.')
         return {'complete': 0, 'open_findings': 2, 'no_tex': 3}[status]
 
