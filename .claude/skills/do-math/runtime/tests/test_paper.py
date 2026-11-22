@@ -795,6 +795,34 @@ class RunTests(PaperCase):
         with self.assertRaises(paper.Stop):
             self.run_paper(script, only=True)
 
+    def test_a_statement_that_a_repair_changes_while_typesetting_later_is_reported_as_not_compared(self):
+        script = good()
+        broken = TOOLS.replace('For every natural number $k$, we have', 'For every natural number $k$, \\undefinedmacro we have')
+        self.assertNotEqual(broken, TOOLS)
+        script['write:tools'] = [{'output/tools.tex': broken}]
+        script['repair:typeset'] = [{'output/tools.tex': TOOLS}]
+        # Without TeX the macro goes unnoticed: the manuscript is read and compared, and the lemma is judged as written.
+        with patch('paper.shutil.which', return_value=None):
+            self.assertEqual(self.run_paper(script, tex=None), 3)
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+        compared = len(self.calls('compare'))
+        # Typesetting later repairs the lemma and does not compare again, so its present text has no verdict.
+        self.assertEqual(self.run_paper(script, only=True), 2)
+        self.assertEqual([c['section'] for c in self.calls('repair')], ['typeset'])
+        self.assertEqual(len(self.calls('compare')), compared)
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same', 'same', 'not compared'])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], [item['check'] for item in end['open']]), ('open_findings', [paper.UNCOMPARED]))
+        self.assertEqual([problem['label'] for problem in end['open'][0]['problems']], ['lem:square'])
+        # Typesetting it once more finds the same statement without a verdict and reports it once.
+        self.assertEqual(self.run_paper(script, only=True), 2)
+        end = self.events('end')[-1]
+        self.assertEqual([(item['check'], [problem['label'] for problem in item['problems']]) for item in end['open']],
+                         [(paper.UNCOMPARED, ['lem:square'])])
+
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
         found = {'latexmk': 'C:/tex/latexmk.exe', 'pdflatex': 'C:/tex/pdflatex.exe', 'C:/tex/pdflatex.exe': 'C:/tex/pdflatex.exe',
                  'tectonic-0.15': 'tectonic-0.15'}

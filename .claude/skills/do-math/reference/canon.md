@@ -1,8 +1,8 @@
 # The canon: reading it and writing in it
 
-The common introduction explains what the canon is: the instance's Lean library, a written record beside each of its declarations, and the written state attached to statements and questions. This guide gives what a session needs in order to work with it. It says where the canon's files are and how each written file is formed, how to judge the weight of an element, which conventions the Lean files follow, with which commands the canon is read and what those commands show, and on which occasions reading it is likely to help.
+The common introduction explains what the canon is: the instance's Lean library, a written record beside each of its declarations, and the written state attached to statements and questions. This guide gives what every session needs in order to work with it. It says where the canon's files are, which conventions the Lean files follow, with which commands the canon is read and what those commands show, and on which occasions reading it is likely to help.
 
-Every role receives this guide, and its parts concern the roles differently. Reading concerns every session. The written formats are used directly by peers and organizers, who put records and Lean modules into a candidate, and by reviewers, who judge them. A producing session, an attempt, an explorer or a formalizer, writes Lean definitions and statements in its own working files and leaves its mathematics in its report; it does not write records. It reads the formats here in order to know what its peer will have to supply for each thing it found, and so what to leave.
+The formats of the written files, namely the record, the approach entry and the understanding text, and the criteria for the weight of an element are in [The written texts of the canon](records.md). Peers and organizers, who write those texts into a change, and reviewers, who judge them, receive that guide. A producing session, an attempt, an explorer or a formalizer, writes Lean definitions and statements in its own working files and leaves its mathematics in its report; it does not write records.
 
 ## Where the canon is
 
@@ -33,113 +33,6 @@ An element is a declaration that an author wrote in a module of the library, tog
 
 Some declarations of the library are not elements and need no record: a declaration marked `private`, and everything Lean generates for a declaration an author wrote, such as the fields and the constructor of a structure, the constructors of an inductive type, equation lemmas and auxiliary proofs. What they use counts as used by the element they belong to, so a proof that reaches a statement through a private helper is recorded as resting on that statement.
 
-## The record
-
-A record is a Markdown file. It begins with a header between two lines `---`, in which each line has the form `key: value`, and continues with parts, each under a heading of the second level.
-
-```markdown
----
-weight: unit
-short: closed form of the triangular numbers
----
-## Description
-
-Twice the n-th triangular number equals n (n + 1).
-
-## Statement
-
-For every natural number $n$, $2 (0 + 1 + \dots + n) = n (n + 1)$.
-
-## Explanation
-
-The statement is written with the factor 2 on the left so that no division of natural numbers occurs. `Tri.tri n` is the sum up to and including $n$, so `Tri.tri 0 = 0`.
-
-## Proof
-
-By induction on $n$. For $n = 0$ both sides are $0$. For the step, `Tri.tri_succ` gives $T_{n+1} = T_n + (n + 1)$, so $2 T_{n+1} = n (n + 1) + 2 (n + 1) = (n + 1)(n + 2)$.
-```
-
-The header has these keys, and a key outside this list is rejected.
-
-| Key | Content |
-|---|---|
-| `weight` | Required. `unit` or `step`, by the criteria of the next section. |
-| `short` | A short name of a few words. The frontier shows it in place of the self-description, and the dependency map uses it as the label of the element. |
-| `proves` | The name of a statement of which this declaration is another proof. |
-| `refutes` | The name of a statement whose negation this declaration states. |
-| `source` | For a result taken from the literature, the key of its entry in the bibliography. |
-
-A record has `proves` or `refutes`, never both. [The candidate change](change-format.md) explains when a declaration enters with one of them and what Lean has to confirm about it.
-
-The parts are the following. Each may occur at most once, in any order, and their headings are exactly these. Nothing may stand before the first heading, and any other heading of the second level is rejected, so inside a part use headings of the third level and below.
-
-| Part | Content |
-|---|---|
-| `## Description` | Required. The **self-description**: what this element is, in one or two lines. |
-| `## Statement` | The statement in natural language; for a definition, the definition in words. |
-| `## Explanation` | What belongs to this object: what the statement says about it, why it can be expected to hold, why a definition was chosen in this form, how the Lean form corresponds to the mathematical one. |
-| `## Proof` | The proof in natural language. |
-| `## Literature` | For a result taken from the literature: the source, how much of it was read, and where the statement stands in what was read. |
-
-The self-description is the only part of the record that views of many elements show, so it has to be understandable without the rest. Say what the statement asserts or what the definition defines. A description such as "a lemma for the main estimate" tells a session that is choosing what to open nothing about the element.
-
-The `## Proof` part decides more than its name suggests. A statement counts as having a proof when its Lean proof is complete or when its record has a nonempty `## Proof`. Whatever stands under that heading is therefore offered as the proof, and review judges it as one. A proof under this heading is written so that it can be read for this element by itself, it refers to the elements it uses by their Lean names, and where the element has a Lean proof it is the same argument as that Lean proof. For a statement established by an exact computation, the proof is the account of that computation: what was computed, over which range and in which arithmetic, with the code and its output among the files of evidence. An idea of why the statement should hold belongs under `## Explanation`. An argument that got part of the way belongs among the approaches tried, described below.
-
-The explanation follows a criterion the user gave: an explanation that is attributed to a mathematical object is kept with that object. The reason a definition counts from zero is kept in the record of that definition, and what a lemma shows about a sequence is kept in the record of that lemma, not in the record of the theorem in whose proof the question first came up. [Writing](writing.md) describes how to write these parts so that a later session can use them.
-
-## Weight: units and steps
-
-The weight of an element says how it stands in the structure of the mathematics. A **unit** is a result that someone describing how the proof goes would name: it is obtained in one place and handed to another as an input. A **step** is a result that lives inside one proof and exists because that proof was written in pieces.
-
-Several things are made from the weight. The frontier passes through a step whose own proof is accepted and shows what that step rests on in its place, so that the view stays at the level of the units. The reading commands can restrict a list to units. The dependency map of the research draws units and folds each step into the connections that pass through it, and the paper that presents the result numbers units and absorbs steps into the proofs that use them. In none of these is a step lost. It remains an element, proofs name it, and a traversal that selects it returns it.
-
-The choice matters because the same body of results gives very different pictures. If every lemma is a unit, the picture is the whole dependency graph, and the structure of the proof is buried under hundreds of entries. If only the root and the last derivation of it are units, everything between them is hidden. The level to aim at is the one at which an author describes the structure of a proof: the results that are named when someone says what a result rests on and where it is used.
-
-Four signs point toward a unit.
-
-- A proof of the root, or of another unit, names the element as one of the pieces from which that result follows, and an account of how the proof goes mentions it by name. The understanding so far of `q0` and the natural-language proofs of the elements near the root are such accounts.
-- The element is where the proof's guarantees come from: it is taken from the literature, or its truth rests on a computation. Which computation and which cited theorem a conclusion stands on is part of the structure of a proof, so such an element is a unit even when a single proof uses it. A lemma of the same size that is not on such a chain may well be a step. The difference is intended, and an element of this kind is not made a step for lacking the other signs.
-- The element gathers the results of several units into one result and hands that on. If it were folded, the inputs it gathered would be scattered over separate connections.
-- Proofs in two or more parts of the library, in different folders of modules, rest on it. If it were folded, the flow from one part to the other would no longer be visible.
-
-Other features point toward a step: a technical lemma that only one proof uses, in the same part of the library; a numerical inequality, or a tool, set up to certify a computation; a corollary or reformulation that restates the result of one unit in other words; the stages into which one proof was divided for writing. A definition is judged by the same question. The objects the root speaks of, and an object that several results are about, are units. A device introduced for one proof is a step.
-
-Folding a step that nothing else uses means that the picture no longer shows that input. This alone is not a reason to make it a unit. The picture is a picture of the structure and not the whole graph, and if every basic input were shown the level would be lost.
-
-An element that no proof uses yet is judged by the role it would have. A conjecture on which a route depends, and a counterexample that closes an approach, are results a session describing the state of the problem would name. An observation recorded only as the grounds of another element is not.
-
-The signs are material for a judgment and not conditions. A result that an account names can still be a short identity used once, and a result that shows none of the signs can be one that several proofs call by name. Read what the element does in the proofs that use it and decide whether it is handled there as a unit of the structure. The author of the record writes the weight, review judges it, and a later record can correct it when the element's role has become clearer.
-
-## Approaches tried
-
-A statement whose proof is not accepted carries the approaches that were tried on it, one file for each approach, at `approaches/<Name>/<id>.md`. `<Name>` follows the name of the statement the approach was aimed at. `<id>` is a short identifier of letters, digits, `_` and `-`, chosen by the first author of the entry and kept when the entry is replaced.
-
-```markdown
----
-title: Induction on the number of terms
-sessions: s41c0e, s77a2b
----
-## Idea
-
-Compare the sum for n + 1 with the sum for n and reduce the statement to an identity between polynomials in n.
-
-## Established
-
-`Tri.tri_succ`
-
-## Where it stops
-
-The inductive step needs $2 (n + 1) + n (n + 1) = (n + 1)(n + 2)$. This identity has been checked by hand and is not yet stated; nothing else is open.
-```
-
-The header has `title`, which is required, and `sessions`, the IDs of the sessions that contributed to the approach, separated by commas: the producing session, and the peer where its own work is part of the approach. The parts are `## Idea` and `## Where it stops`, both required, and `## Established`, which names the elements the approach produced, separated by commas or one to a line. At publication the runner adds a part `## Review` with review's assessment of what the work contributed to the research. A session never writes that part, and a candidate that contains it is rejected.
-
-An entry serves a session that is about to choose how to work on the statement. The idea should be told plainly enough that this session recognizes an approach it was about to take. Where the approach stops should be exact: which step fails or is missing, what would be needed to pass it, and what the failure does and does not exclude. Whatever the approach established exactly is not described in the entry. It is stated as elements, and the entry names them. The common introduction explains when an entry is added, when it is replaced and when nothing is added, in the section "Turning a session's work into the canon".
-
-## The understanding so far of a question
-
-The understanding so far of a question is one file, `questions/<question>.md`, named by the question's identifier. It is free Markdown without a header. It says what has come to be understood about what the question asks and what has not. Its mathematical assertions are elements, to which it refers by name, so that the text itself can explain and connect. At publication the runner adds a part `## Review` at its end, as it does for an approach entry; the text a session writes therefore has no heading `## Review` of its own.
-
 ## Lean conventions of the canon's files
 
 Every file of the library follows one form.
@@ -165,7 +58,7 @@ The file begins with `module`: the library is written in Lean's module system. I
 
 All modules of an instance are under one top-level name, the library, which `instance.json` in the instance directory gives; the file `lean/Tri/Closed.lean` is the module `Tri.Closed`. The operator placed the definitions of the root's objects in one module and the statement of the root in a module of its own that imports it. Later modules import the definitions and not the root, so a later proof of the root can import them without a cycle.
 
-A new element is added in a new module file. No existing file is edited to add a declaration, and a candidate whose new module has a path that already exists in the canon is refused. One new module may hold several declarations. The folder you choose for a module is how the dependency map groups its units, so choose it by the part of the mathematics the module belongs to. Lean rejects a second declaration of a name, and of two candidates that introduce the same name only the first can be published as it is, so give a declaration a name that says what it states, as Mathlib does, and avoid names such as `aux` or `lemma1` that another session is likely to choose as well.
+A new element is added in a new module file. No existing file is edited to add a declaration, and a candidate whose new module has a path that already exists in the canon is refused. One new module may hold several declarations. The folder you choose for a module is how the dependency map groups its units, so choose it by the part of the mathematics the module belongs to, where a reader of the library would look for it. Lean rejects a second declaration of a name, and of two candidates that introduce the same name only the first can be published as it is, so give a declaration a name that says what it states, as Mathlib does, and avoid names such as `aux` or `lemma1` that another session is likely to choose as well.
 
 A statement is a `theorem`, and its proof takes one of three forms.
 
@@ -194,7 +87,7 @@ The canon is read with one command, `commands.canon` in your `input.json`. It is
 | `list --about <element>` | Every element whose statement mentions the given element or whose proof uses it. For a definition, this is what the canon states about that object. |
 | `list --remaining` | The work that remains for the root: the elements of the frontier whose standing is not "accepted", and those whose proof names a statement that has since been refuted. A refuted statement is not among them. |
 | `question <question>` | A question: its state, its statement and grounds, its understanding so far, and review's assessment of the work that wrote it. With `--history` it adds the earlier texts of the understanding, each as its difference from the text that replaced it. |
-| `log` | The most recent published changes, twenty unless `--last <number>` says otherwise: for each its title and description, review's assessment of what it contributed, the elements it added and the proofs it replaced. |
+| `log` | The most recent changes published through a review, twenty unless `--last <number>` says otherwise: for each its title and description, review's assessment of what it contributed, the elements it added and the proofs it replaced. |
 
 A `list` takes at most one of the selectors `--module`, `--uses`, `--used-by`, `--about` and `--remaining`. With `--uses` or `--used-by`, the option `--deep` follows the use all the way, so `list --uses <element> --deep` returns everything the statement rests on within the canon, at any depth. The option `--units` restricts any list to the units.
 

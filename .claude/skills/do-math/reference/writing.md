@@ -42,7 +42,7 @@ Develop the contributions and obstacles that change the next researcher's unders
 
 ## Writing the texts of the canon
 
-The texts of the canon differ from an account written from beginning to end. No reader goes through them in order. A session opens the element its work concerns and reads that element by itself, having seen of the others only a line each. Each text therefore has to do its work alone, and each kind of text has a different job. [The canon](canon.md) gives their formats.
+The texts of the canon differ from an account written from beginning to end. No reader goes through them in order. A session opens the element its work concerns and reads that element by itself, having seen of the others only a line each. Each text therefore has to do its work alone, and each kind of text has a different job. [The written texts of the canon](records.md), which peers, reviewers and organizers receive, gives their formats.
 
 The **self-description** is what a session sees when it is deciding what to open, in a list of many elements. Say what the statement asserts or what the definition defines, completely enough that a session looking for that fact recognizes it. It is not the place for the element's history or for its role in some proof.
 

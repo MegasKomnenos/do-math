@@ -20,10 +20,12 @@ from support import InstanceCase, module_text, record_text, take
 
 INSTALLED = Path(__file__).resolve().parents[2]
 ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
-# The research views a pack carries after the guides, in this order (design record, section 8).
-VIEWS = ['# Root statement', '# The root in Lean', '# Frontier at launch',
+# A pack opens with the root and the assignment, so that the guides are read with both in mind. The other
+# research views, the user conditions and the commands follow the guides, in this order.
+LEAD = ['# Root statement', '# The root in Lean', '# Your assignment']
+VIEWS = ['# Frontier at launch',
          '# Understanding so far of the root problem as a whole (question q0)', '# Board at launch',
-         '# User conditions supplied at launch', '# Assignment and executable commands']
+         '# User conditions supplied at launch', '# Executable commands']
 ROOT_RECORD = record_text('The sum of the first n odd numbers equals n times n.', weight='unit',
                           short='odd numbers sum to a square',
                           statement='For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.',
@@ -77,10 +79,22 @@ class ContextTests(InstanceCase):
         return self.publish(folder, engine=engine)
 
     @staticmethod
+    def lead(folder):
+        """The part of a pack before its guides: the root in words and in Lean, and the assignment."""
+        text = (folder / 'pack.md').read_text(encoding='utf-8')
+        return text[:text.index('<!-- begin ')]
+
+    @staticmethod
     def views(folder):
-        """The part of a pack after its guides: the research views, the user conditions and the assignment."""
+        """The part of a pack after its guides: the research views, the user conditions and the commands."""
         text = (folder / 'pack.md').read_text(encoding='utf-8')
         return text[text.rindex('<!-- end '):]
+
+    def parts(self, text, headings):
+        """The text under each heading, after checking that the headings stand in the given order."""
+        positions = [text.index('\n' + heading + '\n') for heading in headings]
+        self.assertEqual(positions, sorted(positions))
+        return dict(zip(headings, (text[a:b] for a, b in zip(positions, positions[1:] + [len(text)]))))
 
     def test_cli_json_preserves_unicode_under_ascii_output_environment(self):
         instance = self.root / '연구'
@@ -186,26 +200,25 @@ class ContextTests(InstanceCase):
                 folder = self.session('initial-' + role)
                 self.pack(folder, role, {'batch': []} if role == 'organizer' else None)
                 saved[role] = (folder / 'pack.md').read_bytes()
-                views = self.views(folder)
-                positions = [views.index('\n' + heading + '\n') for heading in VIEWS]
-                self.assertEqual(positions, sorted(positions))
-                section = dict(zip(VIEWS, (views[a:b] for a, b in zip(positions, positions[1:] + [len(views)]))))
-                self.assertIn((self.instance / 'root.md').read_text(encoding='utf-8'), section[VIEWS[0]])
+                lead, views = self.lead(folder), self.views(folder)
+                opening, section = self.parts(lead, LEAD), self.parts(views, VIEWS)
+                self.assertIn((self.instance / 'root.md').read_text(encoding='utf-8'), opening[LEAD[0]])
                 # The root in Lean: where it stands, its declaration as written and as Lean prints it.
                 self.assertIn('the declaration `Small.root` of the library `Small`, in `canon/lean/Small/Root.lean`',
-                              section[VIEWS[1]])
+                              opening[LEAD[1]])
                 self.assertIn('```lean\n/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
-                              'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry\n```', section[VIEWS[1]])
-                self.assertIn('As Lean prints it: `Small.root (n : Nat) : oddSum n = n * n`', section[VIEWS[1]])
-                self.assertIn(frontier, section[VIEWS[2]])
-                self.assertIn('No exploration has written it yet.', section[VIEWS[3]])
-                self.assertIn(board, section[VIEWS[4]])
-                self.assertIn('## 001.txt\n\nUse convention K in new work.', section[VIEWS[5]])
+                              'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry\n```', opening[LEAD[1]])
+                self.assertIn('As Lean prints it: `Small.root (n : Nat) : oddSum n = n * n`', opening[LEAD[1]])
+                self.assertIn(frontier, section[VIEWS[0]])
+                self.assertIn('No exploration has written it yet.', section[VIEWS[1]])
+                self.assertIn(board, section[VIEWS[2]])
+                self.assertIn('## 001.txt\n\nUse convention K in new work.', section[VIEWS[3]])
                 # Definitions are met through the statements that use them, and the index is a derived
                 # view a session asks for; neither is delivered at launch.
-                self.assertNotIn('glossary', views.lower())
-                self.assertNotIn('index.md', views)
-                self.assertNotIn('# Index of the canon', views)
+                for delivered in (lead, views):
+                    self.assertNotIn('glossary', delivered.lower())
+                    self.assertNotIn('index.md', delivered)
+                    self.assertNotIn('# Index of the canon', delivered)
         self.assertFalse((knowledge / 'glossary.md').exists())
 
         # An exploration's change writes the understanding so far of q0. Later launches receive it with the
@@ -237,7 +250,7 @@ class ContextTests(InstanceCase):
         source.write_text('Revised format for later launches.', encoding='utf-8')
         self.assertEqual((first / 'context/reference/change-format.md').read_bytes(), saved)
         text = (first / 'pack.md').read_text(encoding='utf-8')
-        for heading in VIEWS:
+        for heading in LEAD + VIEWS:
             self.assertIn('\n' + heading + '\n', text)
         self.assertIn('/retained/source', text)
         self.assertNotIn('Revised format for later launches.', text)
@@ -277,10 +290,17 @@ class ContextTests(InstanceCase):
         for name, argv in inp['commands'].items():
             with self.subTest(command=name):
                 self.assertTrue(Path(argv[1]).is_file())
-        # The pack shows the same task and commands, so a session can act from either.
-        shown = (folder / 'pack.md').read_text(encoding='utf-8').split('# Assignment and executable commands', 1)[1]
-        self.assertEqual(json.loads(shown.split('```json\n', 1)[1].split('\n```', 1)[0]),
-                         {'task': task, 'commands': inp['commands']})
+        # The pack shows the same task, before the guides, and the same commands, after them, so a session
+        # can act from either.
+        pack = (folder / 'pack.md').read_text(encoding='utf-8')
+
+        def shown(heading):
+            return json.loads(pack.split('\n' + heading + '\n', 1)[1].split('```json\n', 1)[1].split('\n```', 1)[0])
+
+        self.assertEqual(shown('# Your assignment'), {'task': task})
+        self.assertEqual(shown('# Executable commands'), {'commands': inp['commands']})
+        self.assertLess(pack.index('\n# Your assignment\n'), pack.index('<!-- begin '))
+        self.assertLess(pack.rindex('<!-- end '), pack.index('\n# Executable commands\n'))
         self.assertIn(str(folder / 'pack.md'), (folder / 'prompt.txt').read_text(encoding='utf-8'))
         self.assertIn(str(folder / 'input.json'), (folder / 'prompt.txt').read_text(encoding='utf-8'))
 
@@ -486,13 +506,15 @@ class ContextTests(InstanceCase):
 
     def test_every_role_receives_its_ordered_guides_and_output_contract(self):
         research = ['what-research-is-for.md', 'user-writing-preferences.md']
+        # sections.md goes to the roles that register sections, and records.md to the roles that write or
+        # judge the written texts of the canon.
         references = {
-            'attempt': research + ['literature.md', 'retained-work.md'],
+            'attempt': research + ['literature.md', 'sections.md', 'retained-work.md'],
             'explore': research + ['literature.md', 'retained-work.md'],
             'formalizer': ['retained-work.md'],
-            'peer': research + ['literature.md', 'retained-work.md', 'change-format.md'],
-            'review': research + ['literature.md', 'change-format.md', 'review-output.md'],
-            'organizer': research + ['change-format.md', 'organizer-output.md'],
+            'peer': research + ['literature.md', 'sections.md', 'retained-work.md', 'records.md', 'change-format.md'],
+            'review': research + ['literature.md', 'records.md', 'change-format.md', 'review-output.md'],
+            'organizer': research + ['records.md', 'change-format.md', 'organizer-output.md'],
         }
         for role, specialized in references.items():
             with self.subTest(role=role):
@@ -517,8 +539,12 @@ class ContextTests(InstanceCase):
                                                  snapshot, folder, folder / 'context')
                     self.assertEqual(body[begin + len(marker):previous_end].strip(),
                                      expected_body.strip(), name)
-                # The guides come before every research view.
-                self.assertLess(previous_end, body.index('\n# Root statement\n', previous_end))
+                # The root and the assignment come before the first guide, and every other research view
+                # comes after the last one.
+                first = body.index('<!-- begin ' + expected[0] + ' -->')
+                for heading in LEAD:
+                    self.assertLess(body.index('\n' + heading + '\n'), first)
+                self.assertLess(previous_end, body.index('\n# Frontier at launch\n', previous_end))
                 self.assertEqual([p.name for p in (folder / 'context/roles').iterdir()],
                                  [role + '.md'])
                 # The snapshot holds every reference, so a link from a guide to another one leads to a copy.

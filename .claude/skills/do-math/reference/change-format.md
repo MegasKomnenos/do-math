@@ -1,10 +1,8 @@
 # The candidate change
 
-A candidate change, called a candidate for short, is the change to the canon that a session proposes. A peer writes one from the work of the producing session it took over and from its own work. It consists of new elements with their records, new proofs for statements that already stand in the canon, and the written state the work added: approach entries, the understanding so far of a question, questions and resolutions it proposes. Review judges the candidate, and the runner applies it to the canon at publication.
+A candidate change, called a candidate for short, is the change to the canon that a session proposes. The common introduction describes, under "Turning a session's work into the canon", who writes it, what it consists of, and how review and publication treat it.
 
-This guide gives the form of a candidate. It first says what a candidate can and cannot do to the canon, since everything else follows from that. It then goes through the folder and its manifest part by part, describes the command with which you prepare the candidate before you end, shows one small candidate in full, and says what happens to the candidate after your session. The formats of a record, of an approach entry and of an understanding text, and the conventions of the Lean files, are in [The canon](canon.md) and are not repeated here.
-
-Peers, reviewers and organizers receive this guide. An organizer writes a candidate of a restricted kind, described at the end.
+This guide gives the form of a candidate. It first says what a candidate can and cannot do to the canon, since everything else follows from that. It then goes through the folder and its manifest part by part, describes the command with which you prepare the candidate before you end, shows one small candidate in full, and says what happens to the candidate after your session. The formats of a record, of an approach entry and of an understanding text are in [The written texts of the canon](records.md), and the conventions of the Lean files are in [The canon](canon.md); neither is repeated here. An organizer writes a candidate of a restricted kind, described at the end.
 
 ## What a candidate can do
 
@@ -63,7 +61,7 @@ The folders mirror the canon, so a file's place in the candidate is its place in
 
 A new module is a file under `lean/`, at the path its module name gives: `lean/Small/Step.lean` is the module `Small.Step`. A path that already exists in the canon is refused, because no existing file is edited to add a declaration. The module is written by the Lean conventions of [The canon](canon.md).
 
-Every declaration a new module adds needs a record at `records/<Name>.md`, in the record format of the same guide. A candidate with a declaration that has no record, or with a record that belongs to no declaration, is not accepted by the preparation described below.
+Every declaration a new module adds needs a record at `records/<Name>.md`, in the record format of [The written texts of the canon](records.md).
 
 ## Replacing a proof
 
@@ -77,9 +75,9 @@ Four conditions hold for a replacement. The statement is unchanged, down to the 
 
 A proof always enters through an entry of `replace`, because the elements review judges are those the candidate adds and those it names there. This holds also for an argument that names no statement of the canon: the declaration's text is then the one the canon already has, and the entry is what puts the new proof before review.
 
-A new proof is usually accompanied by two written files. The first is the record of the element, as a replacing record whose `## Proof` part is the new argument; the record in the canon still describes the old proof. The second is an approach entry for the statement that describes the approach this proof takes. The reason for the entry is what review may decide. Review says, for each proof a candidate would replace, whether the new proof takes the place of the proof the canon has. If it does not, the runner leaves the declaration and its record as they are, and the approach entry is then where what was tried remains. If the new proof is accepted, the approaches tried on the statement go to its history.
+A new proof is usually accompanied by two written files. The first is the record of the element, as a replacing record whose `## Proof` part is the new argument; the record in the canon still describes the old proof. The second is an approach entry for the statement that describes the approach this proof takes. The reason for the entry is what review may decide. Review says, for each proof a candidate would replace, whether the new proof takes the place of the proof the canon has. If it does not, the runner leaves the declaration and its record as they are, and the approach entry is then where what was tried remains.
 
-Two sessions can hold parts of one statement, and both may bring a new proof of it. A replacement is therefore tied to the text of the proof it was written against; the preparation records that text's identity for you. If another publication replaces the proof before your candidate's turn comes, the runner does not put your proof over the other one. A replacement peer then makes the candidate again on the canon as it has become.
+Two sessions can hold parts of one statement, and both may bring a new proof of it. A replacement is therefore tied to the text of the proof it was written against; the preparation records that text's identity for you. If another publication replaces the proof before your candidate's turn comes, the runner does not put your proof over the other one.
 
 ## Another proof of a statement, and a refutation
 
@@ -93,11 +91,11 @@ proves: Parking.unimodal
 ---
 ```
 
-`proves` names the declaration that carries the statement itself. Lean has to confirm that the two statements are the same proposition, up to the names of bound variables. A statement that is only proved equivalent to another remains a different element. The simplest way to meet this is to copy the binders and the type from the source of the existing declaration. The frontier then shows the statement with all of its proofs, and the statement is settled as soon as one of them is. Sections and leases stay with the declaration that carries the statement. The organizer can later rearrange modules so that such a proof stands under the statement's own name.
+`proves` names the declaration that carries the statement itself. Lean has to confirm that the two statements are the same proposition, up to the names of bound variables. A statement that is only proved equivalent to another remains a different element. The simplest way to meet this is to copy the binders and the type from the source of the existing declaration. What follows for a statement with several proofs is in the common introduction: that the frontier shows all of them, under "Seeing what remains: the frontier"; that the statement is settled as soon as one of them is, under "The standing of a statement"; that its sections and lease stay with the declaration that carries the statement, under "Seeing work that is still underway: the board"; and that the organizer can later move such a proof under the statement's own name, under "Other work that advances the research".
 
 Which of the two forms a proof takes follows from the state of the statement. A statement whose own declaration has no proof receives its first proof by a replacement. A proof that improves on one that is not accepted replaces it. A statement that is settled cannot be taken on through its lease, so a further proof of it, whether a simpler one or a different route, enters as a declaration with `proves`. The same form suits a different route to a statement whose own proof is accepted and not yet settled, when both routes should stay in view: the frontier then shows the statement with both proofs. Adding such a declaration requires no section; only a replacement does.
 
-A proof that a statement is false enters in a similar way, as a declaration whose statement is the negation of that statement and whose record has `refutes` with the name of the statement. Lean has to confirm that the new statement is exactly the negation of the whole of the other: for `theorem root (n : Nat) : P n`, whose statement is `∀ n : Nat, P n`, it is `¬ ∀ n : Nat, P n`. An equivalent form, such as the existence of a counterexample, is a different statement. State that form as an element of its own where it is the natural one, and derive the negation from it. When a declaration with `refutes` is settled, the statement it names is refuted. When that statement is the root, the root's state becomes `informal_refuted`, and `formal_refuted` once the proof is formal. The frontier and the view of the refuted statement then name the refuting element, the statement is no longer work that remains, and a statement whose proof names it is shown as needing another proof.
+A proof that a statement is false enters in a similar way, as a declaration whose statement is the negation of that statement and whose record has `refutes` with the name of the statement. Lean has to confirm that the new statement is exactly the negation of the whole of the other: for `theorem root (n : Nat) : P n`, whose statement is `∀ n : Nat, P n`, it is `¬ ∀ n : Nat, P n`. An equivalent form, such as the existence of a counterexample, is a different statement. State that form as an element of its own where it is the natural one, and derive the negation from it. When a declaration with `refutes` is settled, the statement it names is refuted, with the consequences the common introduction gives under "Seeing what remains: the frontier".
 
 ## A statement that supersedes another
 
@@ -111,9 +109,9 @@ When the new declaration's module imports the module of the old element, the one
 
 **Records.** A record in the candidate either belongs to a declaration the candidate adds or replaces the record of a declaration of the canon. A replacing record is the complete new text, not a list of edits; the canon keeps the difference in the element's history. A record can be replaced without an entry of `replace`, for example to correct an explanation or a weight, and this requires no section. A record that gives a statement a proof or changes its proof, or that adds, changes or removes `proves` or `refutes` in its header, comes together with an entry of `replace`, as the section on replacing a proof says. These parts decide the element's standing, and review judges only the elements a candidate adds and those it names in `replace`, so the preparation refuses such a record for a declaration the candidate does not list there.
 
-**Approach entries.** An entry is at `approaches/<Name>/<id>.md`, where `<Name>` follows the name of the statement the approach was aimed at. That statement is an element of the canon or one the candidate adds. A new approach is a new entry with an identifier you choose. An approach that the work carried further replaces its existing entry: use the same identifier, write the complete new text, and add the contributing sessions to `sessions`. Leave out the `## Review` part of the entry you are replacing, since the runner writes that part at publication. An approach that was repeated to the same stopping point adds nothing, and no entry is written for it.
+**Approach entries.** An entry is at `approaches/<Name>/<id>.md`, where `<Name>` follows the name of the statement the approach was aimed at. That statement is an element of the canon or one the candidate adds. A new approach is a new entry with an identifier you choose. An approach that the work carried further replaces its existing entry: use the same identifier, write the complete new text, and add the producing session and yourself to `sessions`. Leave out the `## Review` part of the entry you are replacing, since the runner writes that part at publication.
 
-**The understanding so far.** `questions/<question>.md` replaces the understanding text of an existing question, named by its identifier. The peer of an exploration writes it for the question the exploration held, which the assignment names. Start from the current text, which `commands.canon` with `question <question>` prints, and write the complete text that should stand afterwards: what was understood before and still holds, and what was newly understood. Review reads your text against the one it replaces, including what yours removed, so a qualification of the old text that you drop should be one you mean to drop. The text has no `## Review` part of its own.
+**The understanding so far.** `questions/<question>.md` replaces the understanding text of an existing question, named by its identifier. The peer of an exploration writes it for the question the exploration held, which the assignment names. Start from the current text, which `commands.canon` with `question <question>` prints, and write the complete text that should stand afterwards: what was understood before and still holds, and what was newly understood. Review reads your text against the one it replaces, including what yours removed, so a qualification of the old text that you drop should be one you mean to drop.
 
 **Evidence.** Files that a record refers to, such as the code, the input and the output of a computation, go under `evidence/<Name>/`, where `<Name>` follows the name of the element whose record uses them. Refer to such a file in the record by its path from the root of the canon, for example `evidence/Small/root/table.csv`.
 
@@ -123,11 +121,11 @@ When the new declaration's module imports the module of the old element, the one
 
 A proposed question is an entry of `questions` with exactly three fields. `id` is your peer session ID, a hyphen and a short label of letters, digits, `_` and `-`; the prefix keeps the proposals of concurrent peers apart, and the identifier may not be one that a question already has. `statement` says what is to be understood, and `grounds` says what raises the question and why it matters. Your role guide explains when work has brought a question into view and how exactly it has to be stated; review decides whether to admit it.
 
-A resolution is an entry of `resolutions`. It asserts that the understanding so far of an existing question now settles what the question asks. It has an `id`, a label of your choosing that is unique within the candidate, and `question`, the identifier of the question. A candidate with a resolution carries the text that settles the question, as `questions/<question>.md`. Question `q0`, the root problem as a whole, cannot be resolved this way; the common introduction explains how it is resolved.
+A resolution is an entry of `resolutions`. It asserts that the understanding so far of an existing question now settles what the question asks. It has an `id`, a label of your choosing that is unique within the candidate, and `question`, the identifier of the question. A candidate with a resolution carries the text that settles the question, as `questions/<question>.md`. When the answer leaves something to be done, the same candidate carries that as well, as statements or as a proposed question; your role guide explains this. Question `q0`, the root problem as a whole, cannot be resolved this way; the common introduction explains how it is resolved.
 
 ## Preparing the candidate
 
-Before you end, have the candidate applied to the canon and compiled. `commands.prepare` in your `input.json` is the complete argument array for this; two options can be appended, `--expect-mb <MiB>`, your estimate of the peak memory of one module compile as [Lean](lean.md) explains it, and `--timeout <seconds>`, which is 50 when omitted.
+Before you end, have the candidate applied to the canon and compiled. `commands.prepare` in your `input.json` is the complete argument array for this; two options can be appended, `--expect-mb <MiB>`, your estimate of the peak memory of one module compile as [Lean](lean.md) explains it, and `--timeout <seconds>`, which is 50 when omitted. The command is for a peer and for an organizer that submits a change, and it refuses every other role.
 
 The command reads the manifest and the files, applies the candidate to a copy of the current library in your `work/` folder, compiles the result through the Lean broker, extracts the structural index of the modules that changed, and checks what a machine can decide:
 
@@ -135,6 +133,7 @@ The command reads the manifest and the files, applies the candidate to a copy of
 - no statement of an existing declaration changed, and no existing declaration changed other than the ones the manifest replaces;
 - no declaration disappeared;
 - every declaration the candidate adds has a record, and every record belongs to a declaration;
+- every declaration the candidate adds stands in a new module, and no name it adds differs from another name of the canon only in the case of its letters, since the records of two such names would be one file where the file system ignores case;
 - no declaration is an `axiom`, no definition contains `sorry`, and no replacement touches a definition;
 - for every record with `proves` or `refutes`, Lean confirmed that the statement is the same as, or the negation of, the statement named.
 
@@ -145,6 +144,12 @@ It then writes `output/prepared.json` and prints a summary: `ok`, the build's ID
 `prepared.json` is a receipt for the files the command saw. You do not write or edit it, and it is valid only for those files: after any change to the candidate, including a file added or removed, prepare again. The transport check, `commands.check`, refuses a candidate that was not prepared, that changed after it was prepared, or whose preparation reported errors. For a peer it also confirms that the manifest and the written files are well formed, that every replaced declaration is one your pipeline holds a section on, that approach folders follow the names of elements and understanding files the identifiers of questions, and that the identifiers of proposals carry your session prefix. Neither command judges mathematics.
 
 The canon may change between your preparation and publication. Preparation is made against the canon as it is when you run it, and the runner builds the candidate again on the canon as it is when the candidate's turn comes.
+
+### The builds that `commands.prepare` and `commands.verify` make
+
+Review compiles a candidate with `commands.verify`, which [Review output](review-output.md) describes, and the two commands build in the same way apart from which modules they compile. Each applies the candidate to a fresh copy of the canon as it is at that moment and, when the candidate changes any Lean source, queues one build through the broker. The build waits in the same queue and counts against the same budgets as your other compiles. `commands.prepare` builds every module of the canon with the candidate applied. `commands.verify` builds the modules the candidate changed, with fresh targets, so the reviewing session compiles them itself and takes from the cache only what they import. Both add one further compile to the build. It extracts from the compiled modules the entries of the structural index, the machine-made table of the canon's declarations that the canon command reads from: for each declaration its statement, what it uses and the axioms it depends on. That compile appears in the build's summary as the module `DoMathExtract`. It imports the Lean metaprogramming library and the changed modules, as a plain file, since it has to read their proofs.
+
+That compile is often the largest compile of the build, which is the one the estimate given with `--expect-mb` is for. It imports the Lean metaprogramming library, which on Windows is a commit charge of about 2 GB before anything else. It was measured at about 10 seconds on an idle machine and at about a minute on a loaded one. It imports the changed modules as a plain file, so it is compiled again whenever one of those modules, or anything they reach, came out different in any way from the last time. Without `--expect-mb` the commands use the instance's `calibration_expect_mb` setting. [Lean](lean.md) explains under "Estimating what a compile will need" how to arrive at an estimate.
 
 ## A small candidate
 
@@ -238,7 +243,7 @@ By induction on $n$. For $n = 0$ the sum is empty and both sides are $0$. Suppos
 ```markdown
 ---
 title: Induction on the number of terms
-sessions: <ID of the producing session>
+sessions: <ID of the producing session>, <your session ID>
 ---
 ## Idea
 
@@ -273,7 +278,7 @@ Review will judge two elements. For `Small.oddSum_succ` it judges the statement 
 
 When your session has ended, the runner copies `output/` to a fixed place, records the identity of every file, and gives that copy and the producing originals to a fresh reviewer. The candidate is then frozen; nothing in it changes during review. Review writes its assessment in its own folder, and for a proof that is complete in Lean it compiles the candidate itself.
 
-At publication the runner applies the candidate to the canon as it then is, leaving out the replacements that review declined, compiles the library and runs the same checks as the preparation. If the candidate cannot be applied or does not build, because another publication introduced the same module or the same name, or replaced a proof this candidate would replace, a replacement peer receives the original work, the work of the earlier peer and the reason, and makes a new candidate, which receives a new review.
+At publication the runner applies the candidate to the canon as it then is, leaving out the replacements that review declined, compiles the library and runs the same checks as the preparation. What happens when the candidate cannot be applied or does not build is described in the common introduction under "Turning a session's work into the canon".
 
 ## An organizer's candidate
 

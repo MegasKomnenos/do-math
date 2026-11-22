@@ -61,6 +61,7 @@ LIMIT_WAITS = 12       # times one session is started again after the account's 
 TEX_SECONDS = 600      # one TeX command
 WIDE_PT = 5.0          # a line this many points wider than the text block is sent back to be broken
 WIDE = 'lines wider than the text block'
+UNCOMPARED = 'numbered statements whose present text was not compared with their elements'
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
 NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
@@ -1195,7 +1196,15 @@ class Paper:
                 return False
 
     def finish(self):
-        self.assemble()
+        _, _, rows = self.assemble()
+        # A verdict of the comparison holds for the text that was compared. A statement without one for its present
+        # text stays open, because nothing after this point compares it: the comparison did not reach it, or a repair
+        # changed it afterwards, as a repair of the typesetting under --typeset-only can.
+        uncompared = [{'label': row['label'], 'number': row['number']}
+                      for row in rows if row['comparison']['verdict'] == 'not compared']
+        self.open = [item for item in self.open if item['check'] != UNCOMPARED]
+        if uncompared:
+            self.open.append({'check': UNCOMPARED, 'after_repairs': 0, 'problems': uncompared})
         status = 'open_findings' if self.open else 'complete' if self.recipe else 'no_tex'
         self.event('end', status=status, open=self.open)
         print(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
@@ -1246,7 +1255,8 @@ def typeset_only(instance, out, tex=None, choice=None):
     """Typeset the manuscript a previous run left in `out`, with the same checks and repairs.
 
     The run that wrote the manuscript has to have carried its reading and its comparison to their end,
-    since typesetting does not repeat them, and what that comparison left open stays open."""
+    since typesetting does not repeat them, and what that comparison left open stays open. A numbered
+    statement that a repair made here changes is not compared again, and `finish` reports it as open."""
     out = Path(out)
     needed = [out / 'materials.json', out / 'plan.json', out / 'parts' / 'abstract.tex']
     if not all(path.is_file() for path in needed):

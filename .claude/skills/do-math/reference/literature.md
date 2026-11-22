@@ -88,7 +88,7 @@ The bibliography entry is a BibTeX entry in the candidate's `bibliography.bib`. 
 }
 ```
 
-The wording and arrangement shown inside the `## Literature` part and the choice of BibTeX fields are recommendations; the same information arranged otherwise serves equally well. The parts and header keys of the record are those [The canon](canon.md) fixes. A source the bibliography already lists keeps its entry, and you cite it by its existing key.
+The wording and arrangement shown inside the `## Literature` part and the choice of BibTeX fields are recommendations; the same information arranged otherwise serves equally well. The parts and header keys of the record are those [The written texts of the canon](records.md) fixes. A source the bibliography already lists keeps its entry, and you cite it by its existing key.
 
 One consequence of taking a result from the literature should be known when you choose to rely on it. A cited result that the root comes to rest on is under the same final requirement as every other statement: before the research is complete, it needs a complete Lean proof. A deep theorem that the imported library does not contain therefore brings with it the work of proving it in Lean later. That is no reason to avoid a result the argument needs, and it is a reason to prefer, between two results that serve equally, the one the imported library has or the one whose proof is within reach.
 
