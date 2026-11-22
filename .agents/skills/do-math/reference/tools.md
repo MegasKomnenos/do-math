@@ -61,6 +61,8 @@ For your own modules, use `build` with a module root and target paths. Independe
 
 Use the CLI's available shell, file and search tools for the mathematics. For a long computation, write progress and final output to files in your session directory and retain its process or job identifier. When a shell tool stops waiting, recover the actual exit and output through its continuation mechanism. Starting a duplicate computation obscures which input produced which result.
 
+Your `input.json` records where the library the instance imports, Mathlib and the toolchain, is installed. Its `settings.lean.command` names the toolchain's executable, and `settings.lean.cwd`, when it is set, is the project folder in which the instance's compiles run. The library's source files are found from those two paths. A search that starts from the root of the file system instead can run for longer than the shell tool waits, and its process can keep running after the tool has abandoned it, taking processor time from every session's compiles until your session ends.
+
 The available external tools are the servers explicitly configured in this instance. If scholarly-mcp is present, its source descriptions explain which databases and operations are supported. If a tool or source is unavailable, record the limitation and use another available source where appropriate. The fact that the operator has a personal tool configuration does not make that tool part of your session.
 
 ## Delegating to sub-agents
