@@ -1011,11 +1011,20 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
         before, after = old['entries'][name], new['entries'][name]
         if before['statement_hash'] != after['statement_hash'] or before['kind'] != after['kind']:
             if before['kind'] == after['kind'] and before['source_sha'] == after['source_sha']:
-                # The text is the one the canon has, and Lean reads it otherwise now: the change brought
-                # something into the scope of this declaration's module (with_importers).
+                # The text is the one the canon has, and Lean turns it into another term now: the change
+                # enlarged what this declaration's module imports, directly or through a module it imports
+                # (with_importers). The check sees a different term and cannot say whether the meaning
+                # differs. In the one case met so far it did not: an added Mathlib import made `C ^ k` on
+                # natural numbers in the root's statement elaborate through `Monoid.npow`.
                 errors.append(f'the statement of {name} elaborates differently with this change although its text is '
-                              'unchanged: something the change brings into the scope of its module, such as an '
-                              'instance or a notation, alters what the statement says; keep that out of scope there')
+                              f'unchanged: the change enlarges what the module of {name} imports, directly or through '
+                              'a module it imports, and Lean then reads the same text as another term, for example '
+                              'through another instance (an added Mathlib import has made `^` on natural numbers '
+                              'elaborate through `Monoid.npow`). The meaning may be the same, but the statement is no '
+                              'longer the term the canon has. Leave the imports of that module as they are: put what '
+                              'the new proof needs into a new module and enter the proof there as a separate '
+                              'declaration whose record says which statement it proves, or keep an instance or a '
+                              'notation of your own `local` or `scoped`')
             else:
                 errors.append(f'the statement of {name} changed in place; a different statement enters under a new name')
         elif name not in replaced and not organizer and before['source_sha'] != after['source_sha']:
