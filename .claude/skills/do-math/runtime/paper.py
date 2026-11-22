@@ -143,7 +143,7 @@ def settling_proof(model):
     if model['root_state'] == 'formal_proved':
         found = [p for p in elements[root]['proofs'] if elements[p]['settled'] and elements[p]['formal']]
     elif model['root_state'] == 'formal_refuted':
-        found = sorted(n for n, e in elements.items() if e['refutes'] == root and e['settled'] and e['formal'])
+        found = refuting_proofs(model, elements[root]['statement_of'], formal=True)
     else:
         raise Stop(f"the root is {model['root_state']}; the paper is written once the root is settled by a formal "
                    'proof (formal_proved or formal_refuted)')

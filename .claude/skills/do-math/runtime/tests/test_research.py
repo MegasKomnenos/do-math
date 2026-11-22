@@ -561,6 +561,36 @@ class RefutationTests(RefutedRootCase):
         self.refuted()
         self.assertEqual(formalizable(replay(self.instance)), ['Small.notRoot'])
 
+    def test_a_negation_settled_through_another_declaration_refutes_the_root(self):
+        # The declaration that carries the negation has no proof of its own. A second declaration with the
+        # same statement, marked as another proof of it, is complete in Lean and accepted. The negation is
+        # then settled, and the root is refuted through the declaration that holds the proof.
+        folder = self.candidate(
+            modules={'Small/Against.lean': module_text(theorem('notRoot', self.NEGATION))},
+            records={'Small/notRoot.md': record_text('Some initial sum of odd numbers is not a square.', weight='unit',
+                                                     refutes='Small.root')})
+        self.publish(folder)
+        model = replay(self.instance)
+        self.assertEqual((model['elements']['Small.notRoot']['standing'], model['root_state']), ('no_proof', 'unresolved'))
+        folder = self.candidate(
+            modules={'Small/AgainstAlt.lean': module_text(
+                theorem('notRootAlt', self.NEGATION, proof='intro h\n  exact absurd (h 2) (by decide)'), imports=('Small.Against',))},
+            records={'Small/notRootAlt.md': record_text('The same negation, proved from the second value.', weight='unit',
+                                                        proves='Small.notRoot')})
+        self.publish(folder)
+        model = replay(self.instance)
+        elements = model['elements']
+        self.assertEqual(elements['Small.notRootAlt']['statement_of'], 'Small.notRoot')
+        self.assertEqual((elements['Small.notRoot']['standing'], elements['Small.notRoot']['statement_settled']), ('no_proof', True))
+        self.assertEqual(elements['Small.root']['refuted_by'], ['Small.notRoot'])
+        settlement = {'state': 'formal_refuted', 'proofs': ['Small.notRootAlt']}
+        self.assertEqual((model['root_state'], root_solved(model), root_settlement(model)), ('formal_refuted', True, settlement))
+        self.assertEqual((model['remaining'], formalizable(model), model['contested']), ([], [], []))
+        # A proof of the root beside it makes the pair contested, as when the negation's own declaration holds the proof.
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        model = replay(self.instance)
+        self.assertEqual((model['root_state'], model['contested']), ('contested', ['Small.root']))
+
     def test_a_root_with_settled_proofs_of_itself_and_of_its_negation_is_contested(self):
         self.contested()
         model = replay(self.instance)

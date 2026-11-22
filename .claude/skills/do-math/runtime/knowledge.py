@@ -302,7 +302,10 @@ def settle(model):
         settled = settled_without(excluded)
         refuted = {}
         for name, element in elements.items():
-            if element['refutes'] and name in settled:
+            # The declaration whose record says `refutes:` carries the negation as its statement. The
+            # negation is settled when one of its proofs is, under this declaration or under another
+            # declaration of the same statement.
+            if element['refutes'] and any(p in settled for p in elements[element['statement_of']]['proofs']):
                 refuted.setdefault(elements[element['refutes']]['statement_of'], []).append(name)
         found = {s for s in refuted if any(p in settled for p in elements[s]['proofs'])}
         sides = found | {elements[r]['statement_of'] for s in found for r in refuted[s]}
@@ -338,7 +341,7 @@ def settle(model):
         state = 'contested'
     elif root['statement_formal']:
         state = 'formal_proved'
-    elif any(elements[r]['formal'] for r in refuters):
+    elif any(elements[elements[r]['statement_of']]['statement_formal'] for r in refuters):
         state = 'formal_refuted'
     elif root['statement_settled']:
         state = 'informal_proved'
@@ -354,6 +357,21 @@ def settle(model):
     settle_questions(model)
 
 
+def refuting_proofs(model, statement, formal=False):
+    """The settled proofs through which a statement is refuted, by name.
+
+    They are the settled proofs of the negation that a declaration with `refutes:` carries, whichever
+    declaration of that negation holds each proof. With formal, only the formal ones."""
+    elements = model['elements']
+    found = set()
+    for refuter in elements[statement]['refuted_by'] or [
+            n for n, e in elements.items() if e['refutes'] and elements[e['refutes']]['statement_of'] == statement]:
+        for proof in elements[elements[refuter]['statement_of']]['proofs']:
+            if elements[proof]['settled'] and (elements[proof]['formal'] or not formal):
+                found.add(proof)
+    return sorted(found)
+
+
 def root_settlement(model):
     """The root's formal settlement as the root question's answer, or None while the root lacks one."""
     if model['root_state'] not in ('formal_proved', 'formal_refuted'):
@@ -362,7 +380,7 @@ def root_settlement(model):
     if model['root_state'] == 'formal_proved':
         proofs = [p for p in elements[model['root']]['proofs'] if elements[p]['settled'] and elements[p]['formal']]
     else:
-        proofs = [n for n, e in elements.items() if e['refutes'] == model['root'] and e['settled'] and e['formal']]
+        proofs = refuting_proofs(model, elements[model['root']]['statement_of'], formal=True)
     return {'state': model['root_state'], 'proofs': sorted(proofs)}
 
 

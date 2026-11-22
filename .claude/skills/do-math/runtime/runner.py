@@ -23,7 +23,8 @@ from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, ques
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from knowledge import ROOT_QUESTION, canonical_question, formalizable, record_summary, render, replay, root_solved
+from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
+                       replay, root_solved)
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
@@ -133,10 +134,15 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
                             modules, required_pairs(records))
         outcome = wait_build(instance, build)
     finally:
-        # No session exists yet; the runner starts the broker it needs when it runs.
+        # No session exists yet; the runner starts the broker it needs when it runs. The broker is gone
+        # before this command returns or refuses, so that a refused instance's folder can be removed at once:
+        # a process that is still ending keeps its log file open.
         info = broker_alive(paths)
         if info:
             terminate_process(info['process'])
+            deadline = time.monotonic() + 30
+            while alive(info['process']) and time.monotonic() < deadline:
+                time.sleep(0.1)
     if not outcome['ok']:
         raise ValueError('the canon does not compile: ' + '; '.join(
             f"{e['module']}: {e['status']} {e.get('reason') or ''} {e['output']}" for e in outcome['errors']))
@@ -986,7 +992,7 @@ class Runner:
         keys = []
         for name in self.model['contested']:
             sides = [p for p in elements[name]['proofs'] if elements[p]['settled']]
-            sides += [n for n, e in elements.items() if e['refutes'] == name and e['settled']]
+            sides += [p for p in refuting_proofs(self.model, name) if p not in sides]
             keys.append(name + ':' + ','.join(sorted(str((elements[p]['verdict'] or {}).get('change')) for p in sides)))
         return keys
 
