@@ -22,7 +22,7 @@ INSTALLED = Path(__file__).resolve().parents[2]
 ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
 # A pack opens with the root and the assignment, so that the guides are read with both in mind. The other
 # research views, the user conditions and the commands follow the guides, in this order.
-LEAD = ['# Root statement', '# The root in Lean', '# Your assignment']
+OPENING = ['# Root statement', '# The root in Lean', '# Your assignment']
 VIEWS = ['# Frontier at launch',
          '# Understanding so far of the root problem as a whole (question q0)', '# Board at launch',
          '# User conditions supplied at launch', '# Executable commands']
@@ -201,14 +201,14 @@ class ContextTests(InstanceCase):
                 self.pack(folder, role, {'batch': []} if role == 'organizer' else None)
                 saved[role] = (folder / 'pack.md').read_bytes()
                 lead, views = self.lead(folder), self.views(folder)
-                opening, section = self.parts(lead, LEAD), self.parts(views, VIEWS)
-                self.assertIn((self.instance / 'root.md').read_text(encoding='utf-8'), opening[LEAD[0]])
+                opening, section = self.parts(lead, OPENING), self.parts(views, VIEWS)
+                self.assertIn((self.instance / 'root.md').read_text(encoding='utf-8'), opening[OPENING[0]])
                 # The root in Lean: where it stands, its declaration as written and as Lean prints it.
                 self.assertIn('the declaration `Small.root` of the library `Small`, in `canon/lean/Small/Root.lean`',
-                              opening[LEAD[1]])
+                              opening[OPENING[1]])
                 self.assertIn('```lean\n/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
-                              'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry\n```', opening[LEAD[1]])
-                self.assertIn('As Lean prints it: `Small.root (n : Nat) : oddSum n = n * n`', opening[LEAD[1]])
+                              'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry\n```', opening[OPENING[1]])
+                self.assertIn('As Lean prints it: `Small.root (n : Nat) : oddSum n = n * n`', opening[OPENING[1]])
                 self.assertIn(frontier, section[VIEWS[0]])
                 self.assertIn('No exploration has written it yet.', section[VIEWS[1]])
                 self.assertIn(board, section[VIEWS[2]])
@@ -250,7 +250,7 @@ class ContextTests(InstanceCase):
         source.write_text('Revised format for later launches.', encoding='utf-8')
         self.assertEqual((first / 'context/reference/change-format.md').read_bytes(), saved)
         text = (first / 'pack.md').read_text(encoding='utf-8')
-        for heading in LEAD + VIEWS:
+        for heading in OPENING + VIEWS:
             self.assertIn('\n' + heading + '\n', text)
         self.assertIn('/retained/source', text)
         self.assertNotIn('Revised format for later launches.', text)
@@ -542,7 +542,7 @@ class ContextTests(InstanceCase):
                 # The root and the assignment come before the first guide, and every other research view
                 # comes after the last one.
                 first = body.index('<!-- begin ' + expected[0] + ' -->')
-                for heading in LEAD:
+                for heading in OPENING:
                     self.assertLess(body.index('\n' + heading + '\n'), first)
                 self.assertLess(previous_end, body.index('\n# Frontier at launch\n', previous_end))
                 self.assertEqual([p.name for p in (folder / 'context/roles').iterdir()],
