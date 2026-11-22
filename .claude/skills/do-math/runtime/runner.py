@@ -30,7 +30,8 @@ from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_s
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
-                             popen_options, process_identity, read_json, remove_tree, rename_directory, session_host,
+                             popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
+                             session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
 
@@ -1020,20 +1021,17 @@ class Runner:
                 # Its work is done and waits in the publication queue; publish() carries it from here.
                 continue
             session = self.session_dir(sid)
-            ending = session / 'end-check.json'
-            if ending.exists():
-                current = read_json(ending)
-                if s.get('end_check') != current:
-                    s['end_check'] = current
-                    self.save()
+            # Read again only when the file has changed (read_json_cached): this runs on every pass.
+            current = read_json_cached(session / 'end-check.json')
+            if current is not None and s.get('end_check') != current:
+                s['end_check'] = current
+                self.save()
             if not (session / 'GO').exists():
                 (session / 'CANCEL').touch()
-            receipt = session / 'process.json'
-            if receipt.exists():
-                data = read_json(receipt)
-                if s.get('cli') != data['process']:
-                    s.update(cli=data['process'], cli_started_at=data['started_at'])
-                    self.save()
+            data = read_json_cached(session / 'process.json')
+            if data is not None and s.get('cli') != data['process']:
+                s.update(cli=data['process'], cli_started_at=data['started_at'])
+                self.save()
             if alive(s.get('host')) or alive(s.get('cli')):
                 continue
             # The host has exited, so this poll reaps it. finish() takes the session off the active

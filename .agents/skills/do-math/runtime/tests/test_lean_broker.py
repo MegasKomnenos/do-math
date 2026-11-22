@@ -1696,5 +1696,86 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(listed.get(summary["build"]), "finished")
 
 
+class WaitLooks(unittest.TestCase):
+    """What a waiting client reads: the whole broker state rarely, the job's own result file between."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.paths = lean_broker.Paths(Path(self.temp.name) / "instance")
+        self.paths.ensure()
+        self.job = "j" + "0" * 32
+        self.paths.job(self.job).mkdir()
+        runner.write_json(self.paths.state, {"jobs": {self.job: {"id": self.job, "status": "running"}}, "builds": {}})
+
+    def finish(self, exit_code=0):
+        runner.write_json(self.paths.job(self.job) / "result.json",
+                          {"id": self.job, "status": "finished", "exit_code": exit_code})
+
+    def waited(self, timeout, **patches):
+        """The wait's return value, how often it took the full look, and what it wrote to stderr."""
+        full, err = [], io.StringIO()
+        original = lean_broker.job_record
+        def counted(paths, job_id):
+            full.append(job_id)
+            return original(paths, job_id)
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(patch.object(lean_broker, "ensure_broker", return_value={}))
+            stack.enter_context(patch.object(lean_broker, "job_record", side_effect=counted))
+            for name, value in patches.items():
+                stack.enter_context(patch.object(lean_broker, name, value))
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            code = lean_broker.wait(self.paths, self.job, timeout=timeout)
+        return code, len(full), err.getvalue()
+
+    def test_the_whole_state_is_read_at_the_start_and_at_the_timeout_only(self):
+        code, full, err = self.waited(1.2)
+        self.assertEqual((code, full), (124, 2))
+        self.assertEqual(json.loads(err.strip().splitlines()[-1])["status"], "running")
+
+    def test_the_state_is_read_again_after_the_interval_and_a_record_that_has_gone_is_an_error(self):
+        code, full, _ = self.waited(1.0, WAIT_STATE_SECONDS=0.3)
+        self.assertEqual(code, 124)
+        self.assertGreaterEqual(full, 3)
+        import threading
+        threading.Timer(0.3, lambda: runner.write_json(self.paths.state, {"jobs": {}, "builds": {}})).start()
+        with self.assertRaisesRegex(ValueError, "unknown job"):
+            self.waited(5, WAIT_STATE_SECONDS=0.5)
+
+    def test_a_result_written_between_full_looks_ends_the_wait(self):
+        import threading
+        threading.Timer(0.6, lambda: self.finish(exit_code=7)).start()
+        started = time.monotonic()
+        code, full, err = self.waited(30)
+        self.assertEqual((code, full), (7, 1))
+        self.assertLess(time.monotonic() - started, 0.6 + 2 * lean_broker.WAIT_POLL[1])
+        self.assertIn('"status": "finished"', err)
+
+    def test_an_outcome_present_at_the_timeout_is_reported_as_the_outcome(self):
+        self.finish()
+        self.assertEqual(self.waited(0)[0], 0)
+
+    def test_an_unreadable_result_is_tried_again_and_its_error_given_only_when_it_lasts(self):
+        calls = []
+        def twice_refused(paths, job_id):
+            calls.append(job_id)
+            if len(calls) <= 2:
+                raise PermissionError("sharing violation")
+            return {"id": job_id, "status": "finished", "exit_code": 0}
+        code, _, _ = self.waited(30, final_record=twice_refused)
+        self.assertEqual((code, len(calls)), (0, 3))
+        def refused(paths, job_id):
+            raise PermissionError("sharing violation")
+        started = time.monotonic()
+        with self.assertRaises(PermissionError):
+            self.waited(30, final_record=refused, WAIT_RETRY_SECONDS=0.5)
+        self.assertGreaterEqual(time.monotonic() - started, 0.5)
+        # The timeout still ends the wait with the last status read while the result stays unreadable.
+        code, _, err = self.waited(0.6, final_record=refused)
+        self.assertEqual(code, 124)
+        self.assertEqual(json.loads(err.strip().splitlines()[-1])["status"], "running")
+
+
 if __name__ == "__main__":
     unittest.main()

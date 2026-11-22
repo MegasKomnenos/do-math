@@ -30,13 +30,19 @@ import uuid
 
 from coordination import ACTIVE_STATUSES, session_live
 from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
-                    popen_options, process_identity, read_json, terminate_process, write_json)
+                    popen_options, process_identity, read_json, terminate_process, write_json,
+                    write_json_compact)
 from settings import load_settings
 
 SCRIPT = Path(__file__).resolve()
 MIB = 1024 * 1024
 POLL = 0.25
+WAIT_POLL = (0.25, 1.0)  # a waiting client's first and longest pause between looks at the result file
+WAIT_STATE_SECONDS = 10.0  # how often a waiting client reads the broker's whole state
+WAIT_RETRY_SECONDS = 10.0  # how long a waiting client retries a record it cannot read before giving the error
 SAMPLE_SAVE_SECONDS = 1.0  # memory samples alone reach state.json at most this often
+TREE_SECONDS = 1.0  # a running compile's processes are listed again at most this often
+ESTIMATE_BASIS = 5  # the fewest measured import sets from which the baseline of a new set is estimated
 ACTIVE = ("queued", "running")
 FINISHED = ("finished", "failed", "cancelled")
 BROKER_SESSION = "broker"
@@ -413,11 +419,21 @@ class Calibration:
         """Calibrated, or calibration tried and failed: either way no new calibration job is due."""
         return self.entry(key) is not None
 
-    def record_baseline(self, key, identity, baseline_mb, import_seconds):
-        """`identity` is what the key hashes, in readable form: imports, version, environment_key and direct."""
+    def record_baseline(self, key, identity, baseline_mb, import_seconds, closure_mb=None):
+        """`identity` is what the key hashes, in readable form: imports, version, environment_key and direct.
+
+        `closure_mb` is the size on disk of everything the imports load (Library.closure_mb), kept so
+        that the baselines of later sets can be estimated from this measured one."""
         entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
         entry.update(baseline_mb=round(baseline_mb, 1), import_seconds=round(import_seconds, 1),
-                     calibrated_at=time.time(), failed=None)
+                     calibrated_at=time.time(), failed=None, estimated=False, closure_mb=closure_mb)
+        self.dirty = True
+
+    def record_estimate(self, key, identity, baseline_mb, closure_mb, measured_sets):
+        """A baseline that was not measured but estimated from `measured_sets` measured ones (Broker.estimate_baseline)."""
+        entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
+        entry.update(baseline_mb=round(baseline_mb, 1), import_seconds=None, calibrated_at=time.time(), failed=None,
+                     estimated=True, closure_mb=closure_mb, measured_sets=measured_sets)
         self.dirty = True
 
     def record_failure(self, key, identity, exit_code, reason):
@@ -446,6 +462,78 @@ class Calibration:
     def save(self):
         if self.dirty:
             write_json(self.path, self.data)
+            self.dirty = False
+
+
+class Library:
+    """What each compiled module of the imported library imports, and how large it is on disk.
+
+    A compile loads the modules it imports and, through them, everything those import, each module
+    once. Which modules those are is read from the `.ilean` file that stands beside each compiled
+    module and lists its direct imports, so neither the sources nor the compiler is needed. What was
+    read is kept in one file per Lean environment, since a library does not change within one."""
+
+    def __init__(self, path, roots):
+        self.path, self.roots = Path(path), [Path(root) for root in roots]
+        try:
+            self.modules = read_json(self.path) if self.path.exists() else {}
+        except (OSError, ValueError):
+            self.modules = {}
+        self.dirty = False
+
+    def read(self, name):
+        """[MiB of the module's public and private compiled files, its direct imports], or None if not found."""
+        relative = name.replace("«", "").replace("»", "").replace(".", "/")
+        marker = b'"directImports":'
+        for root in self.roots:
+            try:
+                raw = (root / (relative + ".ilean")).read_bytes()
+            except OSError:
+                continue
+            at = raw.find(marker)
+            if at < 0:
+                return None  # a form of the file this reader does not know; the set is then measured
+            try:
+                listed, _ = json.JSONDecoder().raw_decode(raw[at + len(marker):].decode("utf-8", "replace").lstrip())
+            except ValueError:
+                return None
+            imports = [entry[0] if isinstance(entry, list) and entry else
+                       entry.get("module") if isinstance(entry, dict) else entry for entry in listed]
+            if not all(isinstance(entry, str) and entry for entry in imports):
+                return None
+            size = 0
+            for suffix in (".olean", ".olean.private"):
+                try:
+                    size += (root / (relative + suffix)).stat().st_size
+                except OSError:
+                    pass
+            return [round(size / MIB, 3), imports] if size else None
+        return None
+
+    def closure_mb(self, imports):
+        """MiB of compiled files in everything the imports load, each module once; None if a module is not found.
+
+        `Init` is always among them: Lean adds it to every file that is not itself part of it."""
+        seen, stack, total = set(), [*imports, "Init"], 0.0
+        while stack:
+            name = stack.pop()
+            if name in seen:
+                continue
+            seen.add(name)
+            found = self.modules.get(name)
+            if found is None:
+                found = self.read(name)
+                if found is None:
+                    return None
+                self.modules[name] = found
+                self.dirty = True
+            total += found[0]
+            stack.extend(found[1])
+        return round(total, 1)
+
+    def save(self):
+        if self.dirty:
+            write_json_compact(self.path, self.modules)
             self.dirty = False
 
 
@@ -503,6 +591,8 @@ class Broker:
         self.state = {"jobs": {}, "builds": {}, "version": None}
         self.calibration = Calibration(self.paths.calibration)
         self.hosts = {}
+        self.trees = {}  # job ID -> (pid, when its processes were listed, their PIDs)
+        self.library = self.library_key = None  # the Library of the current environment; False if it has none
         self.dirty = False
         self.samples_dirty = False
         self.last_sample_save = 0.0
@@ -522,10 +612,14 @@ class Broker:
 
     def save(self):
         self.calibration.save()
+        if self.library:
+            self.library.save()
         if self.samples_dirty and time.monotonic() - self.last_sample_save >= SAMPLE_SAVE_SECONDS:
             self.dirty = True
         if self.dirty:
-            write_json(self.paths.state, self.state)
+            # The state holds every recent job and build and is rewritten at each change and, while a
+            # compile runs, once a second for its memory samples; so it is written without indentation.
+            write_json_compact(self.paths.state, self.state)
             self.dirty = self.samples_dirty = False
             self.last_sample_save = time.monotonic()
 
@@ -826,6 +920,77 @@ class Broker:
                 "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
                 "exit_code": None, "launch_error": None, "reason": None, **extra}
 
+    def library_roots(self):
+        """The folders in which the configured Lean finds compiled modules: LEAN_PATH, then its own library."""
+        command = self.settings["lean"]["command"]
+        if self.direct is not None:
+            executable, env = self.direct["argv"][0], {**self.lean_env(), **self.direct["env"]}
+        elif "env" in command[1:]:
+            return []  # lake's environment was not obtained, so the search path is not known
+        else:
+            executable, env = command[0], self.lean_env()
+        found = shutil.which(executable, path=env.get("PATH")) or executable
+        roots = [Path(part) for part in (env.get("LEAN_PATH") or "").split(os.pathsep) if part]
+        roots.append(Path(found).resolve().parent.parent / "lib" / "lean")
+        return [root for root in roots if root.is_dir()]
+
+    def closure_mb(self, imports):
+        """MiB of compiled library that a set of external imports loads, or None when that cannot be told."""
+        key = (self.state.get("environment_key"), self.direct is not None)
+        if self.library is None or self.library_key != key:
+            roots = self.library_roots()
+            self.library = Library(self.paths.root / f"library-{key[0]}.json", roots) if roots else False
+            self.library_key = key
+        if not self.library:
+            return None
+        try:
+            return self.library.closure_mb(imports)
+        except (OSError, ValueError) as exc:
+            self.log(event="library_unreadable", error=str(exc))
+            return None
+
+    def estimate_baseline(self, job):
+        """Give the job's set of external imports an estimated baseline when the measured sets support one.
+
+        A baseline is the memory a compile takes to load its imports, and it follows the size on disk
+        of what they load closely: over 112 sets measured in one instance, a line through the sets
+        measured so far gave the baseline of the next one within about 2%. Measuring a set costs a
+        compile of its own that loads the whole of it, and most sets are used once or twice. So once
+        ESTIMATE_BASIS sets have been measured in this environment and launch mode, a new set whose
+        size lies between two measured sizes gets its baseline from that line and no compile of its
+        own. A set smaller or larger than every measured one is measured, which widens the range, and
+        so is a set whose modules cannot all be found. Estimated baselines are never fitted to."""
+        size = self.closure_mb(job["external"])
+        if size is None:
+            return False
+        direct = self.direct is not None
+        basis = []
+        for entry in self.calibration.data["entries"].values():
+            if (entry.get("baseline_mb") is None or entry.get("estimated") or entry.get("direct") != direct
+                    or entry.get("environment_key") != self.state["environment_key"]
+                    or entry.get("version") != self.state["version"]):
+                continue
+            if entry.get("closure_mb") is None:
+                measured_size = self.closure_mb(entry["imports"])  # measured before the sizes were kept
+                if measured_size is None:
+                    continue
+                entry["closure_mb"] = measured_size
+                self.calibration.dirty = True
+            basis.append((entry["closure_mb"], entry["baseline_mb"]))
+        sizes, baselines = [x for x, _ in basis], [y for _, y in basis]
+        if len(basis) < ESTIMATE_BASIS or not min(sizes) <= size <= max(sizes):
+            return False
+        mean_size, mean_baseline = statistics.fmean(sizes), statistics.fmean(baselines)
+        spread = sum((x - mean_size) ** 2 for x in sizes)
+        slope = sum((x - mean_size) * (y - mean_baseline) for x, y in basis) / spread if spread else 0.0
+        estimate = min(max(mean_baseline + slope * (size - mean_size), min(baselines)), max(baselines))
+        identity = {"imports": job["external"], "version": self.state["version"],
+                    "environment_key": self.state["environment_key"], "direct": direct}
+        self.calibration.record_estimate(job["closure"], identity, estimate, size, len(basis))
+        self.log(event="baseline_estimated", closure=job["closure"], imports=job["external"], closure_mb=size,
+                 baseline_mb=round(estimate, 1), measured_sets=len(basis))
+        return True
+
     def calibration_job(self, closure, imports):
         """An imports-only compile whose peak is the closure's baseline; real jobs wait for it."""
         job_id = "c" + uuid.uuid4().hex
@@ -847,11 +1012,20 @@ class Broker:
     # --- sampling and collection
 
     def sample(self, job):
-        """Read the private memory of the job's process tree; every poll, so short compiles are caught at their peak."""
+        """Read the private memory of the job's process tree; every poll, so short compiles are caught at their peak.
+
+        Which processes belong to the tree is found by listing every process of the machine, and that
+        costs far more than reading the memory of a few known ones. So the tree is listed again only
+        every TREE_SECONDS, and at each poll in between the memory of the processes last listed is
+        read; one that has ended since counts as nothing, and one started since is counted from the
+        next listing."""
         measured = job["measured"]
         if not job.get("pid") or not alive(job.get("lean")):
             return
-        current = round(private_memory_mb(process_tree(job["pid"])), 1)
+        tree = self.trees.get(job["id"])
+        if tree is None or tree[0] != job["pid"] or time.monotonic() - tree[1] >= TREE_SECONDS:
+            tree = self.trees[job["id"]] = (job["pid"], time.monotonic(), process_tree(job["pid"]))
+        current = round(private_memory_mb(tree[2]), 1)
         measured["sampled_at"] = time.time()
         if current != measured["current_mb"]:
             measured["current_mb"] = current
@@ -907,6 +1081,7 @@ class Broker:
                     self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
 
     def finish(self, job, exit_info):
+        self.trees.pop(job["id"], None)
         now = exit_info.get("finished_at") or time.time()
         job["finished_at"] = now
         job["exit_code"] = exit_info.get("exit_code")
@@ -921,7 +1096,8 @@ class Broker:
             identity = {"imports": job["imports"], "version": self.state["version"],
                         "environment_key": job["environment_key"], "direct": job["direct"]}
             if job["exit_code"] == 0:
-                self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"])
+                self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"],
+                                                 self.closure_mb(job["imports"]))
             elif job["exit_code"] is not None and 0 < job["exit_code"] < 2 ** 31 and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
                 self.calibration.record_failure(job["closure"], identity, job["exit_code"],
@@ -1156,6 +1332,9 @@ class Broker:
                 job["waiting_for"] = None
                 continue
             if job["closure"] not in pending_calibration:
+                if self.estimate_baseline(job):
+                    job["waiting_for"] = None
+                    continue
                 # Only the external imports are calibrated: a local module's .olean exists in no
                 # calibration, and its cost is small beside the library's and is measured as excess.
                 calibration = self.calibration_job(job["closure"], job["external"])
@@ -1437,27 +1616,65 @@ def job_record(paths, job_id):
     return None
 
 
+def final_record(paths, job_id):
+    """The record the broker wrote when the job or build ended or was answered as a duplicate, or None.
+
+    Every final outcome is written to result.json in the job's or build's own folder. A client that
+    waits therefore learns that the wait is over from this one small file, without the broker state."""
+    folder = paths.build(job_id) if BUILD_ID.match(job_id) else paths.job(job_id)
+    try:
+        return read_json(folder / "result.json")
+    except FileNotFoundError:
+        return None
+
+
 def wait(paths, job_id, timeout=None):
-    """Relay the finished job's output and exit code; 124 if the timeout passed first."""
+    """Relay the finished job's output and exit code; 124 if the timeout passed first.
+
+    The full look at a record (job_record) parses the broker's whole state, which grows with the
+    instance. The wait takes it at the start, every WAIT_STATE_SECONDS, which is how a record that has
+    gone is noticed, and once more at the timeout, for the status it reports. Between full looks it
+    tries only the result file (final_record). The pause between looks grows from WAIT_POLL[0] to
+    WAIT_POLL[1], which bounds how late an outcome is noticed. A record that cannot be read is tried
+    again for WAIT_RETRY_SECONDS, or until the timeout when no record has been read yet, before the
+    error is given."""
     deadline = None if timeout is None else time.monotonic() + timeout
-    checked = 0.0
+    pause, record, next_full, alive_checked, failing = WAIT_POLL[0], None, 0.0, 0.0, None
     while True:
-        record = job_record(paths, job_id)
-        if record is None:
-            raise ValueError(f"unknown job: {job_id}")
-        if record["status"] == "duplicate":
-            job_id = record["duplicate_of"]
+        full = time.monotonic() >= next_full
+        try:
+            latest = job_record(paths, job_id) if full else final_record(paths, job_id)
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            now = time.monotonic()
+            failing = now if failing is None else failing
+            if now - failing >= WAIT_RETRY_SECONDS or record is None and deadline is not None and now >= deadline:
+                raise
+            latest = None
+        else:
+            failing = None
+            if full:
+                if latest is None:
+                    raise ValueError(f"unknown job: {job_id}")
+                next_full = time.monotonic() + WAIT_STATE_SECONDS
+        record = latest or record
+        if record is not None and record["status"] == "duplicate":
+            job_id, record, next_full = record["duplicate_of"], None, 0.0
             continue
-        if record["status"] in FINISHED:
+        if record is not None and record["status"] in FINISHED:
             break
-        if time.monotonic() - checked > 2.0:
+        now = time.monotonic()
+        if now - alive_checked > 2.0:
             ensure_broker(paths)
-            checked = time.monotonic()
-        if deadline is not None and time.monotonic() >= deadline:
+            alive_checked = now = time.monotonic()
+        if record is not None and deadline is not None and now >= deadline:
+            if not full:
+                next_full = 0.0  # the status reported at the timeout is the one in force then
+                continue
             print(json.dumps({"job": job_id, "status": record["status"], "timeout": True,
                               "hint": f"the job continues; run wait {job_id} again"}), file=sys.stderr, flush=True)
             return 124
-        time.sleep(POLL)
+        time.sleep(pause if deadline is None else max(0.0, min(pause, deadline - now)))
+        pause = min(WAIT_POLL[1], pause * 1.5)
     if BUILD_ID.match(job_id):
         return report_build(paths, record)
     job_dir = paths.job(job_id)

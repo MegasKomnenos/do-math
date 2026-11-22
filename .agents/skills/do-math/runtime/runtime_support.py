@@ -7,6 +7,7 @@ from pathlib import Path
 WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
+COMPACT_ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(",", ":"))
 ARCHIVE_PRESET = 6
 LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5}
 
@@ -81,6 +82,17 @@ def write_json(path, value):
         yield from JSON_ENCODER.iterencode(value)
         yield "\n"
     _write_chunks(path, chunks())
+
+
+def write_json_compact(path, value):
+    """Replace one state file atomically, as write_json does, without indentation.
+
+    For a file that is large and rewritten often, such as the Lean broker's state. The indented form
+    is produced token by token by the encoder written in Python, and for a state of a few megabytes
+    that took about 200 ms a write, ten times what this takes. Here the whole document is encoded in
+    one call, by the C encoder where Python has it. Readers parse the file, so its layout is free; the
+    replacement is the same as write_json's, and a reader still sees one complete version or the other."""
+    _write_chunks(path, (COMPACT_ENCODER.encode(value), "\n"))
 
 
 

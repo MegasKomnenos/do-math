@@ -16,7 +16,7 @@ import time
 import uuid
 from availability import availability_view, retain_snapshot
 from knowledge import ROOT_QUESTION, canonical_question, is_statement, replay
-from runtime_support import alive, read_json, write_json
+from runtime_support import alive, read_json, read_json_cached, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
@@ -68,10 +68,12 @@ def session_live(state, sid):
 
 def section_entries(instance, sid, model):
     """Sections one session declared."""
-    path = Path(instance) / 'sessions' / sid / 'declaration.json'
-    if not sid or not path.is_file():
+    if not sid:
         return []
-    data = read_json(path)
+    # The runner draws the board on every pass; a declaration is read again only when it has changed.
+    data = read_json_cached(Path(instance) / 'sessions' / sid / 'declaration.json')
+    if data is None:
+        return []
     return [{**row, 'session': sid} for row in data.get('sections', []) if row['element'] in model['elements']]
 
 
@@ -79,10 +81,10 @@ def question_entry(instance, sid, model):
     """The question one explorer declared, or None while it is still choosing."""
     if not sid:
         return None
-    path = Path(instance) / 'sessions' / sid / 'declaration.json'
-    if not path.is_file():
+    data = read_json_cached(Path(instance) / 'sessions' / sid / 'declaration.json')
+    if data is None:
         return None
-    held = read_json(path).get('question')
+    held = data.get('question')
     if not held or (held['id'] not in model['questions'] and held['id'] not in model['question_aliases']):
         return None
     return {**held, 'id': canonical_question(model, held['id']), 'session': sid}

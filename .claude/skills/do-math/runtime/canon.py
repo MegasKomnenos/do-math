@@ -918,24 +918,19 @@ def build_outcome(instance, build_id):
     return outcome
 
 
-def wait_build(instance, build_id, timeout=None, poll=0.5):
+def wait_build(instance, build_id, timeout=None):
     """The outcome of a build, or None when the timeout passes first; the build continues either way.
 
     A build makes progress only while a broker is alive. Like the broker's own `wait`, this asks for
-    one every few seconds, and reports that none came instead of waiting without end."""
-    from lean_broker import Paths, ensure_broker
-    deadline = None if timeout is None else time.monotonic() + timeout
-    checked = time.monotonic()
-    while True:
-        outcome = build_outcome(instance, build_id)
-        if outcome is not None:
-            return outcome
-        if deadline is not None and time.monotonic() >= deadline:
-            return None
-        if time.monotonic() - checked > 2.0:
-            ensure_broker(Paths(instance))
-            checked = time.monotonic()
-        time.sleep(poll)
+    one every few seconds, and reports that none came instead of waiting without end. The waiting is
+    the broker client's (`lean_broker.await_record`), which looks for the build's result file and does
+    not read the broker's whole state at every look."""
+    from lean_broker import Paths, await_record
+    outcome = build_outcome(instance, build_id)
+    if outcome is not None:
+        return outcome
+    _, _, ended = await_record(Paths(instance), build_id, timeout)
+    return build_outcome(instance, build_id) if ended else None
 
 
 # ----------------------------------------------------------------------------- validating a candidate against its index

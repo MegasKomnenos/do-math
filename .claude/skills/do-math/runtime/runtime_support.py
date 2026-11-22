@@ -1,12 +1,13 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
+import copy, ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 
 WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
+COMPACT_ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(",", ":"))
 ARCHIVE_PRESET = 6
 LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5}
 
@@ -75,6 +76,32 @@ def file_stamp(path):
     return stat.st_mtime_ns, stat.st_size, stat.st_ino
 
 
+_JSON_SEEN = {}
+
+
+def read_json_cached(path):
+    """The content of a JSON file that one process reads again and again, or None when it is no file.
+
+    One file-system lookup says whether the file has changed since it was last read, by the same stamp
+    as file_stamp; only then is it opened and parsed again. The runner asks for every session's
+    declaration, end check and process receipt on each pass, and most of them have not changed since
+    the pass before. Each call returns a copy of its own, so a caller may keep or change what it gets."""
+    path = Path(path)
+    key = str(path)
+    try:
+        info = path.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        info = None
+    if info is None or not stat.S_ISREG(info.st_mode):
+        _JSON_SEEN.pop(key, None)
+        return None
+    stamp = (info.st_mtime_ns, info.st_size, info.st_ino)
+    seen = _JSON_SEEN.get(key)
+    if seen is None or seen[0] != stamp:
+        seen = _JSON_SEEN[key] = (stamp, read_json(path))
+    return copy.deepcopy(seen[1])
+
+
 
 def write_json(path, value):
     """Replace one state file atomically; readers see either complete version."""
@@ -82,6 +109,17 @@ def write_json(path, value):
         yield from JSON_ENCODER.iterencode(value)
         yield "\n"
     _write_chunks(path, chunks())
+
+
+def write_json_compact(path, value):
+    """Replace one state file atomically, as write_json does, without indentation.
+
+    For a file that is large and rewritten often, such as the Lean broker's state. The indented form
+    is produced token by token by the encoder written in Python, and for a state of a few megabytes
+    that took about 200 ms a write, ten times what this takes. Here the whole document is encoded in
+    one call, by the C encoder where Python has it. Readers parse the file, so its layout is free; the
+    replacement is the same as write_json's, and a reader still sees one complete version or the other."""
+    _write_chunks(path, (COMPACT_ENCODER.encode(value), "\n"))
 
 
 

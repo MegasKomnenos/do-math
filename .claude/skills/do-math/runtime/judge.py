@@ -308,21 +308,16 @@ def outcome(instance, job, folder):
     return {'verdict': 'accepted', 'cases': cases, 'job': record['id'], 'reason': ''}
 
 
-def wait(instance, job, folder, timeout=None, poll=0.5):
-    """The outcome of a judge job, or None when the timeout passes first; the job continues either way."""
-    from lean_broker import Paths, ensure_broker
-    deadline = None if timeout is None else time.monotonic() + timeout
-    checked = time.monotonic()
-    while True:
-        result = outcome(instance, job, folder)
-        if result is not None:
-            return result
-        if deadline is not None and time.monotonic() >= deadline:
-            return None
-        if time.monotonic() - checked > 2.0:
-            ensure_broker(Paths(instance))
-            checked = time.monotonic()
-        time.sleep(poll)
+def wait(instance, job, folder, timeout=None):
+    """The outcome of a judge job, or None when the timeout passes first; the job continues either way.
+
+    The waiting is the broker client's (`lean_broker.await_record`), as for a build."""
+    from lean_broker import Paths, await_record
+    result = outcome(instance, job, folder)
+    if result is not None:
+        return result
+    _, _, ended = await_record(Paths(instance), job, timeout)
+    return outcome(instance, job, folder) if ended else None
 
 
 def build_lib(instance, build):
