@@ -61,6 +61,7 @@ if __name__ == '__main__' and sys.argv[1:2] == ['tex']:
 
 import atexit
 import copy
+import hashlib
 import shutil
 import tempfile
 import unittest
@@ -74,6 +75,72 @@ from runtime_support import read_json, write_json
 from support import InstanceCase, module_text, record_text, stop_broker
 
 TEX = [sys.executable, '-B', str(THIS), 'tex']
+
+# ----------------------------------------------------------------------------- the collection of real papers
+
+# Made for the tests, in the order of its manifest, with the field of each paper. The plan chooses six; of the
+# others, those in a field of a chosen paper (number theory, combinatorics) come first for the readings beside papers.
+FIELDS = [('eta', 'analysis'), ('alpha', 'number theory'), ('theta', 'number theory'), ('beta', 'combinatorics'),
+          ('iota', 'algebra'), ('gamma', 'number theory'), ('kappa', 'combinatorics'), ('delta', 'combinatorics'),
+          ('lambda', 'geometry'), ('epsilon', 'number theory'), ('mu', 'number theory'), ('zeta', 'combinatorics'),
+          ('nu', 'topology'), ('xi', 'combinatorics')]
+KEYS = [key for key, _ in FIELDS]
+CHOSEN = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
+FIRST_FOUR = ['theta', 'kappa', 'mu', 'xi']  # the near fields, in the order of the manifest
+NEXT_FOUR = ['eta', 'iota', 'lambda', 'nu']  # the rest
+# A fetch.py that records each run beside itself and restores what stash/ holds.
+FETCH = '\n'.join([
+    'import shutil, sys',
+    'from pathlib import Path',
+    'here = Path(__file__).resolve().parent',
+    "with (here / 'runs.txt').open('a', encoding='utf-8') as stream:",
+    "    stream.write('run ' + ' '.join(sys.argv[1:]) + chr(10))",
+    "for path in sorted((here / 'stash').glob('*.tex')):",
+    '    shutil.copyfile(path, here / path.name)',
+    "print('stand-in fetch')", ''])
+
+
+def passage(key):
+    """A sentence of the paper `key`, as a quotation gives it: on one line."""
+    return f'The paper {key} opens with the question it answers and states its main theorem at once.'
+
+
+def exemplar(key):
+    """The paper `key`, with its sentences broken and indented over lines as LaTeX sources are."""
+    return ('\\documentclass{amsart}\n\\begin{document}\n\\title{On the paper ' + key + '}\n\\begin{abstract}\n'
+            'The paper ' + key + ' opens with the question it answers\n   and states its main theorem at once.\n'
+            '\\end{abstract}\n\\maketitle\n\\section{Introduction}\nIn the paper ' + key + ' a lemma is introduced by '
+            'a sentence\nthat says what the lemma is for.\n\\end{document}\n')
+
+
+def make_collection(folder):
+    folder.mkdir(parents=True)
+    manifest = []
+    for key, field in FIELDS:
+        (folder / (key + '.tex')).write_text(exemplar(key), encoding='utf-8', newline='\n')
+        manifest.append({'key': key, 'arxiv': '1001.0001v1', 'title': f'On the paper {key}',
+                         'authors': ['A. Author', 'B. Author'], 'journal': 'Journal of Examples', 'year': 2001,
+                         'category': 'math.NT', 'field': field, 'pages': 12, 'licence': 'arXiv non-exclusive',
+                         'abstract': f'The paper {key} opens with the question\n it answers.',
+                         'sha256': hashlib.sha256(exemplar(key).encode('utf-8')).hexdigest(),
+                         'why': f'The introduction of {key} states its theorem at once.'})
+    write_json(folder / 'manifest.json', manifest)
+    (folder / 'fetch.py').write_text(FETCH, encoding='utf-8')
+
+
+STUDY = ('# How the chosen papers are written\n\nEach introduction asks its question before it states the theorem:\n\n'
+         '> ' + passage('alpha') + '\n')
+LIKE ={'likeness': 'The manuscript opens, states and proves as the papers do.', 'departures': []}
+ABSTRACT_QUOTE = 'We show that the sum of the first $n$ odd numbers is the square of $n$.'
+
+
+def departure(difference, keys=('theta', 'kappa'), quote=ABSTRACT_QUOTE):
+    return {'where': 'the abstract', 'quote': quote, 'evidence': [{'exemplar': k, 'quote': passage(k)} for k in keys],
+            'difference': difference}
+
+
+def departed(difference):
+    return {**LIKE, 'departures': [departure(difference)]}
 
 # ----------------------------------------------------------------------------- the settled research
 
@@ -156,6 +223,7 @@ UNDERSTANDING = 'Each step adds one odd number and completes a square; `Small.ro
 # ----------------------------------------------------------------------------- what the scripted sessions write
 
 PLAN = {
+    'exemplars': CHOSEN,
     'title': 'The sum of the first odd numbers',
     'outline': 'Induction on the number of terms; the step is the identity that completes a square.',
     'sections': [{'id': 'intro', 'title': 'Introduction', 'content': 'The problem, the main theorem, an outline.'},
@@ -179,11 +247,6 @@ INTRO = r'''For a natural number $n$ let $S_n$ denote the sum of the first $n$ o
 \begin{theorem}\label{thm:main}
 For every natural number $n$, we have $S_n = n^2$.
 \end{theorem}
-
-\begin{verification}
-Theorem~\ref{thm:main} has been formally verified in Lean 4. The formal statement is
-\LeanStatement
-\end{verification}
 
 The proof, in Section~\ref{sec:proof}, is an induction whose step is Lemma~\ref{lem:square}.
 '''
@@ -218,11 +281,16 @@ SAME = [{'label': label, 'verdict': 'same', 'difference': ''} for label in LABEL
 
 def good():
     """A scenario in which every session does its work at the first attempt."""
-    return {'plan': [{'output/plan.json': json.dumps(PLAN)}],
+    return {'plan': [{'output/plan.json': json.dumps(PLAN), 'output/study.md': STUDY}],
             'write:intro': [{'output/intro.tex': INTRO, 'output/abstract.tex': ABSTRACT}],
             'write:tools': [{'output/tools.tex': TOOLS}], 'write:proof': [{'output/proof.tex': PROOF}],
             'read': [{'output/reading.json': json.dumps(CLEAN)}],
+            'likeness': [{'output/likeness.json': json.dumps(LIKE)}],
             'compare': [{'output/comparison.json': json.dumps(SAME)}]}
+
+
+def answered(note):
+    return json.dumps([{'finding': 1, 'action': 'revised', 'note': note}])
 
 
 _SETTLED = None
@@ -257,6 +325,12 @@ class PaperCase(InstanceCase):
         self.scenario = self.root / 'scenario'
         self.scenario.mkdir()
         self.servers = []
+        # A collection made for the test stands in for the skill's own.
+        self.exemplars = self.root / 'exemplars'
+        make_collection(self.exemplars)
+        collection = patch('paper.EXEMPLARS', self.exemplars)
+        collection.start()
+        self.addCleanup(collection.stop)
 
     def command(self, cli, model, effort, cwd, servers=None, **options):
         self.servers.append(servers)
@@ -276,6 +350,10 @@ class PaperCase(InstanceCase):
 
     def materials(self):
         return paper.extract(self.instance, replay(self.instance))
+
+    def given(self, call):
+        """The papers of the collection a session was given, by key."""
+        return [name[len('exemplars/'):-len('.tex')] for name in call['given'] if name.startswith('exemplars/')]
 
 
 class RefusalTests(InstanceCase):
@@ -355,7 +433,7 @@ class PlanTests(PaperCase):
     def problems(self, change):
         plan = copy.deepcopy(PLAN)
         change(plan)
-        return ' | '.join(paper.check_plan(self.materials(), plan))
+        return ' | '.join(paper.check_plan(self.materials(), plan, KEYS))
 
     def other(self, plan, name):
         return next(item for item in plan['others'] if item['element'] == name)
@@ -411,7 +489,29 @@ class PlanTests(PaperCase):
         self.assertIn('"label"', self.problems(lambda plan: plan['statements'][1].update(label='lem:Small.oddSum_mono')))
         self.assertIn('"section" \'nowhere\' is not the id of a section',
                       self.problems(lambda plan: plan['statements'][2].update(section='nowhere')))
-        self.assertEqual(paper.check_plan(self.materials(), ['not', 'an', 'object']), ['plan.json holds one JSON object'])
+        self.assertEqual(paper.check_plan(self.materials(), ['not', 'an', 'object'], KEYS), ['plan.json holds one JSON object'])
+
+    def test_a_title_of_the_plan_names_no_lean_name_and_does_not_mention_lean(self):
+        # A repair keeps the plan, so a title that mentions Lean has to go back to a planning session.
+        self.assertIn('the title has Lean; the paper names no declaration of the canon and does not mention Lean',
+                      self.problems(lambda plan: plan.update(title='A proof checked in Lean')))
+        named = self.problems(lambda plan: plan['sections'][1].update(title='Around Small.sq_step and Mathlib'))
+        self.assertIn(f"the title of section {PLAN['sections'][1]['id']!r} has Mathlib, Small.sq_step;", named)
+        self.assertEqual(self.problems(lambda plan: plan.update(title='A lean proof of a clean identity')), '')
+
+    def test_the_plan_chooses_six_different_papers_of_the_collection(self):
+        self.assertIn('"exemplars" names 5 papers; it names exactly 6 different ones',
+                      self.problems(lambda plan: plan.update(exemplars=CHOSEN[:5])))
+        repeated = self.problems(lambda plan: plan.update(exemplars=CHOSEN[:5] + ['alpha']))
+        self.assertIn('"exemplars" names a paper more than once: alpha', repeated)
+        self.assertNotIn('names 6 papers', repeated)
+        self.assertIn('"exemplars" names keys that are not keys of exemplars.md: omega',
+                      self.problems(lambda plan: plan.update(exemplars=CHOSEN[:5] + ['omega'])))
+        self.assertIn('"exemplars" is an array of the keys of the 6 papers', self.problems(lambda plan: plan.pop('exemplars')))
+        # The choice is reported beside what else the plan gets wrong.
+        both = self.problems(lambda plan: (plan.update(exemplars=CHOSEN[:5]), plan['others'].pop()))
+        self.assertIn('names 5 papers', both)
+        self.assertIn('says nothing about these elements of the materials: Small.expand', both)
 
 
 class ManuscriptTests(PaperCase):
@@ -420,23 +520,26 @@ class ManuscriptTests(PaperCase):
 
     def test_the_manuscript_of_the_plan_passes_and_is_assembled_in_its_order(self):
         self.assertEqual(self.problems(), '')
-        tex, spans = paper.assemble(self.materials(), PLAN, PARTS)
+        tex, spans = paper.assemble(PLAN, PARTS)
         lines = tex.split('\n')
         self.assertEqual([name for name, _, _ in spans], ['abstract', 'intro', 'tools', 'proof'])
         for name, first, last in spans:
             self.assertEqual('\n'.join(lines[first - 1:last]), PARTS[name].strip('\n'))
         self.assertIn('\\documentclass{amsart}', lines[0])
         self.assertIn('\\section{Preliminaries}\\label{sec:tools}', lines)
-        self.assertIn('theorem Small.root (n : Nat) : oddSum n = n * n', tex)
+        # What the script adds to the parts carries no formal statement and no remark on formal verification.
+        for word in ('Small.', 'Lean', 'verification'):
+            self.assertNotIn(word, tex)
         self.assertLess(tex.index('\\bibliography{references}'), tex.index('\\end{document}'))
-        self.assertNotIn('\\bibliography', paper.assemble(self.materials(), PLAN, {**PARTS, 'tools': 'Nothing is cited.'})[0])
+        self.assertNotIn('\\bibliography', paper.assemble(PLAN, {**PARTS, 'tools': 'Nothing is cited.'})[0])
         found = paper.found_statements(PLAN, PARTS)
         self.assertEqual([(f['label'], f['kind'], f['number']) for f in found],
                          [('thm:main', 'theorem', '1.1'), ('lem:increasing', 'lemma', '2.1'), ('lem:square', 'lemma', '2.2')])
         self.assertEqual(found[0]['text'], 'For every natural number $n$, we have $S_n = n^2$.')
 
-    def test_lean_names_of_the_canon_are_found_outside_the_verification_remark(self):
-        self.assertIn('tools: Lean names of the canon appear outside the verification remark: Small.oddSum_succ',
+    def test_lean_names_of_the_canon_are_found_anywhere_in_a_part(self):
+        self.assertIn('tools: Lean names of the canon appear: Small.oddSum_succ; the paper calls an object by its '
+                      'mathematical name (method, section "The implementation does not show")',
                       self.problems(tools=TOOLS + 'This is the declaration Small.oddSum_succ.\n'))
         # A last component that no ordinary word resembles is found alone, with TeX's escaped underscore as well,
         # in a comment and in a label; a name of a result the paper does not use is a name of the canon too.
@@ -446,9 +549,27 @@ class ManuscriptTests(PaperCase):
         self.assertIn('Small.Step', self.problems(abstract=ABSTRACT + 'See the module Small.Step.\n'))
         # An ordinary word that happens to end a Lean name is not one, and neither is ordinary mathematics.
         self.assertEqual(self.problems(proof=PROOF + 'The root of the induction is the case $n = 0$; we expand $x_n$.\n'), '')
-        # Inside the remark the formal statement may be explained with its identifiers.
-        remark = INTRO.replace('\\LeanStatement', '\\LeanStatement\nHere \\texttt{Small.oddSum} is the sum $S_n$.')
-        self.assertEqual(self.problems(intro=remark), '')
+        # No remark is left out of the search, whatever its environment.
+        for environment in ('remark', 'verification'):
+            remark = f'\\begin{{{environment}}}\nHere \\texttt{{Small.root}} is Theorem~\\ref{{thm:main}}.\n\\end{{{environment}}}\n'
+            self.assertIn('intro: Lean names of the canon appear: Small.root', self.problems(intro=INTRO + remark))
+
+    def test_the_words_lean_and_mathlib_are_found_anywhere_in_a_part(self):
+        said = 'the paper does not mention Lean, and this part has the words '
+        where = ' (method, section "The implementation does not show")'
+        self.assertIn('intro: ' + said + 'Lean' + where,
+                      self.problems(intro=INTRO + 'Theorem~\\ref{thm:main} has been verified in Lean 4.\n'))
+        self.assertIn('proof: ' + said + 'Lean, Mathlib' + where,
+                      self.problems(proof=PROOF + 'We use \\texttt{Mathlib} and Lean4.\n'))
+        # In a comment, in a label, in the abstract and in the title as well.
+        self.assertIn('tools: ' + said + 'Mathlib', self.problems(tools=TOOLS + '% as in Mathlib\n'))
+        self.assertIn('tools: ' + said + 'Lean', self.problems(tools=TOOLS + '\\begin{equation}\\label{eq:Lean}a = a\\end{equation}\n'))
+        self.assertIn('abstract: ' + said + 'Lean', self.problems(abstract=ABSTRACT + 'The proof is checked in Lean.\n'))
+        plan = {**PLAN, 'title': 'The sum of the first odd numbers, in Lean'}
+        self.assertIn('the title: ' + said + 'Lean', ' | '.join(paper.machine_checks(self.materials(), plan, PARTS)))
+        # Other words that contain the letters are ordinary words; only the two words with these capitals are looked for.
+        ordinary = 'The lean case, the clean bound, Leaning on Lemma~\\ref{lem:square}, LEAN and mathlib are not names.\n'
+        self.assertEqual(self.problems(proof=PROOF + ordinary), '')
 
     def test_references_citations_statements_and_form_are_checked(self):
         self.assertIn('\\ref{lem:missing} points to a label', self.problems(proof=PROOF + 'See Lemma~\\ref{lem:missing}.\n'))
@@ -472,9 +593,6 @@ class ManuscriptTests(PaperCase):
                           '$2n + 1$.\n\\end{proof}', '$2n + 1$.')))
         self.assertIn('the plan puts the proof of thm:main here',
                       self.problems(proof=PROOF.replace('[Proof of Theorem~\\ref{thm:main}]', '')))
-        # The one remark on formal verification, around the statement the script supplies.
-        self.assertIn('exactly one verification environment', self.problems(intro=INTRO.replace('\\LeanStatement', '')))
-        self.assertIn('exactly one verification environment', self.problems(proof=PROOF + '\\LeanStatement\n'))
         # The form of a part.
         self.assertIn('a part does not use \\newcommand, \\section',
                       self.problems(proof='\\section{More}\n\\newcommand{\\S}{S}\n' + PROOF))
@@ -489,7 +607,7 @@ class ManuscriptTests(PaperCase):
         plan['others'].pop()
         plan['statements'].insert(1, {'element': 'Small.expand', 'kind': 'lemma', 'label': 'lem:expand', 'section': 'tools',
                                       'proof': 'cited', 'reason': 'It is used in the form stated.'})
-        self.assertEqual(paper.check_plan(self.materials(), plan), [])
+        self.assertEqual(paper.check_plan(self.materials(), plan, KEYS), [])
         source = '[{\\cite[Book II, Proposition 4]{euclid}}]'
         tools = ('\\begin{lemma}' + source + '\\label{lem:expand}\nFor natural numbers $a$ and $b$, we have '
                  '$(a+b)^2 = a^2 + 2ab + b^2$.\n\\end{lemma}\n\n' + TOOLS.replace(' \\cite[Book II, Proposition 4]{euclid}', ''))
@@ -499,20 +617,9 @@ class ManuscriptTests(PaperCase):
         self.assertIn('lem:expand is a result from the literature; it is cited and has no proof',
                       check(tools.replace('\\end{lemma}\n\n', '\\end{lemma}\n\\begin{proof}\nExpand.\n\\end{proof}\n\n', 1)))
 
-    def test_the_formal_statement_is_typeset_from_ascii(self):
-        tex, unknown = paper.lean_tex('theorem T (f : ℕ → ℕ) :\n    ∀ n ≤ 3, f n ≠ x₁ ∧ a_b ∈ {y} ⊛ z')
-        self.assertTrue(tex.isascii())
-        self.assertEqual(unknown, ['⊛'])
-        self.assertIn(r'(f : \ensuremath{\mathbb{N}} \ensuremath{\to} \ensuremath{\mathbb{N}}) :\\', tex)
-        self.assertIn(r'~~~~\ensuremath{\forall} n \ensuremath{\le} 3', tex)
-        self.assertIn(r'x\ensuremath{_{1}} \ensuremath{\wedge} a\_b \ensuremath{\in} \{y\}', tex)
-        self.assertIn(r'\mathrm{U{+}229B}', tex)
-        # A circumflex and a tilde are the characters, where \^{} and \~{} would print an accent.
-        self.assertEqual(paper.lean_tex('n ^ 2 ~ m')[0], r'n \textasciicircum{} 2 \textasciitilde{} m')
-
     def test_the_running_head_is_the_title_with_its_formulas_left_as_they_are(self):
         # amsart capitalizes the title for the head, and with no author it does so twice, formulas included.
-        tex = paper.assemble(self.materials(), PLAN, PARTS)[0]
+        tex = paper.assemble(PLAN, PARTS)[0]
         title = PLAN['title'].strip()
         self.assertIn('\\newcommand{\\RunningHead}{' + title + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n'
                       '\\title{' + title + '}\n', tex)
@@ -534,6 +641,79 @@ class ManuscriptTests(PaperCase):
                               'paper.tex, lines 50 to 53: TeX set a line 7pt wider than the text block'])
 
 
+class CollectionTests(PaperCase):
+    def runs(self):
+        runs = self.exemplars / 'runs.txt'
+        return runs.read_text(encoding='utf-8').splitlines() if runs.is_file() else []
+
+    def test_a_missing_paper_is_fetched_once_and_the_command_stops_when_it_stays_missing(self):
+        (self.exemplars / 'gamma.tex').unlink()
+        write_json(self.scenario / 'script.json', good())
+        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+            with self.assertRaises(paper.Stop) as stopped:
+                paper.produce(self.instance, self.out, TEX)
+        self.assertEqual(self.runs(), ['run '])
+        message = str(stopped.exception)
+        self.assertIn('after fetch.py ran (exit code 0): gamma.', message)
+        self.assertIn(f'"{sys.executable}" "{self.exemplars / "fetch.py"}" --only gamma', message)
+        self.assertIn('stand-in fetch', message)
+        # Nothing was launched and nothing was written.
+        self.assertFalse((self.scenario / 'calls.json').exists())
+        self.assertFalse(self.out.exists())
+
+    def test_a_paper_that_differs_is_fetched_again_and_then_used(self):
+        (self.exemplars / 'stash').mkdir()
+        shutil.copyfile(self.exemplars / 'beta.tex', self.exemplars / 'stash' / 'beta.tex')
+        (self.exemplars / 'beta.tex').write_text(exemplar('beta') + 'An edit.\n', encoding='utf-8', newline='\n')
+        manifest, papers, fetched = paper.load_collection()
+        self.assertEqual(self.runs(), ['run '])
+        self.assertEqual((fetched['missing_or_different'], fetched['exit_code']), (['beta'], 0))
+        self.assertEqual(papers['beta'], exemplar('beta'))
+        self.assertEqual([entry['key'] for entry in manifest], KEYS)
+        # A collection that agrees with its manifest is used as it is.
+        self.assertIsNone(paper.load_collection()[2])
+        self.assertEqual(len(self.runs()), 1)
+
+    def test_the_list_for_the_sessions_and_the_order_of_the_papers_for_the_readings(self):
+        manifest, _, _ = paper.load_collection()
+        text = paper.render_exemplars(manifest)
+        entry = text[text.index('## `kappa`'):text.index('## `delta`')]
+        for words in ('`kappa`: On the paper kappa', 'A. Author, B. Author. Journal of Examples, 2001.',
+                      'Field: combinatorics. Pages: 12.', 'Abstract: The paper kappa opens with the question it answers.',
+                      'Why it is in the collection: The introduction of kappa states its theorem at once.'):
+            self.assertIn(words, entry)
+        self.assertEqual(paper.likeness_papers(manifest, CHOSEN), FIRST_FOUR + NEXT_FOUR)
+
+
+class LikenessShapeTests(unittest.TestCase):
+    """A report of a reading beside papers is checked for its shape, and for nothing that carries meaning."""
+
+    def problems(self, report):
+        return ' | '.join(paper.check_likeness(report))
+
+    def test_the_shape_of_a_report_is_checked_and_its_quotations_are_not_looked_up(self):
+        self.assertEqual(self.problems(LIKE), '')
+        self.assertEqual(self.problems(departed('The abstract says more than theirs.')), '')
+        self.assertEqual(self.problems({**LIKE, 'departures': [departure('An outline is missing.', quote='')]}), '')
+        # A quotation that stands nowhere, a short one, evidence from one paper or from none: the readings judge these.
+        loose = departure('Loose.', keys=('omega',), quote='Nowhere in the manuscript.')
+        loose['evidence'][0]['quote'] = 'short'
+        self.assertEqual(self.problems({**LIKE, 'departures': [loose, {**departure('No evidence.'), 'evidence': []}]}), '')
+        # The shape.
+        self.assertIn('"likeness" is a text that is not empty', self.problems({**LIKE, 'likeness': ' '}))
+        self.assertIn('"departures" is an array', self.problems({'likeness': 'Alike.'}))
+        self.assertIn('departure 1 is not an object', self.problems({**LIKE, 'departures': ['a place']}))
+        self.assertIn('departure 2: "where" is a text that is not empty',
+                      self.problems({**LIKE, 'departures': [departure('Fine.'), {**departure('No place.'), 'where': ''}]}))
+        self.assertIn('departure 1: "difference" is a text that is not empty', self.problems(departed('')))
+        self.assertIn('departure 1: "quote" is a text',
+                      self.problems({**LIKE, 'departures': [{**departure('No quote.'), 'quote': None}]}))
+        self.assertIn('departure 1: "evidence" is an array of objects, each with "exemplar" and "quote" as text',
+                      self.problems({**LIKE, 'departures': [{**departure('Bare.'), 'evidence': [{'exemplar': 'theta'}]}]}))
+        self.assertIn('"evidence" is an array of objects',
+                      self.problems({**LIKE, 'departures': [{**departure('Text.'), 'evidence': 'theta and kappa'}]}))
+
+
 class RunTests(PaperCase):
     def test_one_command_leaves_the_paper_and_what_stands_beside_it(self):
         # The test instance sends every role to the common list; review gets its own list, as in the default settings.
@@ -541,7 +721,8 @@ class RunTests(PaperCase):
         script = good()
         wrong = copy.deepcopy(PLAN)
         wrong['others'].pop()
-        script['plan'].insert(0, {'output/plan.json': json.dumps(wrong)})
+        wrong['exemplars'] = CHOSEN[:5] + ['alpha']
+        script['plan'].insert(0, {'output/plan.json': json.dumps(wrong), 'output/study.md': STUDY})
         write_json(self.scenario / 'script.json', script)
         with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--tex', *TEX]), 0)
@@ -555,17 +736,46 @@ class RunTests(PaperCase):
         calls = self.calls()
         self.assertEqual([(c['kind'], c['section']) for c in calls],
                          [('plan', None), ('plan', None), ('write', 'intro'), ('write', 'tools'), ('write', 'proof'),
-                          ('read', None), ('compare', None)])
+                          ('read', None), ('likeness', None), ('likeness', None), ('compare', None)])
         self.assertEqual([c['folder'] for c in calls], ['01-plan', '02-plan', '03-write-intro', '04-write-tools',
-                                                        '05-write-proof', '06-read', '07-compare'])
-        self.assertEqual(self.servers, [{}] * 7)
-        # The plan the script could not carry out went back with the reason, to a new session.
+                                                        '05-write-proof', '06-read', '07-likeness', '08-likeness',
+                                                        '09-compare'])
+        self.assertEqual(self.servers, [{}] * 9)
+        # The plan the script could not carry out went back with the reasons, to a new session.
         self.assertIn('says nothing about these elements of the materials: Small.expand', calls[1]['prompt'])
+        self.assertIn('"exemplars" names a paper more than once: alpha', calls[1]['prompt'])
         self.assertIn('previous-output/plan.json', calls[1]['given'])
         self.assertEqual(self.events('check')[0]['check'], 'output of the plan session')
-        # A writing session has the method, the materials, the plan and the parts written before it.
-        self.assertEqual(calls[3]['given'], ['materials.md', 'paper-method.md', 'parts/abstract.tex', 'parts/intro.tex',
-                                             'plan.json', 'prompt.txt', 'session.json', 'user-writing-preferences.md'])
+        # The collection was used as it stands; the planning session had all of it and chose from it.
+        self.assertEqual(self.events('collection')[0]['fetched'], None)
+        self.assertEqual(sorted(self.given(calls[0])), sorted(KEYS))
+        self.assertIn('exemplars.md', calls[0]['given'])
+        self.assertNotIn('study.md', calls[0]['given'])
+        self.assertIn('"exemplars": the keys of the 6 papers you chose', calls[0]['prompt'])
+        self.assertIn('output/study.md', calls[0]['prompt'])
+        self.assertEqual(self.events('plan')[0]['exemplars'], CHOSEN)
+        # The planning session's account of the papers is kept beside the paper.
+        self.assertEqual((self.out / 'study.md').read_text(encoding='utf-8'), STUDY)
+        # A writing session has the method, the materials, the plan, the parts written before it, the chosen papers
+        # and the planning session's account of them; it leaves no account of its own.
+        self.assertEqual(calls[3]['given'], sorted(
+            ['materials.md', 'paper-method.md', 'parts/abstract.tex', 'parts/intro.tex', 'plan.json', 'prompt.txt',
+             'session.json', 'user-writing-preferences.md', 'exemplars.md', 'study.md']
+            + [f'exemplars/{key}.tex' for key in CHOSEN]))
+        self.assertEqual((self.out / 'sessions' / '04-write-tools' / 'study.md').read_text(encoding='utf-8'), STUDY)
+        self.assertIn('The papers come before the writing.', calls[3]['prompt'])
+        self.assertNotIn('output/study', calls[3]['prompt'])
+        # Two readings beside papers the plan did not choose, each with papers of its own, found nothing.
+        likeness = self.calls('likeness')
+        for call, keys in zip(likeness, (FIRST_FOUR, NEXT_FOUR)):
+            self.assertEqual(call['given'], sorted(['paper.tex', 'prompt.txt', 'references.bib', 'session.json']
+                                                   + [f'exemplars/{key}.tex' for key in keys]))
+            self.assertIn(', '.join(f'`exemplars/{key}.tex`' for key in keys), call['prompt'])
+            self.assertIn(paper.method_part('Reading the manuscript beside real papers'), call['prompt'])
+            for word in ('materials', 'Small.', 'plan.json'):
+                self.assertNotIn(word, call['prompt'])
+        self.assertEqual([(e['round'], e['exemplars'], e['likeness'], e['departures']) for e in self.events('likeness')],
+                         [(1, FIRST_FOUR, LIKE['likeness'], []), (2, NEXT_FOUR, LIKE['likeness'], [])])
         self.assertIn('stated here: lemma `lem:square`, which states the element `Small.sq_step`; its proof follows it',
                       calls[3]['prompt'])
         self.assertIn('absorbed into lemma `lem:increasing`: `Small.oddSum_succ`', calls[3]['prompt'])
@@ -585,16 +795,27 @@ class RunTests(PaperCase):
         self.assertIn('n^2', rows['statements'][0]['record_statement'])
         self.assertEqual(rows['statements'][0]['paper_statement'], 'For every natural number $n$, we have $S_n = n^2$.')
         self.assertEqual({o['element']: o['treatment'] for o in rows['others']}['Small.oddSum_mono_weak'], 'not_stated')
+        # The paper does not speak of Lean: it has no Lean name, no formal statement and no remark on formal verification,
+        # and no session is asked to write one.
         tex = (self.out / 'paper.tex').read_text(encoding='utf-8')
-        self.assertEqual(tex.count('Small.'), 1)  # the formal statement the script supplies for the remark
-        self.assertIn('statements.json', calls[6]['given'])
+        for word in ('Small.', 'Lean', 'verification'):
+            self.assertNotIn(word, tex)
+        for call in calls:
+            self.assertNotIn('formal verification', call['prompt'])
+            self.assertNotIn('LeanStatement', call['prompt'])
+        self.assertEqual(self.events('materials')[0]['warnings'], [])
+        # The correspondence file still gives the Lean statement of every numbered statement.
+        self.assertEqual(rows['statements'][2]['lean_statement'],
+                         'Small.sq_step (k : Nat) : k * k + (2 * k + 1) = (k + 1) * (k + 1)')
+        self.assertIn('statements.json', calls[8]['given'])
         self.assertEqual(self.events('end')[0], {**self.events('end')[0], 'status': 'complete', 'open': []})
-        self.assertEqual(len(self.events('session')), 7)
-        # Planning and writing use the first common model; the reading and the comparison the first model of review.
+        self.assertEqual(len(self.events('session')), 9)
+        # Planning and writing use the first common model; the readings and the comparison the first model of review.
         chosen = {(c['kind'], tuple(read_json(self.out / 'sessions' / c['folder'] / 'session.json')[key]
                                     for key in ('model', 'effort'))) for c in self.calls()}
         self.assertEqual(chosen, {('plan', ('codex/gpt-6.1-sol', 'xhigh')), ('write', ('codex/gpt-6.1-sol', 'xhigh')),
-                                  ('read', ('claude/opus', 'high')), ('compare', ('claude/opus', 'high'))})
+                                  ('read', ('claude/opus', 'high')), ('likeness', ('claude/opus', 'high')),
+                                  ('compare', ('claude/opus', 'high'))})
 
     def test_a_compile_error_goes_to_a_repair_session_and_the_manuscript_is_typeset_again(self):
         script = good()
@@ -607,6 +828,11 @@ class RunTests(PaperCase):
         self.assertIn('Undefined control sequence', ' '.join(findings))
         self.assertIn('are `parts/proof.tex`', repair[0]['prompt'])
         self.assertTrue({'paper.tex', 'parts/proof.tex', 'findings.json', 'materials.md', 'plan.json'} <= set(repair[0]['given']))
+        # A repair session has the chosen papers and the planning session's account of them.
+        self.assertEqual(self.given(repair[0]), sorted(CHOSEN))
+        self.assertTrue({'exemplars.md', 'study.md'} <= set(repair[0]['given']))
+        self.assertIn('Whatever you rewrite is written as those papers are written,', repair[0]['prompt'])
+        self.assertNotIn('output/study', repair[0]['prompt'])
         checks = [(e['check'], bool(e['problems'])) for e in self.events('check')]
         self.assertEqual(checks[:4], [('machine checks of the manuscript', False), ('typesetting', True),
                                       ('machine checks of the manuscript', False), ('typesetting', False)])
@@ -666,15 +892,29 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 0)
         self.assertIn('no part was changed', self.calls('repair')[1]['prompt'])
 
-    def test_a_lean_name_in_the_text_goes_to_a_repair_session(self):
+    def test_a_lean_name_or_the_word_lean_in_a_part_goes_to_a_repair_session(self):
         script = good()
-        script['write:tools'] = [{'output/tools.tex': TOOLS + 'This is \\texttt{Small.oddSum\\_succ}.\n'}]
-        script['repair:machine'] = [{'output/tools.tex': TOOLS}]
+        # A remark on formal verification as an earlier version of this command asked for, and a Lean name in a comment.
+        remark = ('\\begin{remark}\nTheorem~\\ref{thm:main} has been formally verified in Lean, with Mathlib; the formal '
+                  'statement is \\texttt{Small.root}.\n\\end{remark}\n')
+        script['write:intro'] = [{'output/intro.tex': INTRO + remark, 'output/abstract.tex': ABSTRACT}]
+        script['write:tools'] = [{'output/tools.tex': TOOLS + '% This is \\texttt{Small.oddSum\\_succ}.\n'}]
+        script['repair:machine'] = [{'output/intro.tex': INTRO, 'output/tools.tex': TOOLS}]
         self.assertEqual(self.run_paper(script), 0)
-        repair = self.calls('repair')[0]
-        self.assertIn('Lean names of the canon appear outside the verification remark',
-                      ' '.join(read_json(self.out / 'sessions' / repair['folder'] / 'findings.json')))
-        self.assertNotIn('oddSum\\_succ', (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        repair = self.calls('repair')
+        self.assertEqual([c['section'] for c in repair], ['machine'])
+        findings = read_json(self.out / 'sessions' / repair[0]['folder'] / 'findings.json')
+        where = ' (method, section "The implementation does not show")'
+        self.assertEqual(sorted(findings), sorted([
+            'intro: Lean names of the canon appear: Small.root; the paper calls an object by its mathematical name' + where,
+            'intro: the paper does not mention Lean, and this part has the words Lean, Mathlib' + where,
+            'tools: Lean names of the canon appear: Small.oddSum_succ; the paper calls an object by its mathematical name'
+            + where]))
+        tex = (self.out / 'paper.tex').read_text(encoding='utf-8')
+        for word in ('Small.', 'oddSum\\_succ', 'Lean', 'Mathlib'):
+            self.assertNotIn(word, tex)
+        checks = [(e['check'], bool(e['problems'])) for e in self.events('check')]
+        self.assertEqual(checks[:2], [('machine checks of the manuscript', True), ('machine checks of the manuscript', False)])
 
     def test_the_reading_loop_is_bounded(self):
         script = good()
@@ -684,7 +924,8 @@ class RunTests(PaperCase):
                                      'output/response.json': answer} for n in range(9)]
         self.assertEqual(self.run_paper(script), 0)
         kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
-        self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * paper.READING_ROUNDS + [('compare', None)])
+        self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * paper.READING_ROUNDS
+                         + [('likeness', None)] * paper.LIKENESS_CLEAN + [('compare', None)])
         repair = self.calls('repair')[0]
         findings = read_json(self.out / 'sessions' / repair['folder'] / 'findings.json')
         self.assertEqual((findings['findings'], findings['understanding']), (FOUND['findings'], FOUND['understanding']))
@@ -749,14 +990,18 @@ class RunTests(PaperCase):
         self.assertFalse((self.out / 'typeset').exists())
         for name in ('paper.tex', 'references.bib', 'plan.json', 'correspondence.json', 'log.json'):
             self.assertTrue((self.out / name).is_file(), name)
-        self.assertEqual([c['kind'] for c in self.calls()], ['plan', 'write', 'write', 'write', 'read', 'compare'])
+        self.assertEqual([c['kind'] for c in self.calls()],
+                         ['plan', 'write', 'write', 'write', 'read', 'likeness', 'likeness', 'compare'])
         self.assertEqual((self.events('end')[0]['status'], self.events('materials')[0]['tex']), ('no_tex', None))
         self.assertEqual([e['check'] for e in self.events('check')], ['machine checks of the manuscript'])
         # A folder that holds a manuscript is not written over by a new run; it is typeset as it stands.
         with self.assertRaises(paper.Stop):
             self.run_paper(good())
         launched = len(self.calls())
+        # Typesetting later does not use the collection: a paper missing from it is neither fetched nor missed.
+        (self.exemplars / 'alpha.tex').unlink()
         self.assertEqual(self.run_paper(good(), only=True), 0)
+        self.assertFalse((self.exemplars / 'runs.txt').exists())
         self.assertEqual(len(self.calls()), launched)
         self.assertTrue((self.out / 'paper.pdf').is_file())
         rows = read_json(self.out / 'correspondence.json')['statements']
@@ -822,6 +1067,77 @@ class RunTests(PaperCase):
         end = self.events('end')[-1]
         self.assertEqual([(item['check'], [problem['label'] for problem in item['problems']]) for item in end['open']],
                          [(paper.UNCOMPARED, ['lem:square'])])
+
+    def test_a_plan_without_its_account_and_a_report_of_the_wrong_shape_go_back_with_the_reasons(self):
+        script = good()
+        script['plan'] = [{'output/plan.json': json.dumps(PLAN)}, {'output/plan.json': json.dumps(PLAN), 'output/study.md': ' \n'},
+                          *script['plan']]
+        shapeless = {'likeness': '', 'departures': [{'where': 'the abstract', 'quote': None,
+                                                     'evidence': [{'exemplar': 'theta'}], 'difference': 'Longer.'}]}
+        script['likeness'].insert(0, {'output/likeness.json': json.dumps(shapeless)})
+        self.assertEqual(self.run_paper(script), 0)
+        plans, likeness = self.calls('plan'), self.calls('likeness')
+        self.assertEqual((len(plans), len(likeness)), (paper.PLAN_ATTEMPTS, 3))
+        for call in plans[1:]:
+            self.assertIn('output/study.md, the account of how the chosen papers are written, was not written or is empty',
+                          call['prompt'])
+        self.assertEqual((self.out / 'study.md').read_text(encoding='utf-8'), STUDY)
+        for reason in ('"likeness" is a text that is not empty', 'departure 1: "quote" is a text',
+                       'departure 1: "evidence" is an array of objects, each with "exemplar" and "quote" as text'):
+            self.assertIn(reason, likeness[1]['prompt'])
+        self.assertIn('previous-output/likeness.json', likeness[1]['given'])
+        # The reading done again has the papers of the reading it replaces; the next reading has others.
+        self.assertEqual([self.given(c) for c in likeness], [sorted(FIRST_FOUR), sorted(FIRST_FOUR), sorted(NEXT_FOUR)])
+        self.assertEqual([e['round'] for e in self.events('likeness')], [1, 2])
+        self.assertIn('output of the likeness session', [e['check'] for e in self.events('check')])
+
+    def test_a_departure_from_the_papers_is_repaired_and_the_manuscript_read_again_beside_other_papers(self):
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed('The abstract says more than theirs.'))},
+                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
+                                      'output/response.json': answered('The opening is rewritten.')} for n in range(9)]
+        self.assertEqual(self.run_paper(script), 0)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
+                                 ('compare', None)])
+        repair = self.calls('repair')[0]
+        self.assertEqual(read_json(self.out / 'sessions' / repair['folder'] / 'findings.json'),
+                         [departure('The abstract says more than theirs.')])
+        self.assertIn('places where the manuscript is written otherwise than real papers are written', repair['prompt'])
+        self.assertIn('The mathematics stays as it is, and so do the plan and the decisions of the method', repair['prompt'])
+        self.assertIn('output/response.json', repair['prompt'])
+        self.assertEqual(self.given(repair), sorted(CHOSEN))
+        self.assertIn('study.md', repair['given'])
+        self.assertEqual(self.events('repair')[0]['of'], 'likeness')
+        # The repaired manuscript was settled and read again, beside other papers, until two readings found nothing.
+        second = (self.out / 'sessions' / self.calls('likeness')[1]['folder'] / 'paper.tex').read_text(encoding='utf-8')
+        self.assertIn('Version 0 of the introduction.', second)
+        self.assertEqual([(e['round'], e['exemplars'], len(e['departures'])) for e in self.events('likeness')],
+                         [(1, FIRST_FOUR, 1), (2, NEXT_FOUR, 0), (3, FIRST_FOUR, 0)])
+        self.assertEqual(self.events('end')[0]['open'], [])
+
+    def test_readings_without_two_clean_ones_in_succession_leave_the_last_departures_open(self):
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed('first'))},
+                              {'output/likeness.json': json.dumps(LIKE)},
+                              {'output/likeness.json': json.dumps(departed('third'))},
+                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
+                                      'output/response.json': answered('Rewritten.')} for n in range(9)]
+        self.assertEqual(self.run_paper(script), 2)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
+                                 ('repair', 'likeness'), ('likeness', None), ('compare', None)])
+        self.assertEqual(len(self.calls('likeness')), paper.LIKENESS_ROUNDS)
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], end['open']),
+                         ('open_findings', [{'check': paper.LIKENESS, 'after_repairs': 2,
+                                             'problems': [departure('third')]}]))
+        # The comparison still runs, and its verdicts stand beside the paper.
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+        self.assertTrue((self.out / 'paper.pdf').is_file())
 
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
         found = {'latexmk': 'C:/tex/latexmk.exe', 'pdflatex': 'C:/tex/pdflatex.exe', 'C:/tex/pdflatex.exe': 'C:/tex/pdflatex.exe',

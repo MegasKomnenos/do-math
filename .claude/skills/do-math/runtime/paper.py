@@ -6,13 +6,21 @@
 One command produces the paper to the end without stopping for the user. What the sessions it
 launches do not decide is fixed in ../reference/paper-method.md, which they receive. The stages:
 
-  materials    everything the formal proof of the root rests on is taken from the canon
-  plan         a session decides how each element appears in the paper; the script checks the plan
-  write        one session per section writes its LaTeX, in the order of the paper
+  materials    everything the formal proof of the root rests on is taken from the canon, and the
+               collection of real papers in ../exemplars is checked against its manifest (fetch.py
+               is run once for papers that are missing or differ)
+  plan         a session chooses the papers of the collection this paper is written like, reads
+               them, writes an account of how they are written, and decides how each element
+               appears in the paper; the script checks the plan
+  write        one session per section reads the chosen papers and the account, and writes its
+               LaTeX, in the order of the paper
   settle       the script assembles paper.tex, checks it by machine and typesets it; what fails
                goes to a repair session, and the manuscript is assembled and checked again
   reading      a session that has only the manuscript reads it as the paper's reader, and a repair
                session takes up what it found
+  likeness     a session that has the manuscript and four papers the plan did not choose reports
+               where the manuscript is written otherwise than they are; a repair session takes up
+               what it found, until two such readings in succession find nothing
   comparison   a session compares every numbered statement with the statement of its element
 
 Every loop is bounded by the constants below. Sessions run one at a time, each in its own folder
@@ -20,7 +28,9 @@ under <out>/sessions with its prompt and the files it is given, and the script r
 prompt asked for. <out> receives paper.tex, references.bib, paper.pdf, plan.json,
 correspondence.json (which element each numbered statement states; never inside the paper),
 materials.md and log.json (what was launched and what each check found). The work stays beside
-them: materials.json, parts/ (the abstract and the sections as they stand), sessions/ and typeset/.
+them: materials.json, study.md (the planning session's account of how the chosen papers are
+written), parts/ (the abstract and the sections as they stand), sessions/ and typeset/.
+--typeset-only does not use the collection.
 
 --tex takes the rest of the command line, so it comes last. It names tectonic, latexmk or pdflatex,
 which are run in the way each needs, or any other command, which is run once in the folder of the
@@ -32,6 +42,7 @@ Exit codes: 0 the paper is complete; 1 refused or failed; 2 produced with findin
 (log.json names them); 3 the manuscript is complete and no TeX command was available.
 """
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -51,22 +62,35 @@ REFERENCE = Path(__file__).resolve().parents[1] / 'reference'
 METHOD = REFERENCE / 'paper-method.md'
 PREFERENCES = REFERENCE / 'user-writing-preferences.md'
 READER_SECTION = 'The reader'  # the part of the method that the reading session receives, and nothing else of it
+# The part of the method that a reading beside real papers receives, and nothing else of it.
+LIKENESS_SECTION = 'Reading the manuscript beside real papers'
+EXEMPLARS = Path(__file__).resolve().parents[1] / 'exemplars'  # the collection: manifest.json, <key>.tex, fetch.py
+MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'category', 'field', 'pages', 'licence',
+                   'abstract', 'sha256', 'why')
 
 PLAN_ATTEMPTS = 3      # planning sessions before the command gives up on a plan it can carry out
 SESSION_ATTEMPTS = 2   # sessions of any other kind before it gives up on output it can read
 REPAIR_ROUNDS = 3      # repair sessions for one round of machine checks and typesetting
 READING_ROUNDS = 2     # independent readings, each followed by a repair of what it found
+CHOSEN_PAPERS = 6      # papers of the collection the plan chooses for the paper to be written like
+LIKENESS_PAPERS = 4   # papers the plan did not choose, given to one reading beside real papers
+LIKENESS_ROUNDS = 4    # readings beside real papers at the most
+LIKENESS_CLEAN = 2     # readings in succession without a departure that end those readings
 COMPARISON_ROUNDS = 2  # comparisons of the statements; a repair follows every one but the last
 LIMIT_WAITS = 12       # times one session is started again after the account's usage limit
 TEX_SECONDS = 600      # one TeX command
+FETCH_SECONDS = 3600   # one run of the collection's fetch.py
 WIDE_PT = 5.0          # a line this many points wider than the text block is sent back to be broken
 WIDE = 'lines wider than the text block'
 UNCOMPARED = 'numbered statements whose present text was not compared with their elements'
+LIKENESS = 'reading of the manuscript beside real papers'
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
 NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
 ENVIRONMENT = re.compile(r'\\begin\{(' + '|'.join(NUMBERED) + r')\}(.*?)\\end\{\1\}', re.S)
-VERIFICATION = re.compile(r'\\begin\{verification\}(.*?)\\end\{verification\}', re.S)
+# The words by which a text names the proof assistant and its library, as whole words with these capitals; a
+# letter on either side makes another word ("Leaning"), and a digit does not ("Lean4").
+LEAN_WORDS = re.compile(r'(?<![A-Za-z])(?:Lean|Mathlib)(?![A-Za-z])')
 FORBIDDEN = re.compile(r'\\(documentclass|usepackage|newcommand|renewcommand|providecommand|def|newtheorem|section|'
                        r'bibliography|bibliographystyle|maketitle|title|author|input|include|setcounter|numberwithin|'
                        r'newenvironment|renewenvironment|DeclareMathOperator|let)\b')
@@ -88,28 +112,8 @@ PREAMBLE = r'''\documentclass{amsart}
 \newtheorem{definition}[theorem]{Definition}
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
-\newtheorem*{verification}{Formal verification}
 \numberwithin{equation}{section}
 '''
-TEX_SPECIAL = {'\\': r'\textbackslash{}', '{': r'\{', '}': r'\}', '$': r'\$', '&': r'\&', '#': r'\#', '%': r'\%',
-               '_': r'\_', '^': r'\textasciicircum{}', '~': r'\textasciitilde{}'}  # \^{} and \~{} print an accent
-LEAN_SYMBOLS = {
-    '→': r'\to', '←': r'\leftarrow', '↔': r'\leftrightarrow', '↦': r'\mapsto', '↑': r'\uparrow', '∀': r'\forall',
-    '∃': r'\exists', '¬': r'\neg', '∧': r'\wedge', '∨': r'\vee', '≤': r'\le', '≥': r'\ge', '≠': r'\ne', '≡': r'\equiv',
-    '≃': r'\simeq', '∈': r'\in', '∉': r'\notin', '⊆': r'\subseteq', '⊂': r'\subset', '∩': r'\cap', '∪': r'\cup',
-    '∖': r'\setminus', '∅': r'\emptyset', '×': r'\times', '∘': r'\circ', '·': r'\cdot', '∑': r'\sum', '∏': r'\prod',
-    '∫': r'\int', '∂': r'\partial', '√': r'\surd', '∞': r'\infty', '⊤': r'\top', '⊥': r'\bot', '⊔': r'\sqcup',
-    '⊓': r'\sqcap', '∣': r'\mid', '‖': r'\|', '⌊': r'\lfloor', '⌋': r'\rfloor', '⌈': r'\lceil', '⌉': r'\rceil',
-    '⟨': r'\langle', '⟩': r'\rangle', '«': r'\ll', '»': r'\gg', '⁻': '^{-}',
-    'ℕ': r'\mathbb{N}', 'ℤ': r'\mathbb{Z}', 'ℚ': r'\mathbb{Q}', 'ℝ': r'\mathbb{R}', 'ℂ': r'\mathbb{C}',
-    'Γ': r'\Gamma', 'Δ': r'\Delta', 'Θ': r'\Theta', 'Λ': r'\Lambda', 'Ξ': r'\Xi', 'Π': r'\Pi', 'Σ': r'\Sigma',
-    'Φ': r'\Phi', 'Ψ': r'\Psi', 'Ω': r'\Omega'}
-for _number, _name in enumerate('alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi o pi rho '
-                                'varsigma sigma tau upsilon phi chi psi omega'.split()):
-    LEAN_SYMBOLS[chr(0x3B1 + _number)] = _name if _name == 'o' else '\\' + _name
-for _digit in range(10):
-    LEAN_SYMBOLS[chr(0x2080 + _digit)] = '_{%d}' % _digit
-    LEAN_SYMBOLS['⁰¹²³⁴⁵⁶⁷⁸⁹'[_digit]] = '^{%d}' % _digit
 
 
 class Stop(Exception):
@@ -138,6 +142,133 @@ def method_part(title):
     if not match:
         raise Stop(f'{METHOD} has no section "{title}"')
     return match[1].strip()
+
+
+# ----------------------------------------------------------------------------- the collection of real papers
+
+KEY_FORM = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.+-]*')
+
+
+def collapsed(text):
+    """The text with every run of whitespace replaced by one space."""
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+def collection_state():
+    """The manifest of the collection and the keys whose .tex is missing or differs from its SHA-256."""
+    path = EXEMPLARS / 'manifest.json'
+    if not path.is_file():
+        raise Stop(f'the collection of papers has no manifest: {path} is missing')
+    try:
+        manifest = json.loads(read_file(path))
+    except ValueError as exc:
+        raise Stop(f'{path} is not JSON: {exc}')
+    if not isinstance(manifest, list) or not all(isinstance(entry, dict) for entry in manifest):
+        raise Stop(f'{path} holds an array of objects, one for each paper')
+    for number, entry in enumerate(manifest, 1):
+        lacking = [field for field in MANIFEST_FIELDS if field not in entry]
+        if lacking:
+            raise Stop(f'{path}: paper {number} lacks ' + ', '.join(lacking))
+        if not (isinstance(entry['key'], str) and KEY_FORM.fullmatch(entry['key'])):
+            raise Stop(f"{path}: paper {number} has the key {entry['key']!r}, which cannot name a file")
+    keys = [entry['key'] for entry in manifest]
+    if len(set(keys)) != len(keys):
+        raise Stop(f'{path}: two papers have the same key')
+    if len(keys) < CHOSEN_PAPERS + LIKENESS_PAPERS:
+        raise Stop(f'{path} lists {len(keys)} papers; the plan chooses {CHOSEN_PAPERS} and each reading beside real '
+                   f'papers needs {LIKENESS_PAPERS} others, so the collection has at least '
+                   f'{CHOSEN_PAPERS + LIKENESS_PAPERS}')
+    wrong = [entry['key'] for entry in manifest
+             if not (EXEMPLARS / (entry['key'] + '.tex')).is_file()
+             or hashlib.sha256((EXEMPLARS / (entry['key'] + '.tex')).read_bytes()).hexdigest() != entry['sha256']]
+    return manifest, wrong
+
+
+def load_collection():
+    """The manifest, the papers by key, and whether fetch.py had to be run; stops when papers stay wrong.
+
+    A paper that is missing or differs from the manifest is fetched by the collection's own script,
+    which is run once for all of them with the interpreter that runs this command."""
+    manifest, wrong = collection_state()
+    fetched = None
+    if wrong:
+        fetch = EXEMPLARS / 'fetch.py'
+        if not fetch.is_file():
+            raise Stop(f'papers of the collection are missing or differ from {EXEMPLARS / "manifest.json"}: '
+                       + ', '.join(wrong) + f'; and {fetch}, which fetches them, is missing')
+        try:
+            done = subprocess.run([sys.executable, str(fetch)], cwd=EXEMPLARS, stdin=subprocess.DEVNULL,
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=FETCH_SECONDS,
+                                  **popen_options())
+            output = done.stdout.decode('utf-8', errors='replace').replace('\r\n', '\n')
+            fetched = {'missing_or_different': wrong, 'exit_code': done.returncode, 'output': output[-4000:]}
+        except subprocess.TimeoutExpired:
+            fetched = {'missing_or_different': wrong, 'exit_code': None,
+                       'output': f'fetch.py did not finish within {FETCH_SECONDS} seconds'}
+        except OSError as exc:
+            raise Stop(f'{fetch} could not be started: {exc}')
+        manifest, wrong = collection_state()
+        if wrong:
+            last = '\n'.join(fetched['output'].strip().splitlines()[-10:])
+            raise Stop(f'papers of the collection are missing or differ from {EXEMPLARS / "manifest.json"} after '
+                       f'fetch.py ran (exit code {fetched["exit_code"]}): ' + ', '.join(wrong)
+                       + f'. Fetch them with: "{sys.executable}" "{fetch}" ' + ' '.join('--only ' + k for k in wrong)
+                       + ('\nThe last lines of fetch.py:\n' + last if last else ''))
+    papers = {entry['key']: read_file(EXEMPLARS / (entry['key'] + '.tex')) for entry in manifest}
+    return manifest, papers, fetched
+
+
+def render_exemplars(manifest):
+    """exemplars.md: the list of the collection for the sessions."""
+    lines = ['# The collection of papers', '',
+             f'{len(manifest)} research articles from refereed journals, each kept as the LaTeX source its authors '
+             'wrote. A paper that a session is given stands in its folder as `exemplars/<key>.tex`.', '']
+    for entry in manifest:
+        authors = entry['authors'] if isinstance(entry['authors'], list) else [entry['authors']]
+        lines += [f"## `{entry['key']}`: {entry['title']}", '',
+                  f"{', '.join(map(str, authors))}. {entry['journal']}, {entry['year']}.", '',
+                  f"Field: {entry['field']}. Pages: {entry['pages']}.", '',
+                  f"Abstract: {collapsed(str(entry['abstract']))}", '',
+                  f"Why it is in the collection: {entry['why']}", '']
+    return '\n'.join(lines)
+
+
+def likeness_papers(manifest, chosen):
+    """The papers the plan did not choose, in the order the readings beside real papers take them.
+
+    Those whose field is the field of a chosen paper come first; each group keeps the order of the manifest."""
+    fields = {entry['field'] for entry in manifest if entry['key'] in chosen}
+    rest = [entry for entry in manifest if entry['key'] not in chosen]
+    return [e['key'] for e in rest if e['field'] in fields] + [e['key'] for e in rest if e['field'] not in fields]
+
+
+def check_likeness(report):
+    """The reasons the script cannot pass on a report of a reading beside real papers: its shape only.
+
+    Whether a departure is real is for the readings to judge; no quotation is looked up."""
+    problems = []
+    bad = problems.append
+    if not is_text(report.get('likeness')):
+        bad('output/likeness.json: "likeness" is a text that is not empty')
+    departures = report.get('departures')
+    if not isinstance(departures, list):
+        return problems + ['output/likeness.json: "departures" is an array, empty when there is no departure']
+    for number, departure in enumerate(departures, 1):
+        where = f'departure {number}'
+        if not isinstance(departure, dict):
+            bad(f'{where} is not an object with "where", "quote", "evidence" and "difference"')
+            continue
+        for field in ('where', 'difference'):
+            if not is_text(departure.get(field)):
+                bad(f'{where}: "{field}" is a text that is not empty')
+        if not isinstance(departure.get('quote'), str):
+            bad(f'{where}: "quote" is a text: a passage of paper.tex, or the empty string when something is missing')
+        evidence = departure.get('evidence')
+        if not isinstance(evidence, list) or not all(
+                isinstance(item, dict) and isinstance(item.get('exemplar'), str) and isinstance(item.get('quote'), str)
+                for item in evidence):
+            bad(f'{where}: "evidence" is an array of objects, each with "exemplar" and "quote" as text')
+    return problems
 
 
 # ----------------------------------------------------------------------------- materials
@@ -294,8 +425,28 @@ def stands_in(element, other, elements):
             or (other['kind'] == 'definition' and other['name'] in element['mentions']))  # two definitions agree
 
 
-def check_plan(materials, plan):
-    """The reasons the script cannot carry a plan out, as sentences for the next planning session."""
+def choice_problems(plan, keys):
+    """The reasons the papers a plan chooses are not CHOSEN_PAPERS different keys of the collection."""
+    chosen = plan.get('exemplars')
+    if not isinstance(chosen, list) or not all(isinstance(key, str) for key in chosen):
+        return [f'"exemplars" is an array of the keys of the {CHOSEN_PAPERS} papers of exemplars.md that this paper is '
+                'written like']
+    problems = []
+    unknown = [key for key in chosen if key not in keys]
+    if unknown:
+        problems.append('"exemplars" names keys that are not keys of exemplars.md: ' + ', '.join(unknown))
+    repeated = sorted({key for key in chosen if chosen.count(key) > 1})
+    if repeated:
+        problems.append('"exemplars" names a paper more than once: ' + ', '.join(repeated))
+    if len(chosen) != CHOSEN_PAPERS:
+        problems.append(f'"exemplars" names {len(chosen)} papers; it names exactly {CHOSEN_PAPERS} different ones')
+    return problems
+
+
+def check_plan(materials, plan, keys):
+    """The reasons the script cannot carry a plan out, as sentences for the next planning session.
+
+    `keys` are the keys of the collection, from which the plan chooses its papers."""
     problems = []
     bad = problems.append
     elements = {e['name']: e for e in materials['elements']}
@@ -304,6 +455,7 @@ def check_plan(materials, plan):
     for key in ('title', 'outline'):
         if not is_text(plan.get(key)):
             bad(f'"{key}" is a nonempty text')
+    problems += choice_problems(plan, keys)
     sections, statements, others = plan.get('sections'), plan.get('statements'), plan.get('others')
     for key, value in (('sections', sections), ('statements', statements), ('others', others)):
         if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
@@ -318,6 +470,17 @@ def check_plan(materials, plan):
     order = {section.get('id'): number for number, section in enumerate(sections)}
     if len(order) != len(sections):
         bad('two sections have the same id')
+    # The titles stand in the manuscript as the plan has them, and a repair keeps the plan. A Lean name or the
+    # word Lean in a title is therefore reported here, where a planning session can still change it.
+    pattern = identifier_pattern(materials['identifiers'])
+    titles = [('the title', plan.get('title'))] + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections]
+    for where, title in titles:
+        if is_text(title):
+            plain = title.replace('\\_', '_')
+            found = sorted({m[0] for m in pattern.finditer(plain)} | {m[0] for m in LEAN_WORDS.finditer(plain)})
+            if found:
+                bad(f'{where} has ' + ', '.join(found) + '; the paper names no declaration of the canon and does not '
+                    'mention Lean (method, section "The implementation does not show")')
     placed = {}
     for item in statements + others:
         name = item.get('element')
@@ -469,44 +632,17 @@ def assignment(materials, plan, section):
 
 # ----------------------------------------------------------------------------- the manuscript
 
-def lean_tex(text):
-    """A Lean statement in typewriter type; a symbol outside ASCII becomes its mathematical symbol.
-
-    Returns the LaTeX and the characters for which the table has no symbol."""
-    lines, unknown = [], []
-    for line in text.split('\n'):
-        body = line.lstrip(' ')
-        piece = '~' * (len(line) - len(body))
-        for char in body:
-            if char in TEX_SPECIAL:
-                piece += TEX_SPECIAL[char]
-            elif ord(char) < 128:
-                piece += char
-            elif char in LEAN_SYMBOLS:
-                piece += r'\ensuremath{' + LEAN_SYMBOLS[char] + '}'
-            else:
-                unknown.append(char)
-                piece += r'\ensuremath{\langle\mathrm{U{+}%04X}\rangle}' % ord(char)
-        lines.append(piece)
-    return '\\\\\n'.join(lines), sorted(set(unknown))
-
-
-def main_element(materials):
-    return next(e for e in materials['elements'] if e['main'])
-
-
 def uncommented(text):
     return re.sub(r'(?<!\\)%.*', '', text)
 
 
-def assemble(materials, plan, parts):
+def assemble(plan, parts):
     """paper.tex from the parts, in the order of the plan, and the lines each part occupies in it."""
     cites = any(CITE.search(uncommented(text)) for text in parts.values())
     title = plan['title'].strip()
     # The manuscript names no author. amsart then takes the title for the running head of the even pages and
     # puts it in capitals a second time, the letters of its formulas included. The head is set here instead.
-    lines = (PREAMBLE + '\\newcommand{\\LeanStatement}{\\begin{quote}\\ttfamily\\raggedright\ntheorem '
-             + lean_tex(main_element(materials)['lean'])[0] + '\n\\end{quote}}\n\\newcommand{\\RunningHead}{' + title
+    lines = (PREAMBLE + '\\newcommand{\\RunningHead}{' + title
              + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n\\title{' + title
              + '}\n\\begin{abstract}').split('\n')
     spans = []
@@ -560,8 +696,7 @@ def machine_checks(materials, plan, parts):
     problems = []
     bad = problems.append
     elements = {e['name']: e for e in materials['elements']}
-    first = plan['sections'][0]['id']
-    texts = {'the title': plan['title'], 'abstract': parts['abstract'], **{s['id']: parts[s['id']] for s in plan['sections']}}
+    texts ={'the title': plan['title'], 'abstract': parts['abstract'], **{s['id']: parts[s['id']] for s in plan['sections']}}
     # Every numbered statement is one the plan names, of the planned kind, in the planned section and order.
     found = found_statements(plan, parts)
     planned = [(item['label'], item['kind'], item['section']) for item in plan['statements']]
@@ -600,13 +735,6 @@ def machine_checks(materials, plan, parts):
         if item['treatment'] == 'cited' and key not in [k.strip() for m in CITE.finditer(uncommented(parts[item['section']]))
                                                         for k in m[1].split(',')]:
             bad(f"part {item['section']}: the plan cites the result with the bibliography key {key} here, and the part does not")
-    # The formal verification is reported in one remark of the introduction, around the statement the script supplies.
-    remarks = {name: VERIFICATION.findall(uncommented(text)) for name, text in texts.items()}
-    total = sum(uncommented(text).count('\\LeanStatement') for text in texts.values())
-    if [name for name, hits in remarks.items() for _ in hits] != [first] or total != 1 \
-            or remarks[first][0].count('\\LeanStatement') != 1:
-        bad(f'part {first}: the introduction has exactly one verification environment, and \\LeanStatement stands '
-            'once in it and nowhere else')
     # Labels and citations resolve.
     labels = ['sec:' + s['id'] for s in plan['sections']] + [m[1] for text in texts.values() for m in LABEL.finditer(uncommented(text))]
     for label in sorted({label for label in labels if labels.count(label) > 1}):
@@ -627,12 +755,19 @@ def machine_checks(materials, plan, parts):
             bad(f'{name}: the manuscript is written in ASCII; write these characters as LaTeX: ' + ' '.join(strange))
     if REF.search(uncommented(parts['abstract'])) or CITE.search(uncommented(parts['abstract'])):
         bad('abstract: the abstract stands by itself, without \\ref and without \\cite')
-    # No Lean name of the canon outside the verification remark, comments and labels included.
+    # The paper names no declaration or module of the canon and does not mention Lean, anywhere in a part, comments
+    # and labels included. Only the words are looked for; another way of speaking of a formal proof is not.
     pattern = identifier_pattern(materials['identifiers'])
+    where = ' (method, section "The implementation does not show")'
     for name, text in texts.items():
-        names = sorted({m[0] for m in pattern.finditer(VERIFICATION.sub('', text).replace('\\_', '_'))})
+        plain = text.replace('\\_', '_')
+        names = sorted({m[0] for m in pattern.finditer(plain)})
         if names:
-            bad(f'{name}: Lean names of the canon appear outside the verification remark: ' + ', '.join(names))
+            bad(f'{name}: Lean names of the canon appear: ' + ', '.join(names) + '; the paper calls an object by its '
+                'mathematical name' + where)
+        words = sorted({m[0] for m in LEAN_WORDS.finditer(plain)})
+        if words:
+            bad(f'{name}: the paper does not mention Lean, and this part has the words ' + ', '.join(words) + where)
     return problems
 
 
@@ -723,6 +858,13 @@ mathematics and of the literature. Read it in full.
 - `user-writing-preferences.md` describes the writing that the person who will read the paper first prefers, with the \
 occasions on which the preferences came to light. The method says how it bears on a paper.'''
 
+CHOSEN_FILES = '''- `exemplars/` holds the papers of the collection that the planning session chose for this paper to be written like, \
+the keys in "exemplars" of `plan.json`, each as `exemplars/<key>.tex`, the LaTeX source that its authors wrote. \
+`exemplars.md` lists the whole collection, with the field, the length and the abstract of each paper; the method's section \
+"The papers this paper is written like" says what the papers are for.
+- `study.md` is the planning session's account of how these papers are written, part by part, made so that the \
+sessions that write and repair the paper work from one reading of the same papers. It does not replace your own reading.'''
+
 PLAN_PROMPT = CONTEXT + '''
 
 This session plans the paper. The sessions after it write the sections from the plan, and the script holds the manuscript \
@@ -730,10 +872,22 @@ to it.
 
 In this folder:
 ''' + FILES + '''
+- `exemplars.md` lists the collection of research articles that the method's section "The papers this paper is written \
+like" describes, with the field, the length and the abstract of each paper and why it is in the collection. Each of them \
+is in `exemplars/<key>.tex`, as the LaTeX source that its authors wrote.
 
-Write one file, `output/plan.json`: a JSON object with the keys below. A value that will be printed (the title, a section \
+The papers come first. From `exemplars.md` choose the ''' + str(CHOSEN_PAPERS) + ''' papers that this paper is to be \
+written like, those from which the most can be learned for it, as that section says: near it in subject, near it in \
+length. You may look into a paper's file before you choose it. Then read each of the chosen papers whole, from the title \
+to the references, for how it is written and not for what it proves, in the way that section describes. Plan the paper \
+after that reading and in its light; the sessions that write and repair receive the papers you chose and your account of \
+the reading.
+
+Write `output/plan.json`: a JSON object with the keys below. A value that will be printed (the title, a section \
 title, a symbol) is LaTeX; inside a JSON string a backslash is written twice.
 
+- "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
+`exemplars.md` gives them.
 - "title": the title of the paper.
 - "outline": a few sentences for the writers saying how the proof goes and at which step its difficulty lies. The outline \
 of the proof in the introduction, and the room each proof receives, follow it.
@@ -760,9 +914,13 @@ The script accepts the plan when every element of the materials appears in it ex
 and reasons have the form above; when the main result is a theorem stated in the first section before every other \
 theorem, proposition, lemma and corollary; when no statement mentions an object that is defined in a later numbered \
 definition, and no proof comes before a numbered statement it rests on; when an element absorbed into a numbered \
-statement is one that statement or its proof rests on; when only results with a source in the literature are cited; and \
+statement is one that statement or its proof rests on; when only results with a source in the literature are cited; \
 when an element that is not stated has in its place an element its proof names, another proof of the same statement, or \
-the definition it is stated to agree with. A plan that fails goes to a new planning session with the list of failures.
+the definition it is stated to agree with; and when "exemplars" names ''' + str(CHOSEN_PAPERS) + ''' different keys \
+of `exemplars.md`. A plan that fails goes to a new planning session with the list of failures.
+
+Write also `output/study.md`: your account of how the chosen papers are written, as that section describes it, in \
+free text. The sessions that write and repair the paper receive it with the papers.
 
 Use no source other than the files in this folder. Write no part of the paper itself.
 '''
@@ -778,16 +936,23 @@ numbered statements with the same kinds and labels in the same order, the same t
 notation. Its "outline" says how the proof goes and where its difficulty lies.
 - `parts/` holds what has been written so far, as the paper will carry it{parts}. Your section continues it in the same \
 notation and the same voice, and does not repeat it.
+''' + CHOSEN_FILES + '''
 
 What the plan gives this section: {content}
 
 {assignment}
 
+The papers come before the writing. Read each paper in `exemplars/` whole, from the title to the references, for how it \
+is written and not for what it proves, as the method's section "The papers this paper is written like" describes, with \
+`study.md` beside them; look above all at the places where the papers do what this section does. Then write the \
+section as those papers are written, with the mathematics and the wording of the statements from the materials.
+
 Write `output/{id}.tex`: the body of the section in LaTeX, beginning after the section heading, which the script \
 supplies.{abstract} The method's section "The LaTeX of a part" says what the script supplies and what a part contains.
 
 The script checks afterwards that the numbered statements of your part are those of the plan, that every \\ref and \\cite \
-resolves, that no Lean name of the canon appears outside the verification remark, and that TeX typesets the whole. Before \
+resolves, that your part contains no Lean name of the canon and neither of the words Lean and Mathlib, its comments \
+and labels included, and that TeX typesets the whole. Before \
 you finish, read your part from its first line as the reader of the method would, and correct what that reader could not \
 follow. Use no source other than the files in this folder.
 '''
@@ -815,7 +980,20 @@ mean rewriting the passage from the materials instead of adjusting its wording.'
 `findings.json` lists the statements it found to differ. A numbered statement says exactly what its element says \
 (method, section "Every numbered statement says what its element says"). Correct each statement that differs, and adjust \
 its proof and the places that use it where the correction requires it. When a reported difference is one the method \
-permits, keep the statement and say why.'''}
+permits, keep the statement and say why.''',
+    'likeness': '''A session that had the manuscript and four research articles from refereed journals, and nothing \
+else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
+describes. `findings.json` holds what it found: places where the manuscript is written otherwise than real papers are \
+written. Each finding gives the place ("where"), the passage of the manuscript ("quote", empty when the finding is that \
+something is missing), passages from those papers that show what they do at such a place ("evidence"), and the \
+difference ("difference").
+
+Rewrite the parts so that at each of these places the manuscript does what the papers do: in the structure, the wording, \
+the manner and the flow that the passages show, and as the papers in `exemplars/` write. The mathematics stays as it is, \
+and so do the plan and the decisions of the method; the passages show manner, and no sentence of theirs is copied or \
+paraphrased into the manuscript. Where following a finding would change the mathematics, depart from the plan or undo a \
+decision of the method, such as that the paper names no author or that it does not mention Lean, keep the text and \
+say why.'''}
 
 REPAIR_PROMPT = CONTEXT + '''
 
@@ -826,7 +1004,7 @@ In this folder:
 - `plan.json` is the plan of the paper. A repair keeps it: the same numbered statements, kinds, labels and order.
 - `parts/` holds the parts of the manuscript as they stand: `abstract.tex` and one file per section.
 - `paper.tex` is the manuscript the script assembled from them. {spans}
-- `findings.json` holds what was found.
+- `findings.json` holds what was found.{papers}
 
 {kind}
 
@@ -834,6 +1012,12 @@ For every part you change, write its complete new text as `output/<name>.tex`, w
 Leave unchanged parts out.{response} The script then assembles the manuscript again and repeats its checks. Use no source \
 other than the files in this folder.
 '''
+REPAIR_PAPERS = '\n' + CHOSEN_FILES + '''
+
+Whatever you rewrite is written as those papers are written, in the sense of the method's section "The papers this \
+paper is written like". Before you rewrite a paragraph, a proof or a section, read each paper in `exemplars/` whole, from \
+the title to the references. A repair that only corrects the LaTeX, or breaks a formula over two lines, needs the papers \
+only to see how such a thing is set.'''
 RESPONSE = ''' Write also `output/response.json`: an array with one object for each entry of the findings, in their \
 order, {"finding": <its number, from 1>, "action": "revised" or "kept", "note": "<what you changed, or why the text stays>"}.'''
 
@@ -860,6 +1044,28 @@ symbol is used before it is defined, or is never defined; where a reference poin
 later; where a proof does not prove what its statement says, or has a gap or an error; where the notation or the wording \
 of one thing changes; and where the text does not belong in a mathematical paper, for example because it speaks of how \
 the paper or its proofs were produced.
+'''
+
+LIKENESS_PROMPT = '''This folder holds the manuscript of a mathematical paper, `paper.tex`, its LaTeX source, with its \
+bibliography `references.bib`, and in the folder `exemplars` four research articles from refereed journals, each as the \
+LaTeX source that its authors wrote: {papers}. Read the papers and the manuscript as the text below describes, and report \
+whether the manuscript is written as these papers are written. The report is used to revise the manuscript where it is \
+written otherwise.
+
+{section}
+
+Use these files and nothing else: no other file on this machine and no search.
+
+Write `output/likeness.json`, a JSON object with two keys.
+
+- "likeness": a few sentences saying in what the manuscript is like the papers.
+- "departures": an array, empty when you find no departure. Each is {{"where": "...", "quote": "...", "evidence": [...], \
+"difference": "..."}}. "where" is the place in the manuscript: the part, the section or the numbered statement, or, when \
+something is missing, the place where it would stand. "quote" is the passage of the manuscript, copied exactly from \
+`paper.tex`, or the empty string when the departure is that something is missing. "evidence" is an array of \
+{{"exemplar": "<the name of the paper's file without .tex>", "quote": "..."}}: the passages, copied exactly from the \
+papers, that show the practice from which the manuscript departs, as the text above asks for them. "difference" says \
+what differs and what a paper written like these would have at that place.
 '''
 
 COMPARE_PROMPT = CONTEXT + '''
@@ -910,7 +1116,7 @@ class Paper:
         self.settings = load_settings(self.instance)
         first = self.settings['models'][0]
         chosen = {'model': choice.get('model') or first['model'], 'effort': choice.get('effort') or first['effort']}
-        # The reading and the comparison come, where the settings name one, from the model that reviews.
+        # The readings and the comparison come, where the settings name one, from the model that reviews.
         self.writer = chosen
         self.assessor = chosen if choice.get('model') else self.settings['roles'].get('review', self.settings['models'])[0]
         self.recipe = tex_recipe(tex)
@@ -918,6 +1124,9 @@ class Paper:
         self.count = len(list((self.out / 'sessions').iterdir())) if (self.out / 'sessions').is_dir() else 0
         self.materials = self.plan = None
         self.parts, self.compared, self.open = {}, {}, []
+        # The collection of real papers and the planning session's account of how the chosen ones are
+        # written; --typeset-only has neither.
+        self.collection, self.papers, self.study = None, {}, None
 
     def event(self, name, **fields):
         self.log.append({'event': name, 'at': time.strftime('%Y-%m-%d %H:%M:%S'), **fields})
@@ -975,13 +1184,22 @@ class Paper:
         raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts: ' + '; '.join(problems))
 
     def given(self, *more):
-        """The files every writing session receives, with those of its task."""
+        """The files every writing session receives, with those of its task.
+
+        'collection' adds every paper of the collection, for the planning session; 'papers' adds the
+        papers the plan chose and the planning session's account of them, when there is a collection."""
         files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
                  'materials.md': render_materials(self.materials)}
         if 'plan' in more:
             files['plan.json'] = json.dumps(self.plan, ensure_ascii=False, indent=2) + '\n'
         if 'parts' in more:
             files.update({f'parts/{name}.tex': text for name, text in self.parts.items()})
+        if self.collection is not None and ('collection' in more or 'papers' in more):
+            keys = self.plan['exemplars'] if 'papers' in more else list(self.papers)
+            files['exemplars.md'] = render_exemplars(self.collection)
+            files.update({f'exemplars/{key}.tex': self.papers[key] for key in keys})
+            if 'papers' in more:
+                files['study.md'] = self.study
         return files
 
     @staticmethod
@@ -999,16 +1217,26 @@ class Paper:
     # -- stages -----------------------------------------------------------------------------------------
 
     def make_plan(self):
+        keys = [entry['key'] for entry in self.collection]
+
         def read(output):
             plan = self.load(output / 'plan.json')
-            problems = check_plan(self.materials, plan)
+            problems = check_plan(self.materials, plan, keys)
+            # The account is passed on as it is; that it exists and is not empty is all the script checks.
+            study = read_file(output / 'study.md') if (output / 'study.md').is_file() else ''
+            if not study.strip():
+                problems.append('output/study.md, the account of how the chosen papers are written, was not written '
+                                'or is empty')
             if problems:
                 raise Unusable(problems)
-            return plan
+            return plan, study
 
-        self.plan = self.session('plan', PLAN_PROMPT, self.given(), read, self.writer, attempts=PLAN_ATTEMPTS)
+        self.plan, self.study = self.session('plan', PLAN_PROMPT, self.given('collection'), read, self.writer,
+                                             attempts=PLAN_ATTEMPTS)
         write_json(self.out / 'plan.json', self.plan)
-        self.event('plan', statements=len(self.plan['statements']), sections=[s['id'] for s in self.plan['sections']])
+        write_text(self.out / 'study.md', self.study)
+        self.event('plan', statements=len(self.plan['statements']), sections=[s['id'] for s in self.plan['sections']],
+                   exemplars=self.plan['exemplars'])
 
     def write_parts(self):
         for number, section in enumerate(self.plan['sections']):
@@ -1026,9 +1254,9 @@ class Paper:
                 assignment=assignment(self.materials, self.plan, section),
                 also=' As the first section it is the introduction, and this session also writes the abstract.' if number == 0 else '',
                 parts='' if number else '; it is empty, because this is the first section',
-                abstract=(' Write also `output/abstract.tex`: the text of the abstract, without the abstract environment. '
-                          'The introduction carries the remark on formal verification that the method describes.') if number == 0 else '')
-            self.keep(self.session('write', prompt, self.given('plan', 'parts'), read, self.writer, section['id']))
+                abstract=(' Write also `output/abstract.tex`: the text of the abstract, without the abstract '
+                          'environment.') if number == 0 else '')
+            self.keep(self.session('write', prompt, self.given('plan', 'parts', 'papers'), read, self.writer, section['id']))
 
     def keep(self, parts):
         self.parts.update(parts)
@@ -1038,7 +1266,7 @@ class Paper:
 
     def assemble(self):
         """paper.tex, references.bib and the correspondence file from the parts as they stand."""
-        tex, spans = assemble(self.materials, self.plan, self.parts)
+        tex, spans = assemble(self.plan, self.parts)
         write_text(self.out / 'paper.tex', tex)
         write_text(self.out / 'references.bib', self.materials['bibliography'])
         elements = {e['name']: e for e in self.materials['elements']}
@@ -1099,7 +1327,7 @@ class Paper:
         """A session that changes the parts for what a check or a reader found."""
         if tex is None:
             tex, spans, _ = self.assemble()
-        answers = kind in ('reading', 'comparison')
+        answers = kind in ('reading', 'comparison', 'likeness')
         count = len(findings['findings']) if kind == 'reading' else len(findings)
 
         def read(output):
@@ -1118,10 +1346,11 @@ class Paper:
                                 'output/<name>.tex, with the file name it has in parts/'])
             return changed, response
 
-        files = {**self.given('plan', 'parts'), 'paper.tex': tex,
+        files = {**self.given('plan', 'parts', 'papers'), 'paper.tex': tex,
                  'findings.json': json.dumps(findings, ensure_ascii=False, indent=2) + '\n'}
         prompt = REPAIR_PROMPT.format(
             kind=REPAIR_KINDS[kind], response=RESPONSE if answers else '',
+            papers=REPAIR_PAPERS if self.collection is not None else '',
             spans='Its ' + '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans) + '.')
         changed, response = self.session('repair', prompt, files, read, self.writer, kind)
         self.keep(changed)
@@ -1151,6 +1380,50 @@ class Paper:
                 return False
         self.event('note', text=f'The manuscript was read {READING_ROUNDS} times, and each reading had findings. What '
                                 'the last repair changed has not been read again.')
+        return True
+
+    def read_beside_papers(self):
+        """Readings of the manuscript beside papers the plan did not choose, each with the next ones of their list.
+
+        They go on until LIKENESS_CLEAN readings in succession find no departure, and there are at most
+        LIKENESS_ROUNDS. A reading with departures is followed by a repair, except the last. When the
+        readings end otherwise, the departures of the last reading that had any stay open; the
+        comparison is made in either case. False only when a repair leaves the manuscript failing."""
+        section = method_part(LIKENESS_SECTION)
+        order = likeness_papers(self.collection, self.plan['exemplars'])
+        clean, repairs, left = 0, 0, None
+        for round_number in range(1, LIKENESS_ROUNDS + 1):
+            start = (round_number - 1) * LIKENESS_PAPERS
+            keys = [order[(start + i) % len(order)] for i in range(LIKENESS_PAPERS)]
+            tex = read_file(self.out / 'paper.tex')
+
+            def read(output):
+                report = self.load(output / 'likeness.json')
+                problems = check_likeness(report)
+                if problems:
+                    raise Unusable(problems)
+                return report
+
+            files = {'paper.tex': tex, 'references.bib': self.materials['bibliography'],
+                     **{f'exemplars/{key}.tex': self.papers[key] for key in keys}}
+            prompt = LIKENESS_PROMPT.format(section=section,
+                                            papers=', '.join(f'`exemplars/{key}.tex`' for key in keys))
+            report = self.session('likeness', prompt, files, read, self.assessor)
+            departures = report['departures']
+            self.event('likeness', round=round_number, exemplars=keys, likeness=report['likeness'], departures=departures)
+            if not departures:
+                clean += 1
+                if clean == LIKENESS_CLEAN:
+                    return True
+                continue
+            clean, left = 0, departures
+            if round_number == LIKENESS_ROUNDS:
+                break  # after the last reading no repair is made
+            self.repair('likeness', departures)
+            repairs += 1
+            if not self.settle():
+                return False
+        self.open.append({'check': LIKENESS, 'after_repairs': repairs, 'problems': left})
         return True
 
     def compare(self):
@@ -1228,22 +1501,23 @@ def produce(instance, out, tex=None, choice=None):
         raise Stop(f'{out} is not empty; give a new folder to --out, or --typeset-only to typeset the manuscript it holds')
     model = replay(instance)
     settling_proof(model)  # refuses before anything is written
+    manifest, papers, fetched = load_collection()  # stops, before anything is written, when papers stay missing
     run = Paper(instance, out, tex, choice or {})
+    run.collection, run.papers = manifest, papers
     run.out.mkdir(parents=True, exist_ok=True)
     run.materials = extract(instance, model)
     write_json(run.out / 'materials.json', run.materials)
     write_text(run.out / 'materials.md', render_materials(run.materials))
-    unknown = lean_tex(main_element(run.materials)['lean'])[1]
     lost = sorted({e['source'] for e in run.materials['elements'] if e['source']} - set(run.materials['bibliography_keys']))
     run.event('materials', root=run.materials['root']['name'], state=run.materials['root']['state'],
               settled_by=run.materials['main'], elements=[e['name'] for e in run.materials['elements']],
               tex=run.recipe[0] if run.recipe else None,
-              warnings=([f'the formal statement has characters without a LaTeX form: {" ".join(unknown)}'] if unknown else [])
-              + [f'the source {key} of an element is not in bibliography.bib' for key in lost])
+              warnings=[f'the source {key} of an element is not in bibliography.bib' for key in lost])
+    run.event('collection', folder=str(EXEMPLARS), papers=[entry['key'] for entry in manifest], fetched=fetched)
     try:
         run.make_plan()
         run.write_parts()
-        if run.settle() and run.read_and_repair():
+        if run.settle() and run.read_and_repair() and run.read_beside_papers():
             run.compare()
     except Stop as exc:
         run.event('end', status='failed', error=str(exc))
@@ -1292,11 +1566,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('instance', type=Path)
     parser.add_argument('--out', type=Path, required=True, help='the folder that receives the paper; new or empty')
-    parser.add_argument('--model', help='<provider>/<model> for every session, the reading and the comparison included; '
+    parser.add_argument('--model', help='<provider>/<model> for every session, the readings and the comparison included; '
                                         'default: the first of the instance\'s models for planning, writing and repair, '
-                                        'and the first model of the review role for the reading and the comparison')
+                                        'and the first model of the review role for the readings and the comparison')
     parser.add_argument('--effort', help='the effort of planning, writing and repair, and of every session when --model '
-                                         'is given; default: that of the instance\'s first model, and, for the reading '
+                                         'is given; default: that of the instance\'s first model, and, for the readings '
                                          'and the comparison without --model, that of the review role\'s first model')
     parser.add_argument('--typeset-only', action='store_true', help='typeset the manuscript that --out already holds')
     parser.add_argument('--tex', nargs=argparse.REMAINDER, help='the TeX command; takes the rest of the command line')

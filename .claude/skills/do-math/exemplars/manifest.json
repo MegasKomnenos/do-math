@@ -1,0 +1,569 @@
+[
+  {
+    "key": "balogh2015independent",
+    "arxiv": "1204.6530v2",
+    "title": "Independent sets in hypergraphs",
+    "authors": [
+      "József Balogh",
+      "Robert Morris",
+      "Wojciech Samotij"
+    ],
+    "journal": "J. Amer. Math. Soc. 28 (2015), 669-709",
+    "year": 2015,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 42,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "Many important theorems in combinatorics, such as Szemerédi's theorem on arithmetic progressions and the Erdős-Stone Theorem in extremal graph theory, can be phrased as statements about independent sets in uniform hypergraphs. In recent years, an important trend in the area has been to extend such classical results to the so-called sparse random setting. This line of research culminated recently in the breakthroughs of Conlon and Gowers and of Schacht, who developed general tools for solving problems of this type. In this paper, we provide a third, completely different approach to proving extremal and structural results in sparse random sets. We give a structural characterization of the independent sets in a large class of uniform hypergraphs by showing that every independent set is almost contained in one of a small number of relatively sparse sets. We then derive many interesting results as fairly straightforward consequences of this abstract theorem. In particular, we prove the well-known conjecture of Kohayakawa, Łuczak and Rödl, a probabilistic embedding lemma for sparse graphs. We also give alternative proofs of many of the results of Conlon and Gowers and Schacht, and obtain their natural counting versions, which in some cases are considerably stronger. We moreover prove a sparse version of the Erdős-Frankl-Rödl Theorem on the number of H-free graphs and extend a result of Rödl and Ruciński on Ramsey properties in sparse random graphs to the general, non-symmetric setting. We remark that similar results have been discovered independently by Saxton and Thomason, and that, in parallel to this work, Conlon, Gowers, Samotij and Schacht have proved a sparse analogue of the counting lemma for subgraphs of the random graph G(n,p), which may be viewed as a version of the KŁR conjecture that is stronger in some ways and weaker in others.",
+    "sha256": "b62813b01cd6a8752c1b08ae20c25d1a23bf1874609ca899e6cb551338fe375a",
+    "why": "A long paper whose introduction presents each application in a titled subsection with its theorem and ends with an outline, which states the general theorem in a section of its own and derives each application in a separate section that begins by saying what is deduced and from what."
+  },
+  {
+    "key": "buckmaster2019nonuniqueness",
+    "arxiv": "1709.10033v4",
+    "title": "Nonuniqueness of weak solutions to the Navier-Stokes equation",
+    "authors": [
+      "Tristan Buckmaster",
+      "Vlad Vicol"
+    ],
+    "journal": "Ann. of Math. (2) 189 (2019), 101-144",
+    "year": 2019,
+    "category": "math.AP",
+    "field": "analysis",
+    "pages": 36,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "For initial datum of finite kinetic energy, Leray has proven in 1934 that there exists at least one global in time finite energy weak solution of the 3D Navier-Stokes equations. In this paper we prove that weak solutions of the 3D Navier-Stokes equations are not unique in the class of weak solutions with finite kinetic energy. Moreover, we prove that Holder continuous dissipative weak solutions of the 3D Euler equations may be obtained as a strong vanishing viscosity limit of a sequence of finite energy weak solutions of the 3D Navier-Stokes equations.",
+    "sha256": "f215cf21c68faec6513c9e93007b71fb15082731b21c3604fac631f35a823b9c",
+    "why": "A long iterative construction made readable by an introduction with titled parts for previous works and main results, an outline section that lists the parameters and inductive estimates, and proofs that are each headed by the name of the statement they prove."
+  },
+  {
+    "key": "calegari2009stable",
+    "arxiv": "0802.1352v3",
+    "title": "Stable commutator length is rational in free groups",
+    "authors": [
+      "Danny Calegari"
+    ],
+    "journal": "J. Amer. Math. Soc. 22 (2009), 941-961",
+    "year": 2009,
+    "category": "math.GR",
+    "field": "geometry and topology",
+    "pages": 21,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "For any group, there is a natural (pseudo-)norm on the vector space B1 of real (group) 1-boundaries, called the stable commutator length norm. This norm is closely related to, and can be thought of as a relative version of, the Gromov (pseudo)-norm on (ordinary) homology. We show that for a free group, the unit ball of this pseudo-norm is a rational polyhedron. It follows that stable commutator length in free groups takes on only rational values. Moreover every element of the commutator subgroup of a free group rationally bounds an injective map of a surface group. The proof of these facts yields an algorithm to compute stable commutator length in free groups. Using this algorithm, we answer a well-known question of Bavard in the negative, constructing explicit examples of elements in free groups whose stable commutator length is not a half-integer.",
+    "sha256": "1cbac5e074686d8b809271e1b96ffb26d4d57fb47e636b79d394227f1e6392b9",
+    "why": "The introduction lists the main results as numbered items in words and then states the main theorem formally, a background section collects the definitions and known facts, and an example is computed in full."
+  },
+  {
+    "key": "church2014fi",
+    "arxiv": "1210.1854v2",
+    "title": "FI-modules over Noetherian rings",
+    "authors": [
+      "Thomas Church",
+      "Jordan S. Ellenberg",
+      "Benson Farb",
+      "Rohit Nagpal"
+    ],
+    "journal": "Geom. Topol. 18 (2014), 2951-2984",
+    "year": 2014,
+    "category": "math.RT",
+    "field": "algebra",
+    "pages": 32,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "FI-modules were introduced by the first three authors in [CEF] to encode sequences of representations of symmetric groups. Over a field of characteristic 0, finite generation of an FI-module implies representation stability for the corresponding sequence of S_n-representations. In this paper we prove the Noetherian property for FI-modules over arbitrary Noetherian rings: any sub-FI-module of a finitely generated FI-module is finitely generated. This lets us extend many of the results of [CEF] to representations in positive characteristic, and even to integral coefficients. We focus on three major applications of the main theorem: on the integral and mod p cohomology of configuration spaces; on diagonal coinvariant algebras in positive characteristic; and on an integral version of Putman's central stability for homology of congruence subgroups.",
+    "sha256": "a73a3110d15cbab4997b7bf00552749306dca5a55d0c0dc0f2a27c1f63400cca",
+    "why": "It says what the earlier paper proved and which restriction this one removes, states its theorems under titled headings for the main property and the applications, and names in each later section title the theorem that the section proves."
+  },
+  {
+    "key": "duminilcopin2012connective",
+    "arxiv": "1007.0575v2",
+    "title": "The connective constant of the honeycomb lattice equals $\\sqrt{2+\\sqrt2}$",
+    "authors": [
+      "Hugo Duminil-Copin",
+      "Stanislav Smirnov"
+    ],
+    "journal": "Ann. of Math. (2) 175 (2012), 1653-1665",
+    "year": 2012,
+    "category": "math-ph",
+    "field": "probability",
+    "pages": 11,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We provide the first mathematical proof that the connective constant of the hexagonal lattice is equal to $\\sqrt{2+\\sqrt 2}$. This value has been derived non rigorously by B. Nienhuis in 1982, using Coulomb gas approach from theoretical physics. Our proof uses a parafermionic observable for the self avoiding walk, which satisfies a half of the discrete Cauchy-Riemann relations. Establishing the other half of the relations (which conjecturally holds in the scaling limit) would also imply convergence of the self-avoiding walk to SLE(8/3).",
+    "sha256": "4d03258c15b43038908094f3d87717fdb2872729cbfbe80d5768cd000474a445",
+    "why": "The introduction defines the object, states the single theorem and indicates the idea, the key identity is isolated as a lemma in a section of its own, and the paper ends with a section of conjectures."
+  },
+  {
+    "key": "dvir2009size",
+    "arxiv": "0803.2336v3",
+    "title": "On the size of Kakeya sets in finite fields",
+    "authors": [
+      "Zeev Dvir"
+    ],
+    "journal": "J. Amer. Math. Soc. 22 (2009), 1093-1097",
+    "year": 2009,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 5,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "A Kakeya set is a subset of F^n, where F is a finite field of q elements, that contains a line in every direction. In this paper we show that the size of every Kakeya set is at least C_n * q^n, where C_n depends only on n. This improves the previously best lower bound for general n of ~q^{4n/7}.",
+    "sha256": "908787b5dc825944256bccf7b47b836d03bde543efa58490ef11e6aa0a6a1388",
+    "why": "A five-page paper whose introduction defines the object, recounts the earlier bounds, sketches the idea of the proof in two sentences and states the theorem, and whose proof rests on one cited lemma and one claim."
+  },
+  {
+    "key": "ellenberg2017large",
+    "arxiv": "1605.09223v1",
+    "title": "On large subsets of $F_q^n$ with no three-term arithmetic progression",
+    "authors": [
+      "Jordan S. Ellenberg",
+      "Dion Gijswijt"
+    ],
+    "journal": "Ann. of Math. (2) 185 (2017), 339-343",
+    "year": 2017,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 4,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "In this note, we show that the method of Croot, Lev, and Pach can be used to bound the size of a subset of $F_q^n$ with no three terms in arithmetic progression by $c^n$ with $c < q$. For $q=3$, the problem of finding the largest subset with no three terms in arithmetic progression is called the `cap problem'. Previously the best known upper bound for the cap problem, due to Bateman and Katz, was $O(3^n / n^{1+ε})$.",
+    "sha256": "2f39021e9cceefb4212a8f0eb7b2b8ae6125640dfdc565fc403b2a17116f530a",
+    "why": "A four-page note without section headings: a few paragraphs give the history of the problem, the result and the method, and then a proposition, the theorem and a corollary follow, each with its proof."
+  },
+  {
+    "key": "ford2010common",
+    "arxiv": "0906.3380v2",
+    "title": "Common values of the arithmetic functions phi and sigma",
+    "authors": [
+      "Kevin Ford",
+      "Florian Luca",
+      "Carl Pomerance"
+    ],
+    "journal": "Bull. London Math. Soc. 42 (2010), 478-488",
+    "year": 2010,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 11,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We show that the equation phi(a)=σ(b) has infinitely many solutions, where phi is Euler's totient function and sigma is the sum-of-divisors function. This proves a 50-year old conjecture of Erdos. Moreover, we show that there are infinitely many integers n such that phi(a)=n and sigma(b)=n each have more than n^c solutions, for some c>0. The proofs rely on the recent work of the first two authors and Konyagin on the distribution of primes p for which a given prime divides some iterate of phi at p, and on a result of Heath-Brown connecting the possible existence of Siegel zeros with the distribution of twin primes.",
+    "sha256": "27c90e42073e811210d414d89522c1ce459b29884308a808b41631780b4c12e6",
+    "why": "A short paper that tells the history of a conjecture, states two theorems, names the outside results on which the proofs rely, and ends with a list of further problems."
+  },
+  {
+    "key": "fox2011new",
+    "arxiv": "1006.1300v2",
+    "title": "A new proof of the graph removal lemma",
+    "authors": [
+      "Jacob Fox"
+    ],
+    "journal": "Ann. of Math. (2) 174 (2011), 561-579",
+    "year": 2011,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 17,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "Let H be a fixed graph with h vertices. The graph removal lemma states that every graph on n vertices with o(n^h) copies of H can be made H-free by removing o(n^2) edges. We give a new proof which avoids Szemerédi's regularity lemma and gives a better bound. This approach also works to give improved bounds for the directed and multicolored analogues of the graph removal lemma. This answers questions of Alon and Gowers.",
+    "sha256": "3f96a38743d6d7e5b412fd863b5b6065be2ec79bfda90faa7b8874b48abc7ec7",
+    "why": "It explains the regularity lemma and the removal lemma in words before stating its theorem, the sections on the key lemma and on the main theorem open by saying what they prove, and the inductive proof of the key lemma is divided into cases that the text announces in advance."
+  },
+  {
+    "key": "frank2010inversion",
+    "arxiv": "0904.4275v2",
+    "title": "Inversion positivity and the sharp Hardy-Littlewood-Sobolev inequality",
+    "authors": [
+      "Rupert L. Frank",
+      "Elliott H. Lieb"
+    ],
+    "journal": "Calc. Var. Partial Differential Equations 39 (2010), 85-99",
+    "year": 2010,
+    "category": "math.FA",
+    "field": "analysis",
+    "pages": 15,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We give a new proof of certain cases of the sharp HLS inequality. Instead of symmetric decreasing rearrangement it uses the reflection positivity of inversions in spheres. In doing this we extend a characterization of the minimizing functions due to Li and Zhu.",
+    "sha256": "ae3e182e105aea327a6038c89b04bc2c3fbe4f4c0212c413803dda73cc153700",
+    "why": "The introduction states the inequality, what was known about its sharp constant and the main theorem, a subsection outlines the proof as two further theorems, and each later section opens by naming the theorem it proves."
+  },
+  {
+    "key": "gardam2021counterexample",
+    "arxiv": "2102.11818v4",
+    "title": "A counterexample to the unit conjecture for group rings",
+    "authors": [
+      "Giles Gardam"
+    ],
+    "journal": "Ann. of Math. (2) 194 (2021), 967-979",
+    "year": 2021,
+    "category": "math.GR",
+    "field": "algebra",
+    "pages": 12,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "The unit conjecture, commonly attributed to Kaplansky, predicts that if $K$ is a field and $G$ is a torsion-free group then the only units of the group ring $K[G]$ are the trivial units, that is, the non-zero scalar multiples of group elements. We give a concrete counterexample to this conjecture; the group is virtually abelian and the field is order two.",
+    "sha256": "8530f337256d7b11c1210287ff54c38c58407dc8795936f049c8864eb619737f",
+    "why": "A short paper that states three related conjectures and how they imply one another, gives the counterexample as a theorem with explicit data, verifies it through one lemma, and ends with a discussion and open questions."
+  },
+  {
+    "key": "goldmakher2012multiplicative",
+    "arxiv": "0911.5547v2",
+    "title": "Multiplicative mimicry and improvements of the Polya-Vinogradov inequality",
+    "authors": [
+      "Leo Goldmakher"
+    ],
+    "journal": "Algebra Number Theory 6 (2012), 123-163",
+    "year": 2012,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 45,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We study exponential sums whose coefficients are completely multiplicative and belong to the complex unit disc. Our main result shows that such a sum has substantial cancellation unless the coefficient function is essentially a Dirichlet character. As an application we improve current bounds on odd order character sums. Furthermore, conditionally on the Generalized Riemann Hypothesis we obtain a bound for odd order character sums which is best possible.",
+    "sha256": "53b65dd6d1cdfffb400b1e033426e7e2c631a83d60e20c1ee1bc53ccf1347922",
+    "why": "A long analytic paper whose introduction gives the general theorem and its applications with the earlier bounds for comparison, followed by a section of precise statements and sketches of proofs, and whose section titles name the result that each section proves."
+  },
+  {
+    "key": "helfgott2008growth",
+    "arxiv": "math/0509024v4",
+    "title": "Growth and generation in SL_2(Z/pZ)",
+    "authors": [
+      "H. A. Helfgott"
+    ],
+    "journal": "Ann. of Math. (2) 167 (2008), 601-623",
+    "year": 2008,
+    "category": "math.GR",
+    "field": "algebra",
+    "pages": 21,
+    "licence": "not stated in the arXiv record",
+    "abstract": "We show that every subset of SL_2(Z/pZ) grows rapidly when it acts on itself by the group operation. It follows readily that, for every set of generators A of SL_2(Z/pZ), every element of SL_2(Z/pZ) can be expressed as a product of at most O((log p)^c) elements of the union of A and A^{-1}, where c and the implied constant are absolute.",
+    "sha256": "9604af395ce0a11146d04e91b0c1e19213f87892c44334e03f6e5c8e54078183",
+    "why": "The introduction has titled subsections for background, results and techniques, definitions are given in the sentence that first needs them, and a section of preliminaries collects the known tools with references before the new arguments begin."
+  },
+  {
+    "key": "jiang2021equiangular",
+    "arxiv": "1907.12466v5",
+    "title": "Equiangular lines with a fixed angle",
+    "authors": [
+      "Zilin Jiang",
+      "Jonathan Tidor",
+      "Yuan Yao",
+      "Shengtong Zhang",
+      "Yufei Zhao"
+    ],
+    "journal": "Ann. of Math. (2) 194 (2021), 729-743",
+    "year": 2021,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 11,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "Solving a longstanding problem on equiangular lines, we determine, for each given fixed angle and in all sufficiently large dimensions, the maximum number of lines pairwise separated by the given angle. Fix $0 < α< 1$. Let $N_α(d)$ denote the maximum number of lines through the origin in $\\mathbb{R}^d$ with pairwise common angle $\\arccos α$. Let $k$ denote the minimum number (if it exists) of vertices in a graph whose adjacency matrix has spectral radius exactly $(1-α)/(2α)$. If $k < \\infty$, then $N_α(d) = \\lfloor k(d-1)/(k-1) \\rfloor$ for all sufficiently large $d$, and otherwise $N_α(d) = d + o(d)$. In particular, $N_{1/(2k-1)}(d) = \\lfloor k(d-1)/(k-1) \\rfloor$ for every integer $k\\ge 2$ and all sufficiently large $d$. A key ingredient is a new result in spectral graph theory: the adjacency matrix of a connected bounded degree graph has sublinear second eigenvalue multiplicity.",
+    "sha256": "bc68699dc869be43713ee3db3e1bb089cf97926f5515bb1acbc594dd71f86778",
+    "why": "The introduction gives the history of the problem with precise attributions and states the main theorem and a corollary, a separate section summarises the ideas of the proof, and the paper ends with open questions."
+  },
+  {
+    "key": "juhasz2008floer",
+    "arxiv": "math/0609779v3",
+    "title": "Floer homology and surface decompositions",
+    "authors": [
+      "Andras Juhasz"
+    ],
+    "journal": "Geom. Topol. 12 (2008), 299-350",
+    "year": 2008,
+    "category": "math.GT",
+    "field": "geometry and topology",
+    "pages": 40,
+    "licence": "not stated in the arXiv record",
+    "abstract": "Sutured Floer homology, denoted by SFH, is an invariant of balanced sutured manifolds previously defined by the author. In this paper we give a formula that shows how this invariant changes under surface decompositions. In particular, if (M, γ)--> (M', γ') is a sutured manifold decomposition then SFH(M',γ') is a direct summand of SFH(M, γ). To prove the decomposition formula we give an algorithm that computes SFH(M,γ) from a balanced diagram defining (M,γ) that generalizes the algorithm of Sarkar and Wang. As a corollary we obtain that if (M, γ) is taut then SFH(M,γ) is non-zero. Other applications include simple proofs of a result of Ozsvath and Szabo that link Floer homology detects the Thurston norm, and a theorem of Ni that knot Floer homology detects fibred knots. Our proofs do not make use of any contact geometry. Moreover, using these methods we show that if K is a genus g knot in a rational homology 3-sphere Y whose Alexander polynomial has leading coefficient a_g non-zero and if the rank of \\hat{HFK}(Y,K,g) < 4 then the knot complement admits a depth < 2 taut foliation transversal to the boundary of N(K).",
+    "sha256": "1f5b2c75a423def35ce8a13835f7c70f717b06cd0ffca78f378666b3706681c5",
+    "why": "A long paper that gives the definitions needed for its main theorem before stating it, states the further theorems that follow from it in the same introduction, keeps a strict order of definition, statement and proof throughout, and ends with a question."
+  },
+  {
+    "key": "kiselev2014small",
+    "arxiv": "1310.4799v5",
+    "title": "Small scale creation for solutions of the incompressible two dimensional Euler equation",
+    "authors": [
+      "Alexander Kiselev",
+      "Vladimir Sverak"
+    ],
+    "journal": "Ann. of Math. (2) 180 (2014), 1205-1220",
+    "year": 2014,
+    "category": "math.AP",
+    "field": "analysis",
+    "pages": 16,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We construct an initial data for two-dimensional Euler equation in a disk for which the gradient of vorticity exhibits double exponential growth in time for all times. This estimate is known to be sharp - the double exponential growth is the fastest possible growth rate.",
+    "sha256": "aebc617eeebda704c2bdf80816c09283022c1b4d365a7c0ea3c4cf90c0e4481b",
+    "why": "It follows the plan of introduction with the theorem, preliminaries, key lemma, proof of the main theorem and discussion, and it explains in words what the key lemma provides before proving it."
+  },
+  {
+    "key": "koukoulopoulos2013pretentious",
+    "arxiv": "1203.0596v3",
+    "title": "Pretentious multiplicative functions and the prime number theorem for arithmetic progressions",
+    "authors": [
+      "Dimitris Koukoulopoulos"
+    ],
+    "journal": "Compos. Math. 149 (2013), 1129-1149",
+    "year": 2013,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 21,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "Building on the concept of pretentious multiplicative functions, we give a new and largely elementary proof of the best result known on the counting function of primes in arithmetic progressions.",
+    "sha256": "2623c5c60e9582dee99ced5fcbd5edf0fbe3a7260e38f07d62e174f449354bd3",
+    "why": "It recounts the classical route to the theorem before describing its own, and its proofs carry displayed estimates inside complete sentences, each step justified by a numbered lemma or relation."
+  },
+  {
+    "key": "lerner2013simple",
+    "arxiv": "1202.2824v3",
+    "title": "A simple proof of the $A_2$ conjecture",
+    "authors": [
+      "Andrei K. Lerner"
+    ],
+    "journal": "Int. Math. Res. Not. IMRN 2013, no. 14, 3159-3170",
+    "year": 2013,
+    "category": "math.CA",
+    "field": "analysis",
+    "pages": 12,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We give a simple proof of the $A_2$ conjecture proved recently by T. Hytönen. Our proof avoids completely the notion of the Haar shift operator, and it is based only on the \"local mean oscillation decomposition\". Also our proof yields a simple proof of the \"two-weight conjecture\" as well.",
+    "sha256": "9582cf204fbd73a0d168e1a28973d9af505706433210eab438366651371146c8",
+    "why": "A short paper that states its theorem at once, lists the earlier contributions with authors and years, collects what it needs in a section of preliminaries, and proves the result through a few lemmas whose estimates are displayed and justified line by line."
+  },
+  {
+    "key": "lubetzky2016cutoff",
+    "arxiv": "1507.04725v5",
+    "title": "Cutoff on all Ramanujan graphs",
+    "authors": [
+      "Eyal Lubetzky",
+      "Yuval Peres"
+    ],
+    "journal": "Geom. Funct. Anal. 26 (2016), 1190-1216",
+    "year": 2016,
+    "category": "math.PR",
+    "field": "probability",
+    "pages": 27,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We show that on every Ramanujan graph $G$, the simple random walk exhibits cutoff: when $G$ has $n$ vertices and degree $d$, the total-variation distance of the walk from the uniform distribution at time $t=\\frac{d}{d-2}\\log_{d-1} n + s\\sqrt{\\log n}$ is asymptotically $\\mathbb{P}(Z > c\\, s)$ where $Z$ is a standard normal variable and $c=c(d)$ is an explicit constant. Furthermore, for all $1 \\leq p \\leq \\infty$, $d$-regular Ramanujan graphs minimize the asymptotic $L^p$-mixing time for SRW among all $d$-regular graphs. Our proof also shows that, for every vertex $x$ in $G$ as above, its distance from $n-o(n)$ of the vertices is asymptotically $\\log_{d-1} n$.",
+    "sha256": "bfff78c3dff659a77929a6d06e40b5475a435b444032d313a5013216446be4e3",
+    "why": "The introduction defines the notions its theorem needs, states the theorem and corollaries, and has titled parts for related work, extensions, the method of proof and the organization of the paper."
+  },
+  {
+    "key": "malle2016characters",
+    "arxiv": "1506.07690v1",
+    "title": "Characters of odd degree",
+    "authors": [
+      "Gunter Malle",
+      "Britta Späth"
+    ],
+    "journal": "Ann. of Math. (2) 184 (2016), 869-908",
+    "year": 2016,
+    "category": "math.RT",
+    "field": "algebra",
+    "pages": 40,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We prove the McKay conjecture on characters of odd degree. A major step in the proof is the verification of the inductive McKay condition for groups of Lie type and primes $\\ell$ such that a Sylow $\\ell$-subgroup or its maximal normal abelian subgroup is contained in a maximally split torus by means of a new equivariant version of Harish-Chandra induction. Specifics of characters of odd degree, namely that they only lie in very particular Harish-Chandra series then allow us to deduce from it the McKay conjecture for the prime~$2$, hence for characters of odd degree.",
+    "sha256": "415625d20b5a0d71384d8d993425309117687fab8a5edb6a3135674b8b1631b5",
+    "why": "A long paper whose introduction gives the history of the conjecture and two lettered main theorems, whose background section recalls the criterion on which the proof rests, and whose sections each open with a sentence stating their aim."
+  },
+  {
+    "key": "marks2016baire",
+    "arxiv": "1501.01690v2",
+    "title": "Baire measurable paradoxical decompositions via matchings",
+    "authors": [
+      "Andrew Marks",
+      "Spencer Unger"
+    ],
+    "journal": "Adv. Math. 289 (2016), 397-410",
+    "year": 2016,
+    "category": "math.LO",
+    "field": "other",
+    "pages": 14,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We show that every locally finite bipartite Borel graph satisfying a strengthening of Hall's condition has a Borel perfect matching on some comeager invariant Borel set. We apply this to show that if a group acting by Borel automorphisms on a Polish space has a paradoxical decomposition, then it admits a paradoxical decomposition using pieces having the Baire property. This strengthens a theorem of Dougherty and Foreman who showed that there is a paradoxical decomposition of the unit ball in $\\mathbb{R}^3$ using Baire measurable pieces. We also obtain a Baire category solution to the dynamical von Neumann-Day problem: if $a$ is a nonamenable action of a group on a Polish space $X$ by Borel automorphisms, then there is a free Baire measurable action of $\\mathbb{F}_2$ on $X$ which is Lipschitz with respect to $a$.",
+    "sha256": "873f1ce9d08fd42afdebe18d7158d8ef620f191073a11286e51d24d1de344e85",
+    "why": "It starts from a classical paradox, states its three theorems in the introduction, collects its conventions in a short section of definitions, and introduces a lemma by saying in words what it asserts."
+  },
+  {
+    "key": "matomaki2016multiplicative",
+    "arxiv": "1501.04585v4",
+    "title": "Multiplicative functions in short intervals",
+    "authors": [
+      "Kaisa Matomäki",
+      "Maksym Radziwiłł"
+    ],
+    "journal": "Ann. of Math. (2) 183 (2016), 1015-1056",
+    "year": 2016,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 41,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We introduce a general result relating \"short averages\" of a multiplicative function to \"long averages\" which are well understood. This result has several consequences. First, for the Möbius function we show that there are cancellations in the sum of $μ(n)$ in almost all intervals of the form $[x, x + ψ(x)]$ with $ψ(x) \\rightarrow \\infty$ arbitrarily slowly. This goes beyond what was previously known conditionally on the Density Hypothesis or the stronger Riemann Hypothesis. Second, we settle the long-standing conjecture on the existence of $x^ε$-smooth numbers in intervals of the form $[x, x + c(\\varepsilon) \\sqrt{x}]$, recovering unconditionally a conditional (on the Riemann Hypothesis) result of Soundararajan. Third, we show that the mean-value of $λ(n)λ(n+1)$, with $λ(n)$ Liouville's function, is non-trivially bounded in absolute value by $1 - δ$ for some $δ> 0$. This settles an old folklore conjecture and constitutes progress towards Chowla's conjecture. Fourth, we show that a (general) real-valued multiplicative function $f$ has a positive proportion of sign changes if and only if $f$ is negative on at least one integer and non-zero on a positive proportion of the integers. This improves on many previous works, and is new already in the case of the Möbius function. We also obtain some additional results on smooth numbers in almost all intervals, and sign changes of multiplicative functions in all intervals of square-root length.",
+    "sha256": "9f07f718dcb0a3b4a2ea8823678bb3d77fb8c064e8237b55a50e23b5c489cd99",
+    "why": "The main theorem stands in the first paragraph, its consequences follow as corollaries with the previous state of knowledge for each, and a section on the key ideas outlines the proofs before the lemmas begin."
+  },
+  {
+    "key": "maynard2015small",
+    "arxiv": "1311.4600v3",
+    "title": "Small gaps between primes",
+    "authors": [
+      "James Maynard"
+    ],
+    "journal": "Ann. of Math. (2) 181 (2015), 383-413",
+    "year": 2015,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 25,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We introduce a refinement of the GPY sieve method for studying prime $k$-tuples and small gaps between primes. This refinement avoids previous limitations of the method, and allows us to show that for each $k$, the prime $k$-tuples conjecture holds for a positive proportion of admissible $k$-tuples. In particular, $\\liminf_{n}(p_{n+m}-p_n)<\\infty$ for any integer $m$. We also show that $\\liminf(p_{n+1}-p_n)\\le 600$, and, if we assume the Elliott-Halberstam conjecture, that $\\liminf_n(p_{n+1}-p_n)\\le 12$ and $\\liminf_n (p_{n+2}-p_n)\\le 600$.",
+    "sha256": "acd37e29d6cb58480d28ccc03af2b7a6e638bea70d9aaf2154ffedbd28974d55",
+    "why": "The introduction states the conjecture, the earlier results and the new theorems in that order, separate sections give the motivation, the notation and an outline of the proof, and each technical lemma is stated with all its hypotheses before its computation."
+  },
+  {
+    "key": "nikolov2011product",
+    "arxiv": "math/0703343v3",
+    "title": "Product decompositions of quasirandom groups and a Jordan type theorem",
+    "authors": [
+      "Nikolay Nikolov",
+      "László Pyber"
+    ],
+    "journal": "J. Eur. Math. Soc. (JEMS) 13 (2011), 1063-1077",
+    "year": 2011,
+    "category": "math.GR",
+    "field": "algebra",
+    "pages": 18,
+    "licence": "not stated in the arXiv record",
+    "abstract": "We first note that a result of Gowers on product-free sets in groups has an unexpected consequence: If k is the minimal degree of a representation of the finite group G, then for every subset B of G with $|B| > |G| / k^{1/3}$ we have B^3 = G. We use this to obtain improved versions of recent deep theorems of Helfgott and of Shalev concerning product decompositions of finite simple groups, with much simpler proofs. On the other hand, we prove a version of Jordan's theorem which implies that if k>1, then G has a proper subgroup of index at most ck^2 for some absolute constant c, hence a product-free subset of size at least $|G| / c'k$. This answers a question of Gowers.",
+    "sha256": "b5035b42cd3478baaaf749f435163c8826672b6cb0d8e89052fb604ffb4223c4",
+    "why": "The introduction derives its first result from a cited theorem in a few lines and states the further theorems together with the earlier results they improve, and the body treats the families of groups under separate headings."
+  },
+  {
+    "key": "peres2015mixing",
+    "arxiv": "1108.0133v3",
+    "title": "Mixing times are hitting times of large sets",
+    "authors": [
+      "Yuval Peres",
+      "Perla Sousi"
+    ],
+    "journal": "J. Theoret. Probab. 28 (2015), 488-519",
+    "year": 2015,
+    "category": "math.PR",
+    "field": "probability",
+    "pages": 32,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We consider irreducible reversible discrete time Markov chains on a finite state space. Mixing times and hitting times are fundamental parameters of the chain. We relate them by showing that the mixing time of the lazy chain is equivalent to the maximum over initial states x and large sets A of the hitting time of A starting from x. We also prove that the first time when averaging over two consecutive time steps is close to stationarity is equivalent to the mixing time of the lazy version of the chain.",
+    "sha256": "533dd0c8796b6ed59de0264f266068b52d98c82779212945ea0402f1302bc067",
+    "why": "The introduction states the main theorem after a short account of the notions involved and follows it with remarks, a section of preliminaries defines the further notions and states the equivalences among them, the later sections open by saying what they prove, and the paper ends with examples and a question."
+  },
+  {
+    "key": "piccirillo2020conway",
+    "arxiv": "1808.02923v1",
+    "title": "The Conway knot is not slice",
+    "authors": [
+      "Lisa Piccirillo"
+    ],
+    "journal": "Ann. of Math. (2) 191 (2020), 581-591",
+    "year": 2020,
+    "category": "math.GT",
+    "field": "geometry and topology",
+    "pages": 9,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "A knot is said to be slice if it bounds a smooth properly embedded disk in the 4-ball. We demonstrate that the Conway knot, 11n34 in the Rolfsen tables, is not slice. This completes the classification of slice knots under 13 crossings, and gives the first example of a non-slice knot which is both topologically slice and a positive mutant of a slice knot.",
+    "sha256": "d1954a3bbca37cc2fd74440da73ced3eedb18edd1d4b9791528c0c202b70604f",
+    "why": "A short paper whose introduction defines the notions for a general reader and states the theorem and the strategy, and whose proof is split into a construction and a computation, each in a section of its own."
+  },
+  {
+    "key": "poonen2010insufficiency",
+    "arxiv": "0806.1312v1",
+    "title": "Insufficiency of the Brauer-Manin obstruction applied to etale covers",
+    "authors": [
+      "Bjorn Poonen"
+    ],
+    "journal": "Ann. of Math. (2) 171 (2010), 2157-2169",
+    "year": 2010,
+    "category": "math.NT",
+    "field": "number theory",
+    "pages": 11,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "Let k be any global field of characteristic not 2. We construct a k-variety X such that X(k) is empty, but for which the emptiness cannot be explained by the Brauer-Manin obstruction or even by the Brauer-Manin obstruction applied to finite etale covers.",
+    "sha256": "cac4988a0c452bade330b48e3765119d7aad214a034cd63d13a815505bf6ec42",
+    "why": "Every term is defined at first use, the introduction has titled parts for background, the result, commentary and an outline of the paper, and the short sections each prepare one ingredient of the construction."
+  },
+  {
+    "key": "rudelson2008littlewood",
+    "arxiv": "math/0703503v2",
+    "title": "The Littlewood-Offord Problem and invertibility of random matrices",
+    "authors": [
+      "Mark Rudelson",
+      "Roman Vershynin"
+    ],
+    "journal": "Adv. Math. 218 (2008), 600-633",
+    "year": 2008,
+    "category": "math.PR",
+    "field": "probability",
+    "pages": 34,
+    "licence": "not stated in the arXiv record",
+    "abstract": "We prove two basic conjectures on the distribution of the smallest singular value of random n times n matrices with independent entries. Under minimal moment assumptions, we show that the smallest singular value is of order n^{-1/2}, which is optimal for Gaussian matrices. Moreover, we give a optimal estimate on the tail probability. This comes as a consequence of a new and essentially sharp estimate in the Littlewood-Offord problem: for i.i.d. random variables X_k and real numbers a_k, determine the probability P that the sum of a_k X_k lies near some number v. For arbitrary coefficients a_k of the same order of magnitude, we show that they essentially lie in an arithmetic progression of length 1/p.",
+    "sha256": "bba8a24d8a731b58188bf5746473f0b06469629b3a2c748ed16cb110cb09cf96",
+    "why": "The introduction is divided into titled subsections for the two problems and an outline of the argument, the notation and known tools are collected in a section of preliminaries, and remarks after the lemmas explain the terms of the estimates."
+  },
+  {
+    "key": "song2023existence",
+    "arxiv": "1806.08816v2",
+    "title": "Existence of infinitely many minimal hypersurfaces in closed manifolds",
+    "authors": [
+      "Antoine Song"
+    ],
+    "journal": "Ann. of Math. (2) 197 (2023), 859-895",
+    "year": 2023,
+    "category": "math.DG",
+    "field": "geometry and topology",
+    "pages": 37,
+    "licence": "CC BY 4.0",
+    "abstract": "Using min-max theory, we show that in any closed Riemannian manifold of dimension at least 3 and at most 7, there exist infinitely many smoothly embedded closed minimal hypersurfaces. It proves a conjecture of S.-T. Yau. This paper builds on the methods developed by F. C. Marques and A. Neves.",
+    "sha256": "dbaa6a63aa7ed7521aa9e7fc8c7211c81215766a7f4eea08d946ee368afb9c56",
+    "why": "The introduction traces the problem from its origin to the cases already settled, states the theorem and outlines the proof, and a proof may begin by giving the intuition for the statement before the argument."
+  },
+  {
+    "key": "tikhomirov2020singularity",
+    "arxiv": "1812.09016v4",
+    "title": "Singularity of random Bernoulli matrices",
+    "authors": [
+      "Konstantin Tikhomirov"
+    ],
+    "journal": "Ann. of Math. (2) 191 (2020), 593-634",
+    "year": 2020,
+    "category": "math.PR",
+    "field": "probability",
+    "pages": 42,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "For each $n$, let $M_n$ be an $n\\times n$ random matrix with independent $\\pm 1$ entries. We show that ${\\mathbb P}\\{\\mbox{$M_n$ is singular}\\}=(1/2+o_n(1))^n$, which settles an old problem. Some generalizations are considered.",
+    "sha256": "32f0d5c19771e0d0dc81b2fdcf7fcbfe57e2419399cfda08b5a3315dca61eea1",
+    "why": "It poses the problem as a question, lists the successive earlier bounds with their authors, states the theorem, and devotes a section to the strategy of the proof before a long sequence of carefully quantified lemmas."
+  },
+  {
+    "key": "walsh2012norm",
+    "arxiv": "1109.2922v2",
+    "title": "Norm convergence of nilpotent ergodic averages",
+    "authors": [
+      "Miguel N. Walsh"
+    ],
+    "journal": "Ann. of Math. (2) 175 (2012), 1667-1688",
+    "year": 2012,
+    "category": "math.DS",
+    "field": "other",
+    "pages": 17,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We show that multiple polynomial ergodic averages arising from nilpotent groups of measure preserving transformations of a probability space always converge in the L^2 norm.",
+    "sha256": "c9981d3518c718d28a32b3894674ee50e03aff47ab7026711e937d49674f931e",
+    "why": "The paper opens with the single theorem it proves, gives the history in one titled subsection and an overview of the proof in another, and ends with further results and worked examples."
+  },
+  {
+    "key": "zhao2010number",
+    "arxiv": "0909.3354v1",
+    "title": "The Number of Independent Sets in a Regular Graph",
+    "authors": [
+      "Yufei Zhao"
+    ],
+    "journal": "Combin. Probab. Comput. 19 (2010), 315-320",
+    "year": 2010,
+    "category": "math.CO",
+    "field": "combinatorics",
+    "pages": 5,
+    "licence": "arXiv non-exclusive licence to distribute 1.0",
+    "abstract": "We show that the number of independent sets in an N-vertex, d-regular graph is at most (2^{d+1} - 1)^{N/2d}, where the bound is sharp for a disjoint union of complete d-regular bipartite graphs. This settles a conjecture of Alon in 1991 and Kahn in 2001. Kahn proved the bound when the graph is assumed to be bipartite. We give a short proof that reduces the general case to the bipartite case. Our method also works for a weighted generalization, i.e., an upper bound for the independence polynomial of a regular graph.",
+    "sha256": "7b9eab77353aab0eb9dc1fbb987dc7b3200e8959c8ce2e18cb3b614b34adff1e",
+    "why": "A short paper whose introduction gives the history of the conjecture with the successive bounds, states the conjecture, the main theorem and a corollary, proves the theorem in one section by a reduction that it names at the start, and ends with a discussion of further questions."
+  }
+]
