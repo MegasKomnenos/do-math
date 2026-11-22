@@ -72,7 +72,8 @@ import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay, rests_on
 from runtime_support import read_json, write_json
-from support import InstanceCase, module_text, record_text, stop_broker
+from support import InstanceCase, module_text, record_text, stop_broker, theorem
+from test_research import RefutedRootCase
 
 TEX = [sys.executable, '-B', str(THIS), 'tex']
 
@@ -368,6 +369,31 @@ class RefusalTests(InstanceCase):
         self.assertFalse(out.exists())
         with self.assertRaises(paper.Stop):
             paper.produce(self.instance, out)
+
+
+class RefutedMaterialsTests(RefutedRootCase):
+    def assert_refutation_materials(self, proof):
+        materials = paper.extract(self.instance, replay(self.instance))
+        self.assertEqual(materials['root']['state'], 'formal_refuted')
+        self.assertEqual(materials['main'], proof)
+        self.assertEqual(materials['elements'][-1]['name'], proof)
+        self.assertIn(f'The declaration whose formal proof settles it is `{proof}`, '
+                      'whose statement is the negation of the root.', paper.render_materials(materials))
+
+    def test_direct_formal_refutation_is_the_main_result(self):
+        self.formally_refuted()
+        self.assert_refutation_materials('Small.notRoot')
+
+    def test_formal_alternative_to_an_informal_refutation_is_the_main_result(self):
+        self.refuted()
+        with self.assertRaisesRegex(paper.Stop, 'informal_refuted'):
+            paper.extract(self.instance, replay(self.instance))
+        self.publish(self.candidate(
+            modules={'Small/AgainstAlt.lean': module_text(theorem(
+                'notRootAlt', self.NEGATION, proof='intro h\n  exact absurd (h 2) (by decide)'),
+                imports=('Small.Against',))},
+            records={'Small/notRootAlt.md': record_text('Another proof of the negation.', proves='Small.notRoot')}))
+        self.assert_refutation_materials('Small.notRootAlt')
 
 
 class MaterialsTests(PaperCase):

@@ -58,7 +58,7 @@ import time
 
 from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
 from cli_adapter import detect_usage_limit, provider_for_model
-from knowledge import ROOT_QUESTION, STANDINGS, replay
+from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
 from launch import worker_command, worker_environment
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
 from settings import load_settings
