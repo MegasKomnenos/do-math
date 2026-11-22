@@ -134,7 +134,7 @@ The command reads the manifest and the files, applies the candidate to a copy of
 - no declaration disappeared;
 - every declaration the candidate adds has a record, and every record belongs to a declaration;
 - every declaration the candidate adds stands in a new module, and no name it adds differs from another name of the canon only in the case of its letters, since the records of two such names would be one file where the file system ignores case;
-- no declaration is an `axiom`, no definition contains `sorry`, and no replacement touches a definition;
+- no declaration is an `axiom`, whether it is an element or a private declaration beside one, no definition contains `sorry`, and no replacement touches a definition;
 - for every record with `proves` or `refutes`, Lean confirmed that the statement is the same as, or the negation of, the statement named.
 
 It then writes `output/prepared.json` and prints a summary: `ok`, the build's ID, the elements `added` and the proofs `replaced`, the records, the `errors`, and for each statement the axioms it depends on. The command exits with 0 when the candidate is in order and with 1 when it is not; read `errors`, correct the candidate and run the command again. A compiler error is reported with Lean's own output. The exit code 124, with `"waiting": true`, means that the build has not finished within the timeout. The build continues, and running the same command again returns its result; it is started afresh only when the candidate or the canon has changed in the meantime.

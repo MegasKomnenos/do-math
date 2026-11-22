@@ -1216,6 +1216,75 @@ class UpdateIndexTests(TempCase):
         closure = axiom_closure(index)
         self.assertEqual((closure['Small.first'], closure['Small.second']), (['sorryAx'], ['sorryAx']))
 
+    def test_an_axiom_that_is_no_entry_counts_as_itself_for_whatever_reaches_it(self):
+        # `private axiom shortcut` is no entry. The theorem that rests on it has a complete Lean proof and is
+        # still not proved from the allowed axioms, and neither is a theorem that names that theorem.
+        axiom_text = 'private axiom shortcut : base = 1'
+        rests_text = 'theorem rests : base = 1 := by\n  exact shortcut'
+        further_text = 'theorem further : base = 1 := by\n  exact rests'
+        source = '\n\n'.join([axiom_text, rests_text, further_text]) + '\n'
+        write(self.lean / 'Small/C.lean', source)
+        shortcut = '_private.Small.C.0.Small.shortcut'
+        rows = [row(shortcut, 'axiom', module='Small.C', span=span_of(source, axiom_text), user='Small.shortcut',
+                    private=True, type_uses=['Small.base']),
+                row('Small.rests', module='Small.C', span=span_of(source, rests_text), type_uses=['Small.base'],
+                    value_uses=[shortcut]),
+                row('Small.further', module='Small.C', span=span_of(source, further_text), type_uses=['Small.base'],
+                    value_uses=['Small.rests'])]
+        index = update_index(self.first, rows, {}, self.lean, 2)
+        self.assertNotIn(shortcut, index['entries'])
+        rests = index['entries']['Small.rests']
+        self.assertEqual((rests['direct_axioms'], rests['lean_proof']), ([shortcut], 'complete'))
+        closure = axiom_closure(index)
+        self.assertEqual((closure['Small.rests'], closure['Small.further']), ([shortcut], [shortcut]))
+        self.assertEqual({key: index['hidden'][shortcut][key] for key in ('module', 'user', 'axiom', 'generated')},
+                         {'module': 'Small.C', 'user': 'Small.shortcut', 'axiom': True, 'generated': False})
+
+    def test_an_axiom_that_lean_generates_under_an_entry_counts_for_that_entry(self):
+        # `native_decide` adds an axiom for each computation. Lean 4.36 names it under the declaration that
+        # uses it, as a private and internal name. It belongs to that entry, and the entry depends on it.
+        computed_text = 'theorem computed : count 3 = 3 := by\n  native_decide'
+        from_it_text = 'theorem from_it : count 3 = 3 := by\n  exact computed'
+        source = computed_text + '\n\n' + from_it_text + '\n'
+        write(self.lean / 'Small/C.lean', source)
+        generated = '_private.Small.C.0.Small.computed._native.native_decide.ax_1_1'
+        rows = [row('Small.computed', module='Small.C', span=span_of(source, computed_text), type_uses=['Small.count'],
+                    value_uses=[generated]),
+                row(generated, 'axiom', module='Small.C', span=span_of(source, computed_text), private=True, internal=True,
+                    user='Small.computed._native.native_decide.ax_1_1', type_uses=['Small.count']),
+                row('Small.from_it', module='Small.C', span=span_of(source, from_it_text), type_uses=['Small.count'],
+                    value_uses=['Small.computed'])]
+        index = update_index(self.first, rows, {}, self.lean, 2)
+        self.assertEqual(index['aux'][generated], 'Small.computed')
+        computed = index['entries']['Small.computed']
+        self.assertEqual((computed['direct_axioms'], computed['lean_proof']), ([generated], 'complete'))
+        self.assertEqual(axiom_closure(index)['Small.from_it'], [generated])
+        self.assertEqual((index['hidden'][generated]['axiom'], index['hidden'][generated]['generated']), (True, True))
+
+    def test_an_auxiliary_of_no_entry_is_passed_through_from_a_module_extracted_later(self):
+        # `theorem _aid.step … := by sorry` has an internal name, so it is no entry and belongs to none. A
+        # theorem of a module extracted later names it. That theorem depends on sorry and uses `lemma1`
+        # through the auxiliary, although the row of the auxiliary is not among the rows of that extraction.
+        aid_text = 'theorem _aid.step : count 0 = 0 := by\n  have h := lemma1\n  sorry'
+        write(self.lean / 'Small/C.lean', aid_text + '\n')
+        rows = [row('Small._aid.step', module='Small.C', span=span_of(aid_text, aid_text), internal=True,
+                    type_uses=['Small.count'], value_uses=['Small.lemma1'], library=['Nat.add_comm'], axioms=['sorryAx'])]
+        with_aid = update_index(self.first, rows, {}, self.lean, 2)
+        self.assertEqual({key: with_aid['hidden']['Small._aid.step'][key] for key in ('module', 'uses', 'axioms', 'library')},
+                         {'module': 'Small.C', 'uses': ['Small.count', 'Small.lemma1'], 'axioms': ['sorryAx'],
+                          'library': ['Nat.add_comm']})
+        later_text = 'theorem later : count 0 = 0 := by\n  exact _aid.step'
+        write(self.lean / 'Small/D.lean', later_text + '\n')
+        rows = [row('Small.later', module='Small.D', span=span_of(later_text, later_text), type_uses=['Small.count'],
+                    value_uses=['Small._aid.step'])]
+        index = update_index(with_aid, rows, {}, self.lean, 3)
+        later = index['entries']['Small.later']
+        self.assertEqual((later['uses'], later['direct_axioms'], later['library'], later['lean_proof']),
+                         (['Small.count', 'Small.lemma1'], ['sorryAx'], ['Nat.add_comm'], 'sorry'))
+        # The auxiliary stays known until its own module is extracted again or removed.
+        self.assertIn('Small._aid.step', index['hidden'])
+        self.assertNotIn('Small._aid.step', drop_modules(index, ['Small.C'])['hidden'])
+
     def test_extracting_one_module_again_replaces_its_entries_and_keeps_the_others(self):
         write(self.lean / 'Small/B.lean', B_LATER)
         later = update_index(self.both, rows_b(B_LATER), {}, self.lean, 3)
@@ -1502,6 +1571,23 @@ class CheckAppliedTests(unittest.TestCase):
         self.add(entry('Small.assumed', 'axiom'))
         self.records['Small/assumed'] = parse_record(STEP_RECORD)
         self.refused('Small.assumed is declared as an axiom')
+
+    def test_an_axiom_that_is_no_element(self):
+        # `private axiom shortcut` in the module the candidate adds is no entry, and it is refused as an entry is.
+        shortcut = {'module': 'Small.New', 'user': 'Small.shortcut', 'axiom': True, 'generated': False,
+                    'uses': [], 'axioms': [], 'library': []}
+        self.new['hidden'] = {'_private.Small.New.0.Small.shortcut': shortcut}
+        self.refused('Small.shortcut is declared as an axiom in Small.New; state it as a theorem')
+        # One the canon already had is not this candidate's to answer for.
+        self.old['hidden'] = dict(self.new['hidden'])
+        self.assertEqual(self.check()['errors'], [])
+        # One that Lean generated, as native_decide does, is not refused. What rests on it is not formal.
+        generated = '_private.Small.New.0.Small.step._native.native_decide.ax_1_1'
+        self.new['hidden'] = {generated: {**shortcut, 'user': 'Small.step._native.native_decide.ax_1_1', 'generated': True}}
+        self.assertEqual(self.check()['errors'], [])
+        # An auxiliary that is no axiom is never refused for being hidden.
+        self.new['hidden'] = {'Small._aid.step': {**shortcut, 'user': 'Small._aid.step', 'axiom': False}}
+        self.assertEqual(self.check()['errors'], [])
 
     def test_an_added_definition_with_sorry(self):
         for kind in ('def', 'opaque'):

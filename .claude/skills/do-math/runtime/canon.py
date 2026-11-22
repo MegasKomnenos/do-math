@@ -68,7 +68,7 @@ class Canon:
 
 
 def empty_index():
-    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'pairs': {}}
+    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'hidden': {}, 'pairs': {}}
 
 
 # ----------------------------------------------------------------------------- names and paths
@@ -681,11 +681,18 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
     structure). Every other constant of the canon is auxiliary. An auxiliary whose name extends an
     entry of its own module belongs to that entry: it counts as that entry wherever it is used, and
     what it uses and the axioms it depends on are the entry's as well. An auxiliary that belongs to
-    no entry, such as a private helper, is replaced by what it uses."""
+    no entry, such as a private helper, is replaced by what it uses. The index keeps under `hidden`
+    what each such auxiliary was replaced by, because a later extraction of another module has to
+    pass through it and no longer has its row.
+
+    An axiom is never folded away. An axiom of the canon that is no entry, whether the author wrote
+    it as private or Lean generated it, as `native_decide` does for each computation, counts as
+    itself among the axioms of whatever reaches it, and `hidden` names it as well."""
     lean_root = Path(lean_root)
     modules = sorted(set(modules) | {row['module'] for row in rows})
     entries = {name: entry for name, entry in index['entries'].items() if entry['module'] not in modules}
     aux = {name: parent for name, parent in index['aux'].items() if parent is None or parent in entries}
+    hidden = {name: item for name, item in index.get('hidden', {}).items() if item['module'] not in modules}
     raw = {row['name']: row for row in rows}
     candidates = [row for row in rows if row['span'] and not row['private'] and not row['internal']
                   and row['kind'] in ENTRY_KINDS]
@@ -721,10 +728,21 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
         if target is not None and target != owner:
             into.add(target)
             return
+        if name in seen:
+            return
         row = raw.get(name)
-        if row is None or name in seen:
+        if row is None:
+            # An auxiliary of a module that is not extracted now: what it was replaced by when its module was.
+            kept = hidden.get(name)
+            if kept is not None:
+                seen.add(name)
+                axioms.update(kept['axioms'])
+                library.update(kept['library'])
+                into.update(used for used in kept['uses'] if used != owner)
             return
         seen.add(name)
+        if row['kind'] == 'axiom':
+            axioms.add(name)
         axioms.update(row['axioms'])
         library.update(row['library'])
         for used in row['type_uses'] + row['value_uses']:
@@ -751,6 +769,16 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             'library': sorted(library), 'direct_axioms': sorted(axioms),
             'lean_proof': None if row['kind'] not in ('theorem', 'def', 'opaque')
             else 'sorry' if 'sorryAx' in axioms else 'complete'}
+    for row in rows:
+        name = row['name']
+        if name in new or (aux.get(name) is not None and row['kind'] != 'axiom'):
+            continue
+        uses, axioms, library = set(), set(), set()
+        if aux.get(name) is None:
+            resolve(name, None, set(), uses, axioms, library)
+        hidden[name] = {'module': row['module'], 'user': row['user'], 'axiom': row['kind'] == 'axiom',
+                        'generated': bool(row['internal']), 'uses': sorted(uses), 'axioms': sorted(axioms),
+                        'library': sorted(library)}
     table = dict(index['modules'])
     for module in modules:
         relative = module_file(module)
@@ -758,7 +786,7 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             table[module] = {'file': relative, 'sha256': hashlib.sha256((lean_root / relative).read_bytes()).hexdigest()}
         else:
             table.pop(module, None)
-    return {'revision': revision, 'modules': table, 'entries': entries, 'aux': aux,
+    return {'revision': revision, 'modules': table, 'entries': entries, 'aux': aux, 'hidden': hidden,
             'pairs': {**index.get('pairs', {}), **pairs}}
 
 
@@ -768,7 +796,8 @@ def drop_modules(index, modules):
     entries = {n: e for n, e in index['entries'].items() if e['module'] not in modules}
     return {**index, 'entries': entries,
             'modules': {m: v for m, v in index['modules'].items() if m not in modules},
-            'aux': {n: p for n, p in index['aux'].items() if p is None or p in entries}}
+            'aux': {n: p for n, p in index['aux'].items() if p is None or p in entries},
+            'hidden': {n: item for n, item in index.get('hidden', {}).items() if item['module'] not in modules}}
 
 
 def axiom_closure(index):
@@ -1007,6 +1036,12 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
             errors.append(f'{name} is declared as an axiom; state it as a theorem and leave its proof open instead')
         if entry['kind'] in ('def', 'opaque') and entry['lean_proof'] == 'sorry':
             errors.append(f'the definition {name} contains sorry; a definition has to be complete')
+    for name, item in sorted(new.get('hidden', {}).items()):
+        # An axiom the author wrote without making it an element. One that Lean generated has an internal
+        # name; it is not refused, and what rests on it is simply not proved from the allowed axioms.
+        if item['axiom'] and not item['generated'] and name not in old.get('hidden', {}):
+            errors.append(f"{item['user']} is declared as an axiom in {item['module']}; state it as a theorem "
+                          'and leave its proof open instead')
     for name in replaced:
         if name in new['entries'] and name not in records and not existing_record(name):
             errors.append(f'{name} has no record; write records/{name_path(name)}.md')
