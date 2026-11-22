@@ -114,7 +114,7 @@ Lean          Tri.two_mul_tri (n : Nat) : 2 * Tri.tri n = n * (n + 1)
 source        canon/lean/Tri/Closed.lean, lines 9-12
 short name    closed form of the triangular numbers
 proof         written in the record; its Lean proof ends in sorry
-rests on      Tri.tri_succ (accepted)
+rests on      Tri.tri_succ (accepted, settled, formal)
 settled       no
 objects       Tri.tri
 used by       Tri.tri_even (no proof)
@@ -133,7 +133,7 @@ record parts  Statement, Explanation, Proof, Approaches (read one with --part, a
 | `Lean` | The statement as Lean prints it. | The compiled library. |
 | `source` | The file and lines of the declaration. | The compiled library. |
 | `proof` | For a statement: `complete in Lean`, `written in the record; its Lean proof ends in sorry`, or `none`. | The compiled library and the record. |
-| `rests on` | The statements of the canon that the proof names, each with its standing. | The compiled library. |
+| `rests on` | The statements the proof names, with the current standing, settlement and formality of each named declaration. | The compiled library and the published judgments. |
 | `settled` | Whether this proof is settled. Where the proof is formal, the line adds that it is proved in Lean from the allowed axioms. | Computed. |
 | `proofs` | Shown when the statement has several proofs: all of them, each with its standing. | The records. |
 | `objects` | The definitions of the canon that the statement or the proof uses. | The compiled library. |

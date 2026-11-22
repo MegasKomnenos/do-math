@@ -404,12 +404,17 @@ class MaterialsTests(PaperCase):
         root = materials['root']
         self.assertEqual((root['name'], root['state']), ('Small.root', 'formal_proved'))
         self.assertEqual(root['words'], 'For every natural number n, the sum of the first n odd numbers is n * n.')
-        # The understanding so far of q0 comes without review's note on the work that wrote it.
+        # A correction appended by the reviewer reaches the writer under a separate heading.
         self.assertEqual(materials['understanding'], UNDERSTANDING.strip())
-        self.assertIn('## Review', (self.instance / 'canon/questions/q0.md').read_text(encoding='utf-8'))
+        published = (self.instance / 'canon/questions/q0.md').read_text(encoding='utf-8')
+        review = published.split('\n## Review\n', 1)[1].strip()
+        self.assertTrue(review)
+        self.assertEqual(materials['understanding_review'], review)
         self.assertEqual(materials['bibliography_keys'], ['euclid'])
         self.assertTrue({'Small.unused', 'Small.Alt'} <= set(materials['identifiers']))
         text = paper.render_materials(materials)
+        self.assertIn('### Review of the change that supplied this account\n\n' + review, text)
+        self.assertIn('At this revision this proof is accepted, settled, and formal.', text)
         self.assertLess(text.index('`Small.sq_step`'), text.index('### 7. `Small.root`'))
         self.assertIn('@book{euclid', text)
         self.assertNotIn('Small.unused', text)

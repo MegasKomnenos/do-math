@@ -315,7 +315,7 @@ class CanonToolTests(ScenarioCase):
         for line in ('Lean          Small.colA : oddSum 2 = 4',
                      'short name    Col',
                      'proof         written in the record; its Lean proof ends in sorry',
-                     'rests on      Small.leafH (no proof)',
+                     'rests on      Small.leafH (no proof, unsettled, not formal)',
                      'settled       no',
                      'objects       Small.oddSum',
                      'used by       Small.root (accepted), Small.rootAlt (correct, held back)',
@@ -354,10 +354,10 @@ class CanonToolTests(ScenarioCase):
         other = self.tool('view', 'Small.monoBAlt').splitlines()
         self.assertEqual(other[0], 'Small.monoBAlt · theorem · unit · proof not confirmed · another proof of Small.monoB '
                                    '— Mono from the first odd number.')
-        self.assertIn('rests on      Small.leafH (no proof)', other)
+        self.assertIn('rests on      Small.leafH (no proof, unsettled, not formal)', other)
         self.assertIn('              The addition is not carried out.', other)
         gap = self.tool('view', 'Small.diagD').splitlines()
-        self.assertIn('rests on      Small.stepF (no proof)', gap)
+        self.assertIn('rests on      Small.stepF (no proof, unsettled, not formal)', gap)
         self.assertTrue([line for line in gap if line.startswith('verdict') and line.endswith(f': not_confirmed ({self.changes()[0]})')])
         self.assertIn('              ' + GAP_REASON, gap)
 

@@ -56,9 +56,9 @@ import subprocess
 import sys
 import time
 
-from canon import BIB_ENTRY, Canon, declaration_text, read_record, sha256_text, split_review
+from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
 from cli_adapter import detect_usage_limit, provider_for_model
-from knowledge import ROOT_QUESTION, replay
+from knowledge import ROOT_QUESTION, STANDINGS, replay
 from launch import worker_command, worker_environment
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
 from settings import load_settings
@@ -340,12 +340,14 @@ def extract(instance, model):
                 'statement': words or None, 'statement_from': source if words else None,
                 'explanation': sections.get('Explanation'), 'proof': sections.get('Proof'),
                 'literature': sections.get('Literature')}
-        if not statement:
+        if statement:
+            item.update(standing=element['standing'], settled=element['settled'], formal=element['formal'])
+        else:
             text = (canon.lean / index[name]['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
             item['definition_text'] = declaration_text(text, index[name]['span'])
         return item
 
-    question = canon.questions / (ROOT_QUESTION + '.md')
+    understanding, review = read_question_account(canon, ROOT_QUESTION)
     bibliography = read_file(canon.bibliography) if canon.bibliography.is_file() else ''
     root = model['root']
     root_sections = sections_of(root)
@@ -354,7 +356,7 @@ def extract(instance, model):
                 'lean': elements[root]['statement'], 'statement': root_sections.get('Statement'),
                 'explanation': root_sections.get('Explanation')},
             'main': main, 'axioms': elements[main]['axioms'], 'allowed_axioms': model['allowed_axioms'],
-            'understanding': split_review(read_file(question))[0].strip() if question.is_file() else '',
+            'understanding': understanding.strip(), 'understanding_review': review,
             'elements': [entry(name) for name in order],
             'bibliography': bibliography, 'bibliography_keys': BIB_ENTRY.findall(bibliography),
             'identifiers': sorted(set(elements) | {e['module'] for e in elements.values()})}
@@ -382,8 +384,10 @@ def render_materials(materials):
             if root[key]:
                 lines += [f'**{title}.**', '', root[key], '']
     lines += ['## The understanding so far of the problem as a whole', '',
-              materials['understanding'] or 'No account of the problem as a whole has been written.', '',
-              '## The elements the proof rests on', '',
+              materials['understanding'] or 'No account of the problem as a whole has been written.', '']
+    if materials.get('understanding_review'):
+        lines += ['### Review of the change that supplied this account', '', materials['understanding_review'], '']
+    lines += ['## The elements the proof rests on', '',
               f"{len(materials['elements'])} elements in dependence order: each comes after everything its statement "
               'mentions and its proof names, and the last is the main result.', '']
     for number, element in enumerate(materials['elements'], 1):
@@ -401,6 +405,10 @@ def render_materials(materials):
         if element['source']:
             lines += [f"A result taken from the literature; bibliography key `{element['source']}`.", '']
         if element['kind'] == 'statement':
+            if 'standing' in element:
+                lines.append(f"At this revision this proof is {STANDINGS[element['standing']]}, "
+                             + ('settled' if element['settled'] else 'unsettled') + ', and '
+                             + ('formal.' if element['formal'] else 'not formal.'))
             lines.append(f"Its statement mentions {names(element['mentions'])}. Its proof names {names(element['uses'])}.")
         else:
             lines.append(f"It is defined from {names(sorted(set(element['mentions'] + element['uses'])))}.")

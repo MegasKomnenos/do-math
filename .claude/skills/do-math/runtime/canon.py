@@ -224,6 +224,12 @@ def with_review(text, review):
     return body if not review else body + '\n## ' + REVIEW_SECTION + '\n\n' + review.strip() + '\n'
 
 
+def read_question_account(canon, question):
+    """Read the published account together with its review, including the publication stamp."""
+    path = canon.questions / (question + '.md')
+    return split_review(path.read_text(encoding='utf-8-sig')) if path.is_file() else ('', None)
+
+
 # ----------------------------------------------------------------------------- Lean sources
 
 def header_scan(lines):

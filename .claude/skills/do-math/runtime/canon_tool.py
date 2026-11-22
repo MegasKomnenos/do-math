@@ -11,7 +11,7 @@ import sys
 
 from canon import (BESIDE_CANDIDATE, Canon, CanonError, Conflict, apply_lean, apply_rearrangement, axiom_closure,
                    candidate_records, check_applied, copy_tree, declaration_text, drop_modules, load_change, name_path,
-                   read_approaches, read_record, required_pairs, split_review, start_build, tree_hash, update_index,
+                   read_approaches, read_question_account, read_record, required_pairs, start_build, tree_hash, update_index,
                    wait_build, with_importers)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, replay)
@@ -101,7 +101,13 @@ def view(instance, model, name, part=None, full=False):
         proof = ('complete in Lean' if element['lean_proof'] == 'complete' else
                  'written in the record; its Lean proof ends in sorry' if element['written_proof'] else 'none')
         lines.append(f'proof         {proof}')
-        lines.append(f'rests on      {with_standing(model, statements)}')
+        premises = []
+        for used in statements:
+            premise = model['elements'][used]
+            settlement = 'settled' if premise['settled'] else 'unsettled'
+            formality = 'formal' if premise['formal'] else 'not formal'
+            premises.append(f"{used} ({standing(premise)}, {settlement}, {formality})")
+        lines.append('rests on      ' + (', '.join(premises) or '(none)'))
         lines.append(f"settled       {'yes' if element['settled'] else 'no'}"
                      + (' · proved in Lean from the allowed axioms' if element['formal'] else ''))
         judged = canon.load_index().get('judged', {}).get(name)
@@ -218,9 +224,8 @@ def question_view(instance, model, qid, history=False):
     lines = [f"{qid} · {question['state']}", '', question['statement'], '']
     if question['grounds']:
         lines += ['Grounds: ' + question['grounds'], '']
-    path = canon.questions / (qid + '.md')
-    if path.is_file():
-        body, review = split_review(path.read_text(encoding='utf-8'))
+    body, review = read_question_account(canon, qid)
+    if body or review:
         lines += ['## Understanding so far', '', body.strip(), '']
         if review:
             lines += ['## Review of the work that wrote it', '', review, '']

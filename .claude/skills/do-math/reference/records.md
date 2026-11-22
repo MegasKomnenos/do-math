@@ -28,6 +28,8 @@ The statement is written with the factor 2 on the left so that no division of na
 By induction on $n$. For $n = 0$ both sides are $0$. For the step, `Tri.tri_succ` gives $T_{n+1} = T_n + (n + 1)$, so $2 T_{n+1} = n (n + 1) + 2 (n + 1) = (n + 1)(n + 2)$.
 ```
 
+The example names `Tri.tri_succ` and gives the equation it supplies. That step reads the same way if another session later formalizes the lemma. Describe each premise by what it contributes to the argument. The element view shows its current standing, settlement and formality from the compiled library and published judgments. When a change of status is itself worth recording as history, identify the revision at which it occurred.
+
 The header has these keys, and a key outside this list is rejected.
 
 | Key | Content |
