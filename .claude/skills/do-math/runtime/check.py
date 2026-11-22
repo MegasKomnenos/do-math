@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from availability import no_research_outcome, reported_availability
-from canon import CanonError, load_change, name_path, tree_hash
+from canon import BESIDE_CANDIDATE, CanonError, load_change, name_path, tree_hash
 from coordination import section_entries
 from knowledge import ROOT_QUESTION, canonical_question, replay
 from runtime_support import read_json
@@ -83,7 +83,7 @@ def prepared_candidate(root):
     path = Path(root) / PREPARED
     need(path.is_file(), 'the candidate has not been prepared; run commands.prepare and correct what it reports')
     receipt = read_json(path)
-    need(receipt.get('tree') == tree_hash(root, skip=(PREPARED,)),
+    need(receipt.get('tree') == tree_hash(root, skip=BESIDE_CANDIDATE),
          'the candidate changed after it was prepared; run commands.prepare again')
     need(receipt.get('ok') is True, 'prepare reported errors: ' + '; '.join(receipt.get('errors', []))[:2000])
     return receipt

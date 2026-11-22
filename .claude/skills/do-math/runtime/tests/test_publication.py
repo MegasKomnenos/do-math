@@ -1295,6 +1295,14 @@ class TransportCheckTests(PublicationCase):
         self.assert_refused(check_session(session), 'the candidate changed after it was prepared')
         self.prepare(session / 'output')
         self.assertEqual(check_session(session), [])
+        # The end decision a peer writes beside its candidate is no part of it. Writing it after the preparation
+        # asks for no new one, and its removal by the session's host leaves a later receipt valid.
+        decision = session / 'output/end-decision.json'
+        write_json(decision, {'request_id': 'r1', 'decision': 'end', 'basis': 'task_completed', 'explanation': 'Done.'})
+        self.assertEqual(check_session(session), [])
+        self.prepare(session / 'output')
+        decision.unlink()
+        self.assertEqual(check_session(session), [])
         # A receipt that reports errors does not carry the candidate, and says what prepare said.
         self.assert_refused(self.peer_errors(records={'Small/ghost.md': record_text('A record of nothing.')}),
                             'prepare reported errors: records/Small/ghost.md belongs to no declaration of the canon')

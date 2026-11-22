@@ -155,7 +155,7 @@ According to the proof it carries and to review's judgments of that proof, every
 | correct, held back | Review confirmed the proof and did not accept it, and gave the reason. | Yes |
 | accepted | The proof is correct and accepted. | No |
 
-The elements the instance began with were supplied with the root and no review has judged them. Among these, a statement whose Lean proof is complete stands as accepted, since Lean has checked that proof, and one that has only a written proof stands as not confirmed until a review judges it.
+The elements the instance began with were supplied with the root and no review has judged them. Among these, a statement whose Lean proof is complete stands as accepted, since Lean has checked that proof, and one that has only a written proof stands as not confirmed until a review judges it. This holds for those first elements alone. A proof that a later change brought and that the review of that change left without a verdict stands as not confirmed, whether or not it is complete in Lean, because no review has read its statement against what was meant.
 
 A definition has no proof and none of the four states; what review judges of a definition is whether it denotes the intended object and whether the library already has that object. A verdict belongs to the exact Lean statement it was written about, and the view of an element shows the two together.
 

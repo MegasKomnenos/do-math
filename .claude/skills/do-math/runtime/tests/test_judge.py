@@ -295,6 +295,50 @@ class RootTests(ScenarioCase):
         self.assertEqual(self.judge_root(review=False), 2)
         self.assertEqual(self.requests(), [])
 
+    def test_the_runner_has_a_settled_root_judged_once_for_its_proof_and_again_at_the_end_for_a_changed_library(self):
+        self.configure(lean={'judge': JUDGE})
+        engine = runtime.Runner(self.instance, self.skill)
+        # A root without a formal settlement is not judged.
+        self.assertIsNone(engine.root_judge_due())
+        self.formal()
+        self.configure(lean={'judge': JUDGE})
+        engine = runtime.Runner(self.instance, self.skill)
+        self.assertEqual(engine.root_judge_due(), 'Small.root')
+        # While a publication is underway the canon is about to change, and the judge is not started on it.
+        engine.state['publish_queue'].append({'kind': 'questions'})
+        self.assertIsNone(engine.root_judge_due())
+        engine.state['publish_queue'].clear()
+        # A judging that has ended leaves its verdict in the state; a process that is gone left none to wait for.
+        folder = 'runner/root-judge-test'
+        engine.state['root_judge'] = {'proof': 'Small.root', 'revision': engine.model['revision'], 'folder': folder,
+                                      'process': None, 'status': 'running', 'started_at': 0}
+        self.assertIsNone(engine.root_judge_due())
+        (self.instance / folder).mkdir(parents=True)
+        write_json(self.instance / folder / 'verdict.json', {'verdict': 'rejected', 'reason': 'Const does not match.'})
+        engine.collect_root_judge()
+        record = engine.state['root_judge']
+        self.assertEqual((record['status'], record['reason']), ('rejected', 'Const does not match.'))
+        self.assertEqual(runtime.status(self.instance)['root_judge']['status'], 'rejected')
+        # The same proof on the same library is not judged again, at the end either: a verdict is not asked for twice.
+        self.assertIsNone(engine.root_judge_due())
+        self.assertIsNone(engine.root_judge_due(final=True))
+        # A library that changed since is judged once more before the runner finishes, and a new proof at once.
+        record['revision'] -= 1
+        self.assertIsNone(engine.root_judge_due())
+        self.assertEqual(engine.root_judge_due(final=True), 'Small.root')
+        record.update(revision=engine.model['revision'], proof='Small.other')
+        self.assertEqual(engine.root_judge_due(), 'Small.root')
+        # A command that left no verdict is recorded as one that could not answer.
+        engine.state['root_judge'] = {'proof': 'Small.root', 'revision': engine.model['revision'],
+                                      'folder': 'runner/root-judge-none', 'process': None, 'status': 'running',
+                                      'started_at': 0}
+        engine.collect_root_judge()
+        self.assertEqual(engine.state['root_judge']['status'], 'unavailable')
+        # Without a judge nothing is started.
+        self.configure(lean={'judge': None})
+        engine = runtime.Runner(self.instance, self.skill)
+        self.assertIsNone(engine.root_judge_due())
+
     def test_a_root_without_a_formal_settlement_and_an_instance_without_a_judge_are_refused(self):
         self.configure(lean={'judge': JUDGE})
         with self.assertRaisesRegex(judge.Stop, 'the root is unresolved'):

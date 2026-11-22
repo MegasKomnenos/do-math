@@ -21,7 +21,7 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import (ROOT_QUESTION, canonical, formal_ready, render, replay, root_solved,
                        sufficient_closure)
 from retention import capture, refusal
-from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
+from ending import OUTPUT_ROLES, ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, remove_tree, rename_directory, session_host,
                              terminate_process, write_json, write_text)
@@ -248,7 +248,10 @@ class Runner:
             command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
                                     self.settings['mcp_servers'])
             launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
-            if job['role'] in END_CHECK_ROLES:
+            # Every role is supervised by its host across turns. A producing role and a peer are asked to
+            # reconsider ending; a review and an organizer are resumed while their output does not pass the
+            # transport check (ending.py). The role in the policy tells the host which of the two applies.
+            if job['role'] in END_CHECK_ROLES + OUTPUT_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
                                        'resume_guidance': str(self.skill / 'resume'),
                                        'instance': str(self.instance), 'role': job['role'],

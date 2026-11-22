@@ -123,7 +123,13 @@ def change_event(model, event, folder):
         if verdict is not None:
             model['verdicts'][name] = {**deepcopy(verdict), 'change': cid, 'sequence': event['sequence']}
         else:
-            model['verdicts'].pop(name, None)  # a proof nobody judged carries no earlier proof's verdict
+            # A proof that a reviewed change brought and that its review did not judge carries no earlier
+            # proof's verdict, and it is not confirmed either. Only the elements an instance began with
+            # stand without a verdict (standing_of); if this one did, a complete Lean proof would count
+            # as accepted although no review compared its statement with what was meant.
+            model['verdicts'][name] = {'element': name, 'correct': 'undetermined', 'accepted': False, 'change': cid,
+                                       'sequence': event['sequence'],
+                                       'reason': 'The review of the change that brought this proof did not judge it.'}
     model['changes'][cid] = {'id': cid, 'sequence': event['sequence'], 'title': change['title'],
                              'description': change['description'], 'contribution': assessment['contribution'],
                              'role': event['producer_role'], 'added': applied['added'], 'replaced': applied['replaced'],

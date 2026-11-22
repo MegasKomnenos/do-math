@@ -154,23 +154,25 @@ class KnowledgeTests(ScenarioCase):
         self.assertNotEqual(source.read_bytes(), original)
         self.assertEqual((root['standing'], root['verdict']['change'], root['verdict']['reason']),
                          ('held', second, HELD_REASON))
-        # A later proof that nobody judged does not inherit the judgment of the proof it replaced.
-        offer('induction n <;> sorry')
+        # A later proof that the review of its change did not judge does not inherit the judgment of the proof
+        # it replaced, and it is not confirmed either.
+        third = offer('induction n <;> sorry')
         model = replay(self.instance)
         root = model['elements']['Small.root']
-        self.assertIsNone(root['verdict'])
+        self.assertEqual((root['verdict']['correct'], root['verdict']['accepted'], root['verdict']['change']),
+                         ('undetermined', False, third))
         self.assertEqual((root['standing'], root['settled'], model['root_state']), ('not_confirmed', False, 'unresolved'))
-        # Without a verdict the standing follows from the proof alone. A written proof waits for review, as
-        # above; for a proof that is complete in Lean, Lean's check stands where review's judgment would.
+        # The same holds for a proof that is complete in Lean. Lean's check stands where review's judgment would
+        # only for the elements an instance began with: a proof that a reviewed change brought without a verdict
+        # has had no reading of its statement against what was meant, so it settles nothing.
         folder = self.candidate(replace={'Small.root': self.root_formal()})
         assessment = self.verdicts(folder)
         assessment['elements'] = []
         self.publish(folder, assessment)
         model = replay(self.instance)
         root = model['elements']['Small.root']
-        self.assertIsNone(root['verdict'])
-        self.assertEqual((root['lean_proof'], root['standing'], root['settled'], model['root_state']),
-                         ('complete', 'accepted', True, 'formal_proved'))
+        self.assertEqual((root['lean_proof'], root['verdict']['correct'], root['standing'], root['settled'],
+                          model['root_state']), ('complete', 'undetermined', 'not_confirmed', False, 'unresolved'))
 
     def test_settled_is_a_least_fixed_point_and_a_held_proof_settles_nothing_that_uses_it(self):
         folder = self.candidate(

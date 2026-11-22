@@ -15,7 +15,7 @@ from canon import (EXTRACT_MODULE, Canon, CanonError, apply_lean, apply_rearrang
                    build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
                    empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_record,
                    record_file, required_pairs, retire_approaches, sha256_text, start_build, sync_tree,
-                   update_index, wait_build)
+                   update_index, wait_build, with_importers)
 from check import IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
@@ -23,12 +23,12 @@ from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, ques
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from judge import (build_lib, carried, formal_names, judge_commands, judge_index, outcome as judge_outcome,
-                   publication_targets, wait as wait_judge)
+from judge import (ROOT_MODULE, Stop as NoSettlement, build_lib, carried, formal_names, judge_commands, judge_index,
+                   outcome as judge_outcome, publication_targets, settling, wait as wait_judge)
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
                        replay, root_solved)
 from retention import capture, refusal
-from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
+from ending import OUTPUT_ROLES, ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
                              session_host,
@@ -219,6 +219,7 @@ class Runner:
         self.settings_stamp = None
         self.archiver = None
         self.archive_due = False
+        self.root_judging = None
 
     def save(self):
         try:
@@ -345,7 +346,10 @@ class Runner:
             command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
                                     self.settings['mcp_servers'])
             launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
-            if job['role'] in END_CHECK_ROLES:
+            # Every role is supervised by its host across turns. A producing role and a peer are asked to
+            # reconsider ending; a review and an organizer are resumed while their output does not pass the
+            # transport check (ending.py). The role in the policy tells the host which of the two applies.
+            if job['role'] in END_CHECK_ROLES + OUTPUT_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
                                        'resume_guidance': str(self.skill / 'resume'),
                                        'instance': str(self.instance), 'role': job['role'],
@@ -771,11 +775,14 @@ class Runner:
                     changed = sorted(set(changed) | set(written))
             except (CanonError, OSError, ValueError, KeyError) as exc:
                 return self.publication_failed(publication, str(exc))
-            publication.update(changed=changed, removed=removed)
+            # A module that imports a changed one is compiled in a new environment, so its index is taken again
+            # too: an unchanged statement can come out different when its module's imports bring more into scope.
+            extracted = with_importers(stage / 'lean', self.model['library'], changed)
+            publication.update(changed=changed, extracted=extracted, removed=removed)
             if changed or removed:
                 publication.update(stage='build', build=start_build(
                     self.instance, stage / 'lean', self.model['library'], 'runner',
-                    self.settings['lean']['calibration_expect_mb'], changed, required_pairs(records)))
+                    self.settings['lean']['calibration_expect_mb'], extracted, required_pairs(records)))
             else:
                 publication['stage'] = 'check'
             self.save()
@@ -787,9 +794,10 @@ class Runner:
                 return self.publication_failed(publication, '; '.join(
                     f"{e['module'] or 'build'}: {e['status']} {e.get('reason') or ''}\n{e['output']}"
                     for e in outcome['errors']))
+            # A publication that an earlier runner carried to this stage extracted the changed modules alone.
             write_json(stage / 'index.json', update_index(
                 drop_modules(index, publication['removed']), outcome['rows'], outcome['pairs'],
-                stage / 'lean', event['sequence'], publication['changed']))
+                stage / 'lean', event['sequence'], publication.get('extracted', publication['changed'])))
             publication.update(stage='check', built=outcome['build'])
             self.save()
         if publication['stage'] == 'check':
@@ -892,6 +900,8 @@ class Runner:
 
     def publish(self):
         """Carry the current publication forward, and start the next one in the queue when none is underway."""
+        if not self.state['publication'] and self.state['publish_queue'] and self.root_judge_copying():
+            return
         if not self.state['publication'] and self.state['publish_queue']:
             item = self.state['publish_queue'].pop(0)
             if item['kind'] == 'questions':
@@ -1054,6 +1064,75 @@ class Runner:
             return
         self.broker_attempt = time.monotonic()
         self.broker = launch_broker(paths)
+
+    # -- the settled root against the root as it was posed ------------------------------------------------
+
+    def root_judge_due(self, final=False):
+        """The proof that settles the root, when its judging against the first commit is still to be started.
+
+        A publication has its formal proofs judged against their own export, which leaves the axioms and the
+        kernel. Whether the statement that was proved is still the statement that was posed, with every
+        definition it depends on unchanged, shows only when the canon of the first commit is built beside
+        the canon as it stands (judge.py). That is done once for each proof that settles the root, and once
+        more before the runner finishes if the library has changed since, so that the last verdict is about
+        the canon the instance ends with. The revision compared is the index's, which a publication that
+        changes no Lean source leaves as it was: the review that a rejection asks for does not by itself
+        call for another judging."""
+        record = self.state.get('root_judge')
+        if not root_solved(self.model) or (record and record['status'] == 'running'):
+            return None
+        if self.state['publication'] or self.state['publish_queue'] or (self.instance / 'control/STOP').exists():
+            return None  # the judge copies the canon, which a publication is about to change
+        if judge_commands(self.settings['lean'])[0] is None:
+            return None
+        try:
+            proof = settling(self.model)[1]
+        except NoSettlement:
+            return None
+        if record and record['proof'] == proof and (record['revision'] == self.model['revision'] or not final):
+            return None
+        return proof
+
+    def start_root_judge(self, final=False):
+        """Start judge.py for the settled root as a process of its own: it waits for two builds and for the judge."""
+        proof = self.root_judge_due(final)
+        if proof is None:
+            return
+        folder = 'runner/root-judge-' + uuid.uuid4().hex
+        with (self.instance / 'runner/root-judge.log').open('ab') as log:
+            child = subprocess.Popen([sys.executable, '-B', str(RUNTIME / 'judge.py'), str(self.instance),
+                                      '--out', str(self.instance / folder)],
+                                     cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                     **popen_options(detached=True))
+        self.root_judging = child
+        self.state['root_judge'] = {'proof': proof, 'revision': self.model['revision'], 'folder': folder,
+                                    'process': process_identity(child.pid), 'status': 'running',
+                                    'started_at': time.time()}
+        self.save()
+
+    def collect_root_judge(self):
+        """Keep the verdict of a judging of the root that has ended.
+
+        `accepted` and `rejected` are the judge's answers. A rejection has left a request for a
+        comprehensive review of the proof, which the runner takes up like any other. `unavailable` means
+        that no answer was obtained: the command refused, a build failed, or a tool did not run."""
+        record = self.state.get('root_judge')
+        if not record or record['status'] != 'running' or alive(record['process']):
+            return
+        child, self.root_judging = self.root_judging, None
+        if child is not None:
+            child.poll()  # reaps the process this runner started
+        path = self.instance / record['folder'] / 'verdict.json'
+        found = read_json(path) if path.is_file() else {}
+        record.update(status=found.get('verdict', 'unavailable'), ended_at=time.time(),
+                      reason=(found.get('reason') or 'the command left no verdict; read runner/root-judge.log')[:2000])
+        self.save()
+
+    def root_judge_copying(self):
+        """Whether a judging of the root is still taking its copy of the canon; no publication begins meanwhile."""
+        record = self.state.get('root_judge')
+        return bool(record and record['status'] == 'running' and alive(record['process'])
+                    and not (self.instance / record['folder'] / 'solution' / (ROOT_MODULE + '.lean')).exists())
 
     def conflicts(self):
         """Contested statements, each with the judgments that currently oppose one another.
@@ -1378,13 +1457,18 @@ class Runner:
         if self.state['complete'] != complete:
             self.state['complete'] = complete
             self.save()
+        # Before the requests are read, so that the review a rejection asked for is taken up in this pass.
+        self.collect_root_judge()
         self.ingest_inputs()
         self.attempt_dispatch_ready()
         self.refresh()
         if not (self.instance / 'control/STOP').exists():
             self.schedule()
         remaining = any(j['status'] in ('pending', 'running') for j in self.state['jobs'].values())
-        finished = self.state['complete'] and not self.active() and not remaining
+        idle = self.state['complete'] and not self.active() and not remaining
+        self.start_root_judge(final=idle)
+        # The runner does not finish while the root is being judged: the verdict is part of what it leaves.
+        finished = idle and (self.state.get('root_judge') or {}).get('status') != 'running'
         if self.state['finished'] != finished:
             self.state['finished'] = finished
             self.save()
@@ -1465,6 +1549,8 @@ def status(instance):
             'root_state': model['root_state'], 'finished': state['finished'],
             # Whether formal proofs are judged outside the index, and why not when they are not (judge.py).
             'judge': {'available': commands is not None, 'reason': why, 'commands': commands},
+            # The judging of the settled root against the root of the first commit: its proof, status and reason.
+            'root_judge': state.get('root_judge'),
             'stopped': (instance / 'control/STOP').exists(), 'board': rows,
             'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),

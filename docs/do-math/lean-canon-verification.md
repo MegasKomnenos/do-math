@@ -255,6 +255,41 @@ The broker estimates only where measurements surround the new set. It uses the s
 - The effect of listing the processes once a second was not measured.
 - One fault of that day changed no code. Compiles ran at a priority below normal on both instances, and when a session's own computation and three searches of the whole disk that no session was waiting for any more took all four cores, the five compiles then running received between two and five seconds of processor time each in seven to eleven minutes. The operator set `lean.priority` to `normal` on both instances and ended the three searches, and compiles finished again. The runtime does nothing about such a case by itself.
 
+## Repairs after a reading of the whole skill
+
+The skill was read as a whole, by one session and five parallel readers, and the saved state of the running sunflower instance was read beside it. Six defects were named, and the user had five of them repaired. This section says what was changed and how far it was checked. The changes were written and first checked without running a test, because the user had asked that tests not be run. The user then allowed a run of the affected modules, and the paragraph on the tests below gives its result.
+
+**What was changed.**
+
+- **A review that ends while its sub-reviewers are at work.** In the sunflower instance three of the first six finished reviews ended their only turn while the three sub-reviewers they had dispatched were still running in the background, left no assessment, and were replaced by new sessions. The review guide and the tools reference now say that a delegated agent ends with the turn, and the session host resumes a review or an organizer whose turn ended with output that does not pass the transport check, at most `max_end_resumptions` times (`ending.py`, `resume/output.md`, `resume/review.md`, `resume/organizer.md`). The host acts on the role in the policy the runner writes, so a runner that still holds the earlier code launches reviews as before.
+- **A peer's end decision inside the receipt of its candidate.** One peer of that instance prepared its candidate while its end decision was in `output/`; the host then moved the decision out, the receipt no longer matched, and a finished candidate went to a replacement peer. The receipt and the check now leave `end-decision.json` out (`canon.BESIDE_CANDIDATE`).
+- **An index that was not taken again for importing modules.** A publication, `prepare` and `verify` now extract the modules that changed and every module that imports one of them (`canon.with_importers`), and a statement whose text is unchanged and whose elaborated form differs is refused with a message of its own. The runner now starts `judge.py` itself, once for each proof that settles the root and once more before it finishes if the library changed, and keeps the verdict under `root_judge` in its state.
+- **A proof that a reviewed change brought without a verdict.** It now stands as not confirmed. Before, a complete Lean proof in that position stood as accepted.
+- **The paper command.** The manuscript is read by itself again after a repair that followed a reading beside real papers or a comparison and that changed a part. The last reading at each point is followed by no repair, so its findings stay open with exit code 2 and no text is left unread. `READING_ROUNDS` went from 2 to 3 so that two repairs are still possible.
+
+The older copy `.agents/skills/do-math` received the first of these by hand, in `ending.py`, the runner's launch policy, the review guide, the tools reference and the resume texts. The others concern parts that copy does not have. The copy was not regenerated.
+
+**What was checked.** Every edited Python file of both copies parses. The edited modules of both copies import, and the new pure functions were exercised in a temporary folder: the importing modules of a small tree, the identity of a candidate with and without a decision file, and the resume text of a review and an organizer. The changed and the added tests were followed by hand against their stand-ins. The changed passages of the guides were read by sessions that had only those passages, and the phrases they found unclear were rewritten; the last rewording was not read again.
+
+**The tests.** The tests changed or added are in `test_paper` (39 tests in the module now), `test_ending`, `test_judge`, `test_canon`, `test_publication` and `test_research`, and in `test_ending` of the older copy. Those six modules, `test_pipeline` and the older copy's `test_ending` were run one after another on 23 November 2026, on a machine that was also carrying two research instances. All passed in their last run:
+
+| Module | Tests | Seconds |
+|---|---|---|
+| `test_paper` | 39 | 606 |
+| `test_ending` | 30 | 114 |
+| `test_judge` | 20 | 159 |
+| `test_canon` | 223 | 129 |
+| `test_publication` | 52 | 528 |
+| `test_research` | 108 | 468 |
+| `test_pipeline` | 1 | 72 |
+| `test_ending` of the older copy | 30 | 95 |
+
+Two of them did not pass at first, and neither cause lay in the runtime. `test_ending` failed in one test because the three new resume texts had been saved in the working tree with Windows line endings while the existing ones have Unix endings, and the test compares such a file with the prompt built from it; the texts were converted, the committed files already had Unix endings, and the module then passed. The older copy's `test_ending` was first started as `tests.test_ending` from the `runtime` folder, as the modules of the canonical skill are, and could not be loaded, because that copy's tests import one another by bare name; started from its `tests` folder it passed. The other modules of both copies were not run after these changes.
+
+**The running instances.** On the user's instruction the runners of both instances were ended and started again on the changed code at about 04:05 that day, before the run of the tests had ended and before the line endings of the resume texts had been corrected. Each new runner was alive eight seconds after its start, with an empty start log and no `last_error`, and followed the sessions that were already running. No review or organizer launched under the new launch policy had ended when this was written, so the resumption has not been seen at work in a real session.
+
+**What was not checked.** Three things were not seen to hold, and the tests do not show them. `verify` now has the importing modules compiled as well, since the extraction imports them, and a test that fixes the modules of such a build was not looked for. The hash of a statement is assumed to come out the same when an importing module is extracted again from the same source, which only the real compiler shows. And the automatic judging of the root starts the real command with its default of every kernel, which has not been run on an instance.
+
 ## What has not been measured
 
 One research that imports Mathlib has been running with this implementation since 22 November 2026, and the section before this one reports what was changed and measured on its first day. The quantities that decide the cost of a research at that scale have still not been measured: how long the import takes in each compile, how often a replaced proof changes the public output of its module and sets off compiles downstream, how long a publication waits for its build while other compiles hold the memory, and how many publications an hour the single publication queue carries. Section 16 of the design record lists what to observe in the first real run. On Windows the page file bounds how many compiles run at once, since a Lean process is charged for the whole size of the library files it maps; the operator's guide gives the measurement and the recommendation, and the change is the user's to make.

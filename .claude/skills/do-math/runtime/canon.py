@@ -113,6 +113,13 @@ def sha256_text(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
+# Files in a peer's or an organizer's output folder that are no part of the candidate: the receipt that
+# `prepare` writes about the other files, and the session's end decision, which its host moves out of the
+# folder when the turn ends (ending.py). A receipt that counted the decision would stop matching the
+# candidate at that moment, and a finished candidate would be made again by another peer.
+BESIDE_CANDIDATE = ('prepared.json', 'end-decision.json')
+
+
 def tree_hash(root, skip=()):
     """One identity for a folder's files, by relative path and content."""
     digest = hashlib.sha256()
@@ -291,6 +298,25 @@ def library_modules(lean_root, library):
         if path.is_file():
             found.append(('.'.join(path.relative_to(lean_root).with_suffix('').parts), path))
     return sorted(found)
+
+
+def with_importers(lean_root, library, modules):
+    """The named modules and every module of the library that imports one of them, directly or through others.
+
+    Lean elaborates a declaration in the environment its module imports. A module whose own source did
+    not change can therefore come out different when a module it imports gained an import: an instance
+    or a notation that is now in scope can alter what an unchanged statement says. The index of such a
+    module is extracted again with the modules that changed, so that the checks of a change see it."""
+    needs = {name: set(header_scan(path.read_text(encoding='utf-8').replace('\r\n', '\n').split('\n'))[2])
+             for name, path in library_modules(lean_root, library)}
+    reached, pending = set(modules), list(modules)
+    while pending:
+        current = pending.pop()
+        for name, imported in needs.items():
+            if current in imported and name not in reached:
+                reached.add(name)
+                pending.append(name)
+    return sorted(reached)
 
 
 # ----------------------------------------------------------------------------- candidates
@@ -984,7 +1010,14 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
     for name in sorted(set(new['entries']) & set(old['entries'])):
         before, after = old['entries'][name], new['entries'][name]
         if before['statement_hash'] != after['statement_hash'] or before['kind'] != after['kind']:
-            errors.append(f'the statement of {name} changed in place; a different statement enters under a new name')
+            if before['kind'] == after['kind'] and before['source_sha'] == after['source_sha']:
+                # The text is the one the canon has, and Lean reads it otherwise now: the change brought
+                # something into the scope of this declaration's module (with_importers).
+                errors.append(f'the statement of {name} elaborates differently with this change although its text is '
+                              'unchanged: something the change brings into the scope of its module, such as an '
+                              'instance or a notation, alters what the statement says; keep that out of scope there')
+            else:
+                errors.append(f'the statement of {name} changed in place; a different statement enters under a new name')
         elif name not in replaced and not organizer and before['source_sha'] != after['source_sha']:
             errors.append(f'the source of {name} changed although the candidate does not replace it')
         if name in replaced and after['kind'] != 'theorem' and before['source_sha'] != after['source_sha']:

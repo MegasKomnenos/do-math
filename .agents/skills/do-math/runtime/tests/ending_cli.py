@@ -26,6 +26,11 @@ if json.loads((session / 'input.json').read_text())['role'] == 'peer':
         'title': 'Retained investigation', 'description': 'A developed contribution.',
         'exposition': 'report.md', 'claims': [], 'nodes': [], 'relations': [],
         'solutions': [], 'glossary': []}), encoding='utf-8')
+if json.loads((session / 'input.json').read_text())['role'] == 'review' and number >= config.get('assess_at', 0):
+    # A reviewer leaves its assessment in the turn in which it has its sub-reviews; before that turn, none.
+    (session / 'output/feedback.md').write_text('The questioned record was examined.', encoding='utf-8')
+    (session / 'output/assessment.json').write_text(json.dumps({'feedback': 'feedback.md', 'findings': [],
+                                                                'concerns': []}), encoding='utf-8')
 if config.get('hold_at') == number:
     # A turn still running when the operator ends the session; only termination ends it early.
     (session / 'work/holding').write_text('', encoding='utf-8')

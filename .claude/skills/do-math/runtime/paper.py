@@ -17,11 +17,16 @@ launches do not decide is fixed in ../reference/paper-method.md, which they rece
   settle       the script assembles paper.tex, checks it by machine and typesets it; what fails
                goes to a repair session, and the manuscript is assembled and checked again
   reading      a session that has only the manuscript reads it as the paper's reader, and a repair
-               session takes up what it found
+               session takes up what it found; the last such reading is followed by no repair, so
+               that no text goes unread, and what it found stays open
   likeness     a session that has the manuscript and four papers the plan did not choose reports
                where the manuscript is written otherwise than they are; a repair session takes up
                what it found, until two such readings in succession find nothing
-  comparison   a session compares every numbered statement with the statement of its element
+  rereading    when a repair after a reading beside real papers rewrote the manuscript, it is read
+               by itself again as under "reading": a rewriting for manner can change a proof
+  comparison   a session compares every numbered statement with the statement of its element; when
+               a repair of what it found changed the manuscript, the manuscript is read by itself
+               again before the statements are compared once more
 
 Every loop is bounded by the constants below. Sessions run one at a time, each in its own folder
 under <out>/sessions with its prompt and the files it is given, and the script reads the files the
@@ -71,7 +76,7 @@ MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'categ
 PLAN_ATTEMPTS = 3      # planning sessions before the command gives up on a plan it can carry out
 SESSION_ATTEMPTS = 2   # sessions of any other kind before it gives up on output it can read
 REPAIR_ROUNDS = 3      # repair sessions for one round of machine checks and typesetting
-READING_ROUNDS = 2     # independent readings, each followed by a repair of what it found
+READING_ROUNDS = 3     # independent readings at one time; a repair follows every one but the last
 CHOSEN_PAPERS = 6      # papers of the collection the plan chooses for the paper to be written like
 LIKENESS_PAPERS = 4   # papers the plan did not choose, given to one reading beside real papers
 LIKENESS_ROUNDS = 8    # readings beside real papers at the most
@@ -83,6 +88,7 @@ FETCH_SECONDS = 3600   # one run of the collection's fetch.py
 WIDE_PT = 5.0          # a line this many points wider than the text block is sent back to be broken
 WIDE = 'lines wider than the text block'
 UNCOMPARED = 'numbered statements whose present text was not compared with their elements'
+READING = 'reading of the manuscript by itself'
 LIKENESS = 'reading of the manuscript beside real papers'
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
@@ -1124,6 +1130,9 @@ class Paper:
         self.count = len(list((self.out / 'sessions').iterdir())) if (self.out / 'sessions').is_dir() else 0
         self.materials = self.plan = None
         self.parts, self.compared, self.open = {}, {}, []
+        # How often the manuscript was read by itself, and whether a repair that followed a reading beside real
+        # papers or a comparison has changed a part since it was last read in that way (read_again).
+        self.readings, self.rewritten = 0, False
         # The collection of real papers and the planning session's account of how the chosen ones are
         # written; --typeset-only has neither.
         self.collection, self.papers, self.study = None, {}, None
@@ -1324,7 +1333,7 @@ class Paper:
         return False
 
     def repair(self, kind, findings, tex=None, spans=None):
-        """A session that changes the parts for what a check or a reader found."""
+        """A session that changes the parts for what a check or a reader found; returns the parts it changed."""
         if tex is None:
             tex, spans, _ = self.assemble()
         answers = kind in ('reading', 'comparison', 'likeness')
@@ -1355,9 +1364,14 @@ class Paper:
         changed, response = self.session('repair', prompt, files, read, self.writer, kind)
         self.keep(changed)
         self.event('repair', of=kind, changed=sorted(changed), response=response)
+        return changed
 
     def read_and_repair(self):
-        """Independent readings of the manuscript, each followed by a repair of what the reader found."""
+        """Independent readings of the manuscript; a repair of what the reader found follows all but the last.
+
+        The last thing done is always a reading, so the manuscript these readings leave is one that a
+        reader has read to the end. What the last reading found stays open and is reported. A reading
+        speaks for the manuscript as it then stands, so it replaces what an earlier reading left open."""
         reader = method_part(READER_SECTION)
 
         def read(output):
@@ -1369,18 +1383,34 @@ class Paper:
                                 '"where" and a "problem"'])
             return report
 
-        for round_number in range(1, READING_ROUNDS + 1):
+        self.rewritten = False
+        for number in range(1, READING_ROUNDS + 1):
+            self.readings += 1  # counted over the whole run, so the log tells the later readings from the first ones
             files = {'paper.tex': read_file(self.out / 'paper.tex'), 'references.bib': self.materials['bibliography']}
             report = self.session('read', READ_PROMPT.format(reader=reader), files, read, self.assessor)
-            self.event('reading', round=round_number, understanding=report['understanding'], findings=report['findings'])
+            self.event('reading', round=self.readings, understanding=report['understanding'], findings=report['findings'])
+            self.open = [item for item in self.open if item['check'] != READING]
             if not report['findings']:
                 return True
+            if number == READING_ROUNDS:
+                break  # after the last reading no repair is made
             self.repair('reading', {'understanding': report['understanding'], 'findings': report['findings']})
             if not self.settle():
                 return False
-        self.event('note', text=f'The manuscript was read {READING_ROUNDS} times, and each reading had findings. What '
-                                'the last repair changed has not been read again.')
+        self.open.append({'check': READING, 'after_repairs': READING_ROUNDS - 1, 'problems': report['findings']})
         return True
+
+    def read_again(self):
+        """The readings of the manuscript by itself, made again when a repair has rewritten it since.
+
+        A repair that follows a reading beside real papers rewrites passages for their manner, and one
+        that follows a comparison corrects a statement and adjusts its proof. Either can change what a
+        proof says or take out a step that the reader needs. The machine checks do not see that, and the
+        comparison sees only the numbered statements. So whenever such a repair changed a part, a reader
+        who has nothing but the manuscript reads what it left, in the same way and within the same bound
+        as before. When none did, the manuscript is as its last reading left it and is not read again.
+        False only when a repair leaves the manuscript failing."""
+        return not self.rewritten or self.read_and_repair()
 
     def read_beside_papers(self):
         """Readings of the manuscript beside papers the plan did not choose, each with the next ones of their list.
@@ -1389,7 +1419,8 @@ class Paper:
         LIKENESS_ROUNDS. When the papers of the list are used up, the readings take them again from the
         first. A reading with departures is followed by a repair, except the last. When the
         readings end otherwise, the departures of the last reading that had any stay open; the
-        comparison is made in either case. False only when a repair leaves the manuscript failing."""
+        comparison is made in either case, after read_again when a repair changed a part. False only
+        when a repair leaves the manuscript failing."""
         section = method_part(LIKENESS_SECTION)
         order = likeness_papers(self.collection, self.plan['exemplars'])
         clean, repairs, left = 0, 0, None
@@ -1420,7 +1451,8 @@ class Paper:
             clean, left = 0, departures
             if round_number == LIKENESS_ROUNDS:
                 break  # after the last reading no repair is made
-            self.repair('likeness', departures)
+            if self.repair('likeness', departures):
+                self.rewritten = True  # a repair that kept every passage leaves nothing to read again
             repairs += 1
             if not self.settle():
                 return False
@@ -1465,8 +1497,11 @@ class Paper:
                 self.open.append({'check': 'comparison of the numbered statements with their elements',
                                   'after_repairs': COMPARISON_ROUNDS - 1, 'problems': differing})
                 return False
-            self.repair('comparison', differing)
-            if not self.settle():
+            if self.repair('comparison', differing):
+                self.rewritten = True
+            # The repair corrected statements and adjusted proofs, so the manuscript is read by itself again
+            # before its statements are compared once more; the last thing done is then a comparison.
+            if not self.settle() or not self.read_again():
                 return False
 
     def finish(self):
@@ -1518,7 +1553,7 @@ def produce(instance, out, tex=None, choice=None):
     try:
         run.make_plan()
         run.write_parts()
-        if run.settle() and run.read_and_repair() and run.read_beside_papers():
+        if run.settle() and run.read_and_repair() and run.read_beside_papers() and run.read_again():
             run.compare()
     except Stop as exc:
         run.event('end', status='failed', error=str(exc))

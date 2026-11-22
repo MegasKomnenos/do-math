@@ -24,8 +24,12 @@ class EndingTests(InstanceCase):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
         engine.settings['roles'] = {}  # the scripted CLI speaks the Codex stream for every role
-        key = engine.producer('attempt' if role == 'peer' else role,
-                              {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
+        if role == 'review':
+            key = engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': [],
+                                            'purpose': 'Examine the questioned record.'})
+        else:
+            key = engine.producer('attempt' if role == 'peer' else role,
+                                  {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
         if role == 'peer':
             pipeline = engine.state['jobs'][key]['pipeline']
             engine.state['jobs'][key]['status'] = 'done'
@@ -101,6 +105,31 @@ class EndingTests(InstanceCase):
                 # Finish the first test pipeline so the next role can take root.
                 engine.state['pipelines'][pipeline]['stage'] = 'done'
                 engine.save()
+
+    def test_a_review_whose_turn_ended_without_its_assessment_is_resumed_in_the_same_conversation(self):
+        # The first turn ends as a reviewer's does while the sub-reviewers it delegated to are still at work:
+        # cleanly, and without an assessment. The second turn leaves one.
+        engine, sid, directory = self.prepare(role='review', config={'assess_at': 1})
+        with patch('ending.worker_command', side_effect=self.command) as resume:
+            self.assertEqual(session_host(directory), 0)
+        self.assertEqual(resume.call_count, 1)
+        self.assertEqual(resume.call_args.kwargs['resume_id'], '01234567-89ab-cdef-0123-456789abcdef')
+        state = read_json(directory / 'end-check.json')
+        self.assertEqual((state['resumptions'], state['authorization']['source'], state['authorization']['basis']),
+                         (1, 'runner', 'output_checked'))
+        # The next turn was told what the transport check found, and was asked for no end decision.
+        prompt = (directory / 'turns/0001/prompt.txt').read_text()
+        self.assertIn('the transport check of your session does not yet accept your output', prompt)
+        self.assertIn('assessment.json', prompt)
+        self.assertIn('Resume the review you were assigned', prompt)
+        self.assertNotIn('end-decision', prompt)
+
+    def test_a_review_that_never_leaves_its_assessment_ends_at_the_limit_for_a_new_session_to_take(self):
+        engine, sid, directory = self.prepare(maximum=1, role='review', config={'assess_at': 9})
+        with patch('ending.worker_command', side_effect=self.command):
+            self.assertEqual(session_host(directory), 0)
+        state = read_json(directory / 'end-check.json')
+        self.assertEqual((state['resumptions'], state['authorization']['basis']), (1, 'resumption_limit'))
 
     def test_guidance_edits_reach_next_turn_without_restarting_host(self):
         _, _, directory = self.prepare(maximum=2, role='explore')
@@ -462,8 +491,17 @@ class EndingConfigurationTests(unittest.TestCase):
                 self.assertIn('current-request', prompt)
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('{{', prompt)
+            # A review and an organizer are told what the transport check found; they are asked for no end decision.
+            from ending import OUTPUT_ROLES
+            self.assertEqual(set(OUTPUT_ROLES), {'review', 'organizer'})
+            for role in OUTPUT_ROLES:
+                prompt = request_prompt(request, role, guidance)
+                self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
+                self.assertIn('Stale decision', prompt)
+                self.assertNotIn('current-request', prompt)
+                self.assertNotIn('{{', prompt)
             with self.assertRaises(ValueError):
-                request_prompt(request, 'review', guidance)
+                request_prompt(request, 'operator', guidance)
             (guidance / 'peer.md').unlink()
             with self.assertRaises(FileNotFoundError):
                 request_prompt(request, 'peer', guidance)

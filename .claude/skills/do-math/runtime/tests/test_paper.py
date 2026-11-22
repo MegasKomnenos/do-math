@@ -922,19 +922,28 @@ class RunTests(PaperCase):
         answer = json.dumps([{'finding': 1, 'action': 'revised', 'note': 'The expansion is now written out.'}])
         script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', f'Expand, version {n}.'),
                                      'output/response.json': answer} for n in range(9)]
-        self.assertEqual(self.run_paper(script), 0)
+        self.assertEqual(self.run_paper(script), 2)
         kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
-        self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * paper.READING_ROUNDS
+        # A repair follows every reading but the last, so the last thing done to the text is a reading of it.
+        self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1) + [('read', None)]
                          + [('likeness', None)] * paper.LIKENESS_CLEAN + [('compare', None)])
         repair = self.calls('repair')[0]
         findings = read_json(self.out / 'sessions' / repair['folder'] / 'findings.json')
         self.assertEqual((findings['findings'], findings['understanding']), (FOUND['findings'], FOUND['understanding']))
         self.assertEqual(len(self.events('reading')), paper.READING_ROUNDS)
         self.assertEqual(self.events('repair')[0]['response'][0]['action'], 'revised')
-        self.assertIn('has not been read again', self.events('note')[0]['text'])
-        # The second reader read what the first repair left.
-        second = (self.out / 'sessions' / self.calls('read')[1]['folder'] / 'paper.tex').read_text(encoding='utf-8')
-        self.assertIn('Expand, version 0.', second)
+        # The second reader read what the first repair left, and the last reader what the last repair left.
+        readers = [(self.out / 'sessions' / call['folder'] / 'paper.tex').read_text(encoding='utf-8')
+                   for call in self.calls('read')]
+        self.assertIn('Expand, version 0.', readers[1])
+        self.assertIn(f'Expand, version {paper.READING_ROUNDS - 2}.', readers[-1])
+        self.assertEqual(readers[-1], (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        # What the last reading found is not repaired; it stays open and is reported.
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], end['open']),
+                         ('open_findings', [{'check': paper.READING, 'after_repairs': paper.READING_ROUNDS - 1,
+                                             'problems': FOUND['findings']}]))
+        self.assertEqual(self.events('note'), [])
         self.assertTrue((self.out / 'paper.pdf').is_file())
 
     def test_a_statement_that_differs_is_repaired_and_compared_again(self):
@@ -947,6 +956,12 @@ class RunTests(PaperCase):
             [{'finding': 1, 'action': 'revised', 'note': 'The term 1 is restored.'}])}]
         self.assertEqual(self.run_paper(script), 0)
         self.assertEqual([len(e['differing']) for e in self.events('comparison')], [1, 0])
+        # The repair changed a statement and may have adjusted its proof, so the manuscript was read by itself
+        # again before its statements were compared once more.
+        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][-4:],
+                         [('compare', None), ('repair', 'comparison'), ('read', None), ('compare', None)])
+        again = self.calls('read')[-1]
+        self.assertIn('k^2 + (2k + 1)', (self.out / 'sessions' / again['folder'] / 'paper.tex').read_text(encoding='utf-8'))
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
         self.assertIn('k^2 + (2k + 1)', rows[2]['paper_statement'])
@@ -1100,7 +1115,7 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 0)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
-                                 ('compare', None)])
+                                 ('read', None), ('compare', None)])
         repair = self.calls('repair')[0]
         self.assertEqual(read_json(self.out / 'sessions' / repair['folder'] / 'findings.json'),
                          [departure('The abstract says more than theirs.')])
@@ -1116,6 +1131,13 @@ class RunTests(PaperCase):
         self.assertEqual([(e['round'], e['exemplars'], len(e['departures'])) for e in self.events('likeness')],
                          [(1, FIRST_FOUR, 1), (2, NEXT_FOUR, 0), (3, FIRST_FOUR, 0)])
         self.assertEqual(self.events('end')[0]['open'], [])
+        # The repair rewrote the manuscript after it had been read by itself, so it was read in that way again:
+        # by a session that has what the first reader had, and that reads what the repair left.
+        first, again = self.calls('read')
+        self.assertEqual(again['given'], first['given'])
+        self.assertIn('Version 0 of the introduction.',
+                      (self.out / 'sessions' / again['folder'] / 'paper.tex').read_text(encoding='utf-8'))
+        self.assertEqual([e['round'] for e in self.events('reading')], [1, 2])
 
     def test_readings_without_two_clean_ones_in_succession_leave_the_last_departures_open(self):
         # Every odd reading has a departure and every even one has none, so no two clean readings follow each other.
@@ -1129,7 +1151,7 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 2)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None)] * (rounds // 2)
-                         + [('compare', None)])
+                         + [('read', None), ('compare', None)])
         self.assertEqual(len(self.calls('likeness')), rounds)
         # The last reading found nothing, and the departures of the one before it stay open: one clean reading
         # after their repair is not two.
@@ -1153,11 +1175,72 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 2)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness')] * (rounds - 1)
-                         + [('likeness', None), ('compare', None)])
+                         + [('likeness', None), ('read', None), ('compare', None)])
         end = self.events('end')[0]
         self.assertEqual(end['open'], [{'check': paper.LIKENESS, 'after_repairs': rounds - 1,
                                         'problems': [departure(f'reading {rounds}')]}])
         self.assertTrue((self.out / 'paper.pdf').is_file())
+
+    def test_what_a_reading_after_those_repairs_finds_is_repaired_and_read_again(self):
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed('The abstract says more than theirs.'))},
+                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['repair:likeness'] = [{'output/intro.tex': INTRO + 'Version 0 of the introduction.\n',
+                                      'output/response.json': answered('The opening is rewritten.')}]
+        # The reader finds nothing before the readings beside real papers, and a gap after the repair that followed one.
+        script['read'] = [{'output/reading.json': json.dumps(report)} for report in (CLEAN, FOUND, CLEAN)]
+        script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', 'Expand, version 0.'),
+                                     'output/response.json': answered('The expansion is now written out.')}]
+        self.assertEqual(self.run_paper(script), 0)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
+        self.assertEqual(kinds, [('read', None), ('likeness', None), ('repair', 'likeness'), ('likeness', None),
+                                 ('likeness', None), ('read', None), ('repair', 'reading'), ('read', None),
+                                 ('compare', None)])
+        self.assertEqual([e['of'] for e in self.events('repair')], ['likeness', 'reading'])
+        # The readings are counted over the whole run: one before the readings beside real papers and two after.
+        self.assertEqual([(e['round'], len(e['findings'])) for e in self.events('reading')], [(1, 0), (2, 1), (3, 0)])
+        # The last reader and the comparison had the manuscript as both repairs left it.
+        for call in (self.calls('read')[2], self.calls('compare')[0]):
+            tex = (self.out / 'sessions' / call['folder'] / 'paper.tex').read_text(encoding='utf-8')
+            self.assertIn('Version 0 of the introduction.', tex)
+            self.assertIn('Expand, version 0.', tex)
+        self.assertEqual(self.events('note'), [])
+        self.assertEqual(self.events('end')[0], {**self.events('end')[0], 'status': 'complete', 'open': []})
+
+    def test_the_readings_after_those_repairs_are_bounded_as_the_first_ones_are(self):
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed('The abstract says more than theirs.'))},
+                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['repair:likeness'] = [{'output/intro.tex': INTRO + 'Version 0 of the introduction.\n',
+                                      'output/response.json': answered('The opening is rewritten.')}]
+        # Every reading after the repair has a finding: the script's last entry serves each of them.
+        script['read'] = [{'output/reading.json': json.dumps(report)} for report in (CLEAN, FOUND)]
+        script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', f'Expand, version {n}.'),
+                                     'output/response.json': answered('The expansion is now written out.')} for n in range(9)]
+        self.assertEqual(self.run_paper(script), 2)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][9:]
+        self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1)
+                         + [('read', None), ('compare', None)])
+        self.assertEqual([e['round'] for e in self.events('reading')], list(range(1, paper.READING_ROUNDS + 2)))
+        # No repair follows the last of them: what it found stays open, and the comparison has the text it read.
+        end = self.events('end')[0]
+        self.assertEqual(end['open'], [{'check': paper.READING, 'after_repairs': paper.READING_ROUNDS - 1,
+                                        'problems': FOUND['findings']}])
+        last, compared = (self.out / 'sessions' / self.calls(kind)[-1]['folder'] / 'paper.tex' for kind in ('read', 'compare'))
+        self.assertEqual(last.read_text(encoding='utf-8'), compared.read_text(encoding='utf-8'))
+
+    def test_a_repair_that_keeps_every_passage_is_not_followed_by_another_reading(self):
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed('The abstract says more than theirs.'))},
+                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['repair:likeness'] = [{'output/response.json': json.dumps(
+            [{'finding': 1, 'action': 'kept', 'note': 'Shortening the abstract would drop a hypothesis.'}])}]
+        self.assertEqual(self.run_paper(script), 0)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
+        # Nothing was rewritten, so the manuscript is as its one reader left it.
+        self.assertEqual(kinds, [('read', None), ('likeness', None), ('repair', 'likeness'), ('likeness', None),
+                                 ('likeness', None), ('compare', None)])
+        self.assertEqual(self.events('repair')[0]['changed'], [])
 
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
         found = {'latexmk': 'C:/tex/latexmk.exe', 'pdflatex': 'C:/tex/pdflatex.exe', 'C:/tex/pdflatex.exe': 'C:/tex/pdflatex.exe',

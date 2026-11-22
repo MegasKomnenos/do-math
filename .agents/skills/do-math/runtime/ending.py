@@ -16,6 +16,13 @@ from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
+# A review and an organizer end with their output, an assessment or an organization, and write no end
+# decision. When a turn of theirs ends and that output does not pass the transport check, the host
+# resumes the same conversation with what the check found, instead of leaving the whole assignment to a
+# new session: the turn of a reviewer can end while the sub-reviewers it delegated to are still at work.
+OUTPUT_ROLES = ('review', 'organizer')
+# The one finding of the check that no further turn of the session can remove; the runner deals with it.
+CANDIDATE_CHANGED = 'candidate changed after review assignment'
 OUTPUT_LIMIT_NOTICE = (
     'Your previous turn ended because one response exceeded the output-token limit '
     '(CLI message: "{message}"). That response was discarded: its reasoning and anything it was '
@@ -62,18 +69,23 @@ def end_decision(path, request):
 
 
 def request_prompt(request, role, guidance_dir, *, snapshot=None):
-    """Read current guidance for each turn; retain the actual source bytes delivered."""
-    if role not in ROLES:
+    """Read current guidance for each turn; retain the actual source bytes delivered.
+
+    A role that ends with its output is told what the transport check found, in output.md; it is asked
+    for no end decision, so that text carries no request ID."""
+    if role not in ROLES + OUTPUT_ROLES:
         raise ValueError('no continuation guidance for role: ' + role)
     directory = Path(guidance_dir)
-    sources = {name: (directory / name).read_bytes() for name in ('common.md', role + '.md')}
+    frame = 'output.md' if role in OUTPUT_ROLES else 'common.md'
+    markers = ('{{role_guidance}}', '{{previous_error}}') + (() if role in OUTPUT_ROLES else ('{{request_id}}',))
+    sources = {name: (directory / name).read_bytes() for name in (frame, role + '.md')}
     common, specific = (sources[name].decode('utf-8-sig').strip()
-                        for name in ('common.md', role + '.md'))
+                        for name in (frame, role + '.md'))
     if not common or not specific:
         raise ValueError('continuation guidance must not be empty')
-    for marker in ('{{role_guidance}}', '{{request_id}}', '{{previous_error}}'):
+    for marker in markers:
         if common.count(marker) != 1:
-            raise ValueError('continuation common.md needs exactly one ' + marker)
+            raise ValueError(f'continuation {frame} needs exactly one ' + marker)
     prompt = common.replace('{{role_guidance}}', specific)
     prompt = prompt.replace('{{request_id}}', request['id'])
     prompt = prompt.replace('{{previous_error}}', request['previous_error'] or 'None') + '\n'
@@ -83,6 +95,12 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
         for name, content in sources.items():
             (snapshot / name).write_bytes(content)
     return prompt
+
+
+def output_problems(session):
+    """What the transport check finds in a session's output, as the runner will find it when it collects the session."""
+    from check import check_session  # it reads the canon, which the host of a producing role never needs
+    return check_session(session)
 
 
 def authorize(session, state, source, basis, explanation):
@@ -179,9 +197,10 @@ def supervise(session, launch):
             authorize(session, state, 'runner', 'interrupted',
                       'Execution ended by cancellation, failure or provider/model refusal.')
             return result
+        output_role = policy['role'] in OUTPUT_ROLES
         rejected = None
         try:
-            empty = no_research_outcome(session, policy['role']) if limit is None else None
+            empty = no_research_outcome(session, policy['role']) if limit is None and not output_role else None
         except (OSError, ValueError, TypeError, KeyError) as exc:
             # The session goes on, so the next turn is told why, as the transport check would tell it.
             empty, rejected = None, 'output/outcome.json: ' + str(exc)
@@ -197,7 +216,16 @@ def supervise(session, launch):
                 authorize(session, state, 'runner', 'resume_unavailable', str(exc))
                 return result
         error = rejected
-        if state['request'] is not None:
+        if output_role:
+            # The session is done when its output passes the check the runner makes of it. What the check
+            # finds is what the next turn is told; a candidate that changed is the runner's to restore.
+            problems = output_problems(session)
+            if not problems or problems == [CANDIDATE_CHANGED]:
+                authorize(session, state, 'runner', 'output_checked',
+                          'The transport check of the output passed.' if not problems else problems[0])
+                return result
+            error = 'The transport check of your output found: ' + '; '.join(problems)
+        elif state['request'] is not None:
             decision, problem = end_decision(submitted, state['request'])
             write_json(folder / 'decision-check.json', {'decision': decision, 'error': problem})
             if decision is not None:
@@ -207,9 +235,11 @@ def supervise(session, launch):
                 error = problem if error is None else error + ' Ending decision check: ' + problem
         if limit is not None:
             notice = OUTPUT_LIMIT_NOTICE.format(message=limit)
-            error = notice if error is None else notice + ' Ending decision check: ' + error
+            error = notice if error is None else notice + (' ' if output_role else ' Ending decision check: ') + error
         if number >= state['maximum']:
-            explanation = 'The configured maximum of end-reconsideration resumptions has been reached.'
+            explanation = ('The configured maximum of resumptions has been reached, and the output still does not pass '
+                           'the transport check.' if output_role else
+                           'The configured maximum of end-reconsideration resumptions has been reached.')
             if limit is not None:
                 explanation += ' The last turn ended at the output-token limit: ' + limit
             authorize(session, state, 'runner', 'resumption_limit', explanation)

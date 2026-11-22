@@ -28,7 +28,7 @@ from canon import (Canon, CanonError, Conflict, add_imports, apply_lean, apply_r
                    library_modules, load_change, merge_bibliography, module_file, name_parts, name_path,
                    parse_approach, parse_record, parse_rows, path_name, path_part, read_approaches, read_record,
                    record_file, replace_span, required_pairs, retire_approaches, sha256_text, split_review,
-                   sync_tree, tree_hash, update_index, with_review)
+                   sync_tree, tree_hash, update_index, with_importers, with_review)
 from check import Invalid, prepared_candidate
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
@@ -395,6 +395,22 @@ class LeanSourceTests(TempCase):
     def test_the_header_scan_knows_the_forms_of_an_import(self):
         lines = ['module', 'public meta import Small.A', 'import all Small.B', 'meta import Small.C', 'def x := 1']
         self.assertEqual(header_scan(lines), (4, True, ['Small.A', 'Small.B', 'Small.C']))
+
+    def test_the_modules_that_import_a_changed_module_are_named_with_it(self):
+        # Lean compiles a module in the environment of what it imports, so a module that imports a changed one,
+        # directly or through others, can come out different although its own source is the same.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name, imports in (('Defs', ()), ('Root', ('Small.Defs',)), ('Step', ('Small.Defs',)),
+                                  ('Top', ('Small.Step', 'Mathlib.Tactic')), ('Far', ('Small.Top',))):
+                write(root / 'Small' / (name + '.lean'),
+                      'module\n\n' + ''.join(f'public import {i}\n' for i in imports) + '\n-- import Small.Root\n')
+            write(root / 'DoMathExtract.lean', 'import Small.Step\n')  # no module of the library
+            self.assertEqual(with_importers(root, 'Small', ['Small.Step']), ['Small.Far', 'Small.Step', 'Small.Top'])
+            self.assertEqual(with_importers(root, 'Small', ['Small.Defs']),
+                             ['Small.Defs', 'Small.Far', 'Small.Root', 'Small.Step', 'Small.Top'])
+            self.assertEqual(with_importers(root, 'Small', ['Small.Far', 'Small.New']), ['Small.Far', 'Small.New'])
+            self.assertEqual(with_importers(root, 'Small', []), [])
 
     def test_the_header_scan_skips_comments(self):
         lines = ['/- Copyright.', '   import Fake.Module', '   /- nested -/ still a comment', '-/',
@@ -1465,8 +1481,14 @@ class CheckAppliedTests(unittest.TestCase):
         self.refused('the statement of Small.root changed in place; a different statement enters under a new name')
 
     def test_a_statement_changed_in_place_without_a_replacement(self):
-        self.new['entries']['Small.oddSum']['statement_hash'] = 'another statement'
+        self.new['entries']['Small.oddSum'].update(statement_hash='another statement', source_sha='edited')
         self.refused('the statement of Small.oddSum changed in place')
+
+    def test_a_statement_that_elaborates_differently_although_its_text_is_unchanged(self):
+        # The candidate did not touch the declaration. Something it brought into the scope of the declaration's
+        # module made Lean read the same text otherwise, which shows when that module is extracted again.
+        self.new['entries']['Small.oddSum']['statement_hash'] = 'another statement'
+        self.refused('the statement of Small.oddSum elaborates differently with this change although its text is unchanged')
 
     def test_a_changed_kind(self):
         self.new['entries']['Small.oddSum']['kind'] = 'opaque'
@@ -1760,7 +1782,7 @@ class CheckAppliedTests(unittest.TestCase):
         moved.update(module='Small.Later', file='Small/Later.lean', span=[9, 0, 11, 5])
         self.assertEqual(self.check(organizer=True)['errors'], [])
         moved['statement_hash'] = 'another statement'
-        self.refused('the statement of Small.step changed in place', organizer=True)
+        self.refused('the statement of Small.step elaborates differently with this change', organizer=True)
 
     def test_a_rearrangement_does_not_rewrite_a_definition(self):
         self.organizer_base()
