@@ -14,12 +14,15 @@ MAX_OUTPUT_TOKENS = 128_000
 # Milliseconds the Claude CLI waits for an MCP server to start before beginning the turn without it.
 # Its default is about 30 seconds; sixteen literature servers starting at once took up to 41 (measured).
 MCP_STARTUP_MS = 180_000
-# Milliseconds the Claude CLI, in print mode, lets background tasks run after the main agent's turn has
-# ended; at that limit it stops them. Its default is ten minutes. A reviewer that ended its turn to wait
-# for its sub-reviewers lost all three at the default (measured: 16 of the 22 failed reviews of two
-# instances carry the CLI's message). Two hours gives sub-agents time to finish, and their completion
-# starts the main agent's next turn, while a background task that never ends holds its session for two
-# hours at most.
+# The limit, in milliseconds, after which the Claude CLI in print mode stops background tasks that are
+# still running once the main agent's turn has ended; the CLI's message names this variable, and its
+# default is ten minutes. In the sessions of two instances the CLI did so when sub-agents were the only
+# background work the main agent had left (32 of 35 stops). A main agent that had left a shell command
+# of its own running was not stopped, twelve times for up to 45 minutes. 16 of 22 failed reviews ended
+# this way: the reviewer ended its turn to wait, and ten minutes later its three sub-reviewers were
+# stopped. A sub-agent that finishes while the CLI still runs starts the main agent's next turn (120
+# cases), so two hours is meant to give sub-agents that time. Whether the CLI honours a value other
+# than 0 has not been observed.
 BACKGROUND_WAIT_MS = 7_200_000
 
 
