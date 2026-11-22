@@ -110,7 +110,9 @@ def module_text(body, imports=('Small.Defs',)):
 
 def test_settings():
     config = defaults()
-    config.update(max_sessions=2, retry_seconds=1, retry_max_seconds=2, launch_interval=0, roles={})
+    # No external tools: the tests do not depend on the literature server being installed.
+    config.update(max_sessions=2, retry_seconds=1, retry_max_seconds=2, launch_interval=0, roles={},
+                  mcp_servers={})
     config['lean'].update(command=[sys.executable, '-B', str(HERE / 'canon_lean.py')],
                           version_command=[sys.executable, '-B', str(HERE / 'canon_lean.py'), '--version'],
                           min_free_memory_mb=0, memory_budget_mb=512, calibration_expect_mb=64,

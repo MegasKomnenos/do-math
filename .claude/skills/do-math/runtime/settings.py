@@ -1,6 +1,7 @@
 """Configuration for fresh research instances."""
 from copy import deepcopy
 import math
+import os
 from pathlib import Path
 import shutil
 from cli_adapter import build_command, provider_for_model
@@ -17,12 +18,23 @@ ASSESSORS = [{'model': 'claude/opus', 'effort': 'xhigh'},
 AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 
+def literature_server():
+    """The literature server scholarly-mcp, where the repository that holds this skill keeps it.
+
+    Every instance receives it unless its settings give `mcp_servers` themselves. `--public-only`
+    serves the sources that need no institutional login (reference/operations.md, External tools)."""
+    home = Path(__file__).resolve().parents[4] / 'services' / 'scholarly-mcp'
+    python = home / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+    return {'command': python.as_posix(), 'args': [(home / 'server.py').as_posix(), '--public-only']}
+
+
 def defaults():
     return {'schema': 1, 'max_sessions': 8, 'explore_every': 1,
             'organizer_every_records': 4, 'launch_interval': 180, 'models': deepcopy(MODELS),
             'roles': {'peer': deepcopy(ASSESSORS), 'review': deepcopy(ASSESSORS)},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
-            'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
+            'retry_seconds': 60, 'retry_max_seconds': 1800,
+            'mcp_servers': {'scholarly': literature_server()},
             'max_end_resumptions': 3,
             # Two considerations review weighs before accepting a correct proof (roles/review.md).
             'acceptance': {'decline_reducible_proofs': True,

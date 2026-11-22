@@ -2199,8 +2199,31 @@ class InitializeTests(unittest.TestCase):
                     initialized(self.root, name, root=root, records=records)
                 self.assertFalse((self.root / name / 'instance.json').exists())
 
+    def test_a_server_whose_command_is_not_found_is_refused_before_anything_is_created(self):
+        # A session whose server does not start begins its turn without the tool and reports nothing.
+        config = fixture_settings()
+        config['mcp_servers'] = {'scholarly': {'command': str(self.root / 'absent' / 'python.exe'), 'args': []},
+                                 'remote': {'url': 'https://example.invalid/mcp'}}
+        with patch(__name__ + '.fixture_settings', return_value=config), \
+                self.assertRaisesRegex(ValueError, r'mcp_servers names a command that was not found: scholarly \('):
+            initialized(self.root, 'unattached')
+        self.assertFalse((self.root / 'unattached').exists())
+
 
 class SettingsTests(unittest.TestCase):
+    def test_the_literature_server_is_attached_by_default_and_can_be_left_out(self):
+        attached = defaults()['mcp_servers']
+        self.assertEqual(list(attached), ['scholarly'])
+        # The server of the repository that holds this skill, started without institutional logins.
+        home = Path(__file__).resolve().parents[5] / 'services' / 'scholarly-mcp'
+        self.assertEqual(attached['scholarly']['args'], [(home / 'server.py').as_posix(), '--public-only'])
+        self.assertEqual(Path(attached['scholarly']['command']).parents[1], home / '.venv')
+        # An omitted `mcp_servers` receives the default; a given one replaces it, the empty one included.
+        self.assertEqual(validate({})['mcp_servers'], attached)
+        self.assertEqual(validate({'mcp_servers': {}})['mcp_servers'], {})
+        other = {'explicit': {'command': sys.executable, 'args': ['server.py']}}
+        self.assertEqual(validate({'mcp_servers': other})['mcp_servers'], other)
+
     def test_launch_interval_must_be_nonnegative_seconds(self):
         for bad in (-1, 1.5, '180'):
             config = defaults()

@@ -102,6 +102,13 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
         raise ValueError('the modules of the canon share one top-level name, the library; found: ' + ', '.join(tops))
     library = tops[0]
     config = validate(read_json(settings_file)) if settings_file else defaults()
+    # A session whose server does not start begins its turn without the tool and says nothing, so a
+    # server that cannot be started is refused here. The default names the literature server.
+    absent = [f'{name} ({server["command"]})' for name, server in config['mcp_servers'].items()
+              if 'command' in server and not shutil.which(str(server['command']))]
+    if absent:
+        raise ValueError('mcp_servers names a command that was not found: ' + ', '.join(absent)
+                         + '; give the installed path, or set "mcp_servers" to {} to run without external tools')
     instance.mkdir(parents=True, exist_ok=False)
     for name in ('knowledge/events', 'knowledge/changes', 'knowledge/reviews', 'knowledge/organizations',
                  'sessions', 'runner', 'control/inputs', 'control/requests', 'canon'):
