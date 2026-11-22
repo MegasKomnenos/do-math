@@ -23,6 +23,8 @@ from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, ques
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
+from judge import (build_lib, carried, formal_names, judge_commands, judge_index, outcome as judge_outcome,
+                   publication_targets, wait as wait_judge)
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
                        replay, root_solved)
 from retention import capture, refusal
@@ -140,6 +142,27 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
         build = start_build(instance, stage, library, 'operator', config['lean']['calibration_expect_mb'],
                             modules, required_pairs(records))
         outcome = wait_build(instance, build)
+        if not outcome['ok']:
+            raise ValueError('the canon does not compile: ' + '; '.join(
+                f"{e['module']}: {e['status']} {e.get('reason') or ''} {e['output']}" for e in outcome['errors']))
+        index = update_index(empty_index(), outcome['rows'], outcome['pairs'], stage, 0)
+        checked = check_applied(empty_index(), index, {'replace': [], 'retire': []}, records, lambda name: False,
+                                config['lean']['allowed_axioms'])
+        commands, _ = judge_commands(config['lean'])
+        formal = formal_names(index, config['lean']['allowed_axioms']) if commands and not checked['errors'] else []
+        if formal:
+            # The theorems the canon already proves in Lean are judged like those a publication brings.
+            folder = instance / 'runner/stage-genesis/judge'
+            verdict = wait_judge(instance, judge_index(
+                instance, folder, index, formal, build_lib(instance, outcome['build']), commands,
+                config['lean']['allowed_axioms'], config['lean']['calibration_expect_mb'], 'operator'), folder)
+            if verdict['verdict'] == 'rejected':
+                checked['errors'].append('the judge does not accept a proof of the canon: ' + verdict['reason'])
+            elif verdict['verdict'] != 'accepted':
+                raise ValueError('the judge of formal proofs could not run: ' + verdict['reason']
+                                 + '; repair it, or set lean.judge to null to create the instance without it')
+            else:
+                index['judged'] = {name: 0 for name in formal}
     finally:
         # No session exists yet; the runner starts the broker it needs when it runs. The broker is gone
         # before this command returns or refuses, so that a refused instance's folder can be removed at once:
@@ -150,12 +173,6 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
             deadline = time.monotonic() + 30
             while alive(info['process']) and time.monotonic() < deadline:
                 time.sleep(0.1)
-    if not outcome['ok']:
-        raise ValueError('the canon does not compile: ' + '; '.join(
-            f"{e['module']}: {e['status']} {e.get('reason') or ''} {e['output']}" for e in outcome['errors']))
-    index = update_index(empty_index(), outcome['rows'], outcome['pairs'], stage, 0)
-    checked = check_applied(empty_index(), index, {'replace': [], 'retire': []}, records, lambda name: False,
-                            config['lean']['allowed_axioms'])
     entry = index['entries'].get(root_declaration)
     if entry is None or entry['kind'] != 'theorem' or not entry['prop']:
         checked['errors'].append(f'the root declaration {root_declaration} is not a theorem of the canon')
@@ -772,7 +789,7 @@ class Runner:
             write_json(stage / 'index.json', update_index(
                 drop_modules(index, publication['removed']), outcome['rows'], outcome['pairs'],
                 stage / 'lean', event['sequence'], publication['changed']))
-            publication['stage'] = 'check'
+            publication.update(stage='check', built=outcome['build'])
             self.save()
         if publication['stage'] == 'check':
             change, records = self.effective_change(publication)
@@ -782,8 +799,54 @@ class Runner:
                                     self.settings['lean']['allowed_axioms'], organizer=organizer)
             if checked['errors']:
                 return self.publication_failed(publication, '; '.join(checked['errors']))
+            applied = {key: checked[key] for key in ('added', 'replaced', 'records', 'retired')}
+            # A theorem whose proof this change brings is judged again; the others keep what they had.
+            touched = set(applied['added']) | set(applied['replaced']) | {item['into'] for item in applied['retired']}
+            new['judged'] = carried(new, touched)
             write_json(stage / 'index.json', new)
-            publication.update(stage='commit', applied={key: checked[key] for key in ('added', 'replaced', 'records', 'retired')})
+            commands, _ = judge_commands(self.settings['lean'])
+            names = (publication_targets(index, new, touched, self.settings['lean']['allowed_axioms'])
+                     if commands and publication.get('built') else [])
+            publication.update(applied=applied, stage='judge' if names else 'commit',
+                               judge={'names': names, 'job': None,
+                                      'attempts': (publication.get('judge') or {}).get('attempts', 0)})
+            self.save()
+        if publication['stage'] == 'judge':
+            # The formal proofs this change brings are exported and judged outside the index (judge.py).
+            # A rejection is the candidate's fault, like a module that does not compile. A judge that
+            # could not run says nothing about the candidate: the build is made once more, and after
+            # that the runner stops with the reason, for the operator to repair.
+            state, folder = publication['judge'], stage / 'judge'
+            commands, why = judge_commands(self.settings['lean'])
+            if commands is None:
+                raise RuntimeError('the judge of formal proofs is no longer available: ' + why)
+            if not state['job']:
+                state['job'] = judge_index(
+                    self.instance, folder, read_json(stage / 'index.json'), state['names'],
+                    build_lib(self.instance, publication['built']), commands,
+                    self.settings['lean']['allowed_axioms'], self.settings['lean']['calibration_expect_mb'], 'runner')
+                self.save()
+                return False
+            verdict = judge_outcome(self.instance, state['job'], folder)
+            if verdict is None:
+                return False
+            if verdict['verdict'] == 'rejected':
+                return self.publication_failed(
+                    publication, 'the judge does not accept the formal proofs of this change: ' + verdict['reason'])
+            if verdict['verdict'] != 'accepted':
+                # The job is forgotten either way, so that a runner started after the repair asks the judge again.
+                state['job'] = None
+                if state['attempts'] >= 1:
+                    self.save()
+                    raise RuntimeError('the judge of formal proofs could not run: ' + verdict['reason'])
+                state['attempts'] += 1
+                publication['stage'] = 'apply'
+                self.save()
+                return False
+            new = read_json(stage / 'index.json')
+            new['judged'] = {**new.get('judged', {}), **{name: event['sequence'] for name in state['names']}}
+            write_json(stage / 'index.json', new)
+            publication.update(stage='commit', judged=state['names'])
             self.save()
         return True
 
@@ -879,8 +942,12 @@ class Runner:
                 shutil.copyfile(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
                 write_json(stage / 'applied.json', applied)
                 pipeline = self.state['pipelines'][job['pipeline']]
-                write_json(stage / 'provenance.json', {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
-                                                      'review_session': sid, 'pipeline': pipeline['id']})
+                provenance = {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
+                              'review_session': sid, 'pipeline': pipeline['id']}
+                if publication.get('judged'):
+                    # The theorems whose formal proof the judge accepted for this change (judge.py).
+                    provenance['judged'] = publication['judged']
+                write_json(stage / 'provenance.json', provenance)
                 verified = self.session_dir(sid) / 'work/verify/outcome.json'
                 if verified.is_file():
                     shutil.copyfile(verified, stage / 'verify.json')
@@ -1395,8 +1462,11 @@ def status(instance):
     model = replay(instance)
     from lean_broker import Paths, broker_status
     rows = board(instance, state, model)
+    commands, why = judge_commands(load_settings(instance)['lean'])
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['root_state'], 'finished': state['finished'],
+            # Whether formal proofs are judged outside the index, and why not when they are not (judge.py).
+            'judge': {'available': commands is not None, 'reason': why, 'commands': commands},
             'stopped': (instance / 'control/STOP').exists(), 'board': rows,
             'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),

@@ -103,6 +103,10 @@ def view(instance, model, name, part=None, full=False):
         lines.append(f'rests on      {with_standing(model, statements)}')
         lines.append(f"settled       {'yes' if element['settled'] else 'no'}"
                      + (' · proved in Lean from the allowed axioms' if element['formal'] else ''))
+        judged = canon.load_index().get('judged', {}).get(name)
+        if judged is not None:
+            lines.append(f'judged        at revision {judged}: the export of this proof uses only the allowed axioms, '
+                         'and the kernel accepts it')
         if len(element['proofs']) > 1:
             lines.append(f"proofs        {with_standing(model, element['proofs'])}")
     else:

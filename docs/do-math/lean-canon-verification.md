@@ -31,10 +31,11 @@ The test suite is `runtime/tests/` in the skill. Each module is run by itself, f
 | `test_views` | 26 | The derived views and every reading command |
 | `test_lean_broker` | 76 | The Lean broker: scheduling, the module cache and its key, recovery |
 | `test_paper` | 26 | The paper command: materials, plan checks, manuscript checks, the repair loops, the lines that TeX sets too wide, the stop without TeX, a statement that a repair changes after its comparison |
+| `test_judge` | 19 | The judge of formal proofs: which theorems it is given, the job that starts the exporter and the comparator, what a rejection and a judge that cannot run do to a publication and to `init`, and the judging of a finished root. The exporter and the comparator are stand-ins |
 | `test_depmap` | 21 | The dependency map: which elements are units, the kinds of line, the drawing. One test, of the optional ELK layout, is skipped because the `elkjs` package is not installed |
 | `test_context`, `test_ending`, `test_resilience`, `test_retention`, `test_containment`, `test_cli_adapter`, `test_availability`, `test_pipeline` | 102 together | What a session receives at launch, ending and resumption, recovery from failures, retention of session work, process containment, the CLI adapters, the report that all work is occupied, and one scripted research from start to formal root |
 
-The tests number 683 in all.
+The tests number 702 in all.
 
 One test failed twice before its cause was found. In two runs of the suite made while the machine was under heavy load, the modules took three to four times as long as before, and one test of `test_research`, which creates an instance and expects the creation to be refused, ended in an error. The first time only the result lines had been kept. The second time the full output was kept, and it showed the cause: `init` asked the broker it had started to end and returned without waiting for it, so the test removed the instance's folder while the broker still held its log file open. `init` now waits until that broker has ended. After this change the test passed three times in a row under the same load, and four modules were run again and passed: `test_research`, `test_pipeline`, `test_availability` and `test_context`. The other twelve modules were last run before this change. The change is confined to the last step of `init`, where the broker is ended after the instance has been built.
 

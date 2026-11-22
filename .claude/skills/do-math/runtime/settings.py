@@ -41,7 +41,9 @@ def defaults():
                            'decline_uncomprehended_computation': True},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
-                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
+                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS),
+                     # The judge of formal proofs (judge.py): "auto" looks for it beside the Lean command.
+                     'judge': 'auto'}}
 
 
 def validate(raw):
@@ -122,6 +124,12 @@ def validate(raw):
         raise ValueError('allowed_axioms must be a string list')
     if 'sorryAx' in lean['allowed_axioms']:
         raise ValueError('sorryAx cannot be allowed')
+    judge = lean['judge']
+    commands = isinstance(judge, dict) and set(judge) == {'export', 'compare'} and all(
+        isinstance(command, list) and command and all(isinstance(x, str) and x.strip() for x in command)
+        for command in judge.values())
+    if not (judge is None or judge == 'auto' or commands):
+        raise ValueError('lean.judge must be "auto", null, or {"export": [...], "compare": [...]} with two command arrays')
     return value
 
 

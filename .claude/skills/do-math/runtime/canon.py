@@ -68,7 +68,7 @@ class Canon:
 
 
 def empty_index():
-    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'hidden': {}, 'pairs': {}}
+    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'hidden': {}, 'judged': {}, 'pairs': {}}
 
 
 # ----------------------------------------------------------------------------- names and paths
@@ -786,7 +786,9 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             table[module] = {'file': relative, 'sha256': hashlib.sha256((lean_root / relative).read_bytes()).hexdigest()}
         else:
             table.pop(module, None)
+    # `judged` maps a theorem to the revision at which the judge accepted its formal proof (judge.py).
     return {'revision': revision, 'modules': table, 'entries': entries, 'aux': aux, 'hidden': hidden,
+            'judged': {name: at for name, at in index.get('judged', {}).items() if name in entries},
             'pairs': {**index.get('pairs', {}), **pairs}}
 
 
@@ -797,7 +799,8 @@ def drop_modules(index, modules):
     return {**index, 'entries': entries,
             'modules': {m: v for m, v in index['modules'].items() if m not in modules},
             'aux': {n: p for n, p in index['aux'].items() if p is None or p in entries},
-            'hidden': {n: item for n, item in index.get('hidden', {}).items() if item['module'] not in modules}}
+            'hidden': {n: item for n, item in index.get('hidden', {}).items() if item['module'] not in modules},
+            'judged': {n: at for n, at in index.get('judged', {}).items() if n in entries}}
 
 
 def axiom_closure(index):

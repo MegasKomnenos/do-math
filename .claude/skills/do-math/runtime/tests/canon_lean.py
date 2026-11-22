@@ -8,17 +8,28 @@ unchanged, as the real compiler does when the auxiliary declarations stay the sa
 sources under the root instead of from a compiled environment. As in Lean, a pair is decided only
 between declarations of the modules that file imports, directly or through others.
 
+The judge has stand-ins here as well. The source `DoMathJudge.lean` is answered by running the commands
+its plan names, as the real file does. Run as `canon_lean.py export <modules> -- <names>` this file is
+the exporter: it writes what each named theorem states and rests on, read from the compiled modules on
+LEAN_PATH. Run as `canon_lean.py compare --config … --challenge-from-export … --solution-from-export …`
+it is the comparator, with the comparator's exit codes: 0 accepted, 1 rejected, 2 could not start.
+
+A compiled module with a line `-- judge rejects: <message>` is one the stand-in comparator rejects with
+that message. This is how a test has the judge disagree with the index.
+
 The subset: `namespace`/`end`, an optional `/-- … -/` doc comment, then `theorem`, `def`, `axiom`,
 `structure` or `inductive` (optionally `private`) with a name, a statement up to the first `:=`
 and a body. A declaration ends where the next one begins. What a declaration uses is every known
 declaration name that occurs in it; a body containing `sorry` depends on `sorryAx`. A line
 `-- fail: <message>` makes the compile fail with that message.
 """
+import base64
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 KEYWORDS = ('theorem', 'def', 'axiom', 'structure', 'inductive')
@@ -166,10 +177,138 @@ def extract(root, source):
     return 0
 
 
+def compiled(modules):
+    """The declarations of the compiled modules on LEAN_PATH that the named modules reach, or the module that is missing."""
+    search = [p for p in os.environ.get('LEAN_PATH', '').split(os.pathsep) if p]
+    seen, pending, declarations, rejections = set(), list(modules), [], []
+    while pending:
+        module = pending.pop()
+        if module in seen or module.split('.')[0] in ('Lean', 'Init', 'Std', 'Mathlib'):
+            continue
+        seen.add(module)
+        found = next((Path(entry, *module.split('.')).with_suffix('.olean.private') for entry in search
+                      if Path(entry, *module.split('.')).with_suffix('.olean.private').is_file()), None)
+        if found is None:
+            return None, module, []
+        text = found.read_text(encoding='utf-8')
+        declarations += parse(module, text)
+        rejections += re.findall(r'^-- judge rejects: (.*)$', text, re.MULTILINE)
+        pending += [match[1] for match in (IMPORT.match(line.strip()) for line in text.splitlines()) if match]
+    return declarations, None, rejections
+
+
+def tool_export(arguments):
+    """What each named theorem states, which axioms it rests on, and the definitions its statement names."""
+    modules = arguments[:arguments.index('--')] if '--' in arguments else arguments
+    wanted = arguments[arguments.index('--') + 1:] if '--' in arguments else []
+    declarations, missing, rejections = compiled(modules)
+    if declarations is None:
+        print(f"unknown module '{missing}'", file=sys.stderr)
+        return 1
+    names = {d['user']: d['name'] for d in declarations}
+    by_name = {d['name']: d for d in declarations}
+
+    def said(declaration, seen=()):
+        """The statement of a declaration and what it names. `type_of% @name` stands for the statement of the
+        declaration named, as Lean elaborates it, and so brings what that statement names and not the name."""
+        text, named = declaration['statement'], uses(declaration['statement'], declaration, names)
+        for match in re.finditer(r"type_of% @([A-Za-z_][A-Za-z0-9_'.]*)", declaration['statement']):
+            target = by_name.get(names.get(match[1]))
+            if target is not None and target['name'] not in seen:
+                inner, inner_named = said(target, (*seen, declaration['name']))
+                text = text.replace(match[0], '(' + inner + ')')
+                named = [name for name in named if name != target['name']] + inner_named
+        return text, named
+
+    def reach(start, through):
+        seen, pending = [], list(start)
+        while pending:
+            name = pending.pop()
+            if name not in seen:
+                seen.append(name)
+                pending += through(by_name[name])
+        return [by_name[name] for name in seen]
+
+    export = {}
+    for name in wanted:
+        declaration = by_name.get(names.get(name))
+        if declaration is None or declaration['kind'] != 'theorem':
+            continue  # an axiom of Lean or a constant of its kernel: nothing of the library to write out
+        text, named = said(declaration)
+        stated = reach(named, lambda d: uses(d['statement'] + ' ' + d['body'], d, names))
+        rests = reach([declaration['name']], lambda d: uses(d['statement'] + ' ' + d['body'], d, names))
+        export[name] = {'statement': ' '.join(text.split()),
+                        'definitions': {d['user']: ' '.join(d['text'].split()) for d in stated},
+                        'axioms': sorted({'sorryAx' for d in rests if re.search(r'\bsorry\b', d['body'])}
+                                         | {d['name'] for d in rests if d['kind'] == 'axiom'})}
+    if rejections:
+        export['-- judge rejects'] = rejections
+    print(json.dumps(export))
+    return 0
+
+
+def tool_compare(arguments):
+    option = lambda flag: arguments[arguments.index(flag) + 1] if flag in arguments else None
+    try:
+        config = json.loads(Path(option('--config')).read_text(encoding='utf-8'))
+        challenge = json.loads(Path(option('--challenge-from-export')).read_text(encoding='utf-8'))
+        solution = json.loads(Path(option('--solution-from-export')).read_text(encoding='utf-8'))
+    except (OSError, ValueError, TypeError) as exc:
+        print('error: could not start: ' + str(exc))
+        return 2
+    for message in solution.get('-- judge rejects', []):
+        print('error: ' + message)
+        return 1
+    for name in config['theorem_names']:
+        for side, export in (('challenge', challenge), ('solution', solution)):
+            if name not in export:
+                print(f"error: Const not found in {side}: '{name}'")
+                return 1
+        posed, given = challenge[name], solution[name]
+        if posed['statement'] != given['statement']:
+            print(f"error: Challenge and solution theorem statement do not match: '{name}'")
+            return 1
+        for used in sorted(set(posed['definitions']) | set(given['definitions'])):
+            if posed['definitions'].get(used) != given['definitions'].get(used):
+                print(f"error: Const does not match between challenge and target '{used}'")
+                return 1
+        for axiom in given['axioms']:
+            if axiom not in config['permitted_axioms']:
+                print(f"error: Illegal axiom detected: '{axiom}'")
+                return 1
+    print('Lean default kernel accepts the solution\nYour solution is okay!')
+    return 0
+
+
+def judge(source):
+    """Run the plan of a DoMathJudge.lean as the real file does, and print the same lines."""
+    line = next(line for line in Path(source).read_text(encoding='utf-8').splitlines() if line.startswith('-- plan: '))
+    plan = json.loads(base64.b64decode(line[len('-- plan: '):]))
+    for number, case in enumerate(plan['cases']):
+        codes = []
+        for position, item in enumerate(case['exports']):
+            path = os.pathsep.join(p for p in (item['lib'], os.environ.get('LEAN_PATH')) if p)
+            with open(item['file'], 'wb') as target:
+                codes.append(subprocess.run(item['command'] + item['args'], stdout=target,
+                                            env={**os.environ, 'LEAN_PATH': path}).returncode)
+            print(f'@@judge {number} export {position} {codes[-1]}')
+        if not any(codes):
+            compare = case['compare']
+            result = subprocess.run(compare['command'] + compare['args'], capture_output=True, text=True, encoding='utf-8')
+            Path(compare['log']).write_text(result.stdout + result.stderr, encoding='utf-8')
+            print(f'@@judge {number} compare {result.returncode}')
+    print('@@judge done')
+    return 0
+
+
 def main(argv):
     if '--version' in argv:
         print('Lean (canon test stand-in)')
         return 0
+    if argv[:1] == ['export']:
+        return tool_export(argv[1:])
+    if argv[:1] == ['compare']:
+        return tool_compare(argv[1:])
     source = argv[-1]
     root = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == '-R'), str(Path(source).parent))
     olean = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == '-o'), None)
@@ -189,6 +328,8 @@ def main(argv):
         return 1
     if Path(source).name == 'DoMathExtract.lean':
         code = extract(root, source)
+    elif Path(source).name == 'DoMathJudge.lean':
+        code = judge(source)
     else:
         declarations = parse(module_of(root, source), text)
         known = {d['user'] for d in library(root)}

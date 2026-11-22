@@ -63,7 +63,7 @@ Report what is actually established, in its scope. A published element, a statem
 
 When reporting completion, distinguish formal settlement of the root from the runner finishing its remaining work. The root is settled by a formal proof when one of its proofs is accepted, everything that proof rests on is settled, and the proof is formal. From then on the runner stops launching attempts and explorations. Existing sessions retain their normal scope; the runner carries them through peer and review, still launches formalizations, comprehensive reviews and organization as their inputs become ready, and finishes only when that remaining work has ended. Formalization of other settled statements that the root rests on has no round cap, so the runner can keep working well after the root is settled. A formal proof of the negation is a refutation of the original proposition and settles the research in the same way. Preserve that direction in the explanation.
 
-Two commands produce the dependency map and the paper from the canon; Operations describes them under "The dependency map and the paper", including the paper method that the user reads and confirms before the first paper is produced.
+Two commands produce the dependency map and the paper from the canon; Operations describes them under "The dependency map and the paper", including the paper method that the user reads and confirms before the first paper is produced. A third command judges the settled root against the root as the instance first fixed it, and the runner has formal proofs judged in the same way before it publishes them; Operations describes both under "The judge of formal proofs".
 
 ## Convey the user's conditions, and judge from the text
 
