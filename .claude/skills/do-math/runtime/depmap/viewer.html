@@ -114,6 +114,7 @@ __SVG__
   }
   function how(e) {
     if (e.kind === 'alternative') return 'another proof of the statement';
+    if (e.kind === 'refutation') return 'refutes the root: its statement is the negation of the root';
     var body = unit[e.target].role === 'definition' ? 'definition' : 'proof';
     if (e.kind === 'direct') return 'named in the ' + body + (e.proof.via.length ? ', and reached through ' + foldedNames(e.proof.via) : '');
     if (e.kind === 'contracted') return 'the ' + body + ' reaches it through ' + foldedNames(e.via);
@@ -145,7 +146,8 @@ __SVG__
       'a double click on empty space or the key 0 shows the whole map.', 'help'));
     panel.appendChild(el('p', 'An arrow runs from what is used to what uses it. A dashed line reaches its source only ' +
       'through folded steps, which are written on it. A dotted line joins a statement to something it mentions. ' +
-      'A heavy line joins another proof to the statement it proves; the two proofs are separate arguments, not joint inputs.', 'help'));
+      'A heavy line joins another proof to the statement it proves; the two proofs are separate arguments, not joint inputs. ' +
+      'A heavy dashed red line joins a statement that refutes the root to the root.', 'help'));
   }
   function show(n) {
     var u = unit[n];
@@ -154,7 +156,8 @@ __SVG__
     panel.appendChild(el('code', u.id, 'name'));
     var chips = el('div', null, 'chips');
     var kind = u.role === 'proof' ? 'another proof' : (KIND[u.kind] || u.kind);
-    [u.root ? 'root' : null, kind, u.standing ? STANDING[u.standing] : null,
+    [u.root ? 'root' : null, u.refuted ? 'refuted' : null, u.refutes ? 'refutes the root' : null, kind,
+     u.standing ? STANDING[u.standing] : null,
      u.settled === true ? 'settled' : u.settled === false ? 'not settled' : null,
      u.formal ? 'formal' : null, u.source ? 'from the literature: ' + u.source : null].forEach(function (text) {
       if (text) chips.appendChild(el('span', text, 'chip'));

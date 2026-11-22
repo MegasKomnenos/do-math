@@ -8,7 +8,7 @@ WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
 ARCHIVE_PRESET = 6
-LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5, "header_snapshots": 8}
+LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048, "cpu_threads_budget": None, "threads": 2, "priority": "below_normal", "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5}
 
 def memory_status():
     """(total physical, headroom) in bytes: commit headroom on Windows, MemAvailable on Linux.

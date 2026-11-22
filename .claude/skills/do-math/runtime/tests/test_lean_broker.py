@@ -354,36 +354,19 @@ class ImportClosureTests(unittest.TestCase):
             self.assertNotEqual(statement["public"], first["public"])
             self.assertNotEqual(statement["full"], first["full"])
 
-    def test_the_header_prefix_and_the_main_module_name_key_a_snapshot(self):
+    def test_the_header_gives_its_imports_whether_it_is_a_module_and_whether_it_imports_all(self):
         header = lean_broker.read_header
         text = b"-- leading\nmodule\n\npublic import A.One -- why\nimport all B.Two\r\n\r\ntheorem t : True := trivial\n"
-        read = header(text)
-        self.assertEqual((read["imports"], read["module"], read["all"]), (["A.One", "B.Two"], True, True))
-        # From the first byte to the end of the last header line, without that line's terminator.
-        self.assertEqual(read["prefix"], b"-- leading\nmodule\n\npublic import A.One -- why\nimport all B.Two")
-        self.assertEqual(header(b"\xef\xbb\xbfimport A\n\n\ntheorem t : True := trivial\n")["prefix"], b"\xef\xbb\xbfimport A")
-        plain = header(b"/- module -/\nimport A\ndef module := 1\n")
-        self.assertEqual((plain["module"], plain["all"], plain["prefix"]), (False, False, b"/- module -/\nimport A"))
-        # A file without a header has an empty prefix, whatever comes before its first declaration.
-        self.assertEqual(header(b"-- note\n\ntheorem t : True := trivial\n")["prefix"], b"")
-        with tempfile.TemporaryDirectory() as directory:
-            cwd = Path(directory) / "session"
-            inside = cwd / "work" / "deep" / "A.lean"
-            inside.parent.mkdir(parents=True)
-            inside.write_text("", encoding="utf-8")
-            outside = Path(directory) / "elsewhere" / "A.lean"
-            outside.parent.mkdir()
-            outside.write_text("", encoding="utf-8")
-            name = lean_broker.main_module
-            self.assertEqual(name({"source": str(inside), "cwd": str(cwd)}), ["work", "deep", "A"])
-            self.assertEqual(name({"source": str(outside), "cwd": str(cwd)}), ["_stdin"])
-            self.assertEqual(name({"source": str(outside), "cwd": str(cwd), "module": "Foo.Bar"}), ["Foo", "Bar"])
-        key = lean_broker.snapshot_key
-        base = key("environment", ["Foo", "Bar"], b"import A")
-        self.assertEqual(base, key("environment", ["Foo", "Bar"], b"import A"))
-        for other in (key("other", ["Foo", "Bar"], b"import A"), key("environment", ["Foo.Bar"], b"import A"),
-                      key("environment", ["_stdin"], b"import A"), key("environment", ["Foo", "Bar"], b"\nimport A")):
-            self.assertNotEqual(base, other)
+        self.assertEqual(header(text), {"imports": ["A.One", "B.Two"], "module": True, "all": True})
+        # A byte order mark hides neither the first import nor the first token.
+        self.assertEqual(header(b"\xef\xbb\xbfimport A\n\n\ntheorem t : True := trivial\n"),
+                         {"imports": ["A"], "module": False, "all": False})
+        self.assertTrue(header(b"\xef\xbb\xbfmodule\nimport A\n")["module"])
+        # `module` inside a comment, or after the header, does not make a file a module.
+        self.assertEqual(header(b"/- module -/\nimport A\ndef module := 1\n"),
+                         {"imports": ["A"], "module": False, "all": False})
+        self.assertEqual(header(b"-- note\n\ntheorem t : True := trivial\n"),
+                         {"imports": [], "module": False, "all": False})
 
     def test_imports_are_read_from_the_header_only_and_key_the_version(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -414,74 +397,6 @@ class ImportClosureTests(unittest.TestCase):
             self.assertEqual([name for name, _ in modules], expected + ["Target"])
             self.assertEqual(modules[-1][1]["local"], expected)
             self.assertEqual(modules[-1][1]["external"], [])
-
-
-class SnapshotStoreTests(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.folder = Path(self.temp.name) / "snapshots"
-        self.folder.mkdir()
-        self.store = lean_broker.Snapshots(self.folder)
-
-    def saved(self, name, deps="[]"):
-        """The two files a compile leaves in its job folder when it saves a snapshot."""
-        path = Path(self.temp.name) / name
-        path.write_text("state " + name, encoding="utf-8")
-        Path(str(path) + ".deps").write_text(deps, encoding="utf-8")
-        return path
-
-    def names(self):
-        return sorted(p.name for p in self.folder.iterdir() if p.name != "index.json")
-
-    def test_only_a_snapshot_written_in_full_is_published(self):
-        self.assertTrue(self.store.publish("a", self.saved("a"), {"module": "A", "imports": []}))
-        self.assertEqual(self.names(), ["a.snapshot", "a.snapshot.deps"])
-        self.assertEqual((self.store.status("a"), self.store.proven("a"), self.store.usable("a")), ("ready", False, True))
-        self.assertFalse((Path(self.temp.name) / "a").exists())  # moved, not copied
-        self.assertFalse(self.store.publish("b", self.saved("b", deps=""), {}))  # an empty second file
-        self.assertFalse(self.store.publish("c", Path(self.temp.name) / "never written", {}))
-        self.assertEqual((self.store.status("b"), self.store.status("c")), (None, None))
-        self.store.prove("a")
-        self.assertTrue(self.store.proven("a"))
-        # A snapshot whose files are no longer what was published is forgotten, not used.
-        (self.folder / "a.snapshot").write_text("of another size", encoding="utf-8")
-        self.assertFalse(self.store.usable("a"))
-        self.assertIsNone(self.store.status("a"))
-
-    def test_pruning_keeps_the_most_recently_used_and_whatever_is_loaded_now(self):
-        for number, key in enumerate("abc"):
-            self.assertTrue(self.store.publish(key, self.saved(key), {}))
-            self.store.entries[key]["used_at"] = number
-        self.store.entries["a"]["used_at"] = 10  # loaded again since
-        self.store.prune(2, in_use={"b"})
-        # b is the least recently used and stays while a compile has it loaded; nothing else is over the bound yet.
-        self.assertEqual(self.names(), [key + part for key in "abc" for part in (".snapshot", ".snapshot.deps")])
-        self.store.prune(2, in_use=set())
-        self.assertEqual(self.names(), [key + part for key in "ac" for part in (".snapshot", ".snapshot.deps")])
-        self.assertEqual(sorted(self.store.entries), ["a", "c"])
-        # A condemned key keeps its entry and loses its files; an entry survives a restart through the index.
-        self.store.condemn("c", "it changed a result")
-        self.store.prune(2, in_use={"c"})
-        self.assertIn("c.snapshot", self.names())
-        self.store.prune(2, in_use=set())
-        self.assertEqual(self.names(), ["a.snapshot", "a.snapshot.deps"])
-        again = lean_broker.Snapshots(self.folder)
-        self.assertEqual((again.status("a"), again.status("c"), again.entries["c"]["reason"]), ("ready", "bad", "it changed a result"))
-        # Zero keeps nothing; condemned keys are remembered up to a bound, the oldest forgotten first.
-        with patch.object(lean_broker, "KEEP_CONDEMNED", 1):
-            again.condemn("d", "later")
-            again.prune(0, in_use=set())
-        self.assertEqual((self.names(), list(again.entries)), ([], ["d"]))
-
-    def test_an_unreadable_index_starts_empty_and_the_folder_is_cleared(self):
-        self.assertTrue(self.store.publish("a", self.saved("a"), {}))
-        self.store.save()
-        (self.folder / "index.json").write_text("{not json", encoding="utf-8")
-        store = lean_broker.Snapshots(self.folder)
-        self.assertEqual(store.entries, {})
-        store.prune(8, in_use=set())
-        self.assertEqual(self.names(), [])
 
 
 class SettingsTests(unittest.TestCase):
@@ -515,8 +430,7 @@ class SettingsTests(unittest.TestCase):
                     {"confidence": float("nan")}, {"confidence": True}, {"min_free_memory_mb": -1},
                     {"cpu_threads_budget": 0}, {"threads": 0}, {"threads": None}, {"priority": "realtime"},
                     {"max_passes": -1}, {"max_passes": 1.5}, {"calibration_expect_mb": 0},
-                    {"default_spread": -0.1}, {"default_spread": "half"},
-                    {"header_snapshots": -1}, {"header_snapshots": 1.5}, {"header_snapshots": True}):
+                    {"default_spread": -0.1}, {"default_spread": "half"}):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 self.load(**bad)
 
@@ -1682,255 +1596,6 @@ class OutputKeyTests(BrokerFixture):
         self.assertEqual((uses["status"], uses["job"], uses["key"]), ("failed", None, None))
         self.assertIn("environment changed", uses["reason"])
         self.assertEqual(record["status"], "failed")
-
-
-class SnapshotTests(BrokerFixture):
-    """The snapshot of Lean's state after import: when it is saved and loaded, and what follows when it fails."""
-
-    def option(self, job):
-        """The snapshot option the job's Lean was started with, without its value."""
-        return next((arg.split("=")[0] for arg in self.launched(job["id"]) if arg.startswith("--incr-")), None)
-
-    def entry(self, key):
-        return self.broker.snapshots.entries.get(key)
-
-    def files(self):
-        return sorted(p.name for p in self.paths.snapshots.iterdir() if p.name != "index.json")
-
-    def left_in_job_folder(self, job):
-        return sorted(p.name for p in self.paths.job(job["id"]).glob(lean_broker.SNAPSHOT + "*"))
-
-    def primed(self):
-        """A broker and a file whose header has a snapshot that its second compile saved and none has proven."""
-        self.start_broker()
-        self.assertIsNone(self.compiled(self.session_file("s1", marker="first"))["snapshot"]["mode"])
-        saved = self.compiled(self.session_file("s1", marker="second"))
-        self.assertEqual((saved["snapshot"]["mode"], saved["exit_code"]), ("save", 0))
-        key = saved["snapshot"]["key"]
-        self.assertEqual((self.entry(key)["status"], self.entry(key)["proven"]), ("ready", False))
-        return key
-
-    def test_a_header_seen_again_is_saved_once_and_loaded_afterwards(self):
-        self.start_broker()
-        first = self.compiled(self.session_file("s1", marker="one"))
-        key = first["snapshot"]["key"]
-        self.assertEqual((first["snapshot"]["mode"], self.option(first), self.files()), (None, None, []))
-        self.assertIn("snapshot=none", self.output(first["id"]))
-        second = self.compiled(self.session_file("s1", marker="two"))  # the same header in the same file
-        self.assertEqual((second["snapshot"]["key"], second["snapshot"]["mode"]), (key, "save"))
-        self.assertEqual(self.option(second), "--incr-header-save")
-        self.assertIn("snapshot=saved", self.output(second["id"]))
-        self.assertEqual(self.files(), [key + ".snapshot", key + ".snapshot.deps"])
-        self.assertEqual(self.left_in_job_folder(second), [])
-        entry = runtime_support.read_json(self.paths.snapshots / "index.json")["entries"][key]
-        self.assertEqual((entry["status"], entry["proven"], entry["module"], entry["imports"]),
-                         ("ready", False, "work.A", ["Mathlib.Data.Nat.Basic"]))
-        third = self.compiled(self.session_file("s1", marker="three"))
-        fourth = self.compiled(self.session_file("s1", marker="four"))
-        for job in (third, fourth):
-            self.assertEqual((job["snapshot"], self.option(job), job["exit_code"]), ({"key": key, "mode": "load"}, "--incr-load", 0))
-            self.assertIn("snapshot=loaded", self.output(job["id"]))
-            self.assertIn("--incr-load=" + str(self.paths.snapshots / (key + ".snapshot")), self.launched(job["id"]))
-        self.assertTrue(self.entry(key)["proven"])
-        self.assertEqual(self.files(), [key + ".snapshot", key + ".snapshot.deps"])
-        # The summary tells the session what its compile did with a snapshot.
-        err = io.StringIO()
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            self.assertEqual(lean_broker.wait(self.paths, third["id"], timeout=0), 0)
-        self.assertEqual(json.loads(err.getvalue().split("lean-broker: ", 1)[1])["snapshot"], {"mode": "load"})
-        # Lean names a file's declarations after the main module of the snapshot it loads, so another
-        # file with the same header has a key of its own, and so has the same file with another header.
-        other = self.compiled(self.session_file("s1", "B.lean", marker="other"))
-        longer = self.compiled(self.session_file("s1", imports=("Mathlib.Data.Nat.Basic", "Mathlib.Order.Basic")))
-        for job in (other, longer):
-            self.assertNotEqual(job["snapshot"]["key"], key)
-            self.assertEqual((job["snapshot"]["mode"], self.option(job)), (None, None))
-        outputs = "".join(self.output(job["id"]) for job in (first, second, third, fourth, other, longer))
-        self.assertNotIn("WRONG-MODULE", outputs)
-        self.assertNotIn("mismatch", outputs)
-        # The run that saved paid for the saving; its excess is not a sample of what these imports cost.
-        samples = self.broker.calibration.entry(first["closure"])["excess_mb"]
-        self.assertEqual(len(samples), 4)  # first, third, fourth and other
-
-    def test_files_outside_the_working_directory_share_a_snapshot_by_header(self):
-        # With lean.cwd set, as it is for a Mathlib project, no session's file lies under the working
-        # directory, Lean names every single file `_stdin`, and the header alone tells snapshots apart.
-        project = self.root / "library project"
-        project.mkdir()
-        self.write_settings(cwd=str(project))
-        self.start_broker()
-        jobs = [self.compiled(self.session_file(session, name, marker=name), session=session)
-                for session, name in (("s1", "A.lean"), ("s1", "B.lean"), ("s2", "C.lean"))]
-        self.assertEqual(len({job["snapshot"]["key"] for job in jobs}), 1)
-        self.assertEqual([job["snapshot"]["mode"] for job in jobs], [None, "save", "load"])
-        self.assertEqual(self.entry(jobs[0]["snapshot"]["key"])["module"], "_stdin")
-        self.assertIn("snapshot=loaded", self.output(jobs[2]["id"]))
-
-    def test_two_compiles_at_once_do_not_both_save(self):
-        project = self.root / "library project"
-        project.mkdir()
-        self.write_settings(cwd=str(project))
-        self.start_broker()
-        self.compiled(self.session_file("s1", "A.lean"))
-        pair = [self.submit(self.session_file("s1", name, sleep=2), expect_mb=40) for name in ("B.lean", "C.lean")]
-        self.until(lambda: all(self.finished(job_id) for job_id in pair))
-        b, c = (self.broker.state["jobs"][job_id] for job_id in pair)
-        self.assertLess(max(b["started_at"], c["started_at"]), min(b["finished_at"], c["finished_at"]))  # side by side
-        self.assertEqual(b["snapshot"]["key"], c["snapshot"]["key"])
-        self.assertEqual(sorted(str(job["snapshot"]["mode"]) for job in (b, c)), ["None", "save"])
-        self.assertEqual(sorted(str(self.option(job)) for job in (b, c)), ["--incr-header-save", "None"])
-        self.assertEqual(self.compiled(self.session_file("s1", "D.lean"))["snapshot"]["mode"], "load")
-
-    def test_a_module_of_a_build_uses_a_snapshot_only_without_local_imports(self):
-        self.start_broker()
-        root = self.instance / "sessions/s1/work/lean"
-        def round_of(text, **fake):
-            source(root / "Basis.lean", imports=(), marker=f"basis-{text}", **fake)
-            source(root / "Target.lean", imports=("Basis", "Mathlib.Data.Nat.Basic"), marker=f"target-{text}")
-            record = self.built(root, [root / "Target.lean"])
-            return record, {name: self.broker.state["jobs"][module["job"]]
-                            for name, module in record["modules"].items() if module["job"]}
-        rounds = [round_of("one"), round_of("two")]
-        # The module's second run takes its place in the build like the first. Basis is rejected while
-        # nothing has proven its snapshot, so it is run again without it before the build hears of it.
-        rejected, jobs = round_of("three", exit=1)
-        self.assertEqual(jobs["Basis"]["snapshot"]["retried"], {"mode": "load", "exit_code": 1})
-        self.assertEqual((rejected["modules"]["Basis"]["status"], rejected["modules"]["Basis"]["exit_code"]), ("finished", 1))
-        self.assertEqual((rejected["modules"]["Target"]["status"], rejected["status"]), ("failed", "failed"))
-        rounds.append(round_of("four"))
-        for record, _ in rounds:
-            self.assertEqual(record["status"], "finished", record)
-        self.assertEqual([jobs["Basis"]["snapshot"]["mode"] for _, jobs in rounds], [None, "save", "load"])
-        self.assertEqual([self.option(jobs["Basis"]) for _, jobs in rounds], [None, "--incr-header-save", "--incr-load"])
-        self.assertEqual(self.entry(rounds[0][1]["Basis"]["snapshot"]["key"])["module"], "Basis")
-        # The state after importing Basis belongs to one build's lib folder; no snapshot is made of it.
-        for _, jobs in rounds:
-            self.assertIsNone(jobs["Target"]["snapshot"])
-            self.assertIsNone(self.option(jobs["Target"]))
-
-    def test_the_setting_turns_snapshots_off_and_bounds_them(self):
-        self.write_settings(header_snapshots=0)
-        self.start_broker()
-        for number in range(3):
-            job = self.compiled(self.session_file("s1", marker=f"off-{number}"))
-            self.assertEqual((job["snapshot"], self.option(job), self.files()), (None, None, []))
-        # One snapshot kept: the most recently used.
-        time.sleep(0.02)
-        self.write_settings(header_snapshots=1)
-        a = [self.compiled(self.session_file("s1", "A.lean", marker=f"a-{number}")) for number in range(2)]
-        key_a = a[1]["snapshot"]["key"]
-        self.assertEqual([job["snapshot"]["mode"] for job in a], [None, "save"])  # compiles made while it was off left no trace
-        self.assertEqual(self.files(), [key_a + ".snapshot", key_a + ".snapshot.deps"])
-        b = [self.compiled(self.session_file("s1", "B.lean", marker=f"b-{number}")) for number in range(2)]
-        key_b = b[1]["snapshot"]["key"]
-        self.assertEqual(self.files(), [key_b + ".snapshot", key_b + ".snapshot.deps"])
-        self.assertEqual(list(self.broker.snapshots.entries), [key_b])
-        again = self.compiled(self.session_file("s1", "A.lean", marker="a-again"))
-        self.assertEqual(again["snapshot"]["mode"], "save")  # evicted, and its header has been seen
-        self.assertEqual(self.files(), [key_a + ".snapshot", key_a + ".snapshot.deps"])
-        # Turned off again, the snapshots on disk go with the setting.
-        time.sleep(0.02)
-        self.write_settings(header_snapshots=0)
-        self.broker.tick()
-        self.assertEqual(self.files(), [])
-        self.assertIsNone(self.compiled(self.session_file("s1", "A.lean", marker="a-off"))["snapshot"])
-
-    def test_a_rejected_source_is_run_twice_only_until_the_snapshot_is_proven(self):
-        key = self.primed()
-        rejected = self.compiled(self.session_file("s1", exit=1, marker="rejected"))
-        # Nothing has shown yet that this snapshot leaves results as they are, so the rejection may be
-        # its doing: the compile is run again without it, and that run is the result.
-        self.assertEqual((rejected["status"], rejected["exit_code"]), ("finished", 1))
-        self.assertEqual(rejected["snapshot"], {"key": key, "mode": None, "retried": {"mode": "load", "exit_code": 1}})
-        self.assertIsNone(self.option(rejected))
-        self.assertIn("snapshot=none", self.output(rejected["id"]))
-        self.assertIn("snapshot=loaded", (self.paths.job(rejected["id"]) / "stdout.snapshot.log").read_text(encoding="utf-8"))
-        self.assertEqual(runtime_support.read_json(self.paths.job(rejected["id"]) / "result.json")["exit_code"], 1)
-        self.assertTrue(self.entry(key)["proven"])  # both runs ended alike
-        err = io.StringIO()
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            self.assertEqual(lean_broker.wait(self.paths, rejected["id"], timeout=0), 1)
-        self.assertEqual(json.loads(err.getvalue().split("lean-broker: ", 1)[1])["snapshot"],
-                         {"mode": None, "retried": {"mode": "load", "exit_code": 1}})
-        # From here a rejected source is run once.
-        again = self.compiled(self.session_file("s1", exit=1, marker="rejected again"))
-        self.assertEqual((again["exit_code"], again["snapshot"], self.option(again)), (1, {"key": key, "mode": "load"}, "--incr-load"))
-        self.assertFalse((self.paths.job(again["id"]) / "stdout.snapshot.log").exists())
-        if os.name == "nt":
-            # A crash is never Lean's verdict on a source, so it is run again even now; the second
-            # run crashes the same way, which clears the snapshot.
-            crash = self.compiled(self.session_file("s1", exit=-1073741819))
-            self.assertEqual(crash["exit_code"], 0xC0000005)
-            self.assertEqual(crash["snapshot"]["retried"], {"mode": "load", "exit_code": 0xC0000005})
-            self.assertEqual((self.entry(key)["status"], self.entry(key)["proven"]), ("ready", True))
-        self.assertEqual(self.compiled(self.session_file("s1", marker="accepted"))["snapshot"], {"key": key, "mode": "load"})
-
-    def test_a_rejected_source_that_saves_is_run_again_and_its_snapshot_kept(self):
-        self.start_broker()
-        self.compiled(self.session_file("s1", exit=1, marker="first"))
-        saving = self.compiled(self.session_file("s1", exit=1, marker="second"))
-        key = saving["snapshot"]["key"]
-        # Lean turns a snapshot it could not write into exit code 1, so the rejection may be the saving's.
-        self.assertEqual((saving["exit_code"], saving["snapshot"]["retried"]), (1, {"mode": "save", "exit_code": 1}))
-        self.assertIn("snapshot=saved", (self.paths.job(saving["id"]) / "stdout.snapshot.log").read_text(encoding="utf-8"))
-        self.assertIn("snapshot=none", self.output(saving["id"]))
-        # Both runs ended alike: the saving was not the cause, and what it saved is kept.
-        self.assertEqual((self.entry(key)["status"], self.entry(key)["proven"]), ("ready", False))
-        self.assertEqual(self.files(), [key + ".snapshot", key + ".snapshot.deps"])
-        self.assertEqual(self.left_in_job_folder(saving), [])
-        self.assertEqual(self.compiled(self.session_file("s1", marker="third"))["snapshot"], {"key": key, "mode": "load"})
-
-    def test_a_snapshot_that_changes_a_result_is_condemned(self):
-        key = self.primed()
-        snapshot = self.paths.snapshots / (key + ".snapshot")
-        snapshot.write_bytes(b"x" * snapshot.stat().st_size)  # damaged without a change of size
-        job = self.compiled(self.session_file("s1", marker="third"))
-        self.assertEqual((job["status"], job["exit_code"]), ("finished", 0))  # the compile did not fail of it
-        self.assertEqual(job["snapshot"]["retried"], {"mode": "load", "exit_code": 1})
-        self.assertIn("failed to read", (self.paths.job(job["id"]) / "stderr.snapshot.log").read_text(encoding="utf-8"))
-        self.assertIn("snapshot=none", self.output(job["id"]))
-        self.assertEqual(self.entry(key)["status"], "bad")
-        self.assertIn("exit code 1 when it loaded the snapshot and 0 without it", self.entry(key)["reason"])
-        self.assertEqual(self.files(), [])
-        # The key gets no snapshot again, in this broker or the next.
-        after = self.compiled(self.session_file("s1", marker="fourth"))
-        self.assertEqual((after["snapshot"], self.option(after)), ({"key": key, "mode": None}, None))
-        self.start_broker()
-        later = self.compiled(self.session_file("s1", marker="fifth"))
-        self.assertEqual((later["snapshot"], self.option(later), self.files()), ({"key": key, "mode": None}, None, []))
-
-    def test_a_snapshot_that_cannot_be_saved_is_not_tried_again(self):
-        self.start_broker()
-        self.compiled(self.session_file("s1", marker="first"))
-        job = self.compiled(self.session_file("s1", marker="second", save_fails=1))
-        key = job["snapshot"]["key"]
-        self.assertEqual((job["status"], job["exit_code"]), ("finished", 0))
-        self.assertEqual(job["snapshot"]["retried"], {"mode": "save", "exit_code": 1})
-        self.assertIn("failed to write", (self.paths.job(job["id"]) / "stderr.snapshot.log").read_text(encoding="utf-8"))
-        self.assertEqual((self.entry(key)["status"], self.files(), self.left_in_job_folder(job)), ("bad", [], []))
-        after = self.compiled(self.session_file("s1", marker="third"))
-        self.assertEqual((after["snapshot"], self.option(after)), ({"key": key, "mode": None}, None))
-
-    def test_a_snapshot_missing_from_disk_is_forgotten_and_saved_again(self):
-        key = self.primed()
-        (self.paths.snapshots / (key + ".snapshot.deps")).unlink()
-        job = self.compiled(self.session_file("s1", marker="third"))
-        self.assertEqual((job["snapshot"]["mode"], self.option(job), job["exit_code"]), ("save", "--incr-header-save", 0))
-        self.assertEqual(self.files(), [key + ".snapshot", key + ".snapshot.deps"])
-        self.assertEqual(self.compiled(self.session_file("s1", marker="fourth"))["snapshot"]["mode"], "load")
-
-    def test_a_cancelled_saving_compile_leaves_no_snapshot(self):
-        self.start_broker()
-        self.compiled(self.session_file("s1", marker="first"))
-        job_id = self.submit(self.session_file("s1", marker="second", sleep=30), expect_mb=40)
-        self.until(lambda: self.broker.state["jobs"][job_id].get("pid"))
-        job = self.broker.state["jobs"][job_id]
-        self.assertEqual(job["snapshot"]["mode"], "save")
-        lean_broker.cancel(self.paths, job_id)
-        self.until(lambda: self.finished(job_id), limit=20)
-        self.assertEqual(job["status"], "cancelled")
-        self.assertEqual((self.entry(job["snapshot"]["key"]), self.files(), self.left_in_job_folder(job)), (None, [], []))
-        self.assertEqual(self.compiled(self.session_file("s1", marker="third"))["snapshot"]["mode"], "save")
 
 
 class LauncherTests(BrokerFixture):

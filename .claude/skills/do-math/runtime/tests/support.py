@@ -114,7 +114,6 @@ def test_settings():
     config['lean'].update(command=[sys.executable, '-B', str(HERE / 'canon_lean.py')],
                           version_command=[sys.executable, '-B', str(HERE / 'canon_lean.py'), '--version'],
                           min_free_memory_mb=0, memory_budget_mb=512, calibration_expect_mb=64,
-                          header_snapshots=0,  # the stand-in compiler writes no snapshot of the state after import
                           priority='normal')  # the stand-in compiler competes on equal terms with other load
     return config
 

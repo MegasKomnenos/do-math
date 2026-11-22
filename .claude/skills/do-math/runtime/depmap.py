@@ -28,12 +28,20 @@ the map shows the units the proof of the root rests on: starting at the root, ev
 proof of a reached statement names, everything a reached statement or definition mentions, and so
 on. With `--all` it shows every unit of the canon. Every other item is folded.
 
+A refuted root. A research can end with the root refuted: a statement that Lean confirmed as the
+negation of the root is settled. The result of that research is the refutation, so the map shows
+it. The root's card says that the root is refuted, each settled refutation is a unit whatever its
+weight, the default scope starts from the refutations as well as from the root, and so the map
+shows what the refutation rests on.
+
 Edges. An edge runs from what is used to what uses it, and there is at most one for a pair.
     direct       the proof of the target names the source (for a definition: its body does)
     contracted   the proof reaches the source only through folded items; `via` lists every folded
                  item on some such path, and the drawing writes them on the line
     mention      the statement of the target mentions the source, itself or through folded definitions
     alternative  the source is another proof of the target statement; the two proofs are separate arguments, not joint inputs
+    refutation   the source is a statement whose record says that it refutes the root and that Lean
+                 confirmed as the root's negation; the root is refuted once that statement is settled
 A folded item passes on everything it rests on: what each of its proofs names and what its
 statement mentions. A pair related in both ways gets the relation that says more about it: a
 definition that the statement mentions is a `mention` whatever the proof does with it, and a
@@ -134,9 +142,14 @@ def derive(model, everything=False, statements=None):
         return sorted(names, key=lambda n: (elements[n]['module'], n))
 
     root = item(model['root'])
+    # The statements that refute the root, and among them those that are settled. A settled one is the
+    # result of the research, so it is drawn whatever weight its record gives it.
+    refuting = order({item(name) for name, element in elements.items()
+                      if theorem(name) and element.get('refutes') and item(element['refutes']) == root})
+    settled_refuting = [name for name in refuting if any(elements[p]['settled'] for p in elements[name]['proofs'])]
 
     def is_unit(name):
-        return name == root or elements[name]['weight'] == 'unit'
+        return name == root or elements[name]['weight'] == 'unit' or name in settled_refuting
 
     def reach(start, through):
         """The items reached from `start`, continuing only through the items `through` accepts."""
@@ -151,7 +164,7 @@ def derive(model, everything=False, statements=None):
         return list(seen)
 
     items = order(name for name in elements if item(name) == name)
-    scope = set(items) if everything else set(reach([root], lambda name: True))
+    scope = set(items) if everything else set(reach([root] + settled_refuting, lambda name: True))
     shown = [name for name in items if is_unit(name) and name in scope]
 
     users = {}
@@ -212,6 +225,10 @@ def derive(model, everything=False, statements=None):
                 'description': element['description'], 'lean': element['statement']}
         if role == 'proof':
             unit['proves'] = item(name)
+        if name == root and theorem(name):
+            unit['refuted'] = bool(element['refuted_by'])
+        if name in refuting:
+            unit['refutes'] = root
         if theorem(name):
             proofs = element['proofs'] if role == 'statement' else [name]
             unit.update(standing=element['standing'],
@@ -230,6 +247,10 @@ def derive(model, everything=False, statements=None):
             card(proof, 'proof')
             join(proof, proof, False)
             edges.append({'source': proof, 'target': name, 'kind': 'alternative', 'via': [],
+                          'proof': None, 'statement': None})
+    for name in refuting:
+        if name in shown and root in shown:
+            edges.append({'source': name, 'target': root, 'kind': 'refutation', 'via': [],
                           'proof': None, 'statement': None})
 
     groups = {}
@@ -312,7 +333,9 @@ def main(argv=None):
         say('depmap: ' + str(error), sys.stderr)
         return 2
     counts = data['counts']
-    scope = 'every unit of the canon' if data['scope'] == 'all' else 'what the proof of the root rests on'
+    refuted = str(data.get('root_state') or '').endswith('refuted')
+    scope = ('every unit of the canon' if data['scope'] == 'all' else
+             'what the refutation of the root rests on' if refuted else 'what the proof of the root rests on')
     say(f"{counts['units']} units, {counts['edges']} edges, {counts['groups']} groups; "
         f"{len(data['folded'])} folded elements on edges; scope: {scope}; layout: {result['engine']}")
     if result['note']:

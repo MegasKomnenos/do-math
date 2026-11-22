@@ -17,21 +17,8 @@ the other two from all of it, so a change in such a line leaves the public files
 byte-identical, as a replaced proof does, and any other change shows in all four. No file
 names the source's path. This models file transport and which file changes with which
 part of the source; nothing is elaborated.
-
-A snapshot of the state after import is modelled after what Lean 4.32.0 was measured to
-do. `--incr-header-save=<file>` writes <file> and <file>.deps at the end of a run whose
-imports resolved, whatever the run's exit code; `-- fake: save_fails=1` makes that write
-fail as an unwritable path does, with a message on stderr, exit code 1 and no file.
-`--incr-load=<file>` reads the two files. A missing or unreadable one ends the run with a
-message on stderr and exit code 1. A snapshot of another header is ignored and the import
-done in full
-(`snapshot=mismatch`). A snapshot saved under another main module name is used all the
-same (`snapshot=WRONG-MODULE`): the real compiler then names the file's declarations
-after the other module, which is why the broker keys a snapshot by that name. The
-`compiled` line ends with `snapshot=saved`, `snapshot=loaded` or `snapshot=none`.
 """
 
-import json
 import os
 import re
 import sys
@@ -51,24 +38,6 @@ def option(argv, name):
     return next((arg.split("=", 1)[1] for arg in argv if arg.startswith(name + "=")), None)
 
 
-def main_module(source, root):
-    """The name Lean gives the file: its path under the root (-R, or the working directory), else `_stdin`."""
-    try:
-        relative = os.path.relpath(os.path.realpath(source), os.path.realpath(root or os.getcwd()))
-    except ValueError:  # another drive
-        return ["_stdin"]
-    if relative.startswith("..") or os.path.isabs(relative):
-        return ["_stdin"]
-    return os.path.splitext(relative)[0].replace("\\", "/").split("/")
-
-
-def header(lines):
-    """The source up to its last header line: what a snapshot of the state after import belongs to."""
-    last = max((n for n, line in enumerate(lines) if IMPORT.match(line) or line.strip() in ("module", "prelude")),
-               default=-1)
-    return "\n".join(lines[:last + 1])
-
-
 def main(argv):
     if "--version" in argv:
         print("Lean (version 4.0.0-fake, x86_64-fake, commit 0000000, Release)")
@@ -76,7 +45,6 @@ def main(argv):
     threads = option(argv, "--threads")
     source = argv[-1]
     olean = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == "-o"), None)
-    root = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == "-R"), None)
     with open(source, encoding="utf-8") as stream:
         lines = stream.read().splitlines()
     imports = [match.group(1) for line in lines if (match := IMPORT.match(line))]
@@ -97,40 +65,15 @@ def main(argv):
             for pair in line[len("-- fake:"):].split():
                 key, _, value = pair.partition("=")
                 options[key] = value
-    state = {"header": header(lines), "module": main_module(source, root)}
-    snapshot = "none"
-    load, save = option(argv, "--incr-load"), option(argv, "--incr-header-save")
-    if load:
-        try:
-            with open(load, encoding="utf-8") as stream:
-                text = stream.read()
-            with open(load + ".deps", encoding="utf-8"):
-                pass
-            saved = json.loads(text)
-        except (OSError, ValueError) as exc:
-            print(f"failed to read file '{load}': {exc}", file=sys.stderr)
-            return 1
-        snapshot = "mismatch" if saved["header"] != state["header"] else \
-            "loaded" if saved["module"] == state["module"] else "WRONG-MODULE"
-    held = [touch(bytearray((8 + 8 * len(imports)) * 1024 * 1024))]
+    held =[touch(bytearray((8 + 8 * len(imports)) * 1024 * 1024))]
     time.sleep(0.3)  # the baseline alone, long enough for the broker's sampling to see it
     if "alloc_mb" in options:
         held.append(touch(bytearray(int(options["alloc_mb"]) * 1024 * 1024)))
     time.sleep(float(options.get("sleep", 0)))
     code = int(options.get("exit", 0))
-    if save:
-        if "save_fails" in options:
-            print(f"failed to write '{save}': failed to create file '{save}'", file=sys.stderr)
-            code = code or 1
-        else:
-            with open(save, "w", encoding="utf-8") as stream:
-                json.dump(state, stream)
-            with open(save + ".deps", "w", encoding="utf-8") as stream:
-                json.dump(imports, stream)
-            snapshot = "saved"
     nice = os.nice(0) if hasattr(os, "nice") else "n/a"
     print(f"compiled {source} imports={len(imports)} threads={threads} FAKE_ENV={os.environ.get('FAKE_ENV')} "
-          f"nice={nice} snapshot={snapshot}")
+          f"nice={nice}")
     if "marker" in options:
         print(options["marker"])
     if "stderr" in options:

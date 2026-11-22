@@ -49,11 +49,6 @@ READY_SECONDS = 20.0
 IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)")
 # The emitted files a `module` file reads of a module it imports; the others hold proofs and editor data.
 PUBLIC_SUFFIXES = (".olean", ".ir")
-# A compile that saves a snapshot writes it under this name in its job folder; Lean puts a second
-# file, the list of the library files the snapshot refers to, beside it under the same name plus ".deps".
-SNAPSHOT = "header.snapshot"
-SNAPSHOT_PARTS = ("", ".deps")
-KEEP_CONDEMNED = 200  # condemned snapshot keys remembered, so that none of them is made again
 JOB_ID = re.compile(r"^[jc][0-9a-f]{32}$")  # a job folder name; anything else never touches the file system
 BUILD_ID = re.compile(r"^b[0-9a-f]{32}$")
 MODULE_PART = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")  # one component of a module name, as a file name
@@ -76,11 +71,10 @@ class Paths:
         self.sources = self.root / "calibration"
         self.builds = self.root / "builds"
         self.cache = self.root / "cache"  # emitted module files and logs; a manifest marks complete entries
-        self.snapshots = self.root / "snapshots"  # Lean's state after import, per header; index.json lists them
         self.log = self.root / "broker.log"
 
     def ensure(self):
-        for directory in (self.root, self.queue, self.jobs, self.sources, self.builds, self.cache, self.snapshots):
+        for directory in (self.root, self.queue, self.jobs, self.sources, self.builds, self.cache):
             directory.mkdir(parents=True, exist_ok=True)
 
     def job(self, job_id):
@@ -99,18 +93,13 @@ def read_header(data):
 
     `imports` are the imported module names, sorted. `module` says whether the file is written in
     Lean's module system: its first token that is not a comment or blank is `module`. `all` says
-    whether some import is an `import all`, which reads the private data of what it imports.
-    `prefix` is the source from its first byte to the end of the last header line (`module`,
-    `prelude` or an import), and is empty for a file without a header. Lean reuses a snapshot of the
-    state after import only for a header with the same tokens at the same positions, and that
-    prefix decides both (snapshot_key)."""
-    imports, depth, offset, end = set(), 0, 0, 0
+    whether some import is an `import all`, which reads the private data of what it imports."""
+    imports, depth = set(), 0
     module = private = False
     first = True
-    for raw in data.splitlines(keepends=True):
-        start, offset = offset, offset + len(raw)
+    for number, raw in enumerate(data.splitlines()):
         line = raw.decode("utf-8", errors="replace")
-        if start == 0:
+        if number == 0:
             line = line.removeprefix("\ufeff")
         code = []
         index = 0
@@ -144,8 +133,7 @@ def read_header(data):
             private = private or bool(match[1])
         elif stripped not in ("prelude", "module"):
             break
-        end = start + len(raw.rstrip(b"\r\n"))
-    return {"imports": sorted(imports), "module": module, "all": private, "prefix": data[:end]}
+    return {"imports": sorted(imports), "module": module, "all": private}
 
 
 def read_imports(path):
@@ -272,38 +260,6 @@ def output_identities(files):
             digest.update(data)
         return digest.hexdigest()[:32]
     return {"public": identity([f for f in files if f[0] in PUBLIC_SUFFIXES]), "full": identity(files)}
-
-
-def main_module(job):
-    """The name Lean gives the file a job compiles, as a list of name components.
-
-    A module of a build is named from its root. A single file is named by its path under the
-    working directory of the compile, and `_stdin` when it lies outside that directory; Lean
-    resolves both paths before it compares them, as is done here. Lean stores this name in a
-    snapshot of the state after import and gives it to whatever file loads that snapshot, so
-    the name is part of the snapshot's key."""
-    if job.get("module"):
-        return job["module"].split(".")
-    try:
-        relative = Path(job["source"]).resolve().relative_to(Path(job["cwd"]).resolve())
-    except ValueError:
-        return ["_stdin"]
-    return list(relative.with_suffix("").parts)
-
-
-def snapshot_key(environment, module, prefix):
-    """One snapshot per environment identity, main module name (main_module) and header bytes (read_header)."""
-    digest = hashlib.sha256()
-    for part in (environment.encode("utf-8"), json.dumps(module).encode("utf-8"), prefix):
-        digest.update(str(len(part)).encode("ascii") + b"\n")
-        digest.update(part)
-    return digest.hexdigest()[:32]
-
-
-def crashed(exit_code):
-    """Whether an exit code reports a crash and not Lean's verdict on a source: a negative code is a
-    POSIX signal, and a code of 2**31 and above is a Windows one such as 0xC0000005."""
-    return exit_code < 0 or exit_code >= 2 ** 31
 
 
 # ---------------------------------------------------------------------- processes
@@ -548,114 +504,6 @@ class Calibration:
             self.dirty = False
 
 
-# -------------------------------------------------------------------- snapshots
-
-class Snapshots:
-    """Snapshots of Lean's state after import, kept under runner/lean/snapshots. Only the broker writes them.
-
-    Lean 4.32 can save that state at the end of a run (`--incr-header-save`) and start a later run
-    from it (`--incr-load`), which spares the later run most of the import. A snapshot is two
-    files, `<key>.snapshot` and `<key>.snapshot.deps`; snapshot_key says what a key covers.
-    index.json has one entry per key. A `ready` entry describes a snapshot that compiles load;
-    it is `proven` once the result of a compile that loaded it has been confirmed, by exit code 0
-    or by the same exit code from a run without it. A `bad` entry names a key whose snapshot
-    failed that comparison or could not be saved, so that none is made for it again.
-    Broker.snapshot_arguments and Broker.snapshot_outcome hold the rule that uses these states."""
-
-    def __init__(self, folder):
-        self.folder = Path(folder)
-        self.index = self.folder / "index.json"
-        try:
-            self.entries = dict(read_json(self.index)["entries"])
-        except (OSError, ValueError, KeyError, TypeError):
-            self.entries = {}  # no index yet, or an unreadable one: prune() then clears the folder
-        self.dirty = False
-
-    def path(self, key):
-        return self.folder / (key + ".snapshot")
-
-    def files(self, key):
-        return [Path(str(self.path(key)) + part) for part in SNAPSHOT_PARTS]
-
-    def status(self, key):
-        return self.entries[key]["status"] if key in self.entries else None
-
-    def proven(self, key):
-        return self.status(key) == "ready" and self.entries[key]["proven"]
-
-    def usable(self, key):
-        """Whether a ready snapshot is on disk with the sizes it was published with; one that is not is forgotten."""
-        if self.status(key) != "ready":
-            return False
-        try:
-            intact = [path.stat().st_size for path in self.files(key)] == self.entries[key]["sizes"]
-        except OSError:
-            intact = False
-        if not intact:
-            del self.entries[key]
-            self.dirty = True
-        return intact
-
-    def publish(self, key, saved, described):
-        """Move the snapshot a compile saved at `saved` into the folder under its key; False if Lean did not write it in full."""
-        sources = [Path(str(saved) + part) for part in SNAPSHOT_PARTS]
-        try:
-            sizes = [path.stat().st_size for path in sources]
-            if not all(sizes):
-                return False
-            for source, target in zip(sources, self.files(key)):
-                os.replace(source, target)
-        except OSError:
-            return False
-        now = time.time()
-        self.entries[key] = {"status": "ready", "proven": False, "sizes": sizes, "created_at": now,
-                             "used_at": now, **described}
-        self.dirty = True
-        return True
-
-    def prove(self, key):
-        if self.status(key) == "ready" and not self.entries[key]["proven"]:
-            self.entries[key]["proven"] = True
-            self.dirty = True
-
-    def touch(self, key):
-        self.entries[key]["used_at"] = time.time()
-        self.dirty = True
-
-    def condemn(self, key, reason):
-        self.entries[key] = {"status": "bad", "reason": reason, "at": time.time()}
-        self.dirty = True
-
-    def prune(self, keep, in_use):
-        """Keep the `keep` most recently used snapshots and delete every other file in the folder.
-
-        A snapshot that a running compile has loaded (`in_use`) stays, since Windows refuses to
-        delete a file that a process has mapped; a later call takes it. The files of a condemned
-        snapshot, and those left by a publication that was cut short, belong to no ready entry
-        and go the same way."""
-        ready = sorted((k for k, e in self.entries.items() if e["status"] == "ready"),
-                       key=lambda k: self.entries[k]["used_at"])
-        bad = sorted((k for k, e in self.entries.items() if e["status"] == "bad"), key=lambda k: self.entries[k]["at"])
-        for key in ready[:max(0, len(ready) - keep)] + bad[:max(0, len(bad) - KEEP_CONDEMNED)]:
-            if key not in in_use:
-                del self.entries[key]
-                self.dirty = True
-        for path in list(self.folder.iterdir()) if self.folder.is_dir() else []:
-            key = path.name.split(".")[0]
-            if path == self.index or key in in_use or self.status(key) == "ready":
-                continue
-            try:
-                path.unlink()
-            except OSError:
-                pass
-        self.save()
-
-    def save(self):
-        if self.dirty:
-            write_json(self.index, {"entries": self.entries})
-            self.dirty = False
-
-
 # ------------------------------------------------------------------- admission
 
 def reservation(expect_mb, baseline_mb, cv, current_mb=None):
@@ -709,7 +557,6 @@ class Broker:
         # start() reads the saved state under the lock; this is the state of an instance that has none yet.
         self.state = {"jobs": {}, "builds": {}, "version": None}
         self.calibration = Calibration(self.paths.calibration)
-        self.snapshots = Snapshots(self.paths.snapshots)
         self.hosts = {}
         self.dirty = False
         self.samples_dirty = False
@@ -730,7 +577,6 @@ class Broker:
 
     def save(self):
         self.calibration.save()
-        self.snapshots.save()
         if self.samples_dirty and time.monotonic() - self.last_sample_save >= SAMPLE_SAVE_SECONDS:
             self.dirty = True
         if self.dirty:
@@ -771,7 +617,6 @@ class Broker:
         self.dirty = True
         self.log(event="settings_applied", config=config)
         self.capture_environment()
-        self.prune_snapshots()  # header_snapshots may have been lowered, or set to 0
 
     def capture_environment(self):
         """With `lake env lean …` configured, ask lake once for the environment it gives lean.
@@ -1172,8 +1017,6 @@ class Broker:
                     self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
 
     def finish(self, job, exit_info):
-        if self.snapshot_outcome(job, exit_info):
-            return  # back in the queue for a run without the snapshot; nothing is reported yet
         now = exit_info.get("finished_at") or time.time()
         job["finished_at"] = now
         job["exit_code"] = exit_info.get("exit_code")
@@ -1206,10 +1049,7 @@ class Broker:
         elif baseline is not None:
             measured["baseline_mb"] = baseline
             measured["excess_mb"] = round(max(0.0, measured["peak_mb"] - baseline), 1)
-            # A run that saved a snapshot paid for the saving in memory and time, once for its header;
-            # its excess is not what compiles with these imports cost.
-            saved = (job.get("snapshot") or {}).get("mode") == "save"
-            if job["exit_code"] is not None and not job.get("cancel_requested") and not saved:
+            if job["exit_code"] is not None and not job.get("cancel_requested"):
                 self.calibration.record_job(job["closure"], measured["excess_mb"], measured["seconds"])
         if job["kind"] == "compile" and job["exit_code"] is not None and measured["peak_mb"] > 0:
             # Reported so that the session sees how its estimate did; the broker does not act on it.
@@ -1319,125 +1159,11 @@ class Broker:
             del self.state["builds"][build["id"]]
             shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 
-    # --- snapshots of the state after import
-
-    def prune_snapshots(self, ended=None):
-        """Bound the snapshots on disk to lean.header_snapshots; `ended` is a job whose Lean has just exited."""
-        loading = {j["snapshot"]["key"] for j in self.state["jobs"].values() if j is not ended
-                   and j["status"] == "running" and (j.get("snapshot") or {}).get("mode") == "load"}
-        self.snapshots.prune(self.config["header_snapshots"], loading)
-
-    def snapshot_arguments(self, job, data):
-        """The snapshot option this launch of a compile is given, recorded as job["snapshot"]; [] for a run without one.
-
-        Only a compile whose imports are all the library's can use a snapshot: the state after
-        importing a module of a build belongs to that build's lib folder. `data` is the source.
-
-        A compile whose key has a snapshot loads it. A compile whose key has none, and whose key
-        no job in the broker's state has had before, runs without one: most files are compiled
-        once, and saving costs more than the import it would spare (with Lean 4.32.0 on
-        `import Init.Data.List.Basic`, 1.7 s of processor time against 0.7 s and 100 MiB more
-        private memory). The next compile with that key shows that the key repeats, and it saves
-        the snapshot, unless another compile is saving it at that moment. A key whose snapshot was
-        condemned gets none. snapshot_outcome says what the run's result means for the snapshot
-        and whether the compile is run again without it."""
-        if (job.get("snapshot") or {}).get("retried"):
-            return []  # this launch is the run without the snapshot; the record stays for snapshot_outcome
-        job["snapshot"] = None
-        if job["kind"] != "compile" or not self.config["header_snapshots"] or job["imports"] != job["external"]:
-            return []
-        header = read_header(data)
-        module = main_module(job)
-        key = snapshot_key(self.environment_identity(), module, header["prefix"])
-        plan = job["snapshot"] = {"key": key, "mode": None}
-        if self.snapshots.status(key) == "bad":
-            return []
-        if self.snapshots.usable(key):
-            self.snapshots.touch(key)
-            plan["mode"] = "load"
-            return [f"--incr-load={self.snapshots.path(key)}"]
-        others = [j for j in self.state["jobs"].values()
-                  if j is not job and (j.get("snapshot") or {}).get("key") == key]
-        # Two compiles must not both write one snapshot. A job is saving from its launch until
-        # snapshot_outcome has judged it, which for a second run is the end of that run.
-        saving = any(j["status"] in ACTIVE and "save" in (j["snapshot"]["mode"], (j["snapshot"].get("retried") or {}).get("mode"))
-                     for j in others)
-        if not others or saving:
-            return []
-        plan.update(mode="save", module=".".join(module), imports=header["imports"])
-        return [f"--incr-header-save={self.paths.job(job['id']) / SNAPSHOT}"]
-
-    def snapshot_outcome(self, job, exit_info):
-        """What a run with a snapshot option means for the snapshot; True if the job was put back for a run without it.
-
-        The options are experimental, so no compile may fail because of them, and a compile that
-        Lean rejects on its merits must not be run twice each time. The rule:
-
-        - A run that saved or loaded a snapshot and ended with exit code 0 stands. A saved
-          snapshot is published; a loaded one is proven.
-        - A run that ended with any other exit code is run once more without the snapshot, and
-          the second run is the job's result. If both runs ended with the same exit code the
-          snapshot was not the cause: a loaded snapshot is proven and a saved one is published.
-          If they differ the snapshot is condemned: deleted, and never made for that key again.
-          A saved snapshot that Lean did not write in full is condemned as well.
-        - A proven snapshot is trusted: a compile that loaded it and was rejected with an
-          ordinary exit code is not run again. A crash is still run again, because a crash is
-          never Lean's verdict on a source.
-
-        So a snapshot costs second runs of rejected sources only until it is proven: one for the
-        saving, and one for each compile that loads it and is rejected while it is unproven. When
-        the compiles of a key run one after another, at most one loading compile is run twice,
-        since its two runs prove the snapshot or condemn it, so the key costs at most two; loading
-        compiles that run side by side can each cost one, and a snapshot saved again after prune()
-        deleted it starts over. A run that was cancelled or left no exit code says nothing about
-        the snapshot; a snapshot it was saving is dropped."""
-        plan = job.get("snapshot")
-        if not plan or not (plan["mode"] or plan.get("retried")):
-            return False
-        first, code = plan.get("retried"), exit_info.get("exit_code")
-        mode = plan["mode"] or first["mode"]
-        key, saved = plan["key"], self.paths.job(job["id"]) / SNAPSHOT
-        judged = code is not None and not job.get("cancel_requested")
-        if judged and first is None and code != 0 \
-                and not (mode == "load" and self.snapshots.proven(key) and not crashed(code)):
-            job["snapshot"] = {**plan, "mode": None, "retried": {"mode": mode, "exit_code": code}}
-            for stream in ("stdout", "stderr"):  # the first run's output stays beside the second's
-                try:
-                    os.replace(self.paths.job(job["id"]) / f"{stream}.log", self.paths.job(job["id"]) / f"{stream}.snapshot.log")
-                except OSError:
-                    pass
-            self.requeue(job)
-            self.log(event="snapshot_retry", job=job["id"], key=key, mode=mode, exit_code=code)
-            return True
-        if judged and first is not None and first["exit_code"] != code:
-            self.snapshots.condemn(key, f"a compile ended with exit code {first['exit_code']} when it "
-                                        f"{'loaded' if mode == 'load' else 'saved'} the snapshot and {code} without it")
-            self.log(event="snapshot_condemned", job=job["id"], key=key, reason=self.snapshots.entries[key]["reason"])
-        elif judged and mode == "load":
-            self.snapshots.prove(key)
-        elif judged and not self.snapshots.publish(key, saved, {k: plan[k] for k in ("module", "imports")}):
-            self.snapshots.condemn(key, "the compile that was to save the snapshot did not write it")
-            self.log(event="snapshot_condemned", job=job["id"], key=key, reason=self.snapshots.entries[key]["reason"])
-        self.discard_saved_snapshot(job)
-        self.prune_snapshots(ended=job)
-        return False
-
-    def discard_saved_snapshot(self, job):
-        """Remove what a saving run left in its job folder and was not published."""
-        for part in SNAPSHOT_PARTS:
-            try:
-                (self.paths.job(job["id"]) / (SNAPSHOT + part)).unlink(missing_ok=True)
-            except OSError as exc:
-                self.log(event="snapshot_left", job=job["id"], error=str(exc))
-
     def requeue(self, job):
         """Put a job whose host has ended back in the queue as it was before it started."""
         job_dir = self.paths.job(job["id"])
         for name in ("GO", "exit.json", "process.json", "launch.json"):
             (job_dir / name).unlink(missing_ok=True)
-        host = self.hosts.pop(job["id"], None)
-        if host is not None:
-            self.hosts[job["id"] + " (earlier run)"] = host  # collect() reaps it when it has ended
         job.update(status="queued", host=None, lean=None, pid=None, started_at=None, measured=None)
         if job.get("build") in self.state["builds"]:
             # launch() marked the module running in its build; the build reports it queued again.
@@ -1452,7 +1178,6 @@ class Broker:
             job["finished_at"] = time.time()
             job["status"] = "cancelled"
             job["measured"] = job["measured"] or {"peak_mb": 0.0, "current_mb": 0.0, "seconds": 0.0}
-            self.discard_saved_snapshot(job)  # a job waiting for its run without the snapshot still holds one
             if job.get("build"):
                 self.finish_module(job)
             write_json(self.paths.job(job["id"]) / "result.json", job)
@@ -1619,7 +1344,7 @@ class Broker:
                 raise OSError('source changed after submission; submit the completed source again')
             if job.get("olean"):
                 Path(job["olean"]).parent.mkdir(parents=True, exist_ok=True)
-            argv += self.snapshot_arguments(job, data) + [job["source"]]
+            argv.append(job["source"])
             write_json(job_dir / "launch.json", {"argv": argv, "cwd": job["cwd"], "env": env,
                                                  "priority": self.config["priority"], "broker": self.identity})
             with (job_dir / "host.log").open("ab") as log:
@@ -1636,7 +1361,7 @@ class Broker:
             self.finish(job, {"exit_code": None, "launch_error": str(exc)})
             return
         self.log(event="started", job=job["id"], session=job["session"], reserve=job["reserve"],
-                 threads=job["threads"], passed=job["passed"], snapshot=(job.get("snapshot") or {}).get("mode"))
+                 threads=job["threads"], passed=job["passed"])
 
     # --- lifecycle
 
@@ -1863,15 +1588,9 @@ def wait(paths, job_id, timeout=None):
         return report_build(paths, record)
     job_dir = paths.job(job_id)
     relay(job_dir / "stdout.log", job_dir / "stderr.log")
-    # `snapshot` says what the compile did with a snapshot of the state after import: {"mode": "save"},
-    # {"mode": "load"}, {"mode": null} for a run without one, with "retried" when a first run with
-    # one was repeated, and null when the compile could have none (reference/lean.md).
-    snapshot = record.get("snapshot")
     summary = {"job": job_id, "status": record["status"], "exit_code": record.get("exit_code"),
                "reason": record.get("reason"), "expect_mb": record.get("expect_mb"),
-               "measured": record.get("measured"),
-               "snapshot": snapshot and {k: snapshot[k] for k in ("mode", "retried") if k in snapshot},
-               "dir": str(job_dir)}
+               "measured": record.get("measured"), "dir": str(job_dir)}
     print("lean-broker: " + json.dumps(summary, ensure_ascii=True), file=sys.stderr, flush=True)
     if record["status"] == "finished":
         return record["exit_code"]
@@ -1958,7 +1677,7 @@ def broker_status(paths):
                                     for s in ("cached", "queued", "running", "finished", "failed", "cancelled")}}
                        for b in state.get("builds", {}).values() if b["status"] in ACTIVE
                        or b["finished_at"] and b["finished_at"] > time.time() - 600],
-            "calibration": str(paths.calibration), "cache": str(paths.cache), "snapshots": str(paths.snapshots)}
+            "calibration": str(paths.calibration), "cache": str(paths.cache)}
 
 
 def version(paths):

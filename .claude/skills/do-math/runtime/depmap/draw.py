@@ -63,10 +63,12 @@ HERE = Path(__file__).resolve().parent
 SANS = "'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
 MONO = "Consolas, 'DejaVu Sans Mono', Menlo, monospace"
 INK, SUBTLE, FAINT = '#203549', '#526A7D', '#60788B'
-LINES = {'direct': ('', 2.4), 'contracted': ('12 7', 2.4), 'mention': ('2 7', 2.4), 'alternative': ('', 5.0)}
+LINES = {'direct': ('', 2.4), 'contracted': ('12 7', 2.4), 'mention': ('2 7', 2.4), 'alternative': ('', 5.0),
+         'refutation': ('16 6', 5.0)}
 LEGEND = {'direct': 'named in the proof', 'contracted': 'through folded steps (named on the line)',
-          'mention': 'mentioned in the statement', 'alternative': 'another proof of the same statement'}
-ARROWS = {'alternative': (11, 4.6)}
+          'mention': 'mentioned in the statement', 'alternative': 'another proof of the same statement',
+          'refutation': 'refutes the root: its statement is the negation of the root'}
+ARROWS = {'alternative': (11, 4.6), 'refutation': (11, 4.6)}
 ARROW = (8.2, 3.5)
 CASING = 6
 CORNER = 7
@@ -76,6 +78,8 @@ PALETTE = ['#256D9D', '#B56527', '#277E65', '#965C9D', '#B64258', '#5A778D', '#7
            '#2A7F62']
 ALTERNATIVE_COLOUR = '#7350A3'
 MENTION_COLOUR = '#7B92A4'
+REFUTATION_COLOUR = '#A83232'
+FIXED_COLOURS = {'alternative': ALTERNATIVE_COLOUR, 'mention': MENTION_COLOUR, 'refutation': REFUTATION_COLOUR}
 GROUP_FILL, GROUP_STROKE = '#F8FAFC', '#BECBD6'
 CARD = {'statement': ('#FFFFFF', '#8096A7', 1.6), 'definition': ('#F1F5F8', '#8096A7', 1.6),
         'proof': ('#EEE5F6', '#82719D', 1.6), 'root': ('#FFF0B8', '#8A7E58', 3.0)}
@@ -159,6 +163,10 @@ def wrap(text, size, width, bold=False, mono=False, after=' '):
 def status_of(unit):
     """What a card says under the name: the kind, and for a statement or a proof its standing."""
     words = ['root'] if unit.get('root') else []
+    if unit.get('refuted'):
+        words.append('refuted')
+    if unit.get('refutes'):
+        words.append('refutes the root')
     words.append('another proof' if unit['role'] == 'proof' else KINDS.get(unit['kind'], unit['kind']))
     if unit.get('standing'):
         words.append(STANDINGS[unit['standing']][0])
@@ -584,7 +592,7 @@ def legend(limit, y):
 
     for kind, words in LEGEND.items():
         dash, width = LINES[kind]
-        colour = ALTERNATIVE_COLOUR if kind == 'alternative' else MENTION_COLOUR if kind == 'mention' else '#4B6072'
+        colour = FIXED_COLOURS.get(kind, '#4B6072')
         at = place(62 + text_width(words, 14) + 30)
         parts.append(f'<path d="M {fmt(at)} {y - 5} h 46" fill="none" stroke="{colour}" stroke-width="{width}" stroke-dasharray="{dash}"/>')
         parts.append(f'<path d="M {fmt(at + 54)} {y - 5} l -9 -4 v 8 Z" fill="{colour}"/>')
@@ -628,7 +636,7 @@ def svg_of(data, cards, geometry):
     # before they part, so the casings of a net are all drawn before its lines; otherwise the casing of one
     # edge would cut the line of another where it leaves the common stretch, and a branch would read as a crossing.
     parts.append('<g id="routes">')
-    behind = {'mention': 0, 'contracted': 1, 'direct': 2, 'alternative': 3}
+    behind = {'mention': 0, 'contracted': 1, 'direct': 2, 'alternative': 3, 'refutation': 4}
     nets = {}
     for index in sorted(range(len(data['edges'])), key=lambda i: (behind[data['edges'][i]['kind']], i)):
         nets.setdefault(geometry['edges'][index]['net'], []).append(index)
@@ -637,8 +645,7 @@ def svg_of(data, cards, geometry):
         for index in indices:
             edge, route = data['edges'][index], geometry['edges'][index]
             dash, stroke = LINES[edge['kind']]
-            ink = (ALTERNATIVE_COLOUR if edge['kind'] == 'alternative' else MENTION_COLOUR if edge['kind'] == 'mention'
-                   else colour[edge['source']])
+            ink = FIXED_COLOURS.get(edge['kind']) or colour[edge['source']]
             long, half = ARROWS.get(edge['kind'], ARROW)
             points = list(route['points'])
             (px, py), (ex, ey) = points[-2], points[-1]

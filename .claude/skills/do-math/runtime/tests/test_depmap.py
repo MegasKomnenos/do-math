@@ -27,10 +27,10 @@ SVG = '{http://www.w3.org/2000/svg}'
 
 
 def statement(name, weight='step', uses=(), mentions=(), module='Lib.Main', short=None, proves=None,
-              proof='informal', standing='accepted'):
+              proof='informal', standing='accepted', refutes=None):
     """A theorem of a hand-made canon. proof: None, 'informal' (written, Lean ends in sorry) or 'formal'."""
     return {'name': name, 'kind': 'theorem', 'weight': weight, 'uses': list(uses), 'mentions': list(mentions),
-            'module': module, 'short': short, 'proves': proves, 'proof': proof, 'standing': standing}
+            'module': module, 'short': short, 'proves': proves, 'proof': proof, 'standing': standing, 'refutes': refutes}
 
 
 def definition(name, weight='step', uses=(), mentions=(), module='Lib.Defs', short=None, kind='def'):
@@ -49,7 +49,7 @@ def write_canon(folder, rows, root='Lib.root'):
                          'span': [1, 0, 2, 0], 'statement': name + ' : stated in Lean', 'statement_hash': 'hash-of-' + name,
                          'prop': theorem, 'statement_uses': row['mentions'], 'uses': row['uses'], 'library': [],
                          'direct_axioms': [] if formal else ['sorryAx'], 'lean_proof': 'complete' if formal else 'sorry'}
-        records[name] = {'weight': row['weight'], 'short': row['short'], 'proves': row['proves'], 'refutes': None,
+        records[name] = {'weight': row['weight'], 'short': row['short'], 'proves': row['proves'], 'refutes': row.get('refutes'),
                          'source': None, 'description': 'What ' + name + ' is.', 'proof': row['proof'] == 'informal',
                          'statement': False, 'approaches': [], 'path': 'records/' + name.replace('.', '/') + '.md'}
         if theorem and row['proof']:
@@ -58,6 +58,7 @@ def write_canon(folder, rows, root='Lib.root'):
         elif theorem:
             verdicts.append({'element': name, 'correct': 'not_applicable', 'accepted': False, 'reason': 'Stated faithfully.'})
     pairs = {f"same|{row['name']}|{row['proves']}": True for row in rows if row['proves']}
+    pairs.update({f"negation|{row['name']}|{row['refutes']}": True for row in rows if row.get('refutes')})
     for part in ('canon', 'knowledge/events', 'knowledge/changes/c1'):
         (folder / part).mkdir(parents=True, exist_ok=True)
     write_json(folder / 'instance.json', {'schema': 2, 'root': root, 'library': 'Lib'})
@@ -140,6 +141,34 @@ class Derivation(MapCase):
         self.assertEqual(self.edge(data, 'Lib.a', 'Lib.root')['kind'], 'direct')
         self.assertEqual(self.edge(data, 'Lib.b', 'Lib.a')['via'], ['Lib.s'])
         self.assertIsNone(self.edge(data, 'Lib.b', 'Lib.root'))
+
+    def test_a_refuted_root_is_shown_as_refuted_with_the_refutation_and_what_it_rests_on(self):
+        # The root has no proof. A statement that Lean confirmed as its negation is settled through a lemma.
+        # The refutation is a step by its record and is drawn all the same, because it is the result.
+        rows = [statement('Lib.root', 'unit', proof=None), statement('Lib.lemma', 'unit'),
+                statement('Lib.notRoot', 'step', uses=['Lib.lemma'], refutes='Lib.root', module='Lib.Against'),
+                statement('Lib.stray', 'unit')]
+        data = self.map(rows)
+        self.assertEqual(self.ids(data), ['Lib.notRoot', 'Lib.lemma', 'Lib.root'])
+        root, against = self.unit(data, 'Lib.root'), self.unit(data, 'Lib.notRoot')
+        self.assertEqual((root['refuted'], root['settled'], against['refutes'], against['settled']),
+                         (True, False, 'Lib.root', True))
+        self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
+        self.assertEqual(self.edge(data, 'Lib.lemma', 'Lib.notRoot')['kind'], 'direct')
+        self.assertEqual(data['root_state'], 'informal_refuted')
+        self.assertIn('refuted', draw.status_of(root))
+        self.assertIn('refutes the root', draw.status_of(against))
+        # A refutation that is not settled refutes nothing yet: the root is not marked, and the default map does
+        # not start from it. With every unit in scope its card and its line are drawn when it is a unit.
+        open_rows = [statement('Lib.root', 'unit', proof=None),
+                     statement('Lib.notRoot', 'unit', refutes='Lib.root', proof=None, module='Lib.Against')]
+        data = self.map(open_rows)
+        self.assertEqual((self.ids(data), self.unit(data, 'Lib.root')['refuted']), (['Lib.root'], False))
+        data = self.map(open_rows, everything=True)
+        self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
+        # The refutation line is drawn like every other line.
+        svg, page, engine, note = draw.render(self.map(rows), 'layered', None)
+        self.assertIn('refutes the root', svg)
 
     def test_another_proof_is_an_alternative_of_its_statement(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.a'], standing='held'),

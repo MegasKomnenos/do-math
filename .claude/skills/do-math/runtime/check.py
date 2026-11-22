@@ -89,6 +89,63 @@ def prepared_candidate(root):
     return receipt
 
 
+def carried_by(model, declaration):
+    """What a settled statement has through the proof of this declaration alone: 'settled', 'formal', both or neither.
+
+    A statement is settled through its settled proofs and formal through those of them that are
+    formal. When one declaration holds the only such proof, replacing that proof decides whether the
+    statement stays settled, or stays formal."""
+    elements = model['elements']
+    element = elements.get(declaration)
+    if element is None or not element.get('statement_of'):
+        return set()
+    statement = elements[element['statement_of']]
+    if not statement['statement_settled']:
+        return set()
+    settled = [p for p in statement['proofs'] if elements[p]['settled']]
+    formal = [p for p in settled if elements[p]['formal']]
+    return ({'settled'} if settled == [declaration] else set()) | ({'formal'} if formal == [declaration] else set())
+
+
+def stays_settled(model, receipt, declaration):
+    """A settled statement's proof is replaced only by a proof under which the statement stays settled.
+
+    A statement that supersedes a settled one is better only once it is settled itself, so the
+    derivation of the old statement from it replaces the old proof after that and not before. What a
+    machine can decide of the new proof is checked here: it is complete in Lean, every statement it
+    names is settled, and where the old proof made the statement formal, the new one is formal too.
+    Review's acceptance of it is the remaining condition, which the check of the assessment makes."""
+    carried = carried_by(model, declaration)
+    if not carried:
+        return
+    elements, entry = model['elements'], receipt['entries'][declaration]
+    statement = elements[declaration]['statement_of']
+    need(entry['lean_proof'] == 'complete',
+         f'{statement} is settled through the proof of {declaration}; that proof is replaced only by a proof that is '
+         'complete in Lean and names settled statements, so that the statement stays settled. A further proof of '
+         'another kind enters as a declaration of its own with "proves"')
+    for used in entry['uses']:
+        if used in elements:
+            if elements[used]['kind'] != 'theorem':
+                continue
+            target = elements[elements[used]['statement_of']]
+            need(target['statement_settled'],
+                 f'{statement} is settled, and the new proof of {declaration} names {used}, which is not settled; '
+                 'the statement would no longer be settled')
+            need('formal' not in carried or target['statement_formal'],
+                 f'{statement} has a formal proof, and the new proof of {declaration} names {used}, which has none; '
+                 'the statement would no longer be formal')
+        else:
+            added = receipt['entries'].get(used)
+            need(added is None or added['kind'] != 'theorem',
+                 f'{statement} is settled, and the new proof of {declaration} names {used}, which this candidate adds '
+                 'and which is not settled yet. Publish the new statement first; the derivation of the old statement '
+                 'from it replaces the old proof once the new statement is settled')
+    need('formal' not in carried or set(entry['axioms']) <= set(model['allowed_axioms']),
+         f'{statement} has a formal proof, and the new proof of {declaration} is not formal; the statement would no '
+         'longer be formal')
+
+
 def change_check(root, model, owner, held=None):
     """A peer's candidate change: its manifest, its files, and what a machine can decide about them."""
     try:
@@ -100,9 +157,13 @@ def change_check(root, model, owner, held=None):
     if held is not None:
         for item in change['replace']:
             statement = model['elements'].get(item['declaration'], {}).get('statement_of')
-            need(statement in held,
-                 f"replacing the proof of {item['declaration']} requires holding a section on "
-                 f"{statement or 'it'}; register one through its lease")
+            if statement and model['elements'][statement]['statement_settled']:
+                # A settled statement can no longer be taken, so no section is asked for it.
+                stays_settled(model, receipt, item['declaration'])
+            else:
+                need(statement in held,
+                     f"replacing the proof of {item['declaration']} requires holding a section on "
+                     f"{statement or 'it'}; register one through its lease")
     paths = {name_path(name): name for name in known}
     for relative in change['approaches']:
         folder, _, entry = relative.rpartition('/')
@@ -222,6 +283,11 @@ def assessment_check(data, root, candidate, model, instance, sid):
                 # replaces only those, and the others are recorded among the approaches tried.
                 need(type(row.get('replaces')) is bool,
                      f"{row['element']} already has a proof in the canon; say with \"replaces\" whether the new one takes its place")
+                # A statement that is settled through this proof alone stays settled only under an accepted proof.
+                need(not row['replaces'] or not carried_by(model, row['element'])
+                     or (row['correct'] == 'confirmed' and row['accepted']),
+                     f"{row['element']} holds the proof through which a settled statement is settled; a new proof takes "
+                     'its place only when you confirm and accept it, so answer "replaces": false otherwise')
         else:
             need(row.get('replaces') is None,
                  f"{row['element']} is added by the candidate; \"replaces\" is asked only of a proof that would take "

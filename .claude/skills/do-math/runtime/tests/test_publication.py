@@ -17,10 +17,10 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 import runner as runtime
 from canon import Canon, declaration_text, parse_approach, tree_hash
 from canon_tool import build_candidate, verify
-from check import check_session
+from check import carried_by, change_check, check_session
 from knowledge import replay
 from runtime_support import git, read_json, write_json
-from support import InstanceCase, ROOT, module_text, record_text
+from support import InstanceCase, ROOT, SUM_ZERO, module_text, record_text, theorem
 
 DOC = '/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
 STATEMENT = 'theorem root (n : Nat) : oddSum n = n * n := by\n'
@@ -69,6 +69,32 @@ BIBLIOGRAPHY = '@book{gauss1801,\n  author = {Gauss, C. F.},\n  title = {Disquis
 HOLD = {'Small.root': {'accepted': False, 'reason': 'Correct; the inductive step can be made shorter.'}}
 WHOLE_ROOT = {'sections': [{'id': 'sauthor-1', 'element': 'Small.root', 'whole': True, 'statement': None,
                             'new': None, 'reasons': {}, 'at': 1}], 'at': 1}
+# The statements of TransportCheckTests.settled_canon, in the order of their module: the Lean statement
+# and the description of each.
+SETTLED = {'low': (': oddSum 1 = 1', 'The first odd number is one.'),
+           'open3': (': oddSum 3 = 9', 'The first three odd numbers sum to nine.'),
+           'heldS': (': oddSum 5 = 25', 'The first five odd numbers sum to twenty-five.'),
+           'pair': (': oddSum 2 = 4', 'The first two odd numbers sum to four.'),
+           'base': (SUM_ZERO, 'The empty sum is zero.'),
+           'twin': (': oddSum 4 = 16', 'The first four odd numbers sum to sixteen.')}
+TWIN_ALT = 'The first four odd numbers sum to sixteen, by another argument.'
+# A statement from which `oddSum 2 = 4` follows in one line, as the case n = 0.
+SHARP = ('(n : Nat) : oddSum (n + 2) = (n + 2) * (n + 2)',
+         'The sum of the first n + 2 odd numbers is the square of n + 2.')
+
+
+def settled_text(name, uses=(), proof='rfl'):
+    """The declaration of one of SETTLED with a proof: complete in Lean, unless the proof given is sorry."""
+    statement, description = SETTLED[name]
+    return theorem(name, statement, uses, proof, doc=description)
+
+
+def sharp_module():
+    return module_text(theorem('sharp', SHARP[0], doc=SHARP[1]))
+
+
+def sharp_record():
+    return record_text(SHARP[1], weight='unit', proof='By induction on $n$, adding $2n + 5$ to $(n + 2)^2$.')
 
 
 def write(path, text):
@@ -292,6 +318,53 @@ class PublicationTests(PublicationCase):
                     and 'have step := oddSum_succ' in p.read_text(encoding='utf-8')]
             self.assertTrue(kept, 'the history of Small.root does not hold the proof that was replaced')
             self.assertFalse([p for p in canon.lean.rglob('*.lean') if 'have step' in p.read_text(encoding='utf-8')])
+
+    def test_a_settled_statement_is_derived_from_a_statement_that_supersedes_it_once_that_one_is_settled(self):
+        # The order the rule asks for (design record, sections 5 and 10.3): the settled statement S keeps its
+        # proof while the better statement S' is published and settled, and only then does the one-line
+        # derivation of S from S' take the place of the old proof.
+        description = SETTLED['pair'][1]
+        old = theorem('pair', SETTLED['pair'][0], doc=description)
+        first = self.candidate(modules={'Small/Pair.lean': module_text(old)},
+                               records={'Small/pair.md': record_text(description, weight='unit',
+                                                                     proof='One plus three is four.')})
+        _, engine = self.publish(first)
+        second = self.candidate(modules={'Small/Sharp.lean': sharp_module()}, records={'Small/sharp.md': sharp_record()})
+        self.publish(second, engine=engine)
+        elements = replay(self.instance)['elements']
+        self.assertEqual([(elements[n]['standing'], elements[n]['settled']) for n in ('Small.pair', 'Small.sharp')],
+                         [('accepted', True), ('accepted', True)])
+        derivation = theorem('pair', SETTLED['pair'][0], proof='simpa using sharp 0', doc=description)
+        third = self.candidate(replace={'Small.pair': derivation}, imports={'Small.pair': ['Small.Sharp']},
+                               records={'Small/pair.md': record_text(description, weight='unit',
+                                                                     proof='The case $n = 0$ of `Small.sharp`.')})
+        # The peer's check carries the derivation without a section, since the statement stays settled under it.
+        change_check(third, replay(self.instance), 'speer', held=set())
+        cid, _ = self.publish(third, engine=engine)
+        canon, index = self.canon(), self.canon().load_index()
+        with self.subTest('the statement stays settled, under a proof that names the statement superseding it'):
+            pair = replay(self.instance)['elements']['Small.pair']
+            self.assertEqual((pair['standing'], pair['settled'], pair['statement_settled'], pair['lean_proof'], pair['uses']),
+                             ('accepted', True, True, 'complete', ['Small.sharp']))
+            source = (canon.lean / 'Small/Pair.lean').read_text(encoding='utf-8')
+            self.assertEqual(declaration_text(source, index['entries']['Small.pair']['span']), derivation)
+            self.assertIn('public import Small.Sharp\n', source)
+            self.assertNotIn('sorry', source)
+            self.assertEqual(read_json(self.instance / 'knowledge/changes' / cid / 'applied.json'),
+                             {'added': [], 'replaced': ['Small.pair'], 'records': ['Small.pair'], 'retired': []})
+        with self.subTest('the old proof goes to the history'):
+            path = canon.history / 'Small/pair' / f"{index['revision']:06d}-proof.md"
+            self.assertTrue(path.is_file(), sorted(p.name for p in (canon.history / 'Small/pair').iterdir()))
+            left = path.read_text(encoding='utf-8')
+            self.assertIn(cid, left)
+            self.assertIn('`lean/Small/Pair.lean`', left)
+            # The difference turns the current text into the replaced one: every line of the old declaration
+            # stands on the replaced side, and the derivation's line is the one the old proof had not.
+            lines = left.splitlines()
+            for line in old.splitlines():
+                self.assertTrue(' ' + line in lines or '+' + line in lines, line)
+            self.assertIn('+  sorry', lines)
+            self.assertIn('-  simpa using sharp 0', lines)
 
     def test_a_replacement_that_changes_the_statement_is_refused_when_prepared_and_again_at_publication(self):
         changed = DOC + 'theorem root (n : Nat) : oddSum n = n * n + 0 := by\n  sorry'
@@ -1241,6 +1314,99 @@ class TransportCheckTests(PublicationCase):
                                   'statement': 'the case of even n'}], 'at': 1})
         self.assertEqual(check_session(self.engine.session_dir('speer')), [])
 
+    # -- the proof of a settled statement -----------------------------------------------------------------
+
+    def settled_canon(self):
+        """Publish, through the real path, statements in each relation to settlement that the replacement
+        of a settled statement's proof turns on:
+
+        low, pair  settled, each through its accepted written proof alone, which names nothing
+        base       settled through its accepted proof that is complete in Lean alone, so formal as well
+        twin       settled through its own accepted written proof and through that of Small.twinAlt,
+                   another proof of the same statement
+        heldS      not settled: its written proof is correct and held back
+        open3      not settled: it has no proof"""
+        written = {'low': 'One is the first odd number.', 'pair': 'One plus three is four.',
+                   'heldS': 'Add the five terms one at a time.', 'twin': 'Add seven to nine.'}
+        body = '\n\n'.join(settled_text(name, proof='rfl' if name == 'base' else 'sorry') for name in SETTLED)
+        folder = self.candidate(
+            modules={'Small/Settled.lean': module_text(body),
+                     'Small/Twin.lean': module_text(theorem('twinAlt', SETTLED['twin'][0], doc=TWIN_ALT),
+                                                    imports=('Small.Settled',))},
+            records={**{f'Small/{name}.md': record_text(description, weight='unit', proof=written.get(name))
+                        for name, (_, description) in SETTLED.items()},
+                     'Small/twinAlt.md': record_text(TWIN_ALT, weight='unit', proof='Add the four terms in pairs.',
+                                                     proves='Small.twin')})
+        self.publish(folder, self.verdicts(folder, **{
+            'Small.heldS': {'accepted': False, 'reason': 'Correct; the five terms can be added at once.'}}),
+            engine=self.engine)
+        elements = replay(self.instance)['elements']
+        self.assertEqual({name: (elements['Small.' + name]['standing'], elements['Small.' + name]['statement_settled'],
+                                 elements['Small.' + name]['statement_formal']) for name in SETTLED},
+                         {'low': ('accepted', True, False), 'pair': ('accepted', True, False),
+                          'base': ('accepted', True, True), 'twin': ('accepted', True, False),
+                          'heldS': ('held', False, False), 'open3': ('no_proof', False, False)})
+        self.assertEqual([(elements[n]['standing'], elements[n]['settled']) for n in elements['Small.twin']['proofs']],
+                         [('accepted', True), ('accepted', True)])
+        self.assertEqual(elements['Small.twin']['proofs'], ['Small.twin', 'Small.twinAlt'])
+
+    def section_on(self, element):
+        """The producer of the pipeline registered the whole of the element, which its peer inherits."""
+        write_json(self.engine.session_dir('sauthor') / 'declaration.json',
+                   {'sections': [{**WHOLE_ROOT['sections'][0], 'element': element}], 'at': 1})
+
+    def test_the_proof_that_alone_settles_a_statement_is_replaced_only_by_one_under_which_it_stays_settled(self):
+        self.settled_canon()
+        with self.subTest('what a settled statement has through the proof of one declaration alone'):
+            model = replay(self.instance)
+            self.assertEqual({name: carried_by(model, 'Small.' + name) for name in (*SETTLED, 'twinAlt', 'root', 'oddSum')},
+                             {'low': {'settled'}, 'pair': {'settled'}, 'base': {'settled', 'formal'}, 'twin': set(),
+                              'twinAlt': set(), 'heldS': set(), 'open3': set(), 'root': set(), 'oddSum': set()})
+        # The pipeline holds no section: a settled statement can no longer be taken, so none is asked for.
+        with self.subTest('a proof complete in Lean that names settled statements is carried'):
+            self.assertEqual(self.peer_errors(replace={'Small.pair': settled_text('pair', ['low'])}), [])
+            # The new proof of a formal statement names only a definition and so stays formal.
+            self.assertEqual(self.peer_errors(replace={'Small.base': settled_text('base', proof='simp [oddSum]')}), [])
+        incomplete = {'replace': {'Small.pair': settled_text('pair', ['low'], 'sorry')}}
+        cases = (
+            ('Small.pair is settled through the proof of Small.pair; that proof is replaced only by a proof that is '
+             'complete in Lean and names settled statements', incomplete),
+            ('Small.pair is settled, and the new proof of Small.pair names Small.open3, which is not settled',
+             {'replace': {'Small.pair': settled_text('pair', ['open3'])}}),
+            ('Small.pair is settled, and the new proof of Small.pair names Small.heldS, which is not settled',
+             {'replace': {'Small.pair': settled_text('pair', ['heldS'])}}),
+            ('Small.pair is settled, and the new proof of Small.pair names Small.sharp, which this candidate adds and '
+             'which is not settled yet. Publish the new statement first',
+             {'modules': {'Small/Sharp.lean': sharp_module()}, 'records': {'Small/sharp.md': sharp_record()},
+              'replace': {'Small.pair': settled_text('pair', proof='simpa using sharp 0')},
+              'imports': {'Small.pair': ['Small.Sharp']}}),
+            ('Small.base has a formal proof, and the new proof of Small.base names Small.low, which has none',
+             {'replace': {'Small.base': settled_text('base', ['low'])}}),
+        )
+        for message, options in cases:
+            with self.subTest(message=message):
+                self.assert_refused(self.peer_errors(**options), message)
+        with self.subTest('a section held on the statement does not lift the condition'):
+            self.section_on('Small.pair')
+            self.assert_refused(self.peer_errors(**incomplete), 'that proof is replaced only by a proof that is complete')
+
+    def test_a_statement_settled_through_another_proof_as_well_leaves_the_replacement_of_either_unconditioned(self):
+        self.settled_canon()
+        # Each of the two proofs can give way to one that ends in sorry and names a statement without a proof,
+        # because the other keeps the statement settled; and, the statement being settled, no section is asked.
+        self.assertEqual(self.peer_errors(replace={'Small.twin': settled_text('twin', ['open3'], 'sorry')}), [])
+        self.assertEqual(self.peer_errors(replace={
+            'Small.twinAlt': theorem('twinAlt', SETTLED['twin'][0], ['open3'], doc=TWIN_ALT)}), [])
+
+    def test_the_proof_of_a_statement_that_is_not_settled_is_replaced_under_a_section_as_before(self):
+        self.settled_canon()
+        # A held proof settles nothing, so the statement can still be taken and its replacement needs a section;
+        # under one, a proof that ends in sorry and names a statement without a proof is carried.
+        self.assert_refused(self.peer_errors(replace={'Small.heldS': settled_text('heldS', ['open3'], 'sorry')}),
+                            'replacing the proof of Small.heldS requires holding a section on Small.heldS')
+        self.section_on('Small.heldS')
+        self.assertEqual(check_session(self.engine.session_dir('speer')), [])
+
     def test_a_peer_candidate_is_refused_for_what_a_machine_can_decide_about_its_written_part(self):
         # The rules for question proposals, resolutions and understanding texts are checked with the questions
         # (test_questions.QuestionCheckTests); the other machine-decidable rules of the written part are here.
@@ -1389,6 +1555,37 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
                 self.assert_refused(self.review_errors(session, self.judged(good, 'Small.root_alt', replaces=value)),
                                     'Small.root_alt is added by the candidate; "replaces" is asked only of a proof that '
                                     'would take the place of one the canon has')
+
+    def test_a_proof_that_alone_settles_a_statement_gives_way_only_to_a_new_proof_review_confirms_and_accepts(self):
+        self.settled_canon()
+        # The candidate replaces the proof that alone settles Small.pair, by one that the peer's check carries,
+        # and one of the two proofs that settle Small.twin.
+        folder = self.candidate(replace={'Small.pair': settled_text('pair', ['low']),
+                                         'Small.twin': settled_text('twin', ['low'], 'sorry')})
+        task = {'kind': 'candidate', 'candidate': str(folder), 'candidate_hashes': runtime.tree_hashes(folder)}
+        session = self.install('sreview', 'review', task)
+        (session / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
+        self.engine.state['sessions']['sreview'] = session_record('sreview', 'review', None)
+        self.engine.save()
+        # Confirming the new proof of Small.pair, which is complete in Lean, needs the review's own compile.
+        with patch('builtins.print'):
+            self.assertEqual(verify(session, 64, 120), 0)
+        good = {**self.verdicts(folder), 'formal_check': {'build': read_json(session / 'work/verify/outcome.json')['build']}}
+        self.assertEqual([(row['element'], row['correct'], row['accepted'], row['replaces']) for row in good['elements']],
+                         [('Small.pair', 'confirmed', True, True), ('Small.twin', 'confirmed', True, True)])
+        self.assertEqual(self.review_errors(session, good), [])
+        message = ('Small.pair holds the proof through which a settled statement is settled; a new proof takes its place '
+                   'only when you confirm and accept it, so answer "replaces": false otherwise')
+        for verdict in ({'correct': 'confirmed', 'accepted': False}, {'correct': 'not_confirmed', 'accepted': False},
+                        {'correct': 'undetermined', 'accepted': False}):
+            with self.subTest(**verdict):
+                self.assert_refused(self.review_errors(session, self.judged(good, 'Small.pair', replaces=True, **verdict)),
+                                    message)
+                # Leaving the old proof in place is open under every verdict.
+                self.assertEqual(self.review_errors(session, self.judged(good, 'Small.pair', replaces=False, **verdict)), [])
+                # Small.twin stays settled through Small.twinAlt, so its new proof may take the place of the old one
+                # under any verdict.
+                self.assertEqual(self.review_errors(session, self.judged(good, 'Small.twin', replaces=True, **verdict)), [])
 
     def test_review_s_concerns_and_findings_name_what_exists(self):
         # The verdicts on question proposals and resolutions are checked with the questions
