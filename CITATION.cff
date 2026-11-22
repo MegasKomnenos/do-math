@@ -9,7 +9,7 @@ authors:
     affiliation: "Kyungpook National University"
 repository-code: "https://github.com/MegasKomnenos/do-math"
 url: "https://github.com/MegasKomnenos/do-math"
-license: MPL-2.0
+license: AGPL-3.0-only
 keywords:
   - "autonomous mathematical research"
   - "multi-agent system"

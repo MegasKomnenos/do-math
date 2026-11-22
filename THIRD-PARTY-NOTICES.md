@@ -1,6 +1,6 @@
 # Third-party notices
 
-The project as a whole is licensed under the Mozilla Public License 2.0 (see [LICENSE](LICENSE)). The directories below are adapted from third-party projects and remain under their original licenses. Each directory contains the original license text. The Codex copies of these directories under `.agents/skills/` are generated from them and carry the same licenses.
+The project as a whole is licensed under the GNU Affero General Public License v3.0 (see [LICENSE](LICENSE)). The directories below are adapted from third-party projects and remain under their original licenses. Each directory contains the original license text. The Codex copies of these directories under `.agents/skills/` are generated from them and carry the same licenses.
 
 | Directory | Upstream | License |
 |---|---|---|
