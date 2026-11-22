@@ -239,6 +239,10 @@ class ContextTests(InstanceCase):
         with patch.dict(os.environ, {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '32000'}):
             # The worker's output cap is explicit, not the operator's or the CLI default.
             self.assertEqual(worker_environment()['CLAUDE_CODE_MAX_OUTPUT_TOKENS'], '128000')
+        # Sub-agents a worker left running when its turn ended get two hours, not the CLI's default ten
+        # minutes (reference/operations.md).
+        with patch.dict(os.environ, {'CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS': '600000'}):
+            self.assertEqual(worker_environment()['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'], '7200000')
 
     def test_withdrawn_solution_keeps_its_explanation_visible(self):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])

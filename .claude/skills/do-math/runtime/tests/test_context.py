@@ -450,6 +450,10 @@ class ContextTests(InstanceCase):
         # A configured MCP server that starts slowly under load must still be attached (reference/operations.md).
         with patch.dict(os.environ, {'MCP_TIMEOUT': '5000'}):
             self.assertEqual(worker_environment()['MCP_TIMEOUT'], '180000')
+        # Sub-agents a worker left running when its turn ended get two hours, not the CLI's default ten
+        # minutes (reference/operations.md).
+        with patch.dict(os.environ, {'CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS': '600000'}):
+            self.assertEqual(worker_environment()['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'], '7200000')
 
     def test_withdrawn_proof_keeps_its_explanation_visible(self):
         self.prove_root(INFORMAL)

@@ -14,6 +14,13 @@ MAX_OUTPUT_TOKENS = 128_000
 # Milliseconds the Claude CLI waits for an MCP server to start before beginning the turn without it.
 # Its default is about 30 seconds; sixteen literature servers starting at once took up to 41 (measured).
 MCP_STARTUP_MS = 180_000
+# Milliseconds the Claude CLI, in print mode, lets background tasks run after the main agent's turn has
+# ended; at that limit it stops them. Its default is ten minutes. A reviewer that ended its turn to wait
+# for its sub-reviewers lost all three at the default (measured: 16 of the 22 failed reviews of two
+# instances carry the CLI's message). Two hours gives sub-agents time to finish, and their completion
+# starts the main agent's next turn, while a background task that never ends holds its session for two
+# hours at most.
+BACKGROUND_WAIT_MS = 7_200_000
 
 
 def toml(value):
@@ -70,4 +77,5 @@ def worker_environment():
     environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
     environment['CLAUDE_CODE_MAX_OUTPUT_TOKENS'] = str(MAX_OUTPUT_TOKENS)
     environment['MCP_TIMEOUT'] = str(MCP_STARTUP_MS)
+    environment['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'] = str(BACKGROUND_WAIT_MS)
     return environment

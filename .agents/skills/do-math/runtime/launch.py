@@ -11,6 +11,13 @@ CONTEXT_WINDOW = 1_000_000
 AUTO_COMPACT_TOKENS = 900_000
 # Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
 MAX_OUTPUT_TOKENS = 128_000
+# Milliseconds the Claude CLI, in print mode, lets background tasks run after the main agent's turn has
+# ended; at that limit it stops them. Its default is ten minutes. A reviewer that ended its turn to wait
+# for its sub-reviewers lost all three at the default (measured: 16 of the 22 failed reviews of two
+# instances carry the CLI's message). Two hours gives sub-agents time to finish, and their completion
+# starts the main agent's next turn, while a background task that never ends holds its session for two
+# hours at most.
+BACKGROUND_WAIT_MS = 7_200_000
 
 
 def toml(value):
@@ -66,4 +73,5 @@ def worker_environment():
     environment.pop('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', None)
     environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
     environment['CLAUDE_CODE_MAX_OUTPUT_TOKENS'] = str(MAX_OUTPUT_TOKENS)
+    environment['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'] = str(BACKGROUND_WAIT_MS)
     return environment
