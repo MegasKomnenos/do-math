@@ -5,7 +5,8 @@ It accepts what the broker passes (`-R root`, `-o file`, `--threads=N`, the sour
 4.32 emits; the public file depends on names and statements only, so a changed proof leaves it
 unchanged, as the real compiler does when the auxiliary declarations stay the same. The source
 `DoMathExtract.lean` is answered with the rows canon.extraction_source asks for, computed from the
-sources under the root instead of from a compiled environment.
+sources under the root instead of from a compiled environment. As in Lean, a pair is decided only
+between declarations of the modules that file imports, directly or through others.
 
 The subset: `namespace`/`end`, an optional `/-- … -/` doc comment, then `theorem`, `def`, `axiom`,
 `structure` or `inductive` (optionally `private`) with a name, a statement up to the first `:=`
@@ -89,6 +90,20 @@ def library(root):
     return declarations
 
 
+def imported(root, modules):
+    """The modules under root that the named modules import, directly or through others, with themselves."""
+    seen, pending = set(), list(modules)
+    while pending:
+        module = pending.pop()
+        path = Path(root, *module.split('.')).with_suffix('.lean')
+        if module in seen or not path.is_file():
+            continue
+        seen.add(module)
+        lines = path.read_text(encoding='utf-8').splitlines()
+        pending += [found[1] for found in (IMPORT.match(line.strip()) for line in lines) if found]
+    return seen
+
+
 def uses(text, declaration, names):
     found = []
     for token in IDENT.findall(text):
@@ -122,7 +137,9 @@ def extract(root, source):
     pairs = re.findall(r'\("(\w+)", `([^,\s]+), `([^)\s]+)\)', re.search(r'def pairs .*? := #\[(.*)\]', text)[1])
     declarations = library(root)
     names = {d['user']: d['name'] for d in declarations}
-    by_name = {d['name']: d for d in declarations}
+    # Lean's environment holds the modules the file imports, directly or through others, and no other.
+    visible = imported(root, re.findall(r'^import (\S+)$', text, re.MULTILINE))
+    by_name = {d['name']: d for d in declarations if d['module'] in visible}
     for declaration in declarations:
         if declaration['module'] not in targets:
             continue

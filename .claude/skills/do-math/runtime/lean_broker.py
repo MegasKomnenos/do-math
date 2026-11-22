@@ -1384,9 +1384,13 @@ class Broker:
           ordinary exit code is not run again. A crash is still run again, because a crash is
           never Lean's verdict on a source.
 
-        So a key costs at most two second runs of rejected sources, one for the saving and one
-        for the first loading, and none once its snapshot is proven. A run that was cancelled or
-        left no exit code says nothing about the snapshot; a snapshot it was saving is dropped."""
+        So a snapshot costs second runs of rejected sources only until it is proven: one for the
+        saving, and one for each compile that loads it and is rejected while it is unproven. When
+        the compiles of a key run one after another, at most one loading compile is run twice,
+        since its two runs prove the snapshot or condemn it, so the key costs at most two; loading
+        compiles that run side by side can each cost one, and a snapshot saved again after prune()
+        deleted it starts over. A run that was cancelled or left no exit code says nothing about
+        the snapshot; a snapshot it was saving is dropped."""
         plan = job.get("snapshot")
         if not plan or not (plan["mode"] or plan.get("retried")):
             return False

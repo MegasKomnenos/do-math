@@ -450,6 +450,9 @@ class ManuscriptTests(PaperCase):
         extra = '\\begin{proposition}\\label{prop:own}\nA claim of the writer.\n\\end{proposition}\n'
         self.assertIn('the proposition numbered 3.1 with \\label{prop:own} is not a numbered statement of the plan',
                       self.problems(proof=extra + PROOF))
+        # A numbered statement without a label is reported beside the labelled statements of the plan.
+        self.assertIn('the proposition numbered 3.1 without a \\label is not a numbered statement of the plan',
+                      self.problems(proof='\\begin{proposition}\nA claim of the writer.\n\\end{proposition}\n' + PROOF))
         self.assertIn('the plan has a lemma with \\label{lem:square} here', self.problems(tools=TOOLS.split('The next lemma')[0]))
         self.assertIn('not in the order of the plan', self.problems(
             tools=TOOLS.replace('lem:increasing', 'lem:x').replace('lem:square', 'lem:increasing').replace('lem:x', 'lem:square')))
@@ -500,6 +503,8 @@ class ManuscriptTests(PaperCase):
 
 class RunTests(PaperCase):
     def test_one_command_leaves_the_paper_and_what_stands_beside_it(self):
+        # The test instance sends every role to the common list; review gets its own list, as in the default settings.
+        self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
         script = good()
         wrong = copy.deepcopy(PLAN)
         wrong['others'].pop()
@@ -552,6 +557,11 @@ class RunTests(PaperCase):
         self.assertIn('statements.json', calls[6]['given'])
         self.assertEqual(self.events('end')[0], {**self.events('end')[0], 'status': 'complete', 'open': []})
         self.assertEqual(len(self.events('session')), 7)
+        # Planning and writing use the first common model; the reading and the comparison the first model of review.
+        chosen = {(c['kind'], tuple(read_json(self.out / 'sessions' / c['folder'] / 'session.json')[key]
+                                    for key in ('model', 'effort'))) for c in self.calls()}
+        self.assertEqual(chosen, {('plan', ('codex/gpt-6.1-sol', 'xhigh')), ('write', ('codex/gpt-6.1-sol', 'xhigh')),
+                                  ('read', ('claude/opus', 'high')), ('compare', ('claude/opus', 'high'))})
 
     def test_a_compile_error_goes_to_a_repair_session_and_the_manuscript_is_typeset_again(self):
         script = good()

@@ -10,18 +10,7 @@ Each command is an argument array: pass its elements separately to the process, 
 
 **Your session directory.** Use `work/` for scratch mathematics, Lean files under development, computations and intermediate artifacts. Use `output/` for the retained report or role output your successor will read. Keep the files and any generated caches in your own session directory. The runner preserves `pack.md`, which is your starting context, `input.json`, the copies of the guides under `context/`, and the available CLI conversation. `inbox/` receives messages for you. Your role's guides state the entry file and fields of your output.
 
-**The canon.** `canon/` under the instance holds the knowledge of the research: the Lean library and the written files beside it.
-
-| Path under `canon/` | Content |
-|---|---|
-| `lean/` | The module root of the library. Every declaration of every element is in a file here. |
-| `records/<name path>.md` | The record of an element, at the path that follows the declaration's name: `A.B.c` is `records/A/B/c.md`. |
-| `approaches/<name path>/<id>.md` | The approaches tried on a statement whose proof is not accepted. |
-| `questions/<question>.md` | The understanding so far of a question. |
-| `evidence/<name path>/` | Files a record refers to, such as computations and data. |
-| `history/` | What a replacement left behind: the difference between the replaced text and the current one. A traversal does not show it unless asked. |
-| `bibliography.bib` | The sources of results taken from the literature. |
-| `index.json`, `records.json` | The structural index, extracted from the compiled library at each publication, and a summary of the record headers. Neither is ever edited. |
+**The canon.** `canon/` under the instance holds the knowledge of the research: the Lean library and the written files beside it. [The canon](canon.md) shows where its folders and files are and gives the form of each written file.
 
 You read the canon and never write in it. A change to it is a candidate that a peer or an organizer assembles in its own `output/`, and publication is the runner's work. The commands under Reading the canon below are the way to read it, because a view joins what Lean knows of an element with what its record says and a traversal returns the whole of what its rule selects. The files are there for the cases where you need the source itself: to read or change the body of a Lean proof, or to see more of a declaration than its printed statement.
 
@@ -33,16 +22,7 @@ Working paths can be absolute when invoking tools. What a later reader needs has
 
 ## Reading the canon
 
-`commands.canon` reads the canon. Replace `<command>` with one of the commands below and append its arguments after the array. No command here starts Lean; they read the structural index and the records, so they answer at once and cost no memory. [The canon](canon.md) describes what each view shows and how to move through the canon with them.
-
-| Command and arguments | What it prints |
-|---|---|
-| `frontier` | The frontier as it is now: from the root downward along what each proof names, the statements that are not settled, with their proofs, standings, review's reasons, the number of approaches tried and of sessions holding each element. A step whose own proof is accepted is passed through to what it names. The contested statements, the concerns not yet cleared and the questions follow, each question with its grounds, its state and its source. This is the content of `knowledge/frontier.md`, computed at the moment of the command. |
-| `view <element>` | One element as one view. `--full` adds the parts of its record. `--part statement`, `explanation`, `proof`, `literature`, `approaches`, `history` or `source` prints that one part; `source` is the Lean text of the declaration. |
-| `list` | One line per element, with the count. Without a selector it lists the whole canon. `--module <M>` selects a module or every module under a prefix; `--uses <element>` what the proof of an element names; `--used-by <element>` the elements whose proofs name it; `--about <element>` every element whose statement mentions it or whose proof uses it; `--remaining` the work that remains for the root. `--deep` follows `--uses` or `--used-by` all the way, and `--units` keeps only the elements whose weight is `unit`. |
-| `question <question>` | A question, its state, and its understanding so far with review's assessment of the work that wrote it. |
-| `log` | The recent changes: title, description, review's assessment of what each contributed, the elements added and the proofs replaced. `--last <N>` sets how many, 20 by default. |
-| `checkout <folder>` | Copies the library, `canon/lean`, into a new or empty folder inside your session directory, so that you can build your own Lean files against it. |
+`commands.canon` reads the canon. Replace `<command>` with one of the reading commands that [The canon](canon.md) lists under "Reading the canon: the commands" and append its arguments after the array; that guide also describes what each view shows and how to move through the canon with them. No reading command starts Lean; they read the structural index and the records, so they answer at once and cost no memory. The same array has one further command, `checkout <folder>`, which copies the library, `canon/lean`, into a new or empty folder inside your session directory, so that you can build your own Lean files against it.
 
 An element is named by its declaration name as the canon shows it, for example `Parking.Columns.dq_col`. The reading commands print text. A command that cannot answer, for instance because no element has that name, prints `{"error": "..."}` and exits with code 1.
 

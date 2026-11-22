@@ -1907,6 +1907,33 @@ class RunnerTests(ScenarioCase):
         row = next(r for r in board(self.instance, runner.state) if r['role'] == 'formalizer')
         self.assertEqual(row['elements'], ['Small.root'])
 
+    def test_one_formalizer_at_a_time_holds_a_statement_whichever_of_its_proofs_is_to_be_formalized(self):
+        # The root's own proof and rootAlt both settle the root. A finding withdraws the own proof, so rootAlt is
+        # the proof to formalize, and its formalizer holds the root whole.
+        self.direct()
+        folder = self.candidate(
+            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[self.root_variant]))},
+            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
+                                                     proof='Count an n by n square in L-shaped layers.',
+                                                     proves='Small.root')})
+        self.publish(folder)
+        self.event('v1', 'review', comprehensive([finding('The induction step fails.', invalidates=['Small.root'])]))
+        runner = self.runner()
+        runner.populate()
+        job = next(j for j in runner.state['jobs'].values() if j['role'] == 'formalizer')
+        self.assertEqual(job['task']['element'], 'Small.rootAlt')
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual(job['status'], 'running')
+        # A later review restores the own proof, which comes first again. The formalizer at work still holds the
+        # root whole, so no second formalizer is sent to the same statement.
+        self.event('v2', 'review', comprehensive([finding('The induction step holds.', validates=['Small.root'])]))
+        runner.model = replay(self.instance)
+        self.assertEqual(formalizable(runner.model), ['Small.root'])
+        runner.populate()
+        self.assertEqual(self.formalizers(runner), [('Small.rootAlt', 'producing')])
+
     def test_the_root_waits_for_the_formal_proofs_of_what_its_proof_names(self):
         self.proved()
         runner = self.runner()
@@ -1995,6 +2022,10 @@ class RunnerTests(ScenarioCase):
             (self.instance / 'control/STOP').touch()
             # A session without a held turn is still an active turn and blocks replacement.
             refused('let active CLI turns finish')
+            # A session whose work waits for publication has no CLI turn, and the refusal says what it waits for.
+            runner.state['sessions']['sturn']['status'] = 'publishing'
+            runner.save()
+            refused('let the publications under way finish')
             runner.state['sessions']['sturn']['status'] = 'ended'
             runner.save()
             # A compile still running blocks it as well.

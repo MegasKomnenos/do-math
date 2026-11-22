@@ -605,12 +605,15 @@ class Runner:
 
         The peer's own approach entry for the statement serves when the candidate carries one. Where it
         carries none, the entry is made here from the candidate's description, the declined written
-        proof and review's reason, each taken as it stands."""
+        proof and review's reason, each taken as it stands. Like every approach entry, it names the
+        sessions whose originals hold the work, the producer and the peer, and it carries review's
+        assessment of what the change contributed."""
         canon = Canon(self.instance)
         event = publication['event']
         elements = self.model['elements']
         job = self.state['jobs'][publication['job']]
-        peer = self.state['pipelines'][job['pipeline']]['peer']
+        pipeline = self.state['pipelines'][job['pipeline']]
+        sessions = ', '.join(sid for sid in (pipeline['producer'], pipeline['peer']) if sid)
         change = None
         for verdict in assessment['elements']:
             if verdict.get('replaces') is not False:
@@ -627,10 +630,12 @@ class Runner:
             offered = f'\n\nThe proof as it was offered:\n\n{proof}' if proof else ''
             target.parent.mkdir(parents=True, exist_ok=True)
             write_text(target, f"---\ntitle: Proof offered by change {event['id']} and not put in place\n"
-                               f"sessions: {peer or ''}\n---\n\n"
+                               f"sessions: {sessions}\n---\n\n"
                                f"## Idea\n\n{change['title'].strip()}. {change['description'].strip()}{offered}\n\n"
                                '## Established\n\nNothing of it took the place of the proof the canon has.\n\n'
-                               f"## Where it stops\n\n{verdict['reason'].strip()}\n")
+                               f"## Where it stops\n\n{verdict['reason'].strip()}\n\n"
+                               f"## Review\n\nChange {event['id']} (revision {event['sequence']}): "
+                               f"{assessment['contribution'].strip()}\n")
 
     def join_question_texts(self, publication):
         """When an organizer merges questions, the surviving question keeps one understanding text.
@@ -885,19 +890,19 @@ class Runner:
         if not event_path.exists():
             write_json(event_path, event)
         self.model = replay(self.instance)
-        if applied is not None:
-            # When a statement has an accepted proof, under any of its declarations, the approaches tried
-            # on it go to its history. Read from the model, so that a repeat after a crash finds them gone.
-            elements = self.model['elements']
-            moved = False
-            for name in applied['added'] + applied['replaced']:
-                element = elements.get(name)
-                if element and element['standing'] == 'accepted':
-                    for target in {name, element['statement_of']}:
-                        moved = retire_approaches(canon, target, event['sequence']) or moved
-            if moved:
-                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
-                self.model = replay(self.instance)
+        # When a statement has an accepted proof, under any of its declarations, the approaches tried on it
+        # go to its history. Any publication can bring that about: a change that adds or replaces the proof,
+        # a change that writes an entry on a statement whose proof is already accepted, the entry that
+        # record_declined made above for a replacement review declined, or a review's finding that restores
+        # a proof's confirmation. Read from the model, so that a repeat after a crash finds them gone.
+        moved = False
+        for name, element in self.model['elements'].items():
+            if element['standing'] == 'accepted':
+                for target in {name, element['statement_of']}:
+                    moved = retire_approaches(canon, target, event['sequence']) or moved
+        if moved:
+            write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
+            self.model = replay(self.instance)
         self.attempt_dispatch_ready()
         render(self.instance, self.model, board(self.instance, self.state, self.model),
                lease_table(self.instance, self.state, self.model))
@@ -994,9 +999,13 @@ class Runner:
             if concerns or conflicts:
                 self.enqueue('review', {'kind': 'comprehensive', 'concerns': concerns, 'conflicts': conflicts,
                                         'purpose': 'Trace the questioned proofs to their evidence and through the elements that actually use them; report precise findings.'})
-        active = {p['element'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done'}
+        # One formalizer at a time holds a statement whole, whichever of its proofs it was given, so a formalizer
+        # still at work keeps the statement when the proof to formalize becomes another declaration of it.
+        statement = lambda name: model['elements'].get(name, {}).get('statement_of') or name
+        active = {statement(p['element']) for p in self.state['pipelines'].values()
+                  if p['role'] == 'formalizer' and p['stage'] != 'done'}
         for name in formalizable(model):
-            if name not in active:
+            if statement(name) not in active:
                 previous = [p['record'] for p in self.state['pipelines'].values()
                             if p['role'] == 'formalizer' and p['record'] and p['element'] == name]
                 self.producer('formalizer', {'element': name, 'previous_changes': previous})
@@ -1494,10 +1503,14 @@ def main(argv=None):
             if not (instance / 'control/STOP').exists():
                 raise ValueError('stop new dispatch before replacing the Lean environment')
             # A session held behind STOP for its next turn has no running CLI and
-            # continues with the replaced broker after resume.
-            held, active = [], []
+            # continues with the replaced broker after resume. A session whose work waits
+            # for publication has no CLI either; publication goes on under the stop.
+            held, active, publishing = [], [], []
             for sid, s in state['sessions'].items():
                 if s['status'] not in ACTIVE_STATUSES:
+                    continue
+                if s['status'] == 'publishing':
+                    publishing.append(sid)
                     continue
                 check = instance / 'sessions' / sid / 'end-check.json'
                 waiting = check.is_file() and read_json(check)['status'] == 'waiting_dispatch'
@@ -1505,6 +1518,10 @@ def main(argv=None):
             if active:
                 raise ValueError('let active CLI turns finish before replacing the Lean environment: '
                                  + ', '.join(sorted(active)))
+            if publishing:
+                raise ValueError('let the publications under way finish before replacing the Lean environment; '
+                                 'the work of these sessions waits in state.publication or state.publish_queue: '
+                                 + ', '.join(sorted(publishing)))
             result['held_sessions'] = sorted(held)
             paths = Paths(instance)
             current = broker_status(paths)

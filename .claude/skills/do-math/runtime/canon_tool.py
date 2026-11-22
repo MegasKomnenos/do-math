@@ -10,9 +10,8 @@ from pathlib import Path
 import sys
 
 from canon import (Canon, CanonError, Conflict, apply_lean, apply_rearrangement, axiom_closure, candidate_records,
-                   changed_modules, check_applied, copy_tree, declaration_text, drop_modules, load_change,
-                   name_path, read_approaches, read_record, record_file, required_pairs, split_review,
-                   start_build, tree_hash, update_index, wait_build)
+                   check_applied, copy_tree, declaration_text, drop_modules, load_change, name_path, read_approaches,
+                   read_record, required_pairs, split_review, start_build, tree_hash, update_index, wait_build)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, replay)
 from runtime_support import read_json, write_json
@@ -425,8 +424,9 @@ def main(argv=None):
         if args.command == 'frontier':
             text = '\n'.join([f"Root: {model['root']} · state: {model['root_state']} · revision {model['sequence']}", '']
                              + frontier_lines(model, holders(instance, model)) + frontier_notes(model)
-                             + ['', f"{len(model['remaining'])} elements of this view are work that remains "
-                                    f"({', '.join(STANDINGS[s] for s in REMAINING)})."]
+                             + ['', f"Elements of this view that are work that remains: {len(model['remaining'])}. "
+                                    'Each has one of the standings ' + ', '.join(f'"{STANDINGS[s]}"' for s in REMAINING)
+                                    + ', or a proof that names a statement refuted since.']
                              + question_lines(model))
         elif args.command == 'view':
             text = view(instance, model, args.element, args.part, args.full)

@@ -292,7 +292,8 @@ class CanonToolTests(ScenarioCase):
         expected = FRONTIER.splitlines()
         expected[8] += ' · held by 1 session'
         self.assertEqual(lines[2:12], expected)
-        count = '7 elements of this view are work that remains (no proof, proof not confirmed, correct, held back).'
+        count = ('Elements of this view that are work that remains: 7. Each has one of the standings "no proof", '
+                 '"proof not confirmed", "correct, held back", or a proof that names a statement refuted since.')
         self.assertIn(count, lines)
         # The questions follow, as in frontier.md: each with its grounds, its state and its source.
         self.assertEqual(lines[lines.index(count) + 2:lines.index(count) + 5], ['# Questions', '', '## q0'])
@@ -383,6 +384,17 @@ class CanonToolTests(ScenarioCase):
                 # and it names the review that withdrew the confirmation, not the change.
                 self.assertEqual(verdict(name), f'verdict       for statement {statement[name]}: not_confirmed (v1)')
                 self.assertIn('              ' + reason, self.tool('view', name).splitlines())
+        # A later review that restores the confirmations brings back the reasons they were given with, so the
+        # held proof shows again where it can be improved, in its view and on the frontier.
+        self.event('v2', 'review', comprehensive([finding('The additions are carried out after all.', status='cleared',
+                                                          validates=list(names))]))
+        self.assertEqual(verdict('Small.stepE'),
+                         f"verdict       for statement {statement['Small.stepE']}: confirmed, accepted (v2)")
+        self.assertEqual(verdict('Small.colA'),
+                         f"verdict       for statement {statement['Small.colA']}: confirmed, not accepted (v2)")
+        self.assertIn('              Argument checked.', self.tool('view', 'Small.stepE').splitlines())
+        self.assertIn('              ' + HELD_REASON, self.tool('view', 'Small.colA').splitlines())
+        self.assertIn('  - `Small.colA` — Col — correct, held back: ' + HELD_REASON, self.tool('frontier').splitlines())
 
     def test_the_reading_commands_take_the_instance_folder_and_the_others_refuse_it(self):
         # The operator reads the canon with the same commands, giving the instance folder for the session.
@@ -503,8 +515,9 @@ class CanonToolTests(ScenarioCase):
                       self.tool('view', 'Small.root').splitlines())
         text = self.tool('frontier')
         self.assertIn('  - `Small.sumZero` — The empty sum is zero. — refuted by `Small.notZero`\n', text)
-        self.assertIn('\n1 elements of this view are work that remains (no proof, proof not confirmed, '
-                      'correct, held back).\n\n# Questions\n', text)
+        self.assertIn('\nElements of this view that are work that remains: 1. Each has one of the standings "no proof", '
+                      '"proof not confirmed", "correct, held back", or a proof that names a statement refuted since.'
+                      '\n\n# Questions\n', text)
 
     def test_view_names_the_questions_whose_text_names_the_element(self):
         self.split()

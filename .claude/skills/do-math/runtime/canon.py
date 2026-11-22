@@ -16,17 +16,15 @@ Layout under <instance>/canon/:
     bibliography.bib       the sources of every result taken from the literature
     index.json             the structural index, extracted by machine at each publication
 """
-import argparse
 import difflib
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
 import shutil
-import sys
 import time
 
-from runtime_support import read_json, write_json, write_text
+from runtime_support import read_json, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -256,11 +254,6 @@ def header_scan(lines):
     return last, module, imports
 
 
-def header_end(lines):
-    """The index after the last import line of a Lean file's header, and whether it is a `module` file."""
-    return header_scan(lines)[:2]
-
-
 def add_imports(text, imports):
     """The source with `public import` lines for the named modules added to its header."""
     lines = text.split('\n')
@@ -373,11 +366,6 @@ def relative_file(root, name):
     if not actual.is_relative_to(Path(root).resolve()) or not actual.is_file():
         raise CanonError('missing or escaping file: ' + name)
     return actual
-
-
-def record_names(change):
-    """Declaration name paths of the candidate's records, as the candidate wrote them."""
-    return [relative[:-3] for relative in change['records']]
 
 
 PLAIN_COMPONENT = re.compile(r"[^\W\d][\w'!?]*")
@@ -515,16 +503,18 @@ def lean_name(name):
     return '`' + name
 
 
-def extraction_source(library, modules, pairs):
+def extraction_source(library, modules, pairs, imports=None):
     """A plain Lean file that prints one JSON row for every constant of the named modules.
 
     It is not a `module` file, so it reads the private data of the modules it imports and sees the
     proof terms. A row gives what Lean alone can know: the kind, the source span, the printed
     statement, the canon constants the statement and the proof use, the library theorems the proof
     uses, and the axioms reached through the library. Which rows are elements, and how auxiliary
-    declarations fold into them, is decided in build_index. A pair asks whether two declarations
-    state the same proposition, or whether one states the negation of the other."""
-    imports = '\n'.join('import ' + m for m in modules)
+    declarations fold into them, is decided in update_index. A pair asks whether two declarations
+    state the same proposition, or whether one states the negation of the other. Lean finds a declaration
+    only in a module the file imports, directly or through others. The file imports `imports` when it is
+    given, which can name more modules than those extracted, and the extracted modules otherwise."""
+    imports = '\n'.join('import ' + m for m in (modules if imports is None else imports))
     targets = ', '.join(lean_name(m) for m in modules)
     listed = ', '.join(f'("{kind}", {lean_name(a)}, {lean_name(b)})' for kind, a, b in pairs)
     return f'''import Lean
@@ -832,22 +822,16 @@ def axiom_closure(index):
     return {name: sorted(closure[name]) for name in entries}
 
 
-def changed_modules(index, lean_root, library):
-    """Modules whose source differs from what the index recorded, and modules the index lists that are gone."""
-    current = {module: hashlib.sha256(path.read_bytes()).hexdigest()
-               for module, path in library_modules(lean_root, library)}
-    changed = sorted(m for m, digest in current.items() if index['modules'].get(m, {}).get('sha256') != digest)
-    removed = sorted(m for m in index['modules'] if m not in current)
-    return changed, removed
-
-
 # ----------------------------------------------------------------------------- building through the broker
 
 def start_build(instance, lean_root, library, session, expect_mb, extract, pairs, fresh=False, targets=None):
     """Queue one broker build of the library under lean_root, with an extraction of the named modules.
 
     The extraction file is one more target of the same build, so it is compiled after the modules it
-    imports and its output is kept with the build like any target's. Returns the build ID."""
+    imports and its output is kept with the build like any target's. A pair can name a declaration in a
+    module that no extracted module imports: a new proof in a new module need not import the module of
+    the statement its record says it proves or refutes. An extraction asked about pairs therefore imports
+    every module of the library. Returns the build ID."""
     from lean_broker import Paths, build
     lean_root = Path(lean_root)
     names = [module for module, _ in library_modules(lean_root, library)]
@@ -855,7 +839,8 @@ def start_build(instance, lean_root, library, session, expect_mb, extract, pairs
         raise CanonError(f'no module of the library {library} under {lean_root}')
     files = [str(lean_root / module_file(m)) for m in (targets if targets is not None else names)]
     if extract or pairs:
-        write_text(lean_root / (EXTRACT_MODULE + '.lean'), extraction_source(library, extract, pairs))
+        write_text(lean_root / (EXTRACT_MODULE + '.lean'),
+                   extraction_source(library, extract, pairs, names if pairs else None))
         files.append(str(lean_root / (EXTRACT_MODULE + '.lean')))
     return build(Paths(instance), lean_root, files, expect_mb, session, fresh_targets=fresh)['build']
 

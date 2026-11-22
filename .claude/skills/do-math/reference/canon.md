@@ -183,7 +183,7 @@ The canon is read with one command, `commands.canon` in your `input.json`. It is
 
 | Command and arguments | What it returns |
 |---|---|
-| `frontier` | The state of the root and the frontier as it is now, in the form the common introduction shows under "Seeing what remains: the frontier", followed by the number of its elements that are work that remains. |
+| `frontier` | The state of the root and the frontier as it is now, in the form the common introduction shows under "Seeing what remains: the frontier". The contested statements and the concerns not yet cleared follow, then the number of the frontier's elements that are work that remains, and then the questions, each with its grounds, its state and its source. |
 | `view <element>` | One element as one view, described in the next section. |
 | `view <element> --full` | The same, followed by every part of the record and by the approach entries in full. |
 | `view <element> --part <part>` | One part alone. `statement`, `explanation`, `proof` and `literature` are the parts of the record. `approaches` gives the approach entries in full, with review's assessment of each. `history` gives what replacements left behind: the Lean text of each proof that was replaced, the earlier texts of the record and of approach entries, each as its difference from the text that took its place, and the approach entries that were set aside when a proof of the statement was accepted. `source` gives the Lean text of the declaration. |

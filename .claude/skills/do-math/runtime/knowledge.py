@@ -89,9 +89,17 @@ def apply_findings(model, findings, source, followup=True):
 
         for name in finding.get('invalidates', []):
             verdict = model['verdicts'].setdefault(name, unjudged(name))
+            if verdict.get('correct') == 'confirmed':
+                # Kept for a restoration: the reason a confirmed proof stood with says why it is held back
+                # and where work on it begins.
+                verdict['confirmed_reason'] = verdict.get('reason')
             verdict.update(correct='not_confirmed', later_review=source, reason=finding['reason'])
         for name in finding.get('validates', []):
-            verdict = model['verdicts'].setdefault(name, {**unjudged(name), 'reason': finding['reason']})
+            verdict = model['verdicts'].setdefault(name, unjudged(name))
+            if verdict.get('correct') != 'confirmed':
+                # A restored confirmation brings back the reason the proof was confirmed with. A proof that
+                # was not confirmed before takes the reason of the finding that confirms it.
+                verdict['reason'] = verdict.pop('confirmed_reason', None) or finding['reason']
             verdict.update(correct='confirmed', later_review=source)
         for qid in finding.get('reopens', []):
             question = model['questions'].get(canonical_question(model, qid))

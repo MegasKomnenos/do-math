@@ -368,14 +368,17 @@ class PublicationTests(PublicationCase):
         self.assertEqual(sorted(name for name in after if name.startswith('approaches/')),
                          [f'approaches/Small/root/declined-{cid}.md'])
         entry = parse_approach((canon.approaches / f'Small/root/declined-{cid}.md').read_text(encoding='utf-8'))
-        peer = engine.state['pipelines'][self.review_job(engine, folder)['pipeline']]['peer']
+        pipeline = engine.state['pipelines'][self.review_job(engine, folder)['pipeline']]
         self.assertEqual((entry['meta']['title'], entry['meta']['sessions']),
-                         (f'Proof offered by change {cid} and not put in place', [peer]))
+                         (f'Proof offered by change {cid} and not put in place', [pipeline['producer'], pipeline['peer']]))
         self.assertEqual(entry['sections']['Idea'],
                          'Pairing odd numbers with gnomons. A precise contribution with its limitations.\n\n'
                          'The proof as it was offered:\n\n' + offered)
         self.assertEqual(entry['sections']['Established'], 'Nothing of it took the place of the proof the canon has.')
         self.assertEqual(entry['sections']['Where it stops'], reason)
+        # Like every approach entry of a published change, it carries review's assessment of what the change contributed.
+        self.assertTrue(entry['sections']['Review'].startswith(f'Change {cid} (revision '))
+        self.assertTrue(entry['sections']['Review'].endswith('): Closed what it took on.'))
         self.assertIn(f'canon/approaches/Small/root/declined-{cid}.md',
                       git(self.instance, 'show', '--name-only', '--format=', 'HEAD').splitlines())
         self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
@@ -386,6 +389,27 @@ class PublicationTests(PublicationCase):
         self.assertEqual(read_json(self.instance / 'knowledge/changes' / cid / 'applied.json'),
                          {'added': [], 'replaced': [], 'records': [], 'retired': []})
         self.assertIn('· 1 approach tried', (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
+
+    def test_approaches_brought_to_a_statement_with_an_accepted_proof_go_to_its_history(self):
+        # The canon keeps the approaches tried only on a statement whose proof is not accepted (design record,
+        # section 7). A publication can bring one to a statement whose proof is already accepted without adding
+        # or replacing that proof: an entry of its own, or the entry made for a replacement review declined.
+        first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
+        _, engine = self.publish(first)
+        self.assertEqual(replay(self.instance)['elements']['Small.root']['standing'], 'accepted')
+        self.publish(self.candidate(approaches={'Small/root/induction.md': APPROACH}), engine=engine)
+        folder = self.candidate(replace={'Small.root': PAIRING}, records={'Small/root.md': ROOT_RECORD})
+        declined = {'Small.root': {'correct': 'not_confirmed', 'accepted': False, 'replaces': False,
+                                   'reason': 'The pairing is described and not carried out.'}}
+        cid, _ = self.publish(folder, self.verdicts(folder, **declined), engine=engine)
+        canon = self.canon()
+        self.assertFalse((canon.approaches / 'Small/root').exists())
+        self.assertEqual(sorted(p.relative_to(canon.history).as_posix() for p in canon.history.rglob('*.md')
+                                if p.parent.name.endswith('-approaches')),
+                         ['Small/root/000002-approaches/induction.md', f'Small/root/000003-approaches/declined-{cid}.md'])
+        self.assertEqual(replay(self.instance)['elements']['Small.root']['approaches'], [])
+        self.assertEqual(read_json(canon.root / 'records.json')['Small.root']['approaches'], [])
+        self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
 
     def test_a_new_module_whose_path_now_exists_goes_to_a_replacement_peer(self):
         # Both candidates were written against the same canon and chose the same module path.
@@ -1218,27 +1242,11 @@ class TransportCheckTests(PublicationCase):
         self.assertEqual(check_session(self.engine.session_dir('speer')), [])
 
     def test_a_peer_candidate_is_refused_for_what_a_machine_can_decide_about_its_written_part(self):
-        proposal = {'id': 'speer-why', 'statement': 'Why is each step a square?', 'grounds': 'The proof does not say.'}
+        # The rules for question proposals, resolutions and understanding texts are checked with the questions
+        # (test_questions.QuestionCheckTests); the other machine-decidable rules of the written part are here.
         cases = (
             ('its folder follows the name of no element', {'approaches': {'Small/ghost/induction.md': APPROACH}}),
             ('invalid identifier', {'approaches': {'Small/root/two words.md': APPROACH}}),
-            ('names no question of the frontier', {'understanding': {'nope.md': UNDERSTANDING}}),
-            ('one file per question, named by its ID', {'understanding': {'q0/part.md': UNDERSTANDING}}),
-            ('must use their peer session prefix: speer-', {'questions': [{**proposal, 'id': 'other-why'}]}),
-            ('must use their peer session prefix: speer-', {'questions': [{**proposal, 'id': 'speer-'}]}),
-            ('question proposal ID already names a question', {'questions': [{**proposal, 'id': 'speer-taken'}]}),
-            ('duplicate id', {'questions': [proposal, proposal]}),
-            ('a question proposal has "id", "statement" and "grounds"',
-             {'questions': [{'id': 'speer-why', 'statement': 'Why?'}]}),
-            ('question.statement', {'questions': [{**proposal, 'statement': ' '}]}),
-            ('question.grounds', {'questions': [{**proposal, 'grounds': ''}]}),
-            ('a resolution must name an existing question', {'resolutions': [{'id': 'settles', 'question': 'nope'}]}),
-            ('the root question is not resolved by an explanation',
-             {'resolutions': [{'id': 'settles', 'question': 'q0'}], 'understanding': {'q0.md': UNDERSTOOD}}),
-            ('a resolution of op-scale comes with the text that settles it, as questions/op-scale.md',
-             {'resolutions': [{'id': 'settles', 'question': 'op-scale'}]}),
-            ('duplicate id', {'resolutions': [{'id': 'settles', 'question': 'op-scale'}] * 2,
-                              'understanding': {'op-scale.md': UNDERSTOOD}}),
             ('only the organizer retires an alternative proof',
              {'change': {'retire': [{'alternative': 'Small.root', 'into': 'Small.root', 'reason': 'No.'}]}}),
             ('unknown key in change.json: verdict', {'change': {'verdict': 'accepted'}}),
@@ -1382,7 +1390,9 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
                                     'Small.root_alt is added by the candidate; "replaces" is asked only of a proof that '
                                     'would take the place of one the canon has')
 
-    def test_review_s_concerns_findings_and_question_verdicts_name_what_exists(self):
+    def test_review_s_concerns_and_findings_name_what_exists(self):
+        # The verdicts on question proposals and resolutions are checked with the questions
+        # (test_questions.QuestionCheckTests).
         folder, session = self.reviewed()
         good = self.verdicts(folder, **{'Small.oddSum_succ': {'correct': 'undetermined', 'accepted': False}})
         concern = {'id': 'gap', 'targets': ['Small.root', 'Small.lead'], 'reason': 'The step is asserted.',
@@ -1405,16 +1415,6 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
             ('finding targets an unknown element: Small.ghost', {'findings': [{**finding, 'invalidates': ['Small.ghost']}]}),
             ('finding targets an unknown element: Small.ghost', {'findings': [{**finding, 'validates': ['Small.ghost']}]}),
             ('finding reopens an unknown question', {'findings': [{**finding, 'reopens': ['nope']}]}),
-            ('assess every question proposal', {'questions': []}),
-            ('unknown/duplicate question proposal', {'questions': [verdict, verdict]}),
-            ('unknown/duplicate question proposal', {'questions': [{**verdict, 'proposal': 'speer-other'}]}),
-            ('question verdict must be admitted, declined or revise', {'questions': [{**verdict, 'verdict': 'maybe'}]}),
-            ('question assessment reason', {'questions': [{**verdict, 'reason': ''}]}),
-            ('duplicate_of must name an existing question',
-             {'questions': [{**verdict, 'verdict': 'declined', 'duplicate_of': 'nope'}]}),
-            ('a duplicate is declined', {'questions': [{**verdict, 'verdict': 'revise', 'duplicate_of': 'op-scale'}]}),
-            ('unknown/duplicate resolution proposal',
-             {'resolutions': [{'proposal': 'settles', 'resolved': True, 'reason': 'It does.'}]}),
         )
         for message, changes in cases:
             with self.subTest(message=message):
@@ -1518,7 +1518,8 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
                 write_json(output / 'prepared.json', {**read_json(output / 'prepared.json'), **receipt})
         return check_session(session)
 
-    def test_an_organizer_answers_for_its_exact_batch_and_merges_questions_that_exist(self):
+    def test_an_organizer_answers_for_its_exact_batch(self):
+        # The rules for question merges are checked with the questions (test_questions.QuestionKnowledgeTests).
         merge = {'from': 'op-scale', 'into': 'speer-taken', 'reason': 'Both ask why the sums are squares.'}
         good = {'batch': ['c1', 'c2'], 'merge_questions': [merge]}
         self.assertEqual(self.organizer_errors(good), [])
@@ -1527,12 +1528,6 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
             ('organizer must acknowledge its exact assigned batch', {**good, 'batch': ['c1']}),
             ('organizer must acknowledge its exact assigned batch', {**good, 'batch': ['c2', 'c1']}),
             ('organizer must acknowledge its exact assigned batch', {'merge_questions': []}),
-            ('merge_questions: array required', {**good, 'merge_questions': merge}),
-            ('question merge needs existing questions', {**good, 'merge_questions': [{**merge, 'into': 'nope'}]}),
-            ('question merge needs existing questions', {**good, 'merge_questions': [{**merge, 'from': 'nope'}]}),
-            ('the root question keeps its identity', {**good, 'merge_questions': [{**merge, 'into': 'q0'}]}),
-            ('the root question keeps its identity', {**good, 'merge_questions': [{**merge, 'from': 'q0'}]}),
-            ('question merge reason', {**good, 'merge_questions': [{**merge, 'reason': ''}]}),
         )
         for message, organization in cases:
             with self.subTest(message=message):

@@ -1,7 +1,7 @@
 """Tests of the canon: its names and files, the application of a candidate, the structural index,
 the machine checks, the written part of a publication, and the commands that prepare and verify a change.
 
-The expectations follow docs/do-math/lean-canon-design.md and the interface note of the runtime, not
+The expectations follow docs/do-math/lean-canon-design.md and the guides under reference/, not
 the present behaviour of the code. Pure functions are tested on hand-written inputs in a temporary
 folder. What needs a compiled canon runs on the shared small instance, through a real broker with the
 stand-in compiler of tests/canon_lean.py.
@@ -23,8 +23,8 @@ import uuid
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
 from canon import (Canon, CanonError, Conflict, add_imports, apply_lean, apply_rearrangement, apply_written,
-                   axiom_closure, build_outcome, candidate_records, changed_modules, check_applied, copy_tree,
-                   declaration_text, drop_modules, empty_index, extraction_source, header_end, history_entry,
+                   axiom_closure, build_outcome, candidate_records, check_applied, copy_tree,
+                   declaration_text, drop_modules, empty_index, extraction_source, header_scan, history_entry,
                    library_modules, load_change, merge_bibliography, module_file, name_parts, name_path,
                    parse_approach, parse_record, parse_rows, path_name, path_part, read_approaches, read_record,
                    record_file, replace_span, required_pairs, retire_approaches, sha256_text, split_review,
@@ -378,29 +378,30 @@ end Small
 
 
 class LeanSourceTests(TempCase):
-    def test_header_end_of_a_module_file(self):
+    def test_the_header_of_a_module_file(self):
         lines = ['module', '', 'public import Small.Defs', 'public import Small.Step', '', '@[expose] public section']
-        self.assertEqual(header_end(lines), (4, True))
+        self.assertEqual(header_scan(lines), (4, True, ['Small.Defs', 'Small.Step']))
 
-    def test_header_end_of_a_plain_file(self):
-        self.assertEqual(header_end(['import Lean', 'import Small.Defs', '', 'open Lean']), (2, False))
-        self.assertEqual(header_end(['prelude', 'import Init.Core', 'def x := 1']), (2, False))
+    def test_the_header_of_a_plain_file(self):
+        self.assertEqual(header_scan(['import Lean', 'import Small.Defs', '', 'open Lean']),
+                         (2, False, ['Lean', 'Small.Defs']))
+        self.assertEqual(header_scan(['prelude', 'import Init.Core', 'def x := 1']), (2, False, ['Init.Core']))
 
-    def test_header_end_without_imports(self):
-        self.assertEqual(header_end(['module', '', '@[expose] public section']), (1, True))
-        self.assertEqual(header_end(['def x := 1', 'import Late']), (0, False))
-        self.assertEqual(header_end([]), (0, False))
+    def test_a_header_without_imports(self):
+        self.assertEqual(header_scan(['module', '', '@[expose] public section']), (1, True, []))
+        self.assertEqual(header_scan(['def x := 1', 'import Late']), (0, False, []))
+        self.assertEqual(header_scan([]), (0, False, []))
 
-    def test_header_end_knows_the_forms_of_an_import(self):
+    def test_the_header_scan_knows_the_forms_of_an_import(self):
         lines = ['module', 'public meta import Small.A', 'import all Small.B', 'meta import Small.C', 'def x := 1']
-        self.assertEqual(header_end(lines), (4, True))
+        self.assertEqual(header_scan(lines), (4, True, ['Small.A', 'Small.B', 'Small.C']))
 
-    def test_header_end_skips_comments(self):
+    def test_the_header_scan_skips_comments(self):
         lines = ['/- Copyright.', '   import Fake.Module', '   /- nested -/ still a comment', '-/',
                  '-- import Other.Fake', 'module', '', 'public import Small.Defs -- the definitions',
                  '/- between -/ public import Small.Step', '', 'theorem t : True := trivial',
                  'import After.The.Header']
-        self.assertEqual(header_end(lines), (9, True))
+        self.assertEqual(header_scan(lines), (9, True, ['Small.Defs', 'Small.Step']))
 
     def test_a_module_file_gets_a_public_import(self):
         text = 'module\n\npublic import Small.Defs\n\n@[expose] public section\n'
@@ -431,7 +432,7 @@ class LeanSourceTests(TempCase):
                          text.replace('-- import Small.Step\n', '-- import Small.Step\npublic import Small.Step\n'))
 
     def test_an_import_that_stands_only_in_a_block_comment_is_added(self):
-        # header_end skips comments, so a line of a comment is not an import of the file.
+        # header_scan skips comments, so a line of a comment is not an import of the file.
         text = '/-\nimport Small.Step\n-/\nmodule\n\npublic import Small.Defs\n\ntheorem t : True := trivial\n'
         self.assertIn('public import Small.Step', add_imports(text, ['Small.Step']).split('\n'))
 
@@ -1278,15 +1279,6 @@ class UpdateIndexTests(TempCase):
         # What belonged to an entry of the dropped module goes with it.
         self.assertEqual({name for name, parent in without_a['aux'].items() if parent is not None}, set())
         self.assertEqual(drop_modules(self.both, []), self.both)
-
-    def test_changed_modules(self):
-        self.assertEqual(changed_modules(self.both, self.lean, 'Small'), ([], []))
-        write(self.lean / 'Small/B.lean', B_LATER)
-        write(self.lean / 'Small/Sub/New.lean', 'module\n')
-        write(self.lean / 'DoMathExtract.lean', 'import Lean\n')
-        (self.lean / 'Small/A.lean').unlink()
-        self.assertEqual(changed_modules(self.both, self.lean, 'Small'), (['Small.B', 'Small.Sub.New'], ['Small.A']))
-        self.assertEqual(changed_modules(empty_index(), self.lean, 'Small'), (['Small.B', 'Small.Sub.New'], []))
 
 
 def entry(name, kind='theorem', uses=(), statement_uses=(), axioms=(), proof='complete', statement=None, source=None,
@@ -2147,7 +2139,7 @@ class CandidateToolTests(InstanceCase):
         self.assertEqual(receipt['entries']['Small.oddSum_succ']['lean_proof'], 'complete')
 
     def test_a_replacement_that_leaves_no_declaration_is_refused(self):
-        # The root stands in a module of its own (interface, section 2). A replacement text that declares
+        # The root stands in a module of its own (reference/canon.md). A replacement text that declares
         # nothing removes it, which the check before publication has to find: a declaration disappeared.
         folder = self.candidate(replace={'Small.root': '-- The statement was withdrawn.'}, prepare=False)
         result = self.prepare(folder, expect_ok=False)
@@ -2164,7 +2156,7 @@ class CandidateToolTests(InstanceCase):
         self.assertIn('Small.root_two has no record', errors)
 
     def test_a_module_outside_the_library_is_refused(self):
-        # All modules live under one top-level name, the library (interface, section 2), and the entries of
+        # All modules live under one top-level name, the library (reference/canon.md), and the entries of
         # the index are the declarations of the instance's own library (design 8).
         other = 'module\n\n@[expose] public section\n\nnamespace Other\n\ntheorem thing : True := by\n  trivial\n\nend Other\n'
         folder = self.candidate(modules={'Other/Thing.lean': other}, records={'Other/thing.md': record_text('A thing.')},

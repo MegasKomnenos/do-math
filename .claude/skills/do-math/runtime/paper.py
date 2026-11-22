@@ -565,7 +565,8 @@ def machine_checks(materials, plan, parts):
             bad(f"part {item['section']}: the {item['kind']} numbered {item['number']} "
                 + (f"with \\label{{{item['label']}}}" if item['label'] else 'without a \\label')
                 + ' is not a numbered statement of the plan; every numbered statement states an element the plan names')
-    if sorted(got) == sorted(planned) and got != planned:
+    # A statement without a \label has the label None, which cannot be ordered beside a text; repr can.
+    if sorted(got, key=repr) == sorted(planned, key=repr) and got != planned:
         bad('the numbered statements are not in the order of the plan: ' + ', '.join(label for label, _, _ in planned))
     by_label = {item['label']: item for item in found}
     for item in plan['statements']:
