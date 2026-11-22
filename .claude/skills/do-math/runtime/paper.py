@@ -74,7 +74,7 @@ REPAIR_ROUNDS = 3      # repair sessions for one round of machine checks and typ
 READING_ROUNDS = 2     # independent readings, each followed by a repair of what it found
 CHOSEN_PAPERS = 6      # papers of the collection the plan chooses for the paper to be written like
 LIKENESS_PAPERS = 4   # papers the plan did not choose, given to one reading beside real papers
-LIKENESS_ROUNDS = 4    # readings beside real papers at the most
+LIKENESS_ROUNDS = 8    # readings beside real papers at the most
 LIKENESS_CLEAN = 2     # readings in succession without a departure that end those readings
 COMPARISON_ROUNDS = 2  # comparisons of the statements; a repair follows every one but the last
 LIMIT_WAITS = 12       # times one session is started again after the account's usage limit
@@ -1386,7 +1386,8 @@ class Paper:
         """Readings of the manuscript beside papers the plan did not choose, each with the next ones of their list.
 
         They go on until LIKENESS_CLEAN readings in succession find no departure, and there are at most
-        LIKENESS_ROUNDS. A reading with departures is followed by a repair, except the last. When the
+        LIKENESS_ROUNDS. When the papers of the list are used up, the readings take them again from the
+        first. A reading with departures is followed by a repair, except the last. When the
         readings end otherwise, the departures of the last reading that had any stay open; the
         comparison is made in either case. False only when a repair leaves the manuscript failing."""
         section = method_part(LIKENESS_SECTION)

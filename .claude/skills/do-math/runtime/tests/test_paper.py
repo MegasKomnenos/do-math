@@ -1118,25 +1118,45 @@ class RunTests(PaperCase):
         self.assertEqual(self.events('end')[0]['open'], [])
 
     def test_readings_without_two_clean_ones_in_succession_leave_the_last_departures_open(self):
+        # Every odd reading has a departure and every even one has none, so no two clean readings follow each other.
+        rounds = paper.LIKENESS_ROUNDS
+        self.assertEqual(rounds % 2, 0)
         script = good()
-        script['likeness'] = [{'output/likeness.json': json.dumps(departed('first'))},
-                              {'output/likeness.json': json.dumps(LIKE)},
-                              {'output/likeness.json': json.dumps(departed('third'))},
-                              {'output/likeness.json': json.dumps(LIKE)}]
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed(f'reading {n}') if n % 2 else LIKE)}
+                              for n in range(1, rounds + 1)]
         script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
-                                      'output/response.json': answered('Rewritten.')} for n in range(9)]
+                                      'output/response.json': answered('Rewritten.')} for n in range(rounds)]
         self.assertEqual(self.run_paper(script), 2)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
-        self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
-                                 ('repair', 'likeness'), ('likeness', None), ('compare', None)])
-        self.assertEqual(len(self.calls('likeness')), paper.LIKENESS_ROUNDS)
+        self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None)] * (rounds // 2)
+                         + [('compare', None)])
+        self.assertEqual(len(self.calls('likeness')), rounds)
+        # The last reading found nothing, and the departures of the one before it stay open: one clean reading
+        # after their repair is not two.
         end = self.events('end')[0]
         self.assertEqual((end['status'], end['open']),
-                         ('open_findings', [{'check': paper.LIKENESS, 'after_repairs': 2,
-                                             'problems': [departure('third')]}]))
+                         ('open_findings', [{'check': paper.LIKENESS, 'after_repairs': rounds // 2,
+                                             'problems': [departure(f'reading {rounds - 1}')]}]))
+        # When the papers the plan did not choose are used up, the readings take them again from the first.
+        self.assertEqual([e['exemplars'] for e in self.events('likeness')], [FIRST_FOUR, NEXT_FOUR] * (rounds // 2))
         # The comparison still runs, and its verdicts stand beside the paper.
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+
+    def test_no_repair_follows_the_last_reading_beside_real_papers(self):
+        rounds = paper.LIKENESS_ROUNDS
+        script = good()
+        script['likeness'] = [{'output/likeness.json': json.dumps(departed(f'reading {n}'))} for n in range(1, rounds + 1)]
+        script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
+                                      'output/response.json': answered('Rewritten.')} for n in range(rounds)]
+        self.assertEqual(self.run_paper(script), 2)
+        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness')] * (rounds - 1)
+                         + [('likeness', None), ('compare', None)])
+        end = self.events('end')[0]
+        self.assertEqual(end['open'], [{'check': paper.LIKENESS, 'after_repairs': rounds - 1,
+                                        'problems': [departure(f'reading {rounds}')]}])
         self.assertTrue((self.out / 'paper.pdf').is_file())
 
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
