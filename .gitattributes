@@ -20,3 +20,9 @@ docs/do-math/okf/SPEC-v0.2.md text eol=lf -whitespace
 docs/do-math/통합-설계.md text eol=lf
 CONTEXT.md text eol=lf
 docs/wayfinder/pvsnp-재설계/컨텍스트.md text eol=lf
+
+# 해결한 문제의 지식 보관 파일은 일반 Git 파일로 두되 이진 파일로 다룬다(개행 변환과 텍스트 diff 없음). GitHub는 100 MB를 넘는 일반 파일을 받지 않으므로 그보다 큰 것은 싣지 않는다.
+solved/**/*.tar.xz binary
+
+# 정의 파일은 연구가 낸 것과 바이트가 같다는 것이 검증 항목이므로 체크아웃에서도 LF 바이트를 유지한다.
+solved/parking-unimodality/lean/Parking/Defs.lean text eol=lf

@@ -1,0 +1,1 @@
+TEMPORARY 2026-11-09: user paused all formalization until research is finished. Remove this file and the formalization_paused() code in runtime/runner.py to restore.

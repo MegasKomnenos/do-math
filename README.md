@@ -16,7 +16,9 @@ The rest of this document lists the solved problems, and then explains how the s
 
 ## Solved problems
 
-This section lists the problems that do-math has formally proved and that have been organized into publishable form. None is listed yet.
+This section lists the problems that do-math has formally proved and that have been organized into publishable form.
+
+- **Unimodality of parking functions by maximum displacement.** For every n ≥ 1, the numbers of parking functions of length n whose largest displacement is exactly ℓ, taken for ℓ = 0, …, n − 1, form a unimodal sequence. This is Conjecture 6.5 of Celano, Elder, Hadaway, Harris, Martin, Priestley and Udell (arXiv:2507.07243). The proof is complete in Lean 4.36.0 with Mathlib 4.36.0 as the theorem `Parking.root_unimodal`, and it is in [`solved/parking-unimodality/`](solved/parking-unimodality/README.md) together with a written record of every result it names, a dependency map and a history of the research. The two runs that found it used an earlier version of do-math, in which results were kept as reviewed records and not yet as one Lean library; the formal proof was simplified and packaged afterwards, as that folder's README describes.
 
 ## How the research is organized
 

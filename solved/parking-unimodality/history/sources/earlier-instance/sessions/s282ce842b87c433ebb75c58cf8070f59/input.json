@@ -1,0 +1,241 @@
+{
+  "schema": 1,
+  "instance": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803",
+  "session": "s282ce842b87c433ebb75c58cf8070f59",
+  "role": "review",
+  "pipeline": "p8ee2336d15f848dcae1f8c095166fc7b",
+  "task": {
+    "kind": "candidate",
+    "candidate": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s2839417ae6de42dca5b242c6db9bc2a0\\candidate",
+    "candidate_hashes": {
+      "critical-tie-certificate.json": "527250ac2441ca4216e6a905e63afeb21b55287764c051a82752315b3f1e06d9",
+      "critical_tie_certificate.py": "f506097aa4f1de8e4bcae9547e0927dac8b044430d955871e59d4e01b5748956",
+      "critical_tie_tail.py": "dad7ea9409208cc50d11ee4822427ef580239891f03e99927b8cdd3b92f4aba8",
+      "end-decision.json": "bc50fd997c69e6f668174dd174adf6932c1715778ea2d81ac231433774ae3f36",
+      "exposition.md": "4be78d62f02cc719397c358c1a0bad2b1a9fa3e9a11897797fe728a298210fa3",
+      "global-tie-profile.md": "679d6a0b92d825a5c8e09af9c696a39cb33c686eaf4bc4666bfcd7353e97984b",
+      "glossary-local.md": "c9b4a4a93e6c6a40b67113c0f3e76c8133724d82035497934b23d645d9d99edd",
+      "literature.md": "939ed37237a62d210e4da09cd19be8efcb9cf8182f83682613259a4acbb0c584",
+      "peer-additions.md": "79cb6b8701c77a42bf87be20cab9ae9036dfed9b34152adf8eecb36410695879",
+      "peer-checks.json": "0ee8a92e7407b96fe9afe1ae4e8bf5bd3b369d32575abf00135318b1ed9d6739",
+      "peer_checks.py": "d75a8f08a2755cec8a0e62ab22d9f5ceca376ad3c520393a35498c33ea506134",
+      "record.json": "8bf4896321f96e72d2baea8d2921385e307453f38ab711609c98d02dd5203d5f",
+      "evidence/conversation-supplements.json": "8c2cbec6d7ffa723e3ad5abe76f688a965e2ba3a056dbb50d0c4d5a8c4b481e8",
+      "evidence/final-reference-audit.json": "bc732b1212a1d515235ee8215ca7427bfbfc3c9751408186c70179f4681410a5",
+      "evidence/global-profile-execution.json": "2ab92213affec00f1e70a3b65947d5f54552f57953b4dd7de385d6a61fde567a",
+      "evidence/reading-and-attribution.md": "345272fdc20e1d2ed492b49a33ca026958c0c3a21029134c3f6b84deb4226956",
+      "evidence/reproduction-run.md": "136af4fe3179d74dd81e7ed23d847cdc6b350b3f0cdcded897659293bec28bc9",
+      "evidence/reproduction-summary.json": "5ac77abc4fad54faa78bc757522e76eb1840be5b472e663e0a0198f517f0f361",
+      "evidence/transport-check.json": "6516ed5c8f626de79f8e34a8b7e015e8e49710c3f50840a5400ad4ab378b328a",
+      "evidence/peer-probes/moving-difference-probe.json": "8c2562e138f251e6c5057290b7bbfd8152f01edebb62a8d8287a465f102f19e8",
+      "evidence/peer-probes/moving_difference_probe.py": "26d917fe1136f853f0620eb88660b1aac58315891f0e3108bd49eea405799c59",
+      "evidence/reproduction/blocked-monotone-certificate.json": "5c8fea20746cb41b5e59d71f16b27d348ff43c2eeac909512a0190da6acacf0d",
+      "evidence/reproduction/brownian-ratio-certificate.json": "d7c3e72079a2dbeb3b19d6ab323932f503d87946ef2d46ff307d1c61c2db20f8",
+      "evidence/reproduction/exact-checks.json": "e319dfd22187cd0a514d95532050ba0ffaa20ee66d76457c411d8955c928b177",
+      "evidence/reproduction/gamma-production-checks.json": "48af0521da2ba7908c550125deda4163675830cbb0c41ee4da3844f5014f4fb3",
+      "evidence/reproduction/green-exact-checks.json": "86b10fa6699458d94931ce4dd813453bc2706b6f09c4d5f47ed35eacd1b354ab",
+      "evidence/producer/output/blocked-monotone-certificate.json": "5c8fea20746cb41b5e59d71f16b27d348ff43c2eeac909512a0190da6acacf0d",
+      "evidence/producer/output/blocked_monotone_certificate.py": "42cdcbb96ced0bd632bc956d8dd9d83e380f43e1ad7f2453f343bdbc2508d234",
+      "evidence/producer/output/brownian-ratio-certificate.json": "d7c3e72079a2dbeb3b19d6ab323932f503d87946ef2d46ff307d1c61c2db20f8",
+      "evidence/producer/output/brownian_ratio_certificate.py": "59391e62679e34889075e8e441426863b891cc4c3b32d70eee87fff38d38f1c6",
+      "evidence/producer/output/exact-checks.json": "e319dfd22187cd0a514d95532050ba0ffaa20ee66d76457c411d8955c928b177",
+      "evidence/producer/output/gamma-production-checks.json": "48af0521da2ba7908c550125deda4163675830cbb0c41ee4da3844f5014f4fb3",
+      "evidence/producer/output/gamma_production_checks.py": "a896d9853e2872c7099b3c242aa4252f3187006f9d33633c7d7d33f964295607",
+      "evidence/producer/output/glossary-local.md": "5e6dc430a3da8da49bf1d0c812fe83b9aca1d8b6c9505f9d5eab781e3554ed66",
+      "evidence/producer/output/green-connection.md": "f4c84fe3c132058b02148ac82cb12b28b45b8970c1a8de3fea89d981e1a3a6da",
+      "evidence/producer/output/green-exact-checks.json": "86b10fa6699458d94931ce4dd813453bc2706b6f09c4d5f47ed35eacd1b354ab",
+      "evidence/producer/output/green_exact_checks.py": "7730dfa84bb3332f79aa1a45f1b5a4ea63810e38542fabbc93b0156845972b86",
+      "evidence/producer/output/literature.md": "e565153625f775c61f80643b1bb951b63bc519f3e599633c4925e742b6ccfcb3",
+      "evidence/producer/output/outcome.json": "946b91bd308d0091b695f84b0adfe6979d3a94c68b2317ee582389db36d92660",
+      "evidence/producer/output/report.md": "1493f7d3125edc825218fb1eae8010e8a9bc7a073d2b0572117324a183fca3fd",
+      "evidence/producer/output/tie-gradient.md": "a267fb3c01a79dfa85785a07bd101be5b38f142848046c74855a0e13c5286aad",
+      "evidence/producer/output/verification-summary.json": "96c2cad8492b5da6ad262c89370264b686732dc39512f62b76905fd2d7bf8b17",
+      "evidence/producer/output/verify_exact.py": "77e91ef260d2a13ffdfc14a775a30fc37a549d2437d2a4273a7215ac0d18e3fd",
+      "evidence/producer/work/blocked-monotone-certificate.json": "9115dee4105712faa1fe2358781884b9da021eded1388a952b64bf2c91ab8ccc",
+      "evidence/producer/work/blocked_monotone_certificate.py": "0556f75c29a926c535b8607abc4659e284aacbe4c99b9cb0805b4e1b6cbec039",
+      "evidence/producer/work/brownian-ratio-certificate.json": "d7c3e72079a2dbeb3b19d6ab323932f503d87946ef2d46ff307d1c61c2db20f8",
+      "evidence/producer/work/brownian_ratio_certificate.py": "d9335a1ef0d054160d55a2786d53c6ec9c35b0b7e70fae7cf525610d72cff5a0",
+      "evidence/producer/work/collinear-matroid-probe.json": "70a13203768a1d8a93e272cbd15c99fc263c0287a54b0d944fda2c6d0f55e349",
+      "evidence/producer/work/collinear_matroid_probe.py": "1961563cd28eecf1fa7e57e489e54843b6ea2cb6c3d1ae46fa22d0045ce1aff9",
+      "evidence/producer/work/gamma-coefficient-tp2.json": "ee2fb9861c3ad151384329682befbb1c53904dfd827555cd5a86ed0502bdd281",
+      "evidence/producer/work/gamma-probe.json": "577c74875d3b4555ffd80f90cb4d69fc7be93096a225cbdbf3a49b0718b3559d",
+      "evidence/producer/work/gamma-ratio-probe.json": "9144cda0e485799714b8d3457d19bec7f03decc454dcd77f5566c6902a4c9337",
+      "evidence/producer/work/gamma_coefficient_tp2.py": "6c090a24fedf7340fdc25bab62e4ed7e60d70c2e2130c5b2f6ca3f938aa68e39",
+      "evidence/producer/work/gamma_probe.py": "d080d22261d815c02b4ed0ce10bd9f374d4e49d4477938f20328c2f4c58c002d",
+      "evidence/producer/work/gamma_ratio_probe.py": "963dfd9ae0ad80e9dfca5b7e5eb97a8a124895c9f882058f4c8bcf455c3a4260",
+      "evidence/producer/work/preference-order.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence/producer/work/preference_order.py": "5e305803efb5a206330046267a46eefd4d6ffb87496310f00c8e709a80bc0102",
+      "evidence/producer/work/probe_ties.py": "66f4928b586f06214fb7de1a54682a5154b09dc750171de79e73b8f8207e7f27",
+      "evidence/producer/work/section.json": "1899219c2c49b3cab91662178aecd678d4826303c1537aa3af54384b25094cb0",
+      "evidence/producer/work/tie-probe.json": "d44197b574bc920682ed7bd185febc39161e4ba40d5f58b7684caef0f763d1e4",
+      "evidence/reproduction/work/blocked-monotone-certificate.json": "9115dee4105712faa1fe2358781884b9da021eded1388a952b64bf2c91ab8ccc",
+      "evidence/reproduction/work/collinear-matroid-probe.json": "70a13203768a1d8a93e272cbd15c99fc263c0287a54b0d944fda2c6d0f55e349",
+      "evidence/reproduction/work/gamma-coefficient-tp2.json": "4e22c5644438da87ef9dcc3b6ca270b484ffd38fa512e39b0a5e394b3cb64c55",
+      "evidence/reproduction/work/gamma-probe.json": "7881c2cb491fb31c3447b9e98831e67630df00ea1c214bcb328276fd47234bdd",
+      "evidence/reproduction/work/gamma-ratio-probe.json": "f3234c376c92f189d7dce63dcd0e926e0e124893ca082ae242e1399bbc668543",
+      "evidence/reproduction/work/preference-order.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence/reproduction/work/tie-probe.json": "35d4cf2a6cc1f0ac5490c98cfccffcf33e9ce8b1725652ab31e6fc2d3f8cb433"
+    },
+    "source": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s778e8cef9a2d4be080649d8ead1c41a8",
+    "peer": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s2839417ae6de42dca5b242c6db9bc2a0"
+  },
+  "revision": 106,
+  "references": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59\\context\\reference",
+  "documents": [
+    "reference/common.md",
+    "roles/review.md",
+    "reference/writing.md",
+    "reference/tools.md",
+    "reference/record-format.md",
+    "reference/review-output.md"
+  ],
+  "user_inputs": [
+    {
+      "id": "1793858913461626000-f3efefaa5c9949d98e65e65871637923.txt",
+      "text": "# 독립적인 새 연구의 조건\n\n이 인스턴스는 오직 root.md에 담긴 동일한 프로젝트 목표로 새로 시작한다. 이전 연구 인스턴스, 세션, knowledge, 진행 기록, 로컬 메모리, 기존 풀이·증명·계산 코드·선행연구 요약·실패 접근을 열람하거나 가져와 사용하지 않는다. 원 문제 선정 폴더와 선정 후 연구 산출물도 열람하지 않는다. 이전 대화나 인스턴스를 resume/continue하지 않는다. 새 인스턴스에서 생산하고 검토한 지식만 세션 사이에 이어 사용할 수 있다.\n\n일반 CLI, Python, Git 및 Lean/Mathlib 설치는 실행 환경으로 사용할 수 있으나 이전 연구 산출물은 사용할 수 없다. 공개 학술 문헌은 새로 찾아 원문에서 직접 확인하고, 현재 해결 여부·기여·가치를 독립적으로 판단한다. 문제 식별용 원 논문은 Celano 외, Statistics on ℓ-interval parking functions, arXiv:2507.07243, Conjecture 6.5이다(https://arxiv.org/abs/2507.07243).\n\n사람이 이해할 수 있는 한국어 수학 해설을 주 산출물로 작성한다. 이전 인스턴스의 운영 이력·모델 정책·대기 상태·미완료 작업을 가져오지 않는다. 현재 인스턴스 settings.json과 현재 do-math 역할 지침을 따른다.\n\n## 수학적 해결과 학술적 완료\n\n**수학적 해결:** P의 모든 n에 대한 증명을 주거나, P가 거짓임을 엄밀히 입증한다. 후자의 경우 한 n에서 감소 이후 다시 증가하는 두 위치를 정확한 개수와 함께 증명하면 반증이 된다. 임의의 주차 함수 하나는 개수의 단봉성에 대한 반례가 아니다. 계산 범위를 넓혔지만 반례를 찾지 못한 상태, 특정 n의 검증, 조건을 추가한 명제는 부분 성과다.\n\n**학술적 완료:** 수학적 해결에 더해 기존 문헌과 다른 기여를 설명하고, 결론을 낳는 구조나 장애물을 근거와 함께 제시한다. 검토자는 다음을 확인한다.\n\n1. 결과가 어떤 기존 정리와 같거나 즉시 따라오는지 실제 가정과 결론을 대조했는가?\n2. 증명이 의존하는 핵심 분해·대응·부등식이 무엇이며, 그것이 원 문제의 어떤 현상을 설명하는가?\n3. 계산이나 특정 예시 밖에서도 적용 범위와 한계를 정확히 밝히는가?\n\n새로움·흥미·가치를 점수나 증명 길이로 대신하지 않는다. 후속 독립 검토는 이 질문에 근거를 제시하고, 사용자는 해설과 진행 결과를 보며 원하는 통찰이 구현됐는지 피드백한다. 구조적 설명 없이 수치 반례만 확보하면 P의 반증과 사용자 목적 전체의 달성을 구별해 보고한다.\n\n## 산출물과 보증 수준\n사람이 이해할 수 있는 한국어 수학 해설이 주 산출물이다. 전체 P의 증명 또는 반증을 원래의 주차 과정·대상·정의·양화와 일치하는 Lean 정리로 제공한다. 현재 do-math의 형식 검증 기준에 따라 독립 검토가 별도로 컴파일하고 정확한 명제와의 일치를 확인해야 한다. 허용 공리는 propext, Classical.choice, Quot.sound이며 sorryAx는 허용하지 않는다. 새로 정의한 점화식이나 추상 수열만 다루는 경우 원래 주차 함수 개수와의 일치도 증명해야 한다. 부분 사례, 조건부 명제, 유한 범위 계산, 비형식 주장만으로 전체 달성을 선언하지 않는다. 독립 검토는 수학적 해결과 학술적 완료를 구별한다. 목표 달성 후 투고·외부 공개·외부 연락은 이번 요청 범위에 포함되지 않는다.\n"
+    },
+    {
+      "id": "1793965433272480800-e08ea6699476476c8de95a5f1b07b34d.txt",
+      "text": "# 외부 평가가 제안한 증명 경로 — 참고 지식\n\n## 이 입력의 지위\n\n이 입력은 연구 조건을 추가하지 않는다. root 진술, 앞선 조건 입력, 역할 지침, 그리고 어느 노드와 방법을 추구할지에 대한 세션의 판단은 그대로다. 아래는 이 인스턴스 밖에서 작성된 평가의 진단과 제안을 옮긴 것이다. 세션은 이를 문헌의 한 주장과 같이 다룬다. 출처를 이유로 믿거나 배제하지 않고, 쓰기 전에 코퍼스 자료와 대조하거나 스스로 확인한다. 이 노트와 코퍼스의 검토된 기록이 어긋나면 기록을 우선하고 어긋남을 기록에 남긴다. 평가자의 경로보다 다른 방향이 낫다고 판단하면 그 방향을 택한다.\n\n출처는 이 인스턴스와 무관한 AI 세션(Fable 5.1)이다. 2026-11-06에 연구 판본 102(기록 82개)까지의 코퍼스를 읽고 영어로 12쪽의 평가를 썼다. 평가자는 코퍼스의 공식을 재유도하고 자체 계산을 수행했다고 보고했으나 스크립트는 첨부하지 않았고, 사용자와 이 인스턴스 모두 그 계산을 재현하지 않았다. 전문은 다음 파일이다.\n\n`C:\\math\\.skill-workspace\\do-math-inputs\\parking-unimodality-fresh-20261105-150803\\external-evaluation-fable51-20261106.txt`\n\n이 노트는 전문 가운데 증명 경로에 관한 부분만 옮긴다. 전문에는 그 밖에 코퍼스 결과의 재유도 내역, 확립 결과의 구간별 지도, 서술 형식에 대한 의견이 있다.\n\n## 평가자의 진단\n\n평가자는 코퍼스의 결과가 확인한 범위에서 모두 옳다고 보면서, 방법 자체가 P를 끝낼 수 없다고 진단한다. 행을 여러 창으로 나누어 창마다 o(1) 오차의 점근 전개를 얻는 방법은 구조적으로 \"충분히 큰 n\"만 낳는다. 모든 창을 닫아도 문턱이 비명시적이면 유한 계산으로 나머지를 메울 수 없다. 코퍼스가 얻은 명시적 문턱(오른쪽 꼬리의 n≥r^(3/2)+2000r, 곡률 경계값의 n≥C_curv r^(3/2)+10^160 r; fixed-and-moving-tail-differences 모듈)은 계산이 닿을 수 없는 크기다. 명시적으로 덮인 구간은 왼쪽 ℓ≲√n과 n≳10^12에서의 오른쪽 꼬리뿐이어서 행의 점근적으로 사라지는 비율이다.\n\n평가자가 가장 무겁게 보는 공백은 n/(log n)² ≲ ℓ ≲ n/2 − K n^(2/3) 구간이다. 이 구간은 점근적으로도 덮이지 않았다. 두 번째 벌크 윤곽은 알려졌으나 그 전개를 두 번 차분해 부호를 읽을 수 없고, λ=ℓ/n=1/3, 1/4, …의 이동 전이는 다뤄지지 않았다. 반면 평가자의 수치에서는 이 구간의 인접 증가 여유가 행 전체에서 가장 크다. 그래서 평가자는 이 공백을 참·거짓의 문제가 아니라 기법의 문제로 본다.\n\n평가자의 의견은 P가 참이고, 기전(큰 부분나무가 많아 생기는 곡률 대 문턱에서의 포화)은 바르게 식별되었으며, 증명에는 더 많은 점근 창이 아니라 n에 균일한 부등식이 필요하다는 것이다.\n\n## 평가자가 제안한 경로\n\n출발점은 코퍼스에 이미 있는 정확 항등식이다. r4f3093ea42584db88c69e41d7756f005 「중간 꼬리의 착지 흡수와 오른쪽 절반의 최종적 단봉성」의 식 (14)이며, 같은 형태가 r91f681e023874480ac1166cba3966391의 식 (11)과 rca714427dc924c2eb26c4e0089bf2e49의 식 (2)에 있다. [n] 위 균등 뿌리 숲에서 부분나무 크기 s_v, k=y+1, Z=#{v: s_v>k}, h=#{v: s_v=k}, P=∏_v min(1, k/s_v)라 할 때\n\nδv_n(y)/β_n = E[ P{ (1+1/k)^Z + (1−1/k)^(Z+h) − 2 } ].\n\n좌변은 그 기록의 정의 v_n(y)=e^(−n)b_(n,y)/n!, δv_n(y)=v_n(y+1)−v_n(y), Borel 질량 β_n=e^(−n)n^(n−1)/n!에 따라 인접 차 b_(n,y+1)−b_(n,y)에 비례한다. 우변에서 P의 기댓값은 용량 k의 누적 개수에 대응하고, 괄호의 두 항은 용량을 k+1과 k−1로 바꿀 때 P가 변하는 비이므로, 기댓값은 누적 개수의 이차 차분, 곧 b의 인접 차다. 기댓값의 확률 모형과 정규화는 그 기록의 기술 본문 (32)에서 확인한다.\n\n괄호를 1/k로 전개하면 −h/k + [Z(Z−1)+(Z+h)(Z+h−1)]/(2k²) + O((Z+h)³/k³)이다. 둘째 항은 h≥0이므로 Z(Z−1)/k² 이상이다. 평가자의 요약 Z(Z−1)/k² − h/k는 삼차 이상의 항을 제외한 이 전개의 하계이며, 평가자는 이를 큰 부분나무의 수 Z가 주는 양의 곡률 항과 문턱 크기의 부분나무 수 h가 주는 음의 포화 항의 경쟁으로 읽는다. 평가자는 이 항등식 하나를 명시적 상수로 통제하는 것이 증명에 필요한 전부라고 보고, 네 갈래를 제안한다.\n\n1. **왼쪽, 열린 왼쪽-중간 구간 포함.** 무거운 집합 {v: s_v>k}는 조상에 닫혀 있으므로 뿌리 쪽의 부분숲이다. k>n/2에서는 서로소인 두 부분나무가 동시에 k를 넘을 수 없어 이 집합이 하나의 사슬이지만, k<n/2에서는 가지를 칠 수 있고 전형적인 숲에서 Z가 크다(확률적 진술이며 평가자는 크기를 정량화하지 않았다). 평가자는 항등식의 좌변이 양수라는 것, 곧 증가 b_(n,y+1)>b_(n,y)가 기울인 모멘트 비교 E[P·Z²]/k² ≥ C·E[P·h]/k에서 따른다고 쓴다(전문은 k를 행 위치로 써서 b_(n,k+1)>b_(n,k)로 적는다). 여기서 C는 명시적 상수다. 평가자는 C의 값, Z(Z−1)과 Z²의 차이, 전개의 나머지 항을 통제하는 방법은 제시하지 않았다. 양변은 Cayley 나무의 부분나무 크기 통계의 기댓값이며([n] 위 균등 뿌리 숲은 보조 뿌리 0을 붙이면 n+1 꼭짓점의 균등 Cayley 나무이므로 같은 모형이다) 정확 공식이 있다. 평가자는 그 예로 기울이지 않은 E h를 Borel 질량 β_j의 비로 쓴 식이 코퍼스에 이미 있다고 지적하지만, 기울인 E[P·h], E[P·Z²]의 공식은 제시하지 않았다. 이 추정은 λ=ℓ/n으로 전개하지 않으므로 λ=1/3, 1/4, …의 이동 전이도 함께 해소한다고 본다. 평가자는 자기 수치에서 인접 증가의 여유 n(b_(n,ℓ+1)/b_(n,ℓ)−1)가 최악 지점에서도 약 5이므로(아래 표) 거친 균일 경계로도 여지가 있다고 본다.\n2. **오른쪽.** k>n/2에서 무거운 집합은 사슬이므로(코퍼스의 최대 나무 사슬 S_i, r39ea75d8cd1c4be4a12da9217bc3427e), 문제는 Borel 핵을 가진 1차원 마르코프 사슬이다. β_j에는 양쪽 Robbins–Stirling 경계가 있으므로 이 사슬의 명시적 Berry–Esseen형 국소 추정이 현실적이라고 본다. 어떤 확률량의 국소 추정인지, 그 추정이 b의 인접 차분의 부호를 어떻게 주는지는 평가자가 제시하지 않았다. 평가자는 그러면 10^160이 계산 가능한 문턱으로 바뀌고, 그 너머의 모든 n에서 1≤r≤1.2 n^(2/3)의 b_(n,n−r) 오목성을 준다.\n3. **접합과 마무리.** 어떤 L_n에 대해 ℓ≤L_n에서 엄격 증가하고, 어떤 결손 폭 R_n에 대해 r=n−ℓ≤R_n(즉 ℓ≥n−R_n)에서 오목하며, 두 구간이 L_n ≥ n−R_n로 겹치면 된다. 평가자의 왼쪽 갈래는 k<n/2를, 오른쪽 갈래의 명시한 결론은 r≤1.2 n^(2/3)를 다루므로, 그 사이의 첫 벌크와 중간 꼬리(코퍼스가 비명시적 문턱으로 증가를 보인 구간)를 어느 갈래가 명시적으로 덮는지는 평가자가 따로 말하지 않았다. 오른쪽 갈래의 사슬 기술 자체는 k>n/2 전체에 적용된다. 명시 문턱 아래의 n은 계산으로 처리한다. 평가자는 정확 재귀로 n 수천은 분 단위, 10^4 근처는 시간 단위로 계산할 수 있다고 본다.\n4. **왼쪽 지름길.** ℓ<n/2에서 {M=ℓ}에서 {M=ℓ+1}로의 단사가 있으면 왼쪽 절반 전체가 한 번에 따른다. 최대 변위 차 하나의 선호를 1 낮추면 그 차가 막히지 않은 한(그 자리의 용량 h_i가 ℓ+1이 아닌 한) 동작한다. 코퍼스는 막힌 사건 Blk_n, B_(n,m)(r631b0f49624f4e2789e5efeff41560c8)을 정량화했으나 막힌 경우를 처리하는 보완 사상은 찾지 않았다. 평가자는 여기가 조합론적 기여의 여지가 가장 큰 곳이라고 본다.\n\n## 평가자가 중단을 권한 작업\n\n평가자는 임계 창의 고차 보정, 모멘트 표현의 장애, 산술 합동, 실패한 강화의 목록 작성을 중단하겠다고 썼다. 이유는 모두 옳지만 P를 움직이지 않는다는 것이다. 이는 평가자의 의견이며, 어떤 작업에 실익이 있는지는 세션이 판단한다.\n\n## 평가자의 자체 계산과 코퍼스의 대응 자료\n\n아래 수치는 평가자의 보고이며 이 인스턴스는 재현하지 않았다. 쓰려면 오른쪽 열의 코퍼스 자료와 대조하거나 재계산한다. p_n=|PF_n|=(n+1)^(n−1)이다.\n\n| 평가자 보고 | 코퍼스의 대응 자료 |\n|---|---|\n| 마지막 차 재귀의 정확 정수 계산으로 모든 n≤900의 행이 단봉이며 인접 동률이 없음. 배정밀도 계산으로 n≤1500까지 단봉. | n≤120 정확 검증(r81e7051b155a41b3b4daad1893bb328a). index의 접합·초기 증가 모듈이 참조하는 n≤800 전 행 검증. |\n| 인접 증가의 여유 n(b_(n,ℓ+1)/b_(n,ℓ)−1)는 ℓ≈0.05n의 약 1300에서 단조 감소해 ℓ≈0.49n에서 국소 최솟값 4.7–5.2에 이르고, 벌크에서 다시 올라 모드까지 양수로 남다가 모드에서 0을 지난다. λ=1/3, 1/4의 전이에서 진동이 없다(n=600, 1500). 전문은 이 양을 n²(…)로 적었으나, 같은 문서의 \"최악 지점의 여유 5/n\"과 아래 중앙 차·중앙 질량 수치의 비 45.1/9.40≈4.8은 n(…)에 해당하므로 이 노트는 n(…)로 읽는다. 이 읽기는 이 노트의 추론이다. | 중앙 차 δ_n=b_(n,m)−b_(n,m−1), m=ceil(n/2)를 다루는 기록들(arithmetic-congruences-and-central-equalities, half-threshold-transition 모듈)과 중앙 진입 기록(r243ba1675a2e49bebc28f681d818c334). |\n| 처음 121항 b_(n,0)<⋯<b_(n,120)의 엄격 증가가 n≥143에서 성립하고, n=142는 k=120의 비교에서 실패. | n≥143의 처음 121항 엄격 증가와 시작점 143의 최적성(r9e782f504fc44462b7d8c10988216622). 일치. |\n| 모드 결손 n+1−mode = 0.59963(n+1)^(2/3)+1.24847(n+1)^(1/3)+O(1)이 50≤n≤900에서 1.3 이내. | 모드 첫 보정 계수 1.24846<c<1.24848 인증(r7ce1907a0c744faaa40076dd7b615577). |\n| 중앙 차 상수 n^(5/2)(b_(n,n/2)−b_(n,n/2−1))/p_n → 64/√(2π) ≈ 25.5는 n=400에서 47.8, n=1500에서 45.1로 느리게 이동하고 외삽이 불안정. 중앙 질량 n^(3/2)b_(n,n/2)/p_n → 8√(2/π) ≈ 6.38은 n=1500에서 9.40으로 감소 중. 평가자는 중앙 차 상수를 \"그럴듯하나 미확인\"으로 둔다. | 중앙 진입 기록(r243ba1675a2e49bebc28f681d818c334)의 비형식 유도. 첫 벌크 극한 n^(5/2)Δb/p_n→g″(ℓ/n)의 ℓ/n=1/2 값이 g″(1/2)=64/√(2π)다. |\n| (n,ℓ)=(80,40)의 첫 로그오목성 실패 재현. | r81e7051b155a41b3b4daad1893bb328a. 일치. |\n"
+    }
+  ],
+  "settings": {
+    "schema": 1,
+    "max_sessions": 8,
+    "explore_every": 3,
+    "organizer_every_records": 4,
+    "attempt_launch_interval": 180,
+    "models": [
+      {
+        "model": "codex/gpt-6.1-sol",
+        "effort": "xhigh"
+      },
+      {
+        "model": "claude/opus",
+        "effort": "xhigh"
+      }
+    ],
+    "roles": {
+      "peer": [
+        {
+          "model": "claude/claude-opus-5-5",
+          "effort": "xhigh"
+        },
+        {
+          "model": "codex/gpt-6.1-sol",
+          "effort": "xhigh"
+        }
+      ],
+      "review": [
+        {
+          "model": "claude/claude-opus-5-5",
+          "effort": "xhigh"
+        },
+        {
+          "model": "codex/gpt-6.1-sol",
+          "effort": "xhigh"
+        }
+      ]
+    },
+    "cli": {
+      "codex": "C:/Users/<account>/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "claude": "C:/Users/<account>/.local/bin/claude.exe"
+    },
+    "retry_seconds": 60,
+    "retry_max_seconds": 1800,
+    "mcp_servers": {},
+    "max_end_resumptions": 3,
+    "lean": {
+      "memory_budget_mb": 4096,
+      "confidence": 1.3,
+      "min_free_memory_mb": 2048,
+      "cpu_threads_budget": 4,
+      "threads": 2,
+      "priority": "below_normal",
+      "max_passes": 3,
+      "calibration_expect_mb": 2048,
+      "default_spread": 0.5,
+      "command": [
+        "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+        "env",
+        "lean"
+      ],
+      "version_command": [
+        "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+        "env",
+        "lean",
+        "--version"
+      ],
+      "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+      "env": {
+        "PATH": "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin;C:\\Program Files\\PowerShell\\7;C:\\Users\\<account>\\.codex\\tmp\\arg0-windows\\codex-arg0q15IFE;C:\\Users\\<account>\\.codex\\packages\\standalone\\releases\\0.166.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git LFS;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\GitHub CLI\\;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files\\dotnet\\;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin;C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR;C:\\Users\\<account>\\.local\\bin;C:\\Program Files\\nodejs\\;C:\\Program Files\\pkgconf 3.0.5\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\;C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\;C:\\Users\\<account>\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\;C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python311\\;C:\\Users\\<account>\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\<account>\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include;C:\\Users\\<account>\\.dotnet\\tools;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um;C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin;C:\\Users\\<account>\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\<account>\\.local\\bin;C:\\Users\\<account>\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\<account>\\AppData\\Roaming\\npm;C:\\Users\\<account>\\AppData\\Local\\Programs\\gettext-iconv\\bin;C:\\Users\\<account>\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PolarGoose.minisat_Microsoft.Winget.Source_8wekyb3d8bbwe\\.;C:\\Users\\<account>\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Lean.Elan_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\<account>\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\<account>\\.dotnet\\tools;c:\\Users\\<account>\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand;C:\\Users\\<account>\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\copilot-shim"
+      },
+      "cache_epoch": "parking-unimodality-fresh-20261105-150803",
+      "allowed_axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  },
+  "commands": {
+    "updates": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "updates",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59"
+    ],
+    "lease": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "lease",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59",
+      "<node>"
+    ],
+    "wait": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "wait",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59",
+      "<node>",
+      "--timeout",
+      "50"
+    ],
+    "section": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "section",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59",
+      "<node>",
+      "--file",
+      "<file>"
+    ],
+    "release": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "release",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59",
+      "<node>"
+    ],
+    "message": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\coordination.py",
+      "message",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59",
+      "<recipient>",
+      "--file",
+      "<file>"
+    ],
+    "check": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\check.py",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s282ce842b87c433ebb75c58cf8070f59"
+    ],
+    "lean": [
+      "C:\\Users\\<account>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\.agents\\skills\\do-math\\runtime\\lean_broker.py",
+      "<command>",
+      "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803"
+    ]
+  }
+}

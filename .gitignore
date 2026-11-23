@@ -38,3 +38,6 @@ __pycache__/
 
 # do-math graphify local graph, semantic cache, and execution records.
 /.claude/graphify/
+
+# 주차함수 단봉성의 앞 인스턴스 지식 보관 파일(349 MB)은 저장소에 싣지 않는다. 설명과 체크섬은 같은 폴더의 MANIFEST.md에 있다.
+/solved/parking-unimodality/knowledge/parking-unimodality-fresh-20261105-150803-knowledge.tar.xz
