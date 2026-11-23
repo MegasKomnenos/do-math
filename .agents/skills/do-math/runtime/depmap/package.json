@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Optional layout engine of the do-math dependency map. depmap/draw.py uses elkjs through elk_layout.cjs when Node and this package are present, and its built-in layered layout otherwise. Nothing installs it; `npm install` in this folder is the user's choice.",
+  "dependencies": {
+    "elkjs": "0.12.1"
+  }
+}

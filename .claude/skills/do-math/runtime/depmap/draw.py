@@ -696,6 +696,11 @@ def legend(limit, y, data, bare=()):
     return parts, y
 
 
+def number(count, word):
+    """A count with its noun: `1 step`, `3 steps`."""
+    return f"{count} {word}{'' if count == 1 else 's'}"
+
+
 def scope_words(data):
     """Which units the map shows, in words."""
     if data.get('scope') == 'all':
@@ -713,9 +718,9 @@ def svg_of(data, cards, geometry, bare=()):
     units = {unit['id']: unit for unit in data['units']}
     counts = data['counts']
     library = f" · library {data['library']}, revision {data.get('revision')}" if data.get('library') else ''
-    subtitle = (f"{data.get('root_label') or ''} · {state_words(data)} · {counts['units']} units in {counts['groups']} groups, "
-                f"{counts['edges']} lines, {len(data.get('folded') or {})} steps folded into the lines · "
-                f"{scope_words(data)}{library}")
+    subtitle = (f"{data.get('root_label') or ''} · {state_words(data)} · {number(counts['units'], 'unit')} in "
+                f"{number(counts['groups'], 'group')}, {number(counts['edges'], 'line')}, "
+                f"{number(len(data.get('folded') or {}), 'step')} folded into the lines · {scope_words(data)}{library}")
     width = max(geometry['width'], text_width(subtitle, 15), text_width(data['title'], 30, bold=True), 640) + 2 * MARGIN
     head, baseline = legend(width - MARGIN, 104, data, bare)
     header = baseline + 28
@@ -835,8 +840,8 @@ def guide_of(data, bare=()):
     folded = (f' {steps} smaller step{"s have" if steps > 1 else " has"} no card and {"are" if steps > 1 else "is"} folded '
               f'into the lines that pass through {"them" if steps > 1 else "it"}.') if steps else ''
     parts = [f'<p class="about">The root of this research is {name}: {esc(state_words(data))}. The map shows '
-             f'{esc(scope_words(data))}: {counts["units"]} units, each a card, in {counts["groups"]} groups, joined by '
-             f'{counts["edges"]} lines.{folded}</p>']
+             f'{esc(scope_words(data))}: {number(counts["units"], "unit")}, each a card, in '
+             f'{number(counts["groups"], "group")}, joined by {number(counts["edges"], "line")}.{folded}</p>']
     kinds, roles, standings = occurring(data, bare)
     parts.append('<div class="legend"><h3>How to read the map</h3>'
                  '<p>An arrow runs from what is used to what uses it, so the map is read from the left, where the '

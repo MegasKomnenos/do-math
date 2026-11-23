@@ -1,6 +1,7 @@
 """Configuration for fresh research instances."""
 from copy import deepcopy
 import math
+import os
 from pathlib import Path
 import shutil
 from cli_adapter import build_command, provider_for_model
@@ -17,31 +18,48 @@ ASSESSORS = [{'model': 'claude/opus', 'effort': 'xhigh'},
 AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 
+def literature_server():
+    """The literature server scholarly-mcp, where the repository that holds this skill keeps it.
+
+    Every instance receives it unless its settings give `mcp_servers` themselves. `--public-only`
+    serves the sources that need no institutional login (reference/operations.md, External tools)."""
+    home = Path(__file__).resolve().parents[4] / 'services' / 'scholarly-mcp'
+    python = home / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+    return {'command': python.as_posix(), 'args': [(home / 'server.py').as_posix(), '--public-only']}
+
+
 def defaults():
     return {'schema': 1, 'max_sessions': 8, 'explore_every': 1,
             'organizer_every_records': 4, 'launch_interval': 180, 'models': deepcopy(MODELS),
             'roles': {'peer': deepcopy(ASSESSORS), 'review': deepcopy(ASSESSORS)},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
-            'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
+            'retry_seconds': 60, 'retry_max_seconds': 1800,
+            'mcp_servers': {'scholarly': literature_server()},
             'max_end_resumptions': 3,
+            # Two considerations review weighs before accepting a correct proof (roles/review.md).
+            'acceptance': {'decline_reducible_proofs': True,
+                           'decline_uncomprehended_computation': True},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
-                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
+                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS),
+                     # The judge of formal proofs (judge.py): "auto" looks for it beside the Lean command.
+                     'judge': 'auto'}}
 
 
 def validate(raw):
     if not isinstance(raw, dict) or raw.get('schema', 1) != 1:
         raise ValueError('settings must be a fresh-runtime schema 1 object')
-    for section in ('cli', 'lean'):
+    sections = ('cli', 'lean', 'acceptance')
+    for section in sections:
         if not isinstance(raw.get(section, {}), dict):
             raise ValueError(section + ' must be an object')
     value = defaults()
     value.update(raw)
-    value['cli'] = {**defaults()['cli'], **raw.get('cli', {})}
-    value['lean'] = {**defaults()['lean'], **raw.get('lean', {})}
+    for section in sections:
+        value[section] = {**defaults()[section], **raw.get(section, {})}
     known = defaults()
     unknown = [key for key in raw if key not in known]
-    for section in ('cli', 'lean'):
+    for section in sections:
         nested = raw.get(section, {})
         if isinstance(nested, dict):
             unknown += [section + '.' + key for key in nested if key not in known[section]]
@@ -59,6 +77,9 @@ def validate(raw):
         raise ValueError('launch_interval must be a nonnegative integer number of seconds')
     if type(value['max_end_resumptions']) is not int or value['max_end_resumptions'] < 0:
         raise ValueError('max_end_resumptions must be a nonnegative integer')
+    for key, applied in value['acceptance'].items():
+        if type(applied) is not bool:
+            raise ValueError(f'acceptance.{key} must be true or false')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
     if not isinstance(value['roles'], dict):
@@ -103,6 +124,12 @@ def validate(raw):
         raise ValueError('allowed_axioms must be a string list')
     if 'sorryAx' in lean['allowed_axioms']:
         raise ValueError('sorryAx cannot be allowed')
+    judge = lean['judge']
+    commands = isinstance(judge, dict) and set(judge) == {'export', 'compare'} and all(
+        isinstance(command, list) and command and all(isinstance(x, str) and x.strip() for x in command)
+        for command in judge.values())
+    if not (judge is None or judge == 'auto' or commands):
+        raise ValueError('lean.judge must be "auto", null, or {"export": [...], "compare": [...]} with two command arrays')
     return value
 
 

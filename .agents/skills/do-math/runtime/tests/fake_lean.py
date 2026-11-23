@@ -7,15 +7,25 @@ alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code)
 marker (text printed to stdout), stderr (text printed to stderr). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
 `--version` prints a version line; and an import of a `Missing.*` module fails the way a
-nonexistent module would. Build tests use the artifact profile
-observed with Lean 4.32: .olean, .olean.private, .olean.server and .ir are emitted
-together and all are required for a local import. This models file transport only.
+nonexistent module would.
+
+Build tests use the artifact profile observed with Lean 4.32: .olean, .olean.private,
+.olean.server and .ir are emitted together and all are required for a local import. What
+each file holds follows the source the way a `module` file's output does. The .olean and
+.ir files are written from the source without its lines that begin with `-- proof:`, and
+the other two from all of it, so a change in such a line leaves the public files
+byte-identical, as a replaced proof does, and any other change shows in all four. No file
+names the source's path. This models file transport and which file changes with which
+part of the source; nothing is elaborated.
 """
 
 import os
 import re
 import sys
 import time
+
+IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)")
+SUFFIXES = (".olean", ".olean.private", ".olean.server", ".ir")
 
 
 def touch(buffer):
@@ -24,27 +34,29 @@ def touch(buffer):
     return buffer
 
 
+def option(argv, name):
+    return next((arg.split("=", 1)[1] for arg in argv if arg.startswith(name + "=")), None)
+
+
 def main(argv):
     if "--version" in argv:
         print("Lean (version 4.0.0-fake, x86_64-fake, commit 0000000, Release)")
         return 0
-    threads = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--threads=")), None)
+    threads = option(argv, "--threads")
     source = argv[-1]
     olean = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == "-o"), None)
     with open(source, encoding="utf-8") as stream:
         lines = stream.read().splitlines()
-    imports = [match.group(1) for line in lines
-               if (match := re.match(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", line))]
+    imports = [match.group(1) for line in lines if (match := IMPORT.match(line))]
     if any(name.startswith("Missing.") for name in imports):
         print(f"{source}:1:0: error: unknown module prefix 'Missing'")
         return 1
     search = [p for p in os.environ.get("LEAN_PATH", "").split(os.pathsep) if p]
-    suffixes = (".olean", ".olean.private", ".olean.server", ".ir")
     for name in imports:
         if name.split(".")[0] in ("Mathlib", "Init", "Std", "Lean"):
             continue
         if not any(all(os.path.isfile(os.path.join(entry, *name.split(".")) + suffix)
-                       for suffix in suffixes) for entry in search):
+                       for suffix in SUFFIXES) for entry in search):
             print(f"{source}:1:0: error: incomplete compiled module '{name}'")
             return 1
     options = {}
@@ -53,24 +65,26 @@ def main(argv):
             for pair in line[len("-- fake:"):].split():
                 key, _, value = pair.partition("=")
                 options[key] = value
-    held = [touch(bytearray((8 + 8 * len(imports)) * 1024 * 1024))]
+    held =[touch(bytearray((8 + 8 * len(imports)) * 1024 * 1024))]
     time.sleep(0.3)  # the baseline alone, long enough for the broker's sampling to see it
     if "alloc_mb" in options:
         held.append(touch(bytearray(int(options["alloc_mb"]) * 1024 * 1024)))
     time.sleep(float(options.get("sleep", 0)))
+    code = int(options.get("exit", 0))
     nice = os.nice(0) if hasattr(os, "nice") else "n/a"
-    print(f"compiled {source} imports={len(imports)} threads={threads} FAKE_ENV={os.environ.get('FAKE_ENV')} nice={nice}")
+    print(f"compiled {source} imports={len(imports)} threads={threads} FAKE_ENV={os.environ.get('FAKE_ENV')} "
+          f"nice={nice}")
     if "marker" in options:
         print(options["marker"])
     if "stderr" in options:
         print(options["stderr"], file=sys.stderr)
     sys.stdout.flush()
     del held
-    code = int(options.get("exit", 0))
     if olean and code == 0:
-        for suffix in (".olean", ".olean.private", ".olean.server", ".ir"):
+        public = [line for line in lines if not line.startswith("-- proof:")]
+        for suffix in SUFFIXES:
             with open(os.path.splitext(olean)[0] + suffix, "w", encoding="utf-8") as stream:
-                stream.write(f"fake {suffix} of {source}\n")
+                stream.write("\n".join([f"fake {suffix}"] + (public if suffix in (".olean", ".ir") else lines)) + "\n")
     return code
 
 

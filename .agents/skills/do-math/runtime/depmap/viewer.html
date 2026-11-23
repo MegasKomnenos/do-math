@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<!--
+  The page of a dependency map: the drawing inline, with zoom, drag, a search, and a focus on one unit.
+  Adapted from the click viewer of the dependency-map generator of the previous research (its build
+  stage, `뷰어.py`). Kept: the view changes only the SVG viewBox; one click on a unit keeps everything
+  it rests on and everything that rests on it, a second click keeps its direct neighbours, a third
+  click, a click on empty space or Esc restores the map; `#node=<Lean name>` opens with that focus;
+  opacity changes without a transition. Changed: the wording is English, the unit is identified by
+  its Lean name, and a panel beside the drawing shows the selected unit from the map's data.
+
+  What the page adds for a reader who was not told how it works. Each was missing when the page was
+  first used on a map of 173 units, where the whole drawing fitted to a window shows cards of 20 by 7
+  pixels:
+    the far view   while a card is too small to read, the names of the groups and a mark on the root keep
+                   a readable size, the words of the cards and of the lines are left out, the highlighted
+                   lines are drawn at a visible width, and pointing at a card names it; while a card is
+                   still large enough to hold a few words, it shows the beginning of its name at a
+                   readable size, so that a group seen whole can be read;
+    the search     finds a unit by its short name, its Lean name or its description, and a folded step,
+                   which has no card, with the lines it is folded into (`#step=<Lean name>`);
+    the selection  is the address of the page, so a link in the panel is a real link, Back returns to the
+                   previous selection, and a selection made from the panel or from an address is brought
+                   into view; the panel names the way out of it and the two extents of the highlight;
+    the controls   work with the wheel, a trackpad, touch, the keyboard and three buttons;
+    the window     the panel stands below the map when the window is narrow.
+  The drawing marks what this script reads: g.node[data-node][data-status], g.group[data-group],
+  g.edge[id][data-source][data-target], [data-edge] on the parts of an edge that are drawn outside
+  its group (its label), and the translation of g#drawing. The guide (what the map shows, the legend
+  and the meaning of the words on the cards) is written by draw.py into #guide.
+-->
+<style>
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; color: #203549; }
+body { display: flex; }
+#stage { order: 1; flex: 1 1 auto; min-width: 0; height: 100%; position: relative; overflow: hidden; }
+#stage svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none;
+  -webkit-user-select: none; }
+#stage svg.dragging { cursor: grabbing; }
+g.node { cursor: pointer; outline: none; }
+g.node:focus-visible > rect.card { stroke: #0B57D0; stroke-width: 5; }
+body.focus g.node:not(.hi), body.focus g.edge:not(.hi), body.focus g.route-label:not(.hi) { opacity: .13; }
+body.focus g.node.pick > rect.card { stroke-width: 3.4; }
+/* the far view: a card is too small to read */
+#titles text, #flag { paint-order: stroke; stroke: #FFFFFF; stroke-width: .22em; stroke-linejoin: round; pointer-events: none; }
+#flag { display: none; }
+svg.far #flag { display: inline; }
+svg.far #titles text { pointer-events: auto; cursor: zoom-in; }
+svg.far #cards text:not(.brief), svg.far #labels, svg.far path.casing { display: none; }
+#cards text.brief { display: none; }
+svg.mid #cards text.brief { display: inline; }
+svg.far g.edge.hi path.wire { vector-effect: non-scaling-stroke; stroke-width: 1.5px; }
+body.focus svg.far g.node.hi > rect.card { vector-effect: non-scaling-stroke; stroke: #203549; stroke-width: 1.2px; }
+body.focus svg.far g.node.pick > rect.card { stroke-width: 3px; }
+#tools { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; }
+button { font: inherit; color: #203549; background: white; border: 1px solid #9FB2C1; border-radius: 6px; padding: 4px 10px;
+  cursor: pointer; }
+button:hover { background: #EEF3F7; }
+button:focus-visible, a:focus-visible, input:focus-visible, #panel h2:focus-visible { outline: 2px solid #0B57D0; outline-offset: 2px; }
+button[aria-pressed="true"] { background: #DCE9F3; border-color: #256D9D; }
+#tools button { min-width: 36px; min-height: 34px; font-size: 15px; box-shadow: 0 1px 3px rgba(32, 53, 73, .18); }
+#tip { position: absolute; z-index: 2; max-width: 320px; padding: 5px 9px; background: #203549; color: white; border-radius: 6px;
+  font-size: 13px; line-height: 1.35; pointer-events: none; }
+#tip code { display: block; font-family: Consolas, 'DejaVu Sans Mono', Menlo, monospace; font-size: 11.5px; opacity: .8;
+  word-break: break-all; }
+#panel { order: 2; flex: 0 0 380px; max-width: 42vw; height: 100%; overflow-y: auto; box-sizing: border-box; padding: 14px 20px 18px;
+  border-left: 1px solid #BECBD6; background: #F8FAFC; font-size: 14px; line-height: 1.45; }
+@media (max-width: 820px) {
+  body { flex-direction: column; }
+  #stage { flex: 0 0 55%; height: auto; }
+  #panel { flex: 1 1 0; min-height: 0; max-width: none; width: 100%; height: auto; border-left: none; border-top: 1px solid #BECBD6; }
+}
+#query { width: 100%; box-sizing: border-box; font: inherit; color: inherit; padding: 6px 9px; border: 1px solid #9FB2C1;
+  border-radius: 6px; background: white; }
+#results { margin: 4px 0 0; }
+#results a { display: block; padding: 5px 8px; border-radius: 5px; }
+#results a:hover, #results a:focus-visible { background: #E7EEF4; text-decoration: none; }
+#results a b { display: block; font-weight: 600; color: #203549; }
+#results a code, #results a span { font-size: 12px; color: #60788B; }
+#results p { margin: 6px 0; color: #526A7D; }
+#content { margin-top: 12px; }
+#panel h1 { font-size: 16px; margin: 0 0 6px; }
+#panel h2 { font-size: 19px; margin: 10px 0 2px; outline-offset: 4px; }
+#panel h3 { font-size: 12px; margin: 16px 0 4px; text-transform: uppercase; letter-spacing: .05em; color: #526A7D; }
+#panel p { margin: 6px 0; }
+#panel code, #panel pre, #panel .tex { font-family: Consolas, 'DejaVu Sans Mono', Menlo, monospace; font-size: 12.5px; }
+#panel pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; padding: 8px 10px; background: white;
+  border: 1px solid #DDE5EB; border-radius: 6px; }
+#panel .prose { white-space: pre-wrap; overflow-wrap: anywhere; }
+#panel .statement { margin: 4px 0; padding: 8px 10px; background: white; border: 1px solid #DDE5EB; border-radius: 6px; }
+#panel .tex { background: #EEF2F5; border-radius: 3px; padding: 0 2px; }
+#panel .tex.display { display: block; margin: 4px 0; padding: 4px 8px; }
+#panel .name { color: #60788B; word-break: break-all; }
+#panel .chips { margin: 8px 0; }
+#panel .chip { display: inline-block; margin: 0 6px 4px 0; padding: 1px 8px; border: 1px solid #BECBD6; border-radius: 10px;
+  background: white; font-size: 12.5px; cursor: help; }
+#panel ul { margin: 4px 0; padding-left: 18px; }
+#panel li { margin: 3px 0; }
+#panel a { color: #256D9D; cursor: pointer; text-decoration: none; }
+#panel a:hover { text-decoration: underline; }
+#panel .how { color: #526A7D; }
+#panel .help { color: #526A7D; }
+#panel .bar { display: flex; flex-wrap: wrap; gap: 6px; }
+#panel .extent { margin: 10px 0 4px; }
+#panel .extent button { display: block; width: 100%; text-align: left; margin: 4px 0; font-size: 13px; }
+#panel .jump { margin: 8px 0 0; font-size: 13px; }
+#panel .jump button { margin-right: 12px; white-space: nowrap; }
+button.link { border: none; background: none; padding: 0; color: #256D9D; font-size: inherit; text-align: left; }
+button.link:hover { background: none; text-decoration: underline; }
+#panel .legend ul { list-style: none; padding-left: 0; }
+#panel .legend li { display: flex; align-items: center; gap: 8px; }
+#panel .sample { flex: 0 0 56px; }
+#panel .sample.card { box-sizing: border-box; height: 14px; flex-basis: 22px; margin: 0 17px; border: 1.5px solid; border-radius: 3px; }
+#panel .sample.bar { height: 14px; flex-basis: 8px; margin: 0 24px; border-radius: 2px; }
+#panel dl { margin: 4px 0; }
+#panel dt { font-weight: 600; margin-top: 6px; }
+#panel dd { margin: 0; color: #526A7D; }
+#panel kbd { font-family: inherit; font-size: 12.5px; padding: 0 5px; border: 1px solid #BECBD6; border-radius: 4px; background: white; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="panel">
+<div role="search">
+<input id="query" type="search" placeholder="Find by name or Lean name   ( / )" autocomplete="off" spellcheck="false"
+  aria-label="Find a unit or a folded step by its name, its Lean name or its description">
+<div id="results"></div>
+</div>
+<p id="live" class="sr" role="status"></p>
+<div id="content"></div>
+<div id="guide" hidden>
+__GUIDE__
+</div>
+</div>
+<div id="stage">
+<div id="tools">
+<button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+<button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+<button type="button" id="whole" title="Show the whole map (0)">Whole map</button>
+</div>
+__SVG__
+<div id="tip" hidden></div>
+</div>
+<script type="application/json" id="map-data">__DATA__</script>
+<script>
+(function () {
+  var svg = document.querySelector('#stage svg');
+  if (!svg) return;
+  var NS = 'http://www.w3.org/2000/svg';
+  var data = JSON.parse(document.getElementById('map-data').textContent);
+  var stage = document.getElementById('stage'), panel = document.getElementById('panel');
+  var content = document.getElementById('content'), guide = document.getElementById('guide');
+  var query = document.getElementById('query'), results = document.getElementById('results');
+  var tip = document.getElementById('tip'), live = document.getElementById('live');
+
+  // ---- the map's data and the parts of the drawing, by name
+  var unit = {}, into = {}, out = {};
+  data.units.forEach(function (u) { unit[u.id] = u; into[u.id] = []; out[u.id] = []; });
+  data.edges.forEach(function (e, i) { e.el = 'e' + i; into[e.target].push(e); out[e.source].push(e); });
+  var edgeEl = {}, byNode = {}, nodeEl = {};
+  function adj(n) { return byNode[n] || (byNode[n] = { into: [], out: [] }); }
+  svg.querySelectorAll('g.edge').forEach(function (g) {
+    edgeEl[g.id] = g;
+    adj(g.dataset.source).out.push(g.id);
+    adj(g.dataset.target).into.push(g.id);
+  });
+  svg.querySelectorAll('g.node').forEach(function (g) { nodeEl[g.dataset.node] = g; });
+  var tagged = Array.prototype.slice.call(svg.querySelectorAll('[data-edge]'));
+  var drawing = svg.querySelector('#drawing');
+  var shift = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/.exec((drawing && drawing.getAttribute('transform')) || '');
+  var OX = shift ? parseFloat(shift[1]) : 0, OY = shift ? parseFloat(shift[2]) : 0;
+  function box(rect) {           // a rectangle of the drawing, in the coordinates of the viewBox
+    return { x: parseFloat(rect.getAttribute('x')) + OX, y: parseFloat(rect.getAttribute('y')) + OY,
+             w: parseFloat(rect.getAttribute('width')), h: parseFloat(rect.getAttribute('height')) };
+  }
+  function cardBox(n) { return box(nodeEl[n].querySelector('rect.card')); }
+  function el(tag, text, cls) {
+    var node = document.createElement(tag);
+    if (text !== undefined && text !== null) node.textContent = text;
+    if (cls) node.className = cls;
+    return node;
+  }
+  function svgEl(tag, attributes) {
+    var node = document.createElementNS(NS, tag);
+    Object.keys(attributes).forEach(function (key) { node.setAttribute(key, attributes[key]); });
+    return node;
+  }
+
+  // ---- what stays readable in the far view: the names of the groups, above the lines, and a mark on the root
+  var titles = [], groupBox = {};
+  var layer = svgEl('g', { id: 'titles' });
+  svg.querySelectorAll('g.group').forEach(function (g) {
+    var words = g.querySelector('text'), rect = g.querySelector('rect');
+    if (!words || !rect) return;
+    groupBox[g.dataset.group] = box(rect);
+    words.dataset.group = g.dataset.group;
+    titles.push({ el: words, size: parseFloat(words.getAttribute('font-size')),
+                  top: parseFloat(words.getAttribute('y')) - parseFloat(words.getAttribute('font-size')) });
+    layer.appendChild(words);
+  });
+  var flag = null;
+  if (drawing) {
+    drawing.appendChild(layer);
+    if (nodeEl[data.root]) {
+      var rootRect = nodeEl[data.root].querySelector('rect.card');
+      var rx = parseFloat(rootRect.getAttribute('x')), rw = parseFloat(rootRect.getAttribute('width'));
+      var right = rx + rw / 2 > parseFloat(svg.getAttribute('width')) / 2;
+      flag = svgEl('text', { id: 'flag', x: right ? rx + rw : rx, 'text-anchor': right ? 'end' : 'start', 'font-weight': 700,
+                             fill: '#8A5A00' });
+      flag.textContent = 'the root';
+      flag.bottom = parseFloat(rootRect.getAttribute('y'));
+      drawing.appendChild(flag);
+    }
+  }
+  svg.setAttribute('role', 'group');
+  svg.setAttribute('aria-label', data.title + ': ' + data.counts.units + ' units. Every card is a button; the panel lists what a selected unit rests on and what rests on it.');
+  svg.querySelectorAll('#routes, #labels').forEach(function (g) { g.setAttribute('aria-hidden', 'true'); });
+  Object.keys(nodeEl).forEach(function (n) {
+    var g = nodeEl[n];
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', unit[n].label + ', ' + n + ', ' + (g.dataset.status || '').split(' · ').join(', '));
+  });
+
+  // Between the far view and the near one a card holds the beginning of its name, at a size that can be read.
+  var briefs = Object.keys(nodeEl).map(function (n) {
+    var rect = nodeEl[n].querySelector('rect.card');
+    var words = svgEl('text', { 'class': 'brief', 'font-weight': 600, fill: '#203549' });
+    nodeEl[n].appendChild(words);
+    return { el: words, words: unit[n].label.split(' '), x: parseFloat(rect.getAttribute('x')), y: parseFloat(rect.getAttribute('y')),
+             w: parseFloat(rect.getAttribute('width')), h: parseFloat(rect.getAttribute('height')), key: '' };
+  });
+  function brief(b, u) {
+    var size = 11 * u, pitch = 13 * u;
+    var most = Math.max(1, Math.min(3, Math.floor((b.h - 4 * u) / pitch))), wide = Math.max(2, Math.floor((b.w - 22) / (0.56 * size)));
+    if (b.key !== most + ':' + wide) {
+      b.key = most + ':' + wide;
+      var lines = [], line = '';
+      b.words.forEach(function (word) {
+        if (!line || (line + ' ' + word).length <= wide) line = line ? line + ' ' + word : word;
+        else { lines.push(line); line = word; }
+      });
+      lines.push(line);
+      if (lines.length > most) { lines = lines.slice(0, most); lines[most - 1] += ' …'; }
+      b.el.textContent = '';
+      lines.forEach(function (text) {
+        var span = svgEl('tspan', { x: b.x + 14 });
+        span.textContent = text.length > wide ? text.slice(0, wide - 1) + '…' : text;
+        b.el.appendChild(span);
+      });
+    }
+    b.el.setAttribute('font-size', size);
+    var count = b.el.childNodes.length, first = b.y + (b.h - count * pitch) / 2 + size;
+    for (var i = 0; i < count; i++) b.el.childNodes[i].setAttribute('y', first + i * pitch);
+  }
+
+  // ---- the view: fit, zoom and drag by changing the viewBox only
+  var W = parseFloat(svg.getAttribute('width')), H = parseFloat(svg.getAttribute('height'));
+  var vb = { x: 0, y: 0, w: W, h: H };
+  var FAR = 2.6;      // drawing units per screen pixel above which the words of a card cannot be read
+  var MID = 6;        // and above which a card is too small for the beginning of its name
+  var NEAR = 1.1;     // the scale a card is brought to when the view moves to it
+  function size() { return svg.getBoundingClientRect(); }
+  function unitsPerPx() {       // how many SVG units one screen pixel covers (the scale of preserveAspectRatio meet)
+    var r = size();
+    return Math.max(vb.w / r.width, vb.h / r.height) || 1;
+  }
+  function apply() {
+    svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
+    var u = unitsPerPx();
+    svg.classList.toggle('far', u > FAR);
+    svg.classList.toggle('mid', u > FAR && u <= MID);
+    if (u > FAR && u <= MID) briefs.forEach(function (b) { brief(b, u); });
+    titles.forEach(function (t) {
+      var s = Math.max(t.size, 13 * u);
+      t.el.setAttribute('font-size', s);
+      t.el.setAttribute('y', t.top + s);
+    });
+    if (flag) { flag.setAttribute('font-size', 13 * u); flag.setAttribute('y', flag.bottom - 5 * u); }
+  }
+  function fit() { vb = { x: 0, y: 0, w: W, h: H }; apply(); }
+  function showBox(b, margin) {
+    vb = { x: b.x - margin, y: b.y - margin, w: b.w + 2 * margin, h: b.h + 2 * margin };
+    apply();
+  }
+  function centreOn(b, u) {     // the rectangle b in the middle of the window, at u units per pixel
+    var r = size();
+    vb = { x: b.x + b.w / 2 - r.width * u / 2, y: b.y + b.h / 2 - r.height * u / 2, w: r.width * u, h: r.height * u };
+    apply();
+  }
+  function reveal(n) {          // bring a card into view where it cannot be read or is not on the screen
+    var b = cardBox(n), r = size(), u = unitsPerPx();
+    if (u > 1.6) { centreOn(b, NEAR); return; }
+    var cx = vb.x + vb.w / 2, cy = vb.y + vb.h / 2, hw = r.width * u / 2, hh = r.height * u / 2;
+    if (b.x < cx - hw || b.x + b.w > cx + hw || b.y < cy - hh || b.y + b.h > cy + hh) centreOn(b, u);
+  }
+  function svgPoint(x, y) {
+    var r = size(), u = unitsPerPx();
+    var cx = vb.x + vb.w / 2, cy = vb.y + vb.h / 2;        // the centre of the visible region is at the centre of the element
+    return { x: cx + (x - (r.left + r.width / 2)) * u, y: cy + (y - (r.top + r.height / 2)) * u };
+  }
+  function zoomAt(x, y, f) {    // f < 1 zooms in; the point under (x, y) stays where it is
+    var r = size(), u = unitsPerPx(), whole = Math.max(W / r.width, H / r.height);
+    var next = Math.min(whole * 1.5, Math.max(Math.min(whole / 40, 0.4), u * f));
+    f = next / u;
+    var p = svgPoint(x, y);
+    vb = { x: p.x - (p.x - vb.x) * f, y: p.y - (p.y - vb.y) * f, w: vb.w * f, h: vb.h * f };
+    apply();
+  }
+  function zoomBy(f) { var r = size(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); }
+  function panBy(dx, dy) { var u = unitsPerPx(); vb.x += dx * u; vb.y += dy * u; apply(); }
+  // A wheel sends one event of about a hundred units for a notch, and a trackpad many small ones for one
+  // movement of the fingers, so the zoom follows the distance scrolled and not the number of events.
+  svg.addEventListener('wheel', function (ev) {
+    ev.preventDefault();
+    var d = ev.deltaY * (ev.deltaMode === 1 ? 33 : ev.deltaMode === 2 ? 400 : 1);
+    d = Math.max(-240, Math.min(240, d));
+    zoomAt(ev.clientX, ev.clientY, Math.exp(d * (ev.ctrlKey ? 0.01 : 0.0016)));
+  }, { passive: false });
+  // One pointer drags the map and two pinch it; a mouse, a pen and a finger are all pointers.
+  var pointers = {}, drag = null, pinch = null, moved = false;
+  function gesture() {
+    var ids = Object.keys(pointers);
+    drag = pinch = null;
+    if (ids.length === 1) {
+      var p = pointers[ids[0]];
+      drag = { x: p.x, y: p.y, vx: vb.x, vy: vb.y, u: unitsPerPx() };
+    } else if (ids.length >= 2) {
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      moved = true;
+    }
+  }
+  svg.addEventListener('pointerdown', function (ev) {
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    if (!Object.keys(pointers).length) moved = false;
+    pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    gesture();
+  });
+  window.addEventListener('pointermove', function (ev) {
+    if (!pointers[ev.pointerId]) return;
+    pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    if (pinch) {
+      var ids = Object.keys(pointers), a = pointers[ids[0]], b = pointers[ids[1]];
+      var d = Math.hypot(a.x - b.x, a.y - b.y) || 1, x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
+      zoomAt(x, y, pinch.d / d);
+      panBy(pinch.x - x, pinch.y - y);
+      pinch = { d: d, x: x, y: y };
+    } else if (drag) {
+      var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 4) { moved = true; svg.classList.add('dragging'); tip.hidden = true; }
+      if (moved) { vb.x = drag.vx - dx * drag.u; vb.y = drag.vy - dy * drag.u; apply(); }
+    }
+  });
+  function release(ev) {
+    if (!pointers[ev.pointerId]) return;
+    delete pointers[ev.pointerId];
+    gesture();
+    if (!drag && !pinch) svg.classList.remove('dragging');
+  }
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+  svg.addEventListener('dblclick', function (ev) { if (!(ev.target.closest && ev.target.closest('g.node'))) fit(); });
+  window.addEventListener('resize', apply);
+  document.getElementById('zoom-in').addEventListener('click', function () { zoomBy(1 / 1.4); });
+  document.getElementById('zoom-out').addEventListener('click', function () { zoomBy(1.4); });
+  document.getElementById('whole').addEventListener('click', fit);
+  // In the far view pointing at a card names it, since its words cannot be read there.
+  svg.addEventListener('mousemove', function (ev) {
+    var g = !moved && svg.classList.contains('far') && ev.target.closest ? ev.target.closest('g.node') : null;
+    if (!g) { tip.hidden = true; return; }
+    if (tip.dataset.node !== g.dataset.node) {
+      tip.dataset.node = g.dataset.node;
+      tip.textContent = '';
+      tip.appendChild(el('b', unit[g.dataset.node].label));
+      tip.appendChild(el('code', g.dataset.node));
+    }
+    tip.hidden = false;
+    var r = stage.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+    tip.style.left = Math.max(4, Math.min(x + 14, r.width - tip.offsetWidth - 4)) + 'px';
+    tip.style.top = (y > tip.offsetHeight + 16 ? y - tip.offsetHeight - 10 : y + 18) + 'px';
+  });
+  svg.addEventListener('mouseleave', function () { tip.hidden = true; });
+
+  // ---- words: the records write TeX and Markdown; the page sets emphasis and code, links a Lean name to its
+  // unit or step, and leaves a formula as it was written, set apart from the prose around it
+  function prose(text, cls) {
+    var node = el('div', null, 'prose' + (cls ? ' ' + cls : ''));
+    var pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|`[^`\n]+`|\*\*[^*\n]+?\*\*|\*[^*\s][^*\n]*?\*)/g, at = 0, m;
+    while ((m = pattern.exec(text))) {
+      if (m.index > at) node.appendChild(document.createTextNode(text.slice(at, m.index)));
+      var piece = m[0];
+      if (piece.slice(0, 2) === '$$') node.appendChild(el('span', piece.slice(2, -2).trim(), 'tex display'));
+      else if (piece[0] === '$') node.appendChild(el('span', piece.slice(1, -1), 'tex'));
+      else if (piece[0] === '`') {
+        var name = piece.slice(1, -1), code = el('code', name);
+        if (unit[name] || data.folded[name]) {
+          var a = el('a');
+          a.href = unit[name] ? hashOf({ node: name, mode: 'all' }) : hashOf({ step: name });
+          a.title = unit[name] ? unit[name].label : data.folded[name].label + ' (a step, folded into the lines)';
+          a.appendChild(code);
+          node.appendChild(a);
+        } else node.appendChild(code);
+      } else if (piece.slice(0, 2) === '**') node.appendChild(el('strong', piece.slice(2, -2)));
+      else node.appendChild(el('em', piece.slice(1, -1)));
+      at = m.index + piece.length;
+    }
+    if (at < text.length) node.appendChild(document.createTextNode(text.slice(at)));
+    return node;
+  }
+  function meaning(word) {
+    var entries = guide.querySelectorAll('dt');
+    for (var i = 0; i < entries.length; i++) if (entries[i].dataset.word === word) return entries[i].nextElementSibling.textContent;
+    return '';
+  }
+  function link(n, text) {
+    var a = el('a', text || unit[n].label);
+    a.href = hashOf({ node: n, mode: 'all' });
+    a.title = n;
+    return a;
+  }
+
+  // ---- the selection is the address of the page: #node=<Lean name>[&mode=direct] or #step=<Lean name>
+  var state = {}, shown = null;
+  function hashOf(s) {
+    return s.node ? '#node=' + encodeURIComponent(s.node) + (s.mode === 'direct' ? '&mode=direct' : '')
+         : s.step ? '#step=' + encodeURIComponent(s.step) : '';
+  }
+  function parse() {
+    var h = location.hash, m = /[#&](?:node|step)=([^&]+)/.exec(h), name = '';
+    try { name = decodeURIComponent(m ? m[1] : ''); } catch (error) { name = m[1]; }
+    if (!name) return {};
+    if (unit[name]) return { node: name, mode: /[#&]mode=direct(?:&|$)/.test(h) ? 'direct' : 'all' };
+    if (data.folded[name]) return { step: name };
+    return { unknown: name };
+  }
+  function go(s, replace) {     // a selection made on the map; the view stays where the reader put it
+    var h = hashOf(s);
+    try { history[replace ? 'replaceState' : 'pushState'](null, '', h || (location.pathname + location.search)); }
+    catch (error) { location.hash = h; return; }
+    render(false);
+  }
+  function arrived() { if (location.hash !== shown) render(true); }   // a link, Back, or an address typed in
+  window.addEventListener('popstate', arrived);
+  window.addEventListener('hashchange', arrived);
+
+  // Upstream follows incoming edges to the end, downstream follows outgoing edges; only the edges on those chains are kept.
+  function walk(start, dir, N, E) {
+    var queue = [start], seen = {};
+    seen[start] = true;
+    while (queue.length) {
+      var n = queue.shift();
+      var ids = dir === 'up' ? adj(n).into : adj(n).out;
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        E[id] = true;
+        var m = dir === 'up' ? edgeEl[id].dataset.source : edgeEl[id].dataset.target;
+        N[m] = true;
+        if (!seen[m]) { seen[m] = true; queue.push(m); }
+      }
+    }
+  }
+  function count(set, but) { return Object.keys(set).filter(function (key) { return key !== but; }).length; }
+  function mark(N, E, pick) {
+    Object.keys(N).forEach(function (m) { if (nodeEl[m]) nodeEl[m].classList.add('hi'); });
+    if (pick) nodeEl[pick].classList.add('pick');
+    Object.keys(E).forEach(function (id) { if (edgeEl[id]) edgeEl[id].classList.add('hi'); });
+    tagged.forEach(function (g) { if (E[g.dataset.edge]) g.classList.add('hi'); });
+    document.body.classList.add('focus');
+  }
+  function render(move) {
+    var inside = panel.contains(document.activeElement);
+    shown = location.hash;
+    state = parse();
+    document.body.classList.remove('focus');
+    svg.querySelectorAll('.hi, .pick').forEach(function (g) { g.classList.remove('hi'); g.classList.remove('pick'); });
+    content.textContent = '';
+    results.hidden = true;
+    if (state.node) {
+      var n = state.node, upN = {}, upE = {}, downN = {}, downE = {}, N = {}, E = {};
+      walk(n, 'up', upN, upE);
+      walk(n, 'down', downN, downE);
+      N[n] = true;
+      if (state.mode === 'direct') {
+        adj(n).into.forEach(function (id) { E[id] = true; N[edgeEl[id].dataset.source] = true; });
+        adj(n).out.forEach(function (id) { E[id] = true; N[edgeEl[id].dataset.target] = true; });
+      } else {
+        [upN, downN].forEach(function (set) { Object.keys(set).forEach(function (m) { N[m] = true; }); });
+        [upE, downE].forEach(function (set) { Object.keys(set).forEach(function (id) { E[id] = true; }); });
+      }
+      mark(N, E, n);
+      showUnit(n, count(upN, n), count(downN, n));
+      if (move) reveal(n);
+      live.textContent = unit[n].label + ' selected; ' + count(N, n) + ' other units are kept on the map.';
+    } else if (state.step) {
+      var lines = data.edges.filter(function (e) {
+        return [e.via, e.proof && e.proof.via, e.statement && e.statement.via].some(function (via) {
+          return via && via.indexOf(state.step) >= 0;
+        });
+      });
+      var ends = {}, kept = {};
+      lines.forEach(function (e) { ends[e.source] = ends[e.target] = true; kept[e.el] = true; });
+      mark(ends, kept, null);
+      showStep(state.step, lines);
+      if (move) fit();
+      live.textContent = data.folded[state.step].label + ', a step folded into ' + lines.length + ' lines.';
+    } else {
+      overview(state.unknown);
+      live.textContent = '';
+    }
+    panel.scrollTop = 0;
+    var head = content.querySelector('h2');
+    if (inside && head) head.focus({ preventScroll: true });
+  }
+
+  // ---- the panel
+  function how(e, here) {       // what a line says about the unit at its other end, read from the unit `here`
+    if (e.kind === 'alternative') return here === e.target ? 'a proof of this statement, drawn as its own card' : 'the statement that this card proves';
+    if (e.kind === 'refutation') return 'refutes the root: its statement is the negation of the root';
+    var body = unit[e.target].role === 'definition' ? 'definition' : 'proof';
+    if (e.kind === 'direct') return 'named in the ' + body + (e.proof.via.length ? ', and reached through ' + foldedNames(e.proof.via) : '');
+    if (e.kind === 'contracted') return 'the ' + body + ' reaches it through ' + foldedNames(e.via);
+    var text = 'mentioned in the statement' + (e.via.length ? ' through ' + foldedNames(e.via) : '');
+    if (e.proof) text += e.proof.direct ? '; named in the ' + body : '; the ' + body + ' reaches it through ' + foldedNames(e.proof.via);
+    return text;
+  }
+  function foldedNames(names) {
+    return names.map(function (n) { return (data.folded[n] || {}).label || n; }).join(', ');
+  }
+  function list(title, id, edges, other, here) {
+    if (!edges.length) return;
+    var head = el('h3', title + ' (' + edges.length + ')');
+    head.id = id;
+    content.appendChild(head);
+    var ul = el('ul');
+    edges.forEach(function (e) {
+      var li = el('li');
+      li.appendChild(link(e[other]));
+      li.appendChild(el('span', ' — ' + how(e, here), 'how'));
+      ul.appendChild(li);
+    });
+    content.appendChild(ul);
+  }
+  function button(text, action, pressed) {
+    var b = el('button', text);
+    b.type = 'button';
+    if (pressed !== undefined) b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    b.addEventListener('click', action);
+    return b;
+  }
+  function bar(n) {             // the way out of a selection, and the way to the selected card
+    var row = el('div', null, 'bar');
+    row.appendChild(button('← Whole map', function () { fit(); go({}); }));
+    if (n) row.appendChild(button('Zoom to this card', function () { centreOn(cardBox(n), NEAR); }));
+    content.appendChild(row);
+  }
+  function chips(words) {
+    var row = el('div', null, 'chips');
+    words.forEach(function (word) {
+      if (!word) return;
+      var chip = el('span', word, 'chip');
+      chip.title = meaning(word.split(':')[0]);
+      row.appendChild(chip);
+    });
+    content.appendChild(row);
+  }
+  function jump(entries) {    // the parts of a unit's panel; the lists stand below a statement that can be long
+    var row = el('p', null, 'jump');
+    entries.forEach(function (entry) {
+      if (!document.getElementById(entry[0])) return;
+      var b = button(entry[1], function () { document.getElementById(entry[0]).scrollIntoView({ block: 'start' }); });
+      b.className = 'link';
+      row.appendChild(b);
+    });
+    return row;
+  }
+  function overview(unknown) {
+    content.appendChild(el('h1', data.title));
+    if (unknown) {
+      content.appendChild(el('p', 'This map has no unit and no folded step named ' + unknown + '. The search above looks for a part of a name.'));
+      query.value = unknown;
+      search();
+    }
+    var about = guide.querySelector('.about');
+    if (about) content.appendChild(about.cloneNode(true));
+    var root = unit[data.root];
+    if (root && root.description) content.appendChild(prose(root.description));
+    content.appendChild(el('h3', 'Where to start'));
+    var start = el('p');
+    if (root) {
+      start.appendChild(document.createTextNode('Choose '));
+      start.appendChild(link(data.root, 'the root'));
+      start.appendChild(document.createTextNode(': the map moves to its card, and this panel shows its statement, what it rests ' +
+        'on and what rests on it, each a link to follow. To look for a result by its name or its Lean name, type in the field above.'));
+    } else start.textContent = 'Click a card, or type a name or a Lean name in the field above.';
+    content.appendChild(start);
+    var legend = guide.querySelector('.legend');
+    if (legend) content.appendChild(legend.cloneNode(true));
+    content.appendChild(el('h3', 'Moving and selecting'));
+    var help = el('p');
+    help.innerHTML = 'Scroll or pinch to zoom and drag to move; <kbd>+</kbd> and <kbd>−</kbd> zoom, the arrow keys move, and ' +
+      '<kbd>0</kbd> or a double click on empty space shows the whole map. Click a card to keep what it rests on and what ' +
+      'rests on it; click it again for its direct neighbours only; click it a third time, click empty space or press ' +
+      '<kbd>Esc</kbd> to restore the map. <kbd>/</kbd> goes to the search, <kbd>Tab</kbd> reaches every card and ' +
+      '<kbd>Enter</kbd> selects it. The address of the page holds the selection, so it can be kept or sent, and Back ' +
+      'returns to the selection before.';
+    content.appendChild(help);
+    content.appendChild(el('h3', 'Groups (' + data.groups.length + ')'));
+    content.appendChild(el('p', 'A group is a folder of the Lean library. Choose one to see it whole.', 'help'));
+    var ul = el('ul');
+    data.groups.forEach(function (group) {
+      if (!groupBox[group.id]) return;
+      var li = el('li'), b = button(group.label, function () { showBox(groupBox[group.id], 30); });
+      b.className = 'link';
+      li.appendChild(b);
+      li.appendChild(el('span', ' — ' + group.units.length + (group.units.length === 1 ? ' unit' : ' units'), 'how'));
+      ul.appendChild(li);
+    });
+    content.appendChild(ul);
+    var glossary = guide.querySelector('.glossary');
+    if (glossary) content.appendChild(glossary.cloneNode(true));
+  }
+  function showUnit(n, above, below) {
+    var u = unit[n];
+    bar(n);
+    var head = el('h2', u.label);
+    head.tabIndex = -1;
+    content.appendChild(head);
+    content.appendChild(el('code', u.id, 'name'));
+    chips((nodeEl[n].dataset.status || '').split(' · ').map(function (word) {
+      return word === 'from the literature' && u.source ? word + ': ' + u.source : word;
+    }));
+    if (u.description) content.appendChild(prose(u.description));
+    var where = el('p', 'Module ' + u.module, 'help');
+    if (u.proves && unit[u.proves]) { where.appendChild(document.createTextNode(' · proves ')); where.appendChild(link(u.proves)); }
+    content.appendChild(where);
+    var extent = el('div', null, 'extent');
+    extent.appendChild(el('span', 'Kept on the map:', 'help'));
+    extent.appendChild(button('everything it rests on (' + above + ') and everything that rests on it (' + below + ')',
+      function () { go({ node: n, mode: 'all' }, true); }, state.mode !== 'direct'));
+    extent.appendChild(button('its direct neighbours only (' + into[n].length + ' and ' + out[n].length + ')',
+      function () { go({ node: n, mode: 'direct' }, true); }, state.mode === 'direct'));
+    content.appendChild(extent);
+    var place = el('span');
+    content.appendChild(place);
+    if (u.statement) {
+      var words = el('h3', 'Statement');
+      words.id = 'part-statement';
+      content.appendChild(words);
+      content.appendChild(prose(u.statement, 'statement'));
+    }
+    var lean = el('h3', 'Lean');
+    lean.id = 'part-lean';
+    content.appendChild(lean);
+    content.appendChild(el('pre', u.lean));
+    list('Rests on', 'part-above', into[n], 'source', n);
+    list('Used by', 'part-below', out[n], 'target', n);
+    content.replaceChild(jump([['part-statement', 'Statement'], ['part-lean', 'Lean'], ['part-above', 'Rests on (' + into[n].length + ')'],
+                               ['part-below', 'Used by (' + out[n].length + ')']]), place);
+  }
+  function showStep(name, lines) {
+    var step = data.folded[name];
+    bar(null);
+    var head = el('h2', step.label);
+    head.tabIndex = -1;
+    content.appendChild(head);
+    content.appendChild(el('code', name, 'name'));
+    chips(['step', { theorem: 'statement', def: 'definition', opaque: 'opaque definition', inductive: 'inductive type' }[step.kind] || step.kind]);
+    if (step.description) content.appendChild(prose(step.description));
+    content.appendChild(el('p', 'A step has no card of its own. It is folded into the lines below, which are kept on the map; ' +
+      'each runs from the unit that is used to the unit that uses it through this step.', 'help'));
+    content.appendChild(el('h3', 'Folded into ' + lines.length + (lines.length === 1 ? ' line' : ' lines')));
+    var ul = el('ul');
+    lines.forEach(function (e) {
+      var li = el('li');
+      li.appendChild(link(e.source));
+      li.appendChild(document.createTextNode(' → '));
+      li.appendChild(link(e.target));
+      ul.appendChild(li);
+    });
+    content.appendChild(ul);
+  }
+
+  // ---- the search: units by short name, Lean name, module and description, and the folded steps
+  var entries = data.units.map(function (u) {
+    return { hash: hashOf({ node: u.id, mode: 'all' }), label: u.label, id: u.id, what: u.role === 'proof' ? 'proof' : u.role,
+             near: (u.label + ' ' + u.id).toLowerCase(), far: ((u.description || '') + ' ' + u.module).toLowerCase() };
+  }).concat(Object.keys(data.folded).map(function (name) {
+    var step = data.folded[name];
+    return { hash: hashOf({ step: name }), label: step.label, id: name, what: 'step, folded into the lines',
+             near: (step.label + ' ' + name).toLowerCase(), far: (step.description || '').toLowerCase() };
+  }));
+  var LIMIT = 12;
+  function search() {
+    var text = query.value.trim().toLowerCase(), words = text.split(/\s+/).filter(Boolean);
+    results.textContent = '';
+    results.hidden = !words.length;
+    if (!words.length) return;
+    var found = [];
+    entries.forEach(function (entry) {
+      var near = words.every(function (word) { return entry.near.indexOf(word) >= 0; });
+      if (!near && !words.every(function (word) { return (entry.near + ' ' + entry.far).indexOf(word) >= 0; })) return;
+      var id = entry.id.toLowerCase(), last = id.slice(id.lastIndexOf('.') + 1);
+      var rank = id === text || last === text || entry.label.toLowerCase() === text ? 0
+               : near && (last.indexOf(text) === 0 || entry.label.toLowerCase().indexOf(text) === 0) ? 1 : near ? 2 : 3;
+      found.push({ rank: rank, entry: entry });
+    });
+    found.sort(function (a, b) { return a.rank - b.rank; });
+    if (found.length && found[0].rank < 3) found = found.filter(function (item) { return item.rank < 3; });
+    else if (found.length) results.appendChild(el('p', 'No name has these words. They occur in the description of:'));
+    if (!found.length) {
+      results.appendChild(el('p', 'Nothing on this map has “' + query.value.trim() + '” in its name, its Lean name or its description. ' +
+        'The map holds the units the root rests on and the steps folded into their lines, not every declaration of the library.'));
+      return;
+    }
+    found.slice(0, LIMIT).forEach(function (item) {
+      var a = el('a');
+      a.href = item.entry.hash;
+      a.appendChild(el('b', item.entry.label));
+      a.appendChild(el('code', item.entry.id));
+      a.appendChild(el('span', ' · ' + item.entry.what));
+      results.appendChild(a);
+    });
+    if (found.length > LIMIT) results.appendChild(el('p', (found.length - LIMIT) + ' more; type more of the name.'));
+  }
+  query.addEventListener('input', search);
+  results.addEventListener('click', function (ev) {         // a result that is the selection already changes no address
+    if (ev.target.closest && ev.target.closest('a')) setTimeout(function () { results.hidden = true; }, 0);
+  });
+  query.addEventListener('focus', function () { if (query.value.trim()) search(); });
+  query.addEventListener('keydown', function (ev) {
+    var first = results.querySelector('a');
+    if (ev.key === 'Enter' && first && !results.hidden) { ev.preventDefault(); location.hash = first.getAttribute('href'); render(true); }
+    else if (ev.key === 'Escape') { query.value = ''; search(); ev.stopPropagation(); }
+  });
+
+  // ---- clicks and keys on the map
+  function pick(n) {
+    if (state.node !== n) go({ node: n, mode: 'all' });
+    else if (state.mode === 'all') go({ node: n, mode: 'direct' }, true);
+    else go({});
+  }
+  svg.addEventListener('click', function (ev) {
+    if (moved) { moved = false; return; }                   // it was a drag
+    var title = ev.target.closest ? ev.target.closest('#titles text') : null;
+    if (title && groupBox[title.dataset.group]) { showBox(groupBox[title.dataset.group], 30); return; }
+    var g = ev.target.closest ? ev.target.closest('g.node') : null;
+    if (g) pick(g.dataset.node);
+    else if (state.node || state.step) go({});
+  });
+  svg.addEventListener('keydown', function (ev) {
+    var g = ev.target.closest ? ev.target.closest('g.node') : null;
+    if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); pick(g.dataset.node); }
+  });
+  svg.addEventListener('focusin', function (ev) {          // a card reached with Tab is brought into view
+    var g = ev.target.closest ? ev.target.closest('g.node') : null;
+    if (g && g.matches(':focus-visible')) reveal(g.dataset.node);
+  });
+  document.addEventListener('keydown', function (ev) {
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
+    if (ev.key === 'Escape') { if (state.node || state.step) go({}); return; }
+    if (typing || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (ev.key === '/') { ev.preventDefault(); query.focus(); query.select(); }
+    else if (ev.key === '0') fit();
+    else if (ev.key === '+' || ev.key === '=') zoomBy(1 / 1.4);
+    else if (ev.key === '-' || ev.key === '−') zoomBy(1.4);
+    else if (!panel.contains(ev.target) && /^Arrow/.test(ev.key)) {
+      ev.preventDefault();
+      panBy(ev.key === 'ArrowLeft' ? -90 : ev.key === 'ArrowRight' ? 90 : 0, ev.key === 'ArrowUp' ? -90 : ev.key === 'ArrowDown' ? 90 : 0);
+    }
+  });
+
+  fit();
+  render(true);
+})();
+</script>
+</body>
+</html>

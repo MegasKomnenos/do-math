@@ -1,6 +1,6 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
+import copy, ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 
@@ -14,8 +14,9 @@ LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_m
 def memory_status():
     """(total physical, headroom) in bytes: commit headroom on Windows, MemAvailable on Linux.
 
-    Both headroom figures count private memory only; file-backed mappings such as
-    Lean's .olean files are page cache and never reduce them (reference/lean.md)."""
+    The Windows figure is what the system can still commit. A Lean process is charged there for
+    the whole size of the .olean files it maps, although it touches a part of them, so imports
+    reduce it (reference/lean-broker.md). MemAvailable on Linux does not count such mappings."""
     if os.name != "nt":
         fields = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         return (int(fields["MemTotal"].split()[0]) * 1024,
@@ -73,6 +74,32 @@ def file_stamp(path):
     stat = Path(path).stat()
     # Atomic replacement can share an NTFS timestamp with the preceding version.
     return stat.st_mtime_ns, stat.st_size, stat.st_ino
+
+
+_JSON_SEEN = {}
+
+
+def read_json_cached(path):
+    """The content of a JSON file that one process reads again and again, or None when it is no file.
+
+    One file-system lookup says whether the file has changed since it was last read, by the same stamp
+    as file_stamp; only then is it opened and parsed again. The runner asks for every session's
+    declaration, end check and process receipt on each pass, and most of them have not changed since
+    the pass before. Each call returns a copy of its own, so a caller may keep or change what it gets."""
+    path = Path(path)
+    key = str(path)
+    try:
+        info = path.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        info = None
+    if info is None or not stat.S_ISREG(info.st_mode):
+        _JSON_SEEN.pop(key, None)
+        return None
+    stamp = (info.st_mtime_ns, info.st_size, info.st_ino)
+    seen = _JSON_SEEN.get(key)
+    if seen is None or seen[0] != stamp:
+        seen = _JSON_SEEN[key] = (stamp, read_json(path))
+    return copy.deepcopy(seen[1])
 
 
 
@@ -343,7 +370,7 @@ def lean_config(settings):
 
     A null memory budget is the physical memory minus the machine gate and a
     512 MiB allowance per AI session; a null thread budget is twice the logical
-    core count, since a compile is CPU-bound only during elaboration (reference/lean.md)."""
+    core count, since a compile is CPU-bound only during elaboration (reference/lean-broker.md)."""
     lean = settings["lean"]
     config = {key: lean[key] for key in LEAN_DEFAULTS}
     total_mb = memory_status()[0] // (1024 * 1024)

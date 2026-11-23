@@ -1,3 +1,3 @@
-Resume the organization you were assigned: the batch your assignment names and what you set out to do with it.
+Resume the organization you were assigned: the batch your assignment names, the identities you set out to prove in Lean, the rearrangements you judged sound and the question merges.
 
-Write the output that the organizer output reference describes, acknowledging your exact batch, and run the transport check.
+Write `output/organization.json` as the organizer output reference describes, acknowledging your exact batch. If you submit a change to the Lean library, run `commands.prepare` on it and correct what it reports.

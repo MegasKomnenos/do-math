@@ -11,6 +11,9 @@ CONTEXT_WINDOW = 1_000_000
 AUTO_COMPACT_TOKENS = 900_000
 # Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
 MAX_OUTPUT_TOKENS = 128_000
+# Milliseconds the Claude CLI waits for an MCP server to start before beginning the turn without it.
+# Its default is about 30 seconds; sixteen literature servers starting at once took up to 41 (measured).
+MCP_STARTUP_MS = 180_000
 # The limit, in milliseconds, after which the Claude CLI in print mode stops background tasks that are
 # still running once the main agent's turn has ended; the CLI's message names this variable, and its
 # default is ten minutes. In the sessions of two instances the CLI did so when sub-agents were the only
@@ -76,5 +79,6 @@ def worker_environment():
     environment.pop('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', None)
     environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
     environment['CLAUDE_CODE_MAX_OUTPUT_TOKENS'] = str(MAX_OUTPUT_TOKENS)
+    environment['MCP_TIMEOUT'] = str(MCP_STARTUP_MS)
     environment['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'] = str(BACKGROUND_WAIT_MS)
     return environment

@@ -9,6 +9,7 @@ import contextlib
 import io
 import json
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -317,6 +318,92 @@ class Drawing(MapCase):
         payload = page.split('<script type="application/json" id="map-data">', 1)[1].split('</script>', 1)[0]
         self.assertEqual(json.loads(payload), data)
 
+    def test_a_statement_whose_proof_is_a_card_of_its_own_does_not_say_no_proof(self):
+        # The root is posed without a proof and proved by another declaration, as a root fixed with the user is.
+        data = self.map([statement('Lib.root', 'unit', proof=None), statement('Lib.a', 'unit'),
+                         statement('Lib.rootProof', 'unit', uses=['Lib.a'], proves='Lib.root', module='Lib.Later')])
+        bare = draw.proved_apart(data)
+        self.assertEqual(bare, {'Lib.root'})
+        root, proof = self.unit(data, 'Lib.root'), self.unit(data, 'Lib.rootProof')
+        self.assertEqual((root['standing'], root['settled']), ('no_proof', True))
+        self.assertEqual(draw.status_of(root, bare), ['root', 'statement', 'proof on a separate card', 'settled'])
+        self.assertEqual(draw.status_of(proof, bare), ['proof', 'accepted', 'settled'])
+        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        nodes = {node.get('data-node'): node for node in tree.findall(f".//{SVG}g[@class='node']")}
+        self.assertEqual(nodes['Lib.root'].get('data-status'), 'root · statement · proof on a separate card · settled')
+        # The mark of the standing is on the card of the proof and not on the card of the statement.
+        self.assertIsNone(nodes['Lib.root'].find(f"{SVG}path[@class='standing']"))
+        self.assertIsNotNone(nodes['Lib.rootProof'].find(f"{SVG}path[@class='standing']"))
+        texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
+        self.assertNotIn('no proof', texts)  # neither a card nor the legend says it
+        # A statement that has a proof of its own keeps its words, and its other proof is another proof.
+        self.assertEqual(draw.proved_apart(self.map(wide_canon())), set())
+        # A statement with no proof at all says so.
+        alone = self.map([statement('Lib.root', 'unit', proof=None)])
+        self.assertEqual(draw.status_of(self.unit(alone, 'Lib.root'), draw.proved_apart(alone)),
+                         ['root', 'statement', 'no proof', 'not settled'])
+
+    def test_the_legend_names_what_occurs_and_the_subtitle_says_how_the_root_stands(self):
+        data = self.map(wide_canon())
+        svg = draw.render(data, 'layered')[0]
+        texts = [''.join(element.itertext()) for element in ElementTree.fromstring(svg).iter(f'{SVG}text')]
+        for kind in ('direct', 'contracted', 'mention', 'alternative'):
+            self.assertIn(draw.LEGEND[kind], texts)
+        self.assertNotIn(draw.LEGEND['refutation'], texts)
+        for role in ('statement', 'definition', 'proof', 'root'):
+            self.assertIn(draw.CARD_WORDS[role], texts)
+        for words, _ in draw.STANDINGS.values():  # the canon holds a proof in each of the four states
+            self.assertIn(words, texts)
+        self.assertEqual(data['root_state'], 'unresolved')
+        self.assertTrue(any('the root is open' in line and '9 units in 3 groups, 15 lines, 1 step folded into the lines' in line for line in texts))
+        self.assertFalse(any('unresolved' in line for line in texts))
+        self.assertNotIn('stroke-dasharray=""', svg)  # a solid line carries no dash pattern, not an empty one
+        # A map without a definition and without a second proof has neither in its legend.
+        plain = self.map([statement('Lib.root', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit')])
+        texts = [''.join(element.itertext()) for element in ElementTree.fromstring(draw.render(plain, 'layered')[0]).iter(f'{SVG}text')]
+        self.assertIn(draw.LEGEND['direct'], texts)
+        for absent in (draw.LEGEND['mention'], draw.LEGEND['alternative'], draw.CARD_WORDS['definition'], 'no proof'):
+            self.assertNotIn(absent, texts)
+
+    def test_a_label_that_finds_no_room_counts_its_steps_and_covers_no_card(self):
+        # Three steps with long names lie between two units that stand side by side: their names are wider
+        # than the space between the two cards.
+        long = 'a step whose name is much longer than the space between two layers, number '
+        data = self.map([statement('Lib.root', 'unit', uses=['Lib.s3']), statement('Lib.s3', uses=['Lib.s2'], short=long + 'three'),
+                         statement('Lib.s2', uses=['Lib.s1'], short=long + 'two'),
+                         statement('Lib.s1', uses=['Lib.a'], short=long + 'one'), statement('Lib.a', 'unit')])
+        edge = self.edge(data, 'Lib.a', 'Lib.root')
+        self.assertEqual(edge['via'], ['Lib.s1', 'Lib.s2', 'Lib.s3'])
+        self.assertEqual(draw.via_text(data, edge), f'via {long}one, {long}two, {long}three')
+        self.assertEqual(draw.via_text(data, edge, 1), f'via {long}one and 2 more')
+        cards = {unit['id']: draw.card_of(unit) for unit in data['units']}
+        route = draw.layered(data, cards)['edges'][data['edges'].index(edge)]
+        self.assertEqual(route['words'], 'via 3 steps')
+        for box in draw.layered(data, cards)['cards'].values():
+            self.assertFalse(draw.overlap(route['label'], box))
+        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        label = tree.find(f".//{SVG}g[@class='route-label']")
+        self.assertEqual(label.find(f'{SVG}text').text, 'via 3 steps')
+        self.assertEqual(label.find(f'{SVG}title').text, 'via Lib.s1, Lib.s2, Lib.s3')  # every name stays with the line
+
+    def test_the_page_carries_the_guide_to_its_map(self):
+        data = self.map(wide_canon())
+        svg, page, _, _ = draw.render(data, 'layered')
+        for mark in ('__TITLE__', '__GUIDE__', '__SVG__', '__DATA__'):
+            self.assertNotIn(mark, page)
+        guide = draw.guide_of(data, draw.proved_apart(data))
+        self.assertIn(guide, page)
+        self.assertIn('<a href="#node=Lib.root">every row is unimodal</a>: the root is open.', guide)
+        self.assertIn('9 units, each a card, in 3 groups, joined by 15 lines. 1 smaller step has no card', guide)
+        # The glossary explains the words on the cards of this map, and the two words the map is made of.
+        said = {word for unit in data['units'] for word in draw.status_of(unit)}
+        self.assertEqual(set(re.findall(r'<dt data-word="([^"]+)"', guide)), said | {'unit', 'step'})
+        self.assertNotIn('refutes the root', guide)
+        # The page reads the words of a card from the drawing.
+        nodes = ElementTree.fromstring(svg).findall(f".//{SVG}g[@class='node']")
+        self.assertEqual({node.get('data-node'): node.get('data-status') for node in nodes},
+                         {unit['id']: ' · '.join(draw.status_of(unit)) for unit in data['units']})
+
     def test_cards_do_not_overlap_and_stand_inside_their_groups(self):
         data = self.map(wide_canon())
         cards = {unit['id']: draw.card_of(unit) for unit in data['units']}
@@ -325,6 +412,9 @@ class Drawing(MapCase):
         for index, (first, a) in enumerate(boxes):
             for second, b in boxes[index + 1:]:
                 self.assertFalse(draw.overlap(a, b), (first, second))
+        for route in geometry['edges']:  # the words on a line cover no card
+            for name, box in boxes:
+                self.assertFalse(route['label'] and draw.overlap(route['label'], box), (route['words'], name))
         for unit in data['units']:
             x, y, w, h = geometry['cards'][unit['id']]
             gx, gy, gw, gh = geometry['groups'][unit['group']]
@@ -400,6 +490,110 @@ class Drawing(MapCase):
         tree = ElementTree.fromstring(svg)
         self.assertEqual(len(tree.findall(f".//{SVG}g[@class='node']")), len(data['units']))
         self.assertEqual(len(tree.findall(f".//{SVG}g[@class='edge']")), len(data['edges']))
+
+
+def playwright():
+    """Playwright, where it is installed. The page is opened in a browser only there; the skill does not need it."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return None
+    return sync_playwright
+
+
+@unittest.skipUnless(playwright(), 'Playwright is not installed; the page is opened in a browser only where it is')
+class Page(MapCase):
+    """What a reader does on the page, in a browser: find a unit, select it, leave the selection, come back to it."""
+
+    def test_the_page_finds_selects_follows_and_restores(self):
+        data = self.map(wide_canon())
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        depmap.write(data, temp.name, 'layered')
+        address = (Path(temp.name) / 'dependency_map.html').resolve().as_uri()
+        seen = '''() => ({hash: location.hash, focus: document.body.classList.contains('focus'),
+                         pick: (document.querySelector('g.node.pick') || {dataset: {}}).dataset.node || null,
+                         kept: [...document.querySelectorAll('g.node.hi')].map(g => g.dataset.node).sort(),
+                         lines: document.querySelectorAll('g.edge.hi').length,
+                         head: (document.querySelector('#content h1, #content h2') || {}).textContent,
+                         width: Number(document.querySelector('#stage svg').getAttribute('viewBox').split(' ')[2])})'''
+        with playwright()() as driver:
+            browser = None
+            for options in ({'channel': 'chrome'}, {'channel': 'msedge'}, {}):
+                try:
+                    browser = driver.chromium.launch(**options)
+                    break
+                except Exception:
+                    continue
+            if browser is None:
+                self.skipTest('no browser that Playwright can start')
+            try:
+                page = browser.new_page(viewport={'width': 1200, 'height': 800})
+                errors = []
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                page.goto(address)
+                first = page.evaluate(seen)
+                self.assertEqual((first['hash'], first['focus'], first['head']), ('', False, data['title']))
+                # A name typed in the search is found, among the units and among the folded steps.
+                page.fill('#query', 'unimodal')
+                self.assertEqual(page.locator('#results a').first.get_attribute('href'), '#node=Lib.root')
+                page.fill('#query', 'glue')
+                self.assertEqual(page.locator('#results a').first.get_attribute('href'), '#step=Lib.glue')
+                page.fill('#query', 'unimodal')
+                page.press('#query', 'Enter')
+                root = page.evaluate(seen)
+                self.assertEqual((root['hash'], root['focus'], root['pick'], root['head']),
+                                 ('#node=Lib.root', True, 'Lib.root', 'every row is unimodal'))
+                # Everything the root rests on is kept; its second proof enters through the heavy line.
+                self.assertEqual(root['kept'], sorted(unit['id'] for unit in data['units']))
+                # The panel names the two extents of the highlight and the way out.
+                page.locator('#content .extent button').nth(1).click()
+                near = page.evaluate(seen)
+                self.assertEqual(near['hash'], '#node=Lib.root&mode=direct')
+                self.assertEqual(near['kept'], sorted({'Lib.root'} | {edge['source'] for edge in data['edges'] if edge['target'] == 'Lib.root'}))
+                # A unit in the list is a link, and following it selects that unit.
+                page.locator('#part-above + ul a', has_text='column').first.click()
+                self.assertEqual(page.evaluate(seen)['hash'], '#node=Lib.column')
+                page.go_back()
+                self.assertEqual(page.evaluate(seen)['hash'], '#node=Lib.root&mode=direct')
+                page.locator('#content .bar button').first.click()
+                out = page.evaluate(seen)
+                self.assertEqual((out['hash'], out['focus'], out['pick'], out['head']), ('', False, None, data['title']))
+                page.go_back()
+                self.assertEqual(page.evaluate(seen)['pick'], 'Lib.root')
+                page.keyboard.press('Escape')
+                self.assertFalse(page.evaluate(seen)['focus'])
+                # A folded step has no card: its address keeps the lines it is folded into.
+                page.goto(address + '#step=Lib.glue')
+                page.reload()
+                step = page.evaluate(seen)
+                through = [edge for edge in data['edges']
+                           if any('Lib.glue' in (side or {}).get('via', ()) for side in (edge, edge['proof'], edge['statement']))]
+                self.assertEqual((step['head'], step['lines'], step['pick']), ('glue', len(through), None))
+                self.assertEqual(step['kept'], sorted({end for edge in through for end in (edge['source'], edge['target'])}))
+                # A name that is not on the map is said to be missing, and nothing is selected.
+                page.goto(address + '#node=Lib.nothing')
+                page.reload()
+                self.assertFalse(page.evaluate(seen)['focus'])
+                self.assertIn('no unit and no folded step named Lib.nothing', page.inner_text('#content'))
+                # A card is reached and selected from the keyboard.
+                page.goto(address)
+                page.reload()
+                page.evaluate("() => document.querySelector('g.node[data-node=\\"Lib.count\\"]').focus()")
+                page.keyboard.press('Enter')
+                self.assertEqual(page.evaluate(seen)['pick'], 'Lib.count')
+                page.keyboard.press('Escape')
+                # A trackpad sends many small wheel events for one movement; they do not run the zoom to its end.
+                whole = page.evaluate(seen)['width']
+                page.mouse.move(400, 400)
+                for _ in range(30):
+                    page.mouse.wheel(0, -4)
+                self.assertGreater(page.evaluate(seen)['width'], whole / 2)
+                page.keyboard.press('0')
+                self.assertEqual(page.evaluate(seen)['width'], whole)
+                self.assertEqual(errors, [])
+            finally:
+                browser.close()
 
 
 class PublishedInstance(ScenarioCase):

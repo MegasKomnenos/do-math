@@ -7,18 +7,34 @@ import shutil
 import sys
 from urllib.parse import quote, unquote
 
-from runtime_support import write_json, write_text
+from canon import Canon, declaration_text
+from runtime_support import read_json, write_json, write_text
 
 
 RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
+# Every role states mathematics in Lean and reads the canon, so each receives the canon and Lean guides.
+# A guide that only some roles act on goes to those roles: sections.md to the roles that register sections,
+# records.md to the roles that write or judge the written texts of the canon.
 ROLE_REFERENCES = {
-    'attempt': RESEARCH_CONTEXT + ['retained-work.md'],
-    'explore': RESEARCH_CONTEXT + ['retained-work.md'],
-    'formalizer': ['retained-work.md', 'lean.md'],
-    'peer': RESEARCH_CONTEXT + ['record-format.md', 'retained-work.md'],
-    'review': RESEARCH_CONTEXT + ['record-format.md', 'review-output.md'],
-    'organizer': RESEARCH_CONTEXT + ['organizer-output.md'],
+    'attempt': RESEARCH_CONTEXT + ['literature.md', 'sections.md', 'retained-work.md'],
+    'explore': RESEARCH_CONTEXT + ['literature.md', 'retained-work.md'],
+    'formalizer': ['retained-work.md'],
+    'peer': RESEARCH_CONTEXT + ['literature.md', 'sections.md', 'retained-work.md', 'records.md', 'change-format.md'],
+    'review': RESEARCH_CONTEXT + ['literature.md', 'records.md', 'change-format.md', 'review-output.md'],
+    'organizer': RESEARCH_CONTEXT + ['records.md', 'change-format.md', 'organizer-output.md'],
 }
+
+
+def root_in_lean(instance):
+    """The root as it is fixed in Lean: its declaration and the file it stands in."""
+    canon = Canon(instance)
+    meta = read_json(Path(instance) / 'instance.json')
+    entry = canon.load_index()['entries'][meta['root']]
+    source = (canon.lean / entry['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
+    return (f"The root is the declaration `{meta['root']}` of the library `{meta['library']}`, in "
+            f"`canon/lean/{entry['file']}`. Its statement is fixed for the life of the instance.\n\n"
+            '```lean\n' + declaration_text(source, entry['span']) + '\n```\n\n'
+            f"As Lean prints it: `{entry['statement']}`\n")
 
 
 def rebase_links(body, source, session, scope):
@@ -54,10 +70,13 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     runtime = skill / 'runtime'
     commands = {
         'updates': [sys.executable, str(runtime / 'coordination.py'), 'updates', str(session)],
-        'lease': [sys.executable, str(runtime / 'coordination.py'), 'lease', str(session), '<node>'],
-        'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<node>', '--timeout', '50'],
-        'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<node>', '--file', '<file>'],
-        'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<node>'],
+        'canon': [sys.executable, str(runtime / 'canon_tool.py'), '<command>', str(session)],
+        'prepare': [sys.executable, str(runtime / 'canon_tool.py'), 'prepare', str(session)],
+        'verify': [sys.executable, str(runtime / 'canon_tool.py'), 'verify', str(session)],
+        'lease': [sys.executable, str(runtime / 'coordination.py'), 'lease', str(session), '<element>'],
+        'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<element>', '--timeout', '50'],
+        'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<element>', '--file', '<file>'],
+        'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<element>'],
         'question_lease': [sys.executable, str(runtime / 'coordination.py'), 'question-lease', str(session), '<question>'],
         'question_wait': [sys.executable, str(runtime / 'coordination.py'), 'question-wait', str(session), '<question>', '--timeout', '50'],
         'question_take': [sys.executable, str(runtime / 'coordination.py'), 'question-take', str(session), '<question>'],
@@ -66,38 +85,54 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
         'check': [sys.executable, str(runtime / 'check.py'), str(session)],
         'lean': [sys.executable, str(runtime / 'lean_broker.py'), '<command>', str(instance)],
     }
-    documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/tools.md']
+    documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/canon.md',
+                 'reference/lean.md', 'reference/tools.md']
     documents += ['reference/' + name for name in ROLE_REFERENCES[role]]
     inp = {'schema': 1, 'instance': str(instance), 'session': session.name, 'role': role,
            'pipeline': pipeline, 'task': task, 'revision': revision,
            'references': str(context / 'reference'), 'documents': documents,
            'user_inputs': inputs, 'settings': settings, 'commands': commands}
     write_json(session / 'input.json', inp)
+
+    def view(name, path, text=None):
+        # Preserve mathematical text verbatim. Its relative references retain the
+        # original source base, rather than rewriting arbitrary mathematical prose.
+        return ['# ' + name, '', 'Source: ' + str(path),
+                'Relative references in this research view use ' + str(path.parent) + ' as their base.',
+                '', text if text is not None else path.read_text(encoding='utf-8-sig'), '']
+
+    # The proposition and the assignment come before the guides, so that the guides are read with both in mind.
     parts = ['# Your do-math session', '',
              f'Role: {role}. Session: {session.name}. Instance: {instance}.', '',
-             'Read this complete context before working. The instruction sections below explain your role and the supplied research. '
-             'Copies of their references are under context/reference/ in your session folder.', '']
+             'Read this complete context before working. It begins with the proposition this instance exists to settle '
+             'and with your assignment. The guides that explain your role follow; copies of their references are under '
+             'context/reference/ in your session folder. After the guides come the research as it stood at your launch, '
+             'the user conditions and the commands.', '']
+    parts += view('Root statement', instance / 'root.md')
+    parts += view('The root in Lean', instance / 'canon/index.json', root_in_lean(instance))
+    parts += ['# Your assignment', '',
+              'This is `task` from input.json. Your role guide explains its fields. Where it names no work, your role '
+              'chooses its own.', '',
+              '```json', json.dumps({'task': task}, ensure_ascii=False, indent=2), '```', '']
     for name in documents:
         source = context / name
         body = source.read_text(encoding='utf-8-sig')
         body = rebase_links(body, source, session, context)
         parts += [f'<!-- begin {name} -->', body, f'<!-- end {name} -->', '']
-    for name, path in [('Root statement', instance / 'root.md'), ('Full current global glossary', instance / 'knowledge/glossary.md'),
-                       ('Frontier at launch', instance / 'knowledge/frontier.md'), ('Board at launch', instance / 'knowledge/board.md'),
-                       ('General index at launch', instance / 'knowledge/index.md')]:
-        # Preserve mathematical text verbatim. Its relative references retain the
-        # original source base, rather than rewriting arbitrary mathematical prose.
-        parts += ['# ' + name, '', 'Source: ' + str(path),
-                  'Relative references in this research view use ' + str(path.parent) + ' as their base.',
-                  '', path.read_text(encoding='utf-8-sig'), '']
+    understanding = instance / 'canon/questions/q0.md'
+    parts += view('Frontier at launch', instance / 'knowledge/frontier.md')
+    parts += view('Understanding so far of the root problem as a whole (question q0)', understanding,
+                  None if understanding.is_file() else 'No exploration has written it yet.\n')
+    parts += view('Board at launch', instance / 'knowledge/board.md')
     parts += ['# User conditions supplied at launch', '',
               'The following inputs apply in listed order. Later conditions override earlier conditions on the same matter. '
               'Mathematical suggestions remain suggestions; they do not certify claims.']
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
-    parts += ['', '# Assignment and executable commands', '',
-              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot.', '',
-              '```json', json.dumps({'task': task, 'commands': commands}, ensure_ascii=False, indent=2), '```', '']
+    parts += ['', '# Executable commands', '',
+              'These are `commands` from input.json; that file also holds your session identity, settings and '
+              'user-condition snapshot.', '',
+              '```json', json.dumps({'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     write_text(session / 'pack.md', '\n'.join(parts))
     write_text(session / 'prompt.txt',
                f'You are a do-math {role} session. Your working directory is {session}.\n'

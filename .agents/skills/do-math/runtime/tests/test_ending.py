@@ -6,7 +6,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 from cli_adapter import Command
 from coordination import board, session_live
 from ending import request_prompt, run_turn
@@ -14,9 +14,107 @@ from launch import worker_command
 from runner import Runner, main
 from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
-from test_research import InstanceCase, take
+from support import InstanceCase, take
 
-SCRIPT = Path(__file__).with_name('ending_cli.py')
+RUNTIME = Path(__file__).resolve().parents[1]
+
+# A deterministic CLI conversation, used only by these tests. It stands in for the external CLI that
+# the session host launches for every turn: it reads work/ending-test.json for what the test wants
+# of this run, counts its turns in work/turns.jsonl, and speaks the Codex stream unless told to speak
+# Claude's. A peer leaves a candidate change as a peer does: its files in output/ and the receipt of
+# commands.prepare for exactly those files (a change without Lean is prepared without a build).
+CLI = r'''
+import json
+from pathlib import Path
+import sys
+import time
+
+session = Path.cwd()
+config = json.loads((session / 'work/ending-test.json').read_text())
+prompt = sys.stdin.read()
+history = session / 'work/turns.jsonl'
+number = len(history.read_text().splitlines()) if history.exists() else 0
+with history.open('a', encoding='utf-8') as stream:
+    stream.write(json.dumps({'turn': number, 'prompt': prompt}) + '\n')
+identity = '01234567-89ab-cdef-0123-456789abcdef'
+if config.get('change_identity_at') == number:
+    identity = 'fedcba98-7654-3210-fedc-ba9876543210'
+if config.get('claude_stream'):
+    print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': identity}), flush=True)
+elif not config.get('omit_identity'):
+    print(json.dumps({'type': 'thread.started', 'thread_id': identity}), flush=True)
+print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message',
+                  'text': f'Retained mathematical work from turn {number}.'}}), flush=True)
+(session / 'output/report.md').write_text(f'Research through turn {number}.', encoding='utf-8')
+inp = json.loads((session / 'input.json').read_text())
+if inp['role'] == 'peer':
+    sys.path.insert(0, sys.argv[1])
+    from canon_tool import build_candidate
+    from runtime_support import write_json
+    write_json(session / 'output/change.json', {'title': 'Retained investigation',
+                                                'description': 'A developed contribution.'})
+    write_json(session / 'output/prepared.json', build_candidate(
+        inp['instance'], inp['session'], session / 'output', session / 'work/prepare', 64, None, 'peer'))
+if inp['role'] == 'review' and number >= config.get('assess_at', 0):
+    # A reviewer leaves its assessment in the turn in which it has its sub-reviews; before that turn, none.
+    (session / 'output/feedback.md').write_text('The questioned proof was examined.', encoding='utf-8')
+    (session / 'output/assessment.json').write_text(json.dumps({'feedback': 'feedback.md', 'findings': [],
+                                                                'concerns': []}))
+if config.get('hold_at') == number:
+    # A turn still running when the operator ends the session; only termination ends it early.
+    (session / 'work/holding').write_text('', encoding='utf-8')
+    time.sleep(120)
+if config.get('refuse_at') == number:
+    print(json.dumps({'type': 'error', 'message': "You've hit your usage limit. Try again later."}), flush=True)
+    raise SystemExit(1)
+if config.get('fail_at') == number:
+    raise SystemExit(2)
+if number in config.get('output_limit_at', []):
+    # The Claude CLI's own stream when one response reaches the output-token cap.
+    message = ("API Error: Claude's response exceeded the 64000 output token maximum. "
+               "To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable.")
+    print(json.dumps({'type': 'assistant', 'session_id': identity, 'error': 'max_output_tokens',
+                      'is_api_error_message': True, 'api_error': 'max_output_tokens',
+                      'message': {'model': '<synthetic>', 'role': 'assistant',
+                                  'content': [{'type': 'text', 'text': message}]}}), flush=True)
+    print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'session_id': identity,
+                      'api_error': 'max_output_tokens', 'terminal_reason': 'api_error',
+                      'result': message}), flush=True)
+    raise SystemExit(1)
+if config.get('no_research'):
+    (session / 'output/outcome.json').write_text('{"disposition":"no_research"}')
+if number:
+    request = json.loads((session / 'end-request.json').read_text())
+    target = session / 'output/end-decision.json'
+    if config.get('malformed_at') == number:
+        target.write_text('{broken')
+    elif config.get('stale_at') == number:
+        target.write_text(json.dumps({'request_id': 'old-request', 'decision': 'end',
+                                     'basis': 'task_completed', 'explanation': 'Stale decision.'}))
+    elif number >= config.get('end_after', 100):
+        target.write_text(json.dumps({'request_id': request['id'], 'decision': 'end',
+                                     'basis': config.get('basis', 'no_way_forward'),
+                                     'explanation': config.get('explanation',
+                                                               'The scripted investigation has reached its endpoint.'),
+                                     **config.get('extra_fields', {})}))
+'''
+
+
+# These tests run the session host inside the test process. The real host puts its own process into a
+# job that nothing can leave (runtime_support.contain_session_processes), and a process in such a job can
+# no longer start a Lean broker (lean_broker.ensure_broker): every later test of the same run that builds
+# through a broker would wait for one and fail. Here a stand-in answers for the containment, and the host
+# is checked for asking it before its first turn and recording the answer; the containment itself is
+# tested on real host processes in test_containment.
+CONTAINMENT = patch('runtime_support.contain_session_processes', return_value={'contained': True})
+
+
+def setUpModule():
+    CONTAINMENT.start()
+
+
+def tearDownModule():
+    CONTAINMENT.stop()
 
 
 class EndingTests(InstanceCase):
@@ -26,16 +124,16 @@ class EndingTests(InstanceCase):
         engine.settings['roles'] = {}  # the scripted CLI speaks the Codex stream for every role
         if role == 'review':
             key = engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': [],
-                                            'purpose': 'Examine the questioned record.'})
+                                            'purpose': 'Examine the questioned proof.'})
         else:
             key = engine.producer('attempt' if role == 'peer' else role,
-                                  {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
+                                  {'element': 'Small.root', 'previous_changes': []} if role == 'formalizer' else None)
         if role == 'peer':
             pipeline = engine.state['jobs'][key]['pipeline']
             engine.state['jobs'][key]['status'] = 'done'
             engine.state['pipelines'][pipeline].update(role='attempt', stage='peer', producer='source')
-            key = engine.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
-                                         'source_role': 'attempt'}, pipeline)
+            key = engine.enqueue('peer', {'source': str(self.instance / 'sessions/source'), 'source_role': 'attempt',
+                                          'element': None, 'sections': [], 'question': None}, pipeline)
         with patch('runner.subprocess.Popen') as host, patch('runner.build_command') as build:
             host.return_value.pid = engine.identity['pid']
             build.return_value = self.command(None, None, None, self.instance)
@@ -47,18 +145,21 @@ class EndingTests(InstanceCase):
         write_json(directory / 'launch.json', launch)
         write_json(directory / 'work/ending-test.json', config or {})
         if role == 'attempt' and not (config or {}).get('no_research'):
-            self.assertTrue(take(directory, 'root')['registered'])
+            self.assertTrue(take(directory, 'Small.root')['registered'])
         return engine, sid, directory
 
     @staticmethod
     def command(executable, model, effort, session, *args, **kwargs):
-        return Command('codex', [sys.executable, '-B', str(SCRIPT)], Path(session))
+        return Command('codex', [sys.executable, '-B', '-c', CLI, str(RUNTIME)], Path(session))
 
     def run_host(self, directory):
         with patch('ending.worker_command', side_effect=self.command):
             self.assertEqual(session_host(directory), 0)
-        # The host contains its session before the first turn (runtime_support.contain_session_processes).
-        self.assertEqual(read_json(directory / 'process-job.json')['contained'], os.name == 'nt')
+        # The host contains its session before the first turn (runtime_support.contain_session_processes)
+        # and leaves the answer in the session folder.
+        receipt = read_json(directory / 'process-job.json')
+        self.assertIs(receipt['contained'], True)
+        self.assertLessEqual(receipt['at'], read_json(directory / 'turn-termination.json')['result']['invocation_started_at'])
         return read_json(directory / 'end-check.json')
 
     def test_worker_end_resumes_exact_conversation_and_preserves_context(self):
@@ -91,6 +192,7 @@ class EndingTests(InstanceCase):
                 self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review' if role == 'peer' else 'peer')
                 if role == 'peer':
                     self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 1.')
+                    self.assertEqual(read_json(directory / 'candidate/change.json')['title'], 'Retained investigation')
                     # The ending decision stays with its turn; it is not frozen into the candidate.
                     self.assertFalse((directory / 'candidate/end-decision.json').exists())
                     self.assertTrue((directory / 'turns/0001/submitted-end-decision.json').is_file())
@@ -102,7 +204,7 @@ class EndingTests(InstanceCase):
                 self.assertIn('work from turn 0', body)
                 self.assertIn('work from turn 1', body)
                 self.assertEqual(len(s['retention']['streams']), 4)
-                # Finish the first test pipeline so the next role can take root.
+                # Finish this role's pipeline so that the next role can take the root.
                 engine.state['pipelines'][pipeline]['stage'] = 'done'
                 engine.save()
 
@@ -123,13 +225,29 @@ class EndingTests(InstanceCase):
         self.assertIn('assessment.json', prompt)
         self.assertIn('Resume the review you were assigned', prompt)
         self.assertNotIn('end-decision', prompt)
+        # The runner collects that same session with its assessment; no second review takes the assignment.
+        engine = Runner(self.instance, self.skill)
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        self.assertEqual(engine.state['jobs'][s['job']]['status'], 'done')
+        self.assertEqual(len([j for j in engine.state['jobs'].values() if j['role'] == 'review']), 1)
 
-    def test_a_review_that_never_leaves_its_assessment_ends_at_the_limit_for_a_new_session_to_take(self):
+    def test_a_review_that_never_leaves_its_assessment_goes_to_a_new_session_at_the_limit(self):
         engine, sid, directory = self.prepare(maximum=1, role='review', config={'assess_at': 9})
         with patch('ending.worker_command', side_effect=self.command):
             self.assertEqual(session_host(directory), 0)
         state = read_json(directory / 'end-check.json')
         self.assertEqual((state['resumptions'], state['authorization']['basis']), (1, 'resumption_limit'))
+        engine = Runner(self.instance, self.skill)
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        job = engine.state['jobs'][s['job']]
+        self.assertEqual((s['status'], job['status']), ('failed', 'pending'))
+        self.assertIn('assessment.json', job['last_error'])
 
     def test_guidance_edits_reach_next_turn_without_restarting_host(self):
         _, _, directory = self.prepare(maximum=2, role='explore')
@@ -206,7 +324,7 @@ class EndingTests(InstanceCase):
         # An attempt that registered a section cannot close through no_research (reference/retained-work.md).
         # The host resumes it and names the reason, as the transport check would.
         _, _, directory = self.prepare(maximum=1, config={'no_research': True})
-        self.assertTrue(take(directory, 'root')['registered'])
+        self.assertTrue(take(directory, 'Small.root')['registered'])
         state = self.run_host(directory)
         self.assertEqual(state['authorization']['basis'], 'resumption_limit')
         self.assertIn('no_research is incompatible with registered sections',
@@ -280,7 +398,8 @@ class EndingTests(InstanceCase):
         pipeline = engine.state['jobs'][s['job']]['pipeline']
         self.assertEqual(s['status'], 'ended')
         self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review')
-        self.assertTrue((directory / 'candidate/record.json').is_file())
+        self.assertTrue(read_json(directory / 'candidate/prepared.json')['ok'])
+        self.assertEqual(read_json(directory / 'candidate/change.json')['title'], 'Retained investigation')
 
     def test_output_limit_is_resumable_only_for_the_claude_stream(self):
         _, _, directory = self.prepare(config={'output_limit_at': [0]})

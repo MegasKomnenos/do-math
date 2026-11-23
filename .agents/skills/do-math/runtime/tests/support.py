@@ -1,0 +1,545 @@
+"""Shared fixture of the runtime tests: a small instance whose canon is compiled by the stand-in compiler.
+
+The instance is created once per test process through the real `initialize`, which builds the canon
+through a real broker with tests/canon_lean.py as its compiler, and is then copied for every test.
+Tests that change the canon go through the real candidate, build and publication path with the
+helpers below; nothing here writes the index or the model by hand.
+"""
+import atexit
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+import uuid
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from canon_tool import build_candidate
+from check import tree_hashes
+from lean_broker import Paths, broker_alive, terminate_tree
+from runner import Runner, initialize, main, uid
+from runtime_support import alive, read_json, remove_tree, write_json
+from settings import defaults
+
+HERE = Path(__file__).resolve().parent
+POPEN = subprocess.Popen  # captured before any test patches it
+
+DEFS = '''module
+
+@[expose] public section
+
+namespace Small
+
+/-- The sum of the first `n` odd numbers. -/
+def oddSum : Nat → Nat
+  | 0 => 0
+  | n + 1 => oddSum n + (2 * n + 1)
+
+end Small
+'''
+ROOT = '''module
+
+public import Small.Defs
+
+@[expose] public section
+
+namespace Small
+
+/-- The sum of the first `n` odd numbers is the square of `n`. -/
+theorem root (n : Nat) : oddSum n = n * n := by
+  sorry
+
+end Small
+'''
+RECORDS = {
+    'Small/oddSum.md': '''---
+short: sum of odd numbers
+weight: unit
+---
+## Description
+
+The sum of the first n odd numbers, defined by recursion on n.
+''',
+    'Small/root.md': '''---
+short: odd numbers sum to a square
+weight: unit
+---
+## Description
+
+The sum of the first n odd numbers equals n times n.
+
+## Statement
+
+For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.
+''',
+}
+# The same root as one closed proposition. The stand-in compiler confirms a `refutes:` claim by comparing
+# the texts of two statements, which it can do only for statements without binders before the colon. The
+# negation of this root, `¬ (∀ n : Nat, oddSum n = n * n)`, is such a statement and is valid Lean as well.
+ROOT_CLOSED = ROOT.replace('theorem root (n : Nat) : oddSum n = n * n', 'theorem root : ∀ n : Nat, oddSum n = n * n')
+ROOTS = {'default': ROOT, 'closed': ROOT_CLOSED}
+
+
+def theorem(name, statement, uses=(), proof='sorry', doc=None):
+    """The Lean text of a statement in the stand-in compiler's subset.
+
+    An informal proof names in Lean what it rests on, one `have` per element, and ends in `sorry`.
+    With another last line, such as `rfl`, the proof counts as complete in Lean."""
+    lines = [f'/-- {doc or "A statement of the test canon."} -/', f'theorem {name} {statement} := by']
+    lines += [f'  have h{number} := {used}' for number, used in enumerate(uses, 1)]
+    return '\n'.join(lines + ['  ' + proof])
+
+
+def record_text(description, weight='step', proof=None, statement=None, **meta):
+    lines = ['---', f'weight: {weight}'] + [f'{key}: {value}' for key, value in meta.items()] + ['---',
+             '## Description', '', description, '']
+    if statement:
+        lines += ['## Statement', '', statement, '']
+    if proof:
+        lines += ['## Proof', '', proof, '']
+    return '\n'.join(lines)
+
+
+def module_text(body, imports=('Small.Defs',)):
+    header = ''.join(f'public import {name}\n' for name in imports)
+    return f'module\n\n{header}\n@[expose] public section\n\nnamespace Small\n\n{body.strip()}\n\nend Small\n'
+
+
+def test_settings():
+    config = defaults()
+    # No external tools: the tests do not depend on the literature server being installed.
+    config.update(max_sessions=2, retry_seconds=1, retry_max_seconds=2, launch_interval=0, roles={},
+                  mcp_servers={})
+    config['lean'].update(command=[sys.executable, '-B', str(HERE / 'canon_lean.py')],
+                          version_command=[sys.executable, '-B', str(HERE / 'canon_lean.py'), '--version'],
+                          min_free_memory_mb=0, memory_budget_mb=512, calibration_expect_mb=64,
+                          priority='normal')  # the stand-in compiler competes on equal terms with other load
+    return config
+
+
+def write_canon(folder, root=ROOT):
+    for name, text in (('lean/Small/Defs.lean', DEFS), ('lean/Small/Root.lean', root),
+                       *(('records/' + key, value) for key, value in RECORDS.items())):
+        path = Path(folder) / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding='utf-8', newline='\n')
+
+
+def stop_broker(instance):
+    info = broker_alive(Paths(instance))
+    if info and alive(info['process']):
+        terminate_tree(info['process']['pid'])
+        deadline = time.monotonic() + 10
+        while alive(info['process']) and time.monotonic() < deadline:
+            time.sleep(0.05)
+
+
+_TEMPLATES = {}
+_SCENARIOS = {}
+
+
+def template(variant='default'):
+    """One compiled instance per root variant for the whole test process; every test works on a copy of it."""
+    if variant not in _TEMPLATES:
+        base = Path(tempfile.mkdtemp(prefix='do-math-template-'))
+        atexit.register(shutil.rmtree, base, True)
+        (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
+                                      encoding='utf-8')
+        write_json(base / 'settings.json', test_settings())
+        write_canon(base / 'canon', ROOTS[variant])
+        initialize(base / 'instance', base / 'goal.md', base / 'canon', 'Small.root', base / 'settings.json')
+        _TEMPLATES[variant] = base / 'instance'
+    return _TEMPLATES[variant]
+
+
+class InstanceCase(unittest.TestCase):
+    root_variant = 'default'  # 'closed' states the root without binders, so that its negation can be stated
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.instance = self.root / 'instance'
+        shutil.copytree(template(self.root_variant), self.instance)
+        self.addCleanup(stop_broker, self.instance)
+        self.skill = self.root / 'skill'
+        installed = Path(__file__).resolve().parents[2]
+        for name in ('reference', 'roles', 'resume'):
+            shutil.copytree(installed / name, self.skill / name)
+        shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
+
+    def configure(self, **changes):
+        """Change settings.json of the instance; keys given under `lean` are merged into the Lean settings."""
+        config = read_json(self.instance / 'settings.json')
+        config['lean'].update(changes.pop('lean', {}))
+        config.update(changes)
+        write_json(self.instance / 'settings.json', config)
+
+    def scenario(self, name, build):
+        """Research state that several tests start from, published once per test process.
+
+        The first test that asks for a scenario builds it through the real publication path, on a
+        fresh copy of the instance as it was created, and a copy of the built instance is kept. Every
+        test that asks receives the scenario in place of its instance, whatever it did before. The
+        settings of the asking test stay in force. A build can start from another scenario by asking
+        for that one first."""
+        key = (self.root_variant, name)
+        settings = read_json(self.instance / 'settings.json')
+
+        def replace_instance(source):
+            stop_broker(self.instance)
+            remove_tree(self.instance)
+            shutil.copytree(source, self.instance)
+
+        if key not in _SCENARIOS:
+            replace_instance(template(self.root_variant))
+            build()
+            stop_broker(self.instance)
+            base = Path(tempfile.mkdtemp(prefix='do-math-scenario-'))
+            atexit.register(shutil.rmtree, base, True)
+            shutil.copytree(self.instance, base / 'instance')
+            _SCENARIOS[key] = base / 'instance'
+        else:
+            replace_instance(_SCENARIOS[key])
+        write_json(self.instance / 'settings.json', settings)
+
+    # -- candidates and their publication, through the real path ------------------------------------------
+
+    def candidate(self, modules=None, replace=None, records=None, approaches=None, understanding=None,
+                  questions=None, resolutions=None, imports=None, title='A contribution', prepare=True):
+        """A prepared candidate folder. modules, records, approaches and understanding map relative
+        paths to text; replace maps a declaration to its new complete text."""
+        folder = self.root / ('candidate-' + uuid.uuid4().hex)
+        for sub, files in (('lean', modules), ('records', records), ('approaches', approaches),
+                           ('questions', understanding)):
+            for name, text in (files or {}).items():
+                path = folder / sub / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding='utf-8', newline='\n')
+        entries = []
+        for number, (name, text) in enumerate((replace or {}).items()):
+            path = folder / 'replace' / f'{number}.lean'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding='utf-8', newline='\n')
+            entries.append({'declaration': name, 'file': f'replace/{number}.lean', 'imports': (imports or {}).get(name, [])})
+        folder.mkdir(parents=True, exist_ok=True)
+        write_json(folder / 'change.json', {'title': title, 'description': 'A precise contribution with its limitations.',
+                                            'replace': entries, 'questions': questions or [],
+                                            'resolutions': resolutions or []})
+        if prepare:
+            self.prepare(folder)
+        return folder
+
+    def prepare(self, folder, role='peer', expect_ok=True):
+        result = build_candidate(self.instance, 'test', folder, self.root / ('prepare-' + uuid.uuid4().hex),
+                                 64, 120, role)
+        self.assertIsNotNone(result, 'the candidate build did not finish')
+        write_json(folder / 'prepared.json', result)
+        if expect_ok:
+            self.assertTrue(result['ok'], result['errors'])
+        return result
+
+    def verdicts(self, folder, accepted=True, **overrides):
+        """An assessment that confirms and accepts every proof of a prepared candidate, unless overridden."""
+        receipt = read_json(folder / 'prepared.json')
+        change = read_json(folder / 'change.json')
+        rows = []
+        for name in receipt['added'] + receipt['replaced']:
+            entry = receipt['entries'][name]
+            proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
+            row = {'element': name, 'correct': 'confirmed' if proved else 'not_applicable',
+                   'accepted': bool(proved and accepted), 'reason': 'Argument checked.'}
+            if name in receipt['replaced']:
+                row['replaces'] = True
+            row.update(overrides.get(name, {}))
+            rows.append(row)
+        return {'publish': True, 'reason': 'Useful work.', 'contribution': 'Closed what it took on.',
+                'feedback': 'feedback.md', 'elements': rows, 'concerns': [], 'findings': [],
+                'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'Important and exactly stated.'}
+                              for q in change['questions']],
+                'resolutions': [{'proposal': r['id'], 'resolved': True, 'reason': 'The account settles the question.'}
+                                for r in change['resolutions']]}
+
+    def publish(self, folder, assessment=None, role='attempt', question=None, engine=None, expect=True):
+        """Publish a prepared candidate as the runner does after a review: queue it and carry it through."""
+        engine = engine or Runner(self.instance, self.skill)
+        state = engine.state
+        producer, peer, review, pid = uid('s'), uid('s'), uid('s'), uid('p')
+        for sid in (producer, peer, review):
+            (engine.session_dir(sid) / 'output').mkdir(parents=True)
+        if question:
+            write_json(engine.session_dir(producer) / 'declaration.json',
+                       {'question': {'id': question, 'at': time.time(), 'by': 'session'}, 'at': time.time()})
+        output = engine.session_dir(review) / 'output'
+        write_json(output / 'assessment.json', assessment or self.verdicts(folder))
+        (output / 'feedback.md').write_text('Checked.', encoding='utf-8')
+        key = pid + ':review:' + peer
+        state['pipelines'][pid] = {'id': pid, 'role': role, 'stage': 'review', 'producer': producer, 'peer': peer,
+                                   'review': review, 'record': None, 'element': None, 'previous_peers': []}
+        state['jobs'][pid + ':producer'] = {'id': pid + ':producer', 'role': role, 'task': {}, 'pipeline': pid,
+                                            'status': 'done', 'session': producer, 'retries': 0, 'not_before': 0}
+        state['jobs'][key] = {'id': key, 'role': 'review', 'pipeline': pid, 'status': 'running', 'session': review,
+                              'retries': 0, 'not_before': 0,
+                              'task': {'kind': 'candidate', 'candidate': str(folder),
+                                       'candidate_hashes': tree_hashes(folder),
+                                       'source': str(engine.session_dir(producer)), 'peer': str(engine.session_dir(peer))}}
+        for sid, session_role, job in ((producer, role, pid + ':producer'), (peer, 'peer', key), (review, 'review', key)):
+            state['sessions'][sid] = {'id': sid, 'role': session_role, 'job': job, 'status': 'ended', 'model': 'codex/test',
+                                      'effort': 'low', 'provider': 'codex', 'started_at': time.time(), 'host': None,
+                                      'cli': None, 'record': None}
+        state['sessions'][review]['status'] = 'publishing'
+        state['publish_queue'].append({'session': review, 'job': key, 'kind': 'change'})
+        engine.save()
+        self.drain(engine)
+        if expect:
+            self.assertEqual(state['pipelines'][pid]['stage'], 'done', state['jobs'][key].get('last_error'))
+        return state['pipelines'][pid]['record'], engine
+
+    def drain(self, engine, seconds=120):
+        """Carry queued publications to their end; a build goes through the instance's broker."""
+        deadline = time.monotonic() + seconds
+        while engine.state['publication'] or engine.state['publish_queue']:
+            with patch.object(subprocess, 'Popen', POPEN):
+                engine.publish()
+            self.assertLess(time.monotonic(), deadline, 'publication did not finish')
+            time.sleep(0.05)
+
+    def event(self, eid, kind, data):
+        """A comprehensive review, written as the runner publishes one."""
+        sequence = max([read_json(p)['sequence'] for p in (self.instance / 'knowledge/events').glob('*.json')], default=0) + 1
+        folder = self.instance / 'knowledge/reviews' / eid
+        folder.mkdir(parents=True)
+        write_json(folder / 'assessment.json', data)
+        write_json(self.instance / 'knowledge/events' / (eid + '.json'),
+                   {'id': eid, 'sequence': sequence, 'kind': kind, 'folder': 'reviews/' + eid})
+
+    def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
+        """An operator publication of questions, made as the operator makes it."""
+        source = self.root / ('questions-' + uuid.uuid4().hex + '.json')
+        write_json(source, {'reason': reason, 'questions': items})
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['questions', str(self.instance), '--file', str(source)]), 0, shown.call_args)
+        with patch.object(subprocess, 'Popen', POPEN), \
+                patch('runner.uid', side_effect=lambda prefix: eid if prefix == 'q' else uid(prefix)):
+            engine = Runner(self.instance, self.skill)
+            engine.ingest_inputs()
+        event = self.instance / 'knowledge/events' / (eid + '.json')
+        self.assertTrue(event.is_file(), engine.state['last_error'])
+
+    def note(self, text='What has come to be understood about the root problem.', engine=None, **options):
+        """Publish a change that touches no Lean: an exploration's understanding so far of q0.
+
+        Nothing is built for it, so it serves where a test needs a published change and not its mathematics."""
+        folder = self.candidate(understanding={'q0.md': text + '\n'}, **options)
+        return self.publish(folder, role='explore', question='q0', engine=engine)
+
+    def organize(self, batch=None, merge_questions=(), engine=None):
+        """Publish an organizer's output that carries no change of its own, as the runner publishes one."""
+        engine = engine or Runner(self.instance, self.skill)
+        state = engine.state
+        sid, key = uid('s'), uid('j')
+        output = engine.session_dir(sid) / 'output'
+        output.mkdir(parents=True)
+        if batch is None:
+            batch = [cid for cid in engine.model['changes'] if cid not in engine.model['organized']]
+        write_json(output / 'organization.json', {'batch': batch, 'merge_questions': list(merge_questions)})
+        state['jobs'][key] = {'id': key, 'role': 'organizer', 'pipeline': None, 'status': 'running', 'session': sid,
+                              'retries': 0, 'not_before': 0, 'task': {'batch': batch, 'batch_frozen': True}}
+        state['sessions'][sid] = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'publishing',
+                                  'model': 'codex/test', 'effort': 'low', 'provider': 'codex',
+                                  'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
+        state['publish_queue'].append({'session': sid, 'job': key, 'kind': 'organization'})
+        engine.save()
+        self.drain(engine)
+        self.assertEqual(state['jobs'][key]['status'], 'done', state['jobs'][key].get('last_error'))
+        return state['jobs'][key]['record'], engine
+
+
+ROOT_STATEMENTS = {'default': '(n : Nat) : oddSum n = n * n', 'closed': ': ∀ n : Nat, oddSum n = n * n'}
+SUM_ZERO = ': oddSum 0 = 0'
+SUM_SUCC = '(n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1)'
+HELD_REASON = 'The two cases can be merged into one.'
+GAP_REASON = 'The induction step is not justified.'
+
+
+def take(session, element, statement=None, reasons=None, leased=False, new=None):
+    """Register a section through the element's lease: the whole element unless a statement is given.
+
+    new registers a statement that is not yet in the canon, aimed at the element."""
+    from coordination import lease, section
+    session = Path(session)
+    request = session / ('section-' + uuid.uuid4().hex + '.json')
+    if new is not None:
+        write_json(request, {'new': new, 'reasons': reasons or {}})
+    else:
+        write_json(request, {'whole': statement is None, 'statement': statement, 'reasons': reasons or {}})
+    if not leased:
+        taken = lease(session, element)
+        if not taken['leased']:
+            return {'registered': False, **taken}
+    return section(session, element, request)
+
+
+class ScenarioCase(InstanceCase):
+    """Research states that tests start from, each published once per test process (InstanceCase.scenario).
+
+    split    the root has an accepted informal proof that names Small.sumZero and Small.sumSucc, which have
+             no proof; Small.sumTwo is settled and nothing uses it
+    half     split, and Small.sumZero has an accepted informal proof
+    proved   half, and Small.sumSucc has one too, so the root is settled informally
+    direct   the root has an accepted informal proof that names nothing
+    formal   the root has an accepted proof that is complete in Lean
+    ways     two ways of proving the root over eight statements in every standing (see ways())"""
+
+    def root_text(self, uses=(), proof='sorry'):
+        """The root's declaration with a proof: informal and naming `uses`, or complete with another ending."""
+        return theorem('root', ROOT_STATEMENTS[self.root_variant], uses, proof,
+                       doc='The sum of the first `n` odd numbers is the square of `n`.')
+
+    def root_formal(self, uses=()):
+        """The root's declaration with a proof that is complete in Lean."""
+        induction = ('induction n with\n  | zero => rfl\n  | succ k ih =>\n    rw [oddSum, ih]\n'
+                     '    simp only [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]\n    omega')
+        return self.root_text(uses, induction if self.root_variant == 'default' else 'intro n\n  ' + induction)
+
+    def root_record(self, proof='By induction on $n$, from the empty sum and the passage from $n$ to $n + 1$.'):
+        return record_text('The sum of the first n odd numbers equals n times n.', weight='unit', proof=proof,
+                           statement='For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.',
+                           short='odd numbers sum to a square')
+
+    def session(self, engine, sid, role='attempt'):
+        """A producing session as dispatch leaves it: its pipeline on the board and its input.json in place."""
+        key = engine.producer(role)
+        job = engine.state['jobs'][key]
+        folder = engine.session_dir(sid)
+        for name in ('output', 'work', 'inbox'):
+            (folder / name).mkdir(parents=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
+        engine.state['pipelines'][job['pipeline']]['producer'] = sid
+        engine.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running',
+                                         'host': None, 'cli': None}
+        job.update(status='running', session=sid)
+        engine.save()
+        return folder
+
+    def peer_session(self, engine, producer, sid):
+        """The peer of a producing session's pipeline, as dispatch leaves it."""
+        pipeline = engine.state['jobs'][engine.state['sessions'][producer]['job']]['pipeline']
+        folder = engine.session_dir(sid)
+        folder.mkdir()
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'peer',
+                                           'pipeline': pipeline, 'task': {}, 'user_inputs': []})
+        engine.state['pipelines'][pipeline].update(peer=sid, stage='peer')
+        engine.state['sessions'][sid] = {'id': sid, 'role': 'peer', 'status': 'running', 'job': 'peerjob',
+                                         'host': None, 'cli': None}
+        engine.save()
+        return folder
+
+    def reader(self, sid='sreader', role='attempt'):
+        """A session folder from which the reading commands of canon_tool can be run."""
+        folder = self.instance / 'sessions' / sid
+        folder.mkdir(parents=True, exist_ok=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': None, 'task': {}, 'user_inputs': []})
+        return folder
+
+    def replace_proof(self, name, text, proof, weight='unit', description='A statement of the test canon.',
+                      imports=(), engine=None, **verdict):
+        """Publish a new proof of an existing statement: its Lean text and a record with the written proof."""
+        short = name.rsplit('.', 1)[1]
+        record = (self.root_record(proof) if short == 'root' else record_text(description, weight=weight, proof=proof))
+        folder = self.candidate(replace={name: text}, imports={name: list(imports)},
+                                records={f'Small/{short}.md': record})
+        return self.publish(folder, self.verdicts(folder, **{name: verdict}) if verdict else None, engine=engine)
+
+    def split(self):
+        def build():
+            folder = self.candidate(
+                modules={'Small/Parts.lean': module_text('\n\n'.join([
+                    theorem('sumZero', SUM_ZERO), theorem('sumSucc', SUM_SUCC), theorem('sumTwo', ': oddSum 2 = 4')]))},
+                replace={'Small.root': self.root_text(uses=['sumZero', 'sumSucc'])},
+                imports={'Small.root': ['Small.Parts']},
+                records={'Small/sumZero.md': record_text('The empty sum is zero.', weight='unit'),
+                         'Small/sumSucc.md': record_text('Passing from n to n + 1 adds the odd number 2n + 1.', weight='unit'),
+                         'Small/sumTwo.md': record_text('The first two odd numbers sum to four.', weight='unit',
+                                                        proof='One plus three is four.'),
+                         'Small/root.md': self.root_record()})
+            self.publish(folder)
+        self.scenario('split', build)
+
+    def half(self):
+        def build():
+            self.split()
+            self.replace_proof('Small.sumZero', theorem('sumZero', SUM_ZERO), 'A sum without terms is zero.',
+                               description='The empty sum is zero.')
+        self.scenario('half', build)
+
+    def proved(self):
+        def build():
+            self.half()
+            self.replace_proof('Small.sumSucc', theorem('sumSucc', SUM_SUCC),
+                               'The sum of the first n + 1 odd numbers is the sum of the first n and the next one.',
+                               description='Passing from n to n + 1 adds the odd number 2n + 1.')
+        self.scenario('proved', build)
+
+    def direct(self):
+        def build():
+            self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        self.scenario('direct', build)
+
+    def formal(self):
+        def build():
+            self.replace_proof('Small.root', self.root_formal(), 'By induction on $n$, comparing consecutive squares.')
+        self.scenario('formal', build)
+
+    def ways(self):
+        """Two ways of proving the root, with a statement in every standing beneath them.
+
+        way 1 (the root's own proof, accepted) names colA, stepE and unitG; way 2 (rootAlt, held) names
+        colA and diagD. colA is held and names leafH. stepE is an accepted step that names monoB, which
+        has no proof, one recorded approach and a second proof, monoBAlt, that review did not confirm and
+        that names leafH. unitG is proved in Lean. diagD is not confirmed and names the step stepF, which
+        has no proof. Nothing uses strayS."""
+        def build():
+            statements = [theorem('leafH', ': oddSum 1 = 1'), theorem('colA', ': oddSum 2 = 4', uses=['leafH']),
+                          theorem('monoB', ': oddSum 3 = 9'), theorem('unitG', SUM_ZERO, proof='rfl'),
+                          theorem('stepE', ': oddSum 4 = 16', uses=['monoB']), theorem('stepF', ': oddSum 5 = 25'),
+                          theorem('diagD', ': oddSum 6 = 36', uses=['stepF']), theorem('strayS', ': oddSum 7 = 49')]
+            folder = self.candidate(
+                modules={'Small/Ways.lean': module_text('\n\n'.join(statements))},
+                replace={'Small.root': self.root_text(uses=['colA', 'stepE', 'unitG'])},
+                imports={'Small.root': ['Small.Ways']},
+                records={'Small/leafH.md': record_text('The first odd number is one.', weight='unit'),
+                         'Small/colA.md': record_text('The first two odd numbers sum to four.', weight='unit',
+                                                      proof='Split into the two terms and add them.', short='Col',
+                                                      statement='The sum $1 + 3$ equals $4$.'),
+                         'Small/monoB.md': record_text('The first three odd numbers sum to nine.', weight='unit', short='Mono'),
+                         'Small/unitG.md': record_text('The empty sum is zero.', weight='unit'),
+                         'Small/stepE.md': record_text('The first four odd numbers sum to sixteen.', proof='Add seven to nine.'),
+                         'Small/stepF.md': record_text('The first five odd numbers sum to twenty-five.'),
+                         'Small/diagD.md': record_text('The first six odd numbers sum to thirty-six.', weight='unit',
+                                                       proof='Add eleven to twenty-five.', short='Diag'),
+                         'Small/strayS.md': record_text('Seven odd numbers sum to forty-nine, which is < 50.', weight='unit'),
+                         'Small/root.md': self.root_record('Way 1: from Col and Mono, through the step for four terms.')},
+                approaches={'Small/monoB/induction.md': '---\ntitle: Induction on the number of terms\nsessions: s-early\n---\n'
+                            '## Idea\n\nCompare the sum of three terms with the sum of two.\n\n'
+                            '## Where it stops\n\nThe comparison needs the sum of two terms in a form not yet stated.\n'})
+            self.publish(folder, self.verdicts(folder, **{
+                'Small.colA': {'accepted': False, 'reason': HELD_REASON},
+                'Small.diagD': {'correct': 'not_confirmed', 'accepted': False, 'reason': GAP_REASON}}))
+            folder = self.candidate(
+                modules={'Small/Way2.lean': module_text('\n\n'.join([
+                    theorem('rootAlt', ROOT_STATEMENTS[self.root_variant], uses=['colA', 'diagD']),
+                    theorem('monoBAlt', ': oddSum 3 = 9', uses=['leafH'])]), imports=('Small.Ways',))},
+                records={'Small/rootAlt.md': record_text('The root by way 2, from Col and Diag.', weight='unit',
+                                                         proof='Way 2: from Col and Diag.', proves='Small.root'),
+                         'Small/monoBAlt.md': record_text('Mono from the first odd number.', weight='unit',
+                                                          proof='Add three and five to one.', proves='Small.monoB')})
+            self.publish(folder, self.verdicts(folder, **{
+                'Small.rootAlt': {'accepted': False, 'reason': 'Way 2 repeats the case split of way 1.'},
+                'Small.monoBAlt': {'correct': 'not_confirmed', 'accepted': False, 'reason': 'The addition is not carried out.'}}))
+        self.scenario('ways', build)

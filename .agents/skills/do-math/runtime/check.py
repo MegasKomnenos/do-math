@@ -2,12 +2,18 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
-from knowledge import ROOT_QUESTION, canonical_question, claim_key, replay
+
+from availability import no_research_outcome, reported_availability
+from canon import BESIDE_CANDIDATE, CanonError, load_change, name_path, tree_hash
+from coordination import section_entries
+from knowledge import ROOT_QUESTION, canonical_question, replay
 from runtime_support import read_json
 from settings import PRODUCERS
-from availability import no_research_outcome, reported_availability
+
+VERDICTS = ('confirmed', 'not_confirmed', 'undetermined', 'not_applicable')
+PREPARED = 'prepared.json'
 
 
 class Invalid(ValueError):
@@ -24,7 +30,7 @@ def text(value, name):
     return value
 
 
-# The ID rule of the record format. The questions command applies it to operator questions as well.
+# The ID rule of questions, concerns and proposals. The questions command applies it to operator questions as well.
 IDENTIFIER = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
 
 
@@ -34,9 +40,8 @@ def identifier(value):
 
 
 def taken_question_ids(model):
-    """IDs a new question cannot take, whether a peer proposes it or the operator publishes it:
-    one ID names one question or node."""
-    return set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases'])
+    """IDs a new question cannot take, whether a peer proposes it or the operator publishes it."""
+    return set(model['questions']) | set(model['question_aliases'])
 
 
 def array(value, name):
@@ -45,13 +50,11 @@ def array(value, name):
 
 
 def file(root, name):
-    text(name, 'file')
-    path = PurePosixPath(name)
-    need(not path.is_absolute() and '..' not in path.parts and not any(c in name for c in ('\\', ':', '\0')),
-         'file must be a relative /-separated path')
-    actual = (Path(root) / name).resolve()
-    need(actual.is_relative_to(Path(root).resolve()) and actual.is_file(), 'missing or escaping file: ' + name)
-    return actual
+    from canon import relative_file
+    try:
+        return relative_file(root, name)
+    except CanonError as exc:
+        raise Invalid(str(exc)) from None
 
 
 def regular_tree(root):
@@ -65,246 +68,234 @@ def tree_hashes(root):
             for p in Path(root).rglob('*') if p.is_file()}
 
 
-def signed(value, known):
-    need(isinstance(value, dict) and value.get('node') in known, 'signed statement needs an existing/admitted node')
-    need(value.get('outcome') in ('proved', 'refuted'), 'outcome must be proved or refuted')
-
-
 def unique(rows, key='id'):
     ids = [identifier(row.get(key)) for row in rows]
     need(len(ids) == len(set(ids)), 'duplicate ' + key)
     return set(ids)
 
 
-def record_check(data, root, model, proposal_owner=None):
-    for path in Path(root).iterdir():
-        need(path.name.casefold() not in ('review', 'provenance.json'),
-             'candidate top-level names review and provenance.json are reserved for publication attachments')
-    for key in ('title', 'description'):
-        text(data.get(key), key)
-    file(root, data.get('exposition'))
-    claims = array(data.get('claims'), 'claims')
-    ids = unique(claims)
-    for claim in claims:
-        text(claim.get('statement'), 'claim.statement')
-        text(claim.get('evidence'), 'claim.evidence')
-        need(claim.get('by') in ('producer', 'peer'), 'claim.by must identify producer or peer')
-        for ref in array(claim.get('dependencies', []), 'claim.dependencies'):
-            need(isinstance(ref, dict), 'dependency must be a claim reference')
-            need((ref.get('record') == 'self' and ref.get('claim') in ids) or claim_key(ref) in model['claims'],
-                 'unknown dependency claim')
-    nodes = array(data.get('nodes', []), 'nodes')
-    proposed = unique(nodes)
-    if proposal_owner is not None:
-        prefix = identifier(proposal_owner) + '-'
-        need(all(node.startswith(prefix) and len(node) > len(prefix) for node in proposed),
-             'new node proposals must use their peer session prefix: ' + prefix)
-    need(not proposed.intersection(set(model['nodes']) | set(model['aliases'])), 'new node proposal ID already exists; use existing node directly')
-    known = set(model['nodes']) | set(model['aliases']) | proposed
-    for node in nodes:
-        text(node.get('statement'), 'node.statement')
-        need(node.get('connection') in ids, 'node.connection must name a claim')
-    for relation in array(data.get('relations', []), 'relations'):
-        identifier(relation['id'])
-        need(relation.get('claim') in ids, 'relation needs its proving claim')
-        premises = array(relation.get('premises'), 'relation.premises')
-        need(bool(premises), 'relation needs premises')
-        for item in premises:
-            signed(item, known)
-        signed(relation.get('conclusion'), known)
-    unique(data.get('relations', []))
-    for solution in array(data.get('solutions', []), 'solutions'):
-        identifier(solution['id'])
-        signed(solution, known)
-        need(solution.get('claim') in ids, 'solution needs its proving claim')
-        for dep in array(solution.get('formal_dependencies', []), 'formal_dependencies'):
-            signed(dep, known)
-        lean = solution.get('lean')
-        if lean is not None:
-            need(isinstance(lean, dict), 'lean must be an object or null')
-            text(lean.get('theorem'), 'lean.theorem')
-            sources = array(lean.get('sources'), 'lean.sources')
-            need(bool(sources), 'Lean solution needs sources')
-            for source in sources:
-                file(root, source)
-    unique(data.get('solutions', []))
-    need(not ({s['id'] for s in data.get('solutions', [])} & {r['id'] for r in data.get('relations', [])}),
-         'solution and relation IDs must be distinct')
-    questions = array(data.get('questions', []), 'questions')
-    proposed_questions = unique(questions)
-    if proposal_owner is not None:
-        prefix = identifier(proposal_owner) + '-'
-        need(all(q.startswith(prefix) and len(q) > len(prefix) for q in proposed_questions),
-             'new question proposals must use their peer session prefix: ' + prefix)
-    taken = taken_question_ids(model) | proposed
-    need(not proposed_questions & taken, 'question proposal ID already names a question or node')
+def prepared_candidate(root):
+    """The receipt that `prepare` left for exactly these candidate files, or the reason there is none.
+
+    prepare applies the candidate to a copy of the canon, builds it and extracts what it adds and
+    replaces. The receipt names the files it saw, so a candidate edited afterwards has to be
+    prepared again before review can rely on the lists of elements in it."""
+    path = Path(root) / PREPARED
+    need(path.is_file(), 'the candidate has not been prepared; run commands.prepare and correct what it reports')
+    receipt = read_json(path)
+    need(receipt.get('tree') == tree_hash(root, skip=BESIDE_CANDIDATE),
+         'the candidate changed after it was prepared; run commands.prepare again')
+    need(receipt.get('ok') is True, 'prepare reported errors: ' + '; '.join(receipt.get('errors', []))[:2000])
+    return receipt
+
+
+def carried_by(model, declaration):
+    """What a settled statement has through the proof of this declaration alone: 'settled', 'formal', both or neither.
+
+    A statement is settled through its settled proofs and formal through those of them that are
+    formal. When one declaration holds the only such proof, replacing that proof decides whether the
+    statement stays settled, or stays formal."""
+    elements = model['elements']
+    element = elements.get(declaration)
+    if element is None or not element.get('statement_of'):
+        return set()
+    statement = elements[element['statement_of']]
+    if not statement['statement_settled']:
+        return set()
+    settled = [p for p in statement['proofs'] if elements[p]['settled']]
+    formal = [p for p in settled if elements[p]['formal']]
+    return ({'settled'} if settled == [declaration] else set()) | ({'formal'} if formal == [declaration] else set())
+
+
+def stays_settled(model, receipt, declaration):
+    """A settled statement's proof is replaced only by a proof under which the statement stays settled.
+
+    A statement that supersedes a settled one is better only once it is settled itself, so the
+    derivation of the old statement from it replaces the old proof after that and not before. What a
+    machine can decide of the new proof is checked here: it is complete in Lean, every statement it
+    names is settled, and where the old proof made the statement formal, the new one is formal too.
+    Review's acceptance of it is the remaining condition, which the check of the assessment makes."""
+    carried = carried_by(model, declaration)
+    if not carried:
+        return
+    elements, entry = model['elements'], receipt['entries'][declaration]
+    statement = elements[declaration]['statement_of']
+    need(entry['lean_proof'] == 'complete',
+         f'{statement} is settled through the proof of {declaration}; that proof is replaced only by a proof that is '
+         'complete in Lean and names settled statements, so that the statement stays settled. A further proof of '
+         'another kind enters as a declaration of its own with "proves"')
+    for used in entry['uses']:
+        if used in elements:
+            if elements[used]['kind'] != 'theorem':
+                continue
+            target = elements[elements[used]['statement_of']]
+            need(target['statement_settled'],
+                 f'{statement} is settled, and the new proof of {declaration} names {used}, which is not settled; '
+                 'the statement would no longer be settled')
+            need('formal' not in carried or target['statement_formal'],
+                 f'{statement} has a formal proof, and the new proof of {declaration} names {used}, which has none; '
+                 'the statement would no longer be formal')
+        else:
+            added = receipt['entries'].get(used)
+            need(added is None or added['kind'] != 'theorem',
+                 f'{statement} is settled, and the new proof of {declaration} names {used}, which this candidate adds '
+                 'and which is not settled yet. Publish the new statement first; the derivation of the old statement '
+                 'from it replaces the old proof once the new statement is settled')
+    need('formal' not in carried or set(entry['axioms']) <= set(model['allowed_axioms']),
+         f'{statement} has a formal proof, and the new proof of {declaration} is not formal; the statement would no '
+         'longer be formal')
+
+
+def change_check(root, model, owner, held=None):
+    """A peer's candidate change: its manifest, its files, and what a machine can decide about them."""
+    try:
+        change = load_change(root)
+    except CanonError as exc:
+        raise Invalid(str(exc)) from None
+    receipt = prepared_candidate(root)
+    known = set(model['elements']) | set(receipt['added'])
+    if held is not None:
+        for item in change['replace']:
+            statement = model['elements'].get(item['declaration'], {}).get('statement_of')
+            if statement and model['elements'][statement]['statement_settled']:
+                # A settled statement can no longer be taken, so no section is asked for it.
+                stays_settled(model, receipt, item['declaration'])
+            else:
+                need(statement in held,
+                     f"replacing the proof of {item['declaration']} requires holding a section on "
+                     f"{statement or 'it'}; register one through its lease")
+    paths = {name_path(name): name for name in known}
+    for relative in change['approaches']:
+        folder, _, entry = relative.rpartition('/')
+        need(folder in paths, f'approaches/{relative}: its folder follows the name of no element')
+        identifier(entry[:-3])
+    for relative in change['understanding']:
+        need('/' not in relative, f'questions/{relative}: one file per question, named by its ID')
+        qid = relative[:-3]
+        need(qid in model['questions'] or qid in model['question_aliases'],
+             f'questions/{relative} names no question of the frontier')
+    questions = array(change['questions'], 'questions')
+    proposed = unique(questions)
+    prefix = identifier(owner) + '-'
+    need(all(q.startswith(prefix) and len(q) > len(prefix) for q in proposed),
+         'new question proposals must use their peer session prefix: ' + prefix)
+    need(not proposed & taken_question_ids(model), 'question proposal ID already names a question')
     for question in questions:
+        need(set(question) == {'id', 'statement', 'grounds'}, 'a question proposal has "id", "statement" and "grounds"')
         text(question.get('statement'), 'question.statement')
         text(question.get('grounds'), 'question.grounds')
-    resolutions = array(data.get('question_resolutions', []), 'question_resolutions')
+    resolutions = array(change['resolutions'], 'resolutions')
     unique(resolutions)
-    need(not ({r['id'] for r in resolutions} & ({s['id'] for s in data.get('solutions', [])} | {r['id'] for r in data.get('relations', [])})),
-         'question resolution IDs must be distinct from solution and relation IDs')
     for resolution in resolutions:
         target = resolution.get('question')
         need(target in model['questions'] or target in model['question_aliases'],
-             'question resolution must name an existing question')
+             'a resolution must name an existing question')
         need(canonical_question(model, target) != ROOT_QUESTION, 'the root question is not resolved by an explanation')
-        need(resolution.get('claim') in ids, 'question resolution needs its resolving claim')
-    glossary = data.get('glossary')
-    glossary_check(glossary)
-    for term in glossary:
-        need(type(term.get('global_candidate', False)) is bool, 'global_candidate must be Boolean')
+        need(any(canonical_question(model, relative[:-3]) == canonical_question(model, target)
+                 for relative in change['understanding']),
+             f'a resolution of {target} comes with the text that settles it, as questions/{target}.md')
+    need(not change['retire'], 'only the organizer retires an alternative proof')
     regular_tree(root)
+    return change, receipt
 
 
-def concerns_check(values, model, local=None):
+def concerns_check(values, known):
     unique(array(values, 'concerns'))
     for concern in values:
         text(concern.get('reason'), 'concern.reason')
         text(concern.get('evidence'), 'concern.evidence')
         targets = array(concern.get('targets'), 'concern.targets')
-        need(bool(targets), 'concern needs an identified claim')
-        for ref in targets:
-            need((local and ref.get('record') == 'self' and ref.get('claim') in local) or claim_key(ref) in model['claims'],
-                 'concern targets unknown claim')
+        need(bool(targets), 'a concern names the elements whose proof it questions')
+        for name in targets:
+            need(name in known, 'concern targets an unknown element: ' + str(name))
 
 
-def audit_formal(instance, session, check, solution, candidate):
-    from lean_broker import Paths, job_record, JOB_ID, BUILD_ID
-    need(isinstance(check, dict), 'formal acceptance needs formal_check')
-    job = text(check.get('job'), 'formal_check.job')
-    need(JOB_ID.fullmatch(job) or BUILD_ID.fullmatch(job), 'invalid broker job ID')
-    paths = Paths(instance)
-    receipt = job_record(paths, job)
-    if receipt and receipt['status'] == 'duplicate':
-        # A repeated submission names the job already doing the work; waiting on either ID gives
-        # the same result (lean.md), so the audit follows it to that job as well.
-        job = receipt['duplicate_of']
-        receipt = job_record(paths, job)
-    need(receipt and receipt['status'] == 'finished' and receipt['session'] == session,
-         'formal check must be a finished job of this reviewing session')
-    need(check.get('alignment') == 'matches', 'formal acceptance requires exact mathematical correspondence')
-    text(check.get('reason'), 'formal_check.reason')
-    need(isinstance(solution.get('lean'), dict), "formal acceptance needs the candidate solution's lean theorem and sources")
-    theorem = solution['lean'].get('theorem')
-    need(theorem and check.get('theorem') == theorem, 'formal theorem differs from candidate')
-    if JOB_ID.fullmatch(job):
-        need(receipt.get('exit_code') == 0, 'review compile failed')
-        log = paths.job(job) / 'stdout.log'
-    else:
-        targets = [receipt['modules'][n] for n in receipt['targets']]
-        need(all(m['status'] == 'finished' and m.get('exit_code') == 0 and m.get('job') for m in targets),
-             'review must freshly compile targets (use --fresh-targets)')
-        log = None
-        logs = [paths.job(m['job']) / 'stdout.log' for m in targets]
-    output = log.read_text(encoding='utf-8', errors='replace') if log else '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in logs)
-    found = re.findall(r"^[ \t]*['\"]?" + re.escape(theorem) + r"['\"]?\s+(?:depends on axioms:\s*\[([^\]]*)\]|(does not depend on any axioms))", output, re.MULTILINE)
-    need(bool(found), 'review compile did not print target axiom dependencies')
-    axioms = set()
-    for names, no_axioms in found:
-        if not no_axioms:
-            axioms.update(x.strip() for x in names.split(',') if x.strip())
-    inp = read_json(Path(instance) / 'sessions' / session / 'input.json')
-    allowed = set(inp['settings']['lean']['allowed_axioms'])
-    need('sorryAx' not in axioms and axioms <= allowed, 'target uses an unapproved axiom')
-    need(set(check.get('axioms', [])) == axioms, 'reported axioms differ from broker output')
-    hashes = check.get('source_hashes', {})
-    source_files = check.get('source_files', {})
-    compiled = {str(Path(m['source']).resolve()): m.get('source_sha256') for m in receipt.get('modules', {}).values()} if BUILD_ID.fullmatch(job) else {str(Path(receipt['source']).resolve()): receipt.get('source_sha256')}
-    for source in solution['lean']['sources']:
-        original = file(candidate, source).read_bytes()
-        need(hashes.get(source) == hashlib.sha256(original).hexdigest(),
-             'formal evidence must identify the final candidate source bytes: ' + source)
-        working = file(Path(instance) / 'sessions' / session, source_files.get(source))
-        need(str(working) in compiled, 'checked source is absent from the reviewing compile')
-        copied = working.read_bytes()
-        need(compiled[str(working)] == hashlib.sha256(copied).hexdigest(), 'reviewed source bytes differ from the submitted compile')
-        need(copied.startswith(original), 'review must compile an unchanged copy of final sources')
-        suffix = copied[len(original):].decode('utf-8-sig').strip()
-        need(not suffix or all(re.fullmatch(r"\s*#print axioms [A-Za-z0-9_.'\u0080-\uffff]+\s*", line) for line in suffix.splitlines()),
-             'only axiom inspection commands may be appended to the reviewed source')
+def findings_check(values, model, known):
+    for finding in array(values, 'findings'):
+        need(finding.get('status') in ('cleared', 'confirmed', 'undetermined'), 'unknown finding status')
+        text(finding.get('reason'), 'finding.reason')
+        for cid in array(finding.get('concerns'), 'finding.concerns'):
+            need(cid in model['concerns'], 'unknown concern')
+        for key in ('invalidates', 'validates'):
+            for name in array(finding.get(key, []), key):
+                need(name in known, 'finding targets an unknown element: ' + str(name))
+        for qid in array(finding.get('reopens', []), 'reopens'):
+            need(qid in model['questions'] or qid in model['question_aliases'], 'finding reopens an unknown question')
 
 
-def assessment_check(data, root, record, candidate, model, instance, sid):
-    for path in Path(root).iterdir():
-        need(path.name.casefold() != 'lean-evidence',
-             'review output top-level name lean-evidence is reserved for the broker evidence attached at publication')
+def audit_formal(instance, session, check, receipt):
+    """Review's own compile of the candidate: a finished build of this session that compiled the changed modules afresh."""
+    from lean_broker import BUILD_ID, Paths, job_record
+    need(isinstance(check, dict), 'confirming a proof that is complete in Lean needs formal_check')
+    build = text(check.get('build'), 'formal_check.build')
+    need(BUILD_ID.fullmatch(build), 'formal_check.build is the ID of the build that commands.verify reported')
+    record = job_record(Paths(instance), build)
+    if record and record['status'] == 'duplicate':
+        record = job_record(Paths(instance), record['duplicate_of'])
+    need(record and record['status'] == 'finished' and record['session'] == session,
+         'formal check must be a finished build of this reviewing session')
+    modules = record['modules']
+    need(all(m['status'] == 'cached' or (m['status'] == 'finished' and m.get('exit_code') == 0) for m in modules.values()),
+         'the review build did not compile')
+    for module in receipt['changed_modules']:
+        need(modules.get(module, {}).get('job') and modules[module]['status'] == 'finished',
+             f'review must compile the changed module {module} itself (commands.verify does)')
+    outcome = Path(instance) / 'sessions' / session / 'work/verify/outcome.json'
+    need(outcome.is_file() and read_json(outcome).get('build') == record['id'] and read_json(outcome).get('ok') is True,
+         'formal_check.build is not the build of the last successful commands.verify')
+
+
+def assessment_check(data, root, candidate, model, instance, sid):
     need(type(data.get('publish')) is bool, 'publish must be Boolean')
     text(data.get('reason'), 'assessment.reason')
-    text(data.get('index_assessment'), 'index_assessment')
+    text(data.get('contribution'), 'assessment.contribution')
     file(root, data.get('feedback'))
-    need(type(data.get('glossary_approved')) is bool, 'glossary_approved must be Boolean')
-    ids = {c['id'] for c in record['claims']}
-    rows = array(data.get('claims'), 'assessment.claims')
-    need(len(rows) == len(ids) and {x.get('claim') for x in rows} == ids, 'assess each candidate claim exactly once')
-    supported = set()
+    try:
+        change = load_change(candidate)
+    except CanonError as exc:
+        raise Invalid(str(exc)) from None
+    receipt = read_json(Path(candidate) / PREPARED)
+    judged = receipt['added'] + receipt['replaced']
+    rows = array(data.get('elements'), 'assessment.elements')
+    need(len(rows) == len(judged) and {x.get('element') for x in rows} == set(judged),
+         'judge each element the candidate adds or whose proof it replaces exactly once: ' + ', '.join(judged))
+    formal = False
     for row in rows:
-        need(row.get('status') in ('supported', 'unsupported', 'undetermined'), 'unknown claim assessment')
-        text(row.get('reason'), 'claim assessment reason')
-        if row['status'] == 'supported':
-            supported.add(row['claim'])
-    relations = {r['id']: r for r in record.get('relations', [])}
-    accepted_relations = []
-    seen = set()
-    for row in array(data.get('relations'), 'assessment.relations'):
-        need(row.get('proposal') in relations and row['proposal'] not in seen, 'unknown/duplicate relation proposal')
-        seen.add(row['proposal'])
-        need(type(row.get('accepted')) is bool, 'relation accepted must be Boolean')
-        text(row.get('reason'), 'relation assessment reason')
-        if row['accepted']:
-            relation = relations[row['proposal']]
-            need(relation['claim'] in supported, 'accepted relation needs a supported claim')
-            accepted_relations.append(relation)
-    need(seen == set(relations), 'assess every relation proposal')
-    nodes = {n['id']: n for n in record.get('nodes', [])}
-    resolutions = {}
-    for row in array(data.get('nodes'), 'assessment.nodes'):
-        need(row.get('proposal') in nodes and row['proposal'] not in resolutions, 'unknown/duplicate node proposal')
-        target = row.get('node')
-        need(target is None or target == row['proposal'] or target in model['nodes'], 'node resolution must reuse an existing node or admit the proposal')
-        text(row.get('reason'), 'node resolution reason')
-        if target == row['proposal']:
-            # Admitting the proposal needs its own supported connection; identifying it with an
-            # existing node reuses a node the research already connects (reference/review-output.md).
-            need(nodes[row['proposal']]['connection'] in supported, 'new node needs supported connection')
-        resolutions[row['proposal']] = target
-    need(set(resolutions) == set(nodes), 'resolve every node proposal, with null for an unadmitted node')
-    connected = set(model['nodes']) | set(model['aliases'])
-    for proposal, target in resolutions.items():
-        if target in connected:
-            connected.add(proposal)
-    while True:
-        before = set(connected)
-        for relation in accepted_relations:
-            members = {p['node'] for p in relation['premises']} | {relation['conclusion']['node']}
-            if members & connected:
-                connected.update(members)
-        if before == connected:
-            break
-    need(all(target is None or proposal in connected for proposal, target in resolutions.items()),
-         'admitted nodes must connect to existing research through accepted relations')
-    known = set(model['nodes']) | set(model['aliases']) | {p for p, n in resolutions.items() if n}
-    for relation in accepted_relations:
-        for item in relation['premises'] + [relation['conclusion']]:
-            signed(item, known)
-    solutions = {s['id']: s for s in record.get('solutions', [])}
-    seen = set()
-    for row in array(data.get('solutions'), 'assessment.solutions'):
-        need(row.get('proposal') in solutions and row['proposal'] not in seen, 'unknown/duplicate solution proposal')
-        seen.add(row['proposal'])
-        need(row.get('level') in ('none', 'informal', 'formal'), 'unknown assurance level')
-        text(row.get('reason'), 'solution assessment reason')
-        if row['level'] != 'none':
-            solution = solutions[row['proposal']]
-            signed(solution, known)
-            need(solution['claim'] in supported, 'accepted solution needs a supported claim')
-            for dep in row.get('formal_dependencies', solution.get('formal_dependencies', [])):
-                signed(dep, known)
-            if row['level'] == 'formal':
-                audit_formal(instance, sid, row.get('formal_check'), solution, candidate)
-    need(seen == set(solutions), 'assess every solution proposal')
-    questions = {q['id'] for q in record.get('questions', [])}
+        entry = receipt['entries'][row['element']]
+        need(row.get('correct') in VERDICTS, 'correct is one of ' + ', '.join(VERDICTS))
+        need(type(row.get('accepted')) is bool, 'accepted must be Boolean')
+        text(row.get('reason'), 'element reason')
+        proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
+        if proved:
+            need(row['correct'] != 'not_applicable', f"{row['element']} has a proof; judge whether it is correct")
+        else:
+            need(row['correct'] == 'not_applicable' and not row['accepted'],
+                 f"{row['element']} has no proof to judge; use correct: not_applicable")
+        need(not row['accepted'] or row['correct'] == 'confirmed', 'only a proof confirmed as correct can be accepted')
+        if row['element'] in receipt['replaced']:
+            if model['elements'].get(row['element'], {}).get('standing') == 'no_proof':
+                # A first proof has no other proof to take the place of; it enters with the verdict given here.
+                need(row.get('replaces') in (None, True),
+                     f"{row['element']} has no proof in the canon yet, so its first proof enters with your verdict; "
+                     '"replaces" is asked only where the canon already has a proof')
+            else:
+                # Review says whether the new proof takes the place of the one the canon has; the runner
+                # replaces only those, and the others are recorded among the approaches tried.
+                need(type(row.get('replaces')) is bool,
+                     f"{row['element']} already has a proof in the canon; say with \"replaces\" whether the new one takes its place")
+                # A statement that is settled through this proof alone stays settled only under an accepted proof.
+                need(not row['replaces'] or not carried_by(model, row['element'])
+                     or (row['correct'] == 'confirmed' and row['accepted']),
+                     f"{row['element']} holds the proof through which a settled statement is settled; a new proof takes "
+                     'its place only when you confirm and accept it, so answer "replaces": false otherwise')
+        else:
+            need(row.get('replaces') is None,
+                 f"{row['element']} is added by the candidate; \"replaces\" is asked only of a proof that would take "
+                 'the place of one the canon has, and an added element enters with your verdict')
+        formal = formal or (proved and entry['lean_proof'] == 'complete' and row['correct'] == 'confirmed')
+    if formal:
+        audit_formal(instance, sid, data.get('formal_check'), receipt)
+    questions = {q['id'] for q in change['questions']}
     verdicts = {}
     for row in array(data.get('questions', []), 'assessment.questions'):
         need(row.get('proposal') in questions and row['proposal'] not in verdicts, 'unknown/duplicate question proposal')
@@ -316,114 +307,85 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
         need(duplicate is None or row['verdict'] == 'declined', 'a duplicate is declined')
         verdicts[row['proposal']] = row['verdict']
     need(set(verdicts) == questions, 'assess every question proposal')
-    question_resolutions = {r['id']: r for r in record.get('question_resolutions', [])}
+    resolutions = {r['id'] for r in change['resolutions']}
     resolved = {}
-    for row in array(data.get('question_resolutions', []), 'assessment.question_resolutions'):
-        need(row.get('proposal') in question_resolutions and row['proposal'] not in resolved,
-             'unknown/duplicate question resolution proposal')
+    for row in array(data.get('resolutions', []), 'assessment.resolutions'):
+        need(row.get('proposal') in resolutions and row['proposal'] not in resolved, 'unknown/duplicate resolution proposal')
         need(type(row.get('resolved')) is bool, 'resolved must be Boolean')
-        text(row.get('reason'), 'question resolution reason')
-        if row['resolved']:
-            need(question_resolutions[row['proposal']]['claim'] in supported, 'an accepted resolution needs a supported claim')
+        text(row.get('reason'), 'resolution reason')
         resolved[row['proposal']] = row['resolved']
-    need(set(resolved) == set(question_resolutions), 'assess every question resolution proposal')
-    concerns_check(data.get('concerns', []), model, ids)
-    findings_check(data.get('findings', []), model)
-    glossary_check(data.get('glossary', []))
+    need(set(resolved) == resolutions, 'assess every resolution proposal')
+    known = set(model['elements']) | set(receipt['added'])
+    concerns_check(data.get('concerns', []), known)
+    findings_check(data.get('findings', []), model, known)
     if not data['publish']:
-        need(not accepted_relations and not any(resolutions.values()) and
-             not any(r['level'] != 'none' for r in data['solutions']) and not data.get('concerns') and not data.get('findings')
-             and not any(v == 'admitted' for v in verdicts.values()) and not any(resolved.values()),
+        need(not any(v == 'admitted' for v in verdicts.values()) and not any(resolved.values())
+             and not data.get('concerns') and not data.get('findings'),
              'excluded candidate cannot change shared mathematical state')
+    for path in Path(root).iterdir():
+        need(path.name.casefold() not in ('change.json', 'applied.json', 'provenance.json', 'verify.json'),
+             'review output top-level names change.json, applied.json, provenance.json and verify.json are '
+             'reserved for publication attachments')
     regular_tree(root)
 
 
 def comprehensive_check(data, root, model):
     file(root, data.get('feedback'))
-    findings_check(data.get('findings'), model)
-    concerns_check(data.get('concerns', []), model)
-    glossary_check(data.get('glossary', []))
+    findings_check(data.get('findings'), model, set(model['elements']))
+    concerns_check(data.get('concerns', []), set(model['elements']))
     regular_tree(root)
 
 
-def proof_route(model, pid):
-    """A proof ID of knowledge/state.json: a direct solution, an accepted relation applied
-    forward, or one applied backward to refute the premise at the given position."""
-    if not isinstance(pid, str):
-        return False
-    relation, mark, position = pid.rpartition('~')
-    if not mark:
-        return pid in model['direct'] or pid in model['relations']
-    premises = model['relations'].get(relation, {}).get('premises', [])
-    return position in {str(index) for index in range(len(premises))}
+def organization_check(data, root, model, batch):
+    """An organizer's output: the batch it answers for, question merges, and optionally a change of its own.
 
-
-def findings_check(values, model):
-    for finding in array(values, 'findings'):
-        need(finding.get('status') in ('cleared', 'confirmed', 'undetermined'), 'unknown finding status')
-        text(finding.get('reason'), 'finding.reason')
-        for update in finding.get('dependency_updates', []):
-            need(proof_route(model, update.get('proof')), 'dependency update needs an existing proof route')
-            text(update.get('reason'), 'dependency update reason')
-            for dep in array(update.get('dependencies'), 'dependency update dependencies'):
-                signed(dep, set(model['nodes']) | set(model['aliases']))
-        for cid in array(finding.get('concerns'), 'finding.concerns'):
-            need(cid in model['concerns'], 'unknown concern')
-        for key in ('invalidates', 'validates'):
-            for ref in array(finding.get(key, []), key):
-                need(claim_key(ref) in model['claims'], 'finding targets unknown claim')
-
-
-def organization_check(data, model, batch):
+    Its change adds elements stating that two definitions or statements agree, with Lean proofs, or
+    rearranges modules; `retire` names an alternative proof whose text now stands under the statement's
+    own name. The machine checks of that change are made when it is prepared and again at publication."""
     need(data.get('batch') == batch, 'organizer must acknowledge its exact assigned batch')
-    modules = array(data.get('modules'), 'modules')
-    ids = unique(modules)
-    need(len({s.lower() for s in ids}) == len(ids), 'module IDs collide on case-insensitive filesystems')
-    for module in modules:
-        text(module.get('title'), 'module.title')
-        text(module.get('description'), 'module.description')
-        for rid in array(module.get('records'), 'module.records'):
-            need(rid in model['records'], 'module lists unknown record')
-    for rid in array(data.get('shared_context'), 'shared_context'):
-        need(rid in model['records'], 'unknown shared-context record')
-    filed = set(data['shared_context']) | {r for m in modules for r in m['records']}
-    need(set(batch) <= filed, 'place each assigned batch record in shared context or a module')
-    # Unfiled marks a placement still pending, and no later batch lists a record already organized,
-    # so a complete layout that left one out would leave it looking unprocessed for good.
-    dropped = sorted(set(model['organized']) - filed)
-    need(not dropped, 'keep each record already organized in shared context or a module: ' + ', '.join(dropped))
-    glossary_check(data.get('glossary', []))
-    for key in data.get('promote', []):
-        need(key in model['terms'], 'promotion needs a published local term')
-    for key in data.get('refuse', []):
-        need(key in model['global_terms'] and model['global_terms'][key]['membership'] == 'candidate',
-             'only a pending candidate may be refused')
-    promoted = {next((primary for primary, member in model['global_terms'].items()
-                      if key in member['merged']), key) for key in data.get('promote', [])}
-    available = (set(model['global_terms']) | promoted) - set(data.get('refuse', []))
-    for merge in data.get('merge_terms', []):
-        need(merge['keep'] in available, 'merge primary term is not available')
-        for other in merge['others']:
-            need(other in available and other != merge['keep'], 'unknown or duplicate merged term')
-            available.remove(other)
-        text(merge.get('reason'), 'term merge reason')
-    for merge in data.get('merge_nodes', []):
-        need(merge['from'] in model['nodes'] and merge['into'] in model['nodes'], 'merge needs existing nodes')
-        text(merge.get('reason'), 'node merge reason')
     for merge in array(data.get('merge_questions', []), 'merge_questions'):
         need(merge.get('from') in model['questions'] and merge.get('into') in model['questions'],
              'question merge needs existing questions')
         need(ROOT_QUESTION not in (canonical_question(model, merge['from']), canonical_question(model, merge['into'])),
              'the root question keeps its identity: it neither merges into another question nor absorbs one')
         text(merge.get('reason'), 'question merge reason')
+    if not (Path(root) / 'change.json').exists():
+        need(not (Path(root) / 'rewrite').exists() and not (Path(root) / 'lean').exists() and not data.get('delete'),
+             'Lean files and "delete" take effect only as part of a change; write change.json with them')
+    else:
+        try:
+            change = load_change(root)
+        except CanonError as exc:
+            raise Invalid(str(exc)) from None
+        prepared_candidate(root)
+        need(not change['questions'] and not change['resolutions'] and not change['approaches']
+             and not change['understanding'],
+             'an organizer change holds Lean modules, replacements and records only')
+        for item in array(change['retire'], 'retire'):
+            need(isinstance(item, dict) and set(item) == {'alternative', 'into', 'reason'},
+                 'a retirement has "alternative", "into" and "reason"')
+            need(model['elements'].get(item['alternative'], {}).get('statement_of') == item['into'],
+                 f"{item['alternative']} is not another proof of {item['into']}")
+            text(item['reason'], 'retire reason')
+            # The proof under the statement's own name leaves the source, so the one that takes its
+            # place may not stand lower than it: no review has compared the two.
+            moving, leaving = model['elements'][item['alternative']], model['elements'][item['into']]
+            rank = lambda e: (('no_proof', 'not_confirmed', 'held', 'accepted').index(e['standing']),
+                              e['lean_proof'] == 'complete')
+            need(rank(moving) >= rank(leaving),
+                 f"{item['alternative']} would take the place of a proof of {item['into']} that stands higher; "
+                 'a retirement keeps the proof with the higher standing')
+    regular_tree(root)
 
 
-def glossary_check(entries):
-    unique(array(entries, 'glossary'))
-    for term in entries:
-        text(term.get('name'), 'term.name')
-        text(term.get('definition'), 'term.definition')
-        need(isinstance(term.get('symbol', ''), str), 'term.symbol must be text')
+def pipeline_sections(instance, state, pipeline, model, session):
+    """The elements on which the sessions of one pipeline hold sections."""
+    if pipeline is None:
+        return set()
+    entry = state['pipelines'][pipeline]
+    owners = [entry['producer'], *entry['previous_peers'], entry['peer'], session]
+    return {s['element'] for sid in dict.fromkeys(x for x in owners if x)
+            for s in section_entries(instance, sid, model)}
 
 
 def check_session(session):
@@ -440,20 +402,18 @@ def check_session(session):
                 reported_availability(session, outcome)
             return []  # research, including interrupted work, remains eligible for peer
         if role == 'peer':
-            record_check(read_json(output / 'record.json'), output, model, session.name)
+            state = read_json(instance / 'runner/state.json')
+            change_check(output, model, session.name,
+                         pipeline_sections(instance, state, inp.get('pipeline'), model, session.name))
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
-            actual = tree_hashes(candidate)
-            need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
-            record = read_json(candidate / 'record.json')
-            record_check(record, candidate, model, candidate.parent.name)
-            assessment_check(read_json(output / 'assessment.json'), output, record, candidate, model,
+            need(tree_hashes(candidate) == task['candidate_hashes'], 'candidate changed after review assignment')
+            assessment_check(read_json(output / 'assessment.json'), output, candidate, model,
                              instance, inp['session'])
         elif role == 'review':
             comprehensive_check(read_json(output / 'assessment.json'), output, model)
         elif role == 'organizer':
-            organization_check(read_json(output / 'organization.json'), model, task['batch'])
-            regular_tree(output)
+            organization_check(read_json(output / 'organization.json'), output, model, task['batch'])
         else:
             raise Invalid('unknown role')
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:

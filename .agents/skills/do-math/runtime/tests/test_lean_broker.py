@@ -14,17 +14,22 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import lean_broker
-import runner
 import runtime_support
+from settings import load_settings
 
 FAKE = Path(__file__).resolve().with_name("fake_lean.py")
 
 
-def source(path, imports=("Mathlib.Data.Nat.Basic",), **fake):
-    """A Lean file the fake lean understands; its baseline is 8 MiB per import plus 8."""
-    lines = [f"import {name}" for name in imports]
+def source(path, imports=("Mathlib.Data.Nat.Basic",), module=False, proof=None, **fake):
+    """A Lean file the fake lean understands; its baseline is 8 MiB per import plus 8.
+
+    `module` writes it as a file of Lean's module system. `proof` adds a line that the fake lean
+    keeps out of the public files it emits, as Lean keeps a proof out of them."""
+    lines = (["module"] if module else []) + [f"import {name}" for name in imports]
     if fake:
         lines.append("-- fake: " + " ".join(f"{k}={v}" for k, v in fake.items()))
+    if proof is not None:
+        lines.append(f"-- proof: {proof}")
     lines.append("theorem t : 1 = 1 := rfl")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -39,9 +44,6 @@ class BrokerFixture(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.instance = self.root / "instance é"  # non-ASCII on purpose: every path crosses a JSON file and an argv
-        goal = self.root / "goal.md"
-        goal.write_text("Synthetic goal\n", encoding="utf-8")
-        self.settings_path = self.root / "settings.json"
         self.settings = {
             "max_sessions": 2,
             "cli": {"codex": "codex.exe", "claude": "claude.exe"},
@@ -51,8 +53,13 @@ class BrokerFixture(unittest.TestCase):
                      "cpu_threads_budget": self.threads_budget,
                      # The stand-in compiler must not starve behind normal-priority load on the test machine.
                      "priority": "normal"}}
-        runner.write_json(self.settings_path, self.settings)
-        runner.initialize(self.instance, goal, self.settings_path)
+        # What the broker reads of an instance: its settings, the runner's folder, and in the runner's
+        # state the sessions and whether the instance has finished. The runner creates a real instance
+        # around a compiled canon, which no test of the broker needs.
+        for folder in ("runner", "sessions"):
+            (self.instance / folder).mkdir(parents=True)
+        runtime_support.write_json(self.instance / "settings.json", self.settings)
+        runtime_support.write_json(self.instance / "runner/state.json", {"sessions": {}, "finished": False})
         self.paths = lean_broker.Paths(self.instance)
         self.paths.ensure()
         self.broker = None
@@ -61,7 +68,7 @@ class BrokerFixture(unittest.TestCase):
     def write_settings(self, **lean):
         """Change the instance's settings file as an operator would, for the broker's live reload."""
         self.settings["lean"].update(lean)
-        runner.write_json(self.instance / "settings.json", self.settings)
+        runtime_support.write_json(self.instance / "settings.json", self.settings)
 
     def tearDown(self):
         # Every Lean process a job folder records is terminated, whichever broker started it (this one
@@ -70,15 +77,15 @@ class BrokerFixture(unittest.TestCase):
             (directory / "CANCEL").touch()
             receipt = directory / "process.json"
             if receipt.exists():
-                lean = runner.read_json(receipt)
-                if runner.alive(lean["process"]):
+                lean = runtime_support.read_json(receipt)
+                if runtime_support.alive(lean["process"]):
                     lean_broker.terminate_tree(lean["pid"])
                     self.wait_gone(lean["process"])
         hosts = self.previous_hosts + (list(self.broker.hosts.values()) if self.broker is not None else [])
         for host in hosts:
             host.wait(timeout=10)
         if self.paths.state.exists():  # hosts of a detached broker exit once their Lean has ended
-            for job in runner.read_json(self.paths.state).get("jobs", {}).values():
+            for job in runtime_support.read_json(self.paths.state).get("jobs", {}).values():
                 self.wait_gone(job.get("host"))
         self.stop_detached_broker()
         # A broker terminated during its startup orphans its version command for a moment; on Windows
@@ -99,14 +106,14 @@ class BrokerFixture(unittest.TestCase):
     def stop_detached_broker(self):
         info = lean_broker.broker_alive(self.paths)
         if info:
-            runner.terminate_process(info["process"])
-            while runner.alive(info["process"]):
+            runtime_support.terminate_process(info["process"])
+            while runtime_support.alive(info["process"]):
                 time.sleep(0.02)
 
     @staticmethod
     def wait_gone(identity, limit=10):
         deadline = time.monotonic() + limit
-        while runner.alive(identity) and time.monotonic() < deadline:
+        while runtime_support.alive(identity) and time.monotonic() < deadline:
             time.sleep(0.02)
 
     def start_broker(self):
@@ -128,6 +135,25 @@ class BrokerFixture(unittest.TestCase):
     def build(self, root, targets, expect_mb=60, session="s1"):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
             return lean_broker.build(self.paths, root, targets, expect_mb, session)["build"]
+
+    def built(self, root, targets, **options):
+        """A build carried to its end; its record."""
+        build_id = self.build(root, targets, **options)
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        return self.build_record(build_id)
+
+    def compiled(self, path, expect_mb=40, session="s1"):
+        """A single-file compile carried to its end; its job record."""
+        job_id = self.submit(path, expect_mb=expect_mb, session=session)
+        self.until(lambda: self.finished(job_id))
+        return self.broker.state["jobs"][job_id]
+
+    def launched(self, job_id):
+        """The argv of a job's Lean, as its launch file records it; for a job run twice, that of the second run."""
+        return runtime_support.read_json(self.paths.job(job_id) / "launch.json")["argv"]
+
+    def output(self, job_id):
+        return (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8")
 
     def tree(self, session="s1", **overrides):
         """A imports the library, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
@@ -194,7 +220,7 @@ class BuildResultTests(unittest.TestCase):
                     targets = ["Target"] if codes[0] in (0, None) else ["Basis", "Target"]
                     result = {"id": build_id, "status": status, "targets": targets,
                               "modules": modules, "reason": None}
-                    runner.write_json(folder / "result.json", result)
+                    runtime_support.write_json(folder / "result.json", result)
                     out, err = io.StringIO(), io.StringIO()
                     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                         returned = lean_broker.wait(paths, build_id, timeout=0)
@@ -217,7 +243,7 @@ class StatusTests(unittest.TestCase):
             short = [f"j{n:032x}" for n in range(1, 31)]
             jobs.update({job_id: {"id": job_id, "status": "finished", "finished_at": 1000.0 + n}
                          for n, job_id in enumerate(short, 1)})
-            runner.write_json(paths.state, {"jobs": jobs})
+            runtime_support.write_json(paths.state, {"jobs": jobs})
             listed = [j["id"] for j in lean_broker.broker_status(paths)["finished"]]
             self.assertEqual(listed, short[-19:] + [late])
 
@@ -261,7 +287,7 @@ class AdmissionRuleTests(unittest.TestCase):
 
 
 class ImportClosureTests(unittest.TestCase):
-    def test_comments_preserve_local_dependencies_and_cache_invalidation(self):
+    def test_comments_preserve_local_dependencies(self):
         headers = (
             "module\npublic import Basis\n",
             "module\n/- header -/ public import Basis\n",
@@ -277,11 +303,70 @@ class ImportClosureTests(unittest.TestCase):
                     target.write_text(header + "public theorem target : True := basis\n", encoding="utf-8")
                     modules = lean_broker.discover_modules(root, [target])
                     self.assertEqual([name for name, _ in modules], ["Basis", "Target"])
-                    self.assertEqual(modules[-1][1]["local"], ["Basis"])
-                    before = lean_broker.module_keys("fixture", modules)["Target"]
-                    basis.write_text("module\npublic theorem basis : True := True.intro\n", encoding="utf-8")
-                    after = lean_broker.module_keys("fixture", lean_broker.discover_modules(root, [target]))["Target"]
-                    self.assertNotEqual(before, after)
+                    # Whatever is in `needs` reaches the key of Target (test_a_key_follows...): a
+                    # dependency hidden by a comment would leave Target cached over a changed Basis.
+                    self.assertEqual((modules[-1][1]["local"], modules[-1][1]["needs"]), (["Basis"], ["Basis"]))
+                    self.assertEqual([module["reads"] for _, module in modules], ["public", "public"])
+
+    def test_a_key_follows_the_source_and_the_output_of_every_module_the_compile_reads(self):
+        key = lean_broker.module_key
+        base = key("environment", "Target", "source", [("Basis", "one"), ("Middle", "two")])
+        self.assertEqual(base, key("environment", "Target", "source", [("Basis", "one"), ("Middle", "two")]))
+        for changed in (key("other", "Target", "source", [("Basis", "one"), ("Middle", "two")]),
+                        key("environment", "Other", "source", [("Basis", "one"), ("Middle", "two")]),
+                        key("environment", "Target", "edited", [("Basis", "one"), ("Middle", "two")]),
+                        key("environment", "Target", "source", [("Basis", "changed"), ("Middle", "two")]),
+                        key("environment", "Target", "source", [("Middle", "two")])):
+            self.assertNotEqual(base, changed)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Basis.lean").write_text("module\n", encoding="utf-8")
+            (root / "Middle.lean").write_text("module\npublic import Basis\n", encoding="utf-8")
+            texts = {"Module": "module\npublic import Middle\n", "Plain": "import Middle\n",
+                     "Prying": "module\nimport all Middle\n", "Commented": "-- first\n/- then -/ module\nimport Middle\n"}
+            for name, text in texts.items():
+                (root / (name + ".lean")).write_text(text, encoding="utf-8")
+            modules = dict(lean_broker.discover_modules(root, [root / (name + ".lean") for name in texts]))
+            # A module is keyed by the modules it reaches through others as well, in dependency order.
+            self.assertTrue(all(modules[name]["needs"] == ["Basis", "Middle"] for name in texts))
+            self.assertEqual(modules["Middle"]["needs"], ["Basis"])
+            # A `module` file reads public output; a plain file and an `import all` read the private data too.
+            self.assertEqual({name: modules[name]["reads"] for name in texts},
+                             {"Module": "public", "Plain": "full", "Prying": "full", "Commented": "public"})
+            self.assertEqual(modules["Plain"]["source_sha256"],
+                             lean_broker.hashlib.sha256((root / "Plain.lean").read_bytes()).hexdigest())
+
+    def test_output_identities_tell_public_files_from_the_rest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lib = Path(directory)
+            def emit(olean, private, sibling="other"):
+                for suffix, text in ((".olean", olean), (".ir", "ir"), (".olean.private", private), (".olean.server", "s")):
+                    (lib / ("Foo" + suffix)).write_text(text, encoding="utf-8")
+                (lib / "Foobar.olean").write_text(sibling, encoding="utf-8")  # another module's file
+                files = lean_broker.emitted_files(lib / "Foo.olean")
+                self.assertEqual([suffix for suffix, _ in files], [".ir", ".olean", ".olean.private", ".olean.server"])
+                return lean_broker.output_identities(files)
+            first = emit("statement", "proof")
+            self.assertEqual(first, emit("statement", "proof", sibling="changed"))
+            proof = emit("statement", "another proof")
+            self.assertEqual((proof["public"] == first["public"], proof["full"] == first["full"]), (True, False))
+            statement = emit("another statement", "proof")
+            self.assertNotEqual(statement["public"], first["public"])
+            self.assertNotEqual(statement["full"], first["full"])
+
+    def test_the_header_gives_its_imports_whether_it_is_a_module_and_whether_it_imports_all(self):
+        header = lean_broker.read_header
+        text = b"-- leading\nmodule\n\npublic import A.One -- why\nimport all B.Two\r\n\r\ntheorem t : True := trivial\n"
+        self.assertEqual(header(text), {"imports": ["A.One", "B.Two"], "module": True, "all": True})
+        # A byte order mark hides neither the first import nor the first token.
+        self.assertEqual(header(b"\xef\xbb\xbfimport A\n\n\ntheorem t : True := trivial\n"),
+                         {"imports": ["A"], "module": False, "all": False})
+        self.assertTrue(header(b"\xef\xbb\xbfmodule\nimport A\n")["module"])
+        # `module` inside a comment, or after the header, does not make a file a module.
+        self.assertEqual(header(b"/- module -/\nimport A\ndef module := 1\n"),
+                         {"imports": ["A"], "module": False, "all": False})
+        self.assertEqual(header(b"-- note\n\ntheorem t : True := trivial\n"),
+                         {"imports": [], "module": False, "all": False})
 
     def test_imports_are_read_from_the_header_only_and_key_the_version(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -323,14 +408,14 @@ class SettingsTests(unittest.TestCase):
                      "lean": {"command": ["lean"], "version_command": ["lean", "--version"], "cwd": None, "env": {}}}
 
     def load(self, **lean):
-        runner.write_json(self.instance / "settings.json", {**self.base, "lean": {**self.base["lean"], **lean}})
-        return runner.load_settings(self.instance)
+        runtime_support.write_json(self.instance / "settings.json", {**self.base, "lean": {**self.base["lean"], **lean}})
+        return load_settings(self.instance)
 
     def test_defaults_fill_in_and_derive_from_the_host(self):
         settings = self.load()
         self.assertEqual({k: settings["lean"][k] for k in runtime_support.LEAN_DEFAULTS}, runtime_support.LEAN_DEFAULTS)
         with patch.object(runtime_support, "memory_status", return_value=(32 * 1024 ** 3, 8 * 1024 ** 3)), \
-                patch.object(runner.os, "cpu_count", return_value=8):
+                patch.object(runtime_support.os, "cpu_count", return_value=8):
             config = runtime_support.lean_config(settings)
         self.assertEqual(config["memory_budget_mb"], 32 * 1024 - 2048 - 512 * 3)
         self.assertEqual(config["cpu_threads_budget"], 16)
@@ -359,7 +444,7 @@ class JobHostTests(unittest.TestCase):
         self.lean = source(Path(self.temp.name) / "A.lean", marker="MARK", stderr="WARN", exit=3)
 
     def write_launch(self, broker):
-        runner.write_json(self.job / "launch.json", {
+        runtime_support.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
             "env": {"FAKE_ENV": "1"}, "priority": "normal", "broker": broker})  # equal footing with the test machine's load
 
@@ -376,18 +461,18 @@ class JobHostTests(unittest.TestCase):
         host.wait(timeout=10)
 
     def test_host_waits_for_go_and_records_identity_and_exit(self):
-        host = self.launch(runner.process_identity(os.getpid()))
+        host = self.launch(runtime_support.process_identity(os.getpid()))
         time.sleep(0.5)
         self.assertIsNone(host.poll())
         self.assertFalse((self.job / "process.json").exists())
         (self.job / "GO").touch()
         self.assertEqual(host.wait(timeout=30), 0)
-        receipt = runner.read_json(self.job / "process.json")
+        receipt = runtime_support.read_json(self.job / "process.json")
         # The identity recorded is the Lean process's own, not the host's; that process has ended by now.
         self.assertEqual(receipt["process"]["pid"], receipt["pid"])
         self.assertNotEqual(receipt["pid"], host.pid)
-        self.assertFalse(runner.alive(receipt["process"]))
-        self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
+        self.assertFalse(runtime_support.alive(receipt["process"]))
+        self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 3)
         output = (self.job / "stdout.log").read_text(encoding="utf-8")
         self.assertIn("MARK", output)
         self.assertIn("threads=1", output)
@@ -400,7 +485,7 @@ class JobHostTests(unittest.TestCase):
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):
-        host = self.launch(runner.process_identity(os.getpid()))
+        host = self.launch(runtime_support.process_identity(os.getpid()))
         (self.job / "CANCEL").touch()
         self.assertEqual(host.wait(timeout=10), 1)
         self.assertFalse((self.job / "exit.json").exists())
@@ -418,7 +503,7 @@ class JobHostTests(unittest.TestCase):
             return False
         with patch.object(lean_broker, "alive", side_effect=died_after_go):
             self.assertEqual(lean_broker.job_host(self.job), 0)
-        self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
+        self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 3)
         self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
 
 
@@ -467,10 +552,10 @@ class BrokerTests(BrokerFixture):
                     with patch.object(Path, "unlink", stop_before_ack), self.assertRaises(SystemExit):
                         self.broker.ingest()
                     self.assertTrue(request.exists())
-                    saved = runner.read_json(self.paths.state)
+                    saved = runtime_support.read_json(self.paths.state)
                     folder = self.paths.job(identity) if kind == "job" else self.paths.build(identity)
                     if boundary == "duplicate":
-                        outcome = runner.read_json(folder / "result.json")
+                        outcome = runtime_support.read_json(folder / "result.json")
                         self.assertEqual(outcome["duplicate_of"], original)
                         # Replay must keep this receipt even when the content no
                         # longer matches the request to which it was redirected.
@@ -534,7 +619,7 @@ class BrokerTests(BrokerFixture):
         self.assertEqual(self.broker.state["jobs"][job_id]["waiting_for"], running[0]["id"])
         self.until(lambda: self.finished(job_id))
         job = self.broker.state["jobs"][job_id]
-        entry = runner.read_json(self.paths.calibration)["entries"][job["closure"]]
+        entry = runtime_support.read_json(self.paths.calibration)["entries"][job["closure"]]
         self.assertEqual(entry["imports"], ["Mathlib.Data.Nat.Basic"])
         self.assertIn("4.0.0-fake", entry["version"])
         # The entry names its environment as `status` does, so a session can tell it from one measured before a change.
@@ -547,7 +632,7 @@ class BrokerTests(BrokerFixture):
         self.assertAlmostEqual(job["measured"]["excess_mb"], job["measured"]["peak_mb"] - entry["baseline_mb"], places=0)
         self.assertEqual(entry["excess_mb"], [job["measured"]["excess_mb"]])
         self.assertIn("OUT-A", (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8"))
-        self.assertEqual(runner.read_json(self.paths.job(job_id) / "result.json")["status"], "finished")
+        self.assertEqual(runtime_support.read_json(self.paths.job(job_id) / "result.json")["status"], "finished")
         self.assertAlmostEqual(job["measured"]["estimate_ratio"], job["measured"]["peak_mb"] / 260, places=1)
         # The same closure is not calibrated twice.
         second = self.submit(self.session_file("s1", "B.lean"), expect_mb=40)
@@ -606,7 +691,7 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.finished(warm))
         jobs = [self.submit(self.session_file("s1", f"{n}.lean", sleep=1.5), expect_mb=30) for n in "AB"]
         self.serial(jobs)
-        argv = runner.read_json(self.paths.job(jobs[0]) / "launch.json")["argv"]
+        argv = runtime_support.read_json(self.paths.job(jobs[0]) / "launch.json")["argv"]
         self.assertIn("--threads=2", argv)
         self.assertEqual(argv[-1], str(self.instance / "sessions/s1/work/A.lean"))
         self.write_settings(cpu_threads_budget=4)
@@ -663,7 +748,7 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.broker.state["jobs"].get(first))
         second = self.submit(path, expect_mb=40)
         self.until(lambda: (self.paths.job(second) / "result.json").exists())
-        self.assertEqual(runner.read_json(self.paths.job(second) / "result.json")["duplicate_of"], first)
+        self.assertEqual(runtime_support.read_json(self.paths.job(second) / "result.json")["duplicate_of"], first)
         self.assertNotIn(second, self.broker.state["jobs"])
         self.assertEqual(lean_broker.job_record(self.paths, second)["status"], "duplicate")
         # Another session compiling the same file is not a duplicate.
@@ -675,21 +760,21 @@ class BrokerTests(BrokerFixture):
 
     def test_orphaned_job_is_cancelled_and_its_process_tree_terminated(self):
         self.start_broker()
-        state = runner.read_json(self.instance / "runner/state.json")
+        state = runtime_support.read_json(self.instance / "runner/state.json")
         state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
-        runner.write_json(self.instance / "runner/state.json", state)
+        runtime_support.write_json(self.instance / "runner/state.json", state)
         job_id = self.submit(self.session_file("s1", sleep=30), expect_mb=40)
         self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running" and self.broker.state["jobs"][job_id].get("pid"))
         pid = self.broker.state["jobs"][job_id]["pid"]
         lean = self.broker.state["jobs"][job_id]["lean"]
-        self.assertTrue(runner.alive(lean))
+        self.assertTrue(runtime_support.alive(lean))
         state["sessions"]["s1"]["status"] = "integrated"
-        runner.write_json(self.instance / "runner/state.json", state)
+        runtime_support.write_json(self.instance / "runner/state.json", state)
         self.until(lambda: self.finished(job_id), limit=20)
         job = self.broker.state["jobs"][job_id]
         self.assertEqual(job["status"], "cancelled")
         self.assertIn("ended", job["reason"])
-        self.assertFalse(runner.alive(lean))
+        self.assertFalse(runtime_support.alive(lean))
         self.assertNotIn(pid, [p for p in lean_broker.process_tree(os.getpid())])
         # A cancelled job leaves no sample in the closure history.
         entry = self.broker.calibration.entry(job["closure"])
@@ -700,11 +785,11 @@ class BrokerTests(BrokerFixture):
         # under each status a compile has no reader. A running session with no CLI yet keeps its compile.
         self.start_broker()
         statuses = ("ended", "publishing", "integrated", "failed")
-        state = runner.read_json(self.instance / "runner/state.json")
+        state = runtime_support.read_json(self.instance / "runner/state.json")
         for n, status in enumerate(statuses):
             state["sessions"][f"s{n}"] = {"role": "attempt", "status": status, "host": None, "cli": None}
         state["sessions"]["live"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
-        runner.write_json(self.instance / "runner/state.json", state)
+        runtime_support.write_json(self.instance / "runner/state.json", state)
         jobs = {status: self.submit(self.session_file(f"s{n}"), expect_mb=40, session=f"s{n}")
                 for n, status in enumerate(statuses)}
         kept = self.submit(self.session_file("live"), expect_mb=40, session="live")
@@ -721,11 +806,11 @@ class BrokerTests(BrokerFixture):
         self.start_broker()
         gone = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)
         dead = {"pid": int(gone.stdout), "birth": "a process that has exited"}
-        live = runner.process_identity(os.getpid())
-        state = runner.read_json(self.instance / "runner/state.json")
+        live = runtime_support.process_identity(os.getpid())
+        state = runtime_support.read_json(self.instance / "runner/state.json")
         state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": dead, "cli": live}
         state["sessions"]["s2"] = {"role": "attempt", "status": "running", "host": dead, "cli": dead}
-        runner.write_json(self.instance / "runner/state.json", state)
+        runtime_support.write_json(self.instance / "runner/state.json", state)
         kept = self.submit(self.session_file("s1", sleep=2), expect_mb=40, session="s1")
         dropped = self.submit(self.session_file("s2", sleep=30), expect_mb=40, session="s2")
         self.until(lambda: self.finished(dropped))
@@ -820,7 +905,7 @@ class BrokerTests(BrokerFixture):
         def host_ended_meanwhile(identity):
             if identity == job["host"] and aside.exists():
                 aside.replace(exit_file)
-            return runner.alive(identity)
+            return runtime_support.alive(identity)
         with patch.object(lean_broker, "alive", side_effect=host_ended_meanwhile):
             self.broker.tick()
         self.assertEqual((job["status"], job["exit_code"]), ("finished", 5))
@@ -868,19 +953,19 @@ class BrokerTests(BrokerFixture):
         self.write_settings(memory_budget_mb=1234)
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 1234)
-        self.assertEqual(runner.read_json(self.paths.state)["config"]["memory_budget_mb"], 1234)
+        self.assertEqual(runtime_support.read_json(self.paths.state)["config"]["memory_budget_mb"], 1234)
         time.sleep(0.02)
         (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
         with patch.object(self.broker, "log") as log:
             self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 1234)
-        self.assertTrue(runner.read_json(self.paths.state)["config_error"])
+        self.assertTrue(runtime_support.read_json(self.paths.state)["config_error"])
         self.assertEqual(log.call_args.kwargs["event"], "settings_rejected")
         time.sleep(0.02)
         self.write_settings(memory_budget_mb=99)
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
-        self.assertIsNone(runner.read_json(self.paths.state)["config_error"])
+        self.assertIsNone(runtime_support.read_json(self.paths.state)["config_error"])
         # A broker that starts on a rejected file exits at once; `status` must still say why.
         time.sleep(0.02)
         (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
@@ -936,6 +1021,22 @@ class BrokerTests(BrokerFixture):
         self.broker.config["min_free_memory_mb"] = 0
         self.until(lambda: self.finished(job_id))
 
+    def test_machine_gate_counts_what_running_compiles_have_still_to_take(self):
+        # Free memory shows what a running compile has taken so far. One started a tick ago is still
+        # loading its imports, so the gate counts the rest of its certain part as taken already.
+        self.start_broker()
+        self.broker.config.update(memory_budget_mb=100000, min_free_memory_mb=100)
+        self.broker.calibration.record_baseline("closure", {"imports": []}, 400, 1)
+        def job(status, current_mb=None):
+            return {"kind": "compile", "closure": "closure", "expect_mb": 400, "threads": 1, "status": status,
+                    "measured": None if current_mb is None else {"current_mb": current_mb}}
+        candidate = job("queued")
+        # 550 MiB free leaves 150 after the candidate's 400, above the gate's 100.
+        self.assertTrue(self.broker.fits(candidate, [job("running", current_mb=400)], 550))
+        # A running compile that has taken 50 of its 400 still owes 350 of them.
+        self.assertFalse(self.broker.fits(candidate, [job("running", current_mb=50)], 550))
+        self.assertTrue(self.broker.fits(candidate, [job("running", current_mb=50)], 900))
+
     def test_queued_compile_starts_with_the_threads_in_force(self):
         # A change of lean.threads reaches a compile that is still queued, as a change of priority does.
         self.start_broker()
@@ -948,7 +1049,7 @@ class BrokerTests(BrokerFixture):
             self.broker.tick()
             self.assertEqual(self.jobs("running"), [])
         self.until(lambda: self.finished(job_id))
-        self.assertIn("--threads=3", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+        self.assertIn("--threads=3", runtime_support.read_json(self.paths.job(job_id) / "launch.json")["argv"])
 
     def test_submission_requires_estimate_session_and_existing_file(self):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
@@ -972,10 +1073,10 @@ class BrokerTests(BrokerFixture):
     def test_exit_rule_waits_for_sessions_and_jobs(self):
         self.start_broker()
         self.assertFalse(self.broker.should_exit())
-        state = runner.read_json(self.instance / "runner/state.json")
+        state = runtime_support.read_json(self.instance / "runner/state.json")
         state["complete"] = True
         state["sessions"]["s1"] = {"role": "attempt", "status": "integrated", "host": None, "cli": None}
-        runner.write_json(self.instance / "runner/state.json", state)
+        runtime_support.write_json(self.instance / "runner/state.json", state)
         self.assertFalse(self.broker.should_exit())  # formal root alone does not finish pending follow-ups
         state['finished'] = True
         # The runner saves the sessions it starts in the middle of its tick and recomputes `finished`
@@ -983,10 +1084,10 @@ class BrokerTests(BrokerFixture):
         for status in ("starting", "running", "publishing"):
             with self.subTest(status=status):
                 state["sessions"]["s1"]["status"] = status
-                runner.write_json(self.instance / 'runner/state.json', state)
+                runtime_support.write_json(self.instance / 'runner/state.json', state)
                 self.assertFalse(self.broker.should_exit())
         state["sessions"]["s1"]["status"] = "integrated"
-        runner.write_json(self.instance / 'runner/state.json', state)
+        runtime_support.write_json(self.instance / 'runner/state.json', state)
         job_id = self.submit(self.session_file("s2", sleep=0.5), expect_mb=40, session="s2")
         self.broker.tick()
         self.assertFalse(self.broker.should_exit())
@@ -997,9 +1098,9 @@ class BrokerTests(BrokerFixture):
         # restart-broker returns once the new broker is alive, before that broker has run version_command.
         # A session asking for the version meanwhile must keep waiting, not receive the predecessor's.
         self.start_broker()
-        state = runner.read_json(self.paths.state)
+        state = runtime_support.read_json(self.paths.state)
         state.update(version="Lean (version 3.9.9-replaced)", version_error=None)
-        runner.write_json(self.paths.state, state)
+        runtime_support.write_json(self.paths.state, state)
         asked = []
         read_version = lean_broker.Broker.read_version
         def ask_before_reading(broker):
@@ -1160,8 +1261,7 @@ class BuildTests(BrokerFixture):
         self.assertLessEqual(a["finished_at"], min(b["started_at"], c["started_at"]))
         self.assertLess(max(b["started_at"], c["started_at"]), min(b["finished_at"], c["finished_at"]))  # side by side
         self.assertLessEqual(max(b["finished_at"], c["finished_at"]), d["started_at"])
-        self.assertEqual(b["deps"], [a["id"]])
-        self.assertIn("-R", runner.read_json(self.paths.job(d["id"]) / "launch.json")["argv"])
+        self.assertIn("-R", runtime_support.read_json(self.paths.job(d["id"]) / "launch.json")["argv"])
         self.assertTrue((Path(record["lib"]) / "D.olean").is_file())
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 4)
         # External imports alone key the calibration: B's closure is the empty one, not "A".
@@ -1180,7 +1280,7 @@ class BuildTests(BrokerFixture):
         summary = json.loads(err.getvalue().split("lean-broker: ", 1)[1])
         self.assertEqual(summary["status"], "finished")
         self.assertTrue(all(m["cached"] for m in summary["modules"]))
-        # A change in B reaches D through the keys; A and C stay cached.
+        # A change in B reaches D, a plain file that reads all of B's output; A and C stay cached.
         with (root / "B.lean").open("a", encoding="utf-8") as stream:
             stream.write("-- changed\n")
         third = self.build(root, [root / "D.lean"])
@@ -1307,7 +1407,7 @@ class BuildTests(BrokerFixture):
         self.start_broker()
         root = self.tree()
         with self.assertRaisesRegex(ValueError, "not in the subpath|not a module path"):
-            self.build(root, [self.instance / "root.md"])
+            self.build(root, [self.instance / "settings.json"])  # a file that exists, outside the root
         with self.assertRaisesRegex(ValueError, "does not exist"):
             self.build(root, [root / "Nope.lean"])
         source(root / "X.lean", imports=("Y",))
@@ -1346,7 +1446,7 @@ class BuildTests(BrokerFixture):
         self.assertEqual(record["status"], "cancelled")
         self.assertEqual(record["modules"]["A"]["status"], "cancelled")
         self.assertTrue(all(m["status"] in ("cancelled", "failed") for m in record["modules"].values()))
-        self.assertFalse(runner.alive(self.module_job(build_id, "A").get("lean")))
+        self.assertFalse(runtime_support.alive(self.module_job(build_id, "A").get("lean")))
 
     def test_single_file_submission_is_not_a_duplicate_of_a_module_compile(self):
         self.start_broker()
@@ -1360,7 +1460,7 @@ class BuildTests(BrokerFixture):
         self.assertFalse((self.paths.job(job_id) / "result.json").exists())
         self.until(lambda: self.finished(job_id))
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
-        self.assertNotIn("-R", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+        self.assertNotIn("-R", runtime_support.read_json(self.paths.job(job_id) / "launch.json")["argv"])
         self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
 
     def test_a_pruned_build_loses_its_lib_folder_and_keeps_its_result(self):
@@ -1382,9 +1482,9 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
         self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
 
-    def test_pruning_keeps_a_finished_module_that_a_queued_module_still_imports(self):
-        # A queued module learns that its imports compiled only from their records in the state. With room
-        # for one finished job, B and C both finish before D starts; pruning either would fail D as unknown.
+    def test_pruning_finished_jobs_leaves_a_waiting_module_what_it_needs(self):
+        # A waiting module learns that its imports compiled, and what they emitted, from the build's own
+        # record. With room for one finished job, the jobs of A, B and C are pruned before D is keyed.
         self.start_broker()
         root = self.tree()
         with patch.object(lean_broker, "KEEP_FINISHED", 1):
@@ -1394,6 +1494,108 @@ class BuildTests(BrokerFixture):
         self.assertEqual(record["status"], "finished", record)
         self.assertTrue(all(m["status"] == "finished" and m["exit_code"] == 0 for m in record["modules"].values()))
         self.assertEqual([j.get("module") for j in self.jobs(*lean_broker.FINISHED)], ["D"])  # pruning did run
+
+
+class OutputKeyTests(BrokerFixture):
+    """A module's cache key follows the compiled output of the modules its compile reads, not their sources."""
+
+    def library(self, **basis):
+        """Basis is a `module`; Uses is a module that imports it; Top is a module that imports Uses alone;
+        Plain is a plain file that imports Basis; Prying is a module that imports all of Basis."""
+        root = self.instance / "sessions/s1/work/lean"
+        source(root / "Basis.lean", imports=(), module=True, **{"proof": "first", **basis})
+        source(root / "Uses.lean", imports=("Basis",), module=True, marker="USES-OUTPUT")
+        source(root / "Top.lean", imports=("Uses",), module=True)
+        source(root / "Plain.lean", imports=("Basis",))
+        source(root / "Prying.lean", imports=("all Basis",), module=True)
+        return root, [root / f"{name}.lean" for name in ("Top", "Plain", "Prying")]
+
+    @staticmethod
+    def statuses(record):
+        return {name: module["status"] for name, module in record["modules"].items()}
+
+    def test_a_replaced_proof_recompiles_only_what_reads_proofs(self):
+        self.start_broker()
+        root, targets = self.library()
+        first = self.built(root, targets)
+        self.assertEqual(first["status"], "finished", first)
+        self.assertEqual(self.statuses(first), dict.fromkeys(("Basis", "Uses", "Top", "Plain", "Prying"), "finished"))
+        # The proof in Basis is replaced. Its public files are the same bytes, so the modules that read
+        # only those keep their keys and come from the cache; the plain file and the `import all` do not.
+        root, targets = self.library(proof="second")
+        second = self.built(root, targets)
+        self.assertEqual(second["status"], "finished", second)
+        self.assertEqual(self.statuses(second), {"Basis": "finished", "Uses": "cached", "Top": "cached",
+                                                 "Plain": "finished", "Prying": "finished"})
+        before, after = first["modules"], second["modules"]
+        self.assertEqual(after["Basis"]["public"], before["Basis"]["public"])
+        self.assertNotEqual(after["Basis"]["full"], before["Basis"]["full"])
+        self.assertNotEqual(after["Basis"]["key"], before["Basis"]["key"])
+        for name in ("Uses", "Top"):
+            self.assertEqual(after[name]["key"], before[name]["key"])
+            self.assertEqual((after[name]["job"], after[name]["exit_code"]), (None, 0))
+            self.assertEqual((after[name]["public"], after[name]["full"]), (before[name]["public"], before[name]["full"]))
+        for name in ("Plain", "Prying"):
+            self.assertNotEqual(after[name]["key"], before[name]["key"])
+        jobs_before = len(self.broker.state["jobs"])
+        # A cached target reports its key and replays what its compile printed, from the cache entry
+        # under that key; its files are in the build's lib folder.
+        third = self.built(root, [root / "Uses.lean"])
+        self.assertEqual(self.statuses(third), {"Basis": "cached", "Uses": "cached"})
+        self.assertEqual(len(self.broker.state["jobs"]), jobs_before)
+        self.assertEqual(third["modules"]["Uses"]["key"], before["Uses"]["key"])
+        self.assertIn("USES-OUTPUT", (self.paths.cache / (third["modules"]["Uses"]["key"] + ".stdout.log"))
+                      .read_text(encoding="utf-8"))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lean_broker.report_build(self.paths, lean_broker.job_record(self.paths, third["id"])), 0)
+        self.assertIn("USES-OUTPUT", out.getvalue())
+        self.assertEqual({p.name for p in Path(third["lib"]).iterdir()},
+                         {name + suffix for name in ("Basis", "Uses")
+                          for suffix in (".olean", ".olean.private", ".olean.server", ".ir")})
+        # --fresh-targets compiles the target although an entry with its key exists, and leaves that entry as it is.
+        manifest = self.paths.cache / (before["Uses"]["key"] + ".artifacts.json")
+        stored = manifest.read_bytes()
+        with patch.object(lean_broker, "ensure_broker", return_value={}):
+            fresh_id = lean_broker.build(self.paths, root, [root / "Uses.lean"], 60, "s1", fresh_targets=True)["build"]
+        self.until(lambda: self.build_record(fresh_id)["status"] in lean_broker.FINISHED)
+        fresh = self.build_record(fresh_id)
+        self.assertEqual(self.statuses(fresh), {"Basis": "cached", "Uses": "finished"})
+        self.assertIsNotNone(fresh["modules"]["Uses"]["job"])
+        self.assertEqual(fresh["modules"]["Uses"]["key"], before["Uses"]["key"])
+        self.assertEqual(manifest.read_bytes(), stored)
+
+    def test_a_changed_statement_recompiles_everything_that_reaches_it(self):
+        self.start_broker()
+        root, targets = self.library()
+        first = self.built(root, targets)
+        self.assertEqual(first["status"], "finished", first)
+        root, targets = self.library(marker="ANOTHER-STATEMENT")  # a line of Basis that is in its public files
+        second = self.built(root, targets)
+        self.assertEqual(second["status"], "finished", second)
+        self.assertEqual(self.statuses(second), dict.fromkeys(("Basis", "Uses", "Top", "Plain", "Prying"), "finished"))
+        before, after = first["modules"], second["modules"]
+        self.assertNotEqual(after["Basis"]["public"], before["Basis"]["public"])
+        # Uses was compiled again from the same source and emitted the same files. Top imports Uses
+        # alone and still has another key, because its compile reads Basis through Uses.
+        self.assertEqual((after["Uses"]["public"], after["Uses"]["full"]), (before["Uses"]["public"], before["Uses"]["full"]))
+        self.assertNotEqual(after["Top"]["key"], before["Top"]["key"])
+
+    def test_an_environment_change_fails_the_modules_still_waiting(self):
+        # A waiting module's key would name the new environment while its imports were compiled in the old one.
+        self.start_broker()
+        root, _ = self.library(sleep=3)
+        build_id = self.build(root, [root / "Uses.lean"])
+        self.until(lambda: self.build_record(build_id)["modules"]["Basis"]["status"] == "running")
+        time.sleep(0.02)
+        self.write_settings(cache_epoch="second")
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual((record["modules"]["Basis"]["status"], record["modules"]["Basis"]["exit_code"]), ("finished", 0))
+        uses = record["modules"]["Uses"]
+        self.assertEqual((uses["status"], uses["job"], uses["key"]), ("failed", None, None))
+        self.assertIn("environment changed", uses["reason"])
+        self.assertEqual(record["status"], "failed")
 
 
 class LauncherTests(BrokerFixture):
@@ -1431,7 +1633,7 @@ class LauncherTests(BrokerFixture):
         self.until(lambda: self.finished(job_id))
         job = self.broker.state["jobs"][job_id]
         self.assertEqual(job["exit_code"], 0)
-        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        launch = runtime_support.read_json(self.paths.job(job_id) / "launch.json")
         self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
         self.assertEqual(launch["env"]["FAKE_LAKE"], "1")
         # Baselines measured directly are keyed apart from those measured through lake.
@@ -1447,7 +1649,7 @@ class LauncherTests(BrokerFixture):
         self.assertIn("exit code 7", self.broker.state["launcher"]["reason"])
         job_id = self.submit(self.session_file("s1"), expect_mb=40)
         self.until(lambda: self.finished(job_id))
-        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        launch = runtime_support.read_json(self.paths.job(job_id) / "launch.json")
         self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 7)  # what the configured lake does
 
@@ -1474,7 +1676,7 @@ class LauncherTests(BrokerFixture):
         through_lake = lean_broker.closure_key(self.broker.environment_identity(), job["imports"])
         self.assertNotEqual(queued, through_lake)
         self.assertEqual(job["closure"], through_lake)
-        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        launch = runtime_support.read_json(self.paths.job(job_id) / "launch.json")
         self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
         calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
         self.assertEqual([(j["closure"], j["direct"]) for j in calibrations], [(through_lake, False)])
@@ -1496,7 +1698,7 @@ class LauncherTests(BrokerFixture):
         record = self.build_record(build_id)
         self.assertEqual(record["status"], "finished", record)
         self.assertTrue(all(m["exit_code"] == 0 for m in record["modules"].values()), record)
-        launch = runner.read_json(self.paths.job(record["modules"]["Target"]["job"]) / "launch.json")
+        launch = runtime_support.read_json(self.paths.job(record["modules"]["Target"]["job"]) / "launch.json")
         self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
         self.assertEqual(launch["env"]["LEAN_PATH"].split(os.pathsep)[:2], [record["lib"], "fake-lake-lib"])
 
@@ -1526,7 +1728,8 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(status["config"]["memory_budget_mb"], self.budget)
         self.assertIn("4.0.0-fake", json.loads(self.cli("version", str(self.instance)).stdout)["version"])
         self.assertIn("4.0.0-fake", status["version"])
-        self.assertEqual(runner.status(self.instance)["lean"]["version"], status["version"])
+        # The runner's `status` carries this same object as its `lean` entry.
+        self.assertEqual(lean_broker.broker_status(self.paths)["version"], status["version"])
 
     @unittest.skipUnless(os.name == "nt", "only Windows reports exit codes as unsigned 32-bit values")
     def test_run_relays_a_windows_crash_code_unchanged(self):
@@ -1569,7 +1772,7 @@ class ClientAndLifecycleTests(BrokerFixture):
         second = self.cli("serve", str(self.instance), timeout=30)
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("already has a running Lean broker", second.stderr)
-        self.assertTrue(runner.alive(first["process"]))
+        self.assertTrue(runtime_support.alive(first["process"]))
         self.cli("version", str(self.instance))  # finds the live broker; launches nothing
         self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
 
@@ -1585,10 +1788,10 @@ class ClientAndLifecycleTests(BrokerFixture):
         else:
             self.fail("job did not start")
         broker = lean_broker.broker_alive(self.paths)
-        runner.terminate_process(broker["process"])
-        while runner.alive(broker["process"]):
+        runtime_support.terminate_process(broker["process"])
+        while runtime_support.alive(broker["process"]):
             time.sleep(0.02)
-        self.assertTrue(runner.alive(record["lean"]))
+        self.assertTrue(runtime_support.alive(record["lean"]))
         # A client that finds no broker launches one, which adopts the running job.
         late = self.cli("wait", str(self.instance), submitted["job"])
         self.assertEqual(late.returncode, 5, late.stderr)
@@ -1636,21 +1839,27 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 3)
 
     def test_runner_launches_adopts_and_relaunches_the_broker(self):
-        skill = runner.SKILL
-        engine = runner.Runner(self.instance, skill)
+        # Runner.ensure_broker alone is under test. A Runner is built around an initialized instance with
+        # its compiled canon; ensure_broker reads only the instance's path and the two fields set here.
+        import runner
+        def bare_runner():
+            engine = runner.Runner.__new__(runner.Runner)
+            engine.instance, engine.broker, engine.broker_attempt = self.instance, None, 0
+            return engine
+        engine = bare_runner()
         engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
             time.sleep(0.05)
         first = lean_broker.broker_alive(self.paths)
         self.assertTrue(first)
-        self.assertTrue(runner.status(self.instance)["lean"]["broker_alive"])
-        other = runner.Runner(self.instance, skill)
+        self.assertTrue(lean_broker.broker_status(self.paths)["broker_alive"])
+        other = bare_runner()
         other.ensure_broker()
         self.assertIsNone(other.broker)
         self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
-        runner.terminate_process(first["process"])
-        while runner.alive(first["process"]):
+        runtime_support.terminate_process(first["process"])
+        while runtime_support.alive(first["process"]):
             time.sleep(0.02)
         engine.ensure_broker()  # within ten seconds of the last launch (runner.ensure_broker): no relaunch yet
         time.sleep(0.5)
@@ -1662,7 +1871,7 @@ class ClientAndLifecycleTests(BrokerFixture):
             time.sleep(0.05)
         second = lean_broker.broker_alive(self.paths)
         self.assertNotEqual(second["process"], first["process"])
-        runner.terminate_process(second["process"])
+        runtime_support.terminate_process(second["process"])
         engine.broker.wait(timeout=10)
 
     def test_build_command_relays_the_target_and_waits_on_a_build_id(self):
@@ -1694,87 +1903,6 @@ class ClientAndLifecycleTests(BrokerFixture):
         # status lists builds finished within the last ten minutes; the first build is long recorded in the state.
         listed = {b["id"]: b["status"] for b in lean_broker.broker_status(self.paths)["builds"]}
         self.assertEqual(listed.get(summary["build"]), "finished")
-
-
-class WaitLooks(unittest.TestCase):
-    """What a waiting client reads: the whole broker state rarely, the job's own result file between."""
-
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.paths = lean_broker.Paths(Path(self.temp.name) / "instance")
-        self.paths.ensure()
-        self.job = "j" + "0" * 32
-        self.paths.job(self.job).mkdir()
-        runner.write_json(self.paths.state, {"jobs": {self.job: {"id": self.job, "status": "running"}}, "builds": {}})
-
-    def finish(self, exit_code=0):
-        runner.write_json(self.paths.job(self.job) / "result.json",
-                          {"id": self.job, "status": "finished", "exit_code": exit_code})
-
-    def waited(self, timeout, **patches):
-        """The wait's return value, how often it took the full look, and what it wrote to stderr."""
-        full, err = [], io.StringIO()
-        original = lean_broker.job_record
-        def counted(paths, job_id):
-            full.append(job_id)
-            return original(paths, job_id)
-        with contextlib.ExitStack() as stack:
-            stack.enter_context(patch.object(lean_broker, "ensure_broker", return_value={}))
-            stack.enter_context(patch.object(lean_broker, "job_record", side_effect=counted))
-            for name, value in patches.items():
-                stack.enter_context(patch.object(lean_broker, name, value))
-            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
-            stack.enter_context(contextlib.redirect_stderr(err))
-            code = lean_broker.wait(self.paths, self.job, timeout=timeout)
-        return code, len(full), err.getvalue()
-
-    def test_the_whole_state_is_read_at_the_start_and_at_the_timeout_only(self):
-        code, full, err = self.waited(1.2)
-        self.assertEqual((code, full), (124, 2))
-        self.assertEqual(json.loads(err.strip().splitlines()[-1])["status"], "running")
-
-    def test_the_state_is_read_again_after_the_interval_and_a_record_that_has_gone_is_an_error(self):
-        code, full, _ = self.waited(1.0, WAIT_STATE_SECONDS=0.3)
-        self.assertEqual(code, 124)
-        self.assertGreaterEqual(full, 3)
-        import threading
-        threading.Timer(0.3, lambda: runner.write_json(self.paths.state, {"jobs": {}, "builds": {}})).start()
-        with self.assertRaisesRegex(ValueError, "unknown job"):
-            self.waited(5, WAIT_STATE_SECONDS=0.5)
-
-    def test_a_result_written_between_full_looks_ends_the_wait(self):
-        import threading
-        threading.Timer(0.6, lambda: self.finish(exit_code=7)).start()
-        started = time.monotonic()
-        code, full, err = self.waited(30)
-        self.assertEqual((code, full), (7, 1))
-        self.assertLess(time.monotonic() - started, 0.6 + 2 * lean_broker.WAIT_POLL[1])
-        self.assertIn('"status": "finished"', err)
-
-    def test_an_outcome_present_at_the_timeout_is_reported_as_the_outcome(self):
-        self.finish()
-        self.assertEqual(self.waited(0)[0], 0)
-
-    def test_an_unreadable_result_is_tried_again_and_its_error_given_only_when_it_lasts(self):
-        calls = []
-        def twice_refused(paths, job_id):
-            calls.append(job_id)
-            if len(calls) <= 2:
-                raise PermissionError("sharing violation")
-            return {"id": job_id, "status": "finished", "exit_code": 0}
-        code, _, _ = self.waited(30, final_record=twice_refused)
-        self.assertEqual((code, len(calls)), (0, 3))
-        def refused(paths, job_id):
-            raise PermissionError("sharing violation")
-        started = time.monotonic()
-        with self.assertRaises(PermissionError):
-            self.waited(30, final_record=refused, WAIT_RETRY_SECONDS=0.5)
-        self.assertGreaterEqual(time.monotonic() - started, 0.5)
-        # The timeout still ends the wait with the last status read while the result stays unreadable.
-        code, _, err = self.waited(0.6, final_record=refused)
-        self.assertEqual(code, 124)
-        self.assertEqual(json.loads(err.strip().splitlines()[-1])["status"], "running")
 
 
 if __name__ == "__main__":

@@ -8,18 +8,20 @@ import json
 from pathlib import Path
 import re
 
-from knowledge import canonical
 from runtime_support import read_json, write_json
 
 
 def availability_view(model, rows, epoch):
-    nodes = {nid: [] for nid, node in model['nodes'].items()
-             if canonical(model, nid) == nid and node['state'] == 'unresolved'}
+    """The work that remains for the root, with the sections registered on each element of it."""
+    elements = {name: [] for name in model['remaining']}
+    # A section stands on the statement, so it occupies every proof of that statement that remains.
+    statement = {name: model['elements'][name]['statement_of'] or name for name in elements}
     for row in rows:
         for section in row['sections']:
-            if section['node'] in nodes:
-                nodes[section['node']].append(section['id'])
-    return {'epoch': epoch, 'nodes': {n: sorted(set(ids)) for n, ids in nodes.items()}}
+            for name in elements:
+                if statement[name] == section['element']:
+                    elements[name].append(section['id'])
+    return {'epoch': epoch, 'elements': {n: sorted(set(ids)) for n, ids in elements.items()}}
 
 
 def snapshot_token(value):
@@ -35,20 +37,12 @@ def retain_snapshot(session, view):
     return token
 
 
-def normalized_nodes(view, model):
-    """Node merges preserve registered sections, rather than falsely opening a new node."""
-    result = {}
-    for nid, sections in view['nodes'].items():
-        result.setdefault(canonical(model, nid), set()).update(sections)
-    return result
-
-
-def opening_since(observed, current, model):
-    previous = normalized_nodes(observed, model)
-    for nid, sections in current['nodes'].items():
-        if nid not in previous:
-            return 'new_or_reopened_node'
-        if previous[nid] - set(sections):
+def opening_since(observed, current):
+    """Why work may have opened since a report of full occupancy: new remaining work, or an occupation that ended."""
+    for name, sections in current['elements'].items():
+        if name not in observed['elements']:
+            return 'new_or_reopened_element'
+        if set(observed['elements'][name]) - set(sections):
             return 'ended_occupancy'
     return None
 
@@ -57,7 +51,7 @@ def no_research_outcome(session, role):
     """An attempt that found no section, or an explorer that found no free question, ends here.
 
     Either session registered nothing and did nothing beyond assessing availability. Only an
-    attempt judges whether every unresolved node is occupied, so only its outcome may report it."""
+    attempt judges whether all the work that remains is occupied, so only its outcome may report it."""
     path = Path(session) / 'output/outcome.json'
     if not path.exists():
         return None
@@ -95,12 +89,12 @@ def reported_availability(session, outcome):
     if path is None or not path.exists():
         raise ValueError('availability.snapshot must be a token returned by updates')
     observed = read_json(path)
-    if (not isinstance(observed, dict) or set(observed) != {'epoch', 'nodes'}
+    if (not isinstance(observed, dict) or set(observed) != {'epoch', 'elements'}
             or type(observed['epoch']) is not int or observed['epoch'] < 0
-            or not isinstance(observed['nodes'], dict)
+            or not isinstance(observed['elements'], dict)
             or not all(isinstance(n, str) and isinstance(ids, list)
                        and all(isinstance(s, str) for s in ids)
-                       for n, ids in observed['nodes'].items())
+                       for n, ids in observed['elements'].items())
             or snapshot_token(observed) != token):
         raise ValueError('availability snapshot is invalid or changed')
     return observed
