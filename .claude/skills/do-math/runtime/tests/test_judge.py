@@ -112,6 +112,35 @@ class TargetTests(unittest.TestCase):
         self.assertTrue({'propext', 'Nat.add', 'semiOutParam'} <= set(targets))
         self.assertNotIn('Quot', judge.export_targets(['S.a'], ['propext']))
 
+    def test_a_theorem_that_another_named_theorem_uses_is_judged_in_that_export(self):
+        # root uses mid through a definition; mid uses leaf; side is used by nothing; lone uses an entry
+        # that is not named. The export of root carries mid and leaf, so only root, side and lone are named.
+        index = index_of(entry('S.leaf'), entry('S.mid', uses=['S.leaf']), entry('S.d', uses=['S.mid'], kind='def'),
+                         entry('S.root', uses=['S.d']), entry('S.side'), entry('S.open'),
+                         entry('S.lone', uses=['S.open']))
+        index['entries']['S.root']['statement_uses'] = ['S.d']
+        names = ['S.leaf', 'S.lone', 'S.mid', 'S.root', 'S.side']
+        self.assertEqual(judge.covering(index, names), ['S.lone', 'S.root', 'S.side'])
+        # A theorem keeps its place when the theorem that uses it is not among the names.
+        self.assertEqual(judge.covering(index, ['S.leaf', 'S.mid', 'S.side']), ['S.mid', 'S.side'])
+        self.assertEqual(judge.covering(index, ['S.leaf']), ['S.leaf'])
+        # Entries that use one another are each reached by the other; one of them stays, and what it
+        # reaches below the circle is still left out.
+        circle = index_of(entry('S.a', uses=['S.b']), entry('S.b', uses=['S.a', 'S.c']), entry('S.c'))
+        self.assertEqual(judge.covering(circle, ['S.a', 'S.b', 'S.c']), ['S.a'])
+        self.assertEqual(judge.covering(circle, ['S.c', 'S.b', 'S.a']), ['S.b'])
+        # Every name is kept or is reached from a kept one.
+        for chosen in (names, ['S.mid', 'S.side', 'S.leaf']):
+            kept, entries = judge.covering(index, chosen), index['entries']
+            reach, todo = set(kept), list(kept)
+            while todo:
+                item = entries[todo.pop()]
+                for used in item['uses'] + item['statement_uses']:
+                    if used not in reach:
+                        reach.add(used)
+                        todo.append(used)
+            self.assertTrue(set(chosen) <= reach)
+
     def test_the_file_that_starts_the_tools_carries_its_plan_and_quotes_what_it_passes(self):
         plan = {'cases': [{'names': ['S.a'], 'exports': [
             {'command': ['C:/tools/lean export.exe'], 'args': ['S.M', '--', 'S.a'], 'lib': 'C:\\build "x"\\lib', 'file': 'e.ndjson'}],

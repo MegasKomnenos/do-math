@@ -545,7 +545,11 @@ def extraction_source(library, modules, pairs, imports=None):
     declarations fold into them, is decided in update_index. A pair asks whether two declarations
     state the same proposition, or whether one states the negation of the other. Lean finds a declaration
     only in a module the file imports, directly or through others. The file imports `imports` when it is
-    given, which can name more modules than those extracted, and the extracted modules otherwise."""
+    given, which can name more modules than those extracted, and the extracted modules otherwise.
+
+    The rows are printed by one command that visits every constant once. Lean limits the work of a
+    command by default, and that limit is lifted for this one: its work grows with the canon, and a
+    canon of a few thousand constants passed the default after a third of its rows, every time."""
     imports = '\n'.join('import ' + m for m in (modules if imports is None else imports))
     targets = ', '.join(lean_name(m) for m in modules)
     listed = ', '.join(f'("{kind}", {lean_name(a)}, {lean_name(b)})' for kind, a, b in pairs)
@@ -669,6 +673,7 @@ def run : M Unit := do
       ("holds", samePair env kind a b)]).compress)
   IO.println ("{ROW_MARK}" ++ (Json.mkObj [("done", true)]).compress)
 
+set_option maxHeartbeats 0 in
 #eval show MetaM Unit from do
   let _ ← run.run {{}}
 

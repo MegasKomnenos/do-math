@@ -129,6 +129,36 @@ def export_targets(names, allowed):
     return list(dict.fromkeys([*quotient, *names, *allowed, *PRIMITIVES]))
 
 
+def covering(index, names):
+    """Those of the names that no other of them uses, directly or through other entries; judging these judges all.
+
+    The export of a theorem carries everything the theorem rests on, and the comparator reads the axioms
+    of all of it and runs the kernel over all of it. A theorem that another named theorem uses is in that
+    theorem's export and is judged there; naming it as well adds nothing to what is exported and only
+    lengthens the list, which for a large canon splits one export into several that each repeat almost
+    the same content. The index folds a declaration without an entry into what it uses, so the uses of
+    the entries are the whole of what an export follows inside the canon. Of entries that use one
+    another in a circle, the first in the order given is kept."""
+    entries, wanted = index['entries'], set(names)
+    covered, explored = set(), set()
+    for start in names:
+        if start in explored:
+            continue
+        explored.add(start)
+        stack = [start]
+        while stack:
+            entry = entries[stack.pop()]
+            for used in entry['uses'] + entry['statement_uses']:
+                if used == start or used not in entries:
+                    continue
+                if used in wanted:
+                    covered.add(used)
+                if used not in explored:
+                    explored.add(used)
+                    stack.append(used)
+    return [name for name in names if name not in covered]
+
+
 def batches(names, module_of, allowed):
     """(modules, names) groups whose export command stays within the length a command line may have."""
     fixed = sum(len(name) + 1 for name in export_targets([], allowed))
@@ -327,7 +357,11 @@ def build_lib(instance, build):
 
 
 def judge_index(instance, folder, index, names, lib, commands, allowed, expect_mb, session):
-    """Queue the judging of theorems of an index against their own export; returns the job."""
+    """Queue the judging of theorems of an index against their own export; returns the job.
+
+    The theorems named to the judge are those that none of the others uses (`covering`); the rest are
+    judged in the exports of these."""
+    names = covering(index, names)
     module_of = {name: index['entries'][name]['module'] for name in names}
     cases = [{'names': group, 'solution': {'lib': lib, 'modules': modules}}
              for modules, group in batches(names, module_of, allowed)]
