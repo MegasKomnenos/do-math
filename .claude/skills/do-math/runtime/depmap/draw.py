@@ -55,6 +55,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from urllib.parse import quote
 
 HERE = Path(__file__).resolve().parent
 
@@ -65,8 +66,8 @@ MONO = "Consolas, 'DejaVu Sans Mono', Menlo, monospace"
 INK, SUBTLE, FAINT = '#203549', '#526A7D', '#60788B'
 LINES = {'direct': ('', 2.4), 'contracted': ('12 7', 2.4), 'mention': ('2 7', 2.4), 'alternative': ('', 5.0),
          'refutation': ('16 6', 5.0)}
-LEGEND = {'direct': 'named in the proof', 'contracted': 'through folded steps (named on the line)',
-          'mention': 'mentioned in the statement', 'alternative': 'another proof of the same statement',
+LEGEND = {'direct': 'named in the proof', 'contracted': 'through folded steps (named or counted on the line)',
+          'mention': 'mentioned in the statement', 'alternative': 'a proof drawn as its own card, to its statement',
           'refutation': 'refutes the root: its statement is the negation of the root'}
 ARROWS = {'alternative': (11, 4.6), 'refutation': (11, 4.6)}
 ARROW = (8.2, 3.5)
@@ -86,6 +87,38 @@ CARD = {'statement': ('#FFFFFF', '#8096A7', 1.6), 'definition': ('#F1F5F8', '#80
 STANDINGS = {'no_proof': ('no proof', '#B64258'), 'not_confirmed': ('proof not confirmed', '#C8742B'),
              'held': ('correct, held back', '#C2A21E'), 'accepted': ('accepted', '#2E8B57')}
 KINDS = {'theorem': 'statement', 'def': 'definition', 'opaque': 'opaque definition', 'inductive': 'inductive type'}
+CARD_WORDS = {'statement': 'a statement', 'definition': 'a definition', 'proof': 'a proof on its own card', 'root': 'the root'}
+ROOT_STATES = {'formal_proved': 'the root is proved, and the proof is complete in Lean',
+               'informal_proved': 'the root is settled by accepted proofs; no proof of it is complete in Lean yet',
+               'formal_refuted': 'the root is refuted, and the refutation is complete in Lean',
+               'informal_refuted': 'the root is refuted by a settled statement; the refutation is not complete in Lean yet',
+               'contested': 'the root and its negation both have settled proofs, so neither stands',
+               'unresolved': 'the root is open'}
+# What the words on a card mean, for a reader who does not know the research method. The page shows the
+# entries whose words occur on the map, and each word of the selected card carries its entry.
+GLOSSARY = {
+    'unit': 'A result or a definition that one would name when saying how the proof goes. Every card is a unit.',
+    'step': 'A result that lives inside one proof. A step has no card; it is folded into the lines that pass through it.',
+    'root': 'The proposition the research set out to settle.',
+    'statement': 'A proposition stated in Lean. Its card says how its proof stands.',
+    'definition': 'A definition of the Lean library.',
+    'opaque definition': 'A constant of the Lean library whose value Lean does not unfold.',
+    'inductive type': 'A type of the Lean library that is given by its constructors.',
+    'proof': 'A proof of a statement, drawn as a card of its own. The declaration of the statement itself carries no proof.',
+    'another proof': 'A further proof of a statement that has one already. The proofs are separate arguments, not joint inputs.',
+    'proof on a separate card': 'The declaration of this statement carries no proof. Its proof is the card that the heavy '
+                                'line comes from.',
+    'no proof': 'The statement stands without a proof.',
+    'proof not confirmed': 'A proof was offered, and review found a gap in it or could not finish judging it.',
+    'correct, held back': 'Review found the proof correct and did not accept it: it can still be made simpler, or it closes '
+                          'a part by computation without saying why that part holds.',
+    'accepted': 'Review found the proof correct and accepted it.',
+    'settled': 'One of its proofs is accepted, and every statement that proof names is settled in the same way.',
+    'not settled': 'No proof of it is accepted and rests on settled statements only.',
+    'formal': 'One of its proofs is complete in Lean: it rests on nothing but the allowed axioms, with no gap below it.',
+    'refuted': 'A statement that Lean confirmed as the negation of this one is settled.',
+    'refutes the root': 'Lean confirmed that this statement is the negation of the root.',
+    'from the literature': 'The result is taken from a published source, which its record names.'}
 
 CARD_WIDTH = 300
 TEXT_LEFT, TEXT_RIGHT, TEXT_TOP, TEXT_BOTTOM = 20, 12, 12, 12
@@ -160,16 +193,30 @@ def wrap(text, size, width, bold=False, mono=False, after=' '):
     return lines or ['']
 
 
-def status_of(unit):
-    """What a card says under the name: the kind, and for a statement or a proof its standing."""
+def proved_apart(data):
+    """The statements that carry no proof themselves and have a proof drawn as a card of its own.
+
+    The card of such a statement would say `no proof` beside `settled`, and the card of its proof `another
+    proof` although it is the only one. Their words and the mark of the standing follow this set instead."""
+    apart = {unit.get('proves') for unit in data['units'] if unit['role'] == 'proof'}
+    return {unit['id'] for unit in data['units'] if unit['id'] in apart and unit.get('standing') == 'no_proof'}
+
+
+def status_of(unit, bare=()):
+    """What a card says under the name: the kind, and for a statement or a proof its standing.
+
+    `bare` is the set of proved_apart: the statements whose proofs are all cards of their own."""
     words = ['root'] if unit.get('root') else []
     if unit.get('refuted'):
         words.append('refuted')
     if unit.get('refutes'):
         words.append('refutes the root')
-    words.append('another proof' if unit['role'] == 'proof' else KINDS.get(unit['kind'], unit['kind']))
+    if unit['role'] == 'proof':
+        words.append('proof' if unit.get('proves') in bare else 'another proof')
+    else:
+        words.append(KINDS.get(unit['kind'], unit['kind']))
     if unit.get('standing'):
-        words.append(STANDINGS[unit['standing']][0])
+        words.append('proof on a separate card' if unit['id'] in bare else STANDINGS[unit['standing']][0])
         words.append('settled' if unit.get('settled') else 'not settled')
         if unit.get('formal'):
             words.append('formal')
@@ -178,13 +225,13 @@ def status_of(unit):
     return words
 
 
-def card_of(unit):
+def card_of(unit, bare=()):
     """The lines of a card and its height. The width is fixed, so a layout never depends on a font."""
     inner = CARD_WIDTH - TEXT_LEFT - TEXT_RIGHT
     label = wrap(unit['label'], LABEL_SIZE, inner, bold=True)
     name = wrap(unit['id'], NAME_SIZE, inner, mono=True, after='.')
     status, line = [], ''
-    for word in status_of(unit):  # a line never ends in a separator
+    for word in status_of(unit, bare):  # a line never ends in a separator
         longer = line + ' · ' + word if line else word
         if line and text_width(longer, STATUS_SIZE) > inner:
             status.append(line)
@@ -196,13 +243,17 @@ def card_of(unit):
     return {'label': label, 'name': name, 'status': status, 'width': CARD_WIDTH, 'height': height}
 
 
-def via_text(data, edge):
-    """The words written on a line that passes through folded elements; the data keeps the whole list."""
+def via_text(data, edge, shown=VIA_SHOWN):
+    """The words written on a line that passes through folded elements; the data keeps the whole list.
+
+    At most `shown` of them are named and the rest counted; with none named the words give the number alone."""
     names = [data['folded'].get(name, {}).get('label') or name for name in edge['via']]
     if not names:
         return None
-    more = len(names) - VIA_SHOWN
-    return 'via ' + ', '.join(names[:VIA_SHOWN]) + (f' and {more} more' if more > 0 else '')
+    if not shown:
+        return f"via {len(names)} step{'s' if len(names) > 1 else ''}"
+    more = len(names) - shown
+    return 'via ' + ', '.join(names[:shown]) + (f' and {more} more' if more > 0 else '')
 
 
 def via_box(words):
@@ -421,30 +472,42 @@ def layered(data, cards):
         frames[key] = (x0, above[number] - GROUP_PAD_TOP, x1 - x0, need[number] + GROUP_PAD_TOP + GROUP_PAD_BOTTOM)
 
     # A label is put on a stretch between two layers, nearest the target first, where the line is the edge's own,
-    # at the first place where it covers no card and no other label.
+    # at the first place where it covers no card and no other label. The names of three steps are often wider
+    # than the space between two layers, and a label that found no free place used to lie across the cards beside
+    # it and hide their words. So a label that finds no place names one step fewer and tries again, down to the
+    # number of steps alone; the data keeps every name, and the page lists them for the selected unit.
     taken = [(x - 4, y - 4, w + 8, h + 8) for x, y, w, h in boxes.values()]
     labels = []
     for number, edge in enumerate(data['edges']):
-        words = via_text(data, edge)
-        if not words:
-            labels.append(None)
+        if not edge['via']:
+            labels.append((None, None))
             continue
-        wide, tall = via_box(words)
-        points, places = routes[number], []
-        stretches = [(points[i], points[i + 1]) for i in range(0, len(points) - 1, 2)]
-        for t in (0.5, 0.32, 0.68):
-            for (x1, y1), (x2, y2) in stretches[::-1][:3]:
-                x, y = curve_point(x1, y1, x2, y2, t)
-                places.append((x - wide / 2, y - tall / 2, wide, tall))
-        free = next((place for place in places if not any(overlap(place, other) for other in taken)), places[0])
-        taken.append(free)
-        labels.append(free)
+        points = routes[number]
+        stretches = [(points[i], points[i + 1]) for i in range(0, len(points) - 1, 2)][::-1][:3]
+        found, words = None, None
+        for shown in range(VIA_SHOWN, -1, -1):
+            shorter = via_text(data, edge, shown)
+            if shorter == words:
+                continue
+            words = shorter
+            wide, tall = via_box(words)
+            places = []
+            for t in (0.5, 0.32, 0.68):
+                for (x1, y1), (x2, y2) in stretches:
+                    x, y = curve_point(x1, y1, x2, y2, t)
+                    places.append((x - wide / 2, y - tall / 2, wide, tall))
+            found = next((place for place in places if not any(overlap(place, other) for other in taken)), None)
+            if found:
+                break
+        found = found or places[0]  # nothing is free: the shortest words, where the line is most its own
+        taken.append(found)
+        labels.append((found, words))
 
     right = max([x + w for x, _, w, _ in frames.values()] + [x + w for x, _, w, _ in boxes.values()])
     shared = {net: index for index, net in enumerate(dict.fromkeys(nets))}
     return {'engine': 'layered', 'width': right, 'height': cursor - GROUP_GAP, 'cards': boxes, 'groups': frames,
-            'edges': [{'points': routes[n], 'smooth': True, 'label': labels[n], 'net': shared[nets[n]]}
-                      for n in range(len(pairs))]}
+            'edges': [{'points': routes[n], 'smooth': True, 'label': labels[n][0], 'words': labels[n][1],
+                       'net': shared[nets[n]]} for n in range(len(pairs))]}
 
 
 def curve_point(x1, y1, x2, y2, t):
@@ -521,7 +584,8 @@ def elk(data, cards, package):
         points = [section['startPoint'], *(section.get('bendPoints') or []), section['endPoint']]
         found = (routed[f'e{index}'].get('labels') or [None])[0]
         label = (found['x'], found['y'], found['width'], found['height']) if found and 'x' in found else None
-        routes.append({'points': [(p['x'], p['y']) for p in points], 'smooth': False, 'label': label, 'net': index})
+        routes.append({'points': [(p['x'], p['y']) for p in points], 'smooth': False, 'label': label,
+                       'words': via_text(data, data['edges'][index]), 'net': index})
 
     def box(key):
         node = placed[key]
@@ -577,11 +641,29 @@ def text(x, y, content, size, colour=INK, weight=400, anchor='start', family=Non
             f'{esc(content)}</text>')
 
 
-def legend(limit, y):
-    """Under the title: what each line means, then the colour of each standing. Returns the parts and the last baseline.
+def dashed(dash):
+    """The attribute of a dash pattern; a solid line carries none."""
+    return f' stroke-dasharray="{dash}"' if dash else ''
+
+
+def occurring(data, bare=()):
+    """What a legend of this map has to explain: the kinds of line, the kinds of card and the standings that occur.
+
+    Each is listed in the order of the visual grammar. The standing of a statement whose proof is a card of
+    its own is not marked on its card, so it does not count."""
+    kinds = {edge['kind'] for edge in data['edges']}
+    roles = {'root' if unit.get('root') else unit['role'] for unit in data['units']}
+    standings = {unit['standing'] for unit in data['units'] if unit.get('standing') and unit['id'] not in bare}
+    return ([kind for kind in LEGEND if kind in kinds], [role for role in CARD if role in roles],
+            [standing for standing in STANDINGS if standing in standings])
+
+
+def legend(limit, y, data, bare=()):
+    """Under the title: the lines, the cards and the standings that occur on this map. Returns the parts and the last baseline.
 
     The entries run from left to right and continue on a new row where the next would pass `limit`."""
     parts, x = [], MARGIN
+    kinds, roles, standings = occurring(data, bare)
 
     def place(width):
         nonlocal x, y
@@ -590,28 +672,52 @@ def legend(limit, y):
         x += width
         return x - width
 
-    for kind, words in LEGEND.items():
-        dash, width = LINES[kind]
+    for kind in kinds:
+        (dash, width), words = LINES[kind], LEGEND[kind]
         colour = FIXED_COLOURS.get(kind, '#4B6072')
         at = place(62 + text_width(words, 14) + 30)
-        parts.append(f'<path d="M {fmt(at)} {y - 5} h 46" fill="none" stroke="{colour}" stroke-width="{width}" stroke-dasharray="{dash}"/>')
+        parts.append(f'<path d="M {fmt(at)} {y - 5} h 46" fill="none" stroke="{colour}" stroke-width="{width}"{dashed(dash)}/>')
         parts.append(f'<path d="M {fmt(at + 54)} {y - 5} l -9 -4 v 8 Z" fill="{colour}"/>')
         parts.append(text(at + 62, y, words, 14, SUBTLE))
-    for words, colour in STANDINGS.values():
+    for role in roles:
+        (fill, border, _), words = CARD[role], CARD_WORDS[role]
+        at = place(26 + text_width(words, 14) + 22)
+        parts.append(f'<rect x="{fmt(at)}" y="{y - 12}" width="20" height="14" rx="3" fill="{fill}" stroke="{border}" '
+                     f'stroke-width="1.4"/>')
+        parts.append(text(at + 26, y, words, 14, SUBTLE))
+    for standing in standings:
+        words, colour = STANDINGS[standing]
         at = place(14 + text_width(words, 14) + 22)
         parts.append(f'<rect x="{fmt(at)}" y="{y - 12}" width="8" height="14" rx="2" fill="{colour}"/>')
         parts.append(text(at + 14, y, words, 14, SUBTLE))
+    if kinds:
+        words = 'lines that leave one card have one colour'
+        parts.append(text(place(text_width(words, 14) + 22), y, words, 14, SUBTLE))
     return parts, y
 
 
-def svg_of(data, cards, geometry):
+def scope_words(data):
+    """Which units the map shows, in words."""
+    if data.get('scope') == 'all':
+        return 'every unit of the library'
+    refuted = str(data.get('root_state') or '').endswith('refuted')
+    return 'the units the refutation of the root rests on' if refuted else 'the units the proof of the root rests on'
+
+
+def state_words(data):
+    """How the root stands, in words; a state this code does not know is shown as it is."""
+    return ROOT_STATES.get(data.get('root_state')) or f"root state: {data.get('root_state')}"
+
+
+def svg_of(data, cards, geometry, bare=()):
     units = {unit['id']: unit for unit in data['units']}
     counts = data['counts']
-    scope = 'every unit of the canon' if data.get('scope') == 'all' else 'the units the proof of the root rests on'
-    subtitle = (f"{data.get('root_label') or ''} · {counts['units']} units, {counts['edges']} edges, {counts['groups']} groups · "
-                f"{scope} · root state: {data.get('root_state')} · canon revision {data.get('revision')}")
+    library = f" · library {data['library']}, revision {data.get('revision')}" if data.get('library') else ''
+    subtitle = (f"{data.get('root_label') or ''} · {state_words(data)} · {counts['units']} units in {counts['groups']} groups, "
+                f"{counts['edges']} lines, {len(data.get('folded') or {})} steps folded into the lines · "
+                f"{scope_words(data)}{library}")
     width = max(geometry['width'], text_width(subtitle, 15), text_width(data['title'], 30, bold=True), 640) + 2 * MARGIN
-    head, baseline = legend(width - MARGIN, 104)
+    head, baseline = legend(width - MARGIN, 104, data, bare)
     header = baseline + 28
     height = geometry['height'] + header + MARGIN
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(width)}" height="{fmt(height)}" '
@@ -664,7 +770,7 @@ def svg_of(data, cards, geometry):
             lines.append(
                 f'<g class="edge" id="e{index}" data-source="{esc(edge["source"])}" data-target="{esc(edge["target"])}" '
                 f'data-kind="{edge["kind"]}">'
-                f'<path class="wire" d="{d}" fill="none" stroke="{ink}" stroke-width="{stroke}" stroke-dasharray="{dash}" '
+                f'<path class="wire" d="{d}" fill="none" stroke="{ink}" stroke-width="{stroke}"{dashed(dash)} '
                 f'stroke-linecap="round" stroke-linejoin="round"/>'
                 f'<path class="arrow" d="{tip}" fill="{ink}"/></g>')
         parts += casings + lines
@@ -676,10 +782,11 @@ def svg_of(data, cards, geometry):
         card = cards[name]
         fill, border, thick = CARD['root' if unit.get('root') else unit['role']]
         tooltip = unit['id'] + (' — ' + unit['description'] if unit.get('description') else '')
-        parts.append(f'<g class="node" data-node="{esc(name)}" data-role="{unit["role"]}"><title>{esc(tooltip)}</title>'
+        parts.append(f'<g class="node" data-node="{esc(name)}" data-role="{unit["role"]}" '
+                     f'data-status="{esc(" · ".join(status_of(unit, bare)))}"><title>{esc(tooltip)}</title>'
                      f'<rect class="card" x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="8" '
                      f'fill="{fill}" stroke="{border}" stroke-width="{thick}"/>')
-        if unit.get('standing'):
+        if unit.get('standing') and name not in bare:  # the proof of a statement in `bare` is a card of its own
             parts.append(f'<path class="standing" d="M {fmt(x + 8)} {fmt(y)} Q {fmt(x)} {fmt(y)} {fmt(x)} {fmt(y + 8)} '
                          f'V {fmt(y + h - 8)} Q {fmt(x)} {fmt(y + h)} {fmt(x + 8)} {fmt(y + h)} Z" '
                          f'fill="{STANDINGS[unit["standing"]][1]}"/>')
@@ -700,7 +807,7 @@ def svg_of(data, cards, geometry):
 
     parts.append('<g id="labels">')
     for index, edge in enumerate(data['edges']):
-        place, words = geometry['edges'][index]['label'], via_text(data, edge)
+        place, words = geometry['edges'][index]['label'], geometry['edges'][index].get('words')
         if not place or not words:
             continue
         x, y, w, h = place
@@ -713,13 +820,59 @@ def svg_of(data, cards, geometry):
     return '\n'.join(parts) + '\n'
 
 
-def page_of(svg, data):
-    """The viewer page: the same SVG inline, and the map's data for the panel beside it."""
+def guide_of(data, bare=()):
+    """What the page's panel says about this map before a unit is chosen, as HTML: what it shows and how to read it.
+
+    It is written here, beside the visual grammar, so that the page explains the lines, the cards and the
+    standings in the colours and dashes they are drawn with, and only those that occur on this map. The
+    glossary holds the words of the cards of this map; the page also shows an entry with each word of a
+    chosen card."""
+    counts, units = data['counts'], {unit['id']: unit for unit in data['units']}
+    name = esc(data.get('root_label') or data['root'])
+    if data['root'] in units:
+        name = f'<a href="#node={quote(data["root"], safe="")}">{name}</a>'
+    steps = len(data.get('folded') or {})
+    folded = (f' {steps} smaller step{"s have" if steps > 1 else " has"} no card and {"are" if steps > 1 else "is"} folded '
+              f'into the lines that pass through {"them" if steps > 1 else "it"}.') if steps else ''
+    parts = [f'<p class="about">The root of this research is {name}: {esc(state_words(data))}. The map shows '
+             f'{esc(scope_words(data))}: {counts["units"]} units, each a card, in {counts["groups"]} groups, joined by '
+             f'{counts["edges"]} lines.{folded}</p>']
+    kinds, roles, standings = occurring(data, bare)
+    parts.append('<div class="legend"><h3>How to read the map</h3>'
+                 '<p>An arrow runs from what is used to what uses it, so the map is read from the left, where the '
+                 'definitions and the first results stand, towards the root. Lines that leave one card have one colour.</p><ul>')
+    for kind in kinds:
+        dash, width = LINES[kind]
+        colour = FIXED_COLOURS.get(kind, '#4B6072')
+        parts.append(f'<li><svg class="sample" width="56" height="12" viewBox="0 0 56 12" aria-hidden="true">'
+                     f'<path d="M 1 6 h 44" fill="none" stroke="{colour}" stroke-width="{width}"{dashed(dash)}/>'
+                     f'<path d="M 55 6 l -10 -4.5 v 9 Z" fill="{colour}"/></svg>{esc(LEGEND[kind])}</li>')
+    for role in roles:
+        fill, border, _ = CARD[role]
+        parts.append(f'<li><span class="sample card" style="background:{fill};border-color:{border}"></span>'
+                     f'{esc(CARD_WORDS[role])}</li>')
+    for standing in standings:
+        words, colour = STANDINGS[standing]
+        parts.append(f'<li><span class="sample bar" style="background:{colour}"></span>'
+                     f'the bar at the left of a card: {esc(words)}</li>')
+    parts.append('</ul></div>')
+    said = {word for unit in data['units'] for word in status_of(unit, bare)}
+    parts.append('<div class="glossary"><h3>The words on the cards</h3><dl>')
+    for word, meaning in GLOSSARY.items():
+        if word in said or word in ('unit', 'step'):
+            parts.append(f'<dt data-word="{esc(word)}">{esc(word)}</dt><dd>{esc(meaning)}</dd>')
+    parts.append('</dl></div>')
+    return '\n'.join(parts)
+
+
+def page_of(svg, data, bare=()):
+    """The viewer page: the same SVG inline, the guide to this map, and the map's data for the panel beside it."""
     template = (HERE / 'viewer.html').read_text(encoding='utf-8')
-    head, rest = template.split('__SVG__', 1)
+    head, rest = template.split('__GUIDE__', 1)
+    middle, rest = rest.split('__SVG__', 1)
     between, tail = rest.split('__DATA__', 1)
     payload = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')
-    return head.replace('__TITLE__', esc(data['title'])) + svg + between + payload + tail
+    return head.replace('__TITLE__', esc(data['title'])) + guide_of(data, bare) + middle + svg + between + payload + tail
 
 
 def groups_in_a_cycle(data):
@@ -744,7 +897,8 @@ def render(data, layout='auto', elkjs=None):
     'auto' takes ELK when it is present and the groups do not depend on each other in a cycle. ELK
     draws a group as one box placed along the flow, so a cycle among groups sends lines backwards
     around the whole drawing; the built-in layout draws a group as a band and has no such case."""
-    cards = {unit['id']: card_of(unit) for unit in data['units']}
+    bare = proved_apart(data)
+    cards = {unit['id']: card_of(unit, bare) for unit in data['units']}
     geometry, note = None, None
     if layout in ('auto', 'elk'):
         package, missing = find_elk(elkjs)
@@ -764,5 +918,5 @@ def render(data, layout='auto', elkjs=None):
                 note = f'ELK failed ({error}); the built-in layered layout was used.'
     if geometry is None:
         geometry = layered(data, cards)
-    svg = svg_of(data, cards, geometry)
-    return svg, page_of(svg, data), geometry['engine'], note
+    svg = svg_of(data, cards, geometry, bare)
+    return svg, page_of(svg, data, bare), geometry['engine'], note
