@@ -1579,6 +1579,29 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
         self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
 
+    def test_the_newest_build_of_the_runner_is_not_pruned(self):
+        # The judge of formal proofs reads the lib folder of a publication's build after the build is over,
+        # and a runner that stopped while the publication waited for the judge takes it up again from that
+        # build. So the runner's newest build stays, with its lib folder, however many builds the sessions
+        # finish after it. An older build of the runner is one it no longer needs, and goes like any other.
+        self.start_broker()
+        def build_once(name, session):
+            root = self.instance / "sessions/s1/work" / name
+            build_id = self.build(root, [source(root / "Target.lean", imports=(), marker=name)], session=session)
+            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+            return build_id, Path(self.build_record(build_id)["lib"])
+        with patch.object(lean_broker, "KEEP_FINISHED", 1):
+            older, older_lib = build_once("older", lean_broker.RUNNER_SESSION)
+            held, held_lib = build_once("held", lean_broker.RUNNER_SESSION)
+            later = [build_once(name, "s1") for name in ("one", "two", "three")]
+        self.assertNotIn(older, self.broker.state["builds"])
+        self.assertFalse(older_lib.exists())
+        self.assertEqual(self.build_record(held)["status"], "finished")
+        self.assertTrue((held_lib / "Target.olean").is_file())
+        # The sessions' builds are pruned as before: of the three, the newest is left.
+        self.assertEqual([build_id in self.broker.state["builds"] for build_id, _ in later], [False, False, True])
+        self.assertEqual([lib.exists() for _, lib in later], [False, False, True])
+
     def test_pruning_finished_jobs_leaves_a_waiting_module_what_it_needs(self):
         # A waiting module learns that its imports compiled, and what they emitted, from the build's own
         # record. With room for one finished job, the jobs of A, B and C are pruned before D is keyed.

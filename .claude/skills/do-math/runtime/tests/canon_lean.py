@@ -294,7 +294,10 @@ def judge(source):
             print(f'@@judge {number} export {position} {codes[-1]}')
         if not any(codes):
             compare = case['compare']
-            result = subprocess.run(compare['command'] + compare['args'], capture_output=True, text=True, encoding='utf-8')
+            # As the real file does: the folders the plan names stand first on the comparator's PATH.
+            path = os.pathsep.join(p for p in (*compare.get('path', []), os.environ.get('PATH')) if p)
+            result = subprocess.run(compare['command'] + compare['args'], capture_output=True, text=True, encoding='utf-8',
+                                    env={**os.environ, 'PATH': path})
             Path(compare['log']).write_text(result.stdout + result.stderr, encoding='utf-8')
             print(f'@@judge {number} compare {result.returncode}')
     print('@@judge done')

@@ -112,6 +112,7 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
     if absent:
         raise ValueError('mcp_servers names a command that was not found: ' + ', '.join(absent)
                          + '; give the installed path, or set "mcp_servers" to {} to run without external tools')
+    judge_commands(config['lean'])  # a judge that is asked for and cannot run here is refused before anything is created
     instance.mkdir(parents=True, exist_ok=False)
     for name in ('knowledge/events', 'knowledge/changes', 'knowledge/reviews', 'knowledge/organizations',
                  'sessions', 'runner', 'control/inputs', 'control/requests', 'canon'):
@@ -780,8 +781,9 @@ class Runner:
             extracted = with_importers(stage / 'lean', self.model['library'], changed)
             publication.update(changed=changed, extracted=extracted, removed=removed)
             if changed or removed:
+                from lean_broker import RUNNER_SESSION  # the broker keeps the newest build made under it
                 publication.update(stage='build', build=start_build(
-                    self.instance, stage / 'lean', self.model['library'], 'runner',
+                    self.instance, stage / 'lean', self.model['library'], RUNNER_SESSION,
                     self.settings['lean']['calibration_expect_mb'], extracted, required_pairs(records)))
             else:
                 publication['stage'] = 'check'
@@ -824,7 +826,10 @@ class Runner:
             # The formal proofs this change brings are exported and judged outside the index (judge.py).
             # A rejection is the candidate's fault, like a module that does not compile. A judge that
             # could not run says nothing about the candidate: the build is made once more, and after
-            # that the runner stops with the reason, for the operator to repair.
+            # that the runner stops with the reason, for the operator to repair. The publication waits
+            # at this stage with its build, and the runner started after the repair asks the judge
+            # again. The broker keeps that build's compiled modules for it meanwhile, however many
+            # later builds finish (lean_broker.Broker.prune).
             state, folder = publication['judge'], stage / 'judge'
             commands, why = judge_commands(self.settings['lean'])
             if commands is None:
@@ -1512,6 +1517,10 @@ class Runner:
 
 def start(instance):
     instance = Path(instance).resolve()
+    # A judge that the settings ask for and that cannot run on this machine would end the runner at the first
+    # publication it has to judge. It is refused here instead, with what is missing (judge.judge_commands).
+    # The runner inherits this process's environment, so what is found here is what the runner will find.
+    judge_commands(load_settings(instance)['lean'])
     token = uuid.uuid4().hex
     stdout = instance / 'runner' / ('start-' + token + '.stdout.log')
     stderr = instance / 'runner' / ('start-' + token + '.stderr.log')
@@ -1544,7 +1553,11 @@ def status(instance):
     model = replay(instance)
     from lean_broker import Paths, broker_status
     rows = board(instance, state, model)
-    commands, why = judge_commands(load_settings(instance)['lean'])
+    lean = load_settings(instance)['lean']
+    try:
+        commands, why = judge_commands(lean)
+    except ValueError as exc:  # a judge that is asked for and cannot run here: reported, as `start` refuses it
+        commands, why = None, str(exc)
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['root_state'], 'finished': state['finished'],
             # Whether formal proofs are judged outside the index, and why not when they are not (judge.py).

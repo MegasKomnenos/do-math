@@ -48,6 +48,7 @@ ESTIMATE_BASIS = 5  # the fewest measured import sets from which the baseline of
 ACTIVE = ("queued", "running")
 FINISHED = ("finished", "failed", "cancelled")
 BROKER_SESSION = "broker"
+RUNNER_SESSION = "runner"  # the session of the build the runner makes for a publication; prune keeps its newest
 NICE = {"normal": 0, "below_normal": 10, "idle": 19}
 WINDOWS_PRIORITY = {"normal": 0x20, "below_normal": 0x4000, "idle": 0x40}
 P90 = 1.2816  # the standard-normal 90th percentile: an estimate is read as a probable peak
@@ -1357,14 +1358,23 @@ class Broker:
 
         A build keeps what its waiting modules need of the finished ones in its own record, so a
         job can go once it has finished. A pruned build loses its lib folder, which no compile
-        reads once the build is over."""
+        reads once the build is over.
+
+        The runner's newest build is never pruned. The judge of formal proofs reads its lib folder
+        after the build is over, and a runner that stopped while a publication waited for the judge
+        takes the publication up again from that build, however long it was stopped and however
+        many builds the sessions finished meanwhile. The runner carries one publication at a time,
+        so an older build of its own is one it no longer needs, and goes like any other."""
         finished = sorted((j for j in self.state["jobs"].values() if j["status"] in FINISHED),
                           key=lambda j: j["finished_at"] or 0)
         for job in finished[:-KEEP_FINISHED] if len(finished) > KEEP_FINISHED else []:
             del self.state["jobs"][job["id"]]
         builds = sorted((b for b in self.state["builds"].values() if b["status"] in FINISHED),
                         key=lambda b: b["finished_at"] or 0)
+        held = next((b["id"] for b in reversed(builds) if b["session"] == RUNNER_SESSION), None)
         for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
+            if build["id"] == held:
+                continue
             del self.state["builds"][build["id"]]
             shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 

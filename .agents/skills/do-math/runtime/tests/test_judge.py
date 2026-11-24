@@ -48,18 +48,52 @@ class CommandTests(unittest.TestCase):
             for name in ('lean', 'leanexport', 'lake'):
                 Path(folder, name + suffix).write_text('', encoding='utf-8')
             lean = {'command': [str(Path(folder, 'lean' + suffix))], 'judge': 'auto'}
-            commands, why = judge.judge_commands(lean)
+            with patch.object(judge, 'program_folders', return_value=(['/programs', '/git'], [])):
+                commands, why = judge.judge_commands(lean)
             self.assertIsNone(why)
             self.assertEqual(commands['export'], [Path(folder, 'leanexport' + suffix).as_posix()])
             self.assertEqual(commands['compare'][:2], [Path(folder, 'lake' + suffix).as_posix(), 'comparator'])
             if os.name == 'nt':
                 # The comparator's sandbox needs Linux namespaces, so it is switched off where it cannot run.
                 self.assertEqual(commands['compare'][2:], ['--inadvisably-no-sandbox'])
+            # The folders of the programs the comparator looks up go with the commands.
+            self.assertEqual(commands['path'], ['/programs', '/git'])
+            # A program that is not found leaves a judge that is asked for and cannot run. That is an error
+            # which names the program, and not the absence of a judge.
+            with patch.object(judge, 'program_folders', return_value=(['/git'], ['which', 'env'])):
+                with self.assertRaisesRegex(ValueError, 'cannot run on this machine.*not found: which, env.*lean.judge to null'):
+                    judge.judge_commands(lean)
             # An installation without the exporter, as Lean before 4.35 is, has no judge, and says why.
             Path(folder, 'leanexport' + suffix).unlink()
-            commands, why = judge.judge_commands(lean)
+            with patch.object(judge, 'program_folders', return_value=([], ['which'])):
+                commands, why = judge.judge_commands(lean)
             self.assertIsNone(commands)
             self.assertIn('leanexport', why)
+
+    def test_the_programs_the_comparator_looks_up_are_found_on_path_and_where_git_for_windows_has_them(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder).resolve()
+            if os.name == 'nt':
+                # Git for Windows: `git` is on PATH from <Git>\cmd, `which` and `env` stand in <Git>\usr\bin, which
+                # is on PATH only in Git's own shell. A `which.cmd`, as a Node package installs one, is not a
+                # program the comparator can start by the bare name.
+                on_path, programs = [base / 'Git/cmd', base / 'npm'], base / 'Git/usr/bin'
+                files = [base / 'Git/cmd/git.exe', programs / 'which.exe', programs / 'env.exe', base / 'npm/which.cmd']
+                expected = [str(programs), str(base / 'Git/cmd')]
+            else:
+                on_path, programs = [base / 'bin'], base / 'bin'
+                files = [programs / 'git', programs / 'which', programs / 'env']
+                expected = [str(programs)]
+            for file in files:
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text('', encoding='utf-8')
+                file.chmod(0o755)
+            with patch.dict(os.environ, {'PATH': os.pathsep.join(str(p) for p in on_path)}):
+                self.assertEqual(judge.program_folders(), (expected, []))
+                (programs / ('env.exe' if os.name == 'nt' else 'env')).unlink()
+                self.assertEqual(judge.program_folders()[1], ['env'])
+            with patch.dict(os.environ, {'PATH': str(base / 'nothing')}):
+                self.assertEqual(judge.program_folders(), ([], ['which', 'git', 'env']))
 
     def test_the_settings_can_name_the_commands_or_switch_the_judge_off(self):
         lean = {'command': ['lean'], 'judge': JUDGE}
@@ -151,9 +185,16 @@ class TargetTests(unittest.TestCase):
         self.assertIn('DoMathJudge.exportTo "C:/tools/lean export.exe" #["S.M", "--", "S.a"] "C:\\\\build \\"x\\"\\\\lib" "e.ndjson"', source)
         self.assertIn('IO.println s!"@@judge 0 export 0 {e0x0}"', source)
         self.assertIn('if e0x0 == 0 then', source)
-        self.assertIn('DoMathJudge.compare "lake" #["comparator", "--config", "c.json"] "c.log"', source)
+        self.assertIn('DoMathJudge.compare "lake" #["comparator", "--config", "c.json"] #[] "c.log"', source)
         self.assertIn('IO.println "@@judge done"', source)
         self.assertNotIn('import ', source)
+        # The folders of the programs the comparator looks up are handed to the function that starts it,
+        # which puts them first on the comparator's PATH.
+        plan['cases'][0]['compare']['path'] = ['C:\\Git\\usr\\bin', 'C:\\Git\\cmd']
+        source = judge.launcher_source(plan)
+        self.assertIn('DoMathJudge.compare "lake" #["comparator", "--config", "c.json"] '
+                      '#["C:\\\\Git\\\\usr\\\\bin", "C:\\\\Git\\\\cmd"] "c.log"', source)
+        self.assertIn('env := #[("PATH", some path)]', source)
 
     def test_the_theorem_that_carries_the_root_to_the_judge(self):
         self.assertEqual(judge.wrapper('Small.root', 'Small.Root', 'proved'),
@@ -235,6 +276,27 @@ class PublicationTests(InstanceCase):
         self.drain(engine)
         self.assertEqual(list(self.judged()), ['Small.sumZero'])
 
+    def test_the_comparator_is_started_with_the_folders_of_its_programs_first_on_its_path(self):
+        # The comparator here prints the PATH it was started with and ends with its code for "could not start",
+        # so that the reason the runner stops with shows what the comparator received.
+        programs = str(self.root / 'programs')
+        show = [sys.executable, '-c', 'import os, sys; print("PATH=" + os.environ["PATH"]); sys.exit(2)']
+        commands = {**JUDGE, 'compare': show, 'path': [programs]}
+        with patch.object(runtime, 'judge_commands', return_value=(commands, None)):
+            with self.assertRaises(RuntimeError) as stopped:
+                self.publish(self.zero())
+        self.assertIn('PATH=' + programs + os.pathsep, str(stopped.exception))
+
+    def test_a_judge_that_is_asked_for_and_cannot_run_here_is_refused_at_start_and_named_by_the_status(self):
+        why = 'the judge of formal proofs cannot run on this machine: these were not found: which, env'
+        with patch.object(runtime, 'judge_commands', side_effect=ValueError(why)):
+            with patch.object(runtime.subprocess, 'Popen') as launched:
+                with self.assertRaisesRegex(ValueError, 'not found: which, env'):
+                    runtime.start(self.instance)
+            launched.assert_not_called()
+            status = runtime.status(self.instance)['judge']
+        self.assertEqual((status['available'], status['commands'], status['reason']), (False, None, why))
+
     def test_an_exporter_that_fails_is_not_a_rejection_either(self):
         self.configure(lean={'judge': {**JUDGE, 'export': [sys.executable, '-c', 'import sys; sys.exit(1)']}})
         with self.assertRaisesRegex(RuntimeError, 'the exporter ended with code 1'):
@@ -277,6 +339,11 @@ class InitTests(unittest.TestCase):
         broken = {**JUDGE, 'compare': [sys.executable, '-c', 'import sys; sys.exit(2)']}
         with self.assertRaisesRegex(ValueError, 'could not run.*set lean.judge to null'):
             self.create(ZERO, judge=broken)
+        # A judge whose programs are not found on this machine is refused before anything is created.
+        with patch.object(runtime, 'judge_commands', side_effect=ValueError('these were not found: which')):
+            with self.assertRaisesRegex(ValueError, 'not found: which'):
+                self.create(ZERO, judge='auto')
+        self.assertFalse((Path(self.temp.name) / 'instance').exists())
         self.assertEqual(Canon(self.create(ZERO, judge=None)).load_index()['judged'], {})
 
 

@@ -58,6 +58,12 @@ QUOTIENT = ('Quot', 'Quot.mk', 'Quot.lift', 'Quot.ind')
 # Windows limits a command line to 32,767 characters; the names of one export stay well below it.
 ARGUMENT_BUDGET = 20000
 MISSING = re.compile(r"Const not found in (?:challenge|solution):? ?'([^']+)'")
+# `lake comparator` looks these programs up through PATH before it reads anything it was given: it runs
+# `which git` and `which env` and refuses to start when either gives nothing (Lake/CLI/Check.lean of
+# Lean 4.36.0, mkContext and whichExe). It does so with its sandbox switched off and with both exports
+# handed to it, when it has nothing to build, and it reports a `which` that is itself missing as a
+# missing `git`.
+PROGRAMS = ('which', 'git', 'env')
 
 
 class Stop(Exception):
@@ -66,13 +72,42 @@ class Stop(Exception):
 
 # ----------------------------------------------------------------------------- which commands judge
 
+def program_folders():
+    """(folders, missing): the folders that hold the programs of PROGRAMS, and the programs that were not found.
+
+    The programs are looked for on the PATH of this process. On Windows `which` and `env` are not part
+    of the system. They come with Git for Windows, in the folder `usr\\bin` of its installation, which
+    only Git's own shell has on PATH; so they are looked for there as well, from where `git` stands
+    (`<Git>\\cmd` or `<Git>\\mingw64\\bin`). Only an executable file counts on Windows, because the
+    comparator starts `which` by that bare name, which Windows completes to `which.exe` and to nothing else."""
+    suffix = '.exe' if os.name == 'nt' else ''
+    git = shutil.which('git' + suffix)
+    beside = [above / 'usr' / 'bin' for above in list(Path(git).resolve().parents)[1:3]] if git and suffix else []
+    folders, missing = [], []
+    for name in PROGRAMS:
+        found = shutil.which(name + suffix) or next(
+            (str(folder / (name + suffix)) for folder in beside if (folder / (name + suffix)).is_file()), None)
+        if not found:
+            missing.append(name)
+        elif str(Path(found).parent) not in folders:
+            folders.append(str(Path(found).parent))
+    return folders, missing
+
+
 def judge_commands(lean):
     """({'export': argv, 'compare': argv}, None) for the judge of these Lean settings, or (None, why there is none).
 
     `lean.judge` is "auto", null, or the two commands. With "auto" the exporter and Lake are looked for
     beside the Lean command, where a Lean installation of version 4.35 or later has them. The sandbox of
     `lake comparator` needs Linux namespaces through bubblewrap; where it cannot run, the commands
-    carry the option that switches it off, and the builds of the canon are then trusted as they are."""
+    carry the option that switches it off, and the builds of the canon are then trusted as they are.
+
+    With "auto" the commands also carry, as 'path', the folders of the programs the comparator looks up
+    (PROGRAMS). The comparator is started with these folders first on its PATH (launcher_source), so it
+    finds the programs whatever environment the broker that runs the job was started in. When one of
+    them is not found, the judge that the settings ask for cannot run on this machine. That is an error,
+    a ValueError that names what is missing, and not the absence of a judge: without a judge formal
+    proofs are published unjudged, which is right only where the settings or the Lean version say so."""
     choice = lean.get('judge', 'auto')
     if choice is None:
         return None, 'lean.judge is null in the settings'
@@ -93,10 +128,18 @@ def judge_commands(lean):
     if not exporter or not lake:
         return None, ('no leanexport and lake were found beside the Lean command; they come with Lean 4.35 and '
                       'later, and lean.judge can name them')
+    folders, missing = program_folders()
+    if missing:
+        raise ValueError(
+            'the judge of formal proofs cannot run on this machine: `lake comparator` looks up `which`, `git` and '
+            '`env` through PATH before it judges anything, and these were not found: ' + ', '.join(missing)
+            + '. On Windows `which.exe` and `env.exe` come with Git for Windows, in the folder usr\\bin of its '
+              'installation. Run this command from a shell whose PATH has the folders of these programs, or set '
+              'lean.judge to null in the settings to go on without the judge')
     compare = [lake, 'comparator']
     if os.name == 'nt' or not shutil.which(os.environ.get('COMPARATOR_BWRAP') or 'bwrap'):
         compare.append('--inadvisably-no-sandbox')
-    return {'export': [exporter], 'compare': compare}, None
+    return {'export': [exporter], 'compare': compare, 'path': folders}, None
 
 
 # ----------------------------------------------------------------------------- what is judged
@@ -224,8 +267,12 @@ def launcher_source(plan):
              '  pump child.stdout target',
              '  target.flush',
              '  child.wait', '',
-             'def compare (cmd : String) (args : Array String) (log : String) : IO UInt32 := do',
-             '  let result ← IO.Process.output { cmd := cmd, args := args, stdin := .null }',
+             'def compare (cmd : String) (args folders : Array String) (log : String) : IO UInt32 := do',
+             '  let inherited := (← IO.getEnv "PATH").getD ""',
+             '  let separator := if System.Platform.isWindows then ";" else ":"',
+             '  let path := separator.intercalate (folders.toList ++ (if inherited.isEmpty then [] else [inherited]))',
+             '  let result ← IO.Process.output {',
+             '    cmd := cmd, args := args, env := #[("PATH", some path)], stdin := .null }',
              '  IO.FS.writeFile log (result.stdout ++ result.stderr)',
              '  pure result.exitCode', '',
              'end ' + LAUNCHER, '', '#eval show IO Unit from do']
@@ -240,7 +287,8 @@ def launcher_source(plan):
         compare = case['compare']
         lines += ['  if ' + ' && '.join(code + ' == 0' for code in codes) + ' then',
                   f'    let c{number} ← {LAUNCHER}.compare {lean_string(compare["command"][0])} '
-                  f'{lean_array(compare["command"][1:] + compare["args"])} {lean_string(compare["log"])}',
+                  f'{lean_array(compare["command"][1:] + compare["args"])} {lean_array(compare.get("path", []))} '
+                  f'{lean_string(compare["log"])}',
                   f'    IO.println s!"{MARK}{number} compare {{c{number}}}"']
     lines += [f'  IO.println "{MARK}done"', '']
     return '\n'.join(lines)
@@ -267,7 +315,8 @@ def start(instance, folder, cases, commands, allowed, expect_mb, session):
                             'solution_module': case['solution']['modules'][0],
                             'theorem_names': case['names'], 'permitted_axioms': list(allowed)})
         plan['cases'].append({'names': case['names'], 'exports': exports, 'compare': {
-            'command': commands['compare'], 'log': (folder / f'case-{number}.log').as_posix(),
+            'command': commands['compare'], 'path': commands.get('path', []),
+            'log': (folder / f'case-{number}.log').as_posix(),
             'args': ['--config', config.as_posix(), '--challenge-from-export', exports[0]['file'],
                      '--solution-from-export', exports[-1]['file']]}})
     write_json(folder / 'plan.json', plan)
