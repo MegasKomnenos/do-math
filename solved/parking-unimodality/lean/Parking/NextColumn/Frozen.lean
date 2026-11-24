@@ -4,7 +4,7 @@ import Parking.NextColumn.Compositions
 /-!
 # The frozen polynomial in the single-chain range
 
-`Kpoly k n y` is a polynomial in `y` (the frozen polynomial `K_{n,k}(y)/n!`): the chain expansion
+`Kpoly k n y` is a polynomial in `y` (the frozen polynomial `K_{n,k}(y)`): the chain expansion
 `κ_k(N) + ∑_m κ_k(N-m)/(N-m) · y · Λ_m(y;N)`, `N = n+1`.  For `n ≤ 2k+1` and a level
 `j ∈ {k, k+1}` the column sum `zr j` satisfies a Volterra equation (`zr_volterra`, from the
 single-chain formula `IsWSol.fwd`), whose solution is this chain expansion (`volterra_chain`), so
@@ -81,7 +81,7 @@ theorem kap_pos {k t : ℕ} (ht1 : 1 ≤ t) (ht2 : t ≤ 2 * k + 1) : 0 < kap k 
     nlinarith [h2, hc]
   exact (mul_pos_iff_of_pos_left ht).mp h3
 
-/-- The frozen polynomial (divided by `n!`) as a chain expansion, `N = n+1`:
+/-- The frozen polynomial `K_{n,k}(y)` (normalised like `zr`) as a chain expansion, `N = n+1`:
 `κ_k(N) + ∑_{m=1}^{n-k} κ_k(N-m)/(N-m) · y · Λ_m(y;N)`. -/
 noncomputable def Kpoly (k n : ℕ) (y : ℝ) : ℝ :=
   kap k (n + 1) + ∑ m ∈ Icc 1 (n - k),
@@ -262,7 +262,7 @@ private theorem kap_pred_self {k : ℕ} (hk : 1 ≤ k) : kap (k - 1) k = cay k :
     omega
   rw [h, sub_zero]
 
-/-- Knot identity: `K_{n,k-1}(y) - K_{n,k}(y) = (y - k) (a_k/k) Λ_{N-k}(y;N)` (divided by `n!`). -/
+/-- Knot identity: `K_{n,k-1}(y) - K_{n,k}(y) = (y - k) (a_k/k) Λ_{N-k}(y;N)`, `N = n+1`. -/
 private theorem Kpoly_knot {k n : ℕ} (hk : 1 ≤ k) (hn : k ≤ n) (y : ℝ) :
     Kpoly (k - 1) n y - Kpoly k n y
       = (y - k) * (cay k / k) * Lam (thr y ((n : ℝ) + 1)) (n + 1 - k) := by

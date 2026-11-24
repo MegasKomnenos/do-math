@@ -18,7 +18,7 @@ import Mathlib.Tactic.LinearCombination
   consecutive terms are nondecreasing; both statements are cross-multiplied, so that no division
   occurs.
 * `renewal_logConvex` : a positive log-convex kernel has a log-convex renewal sequence
-  (Kaluza 1928; de Bruijn–Erdős 1953, Theorem 1).
+  (de Bruijn–Erdős 1953, Theorem 1).
 * `resolvent` : if `v s = ι s + ∑_{i=1}^{s} f i * v (s - i)` for all `s`, then `v` is the
   convolution of the renewal sequence of `f` with `ι`.
 -/
@@ -94,7 +94,7 @@ theorem logConvex_cross {G : ℕ → ℝ} (hpos : ∀ n, 0 < G n)
 
 /-! ### Log-convexity of the renewal sequence -/
 
-/-- **Kaluza; de Bruijn–Erdős.**  The renewal sequence of a positive log-convex kernel is
+/-- **de Bruijn–Erdős.**  The renewal sequence of a positive log-convex kernel is
 log-convex.
 
 With `S = ∑_{i+j=M} (f (M+3) f (i+1) - f (M+2) f (i+2)) (u (M+2) u j - u (M+1) u (j+1))`, the

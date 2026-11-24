@@ -244,19 +244,19 @@
       "statement": "$$c_0 = \\frac{1}{\\sqrt{2\\pi}}.$$"
     },
     {
-      "id": "Parking.factorial_le_robbins",
+      "id": "Parking.factorial_lt_robbins",
       "label": "Robbins' upper bound for the factorial",
       "role": "statement",
       "kind": "theorem",
       "module": "Parking.Cayley.Stirling",
       "group": "Parking.Cayley",
       "root": false,
-      "description": "Robbins' upper bound for the factorial: $n! \\le \\sqrt{2\\pi n}\\,(n/e)^n\\, e^{1/(12n)}$ for every $n \\ge 1$.",
-      "lean": "Parking.factorial_le_robbins {n : ℕ} (hn : 1 ≤ n) :\n  ↑n.factorial ≤ √(2 * Real.pi * ↑n) * (↑n / Real.exp 1) ^ n * Real.exp (1 / (12 * ↑n))",
+      "description": "Robbins' upper bound for the factorial: $n! < \\sqrt{2\\pi n}\\,(n/e)^n\\, e^{1/(12n)}$ for every $n \\ge 1$.",
+      "lean": "Parking.factorial_lt_robbins {n : ℕ} (hn : 1 ≤ n) :\n  ↑n.factorial < √(2 * Real.pi * ↑n) * (↑n / Real.exp 1) ^ n * Real.exp (1 / (12 * ↑n))",
       "standing": "accepted",
       "settled": true,
       "formal": true,
-      "statement": "For every natural number $n \\ge 1$,\n\n$$n! \\le \\sqrt{2\\pi n}\\,\\Bigl(\\frac{n}{e}\\Bigr)^{n} e^{1/(12n)}.$$"
+      "statement": "For every natural number $n \\ge 1$,\n\n$$n! < \\sqrt{2\\pi n}\\,\\Bigl(\\frac{n}{e}\\Bigr)^{n} e^{1/(12n)}.$$"
     },
     {
       "id": "Parking.poissonMass",
@@ -2398,12 +2398,12 @@
       "module": "Parking.Unimodal",
       "group": "Parking",
       "root": false,
-      "description": "A finite sequence of natural numbers that has no strict descent followed, at a later position, by a strict ascent is unimodal: it is nondecreasing up to some position and nonincreasing from that position on.",
-      "lean": "Parking.unimodal_of_no_pair (f : ℕ → ℕ) (N : ℕ)\n  (h : ∀ (i j : ℕ), 1 ≤ i → i < j → j ≤ N → f i < f (i - 1) → f (j - 1) < f j → False) :\n  ∃ p ≤ N,\n    (∀ (ℓ : ℕ), 1 ≤ ℓ → ℓ ≤ p → f (ℓ - 1) ≤ f ℓ) ∧ ∀ (ℓ : ℕ), p ≤ ℓ → ℓ + 1 ≤ N → f (ℓ + 1) ≤ f ℓ",
+      "description": "A finite sequence of elements of a linearly ordered set that has no strict descent followed, at a later position, by a strict ascent is unimodal: it is nondecreasing up to some position and nonincreasing from that position on.",
+      "lean": "Parking.unimodal_of_no_pair.{u_1} {α : Type u_1} [LinearOrder α] (f : ℕ → α) (N : ℕ)\n  (h : ∀ (i j : ℕ), 1 ≤ i → i < j → j ≤ N → f i < f (i - 1) → f (j - 1) < f j → False) :\n  ∃ p ≤ N,\n    (∀ (ℓ : ℕ), 1 ≤ ℓ → ℓ ≤ p → f (ℓ - 1) ≤ f ℓ) ∧ ∀ (ℓ : ℕ), p ≤ ℓ → ℓ + 1 ≤ N → f (ℓ + 1) ≤ f ℓ",
       "standing": "accepted",
       "settled": true,
       "formal": true,
-      "statement": "Let $f(0),f(1),\\dots$ be natural numbers and let $N$ be a natural number. Suppose that there are no indices $i,j$ with $1\\le i<j\\le N$, $f(i)<f(i-1)$ and $f(j-1)<f(j)$. Then there is $p$ with $0\\le p\\le N$ such that $f(\\ell-1)\\le f(\\ell)$ for every $\\ell$ with $1\\le\\ell\\le p$, and $f(\\ell+1)\\le f(\\ell)$ for every $\\ell$ with $p\\le\\ell\\le N-1$."
+      "statement": "Let $X$ be a linearly ordered set, that is, a set with an order relation $\\le$ in which any two elements are comparable; the natural numbers, the integers and the real numbers are examples. Let $N$ be a natural number and let $c_0,c_1,\\dots,c_N$ be elements of $X$. Suppose that there are no indices $i,j$ with $1\\le i<j\\le N$, $c_i<c_{i-1}$ and $c_{j-1}<c_j$. Then there is $p$ with $0\\le p\\le N$ such that $c_{\\ell-1}\\le c_\\ell$ for every $\\ell$ with $1\\le\\ell\\le p$, and $c_{\\ell+1}\\le c_\\ell$ for every $\\ell$ with $p\\le\\ell\\le N-1$.\n\nIn the library the finite sequence is given as the first $N+1$ terms of a function $f$ from the natural numbers to $X$, $c_\\ell=f(\\ell)$. Hypothesis and conclusion contain only the terms $f(0),\\dots,f(N)$, so the values of $f$ beyond $N$ play no role, and every finite sequence $c_0,\\dots,c_N$ in $X$ is covered: continue it in any way, for instance by $f(\\ell)=c_N$ for $\\ell>N$."
     }
   ],
   "edges": [
@@ -2858,7 +2858,7 @@
       "statement": null
     },
     {
-      "source": "Parking.factorial_le_robbins",
+      "source": "Parking.factorial_lt_robbins",
       "target": "Parking.poissonMass_ge",
       "kind": "direct",
       "via": [],
@@ -3225,6 +3225,7 @@
         "Parking.log_one_add_le3",
         "Parking.P1_le",
         "Parking.eps_succ_le_gam",
+        "Parking.near_term_le",
         "Parking.theta_f_le",
         "Parking.xk_bounds"
       ],
@@ -3235,6 +3236,7 @@
           "Parking.log_one_add_le3",
           "Parking.P1_le",
           "Parking.eps_succ_le_gam",
+          "Parking.near_term_le",
           "Parking.theta_f_le",
           "Parking.xk_bounds"
         ]
@@ -3307,6 +3309,7 @@
           "Parking.eps_step",
           "Parking.P1_le",
           "Parking.eps_succ_le_gam",
+          "Parking.near_term_le",
           "Parking.theta_f_le",
           "Parking.Gres_pos",
           "Parking.fker_logconvex",
@@ -3323,6 +3326,7 @@
       "via": [
         "Parking.mul_eps",
         "Parking.P1_le",
+        "Parking.near_term_le",
         "Parking.theta_f_le"
       ],
       "proof": {
@@ -3330,6 +3334,7 @@
         "via": [
           "Parking.mul_eps",
           "Parking.P1_le",
+          "Parking.near_term_le",
           "Parking.theta_f_le"
         ]
       },
@@ -3355,12 +3360,14 @@
       "kind": "contracted",
       "via": [
         "Parking.P1_le",
+        "Parking.near_term_le",
         "Parking.theta_f_le"
       ],
       "proof": {
         "direct": false,
         "via": [
           "Parking.P1_le",
+          "Parking.near_term_le",
           "Parking.theta_f_le"
         ]
       },
@@ -3372,12 +3379,14 @@
       "kind": "contracted",
       "via": [
         "Parking.P1_le",
+        "Parking.near_term_le",
         "Parking.theta_f_le"
       ],
       "proof": {
         "direct": false,
         "via": [
           "Parking.P1_le",
+          "Parking.near_term_le",
           "Parking.theta_f_le"
         ]
       },
@@ -3577,6 +3586,7 @@
         "via": [
           "Parking.P1_le",
           "Parking.eps_succ_le_gam",
+          "Parking.near_term_le",
           "Parking.theta_f_le",
           "Parking.gam_pos",
           "Parking.xk_bounds",
@@ -3641,6 +3651,7 @@
         "via": [
           "Parking.P1_le",
           "Parking.eps_succ_le_gam",
+          "Parking.near_term_le",
           "Parking.theta_f_le",
           "Parking.xk_bounds",
           "Parking.CrossCrit.xk_mul_gam",
@@ -7186,6 +7197,7 @@
       "via": [
         "Parking.log_one_add_ge4",
         "Parking.log_one_add_le5",
+        "Parking.strip_main",
         "Parking.cstrip_main"
       ],
       "proof": {
@@ -7193,6 +7205,7 @@
         "via": [
           "Parking.log_one_add_ge4",
           "Parking.log_one_add_le5",
+          "Parking.strip_main",
           "Parking.cstrip_main"
         ]
       },
@@ -7201,15 +7214,24 @@
     {
       "source": "Parking.c0",
       "target": "Parking.crossing_strip",
-      "kind": "direct",
-      "via": [],
+      "kind": "contracted",
+      "via": [
+        "Parking.c0_bounds",
+        "Parking.Sbar",
+        "Parking.tlow",
+        "Parking.tup",
+        "Parking.strip_main",
+        "Parking.strip_tlow_nonneg"
+      ],
       "proof": {
-        "direct": true,
+        "direct": false,
         "via": [
           "Parking.c0_bounds",
           "Parking.Sbar",
           "Parking.tlow",
-          "Parking.tup"
+          "Parking.tup",
+          "Parking.strip_main",
+          "Parking.strip_tlow_nonneg"
         ]
       },
       "statement": null
@@ -12949,7 +12971,7 @@
       "statement": null
     },
     {
-      "source": "Parking.factorial_le_robbins",
+      "source": "Parking.factorial_lt_robbins",
       "target": "Parking.sbirth_le",
       "kind": "direct",
       "via": [],
@@ -16605,7 +16627,7 @@
         "Parking.hasSum_borel",
         "Parking.hasSum_eps",
         "Parking.c0",
-        "Parking.factorial_le_robbins",
+        "Parking.factorial_lt_robbins",
         "Parking.poissonMass",
         "Parking.poissonMass_ge",
         "Parking.poissonMass_le",
@@ -17002,9 +17024,9 @@
       "description": "The first step ratio of the prime kernel is $g_1 = \\frac12$."
     },
     "Parking.P1_le": {
-      "label": "bound of the loss term of a finite run of positive rows",
+      "label": "comparison of the bound of the loss term with a number p",
       "kind": "theorem",
-      "description": "A bound for $\\frac N2\\,\\varepsilon_{t+1}x^t$ at the diagonal tilt $x = 1/\\gamma_k$, when $t$ lies in $[\\sigma k, \\sigma k + 1]$ and $N \\le ck$: it is at most $p$ as soon as $\\lambda^2c^2E_0 \\le p^2\\cdot 8\\cdot 3.14\\cdot\\sigma^3k$, where $E_0 \\ge e^{5\\sigma}$ and $\\lambda \\ge \\sigma(k+3)/(\\sigma k+1)$."
+      "description": "The bound `Parking.near_term_le` of $\\frac N2\\,\\varepsilon_{t+1}x^t$ at the diagonal tilt $x = 1/\\gamma_k$, compared with a number $p$: when $t$ lies in $[\\sigma k, \\sigma k + 1]$ and $N \\le ck$, the quantity is at most $p$ as soon as $\\lambda^2c^2E_0 \\le p^2\\cdot 8\\cdot 3.14\\cdot\\sigma^3k$, where $E_0 \\ge e^{5\\sigma}$ and $\\lambda \\ge \\sigma(k+3)/(\\sigma k+1)$."
     },
     "Parking.eps_succ_le_gam": {
       "label": "the prime kernel grows by at most the diagonal factor up to 3k/5",
@@ -17025,6 +17047,11 @@
       "label": "the tilted kernel does not increase up to 3k/5",
       "kind": "theorem",
       "description": "At the diagonal tilt $x = 1/\\gamma_k$ the tilted kernel $\\kappa_m = x^m\\varepsilon_m$ satisfies $\\kappa_{m+1} \\le \\kappa_m$ for $1 \\le m$, $m + 1 \\le \\frac35k$ ($k \\ge 2$)."
+    },
+    "Parking.near_term_le": {
+      "label": "bound of the loss term of a finite run of positive rows",
+      "kind": "theorem",
+      "description": "A bound for $\\frac N2\\,\\varepsilon_{t+1}x^t$ at the diagonal tilt $x = 1/\\gamma_k$, when $t$ lies in $[\\sigma k, \\sigma k + 1]$ and $0 \\le N \\le Lk$: it is at most $\\lambda L\\,e^{5\\sigma/2}/\\bigl(2\\sigma\\sqrt{2\\pi\\sigma k}\\bigr)$, where $\\lambda \\ge \\sigma(k+3)/(\\sigma k+1)$."
     },
     "Parking.theta_f_le": {
       "label": "bound of the far weights against the frozen kernel",
@@ -17225,6 +17252,16 @@
       "label": "positivity of the diagonal tilt",
       "kind": "theorem",
       "description": "The diagonal tilt $x=1/\\gamma_k$ is positive, for every natural number $k$."
+    },
+    "Parking.strip_main": {
+      "label": "the main inequality at the end of the strip",
+      "kind": "theorem",
+      "description": "For a column $k\\ge265$ and the least positive integer $R$ with $121k^2<25R^3$, the closed forms satisfy $\\mathsf A\\,\\mathsf B<\\mathsf C$, where $\\mathsf A=e\\,\\bar t+e^{\\bar a}\\frac{R+1}{k+R}$, $\\mathsf B=\\bar H+\\frac5k\\bar G$ and $\\mathsf C=\\frac{R(R+1)}{k+R}-1-\\bar S-\\bar{\\mathsf E}$. Multiplied by $e^{-1}$, this is the main hypothesis of the closed-form crossing criterion at this $R$."
+    },
+    "Parking.strip_tlow_nonneg": {
+      "label": "the deficit bound is nonnegative at the end of the strip",
+      "kind": "theorem",
+      "description": "For a column $k\\ge265$ and the least positive integer $R$ with $121k^2<25R^3$, the closed-form lower bound $\\underline t(k,R)$ of the kernel deficit is nonnegative. This is one of the two inequalities that the crossing theorem `Parking.crossing_strip` needs at this $R$."
     },
     "Parking.cstrip_main": {
       "label": "main inequality in the strip",
@@ -17708,7 +17745,7 @@
     }
   },
   "counts": {
-    "elements": 400,
+    "elements": 407,
     "units": 173,
     "edges": 916,
     "groups": 12

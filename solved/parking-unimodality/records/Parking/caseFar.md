@@ -35,7 +35,7 @@ The far feedback grows with $r$: its bound is proportional to $(k+r)\,r^{3/2}/k^
 
 **The upper end.** The upper end $r \le k-1$, the row $2k-1$, is the end of the chain range: the column equation `Parking.dq_col` holds for $k+1 \le n \le 2k-1$, the column equation `Parking.bq_L0` of the level $k-1$ holds up to the row $2k-1$, and the coefficient $\frac{k-1}{j}$ of the latter is at least $\frac12$, the value frozen into $f$, only for $j \le 2k-2$.
 
-**The constants.** In each regime the cut is $t_0 = \lfloor\sigma k\rfloor + 1$, where $\sigma$ is the lower end of the regime minus $\frac13$. The table lists the parameters with which `Parking.P1_le` (near term) and the far bound are applied; $n \le ck$, $E_0 \ge e^{5\sigma}$, $\sum_{i\le\rho-M}G_i \le S\,e$, $r \le c'^2k$, $r \ge r_0$. The last column is the range of $k$ in which the numerical hypothesis of `Parking.P1_le` holds for the listed $p$.
+**The constants.** In each regime the cut is $t_0 = \lfloor\sigma k\rfloor + 1$, where $\sigma$ is the lower end of the regime minus $\frac13$. The table lists the parameters with which `Parking.P1_le` (near term; it is the bound `Parking.near_term_le`, with $L = c$, compared with $p$) and the far bound are applied; $n \le ck$, $E_0 \ge e^{5\sigma}$, $\sum_{i\le\rho-M}G_i \le S\,e$, $r \le c'^2k$, $r \ge r_0$. The last column is the range of $k$ in which the numerical hypothesis of `Parking.P1_le` holds for the listed $p$.
 
 | regime | offsets | $\sigma$ | $c$ | $E_0$ | $\lambda$ | $p$ | $S$ | $c'$ | $r_0$ | $q$ | $p+q$ | near term needs |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

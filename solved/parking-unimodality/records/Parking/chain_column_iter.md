@@ -14,7 +14,7 @@ Let $b(n,\ell)$ be the number of parking functions of length $n$ with maximum di
 
 This is `Parking.chain_column` applied repeatedly: a column that is positive in one row of its chain range $k+1 \le n \le 2k-1$ is positive in all later rows of that range. It is the form in which the persistence of the sign leaves this part of the library, and it is used in contrapositive form: if $b(n,k) \le b(n,k-1)$ at a row $n \le 2k-1$, then $b(m,k) \le b(m,k-1)$ at every row $k+1 \le m \le n$.
 
-Two results use it. In `Parking.mono`, a positive step of the column $k+1$ at a row would persist up to a row at which the table of two signs shows a negative step, a contradiction. In `Parking.right_tail`, a nonpositive step of a column at the row $n$ is carried back to all earlier rows of the chain range, which starts the induction over the columns to the right.
+Two results of the proof of `Parking.root_unimodal` use it. In `Parking.mono`, a positive step of the column $k+1$ at a row would persist up to a row at which the table of two signs shows a negative step, a contradiction. In `Parking.right_tail`, a nonpositive step of a column at the row $n$ is carried back to all earlier rows of the chain range, which starts the induction over the columns to the right. Outside that proof the statement is used in its direct form, in which a positive sign is carried forward along a column: in `Parking.beyond_strip` from the row of `Parking.crossing_strip` to every later row of the chain range, and in `Parking.row_peak` from the row of `Parking.crossing_row` to a row $n\ge335$, for the columns $168\le k\le264$.
 
 ## Proof
 

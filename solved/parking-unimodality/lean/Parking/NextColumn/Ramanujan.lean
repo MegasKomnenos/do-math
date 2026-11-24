@@ -446,7 +446,7 @@ theorem sbirth_le {r : ℕ} (hr : 1 ≤ r) :
     field
   have h3 : 1 / (2 * poissonMass r)
       ≤ Real.sqrt (2 * Real.pi * r) / 2 * Real.exp (1 / (12 * (r : ℝ))) := by
-    have hfac := factorial_le_robbins hr
+    have hfac := (factorial_lt_robbins hr).le
     have e : 1 / (2 * poissonMass r) = (r.factorial : ℝ) / (2 * ((r : ℝ) / Real.exp 1) ^ r) := by
       rw [poissonMass_eq]
       generalize ((r : ℝ) / Real.exp 1) ^ r = P at hP ⊢

@@ -30,7 +30,7 @@ $$e^{D_r/(k-1)}\Bigl(1+\frac1r\Bigr)^{r} e^{-\mu_-/(2(k-1))} \ <\ \Bigl(1+\frac1
 
 in which $\mu_-$ and $\mu_{\mathrm{mid}}$ are mean numbers of cuts under two homogeneous laws. The criterion function is built so that $\mathsf{G}(r,k) \ge 0$ implies it: the logarithm of the right side exceeds the logarithm of the left side by at least $\mathsf{G}(r,k)/k + 1/k^2$. The record of `Parking.Gfun` goes through the terms of $\mathsf{G}$ one by one.
 
-The conclusion is strict although the hypotheses are not; the strictness comes from the term $1/k^2$. The statement is applied in `Parking.mono265`, where `Parking.Gfun_pos` supplies $\mathsf{G}(r,k) > 0$.
+The conclusion is strict although the hypotheses are not; the strictness comes from the term $1/k^2$. The statement is applied in `Parking.mono265` and in `Parking.strip_step`, where `Parking.Gfun_pos` supplies $\mathsf{G}(r,k) > 0$.
 
 On the hypotheses: $k \ge 3$ follows from $2 \le r \le k - 1$ and is listed separately in the Lean statement. The proof uses $r \ge 1$ only; the hypothesis $r \ge 2$ keeps the statement in the range in which $D_r$ is given by its formula (for $r = 1$ the formula is $0/0$, see `Parking.curv_ratio`). In Lean the hypothesis and the conclusion are `dq k (k + r) ≤ 0` and `dq (k + 1) (k + r) < 0`; the form in terms of the counts follows from `Parking.dq_nonpos_iff` and `Parking.dq_neg_iff`.
 

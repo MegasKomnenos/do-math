@@ -11,8 +11,8 @@ is exactly `ℓ`.
 
 Write `d_{n,k} = b n k - b n (k-1)` for the step of column `k` in the row `n`.  A row is unimodal
 as soon as it has no strict descent followed by a strict ascent, that is, no pair
-`1 ≤ i < j ≤ n - 1` with `d_{n,i} < 0 < d_{n,j}` (`unimodal_of_no_pair`).  There is no such
-pair (`no_descent_ascent`):
+`1 ≤ i < j ≤ n - 1` with `d_{n,i} < 0 < d_{n,j}` (`unimodal_of_no_pair`, which holds for a finite
+sequence in any linear order).  There is no such pair (`no_descent_ascent`):
 
 * `n ≤ 16`: the rows are checked directly (`Tab.small_rows`).
 * `n ≥ 17` and `2i ≤ n`: the left half (`left_half`) gives `d_{n,i} ≥ 0`.
@@ -25,13 +25,15 @@ pair (`no_descent_ascent`):
 
 namespace Parking
 
-/-- A sequence `f` of natural numbers that has no pair `1 ≤ i < j ≤ N` with a strict descent at
-`i` (`f i < f (i-1)`) and a strict ascent at `j` (`f (j-1) < f j`) is unimodal on the positions
-`0, …, N`: for some `p ≤ N` it is nondecreasing up to `p` and nonincreasing from `p` on.
+/-- A sequence `f` with values in a linearly ordered type `α` that has no pair `1 ≤ i < j ≤ N`
+with a strict descent at `i` (`f i < f (i-1)`) and a strict ascent at `j` (`f (j-1) < f j`) is
+unimodal on the positions `0, …, N`: for some `p ≤ N` it is nondecreasing up to `p` and
+nonincreasing from `p` on.  Only the terms `f 0, …, f N` occur, so this is a statement about the
+finite sequence `f 0, …, f N`.
 
 By induction on `N`, the position `p` is chosen so that, when `p < N`, there is a strict descent
 right after it. -/
-theorem unimodal_of_no_pair (f : ℕ → ℕ) (N : ℕ)
+theorem unimodal_of_no_pair {α : Type*} [LinearOrder α] (f : ℕ → α) (N : ℕ)
     (h : ∀ i j, 1 ≤ i → i < j → j ≤ N → f i < f (i - 1) → f (j - 1) < f j → False) :
     ∃ p, p ≤ N ∧ (∀ ℓ, 1 ≤ ℓ → ℓ ≤ p → f (ℓ - 1) ≤ f ℓ) ∧
       (∀ ℓ, p ≤ ℓ → ℓ + 1 ≤ N → f (ℓ + 1) ≤ f ℓ) := by

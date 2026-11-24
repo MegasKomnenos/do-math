@@ -30,7 +30,7 @@ $x$ being the diagonal tilt (`Parking.xk`). The quantities on the smaller side, 
 | $\Psi$ | $0\le\Psi\le\bar H+\frac5k\bar G$ | the same, summed against comparison functions |
 | $\bar\kappa_R$ | $\underline t\le\bar\kappa_R\le\bar t$ | two-sided Stirling bound; $\sum_{m\ge1}e^{-m}\varepsilon_m=1-e^{-1}$ |
 
-There are two analytic inputs. One is Stirling's formula with the sharp constant $c_0=1/\sqrt{2\pi}$ in both directions (`Parking.poissonMass_le_c0` and `Parking.poissonMass_ge_c0`; the lower bound rests on Robbins' bound `Parking.factorial_le_robbins`) together with the exact total mass of the kernel at the tilt $e^{-1}$ (`Parking.hasSum_eps`). The other is elementary: Taylor polynomials of the logarithm and of the exponential.
+There are two analytic inputs. One is Stirling's formula with the sharp constant $c_0=1/\sqrt{2\pi}$ in both directions (`Parking.poissonMass_le_c0` and `Parking.poissonMass_ge_c0`; the lower bound rests on Robbins' upper bound for the factorial, `Parking.factorial_lt_robbins`) together with the exact total mass of the kernel at the tilt $e^{-1}$ (`Parking.hasSum_eps`). The other is elementary: Taylor polynomials of the logarithm and of the exponential.
 
 **Which bounds are tight.** For the smallest column of the application, $k=265$ with $R=70$, a floating-point evaluation of the definitions (not part of any proof) gives the following values.
 

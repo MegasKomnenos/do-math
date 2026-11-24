@@ -16,7 +16,9 @@ Notation: `g(i+1) = ε_{i+2}/ε_{i+1}` is the step ratio `gs i` of the prime ker
 * `theta_f_le`     : the profile bound `(g(m) - γ_k) f_m ≤ 1.05 c₀ / k^{5/2}` of the far weights;
 * `tail_sqrt`      : a telescoping lower bound for sums of `j^{-3/2}`;
 * `exp_41_60`, `exp_4_3`, `exp_7_3` : three values of the exponential;
-* `P1_le`          : the bound of the near term `(n/2) ε_{t+1} x^t`.
+* `near_term_le`   : the bound `(N/2) ε_{t+1} x^t ≤ λ L e^{5σ/2} / (2σ √(2πσk))` of the near
+  term, for `σ k ≤ t ≤ σ k + 1` and `0 ≤ N ≤ L k`;
+* `P1_le`          : the comparison of this bound with a number `p`.
 -/
 
 namespace Parking
@@ -506,37 +508,33 @@ private theorem exp_le_small {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 6) :
 
 /-! ### The near term -/
 
-/-- The bound of the near term `(n/2) ε_{t+1} x^t`, where `σ k ≤ t ≤ σ k + 1` and `n ≤ c k`. -/
-theorem P1_le {k t : ℕ} (hk : 15 ≤ k) (ht : 1 ≤ t) (σ c E0 lam N p : ℝ)
+/-- The bound of the near term: for `k ≥ 15`, `t ≥ 1`, `σ > 0` and `λ > 0` with
+`σ (k + 3) ≤ λ (σ k + 1)`, `σ k ≤ t ≤ σ k + 1` and `0 ≤ N ≤ L k`,
+`(N/2) ε_{t+1} x^t ≤ λ L e^{5σ/2} / (2σ √(2πσk))`. -/
+theorem near_term_le {k t : ℕ} (hk : 15 ≤ k) (ht : 1 ≤ t) (σ lam L N : ℝ)
     (hσ : 0 < σ) (hlam0 : 0 < lam) (hlam : σ * ((k : ℝ) + 3) ≤ lam * (σ * (k : ℝ) + 1))
     (hT1 : σ * (k : ℝ) ≤ (t : ℝ)) (hT2 : (t : ℝ) ≤ σ * (k : ℝ) + 1)
-    (hE0 : Real.exp (5 * σ) ≤ E0) (hN0 : 0 ≤ N) (hN : N ≤ c * (k : ℝ))
-    (hp : 0 ≤ p)
-    (hnum : lam ^ 2 * c ^ 2 * E0 ≤ p ^ 2 * (8 * (314 / 100) * σ ^ 3 * (k : ℝ))) :
-    N / 2 * (eps (t + 1) * xk k ^ t) ≤ p := by
+    (hN0 : 0 ≤ N) (hN : N ≤ L * (k : ℝ)) :
+    N / 2 * (eps (t + 1) * xk k ^ t)
+      ≤ lam * L * Real.exp (5 * σ / 2)
+        / (2 * σ * Real.sqrt (2 * Real.pi * (σ * (k : ℝ)))) := by
   have hK15 : (15 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
   have hK : (0 : ℝ) < (k : ℝ) := by linarith
   have hK0 : (k : ℝ) ≠ 0 := hK.ne'
   have hT0 : (0 : ℝ) < (t : ℝ) := by exact_mod_cast ht
   have hT : (0 : ℝ) < (t : ℝ) + 1 := by linarith
-  have h2pi : (0 : ℝ) < 2 * Real.pi * (t : ℝ) := mul_pos (mul_pos two_pos Real.pi_pos) hT0
+  have hσK : 0 < σ * (k : ℝ) := mul_pos hσ hK
+  have h2pi : (0 : ℝ) < 2 * Real.pi := mul_pos two_pos Real.pi_pos
   have hψ := psi_le (k := k) (t := t) (by omega) ht
   obtain ⟨S, hSdef⟩ : ∃ S : ℝ, S = Real.sqrt (2 * Real.pi * (t : ℝ)) := ⟨_, rfl⟩
   rw [← hSdef] at hψ
-  have hS : 0 < S := by rw [hSdef]; exact Real.sqrt_pos.2 h2pi
-  have hS2 : S ^ 2 = 2 * Real.pi * (t : ℝ) := by rw [hSdef]; exact Real.sq_sqrt h2pi.le
+  have hS : 0 < S := by rw [hSdef]; exact Real.sqrt_pos.2 (mul_pos h2pi hT0)
+  have hψ0 : 0 ≤ eps (t + 1) * xk k ^ t :=
+    mul_nonneg (eps_nonneg _) (pow_nonneg (CrossCrit.xk_pos k).le t)
   obtain ⟨ψ, hψdef⟩ : ∃ ψ : ℝ, ψ = eps (t + 1) * xk k ^ t := ⟨_, rfl⟩
-  rw [← hψdef] at hψ ⊢
+  rw [← hψdef] at hψ hψ0 ⊢
   obtain ⟨Eh, hEhdef⟩ : ∃ Eh : ℝ, Eh = Real.exp (5 * σ / 2) := ⟨_, rfl⟩
   have hEh : 0 < Eh := by rw [hEhdef]; exact Real.exp_pos _
-  have hEh2 : Eh ^ 2 ≤ E0 := by
-    have e : Eh ^ 2 = Real.exp (5 * σ) := by
-      rw [hEhdef, ← Real.exp_nat_mul]
-      congr 1
-      push_cast
-      ring
-    rw [e]
-    exact hE0
   -- the exponential factor
   have hx0 : (0 : ℝ) ≤ 5 / (2 * (k : ℝ)) := by positivity
   have hx1 : 5 / (2 * (k : ℝ)) ≤ 1 / 6 := by
@@ -565,51 +563,69 @@ theorem P1_le {k t : ℕ} (hk : 15 ≤ k) (ht : 1 ≤ t) (σ c E0 lam N p : ℝ)
   have hψ' : ψ * (((t : ℝ) + 1) * S) ≤ Real.exp (5 * (t : ℝ) / (2 * (k : ℝ))) := by
     rw [le_div_iff₀ (mul_pos hT hS)] at hψ
     exact hψ
-  have hσK : 0 ≤ σ * (k : ℝ) := (mul_pos hσ hK).le
-  have hA : ψ * (S * (σ * (k : ℝ))) * ((t : ℝ) + 1) ≤ (Eh * lam) * ((t : ℝ) + 1) := by
+  have hA : ψ * (S * (σ * (k : ℝ))) * ((t : ℝ) + 1) ≤ (lam * Eh) * ((t : ℝ) + 1) := by
     calc ψ * (S * (σ * (k : ℝ))) * ((t : ℝ) + 1)
         = (ψ * (((t : ℝ) + 1) * S)) * (σ * (k : ℝ)) := by ring
       _ ≤ (Eh * (1 + 3 / (k : ℝ))) * (σ * (k : ℝ)) :=
-          mul_le_mul_of_nonneg_right (hψ'.trans hE) hσK
+          mul_le_mul_of_nonneg_right (hψ'.trans hE) hσK.le
       _ = Eh * ((1 + 3 / (k : ℝ)) * (σ * (k : ℝ))) := by ring
       _ ≤ Eh * (lam * ((t : ℝ) + 1)) := mul_le_mul_of_nonneg_left hW hEh.le
-      _ = (Eh * lam) * ((t : ℝ) + 1) := by ring
-  have hB : ψ * (S * (σ * (k : ℝ))) ≤ Eh * lam := le_of_mul_le_mul_right hA hT
-  have hC : (N / 2 * ψ) * (2 * S * σ) * (k : ℝ) ≤ (c * Eh * lam) * (k : ℝ) := by
-    calc (N / 2 * ψ) * (2 * S * σ) * (k : ℝ) = N * (ψ * (S * (σ * (k : ℝ)))) := by ring
-      _ ≤ N * (Eh * lam) := mul_le_mul_of_nonneg_left hB hN0
-      _ ≤ (c * (k : ℝ)) * (Eh * lam) :=
-          mul_le_mul_of_nonneg_right hN (mul_pos hEh hlam0).le
-      _ = (c * Eh * lam) * (k : ℝ) := by ring
-  have hD : (N / 2 * ψ) * (2 * S * σ) ≤ c * Eh * lam := le_of_mul_le_mul_right hC hK
+      _ = (lam * Eh) * ((t : ℝ) + 1) := by ring
+  have hB : ψ * (S * (σ * (k : ℝ))) ≤ lam * Eh := le_of_mul_le_mul_right hA hT
+  have hC : (N / 2 * ψ) * (2 * σ * S) * (k : ℝ) ≤ (lam * L * Eh) * (k : ℝ) := by
+    calc (N / 2 * ψ) * (2 * σ * S) * (k : ℝ) = N * (ψ * (S * (σ * (k : ℝ)))) := by ring
+      _ ≤ N * (lam * Eh) := mul_le_mul_of_nonneg_left hB hN0
+      _ ≤ (L * (k : ℝ)) * (lam * Eh) :=
+          mul_le_mul_of_nonneg_right hN (mul_pos hlam0 hEh).le
+      _ = (lam * L * Eh) * (k : ℝ) := by ring
+  have hD : (N / 2 * ψ) * (2 * σ * S) ≤ lam * L * Eh := le_of_mul_le_mul_right hC hK
+  -- from `√(2πt)` to `√(2πσk)`
+  have hSS : Real.sqrt (2 * Real.pi * (σ * (k : ℝ))) ≤ S := by
+    rw [hSdef]
+    exact Real.sqrt_le_sqrt (mul_le_mul_of_nonneg_left hT1 h2pi.le)
+  have hσ2 : (0 : ℝ) < 2 * σ := mul_pos two_pos hσ
+  rw [← hEhdef, le_div_iff₀ (mul_pos hσ2 (Real.sqrt_pos.2 (mul_pos h2pi hσK)))]
+  exact (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hSS hσ2.le)
+    (mul_nonneg (by linarith) hψ0)).trans hD
+
+/-- The comparison of the bound `near_term_le` with a number `p ≥ 0`: for `E₀ ≥ e^{5σ}` and
+`N ≤ c k`, `(N/2) ε_{t+1} x^t ≤ p` as soon as `λ² c² E₀ ≤ p² · 8 · 3.14 · σ³ k`. -/
+theorem P1_le {k t : ℕ} (hk : 15 ≤ k) (ht : 1 ≤ t) (σ c E0 lam N p : ℝ)
+    (hσ : 0 < σ) (hlam0 : 0 < lam) (hlam : σ * ((k : ℝ) + 3) ≤ lam * (σ * (k : ℝ) + 1))
+    (hT1 : σ * (k : ℝ) ≤ (t : ℝ)) (hT2 : (t : ℝ) ≤ σ * (k : ℝ) + 1)
+    (hE0 : Real.exp (5 * σ) ≤ E0) (hN0 : 0 ≤ N) (hN : N ≤ c * (k : ℝ))
+    (hp : 0 ≤ p)
+    (hnum : lam ^ 2 * c ^ 2 * E0 ≤ p ^ 2 * (8 * (314 / 100) * σ ^ 3 * (k : ℝ))) :
+    N / 2 * (eps (t + 1) * xk k ^ t) ≤ p := by
+  have hK : (0 : ℝ) < (k : ℝ) := by exact_mod_cast (by omega : 0 < k)
+  have h2pi : (0 : ℝ) < 2 * Real.pi * (σ * (k : ℝ)) :=
+    mul_pos (mul_pos two_pos Real.pi_pos) (mul_pos hσ hK)
+  have hloss := near_term_le hk ht σ lam c N hσ hlam0 hlam hT1 hT2 hN0 hN
+  obtain ⟨S, hSdef⟩ : ∃ S : ℝ, S = Real.sqrt (2 * Real.pi * (σ * (k : ℝ))) := ⟨_, rfl⟩
+  rw [← hSdef] at hloss
+  have hS2 : S ^ 2 = 2 * Real.pi * (σ * (k : ℝ)) := by rw [hSdef]; exact Real.sq_sqrt h2pi.le
+  have hpos : 0 < 2 * σ * S := by
+    rw [hSdef]
+    exact mul_pos (mul_pos two_pos hσ) (Real.sqrt_pos.2 h2pi)
   have hpi : (314 / 100 : ℝ) ≤ Real.pi := le_of_lt (lt_of_le_of_lt (by norm_num) Real.pi_gt_d2)
-  have hsq : (c * Eh * lam) ^ 2 ≤ (p * (2 * S * σ)) ^ 2 := by
-    have e1 : (c * Eh * lam) ^ 2 = lam ^ 2 * c ^ 2 * Eh ^ 2 := by ring
-    have e2 : (p * (2 * S * σ)) ^ 2 = p ^ 2 * (4 * σ ^ 2) * S ^ 2 := by ring
-    rw [e1, e2, hS2]
-    have h3 : lam ^ 2 * c ^ 2 * Eh ^ 2 ≤ lam ^ 2 * c ^ 2 * E0 :=
-      mul_le_mul_of_nonneg_left hEh2 (by positivity)
-    have h5 : 8 * (314 / 100) * σ ^ 3 * (k : ℝ) ≤ (4 * σ ^ 2) * (2 * Real.pi * (t : ℝ)) := by
-      have h7 : 2 * (314 / 100) * (σ * (k : ℝ)) ≤ 2 * Real.pi * (t : ℝ) := by
-        have h8 : 2 * (314 / 100) * (σ * (k : ℝ)) ≤ 2 * Real.pi * (σ * (k : ℝ)) :=
-          mul_le_mul_of_nonneg_right (by linarith) hσK
-        have h9 : 2 * Real.pi * (σ * (k : ℝ)) ≤ 2 * Real.pi * (t : ℝ) :=
-          mul_le_mul_of_nonneg_left hT1 (mul_pos two_pos Real.pi_pos).le
-        linarith
-      calc 8 * (314 / 100) * σ ^ 3 * (k : ℝ)
-          = (4 * σ ^ 2) * (2 * (314 / 100) * (σ * (k : ℝ))) := by ring
-        _ ≤ (4 * σ ^ 2) * (2 * Real.pi * (t : ℝ)) :=
-            mul_le_mul_of_nonneg_left h7 (by positivity)
-    have h4 : p ^ 2 * (8 * (314 / 100) * σ ^ 3 * (k : ℝ))
-        ≤ p ^ 2 * (4 * σ ^ 2) * (2 * Real.pi * (t : ℝ)) := by
-      calc p ^ 2 * (8 * (314 / 100) * σ ^ 3 * (k : ℝ))
-          ≤ p ^ 2 * ((4 * σ ^ 2) * (2 * Real.pi * (t : ℝ))) :=
-            mul_le_mul_of_nonneg_left h5 (by positivity)
-        _ = p ^ 2 * (4 * σ ^ 2) * (2 * Real.pi * (t : ℝ)) := by ring
-    linarith
-  have hpos2 : 0 < 2 * S * σ := by positivity
-  have hE' : c * Eh * lam ≤ p * (2 * S * σ) :=
-    le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg hp hpos2.le) hsq
-  exact le_of_mul_le_mul_right (hD.trans hE') hpos2
+  have hE : Real.exp (5 * σ / 2) ^ 2 = Real.exp (5 * σ) := by
+    rw [← Real.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  -- the square of the right side of `near_term_le` is `λ² c² e^{5σ} / (8π σ³ k)`
+  have hsq : (lam * c * Real.exp (5 * σ / 2)) ^ 2 ≤ (p * (2 * σ * S)) ^ 2 := by
+    calc (lam * c * Real.exp (5 * σ / 2)) ^ 2 = lam ^ 2 * c ^ 2 * Real.exp (5 * σ) := by
+          rw [mul_pow, mul_pow, hE]
+      _ ≤ lam ^ 2 * c ^ 2 * E0 := mul_le_mul_of_nonneg_left hE0 (by positivity)
+      _ ≤ p ^ 2 * (8 * (314 / 100) * σ ^ 3 * (k : ℝ)) := hnum
+      _ ≤ p ^ 2 * (8 * Real.pi * σ ^ 3 * (k : ℝ)) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_left hpi (by norm_num)) (pow_pos hσ 3).le) hK.le) (sq_nonneg p)
+      _ = (p * (2 * σ * S)) ^ 2 := by
+          rw [mul_pow, mul_pow, mul_pow, hS2]
+          ring
+  exact hloss.trans ((div_le_iff₀ hpos).2
+    (le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg hp hpos.le) hsq))
 
 end Parking

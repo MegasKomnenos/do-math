@@ -1,0 +1,10 @@
+name = "parking_unimodality_staircase"
+defaultTargets = ["Staircase"]
+
+[[require]]
+name = "parking_unimodality"
+path = "../../lean"
+
+[[lean_lib]]
+name = "Staircase"
+globs = ["Staircase.+"]

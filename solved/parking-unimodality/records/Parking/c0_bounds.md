@@ -14,7 +14,7 @@ where $c_0 = 1/\sqrt{2\pi}$ (`Parking.c0`). In decimals, $0.39894 \le c_0 \le 0.
 
 ## Explanation
 
-The enclosure is what the explicit numerical inequalities of the later parts use in place of the irrational constant: the bookkeeping of the crossing strip (in the proof of `Parking.crossing_strip`) and the lower bound of the resolvent sequence in the far rows (in the proof of `Parking.caseFar`). The true value is $0.398942\ldots$, so both bounds are correct to five decimal places.
+The enclosure is what the explicit numerical inequalities of the later parts use in place of the irrational constant: the bookkeeping of the crossing strip (in the proofs of `Parking.strip_tlow_nonneg` and `Parking.strip_main`, on which `Parking.crossing_strip` rests) and the lower bound of the resolvent sequence in the far rows (in the proof of `Parking.caseFar`). The true value is $0.398942\ldots$, so both bounds are correct to five decimal places.
 
 ## Proof
 
