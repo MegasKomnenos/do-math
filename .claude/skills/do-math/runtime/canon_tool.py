@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import sys
 
-from canon import (BESIDE_CANDIDATE, Canon, CanonError, Conflict, apply_lean, apply_rearrangement, axiom_closure,
+from canon import (BESIDE_CANDIDATE, EXTRACTION, Canon, CanonError, Conflict, apply_lean, apply_rearrangement,
                    candidate_records, check_applied, copy_tree, declaration_text, drop_modules, load_change, name_path,
                    read_approaches, read_question_account, read_record, required_pairs, start_build, tree_hash, update_index,
                    wait_build, with_importers)
@@ -110,10 +110,6 @@ def view(instance, model, name, part=None, full=False):
         lines.append('rests on      ' + (', '.join(premises) or '(none)'))
         lines.append(f"settled       {'yes' if element['settled'] else 'no'}"
                      + (' · proved in Lean from the allowed axioms' if element['formal'] else ''))
-        judged = canon.load_index().get('judged', {}).get(name)
-        if judged is not None:
-            lines.append(f'judged        at revision {judged}: the export of this proof uses only the allowed axioms, '
-                         'and the kernel accepts it')
         if len(element['proofs']) > 1:
             lines.append(f"proofs        {with_standing(model, element['proofs'])}")
     else:
@@ -253,18 +249,19 @@ def log(model, last):
 
 # ----------------------------------------------------------------------------- preparing a change
 
-def entry_info(index, name, closure, written):
+def entry_info(index, name, written):
     entry = index['entries'][name]
     return {'kind': entry['kind'], 'statement': entry['statement'], 'statement_hash': entry['statement_hash'],
             'lean_proof': entry['lean_proof'], 'written_proof': written, 'uses': entry['uses'],
-            'statement_uses': entry['statement_uses'], 'axioms': closure.get(name, [])}
+            'statement_uses': entry['statement_uses'], 'axioms': entry['axioms']}
 
 
 def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout, role, fresh=False):
     """Apply a candidate to a copy of the current canon, build it and say what it adds and replaces.
 
     Returns None while the build runs, so that the caller can come back for it; the build is kept
-    with the candidate's file identity, and is started again only when the candidate changed."""
+    with the candidate's file identity, and is started again only when the candidate changed, the canon
+    was published to, or the build was made with another extraction than this code's (canon.EXTRACTION)."""
     canon = Canon(instance)
     meta = read_json(Path(instance) / 'instance.json')
     settings = read_json(Path(instance) / 'settings.json')
@@ -289,7 +286,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
                         or organization.get('delete'))
     new_index = index
     if touches_lean:
-        if state.get('tree') != tree or state.get('revision') != index['revision'] or state.get('fresh') != fresh:
+        if (state.get('tree') != tree or state.get('revision') != index['revision'] or state.get('fresh') != fresh
+                or state.get('extraction') != EXTRACTION):
             folder.mkdir(parents=True, exist_ok=True)
             copy_tree(canon.lean, lean_root)
             try:
@@ -306,7 +304,7 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
             build = start_build(instance, lean_root, meta['library'], session_id, expect_mb, extracted,
                                 required_pairs(records), fresh=fresh, targets=changed if fresh else None)
             state = {'tree': tree, 'revision': index['revision'], 'fresh': fresh, 'build': build,
-                     'changed': changed, 'extracted': extracted, 'removed': removed}
+                     'changed': changed, 'extracted': extracted, 'removed': removed, 'extraction': EXTRACTION}
             write_json(state_path, state)
         outcome = wait_build(instance, state['build'], timeout)
         if outcome is None:
@@ -318,12 +316,10 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
                                 + (f": {e['reason']}" if e.get('reason') else '')
                                 + ('\n' + e['output'] if e.get('output') else '') for e in outcome['errors']]
             return result
-        # A build that an earlier version of this command started extracted the changed modules alone.
         new_index = update_index(drop_modules(index, state['removed']), outcome['rows'], outcome['pairs'],
-                                 lean_root, index['revision'], state.get('extracted', state['changed']))
+                                 lean_root, index['revision'], state['extracted'])
     checked = check_applied(index, new_index, change, records, lambda name: read_record(canon, name),
                             settings['lean']['allowed_axioms'], organizer=organizer)
-    closure = axiom_closure(new_index)
     paths = {name_path(name): name for name in new_index['entries']}
     by_name = {paths[path]: record for path, record in records.items() if path in paths}
 
@@ -333,7 +329,7 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
 
     result.update(ok=not checked['errors'], errors=checked['errors'], added=checked['added'],
                   replaced=checked['replaced'], records=checked['records'], retired=checked['retired'],
-                  entries={name: entry_info(new_index, name, closure, written(name))
+                  entries={name: entry_info(new_index, name, written(name))
                            for name in checked['added'] + checked['replaced'] if name in new_index['entries']},
                   bases={name: index['entries'][name]['source_sha'] for name in checked['replaced']
                          if name in index['entries']})

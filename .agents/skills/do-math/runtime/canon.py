@@ -64,11 +64,51 @@ class Canon:
         self.index = self.root / 'index.json'
 
     def load_index(self):
-        return read_json(self.index) if self.index.exists() else empty_index()
+        return read_index(self.index) if self.index.exists() else empty_index()
 
 
 def empty_index():
-    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'hidden': {}, 'judged': {}, 'pairs': {}}
+    return {'revision': 0, 'modules': {}, 'entries': {}, 'aux': {}, 'hidden': {}, 'pairs': {}}
+
+
+def read_index(path):
+    """An index file in the form this code writes, whichever version of the code wrote the file.
+
+    An entry carries under `axioms` what `Lean.collectAxioms` gave for its declaration when its module
+    was last extracted. An index written before the extraction asked Lean for the axioms carries
+    instead, under `direct_axioms`, the axioms each entry reaches without passing through another
+    entry, and the axioms of an entry were then those of everything it uses, added up from these lists.
+    Such an index is read with that sum made once, here, so that an instance created by the earlier code
+    stands as it stood. Nothing is written back. The index file takes the present form at the next
+    publication that changes a Lean source, and an entry's list is Lean's own from the time its module
+    is next extracted. The earlier index also kept, under `judged`, which proofs a separate program had
+    checked; that is no longer kept."""
+    index = read_json(path)
+    entries = index['entries']
+    if not any('direct_axioms' in entry for entry in entries.values()):
+        return index
+    axioms = {name: set(entry['direct_axioms']) | ({name} if entry['kind'] == 'axiom' else set())
+              for name, entry in entries.items()}
+    users = {}
+    for name, entry in entries.items():
+        for used in entry['uses'] + entry['statement_uses']:
+            if used in entries:
+                users.setdefault(used, []).append(name)
+    pending = list(entries)
+    while pending:
+        name = pending.pop()
+        for user in users.get(name, ()):
+            if not axioms[name] <= axioms[user]:
+                axioms[user] |= axioms[name]
+                pending.append(user)
+    return {'revision': index['revision'], 'modules': index['modules'],
+            'entries': {name: {**{key: value for key, value in entry.items() if key != 'direct_axioms'},
+                               'axioms': sorted(axioms[name])} for name, entry in entries.items()},
+            'aux': index['aux'],
+            'hidden': {name: {**{key: value for key, value in item.items() if key != 'axioms'},
+                              'sorry': 'sorryAx' in item['axioms']}
+                       for name, item in index.get('hidden', {}).items()},
+            'pairs': index.get('pairs', {})}
 
 
 # ----------------------------------------------------------------------------- names and paths
@@ -541,11 +581,23 @@ def extraction_source(library, modules, pairs, imports=None):
     It is not a `module` file, so it reads the private data of the modules it imports and sees the
     proof terms. A row gives what Lean alone can know: the kind, the source span, the printed
     statement, the canon constants the statement and the proof use, the library theorems the proof
-    uses, and the axioms reached through the library. Which rows are elements, and how auxiliary
-    declarations fold into them, is decided in update_index. A pair asks whether two declarations
-    state the same proposition, or whether one states the negation of the other. Lean finds a declaration
-    only in a module the file imports, directly or through others. The file imports `imports` when it is
-    given, which can name more modules than those extracted, and the extracted modules otherwise.
+    uses, whether the constant's own term contains `sorry`, and the axioms the constant depends on.
+
+    The axioms are the answer of `Lean.collectAxioms`, the function behind `#print axioms`: every
+    axiom reached from the constant through everything it uses, in the canon and in the imported
+    library alike, in the environment this file loads. No other part of do-math works out axioms.
+    Lean 4.36 keeps that answer for every declaration in the compiled module, so asking costs a
+    lookup. The answer for a declaration of a module is as current as the module's compiled form:
+    it changes only when the module is compiled again, and the broker compiles a module again
+    whenever the compiled output of a module it imports changed, which includes a change in the
+    axioms of any declaration there (lean_broker.module_key). The modules to extract are therefore
+    the changed ones and every module that imports one of them (with_importers).
+
+    Which rows are elements, and how auxiliary declarations fold into them, is decided in update_index.
+    A pair asks whether two declarations state the same proposition, or whether one states the negation
+    of the other. Lean finds a declaration only in a module the file imports, directly or through others.
+    The file imports `imports` when it is given, which can name more modules than those extracted, and
+    the extracted modules otherwise.
 
     The rows are printed by one command that visits every constant once. Lean limits the work of a
     command by default, and that limit is lifted for this one: its work grows with the canon, and a
@@ -563,12 +615,6 @@ def targets : Array Name := #[{targets}]
 def library : Name := {lean_name(library)}
 def pairs : Array (String × Name × Name) := #[{listed}]
 
-structure St where
-  memo : Std.HashMap Name Nat := {{}}
-  axioms : Array Name := #[]
-
-abbrev M := StateT St MetaM
-
 def fnv (seed : UInt64) (s : String) : UInt64 :=
   s.foldl (fun h c => (h ^^^ c.toNat.toUInt64) * 1099511628211) seed
 
@@ -580,44 +626,13 @@ def inCanon (env : Environment) (c : Name) : Bool :=
   | some m => m.getRoot == library
   | none => false
 
-def children (ci : ConstantInfo) : Array Name :=
-  match ci with
-  | .defnInfo v => v.type.getUsedConstants ++ v.value.getUsedConstants
-  | .thmInfo v => v.type.getUsedConstants ++ v.value.getUsedConstants
-  | .opaqueInfo v => v.type.getUsedConstants ++ v.value.getUsedConstants
-  | .inductInfo v => v.type.getUsedConstants ++ v.ctors.toArray
-  | .ctorInfo v => v.type.getUsedConstants
-  | .recInfo v => v.type.getUsedConstants
-  | _ => #[]
-
-def axiomBit (n : Name) : M Nat := do
-  match (← get).axioms.findIdx? (· == n) with
-  | some i => return i
-  | none =>
-    let i := (← get).axioms.size
-    modify fun s => {{ s with axioms := s.axioms.push n }}
-    return i
-
-/-- The axioms a constant outside the canon depends on, as a set of bits; canon constants stop the walk. -/
-partial def mask (env : Environment) (c : Name) : M Nat := do
-  if inCanon env c then return 0
-  if let some m := (← get).memo[c]? then return m
-  modify fun s => {{ s with memo := s.memo.insert c 0 }}
-  let some ci := env.find? c | return 0
-  let mut m := 0
-  if ci matches .axiomInfo _ then m := 1 <<< (← axiomBit c)
-  for d in children ci do
-    m := m ||| (← mask env d)
-  modify fun s => {{ s with memo := s.memo.insert c m }}
-  return m
-
 def kindOf (ci : ConstantInfo) : String :=
   match ci with
   | .thmInfo _ => "theorem" | .defnInfo _ => "def" | .axiomInfo _ => "axiom"
   | .opaqueInfo _ => "opaque" | .inductInfo _ => "inductive" | .ctorInfo _ => "ctor"
   | .recInfo _ => "rec" | .quotInfo _ => "quot"
 
-def row (env : Environment) (name : Name) (ci : ConstantInfo) : M Json := do
+def row (env : Environment) (name : Name) (ci : ConstantInfo) : MetaM Json := do
   let ranges ← findDeclarationRanges? name
   let span : Json := match ranges with
     | some r => toJson #[r.range.pos.line, r.range.pos.column, r.range.endPos.line, r.range.endPos.column]
@@ -629,15 +644,13 @@ def row (env : Environment) (name : Name) (ci : ConstantInfo) : M Json := do
     | .inductInfo v => v.ctors.toArray
     | _ => #[]
   let typeUses := ci.type.getUsedConstants
-  let mut m := 0
+  let used := typeUses ++ value
   let mut lib : Array Name := #[]
-  for d in typeUses ++ value do
-    m := m ||| (← mask env d)
+  for d in used do
     if !inCanon env d then
       if let some (.thmInfo _) := env.find? d then
         if !lib.contains d then lib := lib.push d
-  let axioms := (← get).axioms
-  let reached := (List.range axioms.size).filterMap fun i => if m &&& (1 <<< i) != 0 then some axioms[i]! else none
+  let axioms ← collectAxioms name
   let sig ← try
       let f ← (PrettyPrinter.ppSignature name : MetaM _)
       pure (f.fmt.pretty 100)
@@ -651,7 +664,8 @@ def row (env : Environment) (name : Name) (ci : ConstantInfo) : M Json := do
     ("statement", toString (fnv 14695981039346656037 text) ++ "-" ++ toString (fnv 1099511628211 text)),
     ("type_uses", toJson ((typeUses.filter (inCanon env)).map toString)),
     ("value_uses", toJson ((value.filter (inCanon env)).map toString)),
-    ("library", toJson (lib.map toString)), ("axioms", toJson (reached.map toString))]
+    ("library", toJson (lib.map toString)), ("sorry", used.contains ``sorryAx),
+    ("collected", toJson (axioms.map toString))]
 
 def samePair (env : Environment) (kind : String) (a b : Name) : Bool :=
   match env.find? a, env.find? b with
@@ -662,7 +676,7 @@ def samePair (env : Environment) (kind : String) (a b : Name) : Bool :=
       if kind == "negation" then ta == mkApp (mkConst ``Not) cb.type else ta == cb.type
   | _, _ => false
 
-def run : M Unit := do
+def run : MetaM Unit := do
   let env ← getEnv
   for (name, ci) in env.constants.map₁.toList do
     if let some m := moduleOf env name then
@@ -674,11 +688,16 @@ def run : M Unit := do
   IO.println ("{ROW_MARK}" ++ (Json.mkObj [("done", true)]).compress)
 
 set_option maxHeartbeats 0 in
-#eval show MetaM Unit from do
-  let _ ← run.run {{}}
+#eval run
 
 end {EXTRACT_MODULE}
 '''
+
+
+# The identity of the extraction file apart from the modules and pairs it is asked about. A build that
+# was staged with another extraction printed rows of another form, so whoever kept such a build stages
+# it again: the runner for a publication, `prepare` and `verify` for a candidate.
+EXTRACTION = sha256_text(extraction_source('', [], []))[:16]
 
 
 def parse_rows(output):
@@ -717,14 +736,27 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
     declaration whose name it extends (a structure's fields and constructor are inside the
     structure). Every other constant of the canon is auxiliary. An auxiliary whose name extends an
     entry of its own module belongs to that entry: it counts as that entry wherever it is used, and
-    what it uses and the axioms it depends on are the entry's as well. An auxiliary that belongs to
-    no entry, such as a private helper, is replaced by what it uses. The index keeps under `hidden`
-    what each such auxiliary was replaced by, because a later extraction of another module has to
-    pass through it and no longer has its row.
+    what it uses is the entry's as well. An auxiliary that belongs to no entry, such as a private
+    helper, is replaced by what it uses. The index keeps under `hidden` what each such auxiliary was
+    replaced by, because a later extraction of another module has to pass through it and no longer
+    has its row.
 
-    An axiom is never folded away. An axiom of the canon that is no entry, whether the author wrote
-    it as private or Lean generated it, as `native_decide` does for each computation, counts as
-    itself among the axioms of whatever reaches it, and `hidden` names it as well."""
+    Two things are recorded about an entry's proof, and they answer different questions.
+
+    `axioms` is what Lean reported for the declaration (the row's `collected`): every axiom its proof
+    depends on through everything it uses. It is stored as Lean gave it and nothing is added to it
+    here. A statement is formal when this list lies within the allowed axioms (beyond_allowed), so a
+    `sorry` anywhere below it, an axiom the author declared, and the axiom that `native_decide`
+    generates for each computation all keep it from being formal.
+
+    `lean_proof` says whether the declaration's own proof is written out: `sorry` when the term of the
+    declaration, or of an auxiliary that is folded into it, contains `sorry`, and `complete` otherwise.
+    It does not look into the entries the proof names. A proof that is complete and names a statement
+    still open is a proof, of this statement from that one, and the standing of statements and the
+    frontier are built on that.
+
+    `hidden` also names every axiom of the canon that is no entry, whether the author wrote it as
+    private or Lean generated it, because a candidate that declares an axiom is refused (check_applied)."""
     lean_root = Path(lean_root)
     modules = sorted(set(modules) | {row['module'] for row in rows})
     entries = {name: entry for name, entry in index['entries'].items() if entry['module'] not in modules}
@@ -743,7 +775,7 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
 
     def parent(row):
         # Only an entry of the same module: that entry is extracted together with the auxiliary, so
-        # what the auxiliary depends on can be made the entry's. An entry elsewhere is not touched.
+        # what the auxiliary uses can be made the entry's. An entry elsewhere is not touched.
         parts = name_parts(row['user'])
         for length in range(len(parts) - 1, 0, -1):
             prefix = '.'.join(parts[:length])
@@ -755,8 +787,11 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
         if row['name'] not in new:
             aux[row['name']] = parent(row)
 
-    def resolve(name, owner, seen, into, axioms, library):
-        """Add to `into` the entries that a used canon constant stands for, seen from `owner`."""
+    def resolve(name, owner, seen, into, folded):
+        """Add to `into` the entries that a used canon constant stands for, seen from `owner`.
+
+        `folded` receives what the auxiliaries passed through on the way bring with them: the library
+        theorems they use, and whether one of them contains `sorry`."""
         if name in known:
             if name != owner:
                 into.add(name)
@@ -773,29 +808,27 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             kept = hidden.get(name)
             if kept is not None:
                 seen.add(name)
-                axioms.update(kept['axioms'])
-                library.update(kept['library'])
+                folded['sorry'] = folded['sorry'] or kept['sorry']
+                folded['library'].update(kept['library'])
                 into.update(used for used in kept['uses'] if used != owner)
             return
         seen.add(name)
-        if row['kind'] == 'axiom':
-            axioms.add(name)
-        axioms.update(row['axioms'])
-        library.update(row['library'])
+        folded['sorry'] = folded['sorry'] or row['sorry']
+        folded['library'].update(row['library'])
         for used in row['type_uses'] + row['value_uses']:
-            resolve(used, owner, seen, into, axioms, library)
+            resolve(used, owner, seen, into, folded)
 
     for name, row in new.items():
         statement_uses, uses = set(), set()
-        axioms, library = set(row['axioms']), set(row['library'])
+        folded = {'library': set(row['library']), 'sorry': row['sorry']}
         seen = {name}
         for used in row['type_uses']:
-            resolve(used, name, seen, statement_uses, axioms, library)
+            resolve(used, name, seen, statement_uses, folded)
         for used in row['value_uses']:
-            resolve(used, name, seen, uses, axioms, library)
+            resolve(used, name, seen, uses, folded)
         for child in rows:
             if aux.get(child['name']) == name and child['name'] not in seen:
-                resolve(child['name'], name, seen, uses, axioms, library)
+                resolve(child['name'], name, seen, uses, folded)
         relative = module_file(row['module'])
         text = (lean_root / relative).read_text(encoding='utf-8').replace('\r\n', '\n')
         entries[name] = {
@@ -803,19 +836,19 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             'source_sha': sha256_text(declaration_text(text, row['span'])),
             'statement': row['sig'], 'statement_hash': row['statement'], 'prop': bool(row['prop']),
             'statement_uses': sorted(statement_uses), 'uses': sorted(uses - {name}),
-            'library': sorted(library), 'direct_axioms': sorted(axioms),
+            'library': sorted(folded['library']), 'axioms': sorted(row['collected']),
             'lean_proof': None if row['kind'] not in ('theorem', 'def', 'opaque')
-            else 'sorry' if 'sorryAx' in axioms else 'complete'}
+            else 'sorry' if folded['sorry'] else 'complete'}
     for row in rows:
         name = row['name']
         if name in new or (aux.get(name) is not None and row['kind'] != 'axiom'):
             continue
-        uses, axioms, library = set(), set(), set()
+        uses, folded = set(), {'library': set(), 'sorry': False}
         if aux.get(name) is None:
-            resolve(name, None, set(), uses, axioms, library)
+            resolve(name, None, set(), uses, folded)
         hidden[name] = {'module': row['module'], 'user': row['user'], 'axiom': row['kind'] == 'axiom',
-                        'generated': bool(row['internal']), 'uses': sorted(uses), 'axioms': sorted(axioms),
-                        'library': sorted(library)}
+                        'generated': bool(row['internal']), 'uses': sorted(uses),
+                        'library': sorted(folded['library']), 'sorry': folded['sorry']}
     table = dict(index['modules'])
     for module in modules:
         relative = module_file(module)
@@ -823,9 +856,7 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             table[module] = {'file': relative, 'sha256': hashlib.sha256((lean_root / relative).read_bytes()).hexdigest()}
         else:
             table.pop(module, None)
-    # `judged` maps a theorem to the revision at which the judge accepted its formal proof (judge.py).
     return {'revision': revision, 'modules': table, 'entries': entries, 'aux': aux, 'hidden': hidden,
-            'judged': {name: at for name, at in index.get('judged', {}).items() if name in entries},
             'pairs': {**index.get('pairs', {}), **pairs}}
 
 
@@ -836,59 +867,59 @@ def drop_modules(index, modules):
     return {**index, 'entries': entries,
             'modules': {m: v for m, v in index['modules'].items() if m not in modules},
             'aux': {n: p for n, p in index['aux'].items() if p is None or p in entries},
-            'hidden': {n: item for n, item in index.get('hidden', {}).items() if item['module'] not in modules},
-            'judged': {n: at for n, at in index.get('judged', {}).items() if n in entries}}
+            'hidden': {n: item for n, item in index.get('hidden', {}).items() if item['module'] not in modules}}
 
 
-def axiom_closure(index):
-    """Every entry's axioms through everything of the canon it uses; a canon axiom counts as itself."""
-    entries = index['entries']
+def beyond_allowed(entry, allowed):
+    """What keeps a statement from being proved in Lean from the allowed axioms; empty when it is so proved.
 
-    def successors(name):
-        entry = entries[name]
-        return [used for used in entry['uses'] + entry['statement_uses'] if used in entries]
+    These are the axioms Lean reported for the declaration that are not allowed: `sorryAx` for a `sorry`
+    anywhere below it, an axiom declared in the canon, the axiom of a `native_decide`. `sorryAx` is
+    named as well when the declaration's own proof is not complete although Lean's list is without it.
+    That happens when the `sorry` stands in an auxiliary declared under the entry's name which the
+    entry's own term does not reach: the auxiliary's open proof counts as the entry's (update_index)."""
+    found = set(entry['axioms']) - set(allowed)
+    if entry['lean_proof'] == 'sorry':
+        found.add('sorryAx')
+    return sorted(found)
 
-    # Entries that use one another, directly or in a circle, depend on the same axioms. The components
-    # are found in one pass without recursion, each after everything it uses outside itself.
-    order, low, closure = {}, {}, {}
-    stack, on_stack = [], set()
-    for start in entries:
-        if start in order:
+
+def statement_differences(first, now, name):
+    """How a statement, with every definition under it, differs between two indexes of one canon.
+
+    `first` is the index as the instance's first commit has it and `now` the index as it stands. The
+    result is empty when the statement of `name` is the same in both, and otherwise says what differs.
+    The comparison starts at `name` and goes to every entry its statement names, and from a definition
+    also to what its body names, since the body of a definition is part of what a statement built on it
+    says. A theorem met on the way counts by its statement alone, whatever its proof became. Each entry
+    reached must be in both indexes with the same kind and the same statement, by the identity Lean's
+    term has (`statement_hash`), and a definition also with the same source text (`source_sha`). What
+    is reached is followed in both indexes, so a dependency that exists only now is found as well.
+
+    The comparison reads the two indexes and compiles nothing. What it cannot see is a declaration
+    that is no entry, such as a private helper of a definition, and a definition whose unchanged text
+    Lean would read as another term."""
+    before, after = first['entries'], now['entries']
+    found, reached, pending = [], set(), [name]
+    while pending:
+        current = pending.pop()
+        if current in reached:
             continue
-        order[start] = low[start] = len(order)
-        stack.append(start)
-        on_stack.add(start)
-        work = [(start, iter(successors(start)))]
-        while work:
-            name, pending = work[-1]
-            for used in pending:
-                if used not in order:
-                    order[used] = low[used] = len(order)
-                    stack.append(used)
-                    on_stack.add(used)
-                    work.append((used, iter(successors(used))))
-                    break
-                if used in on_stack:
-                    low[name] = min(low[name], order[used])
-            else:
-                work.pop()
-                if work:
-                    low[work[-1][0]] = min(low[work[-1][0]], low[name])
-                if low[name] == order[name]:
-                    component = []
-                    while not component or component[-1] != name:
-                        component.append(stack.pop())
-                        on_stack.discard(component[-1])
-                    axioms = set()
-                    for member in component:
-                        axioms.update(entries[member]['direct_axioms'])
-                        if entries[member]['kind'] == 'axiom':
-                            axioms.add(member)
-                        for used in successors(member):
-                            axioms.update(closure.get(used, ()))
-                    for member in component:
-                        closure[member] = axioms
-    return {name: sorted(closure[name]) for name in entries}
+        reached.add(current)
+        old, new = before.get(current), after.get(current)
+        if old is None or new is None:
+            found.append(f'{current} is under the statement and is not in the canon '
+                         + ('of the first commit' if old is None else 'as it stands'))
+        elif old['kind'] != new['kind']:
+            found.append(f"{current} was declared as {old['kind']} and is now declared as {new['kind']}")
+        elif old['statement_hash'] != new['statement_hash']:
+            found.append(f'the statement of {current} is not the statement the first commit has')
+        elif old['kind'] not in STATEMENT_KINDS and old['source_sha'] != new['source_sha']:
+            found.append(f'the text of the definition {current} is not the text the first commit has')
+        for entry in (old, new):
+            if entry is not None:
+                pending += entry['statement_uses'] + ([] if entry['kind'] in STATEMENT_KINDS else entry['uses'])
+    return sorted(found)
 
 
 # ----------------------------------------------------------------------------- building through the broker
@@ -1096,7 +1127,6 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
     for name in replaced:
         if name in new['entries'] and name not in records and not existing_record(name):
             errors.append(f'{name} has no record; write records/{name_path(name)}.md')
-    closure = axiom_closure(new)
     for name, record in records.items():
         entry = new['entries'][name]
         meta = record['meta']
@@ -1122,7 +1152,7 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
                 errors.append(f'{name}: the record changes the written proof, "proves" or "refutes" of an element '
                               'whose proof the candidate does not replace; list the declaration in "replace"')
         if organizer and name in added and entry['kind'] in STATEMENT_KINDS:
-            foreign = sorted(set(closure[name]) - set(allowed_axioms))
+            foreign = beyond_allowed(entry, allowed_axioms)
             if foreign:
                 errors.append(f'{name} is not proved in Lean from the allowed axioms: ' + ', '.join(foreign))
     return {'added': added, 'replaced': replaced, 'records': sorted(records), 'errors': errors,

@@ -1468,6 +1468,7 @@ class RunnerTests(ScenarioCase):
         self.formal()
         runner = self.runner()
         self.assertTrue(root_solved(runner.model))
+        runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
         with patch('runner.subprocess.Popen') as launch:
             # An earlier archiver is still processing its older state snapshot
             # when the final publication requests another archive pass.
@@ -1828,6 +1829,7 @@ class RunnerTests(ScenarioCase):
         self.formal()
         runner = self.runner()
         attempt, explore = runner.producer('attempt'), runner.producer('explore')
+        runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.tick()

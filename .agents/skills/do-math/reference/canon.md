@@ -140,7 +140,7 @@ record parts  Statement, Explanation, Proof, Approaches (read one with --part, a
 | `used by` | The elements whose proofs name this one, each with its standing. | The compiled library. |
 | `stated with` | For an element that statements mention: how many do, and the command that lists them. | The compiled library. |
 | `library` | Theorems of the imported library that the declaration uses, the first twelve and the number of the rest. | The compiled library. |
-| `axioms` | The axioms the proof depends on through everything of the canon it uses. `sorryAx` means that this proof, or a proof it rests on, ends in `sorry`. | The compiled library. |
+| `axioms` | The axioms the proof depends on through everything it uses, as Lean reported them for the declaration; it is the list that `#print axioms` prints. `sorryAx` means that this proof, or a proof it rests on, ends in `sorry`. | The compiled library. |
 | `verdict` | Review's judgment: of which Lean statement it was made, whether the proof was confirmed, whether it was accepted, the change or later review that carried the judgment, and the reason. | Review. |
 | `contested` | Shown when this statement and its negation both carry settled proofs. Nothing rests on either of the two until a comprehensive review has located the failure. | Computed. |
 | `refuted by` | Shown when a settled proof establishes the negation of this statement: the elements that carry that proof. No work on a refuted statement remains. | Computed. |

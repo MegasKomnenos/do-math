@@ -15,7 +15,6 @@ import re
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
 from xml.etree import ElementTree
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
@@ -51,7 +50,7 @@ def write_canon(folder, rows, root='Lib.root'):
         entries[name] = {'name': name, 'kind': row['kind'], 'module': row['module'], 'file': row['module'].replace('.', '/') + '.lean',
                          'span': [1, 0, 2, 0], 'statement': name + ' : stated in Lean', 'statement_hash': 'hash-of-' + name,
                          'prop': theorem, 'statement_uses': row['mentions'], 'uses': row['uses'], 'library': [],
-                         'direct_axioms': [] if formal else ['sorryAx'], 'lean_proof': 'complete' if formal else 'sorry'}
+                         'lean_proof': 'complete' if formal else 'sorry'}
         records[name] = {'weight': row['weight'], 'short': row['short'], 'proves': row['proves'], 'refutes': row.get('refutes'),
                          'source': None, 'description': 'What ' + name + ' is.', 'proof': row['proof'] == 'informal',
                          'statement': False, 'approaches': [], 'path': 'records/' + name.replace('.', '/') + '.md'}
@@ -60,6 +59,17 @@ def write_canon(folder, rows, root='Lib.root'):
                              'accepted': row['standing'] == 'accepted', 'reason': 'Read by review.'})
         elif theorem:
             verdicts.append({'element': name, 'correct': 'not_applicable', 'accepted': False, 'reason': 'Stated faithfully.'})
+    def rests_on_sorry(name, seen):
+        # What Lean reports for a declaration: `sorryAx` when its own proof, or the proof of anything it
+        # reaches through what it uses, ends in `sorry`.
+        if name not in entries or name in seen:
+            return False
+        seen.add(name)
+        return entries[name]['lean_proof'] == 'sorry' or any(
+            rests_on_sorry(used, seen) for used in entries[name]['uses'] + entries[name]['statement_uses'])
+
+    for name, entry in entries.items():
+        entry['axioms'] = ['sorryAx'] if rests_on_sorry(name, set()) else []
     pairs = {f"same|{row['name']}|{row['proves']}": True for row in rows if row['proves']}
     pairs.update({f"negation|{row['name']}|{row['refutes']}": True for row in rows if row.get('refutes')})
     for part in ('canon', 'knowledge/events', 'knowledge/changes/c1'):
@@ -170,7 +180,7 @@ class Derivation(MapCase):
         data = self.map(open_rows, everything=True)
         self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
         # The refutation line is drawn like every other line.
-        svg, page, engine, note = draw.render(self.map(rows), 'layered', None)
+        svg, page = draw.render(self.map(rows))
         self.assertIn('refutes the root', svg)
 
     def test_another_proof_is_an_alternative_of_its_statement(self):
@@ -239,7 +249,7 @@ class Derivation(MapCase):
         self.assertEqual(self.edge(data, 'Lib.sAgain', 'Lib.s')['kind'], 'alternative')
         # Neither statement settles the other, and the layout does not need an acyclic map.
         self.assertFalse(self.unit(data, 'Lib.s')['settled'])
-        svg = draw.render(data, 'layered')[0]
+        svg = draw.render(data)[0]
         self.assertEqual(len(ElementTree.fromstring(svg).findall(f".//{SVG}g[@class='edge']")), len(data['edges']))
 
     def test_a_unit_carries_its_label_its_lean_name_its_kind_and_its_standing(self):
@@ -311,8 +321,7 @@ def lines_of(data, geometry):
 class Drawing(MapCase):
     def test_every_unit_and_edge_is_drawn_and_marked_for_the_page(self):
         data = self.map(wide_canon())
-        svg, page, engine, note = draw.render(data, 'layered')
-        self.assertEqual((engine, note), ('layered', None))
+        svg, page = draw.render(data)
         tree = ElementTree.fromstring(svg)  # well formed although a label carries <, " and &
         nodes = tree.findall(f".//{SVG}g[@class='node']")
         self.assertEqual(sorted(node.get('data-node') for node in nodes), sorted(self.ids(data)))
@@ -351,7 +360,7 @@ class Drawing(MapCase):
         self.assertEqual((root['standing'], root['settled']), ('no_proof', True))
         self.assertEqual(draw.status_of(root, bare), ['root', 'statement', 'proof on a separate card', 'settled'])
         self.assertEqual(draw.status_of(proof, bare), ['proof', 'accepted', 'settled'])
-        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        tree = ElementTree.fromstring(draw.render(data)[0])
         nodes = {node.get('data-node'): node for node in tree.findall(f".//{SVG}g[@class='node']")}
         self.assertEqual(nodes['Lib.root'].get('data-status'), 'root · statement · proof on a separate card · settled')
         # The mark of the standing is on the card of the proof and not on the card of the statement.
@@ -368,7 +377,7 @@ class Drawing(MapCase):
 
     def test_the_legend_names_what_occurs_and_the_subtitle_says_how_the_root_stands(self):
         data = self.map(wide_canon())
-        svg = draw.render(data, 'layered')[0]
+        svg = draw.render(data)[0]
         texts = [''.join(element.itertext()) for element in ElementTree.fromstring(svg).iter(f'{SVG}text')]
         for kind in ('direct', 'contracted', 'mention', 'alternative'):
             self.assertIn(draw.LEGEND[kind], texts)
@@ -384,7 +393,7 @@ class Drawing(MapCase):
         self.assertNotIn('stroke-dasharray=""', svg)  # a solid line carries no dash pattern, not an empty one
         # A map without a definition and without a second proof has neither in its legend.
         plain = self.map([statement('Lib.root', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit')])
-        texts = [''.join(element.itertext()) for element in ElementTree.fromstring(draw.render(plain, 'layered')[0]).iter(f'{SVG}text')]
+        texts = [''.join(element.itertext()) for element in ElementTree.fromstring(draw.render(plain)[0]).iter(f'{SVG}text')]
         self.assertIn(draw.LEGEND['direct'], texts)
         for absent in (draw.LEGEND['mention'], draw.LEGEND['alternative'], draw.CARD_WORDS['definition'], 'no proof'):
             self.assertNotIn(absent, texts)
@@ -395,7 +404,7 @@ class Drawing(MapCase):
         data = self.map(hub_canon())
         role = {unit['id']: unit['role'] for unit in data['units']}
         self.assertEqual({edge['kind'] for edge in data['edges'] if edge['source'] == 'Lib.object'}, {'direct', 'mention'})
-        svg = draw.render(data, 'layered')[0]
+        svg = draw.render(data)[0]
         tree = ElementTree.fromstring(svg)
         strokes, first = {}, []  # the colours of the lines that leave each card; whether each line leaves a definition
         for group in tree.find(f".//{SVG}g[@id='routes']"):
@@ -439,7 +448,7 @@ class Drawing(MapCase):
         self.assertIn(f'stroke="{draw.SAMPLE_COLOUR}" stroke-width="1.7" stroke-dasharray="{draw.LINES["mention"][0]}"', guide)
         # A heavy line has the colour of its kind, so on a map with a heavy line the sentence speaks of the thin ones.
         wide = self.map(wide_canon())
-        svg = draw.render(wide, 'layered')[0]
+        svg = draw.render(wide)[0]
         tree = ElementTree.fromstring(svg)
         texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
         self.assertIn('thin ' + draw.COLOUR_WORDS, texts)
@@ -457,7 +466,7 @@ class Drawing(MapCase):
         self.assertNotIn(draw.LEGEND['contracted'], draw.guide_of(wide))
         # A map without a definition has no lighter line and says nothing of one.
         plain = self.map([statement('Lib.root', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit')])
-        self.assertNotIn(draw.LIGHT_WORDS, draw.render(plain, 'layered')[0])
+        self.assertNotIn(draw.LIGHT_WORDS, draw.render(plain)[0])
         self.assertNotIn(draw.LIGHT_WORDS, draw.guide_of(plain))
 
     def test_a_label_that_finds_no_room_counts_its_steps_and_covers_no_card(self):
@@ -476,14 +485,14 @@ class Drawing(MapCase):
         self.assertEqual(route['words'], 'via 3 steps')
         for box in draw.layered(data, cards)['cards'].values():
             self.assertFalse(draw.overlap(route['label'], box))
-        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        tree = ElementTree.fromstring(draw.render(data)[0])
         label = tree.find(f".//{SVG}g[@class='route-label']")
         self.assertEqual(label.find(f'{SVG}text').text, 'via 3 steps')
         self.assertEqual(label.find(f'{SVG}title').text, 'via Lib.s1, Lib.s2, Lib.s3')  # every name stays with the line
 
     def test_the_page_carries_the_guide_to_its_map(self):
         data = self.map(wide_canon())
-        svg, page, _, _ = draw.render(data, 'layered')
+        svg, page = draw.render(data)
         for mark in ('__TITLE__', '__GUIDE__', '__SVG__', '__DATA__'):
             self.assertNotIn(mark, page)
         guide = draw.guide_of(data, draw.proved_apart(data))
@@ -618,13 +627,13 @@ class Drawing(MapCase):
         self.assertEqual(draw.runs([[[(0, 0), (40, 0)], [(40, 0), (90, 0)]], [[(0, 0), (40, 0)], [(40, 0), (60, 0), (60, 9)]]]),
                          [([(0, 0), (40, 0)], 0.0, [0, 1]), ([(40, 0), (60, 0)], 40.0, [0, 1]), ([(60, 0), (90, 0)], 60.0, [0]),
                           ([(46.0, 0.0), (60, 0), (60, 9)], 46.0, [1])])
-        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        tree = ElementTree.fromstring(draw.render(data)[0])
         named = [group.get('data-edges').split() for group in tree.findall(f".//{SVG}g[@class='shared']")]
         mine = {f'e{index}' for index in used}
         self.assertTrue(any(set(names) == mine for names in named))
         self.assertTrue(all(len(names) > 1 and (set(names) <= mine or not set(names) & mine) for names in named))
         # The drawing carries the dots in the group of their edge, so that the page dims them with it.
-        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        tree = ElementTree.fromstring(draw.render(data)[0])
         drawn = {edge.get('id'): edge.find(f"{SVG}path[@class='dot']") for edge in tree.findall(f".//{SVG}g[@class='edge']")}
         for index, points in enumerate(dots):
             self.assertEqual(drawn[f'e{index}'] is not None, bool(points))
@@ -650,8 +659,8 @@ class Drawing(MapCase):
         instance = write_canon(Path(temp.name) / 'instance', wide_canon())
         first, second = Path(temp.name) / 'first', Path(temp.name) / 'second'
         with contextlib.redirect_stdout(io.StringIO()) as shown:
-            self.assertEqual(depmap.main([str(instance), '--out', str(first), '--layout', 'layered']), 0)
-            self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(second), '--layout', 'layered']), 0)
+            self.assertEqual(depmap.main([str(instance), '--out', str(first)]), 0)
+            self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(second)]), 0)
         self.assertIn('9 units, 15 edges, 3 groups', shown.getvalue())
         for name in ('dependency_map.json', 'dependency_map.svg', 'dependency_map.html'):
             self.assertEqual((first / name).read_bytes(), (second / name).read_bytes(), name)
@@ -659,101 +668,6 @@ class Drawing(MapCase):
             self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(second), '--all']), 2)
             self.assertEqual(depmap.main([str(Path(temp.name) / 'nothing'), '--out', str(second)]), 2)
         self.assertIn('--all needs the instance', errors.getvalue())
-
-    def test_without_elk_the_built_in_layout_is_used(self):
-        data = self.map(wide_canon())
-        with patch.object(draw.shutil, 'which', return_value=None):
-            self.assertEqual(draw.render(data, 'auto')[2:], ('layered', None))
-            with self.assertRaisesRegex(ValueError, 'the ELK layout needs Node on the PATH'):
-                draw.render(data, 'elk')
-        with patch.object(draw.shutil, 'which', return_value='node'), patch.dict(draw.os.environ, {'DO_MATH_ELKJS': ''}):
-            missing = str(Path(tempfile.gettempdir()) / 'no-elkjs-here')
-            engine, note = draw.render(data, 'auto', missing)[2:]
-            self.assertEqual(engine, 'layered')
-            self.assertIn('ELK was not used because it needs an elkjs package in ' + missing, note)
-
-    def test_the_built_in_layout_is_the_default_whether_or_not_elk_is_present(self):
-        # The folders of this canon use each other in one direction: the case in which `auto` takes ELK when it is present.
-        rows = [definition('Lib.object', 'unit', module='Lib.Objects.Defs'),
-                statement('Lib.a', 'unit', mentions=['Lib.object'], module='Lib.Parts.A'),
-                statement('Lib.root', 'unit', uses=['Lib.a'], module='Lib.Main.Root')]
-        data = self.map(rows)
-        self.assertFalse(draw.groups_in_a_cycle(data))
-        temp = tempfile.TemporaryDirectory()
-        self.addCleanup(temp.cleanup)
-        instance = write_canon(Path(temp.name) / 'instance', rows)
-
-        def command(*options):
-            with contextlib.redirect_stdout(io.StringIO()) as shown:
-                self.assertEqual(depmap.main([str(instance), '--out', str(Path(temp.name) / 'out'), *options]), 0)
-            return shown.getvalue()
-
-        def without_a_layout():
-            """What each level gives to a caller that names no layout: the drawing code, depmap.write, the command."""
-            written = depmap.write(data, Path(temp.name) / 'written')
-            return draw.render(data)[2:], (written['engine'], written['note']), command()
-
-        named = draw.render(data, 'layered')
-        self.assertEqual(draw.render(data), named)  # the same drawing as with the built-in layout named
-        # With ELK present, no level looks for it or runs it, and nothing is said about it.
-        with patch.object(draw, 'find_elk', return_value=(Path('elkjs'), None)) as looked, \
-                patch.object(draw, 'elk', side_effect=RuntimeError('no layout')) as ran:
-            drawn, written, printed = without_a_layout()
-            self.assertEqual((drawn, written), (('layered', None), ('layered', None)))
-            self.assertIn('layout: layered', printed)
-            self.assertNotIn('ELK', printed)
-            looked.assert_not_called()
-            ran.assert_not_called()
-            # `auto` is still a choice, and with it ELK is tried for this map.
-            self.assertIn('ELK failed (no layout)', draw.render(data, 'auto')[3])
-            self.assertIn('ELK failed (no layout)', command('--layout', 'auto'))
-            self.assertEqual(ran.call_count, 2)
-        # Without ELK the same, also when --elkjs names a folder that holds no package: ELK was not asked for.
-        with patch.object(draw.shutil, 'which', return_value=None):
-            drawn, written, printed = without_a_layout()
-            self.assertEqual((drawn, written), (('layered', None), ('layered', None)))
-            self.assertIn('layout: layered', printed)
-        with patch.dict(draw.os.environ, {'DO_MATH_ELKJS': ''}):
-            printed = command('--elkjs', str(Path(tempfile.gettempdir()) / 'no-elkjs-here'))
-            self.assertIn('layout: layered', printed)
-            self.assertNotIn('ELK', printed)
-        # Where Node and the package are really installed, `auto` draws this map with ELK and the default does not.
-        if draw.find_elk()[0]:
-            self.assertEqual(draw.render(data), named)
-            self.assertIn('layout: layered', command())
-            self.assertTrue(draw.render(data, 'auto')[2].startswith('ELK Layered'))
-            self.assertIn('layout: ELK Layered', command('--layout', 'auto'))
-
-    def test_auto_takes_elk_only_when_the_groups_are_free_of_cycles(self):
-        # In wide_canon the folder Lib holds the definition and the root, so it both feeds and uses the other folders.
-        cyclic = self.map(wide_canon())
-        one_way = self.map([definition('Lib.object', 'unit', module='Lib.Objects.Defs'),
-                            statement('Lib.a', 'unit', mentions=['Lib.object'], module='Lib.Parts.A'),
-                            statement('Lib.root', 'unit', uses=['Lib.a'], module='Lib.Main.Root')])
-        self.assertTrue(draw.groups_in_a_cycle(cyclic))
-        self.assertFalse(draw.groups_in_a_cycle(one_way))
-        with patch.object(draw, 'find_elk', return_value=(Path('elkjs'), None)),                 patch.object(draw, 'elk', side_effect=RuntimeError('no layout')) as called:
-            engine, note = draw.render(cyclic, 'auto')[2:]
-            self.assertEqual(engine, 'layered')
-            self.assertIn('the groups depend on each other in a cycle', note)
-            called.assert_not_called()
-            # Asked for by name, ELK is used whatever the groups are; a failure is then an error and not a fallback.
-            with self.assertRaisesRegex(ValueError, 'the ELK layout failed: no layout'):
-                draw.render(cyclic, 'elk')
-            engine, note = draw.render(one_way, 'auto')[2:]
-            self.assertEqual(engine, 'layered')
-            self.assertIn('ELK failed (no layout)', note)
-            self.assertEqual(called.call_count, 2)
-
-    @unittest.skipUnless(draw.find_elk()[0], 'Node or the elkjs package is not present; the ELK layout is optional')
-    def test_elk_lays_out_the_same_map_when_it_is_present(self):
-        data = self.map(wide_canon())
-        svg, _, engine, note = draw.render(data, 'elk')
-        self.assertTrue(engine.startswith('ELK Layered'), engine)
-        self.assertIsNone(note)
-        tree = ElementTree.fromstring(svg)
-        self.assertEqual(len(tree.findall(f".//{SVG}g[@class='node']")), len(data['units']))
-        self.assertEqual(len(tree.findall(f".//{SVG}g[@class='edge']")), len(data['edges']))
 
 
 def playwright():
@@ -775,7 +689,7 @@ class Page(MapCase):
         self.unit(data, 'Lib.count')['description'] = r'The sum $\sum_{i=1}^{n} a_i \le \frac12\binom{n}{2}$, and $\notacommand x$.'
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        depmap.write(data, temp.name, 'layered')
+        depmap.write(data, temp.name)
         address = (Path(temp.name) / 'dependency_map.html').resolve().as_uri()
         seen = '''() => ({hash: location.hash, focus: document.body.classList.contains('focus'),
                          pick: (document.querySelector('g.node.pick') || {dataset: {}}).dataset.node || null,
@@ -908,7 +822,7 @@ class PublishedInstance(ScenarioCase):
     def run_map(self, *options):
         out = self.root / ('map-' + '-'.join(option.strip('-') for option in options))
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(depmap.main([str(self.instance), '--out', str(out), '--layout', 'layered', *options]), 0)
+            self.assertEqual(depmap.main([str(self.instance), '--out', str(out), *options]), 0)
         for name in ('dependency_map.svg', 'dependency_map.html'):
             self.assertTrue((out / name).is_file())
         return read_json(out / 'dependency_map.json')

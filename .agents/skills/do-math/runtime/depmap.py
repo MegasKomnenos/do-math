@@ -1,6 +1,6 @@
 """The dependency map of a research instance, drawn from its canon by script.
 
-    python depmap.py <instance> --out <folder> [--all] [--layout layered|elk|auto] [--elkjs <folder>]
+    python depmap.py <instance> --out <folder> [--all]
     python depmap.py <folder>/dependency_map.json --out <folder>     draw again, without the instance
 
 The map is a view. It is computed from the model that knowledge.replay derives from the structural
@@ -12,13 +12,9 @@ in the instance. The command writes three files into the output folder:
     dependency_map.html   the same drawing in a page that zooms, finds a unit or a folded step by name, follows a
                           unit up and down, and shows its details
 
-The drawing is laid out by code that ships with the skill and needs nothing beyond Python. This
-built-in layout is the default, whether or not ELK is installed. ELK, the layout engine of the
-previous research's map, is used when `--layout elk` asks for it, which needs Node and the elkjs
-package to be installed; with `--layout auto` the command chooses ELK itself when both are present
-and the map is one ELK draws well. depmap/draw.py says when that is, why the built-in layout is
-the default, what was taken from that generator and what was left. Nothing is installed by this
-command.
+The drawing is laid out by code that ships with the skill and needs nothing beyond Python.
+depmap/draw.py describes the layout and says what was taken from the generator of the previous
+research's map and what was left. Nothing is installed by this command.
 
 How the map is derived. The words are those of docs/do-math/lean-canon-design.md, sections 4.4, 5 and 13.1.
 
@@ -289,17 +285,17 @@ def from_instance(instance, everything=False):
     return derive(model, everything, statements)
 
 
-def write(data, out, layout='layered', elkjs=None):
-    """Write the map's data and its two drawings into a folder; returns what was written and how it was laid out."""
+def write(data, out):
+    """Write the map's data and its two drawings into a folder; returns what was written."""
     from runtime_support import write_json, write_text
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     draw = drawing()
-    svg, page, engine, note = draw.render(data, layout, elkjs)
+    svg, page = draw.render(data)
     write_json(out / FILES['data'], data)
     write_text(out / FILES['svg'], svg)
     write_text(out / FILES['html'], page)
-    return {'files': {key: str(out / name) for key, name in FILES.items()}, 'engine': engine, 'note': note}
+    return {'files': {key: str(out / name) for key, name in FILES.items()}}
 
 
 def say(text, stream=None):
@@ -314,12 +310,6 @@ def main(argv=None):
     parser.add_argument('source', help='an instance folder, or a dependency_map.json to draw again')
     parser.add_argument('--out', required=True, help='the folder the map is written into')
     parser.add_argument('--all', action='store_true', help='every unit of the canon, not only what the proof of the root rests on')
-    parser.add_argument('--layout', choices=('layered', 'elk', 'auto'), default='layered',
-                        help='layered, the default: the built-in layout, which needs only Python; elk: ELK, available '
-                             'once Node and the elkjs package are installed; auto: elk when both are present and the '
-                             'groups do not depend on each other in a cycle, else layered')
-    parser.add_argument('--elkjs', help='with --layout elk or auto: the folder of an installed elkjs package '
-                                        '(default: depmap/node_modules/elkjs)')
     args = parser.parse_args(argv)
     source = Path(args.source)
     try:
@@ -334,7 +324,7 @@ def main(argv=None):
             data = from_instance(source, args.all)
         else:
             raise ValueError(f'{source} is neither an instance folder nor a dependency_map.json')
-        result = write(data, args.out, args.layout, args.elkjs)
+        result = write(data, args.out)
     except (ValueError, OSError) as error:
         say('depmap: ' + str(error), sys.stderr)
         return 2
@@ -343,9 +333,7 @@ def main(argv=None):
     scope = ('every unit of the canon' if data['scope'] == 'all' else
              'what the refutation of the root rests on' if refuted else 'what the proof of the root rests on')
     say(f"{counts['units']} units, {counts['edges']} edges, {counts['groups']} groups; "
-        f"{len(data['folded'])} folded elements on edges; scope: {scope}; layout: {result['engine']}")
-    if result['note']:
-        say(result['note'])
+        f"{len(data['folded'])} folded elements on edges; scope: {scope}")
     for path in result['files'].values():
         say(path)
     return 0

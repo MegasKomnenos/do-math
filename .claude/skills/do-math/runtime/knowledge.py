@@ -8,7 +8,7 @@ the root are computed afresh on each replay, so no session writes them.
 from copy import deepcopy
 from pathlib import Path
 
-from canon import Canon, axiom_closure, name_path, read_approaches
+from canon import Canon, beyond_allowed, name_path, read_approaches
 from runtime_support import read_json, write_json, write_text
 
 ROOT_QUESTION = 'q0'
@@ -42,6 +42,8 @@ def new_model(instance):
         elements[name] = {
             'name': name, 'kind': entry['kind'], 'module': entry['module'], 'statement': entry['statement'],
             'statement_hash': entry['statement_hash'], 'lean_proof': entry['lean_proof'],
+            # What Lean reported for the declaration: every axiom its proof depends on (canon.update_index).
+            'axioms': entry['axioms'],
             'uses': entry['uses'], 'statement_uses': entry['statement_uses'], 'library': entry['library'],
             'weight': record.get('weight', 'step'), 'short': record.get('short') or '',
             'description': record.get('description') or '', 'written_proof': bool(record.get('proof')),
@@ -49,7 +51,7 @@ def new_model(instance):
             'approaches': record.get('approaches', []), 'verdict': None, 'concerns': [], 'findings': []}
     return {'root': meta['root'], 'library': meta['library'], 'revision': index['revision'],
             'allowed_axioms': read_json(Path(instance) / 'settings.json')['lean']['allowed_axioms'],
-            'elements': elements, 'pairs': index.get('pairs', {}), 'axioms': axiom_closure(index),
+            'elements': elements, 'pairs': index.get('pairs', {}),
             'verdicts': {}, 'changes': {}, 'organized': [],
             'questions': {ROOT_QUESTION: {'id': ROOT_QUESTION, 'statement': ROOT_QUESTION_STATEMENT,
                                           'grounds': ROOT_QUESTION_GROUNDS, 'source': None, 'origin': 'root',
@@ -264,8 +266,9 @@ def settle(model):
     for name, element in elements.items():
         element['verdict'] = model['verdicts'].get(name)
         element['standing'] = standing_of(element)
-        element['axioms'] = model['axioms'].get(name, [])
-        element['formal'] = is_statement(element) and set(element['axioms']) <= allowed
+        # Formal: a statement whose proof, by Lean's own account of its axioms, depends on allowed axioms only.
+        # A `sorry` anywhere below it is the axiom `sorryAx`, which cannot be allowed (settings.validate).
+        element['formal'] = is_statement(element) and not beyond_allowed(element, allowed)
         element['statement_of'] = statement_of(model, name) if is_statement(element) else None
         element['used_by'], element['mentioned_by'] = [], []
         element['settled'] = False

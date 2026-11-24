@@ -1,63 +1,36 @@
 """Draw a dependency map as SVG and as an HTML page. The input is the JSON that depmap.py derives.
 
 This module reads the map's data and nothing of the runtime, so a map can be drawn again from its
-JSON alone. `render(data)` returns the SVG, the page, the name of the layout that was used and,
-when a requested layout could not be used, a sentence saying so.
+JSON alone. `render(data)` returns the SVG and the page.
 
 The drawing explains itself to a reader who was not told how it is made: its legend shows the lines,
 the cards and the standings that occur on it, and the page receives the same legend, a sentence on
 what the map shows and the meaning of the words on its cards (`guide_of`). The page is viewer.html
 with the drawing, that guide and the data put in; what it does with them is described at its head.
 
-Two layouts produce the same geometry (card rectangles, group rectangles, one path per edge):
-
-    layered   written here, always available. Units are placed in layers from left to right so that
-              every edge runs to a later layer, and each group is a horizontal band. The order
-              inside a layer is chosen by barycentre sweeps over the edges to the next layer, and
-              the vertical positions are relaxed towards those neighbours. The lines run at right
-              angles with rounded corners. The edges that leave one card with one meaning are one
-              net, drawn as one line that branches, with a dot at each branch. In the space after
-              its card a net has a trunk, an upright line on a track; an edge to the next layer
-              leaves the trunk level. An edge to a later layer runs on a lane, a level line under
-              the cards of the band it enters and outside the frame of the group, which the edges
-              of the net into that band share; it leaves the lane upright before the layer of its
-              target. So no line passes through a card or runs along the cards inside a group,
-              lines on neighbouring tracks and lanes keep one distance, and every edge arrives at
-              a card at a point of its own, for which a card grows where many arrive. A line is
-              written as a few pieces with narrow boxes, so that a browser draws only those in
-              its window. The words on a line name its folded steps where they cover no card, and
-              count them where the names would.
-    elk       ELK Layered through Node and the elkjs package, with groups as compound nodes and
-              orthogonal routing. It can be used only when both are present: Node on the PATH, and
-              elkjs in `node_modules/elkjs` beside this file, in the folder named by --elkjs, or
-              in the folder named by the environment variable DO_MATH_ELKJS. Nothing installs it.
-
-Which of the two draws better depends on the groups; this was observed on drawn maps. Where the
-folders use each other in one direction, ELK gives the more compact drawing. Where they use each
-other in a cycle, ELK places each group as one box along the flow and leads the lines of the cycle
-backwards around the whole map, while a band has no such case. The cycle is the usual case, since
-the definitions the root speaks of and the root itself stand in one folder. The existing generator
-met the same difficulty with hand-chosen columns of chapters, which a script that runs without
-judgment cannot choose. So `auto` takes ELK only when it is present and the groups are free of
-cycles; `--layout elk` asks for it regardless.
-
-The built-in layout is the default, at every level: of `render`, of `write` in depmap.py and of
-the command. ELK is used only when the caller names `elk` or `auto`. There are two reasons. The
-two maps of whole researches that were drawn with both so far (173 and 211 cards) have folders
-that use each other in a cycle, and on them ELK gave a sheet several times larger, most of it
-parallel lines, which was harder to read; the more compact drawings of ELK were seen on maps of
-some ten cards, and no map of a whole research with folders free of cycles has been drawn. And
-a default that looked for the package would draw one command differently on two machines,
-according to what is installed beside this file.
+The layout is written here and needs nothing beyond Python. It gives each card and each group a
+rectangle and each edge one path. Units are placed in layers from left to right so that every
+edge runs to a later layer, and each group is a horizontal band. The order inside a layer is
+chosen by barycentre sweeps over the edges to the next layer, and the vertical positions are
+relaxed towards those neighbours. The lines run at right angles with rounded corners. The edges
+that leave one card with one meaning are one net, drawn as one line that branches, with a dot at
+each branch. In the space after its card a net has a trunk, an upright line on a track; an edge
+to the next layer leaves the trunk level. An edge to a later layer runs on a lane, a level line
+under the cards of the band it enters and outside the frame of the group, which the edges of the
+net into that band share; it leaves the lane upright before the layer of its target. So no line
+passes through a card or runs along the cards inside a group, lines on neighbouring tracks and
+lanes keep one distance, and every edge arrives at a card at a point of its own, for which a card
+grows where many arrive. A line is written as a few pieces with narrow boxes, so that a browser
+draws only those in its window. The words on a line name its folded steps where they cover no
+card, and count them where the names would.
 
 What was taken from the dependency-map generator of the previous research (the folder
 dependency_map/scripts/지도 of that research) and what was left there:
 
-    taken     the layout runner (`빌드/배치.cjs`, here elk_layout.cjs) and the ELK option profile it
-              was run with (`지도_설정.json`, 배치.프로필들.기본); the click viewer (`빌드/뷰어.py`, here
-              viewer.html) with the attributes the drawing writes for it; the visual grammar of
-              `지도_설정.json` and `빌드/그리기.py`: the line of each kind of edge (solid, dashed
-              "through intermediate results", dotted reference, heavy "each complete"), the white
+    taken     the click viewer (`빌드/뷰어.py`, here viewer.html) with the attributes the drawing
+              writes for it; the visual grammar of `지도_설정.json` and `빌드/그리기.py`: the
+              line of each kind of edge (solid, dashed "through intermediate results", dotted
+              reference, heavy "each complete"), the white
               casing under a line that separates crossings, rounded corners of orthogonal lines,
               the arrowheads, the palette that gives all edges leaving one card one colour, the
               lighter drawing of the lines that would otherwise fill the sheet (there the lines of
@@ -65,9 +38,11 @@ dependency_map/scripts/지도 of that research) and what was left there:
               group boxes, and the colours of cards, of the goal and of a completing proof; the
               dot where a net branches, read from the finished routes (`빌드/배치.py`,
               분기점_재계산); and from its rails (`빌드/열배치.py`) the lane of a net with far
-              targets and the one branch before each column, which the built-in layout gives to
-              every line that goes further than the next layer, under each group.
-    left      everything bound to a manuscript: chapter parsing, numbering and label resolution,
+              targets and the one branch before each column, which the layout here gives to every
+              line that goes further than the next layer, under each group.
+    left      its layout, which ran ELK Layered through Node (`빌드/배치.cjs`) with the option
+              profile of `지도_설정.json` (배치.프로필들.기본), since the layout is written here;
+              everything bound to a manuscript: chapter parsing, numbering and label resolution,
               translation, the stored graph and its overlay, candidate and review rounds; the
               compartments of a card with ports and endpoint lists; column placement of chapters,
               bundles, and the nudging and untwisting that repair the routes of two routers laid
@@ -83,11 +58,7 @@ from bisect import bisect_right, insort
 import html
 import json
 import math
-import os
 from pathlib import Path
-import shutil
-import subprocess
-import tempfile
 from urllib.parse import quote
 
 HERE = Path(__file__).resolve().parent
@@ -191,21 +162,6 @@ LANE_GAP, LANE_MARGIN = 9, 20  # between two lanes, from the frame of a group to
 GROUP_PAD_X, GROUP_PAD_TOP, GROUP_PAD_BOTTOM, GROUP_GAP = 28, 108, 24, 30
 PORT_GAP, PORT_MARGIN, PORT_MIN = 14, 12, 7  # between two ends on a card, from its corner to the first; a card grows to keep the last
 SWEEPS, RELAXATIONS = 24, 24
-
-# ELK: the profile the existing generator was run with, and the padding of a group around its cards
-ELK_OPTIONS = {
-    'elk.algorithm': 'layered', 'elk.direction': 'RIGHT', 'elk.edgeRouting': 'ORTHOGONAL',
-    'elk.hierarchyHandling': 'INCLUDE_CHILDREN', 'elk.layered.mergeEdges': 'false',
-    'elk.layered.mergeHierarchyEdges': 'true',
-    'elk.layered.crossingMinimization.greedySwitchHierarchical.type': 'TWO_SIDED',
-    'elk.layered.crossingMinimization.greedySwitch.type': 'TWO_SIDED',
-    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', 'elk.layered.thoroughness': '30',
-    'elk.randomSeed': '1', 'elk.spacing.nodeNode': '60', 'elk.spacing.edgeNode': '60', 'elk.spacing.edgeEdge': '28',
-    'elk.layered.spacing.nodeNodeBetweenLayers': '90', 'elk.layered.spacing.edgeNodeBetweenLayers': '26',
-    'elk.layered.spacing.edgeEdgeBetweenLayers': '20', 'elk.padding': '[top=20,left=20,bottom=20,right=20]',
-    'elk.json.edgeCoords': 'ROOT', 'elk.json.shapeCoords': 'ROOT'}
-ELK_GROUP_PADDING = f'[top={GROUP_PAD_TOP},left={GROUP_PAD_X},bottom={GROUP_PAD_BOTTOM},right={GROUP_PAD_X}]'
-ELK_TIMEOUT = 600
 
 
 # ----------------------------------------------------------------------------- text
@@ -658,7 +614,7 @@ def layered(data, cards):
 
     right = max([x + w for x, _, w, _ in frames.values()] + [edge[-1] - LAYER_GAP + GROUP_PAD_X])
     shared = {net: index for index, net in enumerate(dict.fromkeys(nets))}
-    return {'engine': 'layered', 'width': right, 'height': cursor - GROUP_GAP, 'cards': boxes, 'groups': frames,
+    return {'width': right, 'height': cursor - GROUP_GAP, 'cards': boxes, 'groups': frames,
             'edges': [{'points': routes[n], 'pieces': cuts[n], 'label': labels[n][0], 'words': labels[n][1],
                        'net': shared[nets[n]]} for n in range(len(pairs))]}
 
@@ -813,81 +769,6 @@ def junctions(edges):
                     seen.add(key)
                     found[index].append(corner)
     return found
-
-
-# ----------------------------------------------------------------------------- the ELK layout
-
-def find_elk(explicit=None):
-    """(the folder of elkjs, None) when ELK can be used, else (None, what is missing)."""
-    if not shutil.which('node'):
-        return None, 'Node on the PATH'
-    places = [explicit] if explicit else [os.environ.get('DO_MATH_ELKJS'), HERE / 'node_modules' / 'elkjs']
-    for place in places:
-        if place and (Path(place) / 'package.json').is_file():
-            return Path(place), None
-    return None, ('an elkjs package in ' + str(explicit) if explicit else
-                  'the elkjs package (in depmap/node_modules/elkjs, in the folder named by --elkjs, or by DO_MATH_ELKJS)')
-
-
-def elk(data, cards, package):
-    """The same geometry from ELK Layered: groups are compound nodes and edges are routed orthogonally."""
-    ids = [unit['id'] for unit in data['units']]
-    number = {name: index for index, name in enumerate(ids)}
-    children = [{'id': f'g{index}', 'layoutOptions': {'elk.padding': ELK_GROUP_PADDING},
-                 'children': [{'id': f'n{number[name]}', 'width': cards[name]['width'], 'height': cards[name]['height']}
-                              for name in group['units']]}
-                for index, group in enumerate(data['groups'])]
-    edges = []
-    for index, edge in enumerate(data['edges']):
-        item = {'id': f'e{index}', 'sources': [f"n{number[edge['source']]}"], 'targets': [f"n{number[edge['target']]}"]}
-        words = via_text(data, edge)
-        if words:
-            wide, tall = via_box(words)
-            item['labels'] = [{'id': f'l{index}', 'text': words, 'width': wide, 'height': tall}]
-        edges.append(item)
-    graph = {'id': 'root', 'layoutOptions': ELK_OPTIONS, 'children': children, 'edges': edges}
-    with tempfile.TemporaryDirectory(prefix='depmap-elk-') as folder:
-        source, target = Path(folder) / 'input.json', Path(folder) / 'output.json'
-        source.write_text(json.dumps(graph), encoding='utf-8')
-        try:
-            done = subprocess.run(['node', str(HERE / 'elk_layout.cjs'), str(package), str(source), str(target)],
-                                  capture_output=True, text=True, encoding='utf-8', errors='replace',
-                                  timeout=ELK_TIMEOUT, stdin=subprocess.DEVNULL)
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise RuntimeError(str(error))
-        if done.returncode != 0 or not target.is_file():
-            raise RuntimeError((done.stderr or done.stdout or 'no output').strip()[-600:])
-        raw = json.loads(target.read_text(encoding='utf-8'))
-    placed, routed = {}, {}
-
-    def walk(node):
-        placed[node['id']] = node
-        for edge in node.get('edges') or []:
-            routed[edge['id']] = edge
-        for child in node.get('children') or []:
-            walk(child)
-
-    walk(raw)
-    routes = []
-    for index in range(len(edges)):
-        sections = routed[f'e{index}'].get('sections') or []
-        if len(sections) != 1:
-            raise RuntimeError(f'ELK returned {len(sections)} sections for an edge; one continuous route is expected')
-        section = sections[0]
-        points = [section['startPoint'], *(section.get('bendPoints') or []), section['endPoint']]
-        found = (routed[f'e{index}'].get('labels') or [None])[0]
-        label = (found['x'], found['y'], found['width'], found['height']) if found and 'x' in found else None
-        routes.append({'points': [(p['x'], p['y']) for p in points], 'label': label,
-                       'words': via_text(data, data['edges'][index]), 'net': index})
-
-    def box(key):
-        node = placed[key]
-        return node['x'], node['y'], node['width'], node['height']
-
-    return {'engine': f"ELK Layered (elkjs {raw.get('__elk_version', '?')})", 'width': raw['width'], 'height': raw['height'],
-            'cards': {name: box(f'n{number[name]}') for name in ids},
-            'groups': {group['id']: box(f'g{index}') for index, group in enumerate(data['groups'])},
-            'edges': routes}
 
 
 # ----------------------------------------------------------------------------- SVG
@@ -1094,7 +975,7 @@ def svg_of(data, cards, geometry, bare=()):
             (px, py), (ex, ey) = route['points'][-2:]
             span = math.hypot(ex - px, ey - py) or 1.0
             dx, dy = (ex - px) / span, (ey - py) / span
-            pieces = [list(piece) for piece in route.get('pieces') or [route['points']]]
+            pieces = [list(piece) for piece in route['pieces']]
             pieces[-1][-1] = (ex - dx * (long - 1), ey - dy * (long - 1))  # the line ends inside its arrowhead
             lines.append(pieces)
             bx, by = ex - dx * long, ey - dy * long
@@ -1238,50 +1119,10 @@ def page_of(svg, data, bare=()):
     return head.replace('__TITLE__', esc(data['title'])) + guide_of(data, bare) + middle + svg + between + payload + tail
 
 
-def groups_in_a_cycle(data):
-    """Whether the groups depend on each other in a cycle, as when one folder holds both the definitions and the root."""
-    group = {unit['id']: unit['group'] for unit in data['units']}
-    after = {key: set() for key in group.values()}
-    for edge in data['edges']:
-        if group[edge['source']] != group[edge['target']]:
-            after[group[edge['source']]].add(group[edge['target']])
-    left = set(after)
-    while left:
-        free = {key for key in left if not any(key in after[other] for other in left)}
-        if not free:
-            return True
-        left -= free
-    return False
-
-
-def render(data, layout='layered', elkjs=None):
-    """(SVG, page, layout used, note). `layout` is 'layered', 'elk' or 'auto'.
-
-    'layered', the default, is the built-in layout; it does not look whether ELK is present. 'elk'
-    asks for ELK and is an error without it. 'auto' takes ELK when it is present and the groups do
-    not depend on each other in a cycle. ELK draws a group as one box placed along the flow, so a
-    cycle among groups sends lines backwards around the whole drawing; the built-in layout draws a
-    group as a band and has no such case."""
+def render(data):
+    """(SVG, page): the drawing of a map and the page that shows it."""
     bare = proved_apart(data)
     cards = {unit['id']: card_of(unit, bare) for unit in data['units']}
-    geometry, note = None, None
-    if layout in ('auto', 'elk'):
-        package, missing = find_elk(elkjs)
-        if package is None and (layout == 'elk' or elkjs):
-            if layout == 'elk':
-                raise ValueError('the ELK layout needs ' + missing)
-            note = f'ELK was not used because it needs {missing}; the built-in layered layout was used.'
-        elif package is not None and layout == 'auto' and groups_in_a_cycle(data):
-            note = ('ELK is present and was not used: the groups depend on each other in a cycle, which ELK draws with '
-                    'lines running backwards around the map. --layout elk draws it with ELK all the same.')
-        elif package is not None:
-            try:
-                geometry = elk(data, cards, package)
-            except RuntimeError as error:
-                if layout == 'elk':
-                    raise ValueError('the ELK layout failed: ' + str(error))
-                note = f'ELK failed ({error}); the built-in layered layout was used.'
-    if geometry is None:
-        geometry = layered(data, cards)
+    geometry = layered(data, cards)
     svg = svg_of(data, cards, geometry, bare)
-    return svg, page_of(svg, data, bare), geometry['engine'], note
+    return svg, page_of(svg, data, bare)

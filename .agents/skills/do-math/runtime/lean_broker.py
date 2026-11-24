@@ -42,13 +42,13 @@ POLL = 0.25
 WAIT_FIRST = 0.25  # the first pause of a waiting client; each later pause is half as long again
 WAIT_CAP = 1.0  # the longest pause between two looks for the result file
 WAIT_STATE = 10.0  # the seconds between two reads of the broker's state while the result file is absent
-SAMPLE_SAVE_SECONDS = 1.0  # memory samples alone reach state.json at most this often
+STATE_SECONDS = 10.0  # the broker writes state.json at most this often, and at once in the cases Broker.save names
+STATE_REQUEST = ".state"  # an empty file with this suffix in the queue asks the broker to write its state now
 TREE_SECONDS = 1.0  # a running compile's processes are listed again at most this often
 ESTIMATE_BASIS = 5  # the fewest measured import sets from which the baseline of a new set is estimated
 ACTIVE = ("queued", "running")
 FINISHED = ("finished", "failed", "cancelled")
 BROKER_SESSION = "broker"
-RUNNER_SESSION = "runner"  # the session of the build the runner makes for a publication; prune keeps its newest
 NICE = {"normal": 0, "below_normal": 10, "idle": 19}
 WINDOWS_PRIORITY = {"normal": 0x20, "below_normal": 0x4000, "idle": 0x40}
 P90 = 1.2816  # the standard-normal 90th percentile: an estimate is read as a probable peak
@@ -649,6 +649,18 @@ def admission(running, candidate, budget_mb, z):
 
 # ----------------------------------------------------------------------- broker
 
+def remove_request(path):
+    """Remove a file from the queue and say whether it is gone.
+
+    A client looks at the files it put there while it waits, and on Windows a file that is being
+    looked at can refuse removal for a moment. The file is then found again at the next poll."""
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        return False
+    return True
+
+
 class Broker:
     def __init__(self, instance, log_path=None):
         self.paths = Paths(instance)
@@ -666,9 +678,10 @@ class Broker:
         self.hosts = {}
         self.trees = {}  # job ID -> (pid, when its processes were listed, their PIDs)
         self.library = self.library_key = None  # the Library of the current environment; False if it has none
-        self.dirty = False
-        self.samples_dirty = False
-        self.last_sample_save = 0.0
+        self.dirty = False  # the state has changed since it was written
+        self.urgent = False  # a change that does not wait for STATE_SECONDS: a compile has ended
+        self.written_at = float("-inf")  # when the state was last written, on the monotonic clock
+        self.unwritten = {}  # ID -> the queue file of a request registered since the state was last written
         self.runner_stamp = None
         self.runner_state = None
         self.last_sessions_check = 0.0
@@ -683,18 +696,36 @@ class Broker:
             with open(self.log_path, "a", encoding="utf-8") as stream:
                 stream.write(line + "\n")
 
-    def save(self):
+    def save(self, now=False):
+        """Write the calibration table and the library's sizes if they changed, and the state when it is due.
+
+        The state holds every recent job and build, and the whole of it is written each time: 62 MB
+        and about a second in one instance. So a change waits until STATE_SECONDS have passed since
+        the last write, with these exceptions, which are written at once (`now`) or at the end of the
+        poll (`urgent`):
+
+        - the broker starts or exits (start, serve), so that what `version` and `status` read is its own;
+        - a compile is about to start (launch): a Lean that ran with no record of its host could not
+          be followed by the next broker, which would start the same job beside it;
+        - a compile has ended (finish): the next broker would end it a second time, from the memory
+          last written, and record that as the compile's peak and, for a calibration, as the baseline;
+        - a client has asked for the state (tick, saved_state).
+
+        Whatever else a death of the broker leaves unwritten, the next broker finds on disk: a
+        registered request in the queue (ingest), a Lean's identity and exit in its job folder, a
+        cancellation as a CANCEL file, the settings in settings.json."""
         self.calibration.save()
         if self.library:
             self.library.save()
-        if self.samples_dirty and time.monotonic() - self.last_sample_save >= SAMPLE_SAVE_SECONDS:
-            self.dirty = True
-        if self.dirty:
-            # The state holds every recent job and build and is rewritten at each change and, while a
-            # compile runs, once a second for its memory samples; so it is written without indentation.
-            write_json_compact(self.paths.state, self.state)
-            self.dirty = self.samples_dirty = False
-            self.last_sample_save = time.monotonic()
+        if self.dirty and (now or self.urgent or time.monotonic() - self.written_at >= STATE_SECONDS):
+            write_json_compact(self.paths.state, self.state)  # without indentation, for its size
+            self.dirty = self.urgent = False
+            self.written_at = time.monotonic()
+        if not self.dirty:
+            # The file holds every registration now, so their requests can leave the queue (ingest).
+            for job_id, path in list(self.unwritten.items()):
+                if remove_request(path):
+                    del self.unwritten[job_id]
 
     def reload_settings(self):
         """Apply settings.json whenever it changes; keep the last good configuration on error."""
@@ -817,8 +848,17 @@ class Broker:
     # --- queue
 
     def ingest(self):
+        """Register the requests in the queue; each leaves the queue once a client can find it elsewhere.
+
+        A client finds a job in the queue, in the state file or in its result (job_record). A request
+        answered with a result leaves the queue at once. One that is registered leaves it when a
+        state that holds it has been written (save), which can be STATE_SECONDS later. Until then the
+        request is the durable record of the registration: if this broker dies first, the next one
+        finds the request and registers it again."""
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
             job_id = path.stem
+            if job_id in self.unwritten:
+                continue
             try:
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 # Registration or a final outcome can be durable while its queue
@@ -839,7 +879,7 @@ class Broker:
                     continue
                 if BUILD_ID.match(job_id):
                     self.ingest_build(job_id, request)
-                    path.unlink(missing_ok=True)
+                    self.registered(job_id, path, folder)
                     continue
                 source, source_hash = request["source"], request["source_sha256"]  # hashed by the client at submission
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
@@ -880,9 +920,15 @@ class Broker:
             if (job_dir / "CANCEL").exists():
                 self.cancel(job, "cancelled on request")
             self.dirty = True
-            self.save()
-            path.unlink(missing_ok=True)
+            self.registered(job_id, path, job_dir)
             self.log(event=job["status"], job=job_id, session=job["session"], expect_mb=expect, imports=len(imports))
+
+    def registered(self, job_id, path, folder):
+        """Let a registered request leave the queue: now if its result is written, else with the next write of the state."""
+        if (folder / "result.json").exists():
+            path.unlink(missing_ok=True)
+        else:
+            self.unwritten[job_id] = path
 
     def ingest_build(self, build_id, request):
         """Register a build: its modules, discovered from the targets' import headers, in dependency order.
@@ -941,7 +987,6 @@ class Broker:
             self.settle_build(build)
         else:
             write_json(folder / "result.json", build)
-        self.save()
 
     def advance_build(self, build):
         """Give every module whose imports are settled its key, and then its cached files or a compile job.
@@ -1164,7 +1209,7 @@ class Broker:
         if current != measured["current_mb"]:
             measured["current_mb"] = current
             measured["peak_mb"] = max(measured["peak_mb"], current)
-            self.samples_dirty = True
+            self.dirty = True
 
     def collect(self):
         # A host can end just after the poll that finished its job. Every ended host is reaped here,
@@ -1258,7 +1303,7 @@ class Broker:
         if job.get("build"):
             self.finish_module(job)
         write_json(self.paths.job(job["id"]) / "result.json", job)
-        self.dirty = True
+        self.dirty = self.urgent = True  # written at the end of this poll; see save
         self.log(event=job["status"], job=job["id"], session=job["session"], exit_code=job["exit_code"],
                  measured=measured)
         self.prune()
@@ -1358,23 +1403,14 @@ class Broker:
 
         A build keeps what its waiting modules need of the finished ones in its own record, so a
         job can go once it has finished. A pruned build loses its lib folder, which no compile
-        reads once the build is over.
-
-        The runner's newest build is never pruned. The judge of formal proofs reads its lib folder
-        after the build is over, and a runner that stopped while a publication waited for the judge
-        takes the publication up again from that build, however long it was stopped and however
-        many builds the sessions finished meanwhile. The runner carries one publication at a time,
-        so an older build of its own is one it no longer needs, and goes like any other."""
+        reads once the build is over."""
         finished = sorted((j for j in self.state["jobs"].values() if j["status"] in FINISHED),
                           key=lambda j: j["finished_at"] or 0)
         for job in finished[:-KEEP_FINISHED] if len(finished) > KEEP_FINISHED else []:
             del self.state["jobs"][job["id"]]
         builds = sorted((b for b in self.state["builds"].values() if b["status"] in FINISHED),
                         key=lambda b: b["finished_at"] or 0)
-        held = next((b["id"] for b in reversed(builds) if b["session"] == RUNNER_SESSION), None)
         for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
-            if build["id"] == held:
-                continue
             del self.state["builds"][build["id"]]
             shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 
@@ -1581,7 +1617,7 @@ class Broker:
                                         **popen_options(detached=True))
             self.hosts[job["id"]] = host
             job["host"] = process_identity(host.pid)
-            self.save()
+            self.save(now=True)
             # No Lean may start until its host's identity is durable, as for the session host.
             (job_dir / "GO").write_bytes(b"go\n")
         except OSError as exc:
@@ -1631,6 +1667,9 @@ class Broker:
             self.log(event="adopted", job=job_id, host=job.get("host"), lean=job.get("lean"))
 
     def tick(self):
+        # Looked for before the work of this poll: the state written at its end then holds whatever
+        # had reached the broker's folders before the client asked.
+        asked = list(self.paths.queue.glob("*" + STATE_REQUEST))
         self.reload_settings()
         if self.config is None:
             return
@@ -1638,7 +1677,9 @@ class Broker:
         self.ingest()
         self.cancel_orphans()
         self.schedule()
-        self.save()
+        self.save(now=bool(asked))
+        for path in asked:  # the answer: the client reads the state once its request is gone
+            remove_request(path)
 
     def start(self):
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
@@ -1648,26 +1689,30 @@ class Broker:
         # so nothing is reported as the version until this broker has run version_command itself.
         self.state.update(version=None, version_error=None)
         self.dirty = True
-        self.save()
+        self.save(now=True)
         self.reload_settings()
         if self.config is None:
             # This broker exits now; state.json keeps the rejection, which is where `status` reports it.
-            self.save()
+            self.save(now=True)
             raise ValueError("settings.json rejected: " + str(self.config_error))
         self.read_version()
         self.adopt()
         self.dirty = True
-        self.save()
+        self.save(now=True)
 
     def serve(self):
         with InstanceLock(self.paths.lock, "Lean broker"):
             # Alive from this moment: clients may queue requests while the broker finishes starting.
-            write_json(self.paths.process, {"process": self.identity, "started_at": time.time()})
+            # `state_seconds` tells a client that this broker writes its state at most that often and
+            # when asked (saved_state); a receipt without it is an earlier broker's.
+            write_json(self.paths.process, {"process": self.identity, "started_at": time.time(),
+                                            "state_seconds": STATE_SECONDS})
             self.start()
             print(json.dumps({"started": self.identity, "instance": str(self.paths.instance)}), flush=True)
             while True:
                 self.tick()
                 if self.should_exit():
+                    self.save(now=True)
                     self.log(event="exit", reason="instance complete and no session active")
                     return 0
                 time.sleep(POLL)
@@ -1777,20 +1822,57 @@ def result_file(paths, job_id):
     return (paths.build(job_id) if BUILD_ID.match(job_id) else paths.job(job_id)) / "result.json"
 
 
-def job_record(paths, job_id):
-    """The job's or build's current record from the result or the broker state, or None if unknown."""
+def saved_state(paths, current=False):
+    """The broker's state as its file holds it or, with `current`, as the broker holds it at this moment.
+
+    The broker writes the file at most every STATE_SECONDS (Broker.save), so the file can be that
+    far behind in what does not start or end a compile: the memory measured for a running compile,
+    a registered request that has not started, the progress of a build through the cache. A caller
+    that shows the state to a reader asks for it to be written first, through the folder that
+    requests for work go to. It puts an empty file `<name>.state` into the queue; the broker writes
+    its state at the end of the poll in which it finds that file and then removes it; and the state
+    is read once the file is gone.
+
+    Only a live broker whose receipt carries `state_seconds` is asked. When no broker is alive,
+    nothing is newer than the file. A receipt without the field is that of an earlier broker, which
+    writes its state at each change and would leave the request where it is. The wait ends after
+    READY_SECONDS at the latest, and at once when the broker is no longer alive; the file is then
+    read as it is, so a broker that does not answer never holds the caller. A caller that cannot
+    write into the queue reads the file as it is as well."""
+    info = broker_alive(paths) if current else None
+    if info and "state_seconds" in info:
+        request = paths.queue / (uuid.uuid4().hex + STATE_REQUEST)
+        deadline = time.monotonic() + READY_SECONDS
+        try:
+            request.touch()
+            while request.exists() and time.monotonic() < deadline and broker_alive(paths):
+                time.sleep(0.05)
+        except OSError:
+            pass
+        finally:
+            remove_request(request)  # an unanswered one; whatever is left, the next live broker removes
+    return read_json(paths.state) if paths.state.exists() else {}
+
+
+def job_record(paths, job_id, current=False):
+    """The job's or build's record from the result or the broker state, or None if unknown.
+
+    A job that has ended is read from its result, which the broker writes at that moment. One that
+    has not ended is read from the state file, which can be STATE_SECONDS behind the broker;
+    `current` has the broker write it first (saved_state), for a caller that shows the record to a
+    reader."""
     is_build = BUILD_ID.match(job_id) is not None
     result = result_file(paths, job_id)
-    # The broker records a request in its state, or answers it with a result, before it removes the
+    # The broker answers a request with a result, or writes a state that holds it, before it removes the
     # request from the queue. So the queue is looked at first: a request that leaves it after this look
-    # has left its record for the reads below, and one already gone was recorded before this look.
+    # has left its record for the reads below, and one already gone was recorded before this look. A
+    # registered request can stay in the queue for STATE_SECONDS and is reported as submitted meanwhile.
     submitted = (paths.queue / (job_id + ".json")).exists()
     if result.exists():
         return read_json(result)
-    if paths.state.exists():
-        record = read_json(paths.state).get("builds" if is_build else "jobs", {}).get(job_id)
-        if record:
-            return record
+    record = saved_state(paths, current).get("builds" if is_build else "jobs", {}).get(job_id)
+    if record:
+        return record
     if submitted:
         return {"id": job_id, "status": "submitted"}
     return None
@@ -1803,9 +1885,10 @@ def await_record(paths, job_id, timeout=None, broker_first=False):
     given when that one was answered as a duplicate. `ended` is False when the timeout passed first,
     and the record is then the one read at that moment.
 
-    The wait is cheap however long it lasts. The broker writes `result.json` into the job's or build's
-    folder when it ends and when it is answered as a duplicate, and at no other time, so between two
-    reads of the whole record only the presence of that file is looked at. The record is read in full
+    The wait is cheap however long it lasts, and the end is learnt no later for the broker's state being
+    written only every STATE_SECONDS. The broker writes `result.json` into the job's or build's folder
+    when it ends and when it is answered as a duplicate, and at no other time, so between two reads of
+    the whole record only the presence of that file is looked at. The record is read in full
     at the start, when the file has appeared, every WAIT_STATE seconds, and once more when the timeout
     has passed, so that a job which ended during the last pause is still returned as ended. The pauses
     grow from WAIT_FIRST to WAIT_CAP and never run past the timeout.
@@ -1920,10 +2003,15 @@ def cancel(paths, job_id):
 
 
 def broker_status(paths):
+    """What `status` shows of the broker: its state as it is now, when a live broker writes it on request (saved_state).
+
+    `state_written_at` is the time at which the state that was read was written. It is the present
+    moment when the broker answered, and it says how old the report is when none did."""
     info = broker_alive(paths)
-    state = read_json(paths.state) if paths.state.exists() else {}
+    state = saved_state(paths, current=True)
     jobs = state.get("jobs", {})
     return {"instance": str(paths.instance), "broker": info, "broker_alive": bool(info),
+            "state_written_at": paths.state.stat().st_mtime if paths.state.exists() else None,
             'environment_key': state.get('environment_key'),
             "config": state.get("config"), "config_error": state.get("config_error"),
             "version": state.get("version"), "version_error": state.get("version_error"),
@@ -2006,7 +2094,7 @@ def main(argv=None):
         if args.command == "wait":
             return wait(paths, args.job, args.timeout)
         if args.command == "result":
-            record = job_record(paths, args.job)
+            record = job_record(paths, args.job, current=True)
             if record is None:
                 raise ValueError(f"unknown job: {args.job}")
             print(json.dumps(record, ensure_ascii=True, indent=2))

@@ -41,9 +41,13 @@ def defaults():
                            'decline_uncomprehended_computation': True},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
-                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS),
-                     # The judge of formal proofs (judge.py): "auto" looks for it beside the Lean command.
-                     'judge': 'auto'}}
+                     'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
+
+
+# Settings that an earlier version of this code had and this one does not. A settings file written then
+# is still read: the key is accepted and has no effect. `lean.judge` configured a program that checked
+# formal proofs a second time; whether a proof is formal is now Lean's own account of its axioms.
+RETIRED = ('lean.judge',)
 
 
 def validate(raw):
@@ -53,6 +57,8 @@ def validate(raw):
     for section in sections:
         if not isinstance(raw.get(section, {}), dict):
             raise ValueError(section + ' must be an object')
+    raw = {key: ({k: v for k, v in value.items() if key + '.' + k not in RETIRED} if key in sections else value)
+           for key, value in raw.items()}
     value = defaults()
     value.update(raw)
     for section in sections:
@@ -124,12 +130,6 @@ def validate(raw):
         raise ValueError('allowed_axioms must be a string list')
     if 'sorryAx' in lean['allowed_axioms']:
         raise ValueError('sorryAx cannot be allowed')
-    judge = lean['judge']
-    commands = isinstance(judge, dict) and set(judge) == {'export', 'compare'} and all(
-        isinstance(command, list) and command and all(isinstance(x, str) and x.strip() for x in command)
-        for command in judge.values())
-    if not (judge is None or judge == 'auto' or commands):
-        raise ValueError('lean.judge must be "auto", null, or {"export": [...], "compare": [...]} with two command arrays')
     return value
 
 

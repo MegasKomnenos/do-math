@@ -1,12 +1,12 @@
 # Running do-math
 
-This guide covers the requirements, what a run does on your machine, starting a run through the skill or by hand, the settings, the commands, reading the results, ending a run, and interruptions and completion. The repository [README](../../README.md) gives a quick start taken from it and defines the terms used here, such as root, canon, element, record, standing, settled, formal, frontier, candidate, judge, standing input and Lean broker. The [operating guide](../../.claude/skills/do-math/reference/operations.md) in the skill is the reference that the operator works from, and it holds the detail that this guide leaves out.
+This guide covers the requirements, what a run does on your machine, starting a run through the skill or by hand, the settings, the commands, reading the results, ending a run, and interruptions and completion. The repository [README](../../README.md) gives a quick start taken from it and defines the terms used here, such as root, canon, element, record, standing, settled, formal, frontier, candidate, root check, standing input and Lean broker. The [operating guide](../../.claude/skills/do-math/reference/operations.md) in the skill is the reference that the operator works from, and it holds the detail that this guide leaves out.
 
 ## Requirements
 
 The runtime needs Python 3.12 or later and Git, and it imports only Python's standard library. It needs the Codex CLI, the Claude Code CLI, or both, installed and logged in; it launches them as processes and does not call model APIs directly, so usage is billed or metered however those CLIs are configured, and do-math adds no accounting of its own.
 
-The runtime needs Lean 4 in every case. `init`, the command that creates an instance, compiles the Lean form of the root. Lean therefore has to be installed before the instance exists, and it has to be named in the settings unless `lean` is on your PATH. The runs recorded so far used Lean 4.32.0 and 4.36.0. The judge of formal proofs uses two programs that come with Lean 4.35 and later; with an earlier Lean a run proceeds without the judge, and the `status` command says so. Mathlib is needed when the Lean definitions of the problem, or the proofs the sessions will write, draw on it.
+The runtime needs Lean 4 in every case. `init`, the command that creates an instance, compiles the Lean form of the root. Lean therefore has to be installed before the instance exists, and it has to be named in the settings unless `lean` is on your PATH. The runs recorded so far used Lean 4.32.0 and 4.36.0. Mathlib is needed when the Lean definitions of the problem, or the proofs the sessions will write, draw on it.
 
 The default settings attach one external tool to every session: scholarly-mcp, a local server for academic literature search that this repository keeps under `services/scholarly-mcp` and that runs in a Python environment of its own. `init` refuses to create an instance when it cannot find that environment's Python, and a settings file with `"mcp_servers": {}` creates an instance without external tools. The server's own README, which is in Korean, gives these commands for installing the environment, to be run from the repository root in PowerShell:
 
@@ -18,7 +18,7 @@ python -m venv services/scholarly-mcp/.venv
 
 Beyond the servers named in the instance's settings, the sessions have the CLIs' built-in tools, which include shell commands and web search.
 
-Two commands have requirements of their own; both are used once the research has results. `paper.py`, which writes the paper, needs one of the TeX programs `tectonic`, `latexmk` and `pdflatex` to produce the PDF; without one it still writes the manuscript. `depmap.py`, which draws the dependency map, needs only Python, and it can use Node with the `elkjs` package for a second layout when you choose to install them.
+Two commands are used once the research has results, and one of them has a requirement of its own. `paper.py`, which writes the paper, needs one of the TeX programs `tectonic`, `latexmk` and `pdflatex` to produce the PDF; without one it still writes the manuscript. `depmap.py`, which draws the dependency map, needs only Python.
 
 Every run whose operating system is recorded was made on Windows. The runtime has code for Linux as well, where it reads `/proc`, and no recorded run has used that code. macOS is not supported, because the runtime identifies processes and reads the machine's free memory only by the means that Windows and Linux provide.
 
@@ -166,7 +166,6 @@ The main defaults are these.
 - `acceptance.decline_reducible_proofs` and `acceptance.decline_uncomprehended_computation`: both true. With the first, a review does not yet accept a correct proof that can still clearly be made simpler; with the second, it does not yet accept a correct proof that settles part of its statement by a large computation carried out without understanding. Such a proof is still published, with the standing "correct, held back".
 - `lean.command` and `lean.version_command`: `lean` and `lean --version`, as found on your PATH.
 - `lean.allowed_axioms`: `propext`, `Classical.choice` and `Quot.sound`. The list can be extended, and `sorryAx` is never allowed.
-- `lean.judge`: `"auto"`, which uses the judge where the Lean installation provides its two programs; `null` switches the judge off.
 - `mcp_servers`: the one server `scholarly`, started with its `--public-only` option. Each session starts its own copy of the server, and under this option a copy creates no login and serves only the sources that are reached through public interfaces, about twenty of them, among them zbMATH, arXiv, Crossref, OpenAlex and Semantic Scholar. A settings file that gives `mcp_servers` replaces this default with what it gives.
 
 The `models` list is the ordered model preference for every role, and an entry under `roles` replaces it for that role; each entry names a model as `provider/model` together with the CLI's reasoning-effort setting. The default `models` list puts Codex `gpt-6.1-sol` first and Claude `opus` second, and the default `roles` entries for peer and review reverse that order, so that a candidate and its review come from a different model than the work they are about. With only Claude Code installed, list Claude models only, both in the common list and in the two role entries, as in this example, where `claude/opus` names the Claude CLI's `opus` model; with only Codex installed, do the same with `codex/gpt-6.1-sol`:
@@ -199,7 +198,7 @@ To use Mathlib, set `lean.command` to your Lake executable followed by `env` and
 
 The broker compiles the instance's own modules and does not build Mathlib, so the project's compiled library has to be there already. A file that imported all of Mathlib took about seven minutes to load on the development machine when Mathlib's files were not in the operating system's cache, which is one reason why compiles go through the broker.
 
-All sessions request a one-million-token context from their CLI; the CLI and the account decide what the session actually gets. A setting that the runtime does not know, such as a misspelled name, is refused, and the refusal names it. `init` writes the complete configuration into the instance's own `settings.json`, and that file is the configuration in force afterwards: a running runner rereads it when it changes, and a session already launched keeps the settings it was launched with.
+All sessions request a one-million-token context from their CLI; the CLI and the account decide what the session actually gets. A setting that the runtime does not know, such as a misspelled name, is refused, and the refusal names it. The one exception is `lean.judge`, a key that an earlier version of do-math used: a settings file that still has it is accepted, and the key has no effect. `init` writes the complete configuration into the instance's own `settings.json`, and that file is the configuration in force afterwards: a running runner rereads it when it changes, and a session already launched keeps the settings it was launched with.
 
 The Lean broker has settings of its own under `lean`, such as the memory it may reserve for compiles at one time; the [broker guide](../../.claude/skills/do-math/reference/lean-broker.md) lists them. Two cases need your attention. When several instances run on one machine, each broker derives its memory budget from the whole machine, so set `lean.memory_budget_mb` in each instance to that instance's share. And on Windows, compiles can wait although physical memory is free, because Windows charges a Lean process for the whole size of the library files it maps and counts that against the commit limit, which is physical memory plus the page file. Enlarging the page file raises the limit; that is a setting of your machine and yours to decide.
 
@@ -260,7 +259,7 @@ All runner commands have the form `python <skill>/runtime/runner.py <command> <i
 |---|---|
 | `start` | Launch the detached runner when none is alive, including after a crash or reboot; existing sessions and an unfinished publication are recovered. It does not replace a runner that is alive. |
 | `run` | Run the runner in the foreground for observation. |
-| `status` | Show the root's state, whether the runner is alive and whether it has finished, the sessions and the pending work, the board, the blocks on providers and models, the judge and the Lean broker. It changes nothing. |
+| `status` | Show the root's state, whether the runner is alive and whether it has finished, the sessions and the pending work, the board, the blocks on providers and models, the root check and the Lean broker. It changes nothing. |
 | `stop` / `resume` | Stop or resume the launching of new sessions and of further turns of running sessions; a turn is one run of a session's CLI process. `stop` does not end the run: the runner stays alive, the turns that are running finish, and publication goes on. The stop is recorded in the instance, so if the runner process has ended in the meantime, run `resume` to clear it and then `start`. |
 | `reconsider-attempts` | Ask for one attempt to look again for available work. After an attempt has reported that every statement that remains is occupied, the runner launches no further attempts until an occupation ends, a statement newly appears among the work that remains, or this command is given; `status` shows that wait under `attempt_dispatch`. |
 | `input --file <file>` | Supply a standing input to the sessions launched from now on. |
@@ -287,9 +286,9 @@ python "$skill/runtime/canon_tool.py" log $instance --last 10
 
 `frontier` prints the frontier as it is now. `view` prints one element: its Lean statement, what its proof rests on with the standing of each statement, whether it is settled and formal, what uses it, the review's judgment with its reason, any concerns, and the approaches tried; `--full` adds the parts of the record. `list` prints one line for each element it selects: the elements of a module, what an element uses or is used by, everything the canon states about a definition, or, with `--remaining`, the work that remains. `question` prints a question with its understanding so far, and `log` the recent changes with the review's assessment of what each contributed.
 
-## The dependency map, the paper and the judge of the root
+## The dependency map, the paper and the root check
 
-Three further commands work from the canon.
+Two further commands work from the canon: one draws the dependency map and the other writes the paper. The root check, which the last subsection describes, is no command; the runner makes it by itself once the root is formally settled.
 
 ### The dependency map
 
@@ -310,11 +309,17 @@ The exit code is:
 - 2 when the manuscript was produced and findings stayed open after the repairs; the log in the output folder lists them;
 - 3 when the manuscript is complete and no TeX program was found.
 
-### The judge of the root
+A command line that `paper.py` cannot parse also exits with 2, with a usage message in place of a result.
 
-`python <skill>/runtime/judge.py <instance> --out <new folder>` judges the root of an instance whose root is formally proved or refuted, against the root as the instance's first commit fixed it. It accepts when the two statements are identical together with every definition they depend on, the axioms are within the allowed list, and the proof passes Lean's kernel and the other proof checkers that Lean ships. Where the instance has a judge, the runner starts this command itself when the root becomes formally settled, and `status` gives the result under `root_judge` as running, accepted, rejected or unavailable. Run it by hand when that result is unavailable and the cause has been repaired. Exit code 0 means accepted, 2 rejected, and 1 that the command refused or the judge could not run, which says nothing about the proof.
+### The root check
 
-For both `paper.py` and `judge.py`, a command line that the program cannot parse also exits with 2, with a usage message in place of a result.
+A statement is formal on two facts that both come from Lean: the library compiles, and the axioms that Lean reports for the proof are all allowed. The README explains this under "Formal proofs and the root check". When the root is formally settled, one thing remains to be known, namely that the root's statement, with every definition it is built on, is still what the instance's first commit fixed. No publication can change either, because the runner refuses a publication that changes a statement or the text of a definition in place. The canon and its index are files, however, and something other than a publication can change them. The runner therefore compares the present state with the first commit itself, in the root check, and there is no command for you to run.
+
+The root check compares the structural index in the instance's first commit with `canon/index.json` as it stands. It starts at the root and goes to every element that the root's statement names, and from a definition on to what the body of the definition names. Each element it reaches must have the same kind and the same statement in both indexes, and a definition must have the same source text as well. The check compiles nothing. The runner makes it as soon as it finds the root formally settled, and repeats it whenever another proof comes to settle the root or a publication changes the library.
+
+`status` gives the result under `root_check`, which is `null` until the root is formally settled and a runner has made the comparison. The entry names the proof that settles the root and the commit that the present index was compared with, and its `status` is `unchanged` or `changed`. With `changed`, the entry's `differences` hold one sentence for each element that differs or that is under the statement in only one of the two indexes. The runner has then written a request for a comprehensive review of the proof that settles the root, and it takes that request up itself. A result of `changed` means that something other than a publication changed the canon or its index, such as an edit by hand of a file under `canon/`. Read the differences together with the settlement, because they say that what was proved may not be what was posed.
+
+The root check has two limits. It compares elements, so it does not see a declaration that is not an element, such as a private helper that a definition uses. And it does not see a definition whose text is unchanged and which Lean now reads as a different term.
 
 ## Ending a run
 
@@ -330,6 +335,6 @@ A producing session interrupted by a provider's usage limit or another failure l
 
 After a crash of the runner or a reboot of the machine, run `start` on the same instance. The runner finds the processes that are still alive, collects the work of those that have ended, and completes a publication that was underway without publishing anything twice. On Windows, use a shell at the same privilege level as the one that started the run, because the runner has to be able to query its processes.
 
-When the root is formally settled, the runner stops launching new attempts and explorers. Existing sessions finish; their peers and reviews, and any formalizers, comprehensive reviews and organizers, still launch as their inputs become ready; the runner has the root judged, where the instance has a judge; and it finishes when that work has ended. A root that is formally settled and a runner that has finished are therefore different states, and `status` reports both. If a later review withdraws the confirmation of a proof that the settlement rests on before the runner has finished, the research resumes.
+When the root is formally settled, the runner stops launching new attempts and explorers. Existing sessions finish; their peers and reviews, and any formalizers, comprehensive reviews and organizers, still launch as their inputs become ready; the runner makes the root check; and it finishes when that work has ended. A root that is formally settled and a runner that has finished are therefore different states, and `status` reports both. If a later review withdraws the confirmation of a proof that the settlement rests on before the runner has finished, the research resumes.
 
 The [operating guide](../../.claude/skills/do-math/reference/operations.md) explains the states, the failures and the recovery in full; the [Lean guide](../../.claude/skills/do-math/reference/lean.md) explains how sessions use the broker, and the [broker guide](../../.claude/skills/do-math/reference/lean-broker.md) its scheduling and settings.

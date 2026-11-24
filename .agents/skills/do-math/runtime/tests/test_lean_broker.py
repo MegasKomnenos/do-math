@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -184,6 +185,43 @@ class BrokerFixture(unittest.TestCase):
 
     def finished(self, job_id):
         return self.broker.state["jobs"].get(job_id, {}).get("status") in lean_broker.FINISHED
+
+    def on_disk(self):
+        """The broker's state as its file holds it, which can be behind the broker under test."""
+        return runtime_support.read_json(self.paths.state)
+
+    def asking(self, call, limit=30):
+        """What a client's call returns when the broker under test is a live broker that writes on request.
+
+        The broker runs in this process and has written no receipt, so the client is given the
+        receipt that a served broker writes. The client runs in a thread while this thread makes the
+        broker's polls."""
+        receipt = {"process": runtime_support.process_identity(os.getpid()), "state_seconds": lean_broker.STATE_SECONDS}
+        outcome = []
+
+        def client():
+            try:
+                outcome.append((call(), None))
+            except BaseException as exc:  # raised again in the test's thread, below
+                outcome.append((None, exc))
+
+        with patch.object(lean_broker, "broker_alive", return_value=receipt):
+            thread = threading.Thread(target=client)
+            thread.start()
+            deadline = time.monotonic() + limit
+            while thread.is_alive() and time.monotonic() < deadline:
+                self.broker.tick()
+                time.sleep(0.02)
+            thread.join(timeout=lean_broker.READY_SECONDS + 5)
+        self.assertFalse(thread.is_alive(), "the client did not return")
+        value, error = outcome[0]
+        if error is not None:
+            raise error
+        return value
+
+    def status(self):
+        """`status` of the broker under test, asked of it as a client asks a live broker."""
+        return self.asking(lambda: lean_broker.broker_status(self.paths))
 
 
 class BuildResultTests(unittest.TestCase):
@@ -530,9 +568,16 @@ class BrokerTests(BrokerFixture):
         self.assertIn("AFTER-INGESTION", (self.paths.job(second) / "stdout.log").read_text(encoding="utf-8"))
 
     def test_ingestion_restart_preserves_registration_and_duplicate_outcomes(self):
+        # A request leaves the queue once a client can find it elsewhere: at once when it is answered
+        # with a result, and otherwise when a state that holds it has been written. The broker is
+        # stopped at each point at which a request is still in the queue; the next broker must lose
+        # nothing, register nothing twice, and keep an answer that was given.
+        #   unwritten: the request is registered, and no state that holds it has been written
+        #   written:   that state has been written, and the request has not left the queue
+        #   duplicate: the request has been answered as a duplicate, and has not left the queue
         for kind in ("job", "build"):
-            for boundary in ("registration", "duplicate"):
-                with self.subTest(kind=kind, boundary=boundary):
+            for boundary in ("unwritten", "written", "duplicate"):
+                with self.subTest(kind=kind, boundary=boundary), patch.object(lean_broker, "STATE_SECONDS", 3600):
                     self.start_broker()
                     root = self.instance / "sessions/s1/work" / f"{kind}-{boundary}"
                     target = source(root / "Target.lean", imports=(), marker=f"{kind}-{boundary}")
@@ -542,6 +587,7 @@ class BrokerTests(BrokerFixture):
                     identity = original
                     if boundary == "duplicate":
                         self.broker.ingest()
+                        self.broker.save(now=True)  # the request it will be redirected to is registered and written
                         identity = enqueue()
                     request = self.paths.queue / (identity + ".json")
                     unlink = Path.unlink
@@ -549,22 +595,42 @@ class BrokerTests(BrokerFixture):
                         if path == request:
                             raise SystemExit("broker stopped before queue acknowledgement")
                         return unlink(path, *args, **kwargs)
-                    with patch.object(Path, "unlink", stop_before_ack), self.assertRaises(SystemExit):
+                    if boundary == "unwritten":
                         self.broker.ingest()
+                        self.broker.save()  # within the interval: nothing is written, and the request stays
+                    else:
+                        with patch.object(Path, "unlink", stop_before_ack), self.assertRaises(SystemExit):
+                            self.broker.ingest()
+                            self.broker.save(now=True)
                     self.assertTrue(request.exists())
-                    saved = runtime_support.read_json(self.paths.state)
+                    saved = self.on_disk()
+                    kept = "jobs" if kind == "job" else "builds"
                     folder = self.paths.job(identity) if kind == "job" else self.paths.build(identity)
+                    self.assertEqual(identity in saved[kept], boundary == "written")
+                    self.assertEqual(original in saved[kept], boundary != "unwritten")
                     if boundary == "duplicate":
                         outcome = runtime_support.read_json(folder / "result.json")
                         self.assertEqual(outcome["duplicate_of"], original)
                         # Replay must keep this receipt even when the content no
                         # longer matches the request to which it was redirected.
                         source(target, imports=(), marker=f"{kind}-{boundary}-edited")
+                    if boundary == "unwritten":
+                        # What a client sees of a job that only the stopped broker knew: it is not unknown.
+                        self.assertEqual(lean_broker.job_record(self.paths, identity),
+                                         {"id": identity, "status": "submitted"})
                     self.start_broker()
                     self.broker.ingest()
+                    if boundary == "unwritten":
+                        # Registered again from the request, which stays until this broker has written it.
+                        self.assertTrue(request.exists())
+                        self.assertEqual(self.broker.state[kept][identity]["status"], "queued")
+                        self.assertFalse((folder / "result.json").exists())
+                        self.assertEqual(lean_broker.job_record(self.paths, identity)["status"], "submitted")
+                        self.broker.save(now=True)
+                    else:
+                        self.assertEqual(self.broker.state["jobs"], saved["jobs"])
+                        self.assertEqual(self.broker.state["builds"], saved["builds"])
                     self.assertFalse(request.exists())
-                    self.assertEqual(self.broker.state["jobs"], saved["jobs"])
-                    self.assertEqual(self.broker.state["builds"], saved["builds"])
                     if boundary == "duplicate":
                         self.assertEqual(lean_broker.job_record(self.paths, identity), outcome)
                     else:
@@ -585,13 +651,13 @@ class BrokerTests(BrokerFixture):
                             contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
                         self.assertEqual(lean_broker.wait(self.paths, identity, timeout=1),
                                          3 if boundary == "duplicate" else 0)
-                    if boundary == "registration":
+                    if boundary != "duplicate":
                         self.assertIn(f"{kind}-{boundary}", out.getvalue())
 
     def test_a_request_registered_while_its_record_is_read_is_not_unknown(self):
-        # The broker records a request in its state and then removes it from the queue. A client that read
-        # the state just before the registration and looks at the queue just after it must still find the job;
-        # `wait` would otherwise end with "unknown job" for a job that is queued.
+        # The broker writes a state that holds a request and then removes the request from the queue. A
+        # client that read the state just before that write and looks at the queue just after the removal
+        # must still find the job; `wait` would otherwise end with "unknown job" for a job that is queued.
         self.start_broker()
         job_id = self.submit(self.session_file("s1"), expect_mb=40)
         original_read = lean_broker.read_json
@@ -601,6 +667,7 @@ class BrokerTests(BrokerFixture):
             if Path(path) == self.paths.state and not registered:
                 registered.append(job_id)
                 self.broker.ingest()
+                self.broker.save(now=True)
             return value
         with patch.object(lean_broker, "read_json", side_effect=register_after_the_read):
             record = lean_broker.job_record(self.paths, job_id)
@@ -953,19 +1020,19 @@ class BrokerTests(BrokerFixture):
         self.write_settings(memory_budget_mb=1234)
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 1234)
-        self.assertEqual(runtime_support.read_json(self.paths.state)["config"]["memory_budget_mb"], 1234)
+        self.assertEqual(self.status()["config"]["memory_budget_mb"], 1234)
         time.sleep(0.02)
         (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
         with patch.object(self.broker, "log") as log:
             self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 1234)
-        self.assertTrue(runtime_support.read_json(self.paths.state)["config_error"])
+        self.assertTrue(self.status()["config_error"])
         self.assertEqual(log.call_args.kwargs["event"], "settings_rejected")
         time.sleep(0.02)
         self.write_settings(memory_budget_mb=99)
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
-        self.assertIsNone(runtime_support.read_json(self.paths.state)["config_error"])
+        self.assertIsNone(self.status()["config_error"])
         # A broker that starts on a rejected file exits at once; `status` must still say why.
         time.sleep(0.02)
         (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
@@ -998,7 +1065,7 @@ class BrokerTests(BrokerFixture):
         self.assertIn("environment changed", stale["reason"])
         self.assertFalse((self.paths.job(waiting) / "launch.json").exists())
         self.assertNotEqual(self.broker.state["environment_key"], before)
-        self.assertEqual(lean_broker.broker_status(self.paths)["environment_key"], self.broker.state["environment_key"])
+        self.assertEqual(self.status()["environment_key"], self.broker.state["environment_key"])
         again = self.submit(path, expect_mb=40)
         self.until(lambda: self.finished(again) and self.finished(blocker))
         fresh = self.broker.state["jobs"][again]
@@ -1579,29 +1646,6 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
         self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
 
-    def test_the_newest_build_of_the_runner_is_not_pruned(self):
-        # The judge of formal proofs reads the lib folder of a publication's build after the build is over,
-        # and a runner that stopped while the publication waited for the judge takes it up again from that
-        # build. So the runner's newest build stays, with its lib folder, however many builds the sessions
-        # finish after it. An older build of the runner is one it no longer needs, and goes like any other.
-        self.start_broker()
-        def build_once(name, session):
-            root = self.instance / "sessions/s1/work" / name
-            build_id = self.build(root, [source(root / "Target.lean", imports=(), marker=name)], session=session)
-            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
-            return build_id, Path(self.build_record(build_id)["lib"])
-        with patch.object(lean_broker, "KEEP_FINISHED", 1):
-            older, older_lib = build_once("older", lean_broker.RUNNER_SESSION)
-            held, held_lib = build_once("held", lean_broker.RUNNER_SESSION)
-            later = [build_once(name, "s1") for name in ("one", "two", "three")]
-        self.assertNotIn(older, self.broker.state["builds"])
-        self.assertFalse(older_lib.exists())
-        self.assertEqual(self.build_record(held)["status"], "finished")
-        self.assertTrue((held_lib / "Target.olean").is_file())
-        # The sessions' builds are pruned as before: of the three, the newest is left.
-        self.assertEqual([build_id in self.broker.state["builds"] for build_id, _ in later], [False, False, True])
-        self.assertEqual([lib.exists() for _, lib in later], [False, False, True])
-
     def test_pruning_finished_jobs_leaves_a_waiting_module_what_it_needs(self):
         # A waiting module learns that its imports compiled, and what they emitted, from the build's own
         # record. With room for one finished job, the jobs of A, B and C are pruned before D is keyed.
@@ -1889,6 +1933,8 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(self.cli("version", str(self.instance)).returncode, 0)  # launches the first broker
         first = lean_broker.broker_alive(self.paths)
         self.assertTrue(first)
+        # The receipt says that this broker writes its state on request; a client asks only such a broker.
+        self.assertEqual(first["state_seconds"], lean_broker.STATE_SECONDS)
         second = self.cli("serve", str(self.instance), timeout=30)
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("already has a running Lean broker", second.stderr)
@@ -1901,7 +1947,8 @@ class ClientAndLifecycleTests(BrokerFixture):
         submitted = json.loads(self.cli("submit", str(self.instance), str(path), "--session", "s1", "--expect-mb", "40").stdout)
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
-            record = lean_broker.job_record(self.paths, submitted["job"])
+            # As `result` reads it: the Lean's identity is in the state file once the broker has been asked.
+            record = lean_broker.job_record(self.paths, submitted["job"], current=True)
             if record and record["status"] == "running" and record.get("pid"):
                 break
             time.sleep(0.05)

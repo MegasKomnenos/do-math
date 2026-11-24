@@ -11,11 +11,11 @@ import time
 import traceback
 import uuid
 
-from canon import (EXTRACT_MODULE, Canon, CanonError, apply_lean, apply_rearrangement, apply_written,
+from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, apply_rearrangement, apply_written,
                    build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
-                   empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_record,
-                   record_file, required_pairs, retire_approaches, sha256_text, start_build, sync_tree,
-                   update_index, wait_build, with_importers)
+                   empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_index,
+                   read_record, record_file, required_pairs, retire_approaches, sha256_text, start_build,
+                   statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
@@ -23,10 +23,8 @@ from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, ques
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from judge import (ROOT_MODULE, Stop as NoSettlement, build_lib, carried, formal_names, judge_commands, judge_index,
-                   outcome as judge_outcome, publication_targets, settling, wait as wait_judge)
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
-                       replay, root_solved)
+                       replay, root_settlement, root_solved)
 from retention import capture, refusal
 from ending import OUTPUT_ROLES, ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
@@ -112,7 +110,6 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
     if absent:
         raise ValueError('mcp_servers names a command that was not found: ' + ', '.join(absent)
                          + '; give the installed path, or set "mcp_servers" to {} to run without external tools')
-    judge_commands(config['lean'])  # a judge that is asked for and cannot run here is refused before anything is created
     instance.mkdir(parents=True, exist_ok=False)
     for name in ('knowledge/events', 'knowledge/changes', 'knowledge/reviews', 'knowledge/organizations',
                  'sessions', 'runner', 'control/inputs', 'control/requests', 'canon'):
@@ -150,21 +147,6 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
         index = update_index(empty_index(), outcome['rows'], outcome['pairs'], stage, 0)
         checked = check_applied(empty_index(), index, {'replace': [], 'retire': []}, records, lambda name: False,
                                 config['lean']['allowed_axioms'])
-        commands, _ = judge_commands(config['lean'])
-        formal = formal_names(index, config['lean']['allowed_axioms']) if commands and not checked['errors'] else []
-        if formal:
-            # The theorems the canon already proves in Lean are judged like those a publication brings.
-            folder = instance / 'runner/stage-genesis/judge'
-            verdict = wait_judge(instance, judge_index(
-                instance, folder, index, formal, build_lib(instance, outcome['build']), commands,
-                config['lean']['allowed_axioms'], config['lean']['calibration_expect_mb'], 'operator'), folder)
-            if verdict['verdict'] == 'rejected':
-                checked['errors'].append('the judge does not accept a proof of the canon: ' + verdict['reason'])
-            elif verdict['verdict'] != 'accepted':
-                raise ValueError('the judge of formal proofs could not run: ' + verdict['reason']
-                                 + '; repair it, or set lean.judge to null to create the instance without it')
-            else:
-                index['judged'] = {name: 0 for name in formal}
     finally:
         # No session exists yet; the runner starts the broker it needs when it runs. The broker is gone
         # before this command returns or refuses, so that a refused instance's folder can be removed at once:
@@ -220,7 +202,6 @@ class Runner:
         self.settings_stamp = None
         self.archiver = None
         self.archive_due = False
-        self.root_judging = None
 
     def save(self):
         try:
@@ -753,6 +734,11 @@ class Runner:
             publication.update(stage='commit', applied=None)
             self.save()
             return True
+        if publication['stage'] != 'apply' and publication.get('extraction') != EXTRACTION:
+            # A runner with another extraction staged this publication, and the index it staged holds rows of
+            # another form. An earlier version of this code, which also had a stage `judge` after `check`, is
+            # such a runner. The candidate is staged again; the modules come from the broker's cache.
+            publication['stage'] = 'apply'
         if publication['stage'] == 'apply':
             job = self.state['jobs'][publication['job']]
             if not organizer and tree_hashes(candidate) != job['task']['candidate_hashes']:
@@ -779,11 +765,10 @@ class Runner:
             # A module that imports a changed one is compiled in a new environment, so its index is taken again
             # too: an unchanged statement can come out different when its module's imports bring more into scope.
             extracted = with_importers(stage / 'lean', self.model['library'], changed)
-            publication.update(changed=changed, extracted=extracted, removed=removed)
+            publication.update(changed=changed, extracted=extracted, removed=removed, extraction=EXTRACTION)
             if changed or removed:
-                from lean_broker import RUNNER_SESSION  # the broker keeps the newest build made under it
                 publication.update(stage='build', build=start_build(
-                    self.instance, stage / 'lean', self.model['library'], RUNNER_SESSION,
+                    self.instance, stage / 'lean', self.model['library'], 'runner',
                     self.settings['lean']['calibration_expect_mb'], extracted, required_pairs(records)))
             else:
                 publication['stage'] = 'check'
@@ -796,11 +781,10 @@ class Runner:
                 return self.publication_failed(publication, '; '.join(
                     f"{e['module'] or 'build'}: {e['status']} {e.get('reason') or ''}\n{e['output']}"
                     for e in outcome['errors']))
-            # A publication that an earlier runner carried to this stage extracted the changed modules alone.
             write_json(stage / 'index.json', update_index(
                 drop_modules(index, publication['removed']), outcome['rows'], outcome['pairs'],
-                stage / 'lean', event['sequence'], publication.get('extracted', publication['changed'])))
-            publication.update(stage='check', built=outcome['build'])
+                stage / 'lean', event['sequence'], publication['extracted']))
+            publication['stage'] = 'check'
             self.save()
         if publication['stage'] == 'check':
             change, records = self.effective_change(publication)
@@ -810,57 +794,10 @@ class Runner:
                                     self.settings['lean']['allowed_axioms'], organizer=organizer)
             if checked['errors']:
                 return self.publication_failed(publication, '; '.join(checked['errors']))
-            applied = {key: checked[key] for key in ('added', 'replaced', 'records', 'retired')}
-            # A theorem whose proof this change brings is judged again; the others keep what they had.
-            touched = set(applied['added']) | set(applied['replaced']) | {item['into'] for item in applied['retired']}
-            new['judged'] = carried(new, touched)
-            write_json(stage / 'index.json', new)
-            commands, _ = judge_commands(self.settings['lean'])
-            names = (publication_targets(index, new, touched, self.settings['lean']['allowed_axioms'])
-                     if commands and publication.get('built') else [])
-            publication.update(applied=applied, stage='judge' if names else 'commit',
-                               judge={'names': names, 'job': None,
-                                      'attempts': (publication.get('judge') or {}).get('attempts', 0)})
-            self.save()
-        if publication['stage'] == 'judge':
-            # The formal proofs this change brings are exported and judged outside the index (judge.py).
-            # A rejection is the candidate's fault, like a module that does not compile. A judge that
-            # could not run says nothing about the candidate: the build is made once more, and after
-            # that the runner stops with the reason, for the operator to repair. The publication waits
-            # at this stage with its build, and the runner started after the repair asks the judge
-            # again. The broker keeps that build's compiled modules for it meanwhile, however many
-            # later builds finish (lean_broker.Broker.prune).
-            state, folder = publication['judge'], stage / 'judge'
-            commands, why = judge_commands(self.settings['lean'])
-            if commands is None:
-                raise RuntimeError('the judge of formal proofs is no longer available: ' + why)
-            if not state['job']:
-                state['job'] = judge_index(
-                    self.instance, folder, read_json(stage / 'index.json'), state['names'],
-                    build_lib(self.instance, publication['built']), commands,
-                    self.settings['lean']['allowed_axioms'], self.settings['lean']['calibration_expect_mb'], 'runner')
-                self.save()
-                return False
-            verdict = judge_outcome(self.instance, state['job'], folder)
-            if verdict is None:
-                return False
-            if verdict['verdict'] == 'rejected':
-                return self.publication_failed(
-                    publication, 'the judge does not accept the formal proofs of this change: ' + verdict['reason'])
-            if verdict['verdict'] != 'accepted':
-                # The job is forgotten either way, so that a runner started after the repair asks the judge again.
-                state['job'] = None
-                if state['attempts'] >= 1:
-                    self.save()
-                    raise RuntimeError('the judge of formal proofs could not run: ' + verdict['reason'])
-                state['attempts'] += 1
-                publication['stage'] = 'apply'
-                self.save()
-                return False
-            new = read_json(stage / 'index.json')
-            new['judged'] = {**new.get('judged', {}), **{name: event['sequence'] for name in state['names']}}
-            write_json(stage / 'index.json', new)
-            publication.update(stage='commit', judged=state['names'])
+            # Nothing further is asked about the proofs the change brings. The library compiled, so Lean's
+            # kernel accepted every declaration, and the index holds Lean's account of each proof's axioms.
+            publication.update(applied={key: checked[key] for key in ('added', 'replaced', 'records', 'retired')},
+                               stage='commit')
             self.save()
         return True
 
@@ -874,7 +811,7 @@ class Runner:
         stage = self.instance / 'runner' / ('stage-' + event['id'])
         if not (stage / 'index.json').exists() or not (stage / 'lean').exists():
             return
-        old, new = canon.load_index()['entries'], read_json(stage / 'index.json')['entries']
+        old, new = canon.load_index()['entries'], read_index(stage / 'index.json')['entries']
         for name in applied['replaced'] + [item['into'] for item in applied['retired']]:
             if name not in old or name not in new:
                 continue
@@ -899,14 +836,14 @@ class Runner:
             (stage / 'lean' / (EXTRACT_MODULE + '.lean')).unlink(missing_ok=True)
             sync_tree(stage / 'lean', canon.lean)
         if (stage / 'index.json').exists():
-            write_json(canon.index, read_json(stage / 'index.json'))
+            # Read as an index of any version: a publication that an earlier version of this code carried
+            # past its checks is installed by this one in the present form.
+            write_json(canon.index, read_index(stage / 'index.json'))
         if stage.exists():
             remove_tree(stage)
 
     def publish(self):
         """Carry the current publication forward, and start the next one in the queue when none is underway."""
-        if not self.state['publication'] and self.state['publish_queue'] and self.root_judge_copying():
-            return
         if not self.state['publication'] and self.state['publish_queue']:
             item = self.state['publish_queue'].pop(0)
             if item['kind'] == 'questions':
@@ -958,12 +895,9 @@ class Runner:
                 shutil.copyfile(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
                 write_json(stage / 'applied.json', applied)
                 pipeline = self.state['pipelines'][job['pipeline']]
-                provenance = {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
-                              'review_session': sid, 'pipeline': pipeline['id']}
-                if publication.get('judged'):
-                    # The theorems whose formal proof the judge accepted for this change (judge.py).
-                    provenance['judged'] = publication['judged']
-                write_json(stage / 'provenance.json', provenance)
+                write_json(stage / 'provenance.json', {
+                    'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
+                    'review_session': sid, 'pipeline': pipeline['id']})
                 verified = self.session_dir(sid) / 'work/verify/outcome.json'
                 if verified.is_file():
                     shutil.copyfile(verified, stage / 'verify.json')
@@ -1072,72 +1006,41 @@ class Runner:
 
     # -- the settled root against the root as it was posed ------------------------------------------------
 
-    def root_judge_due(self, final=False):
-        """The proof that settles the root, when its judging against the first commit is still to be started.
+    def check_root(self):
+        """Once the root is formally settled, compare its statement with the root the first commit fixed.
 
-        A publication has its formal proofs judged against their own export, which leaves the axioms and the
-        kernel. Whether the statement that was proved is still the statement that was posed, with every
-        definition it depends on unchanged, shows only when the canon of the first commit is built beside
-        the canon as it stands (judge.py). That is done once for each proof that settles the root, and once
-        more before the runner finishes if the library has changed since, so that the last verdict is about
-        the canon the instance ends with. The revision compared is the index's, which a publication that
-        changes no Lean source leaves as it was: the review that a rejection asks for does not by itself
-        call for another judging."""
-        record = self.state.get('root_judge')
-        if not root_solved(self.model) or (record and record['status'] == 'running'):
-            return None
-        if self.state['publication'] or self.state['publish_queue'] or (self.instance / 'control/STOP').exists():
-            return None  # the judge copies the canon, which a publication is about to change
-        if judge_commands(self.settings['lean'])[0] is None:
-            return None
-        try:
-            proof = settling(self.model)[1]
-        except NoSettlement:
-            return None
-        if record and record['proof'] == proof and (record['revision'] == self.model['revision'] or not final):
-            return None
-        return proof
+        A formal settlement says that some declaration is proved in Lean from the allowed axioms and that
+        Lean confirmed its statement to be the root's, or the negation of the root's. What remains to be
+        shown is that the root's statement, with every definition it is made of, is still the one that
+        was posed. Every publication is refused that would change a statement or a definition in place,
+        so this holds by construction; here it is read off once more from the two ends, the index in the
+        instance's first commit and the index as it stands (canon.statement_differences). The comparison
+        reads two files and is repeated whenever the settling proof or the library's revision is another.
 
-    def start_root_judge(self, final=False):
-        """Start judge.py for the settled root as a process of its own: it waits for two builds and for the judge."""
-        proof = self.root_judge_due(final)
-        if proof is None:
+        A difference is kept with its description, and a comprehensive review of the settling proof is
+        requested once for it, so that sessions examine what the settlement now rests on."""
+        settlement = root_settlement(self.model)
+        if settlement is None:
             return
-        folder = 'runner/root-judge-' + uuid.uuid4().hex
-        with (self.instance / 'runner/root-judge.log').open('ab') as log:
-            child = subprocess.Popen([sys.executable, '-B', str(RUNTIME / 'judge.py'), str(self.instance),
-                                      '--out', str(self.instance / folder)],
-                                     cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                                     **popen_options(detached=True))
-        self.root_judging = child
-        self.state['root_judge'] = {'proof': proof, 'revision': self.model['revision'], 'folder': folder,
-                                    'process': process_identity(child.pid), 'status': 'running',
-                                    'started_at': time.time()}
-        self.save()
-
-    def collect_root_judge(self):
-        """Keep the verdict of a judging of the root that has ended.
-
-        `accepted` and `rejected` are the judge's answers. A rejection has left a request for a
-        comprehensive review of the proof, which the runner takes up like any other. `unavailable` means
-        that no answer was obtained: the command refused, a build failed, or a tool did not run."""
-        record = self.state.get('root_judge')
-        if not record or record['status'] != 'running' or alive(record['process']):
+        root = self.model['root']
+        proof = sorted(settlement['proofs'], key=lambda name: (name != root, name))[0]
+        record = self.state.get('root_check')
+        if record and record['proof'] == proof and record['revision'] == self.model['revision']:
             return
-        child, self.root_judging = self.root_judging, None
-        if child is not None:
-            child.poll()  # reaps the process this runner started
-        path = self.instance / record['folder'] / 'verdict.json'
-        found = read_json(path) if path.is_file() else {}
-        record.update(status=found.get('verdict', 'unavailable'), ended_at=time.time(),
-                      reason=(found.get('reason') or 'the command left no verdict; read runner/root-judge.log')[:2000])
+        commit = git(self.instance, 'rev-list', '--max-parents=0', 'HEAD').split()[0]
+        first = json.loads(git(self.instance, 'show', commit + ':canon/index.json'))
+        differences = statement_differences(first, Canon(self.instance).load_index(), root)
+        checked = {'proof': proof, 'revision': self.model['revision'], 'compared_with_commit': commit,
+                   'status': 'changed' if differences else 'unchanged', 'differences': differences, 'at': time.time()}
+        if differences and not (record and record['differences'] == differences):
+            request = self.instance / 'control/requests' / (uid('request') + '.json')
+            write_json(request, {'kind': 'review', 'elements': [proof], 'concerns': [],
+                                 'reason': 'The root is formally settled, and its statement or a definition under it '
+                                           'is not what the first commit of the instance fixed: '
+                                           + '; '.join(differences)})
+            checked['review_request'] = str(request)
+        self.state['root_check'] = checked
         self.save()
-
-    def root_judge_copying(self):
-        """Whether a judging of the root is still taking its copy of the canon; no publication begins meanwhile."""
-        record = self.state.get('root_judge')
-        return bool(record and record['status'] == 'running' and alive(record['process'])
-                    and not (self.instance / record['folder'] / 'solution' / (ROOT_MODULE + '.lean')).exists())
 
     def conflicts(self):
         """Contested statements, each with the judgments that currently oppose one another.
@@ -1462,18 +1365,15 @@ class Runner:
         if self.state['complete'] != complete:
             self.state['complete'] = complete
             self.save()
-        # Before the requests are read, so that the review a rejection asked for is taken up in this pass.
-        self.collect_root_judge()
+        # Before the requests are read, so that the review a difference asked for is taken up in this pass.
+        self.check_root()
         self.ingest_inputs()
         self.attempt_dispatch_ready()
         self.refresh()
         if not (self.instance / 'control/STOP').exists():
             self.schedule()
         remaining = any(j['status'] in ('pending', 'running') for j in self.state['jobs'].values())
-        idle = self.state['complete'] and not self.active() and not remaining
-        self.start_root_judge(final=idle)
-        # The runner does not finish while the root is being judged: the verdict is part of what it leaves.
-        finished = idle and (self.state.get('root_judge') or {}).get('status') != 'running'
+        finished = self.state['complete'] and not self.active() and not remaining
         if self.state['finished'] != finished:
             self.state['finished'] = finished
             self.save()
@@ -1517,10 +1417,6 @@ class Runner:
 
 def start(instance):
     instance = Path(instance).resolve()
-    # A judge that the settings ask for and that cannot run on this machine would end the runner at the first
-    # publication it has to judge. It is refused here instead, with what is missing (judge.judge_commands).
-    # The runner inherits this process's environment, so what is found here is what the runner will find.
-    judge_commands(load_settings(instance)['lean'])
     token = uuid.uuid4().hex
     stdout = instance / 'runner' / ('start-' + token + '.stdout.log')
     stderr = instance / 'runner' / ('start-' + token + '.stderr.log')
@@ -1553,17 +1449,11 @@ def status(instance):
     model = replay(instance)
     from lean_broker import Paths, broker_status
     rows = board(instance, state, model)
-    lean = load_settings(instance)['lean']
-    try:
-        commands, why = judge_commands(lean)
-    except ValueError as exc:  # a judge that is asked for and cannot run here: reported, as `start` refuses it
-        commands, why = None, str(exc)
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['root_state'], 'finished': state['finished'],
-            # Whether formal proofs are judged outside the index, and why not when they are not (judge.py).
-            'judge': {'available': commands is not None, 'reason': why, 'commands': commands},
-            # The judging of the settled root against the root of the first commit: its proof, status and reason.
-            'root_judge': state.get('root_judge'),
+            # Whether the formally settled root still states what the first commit fixed (Runner.check_root);
+            # nothing until the root is formally settled and a runner has seen it.
+            'root_check': state.get('root_check'),
             'stopped': (instance / 'control/STOP').exists(), 'board': rows,
             'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),
