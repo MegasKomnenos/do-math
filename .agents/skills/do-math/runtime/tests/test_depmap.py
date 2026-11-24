@@ -3,7 +3,9 @@
 The derivation tests work on small hand-made canons. Each is written as the files replay reads (the
 structural index, the summary of the records, one published change with review's verdicts), and the
 model comes from the real replay, so the tests hold the map to the model the runtime computes. The
-last class draws the map of an instance published through the real path.
+class Page opens the page of a map in a browser and does what a reader does there; it runs only where
+Playwright and a browser it can start are installed. The last class draws the map of an instance
+published through the real path.
 """
 import contextlib
 import io
@@ -285,6 +287,27 @@ def wide_canon():
     ]
 
 
+def hub_canon():
+    """A definition and a first result that a chain of twelve statements in three groups uses, and a root that uses them all."""
+    rows = [definition('Lib.object', 'unit'), statement('Lib.first', 'unit', mentions=['Lib.object'], module='Lib.Start.Basic')]
+    for step in range(1, 13):
+        before = [f'Lib.s{step - 1}'] if step > 1 else []
+        rows.append(statement(f'Lib.s{step}', 'unit', uses=['Lib.object', 'Lib.first', *before], mentions=['Lib.object'],
+                              module=f"Lib.{('Counting', 'Signs', 'Tables')[step % 3]}.Part{step}"))
+    rows.append(statement('Lib.root', 'unit', uses=['Lib.object', 'Lib.first', *[f'Lib.s{step}' for step in range(1, 13)]]))
+    return rows
+
+
+def lines_of(data, geometry):
+    """The straight parts of every net, each once, with the units the net joins: (start, end, net, units)."""
+    nets = {}
+    for edge, route in zip(data['edges'], geometry['edges']):
+        routes, ends = nets.setdefault(route['net'], ([], set()))
+        routes.append(route['points'])
+        ends.update((edge['source'], edge['target']))
+    return [(start, end, net, ends) for net, (routes, ends) in nets.items() for start, end in draw.stretches(routes)]
+
+
 class Drawing(MapCase):
     def test_every_unit_and_edge_is_drawn_and_marked_for_the_page(self):
         data = self.map(wide_canon())
@@ -332,8 +355,8 @@ class Drawing(MapCase):
         nodes = {node.get('data-node'): node for node in tree.findall(f".//{SVG}g[@class='node']")}
         self.assertEqual(nodes['Lib.root'].get('data-status'), 'root · statement · proof on a separate card · settled')
         # The mark of the standing is on the card of the proof and not on the card of the statement.
-        self.assertIsNone(nodes['Lib.root'].find(f"{SVG}path[@class='standing']"))
-        self.assertIsNotNone(nodes['Lib.rootProof'].find(f"{SVG}path[@class='standing']"))
+        self.assertIsNone(nodes['Lib.root'].find(f"{SVG}rect[@class='standing']"))
+        self.assertIsNotNone(nodes['Lib.rootProof'].find(f"{SVG}rect[@class='standing']"))
         texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
         self.assertNotIn('no proof', texts)  # neither a card nor the legend says it
         # A statement that has a proof of its own keeps its words, and its other proof is another proof.
@@ -354,6 +377,7 @@ class Drawing(MapCase):
             self.assertIn(draw.CARD_WORDS[role], texts)
         for words, _ in draw.STANDINGS.values():  # the canon holds a proof in each of the four states
             self.assertIn(words, texts)
+        self.assertIn(draw.BRANCH_WORDS, texts)  # what a dot on a line means
         self.assertEqual(data['root_state'], 'unresolved')
         self.assertTrue(any('the root is open' in line and '9 units in 3 groups, 15 lines, 1 step folded into the lines' in line for line in texts))
         self.assertFalse(any('unresolved' in line for line in texts))
@@ -364,6 +388,77 @@ class Drawing(MapCase):
         self.assertIn(draw.LEGEND['direct'], texts)
         for absent in (draw.LEGEND['mention'], draw.LEGEND['alternative'], draw.CARD_WORDS['definition'], 'no proof'):
             self.assertNotIn(absent, texts)
+
+    def test_the_lines_of_a_card_have_one_colour_and_those_of_a_definition_are_lighter(self):
+        # In hub_canon the definition Lib.object is mentioned in thirteen statements and named in the proof of the
+        # root, so it sends dotted lines and a solid one; the statements send solid lines.
+        data = self.map(hub_canon())
+        role = {unit['id']: unit['role'] for unit in data['units']}
+        self.assertEqual({edge['kind'] for edge in data['edges'] if edge['source'] == 'Lib.object'}, {'direct', 'mention'})
+        svg = draw.render(data, 'layered')[0]
+        tree = ElementTree.fromstring(svg)
+        strokes, first = {}, []  # the colours of the lines that leave each card; whether each line leaves a definition
+        for group in tree.find(f".//{SVG}g[@id='routes']"):
+            if group.get('class') == 'edge':
+                names = [group.get('id')]
+                for mark in group.findall(f'{SVG}path[@fill]'):  # the arrowhead and the dots have the colour of the line
+                    self.assertEqual(mark.get('fill'), group.get('stroke'))
+            elif group.get('class') == 'shared':
+                names = group.get('data-edges').split()
+            else:
+                continue
+            for name in names:
+                source = data['edges'][int(name[1:])]['source']
+                strokes.setdefault(source, set()).add(group.get('stroke'))
+                first.append(role[source] == 'definition')
+        self.assertEqual(set(strokes), {edge['source'] for edge in data['edges']})
+        # The lines that leave one card have one colour, whatever their kind: a colour of the palette for a
+        # statement, and such a colour lighter for a definition.
+        light = {draw.lighter(colour) for colour in draw.PALETTE}
+        self.assertFalse(light & set(draw.PALETTE))
+        for source, found in strokes.items():
+            self.assertEqual(len(found), 1, source)
+            self.assertTrue(found <= (light if role[source] == 'definition' else set(draw.PALETTE)), (source, found))
+        # Lighter means mixed with white: what the colour shows on white at that opacity.
+        self.assertEqual(draw.lighter('#000000', 0.5), '#808080')
+        self.assertEqual((draw.lighter('#256D9D', 1), draw.lighter('#256D9D', 0)), ('#256D9D', '#FFFFFF'))
+        self.assertTrue(0.45 < draw.LIGHT < 0.65)  # the range in which the lighter lines were seen to read well
+        # The lighter lines are drawn before the others, so that the casing of a lighter line cuts no stronger line.
+        self.assertTrue(any(first) and not all(first))
+        self.assertEqual(first, sorted(first, reverse=True))
+        # The legend of the drawing and the guide of the page say both, and show a lighter line.
+        texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
+        guide = draw.guide_of(data)
+        sample = f'stroke="{draw.lighter(draw.SAMPLE_COLOUR)}"'
+        self.assertIn(draw.LIGHT_WORDS, texts)
+        self.assertIn(draw.COLOUR_WORDS, texts)
+        self.assertIn(sample, svg.split('<g id="drawing"')[0])
+        self.assertIn(draw.LIGHT_WORDS, guide)
+        self.assertIn('Lines that leave one card have one colour;', guide)
+        self.assertIn(sample, guide)
+        self.assertIn(f'stroke="{draw.SAMPLE_COLOUR}" stroke-width="1.7" stroke-dasharray="{draw.LINES["mention"][0]}"', guide)
+        # A heavy line has the colour of its kind, so on a map with a heavy line the sentence speaks of the thin ones.
+        wide = self.map(wide_canon())
+        svg = draw.render(wide, 'layered')[0]
+        tree = ElementTree.fromstring(svg)
+        texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
+        self.assertIn('thin ' + draw.COLOUR_WORDS, texts)
+        self.assertNotIn(draw.COLOUR_WORDS, texts)
+        self.assertIn('Thin lines that leave one card have one colour;', draw.guide_of(wide))
+        heavy = [edge.get('stroke') for edge in tree.findall(f".//{SVG}g[@class='edge']") if edge.get('data-kind') == 'alternative']
+        self.assertEqual(heavy, [draw.ALTERNATIVE_COLOUR])
+        # The definition of that map is only mentioned, and its dotted lines have the colour of its card as well.
+        dotted = {edge.get('stroke') for edge in tree.findall(f".//{SVG}g[@class='edge']") if edge.get('data-kind') == 'mention'}
+        self.assertEqual(len(dotted), 1)
+        self.assertTrue(dotted <= light)
+        # The words on the lines are in the drawing and not in the page, and each legend says where the steps are named.
+        self.assertIn(draw.LEGEND['contracted'], texts)
+        self.assertIn(draw.PAGE_LEGEND['contracted'], draw.guide_of(wide))
+        self.assertNotIn(draw.LEGEND['contracted'], draw.guide_of(wide))
+        # A map without a definition has no lighter line and says nothing of one.
+        plain = self.map([statement('Lib.root', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit')])
+        self.assertNotIn(draw.LIGHT_WORDS, draw.render(plain, 'layered')[0])
+        self.assertNotIn(draw.LIGHT_WORDS, draw.guide_of(plain))
 
     def test_a_label_that_finds_no_room_counts_its_steps_and_covers_no_card(self):
         # Three steps with long names lie between two units that stand side by side: their names are wider
@@ -432,6 +527,123 @@ class Drawing(MapCase):
             self.assertLess(sx, tx)
             self.assertTrue(sy <= route['points'][0][1] <= sy + sh and ty <= route['points'][-1][1] <= ty + th)
 
+    def test_the_lines_keep_clear_of_the_cards_and_of_each_other(self):
+        # Checked on the finished geometry, for a map with a hub, for one with three groups and a second proof, and
+        # for one whose alternatives close a cycle.
+        cycle = [statement('Lib.root', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit', uses=['Lib.b']),
+                 statement('Lib.b', 'unit'), statement('Lib.rootAgain', 'unit', uses=['Lib.root'], proves='Lib.b')]
+        for rows in (hub_canon(), wide_canon(), cycle):
+            data = self.map(rows)
+            geometry = draw.layered(data, {unit['id']: draw.card_of(unit) for unit in data['units']})
+            for route in geometry['edges']:  # every line runs at right angles
+                for (x1, y1), (x2, y2) in zip(route['points'], route['points'][1:]):
+                    self.assertTrue(abs(x1 - x2) < 0.01 or abs(y1 - y2) < 0.01, route['points'])
+            lines = lines_of(data, geometry)
+            for (x1, y1), (x2, y2), net, ends in lines:  # no line passes through a card that is not one of its ends
+                for name, (x, y, w, h) in geometry['cards'].items():
+                    inside = min(x1, x2) < x + w - 0.5 and max(x1, x2) > x + 0.5 and min(y1, y2) < y + h - 0.5 and max(y1, y2) > y + 0.5
+                    self.assertFalse(inside and name not in ends, (name, (x1, y1), (x2, y2)))
+            # Two nets never lie on one stretch, and where they run side by side they keep the distance of two ends on a card.
+            for flat in (True, False):
+                along = sorted(((a[flat], min(a[not flat], b[not flat]), max(a[not flat], b[not flat]), net)
+                                for a, b, net, _ in lines if abs(a[flat] - b[flat]) < 0.01))
+                for index, (at, low, high, net) in enumerate(along):
+                    for other, start, end, second in along[index + 1:]:
+                        if other - at >= draw.PORT_MIN - 0.01:
+                            break
+                        self.assertFalse(net != second and min(high, end) - max(low, start) > 12, ((at, low, high), (other, start, end)))
+
+    def test_a_net_is_one_line_that_branches_with_a_dot_at_each_branch(self):
+        data = self.map(hub_canon())
+        geometry = draw.layered(data, {unit['id']: draw.card_of(unit) for unit in data['units']})
+        used = [index for index, edge in enumerate(data['edges']) if (edge['source'], edge['kind']) == ('Lib.first', 'direct')]
+        self.assertEqual(len(used), 13)  # the twelve statements of the chain and the root
+        routes = [geometry['edges'][index] for index in used]
+        # The edges that leave one card with one meaning are one net: they leave at one point and run together.
+        self.assertEqual(len({route['net'] for route in routes}), 1)
+        self.assertEqual(len({route['points'][0] for route in routes}), 1)
+        self.assertEqual(len({route['points'][-1] for route in routes}), 13)
+        mentions = [geometry['edges'][index]['net'] for index, edge in enumerate(data['edges'])
+                    if (edge['source'], edge['kind']) == ('Lib.object', 'mention')]
+        self.assertEqual(len(set(mentions)), 1)
+        self.assertNotIn(routes[0]['net'], mentions)
+        # A far target is reached on a lane under the cards of its group: a level stretch below the frame.
+        frames = geometry['groups']
+        far = [route for route in routes if len(route['points']) == 6]
+        self.assertTrue(far)
+        for route in far:
+            index = geometry['edges'].index(route)
+            x, y, w, h = frames[self.unit(data, data['edges'][index]['target'])['group']]
+            (x3, y3), (x4, y4) = route['points'][2:4]
+            self.assertEqual(y3, y4)
+            self.assertGreater(y3, y + h)
+            self.assertFalse(any(top < y3 < top + tall for _, top, _, tall in frames.values()))
+        # A dot marks every point where an edge turns off the line of its net, and no other point.
+        dots = draw.junctions(geometry['edges'])
+        net = {index: route['net'] for index, route in enumerate(geometry['edges'])}
+        on = lambda point, points: any(min(a[0], b[0]) - 0.01 <= point[0] <= max(a[0], b[0]) + 0.01
+                                       and min(a[1], b[1]) - 0.01 <= point[1] <= max(a[1], b[1]) + 0.01
+                                       for a, b in zip(points, points[1:]))
+        self.assertGreaterEqual(sum(len(dots[index]) for index in used), 3)
+        for index, points in enumerate(dots):
+            for point in points:
+                self.assertIn(point, geometry['edges'][index]['points'][1:-1])  # a corner of the edge the dot belongs to
+                others = [other for other in net if other != index and net[other] == net[index] and on(point, geometry['edges'][other]['points'])]
+                self.assertTrue(others, point)
+        every = [point for points in dots for point in points]
+        self.assertEqual(len(every), len(set(every)))
+        # Two edges of a net that only run together have no dot, and neither have two nets that cross.
+        apart = [(1, 1), (5, 1), (5, 9), (9, 9)]
+        self.assertEqual(draw.junctions([{'points': apart, 'net': 0}, {'points': apart[:3] + [(5, 12), (9, 12)], 'net': 0}]),
+                         [[(5, 9)], []])
+        self.assertEqual(draw.junctions([{'points': apart, 'net': 0}, {'points': apart, 'net': 0}]), [[], []])
+        self.assertEqual(draw.junctions([{'points': apart, 'net': 0}, {'points': [(1, 5), (7, 5), (7, 12)], 'net': 1}]), [[], []])
+        self.assertEqual(draw.junctions([{'points': apart, 'net': 0}, {'points': [(1, 1), (5, 1), (5, 5), (9, 5)], 'net': 0}]),
+                         [[], [(5, 5)]])
+        self.assertEqual(sorted(draw.stretches([apart, [(1, 1), (3, 1)], [(5, 4), (5, 12)]])),
+                         [((1, 1), (5, 1)), ((5, 1), (5, 12)), ((5, 9), (9, 9))])
+        # Each stretch of the net is drawn once: its runs together are as long as the net, but for the short lead
+        # before a turn, and the stretches that several edges share name those edges.
+        parts = draw.runs([geometry['edges'][index]['pieces'] for index in used])
+        whole = sum(abs(x2 - x1) + abs(y2 - y1) for (x1, y1), (x2, y2)
+                    in draw.stretches([geometry['edges'][index]['points'] for index in used]))
+        drawn = sum(abs(b[0] - a[0]) + abs(b[1] - a[1]) for points, _, _ in parts for a, b in zip(points, points[1:]))
+        self.assertGreater(drawn, whole - 0.01)
+        self.assertLess(drawn, whole + 2 * draw.CORNER * len(parts))
+        self.assertEqual({user for _, _, users in parts if len(users) == 1 for user in users}, set(range(len(used))))
+        self.assertTrue(any(len(users) == len(used) for _, _, users in parts))  # the stub by which the net leaves its card
+        self.assertEqual(draw.runs([[[(0, 0), (40, 0), (40, 10)]], [[(0, 0), (40, 0), (40, -10)]]]),
+                         [([(0, 0), (40, 0)], 0.0, [0, 1]), ([(26.0, 0.0), (40, 0), (40, 10)], 26.0, [0]),
+                          ([(26.0, 0.0), (40, 0), (40, -10)], 26.0, [1])])
+        self.assertEqual(draw.runs([[[(0, 0), (40, 0)], [(40, 0), (90, 0)]], [[(0, 0), (40, 0)], [(40, 0), (60, 0), (60, 9)]]]),
+                         [([(0, 0), (40, 0)], 0.0, [0, 1]), ([(40, 0), (60, 0)], 40.0, [0, 1]), ([(60, 0), (90, 0)], 60.0, [0]),
+                          ([(46.0, 0.0), (60, 0), (60, 9)], 46.0, [1])])
+        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        named = [group.get('data-edges').split() for group in tree.findall(f".//{SVG}g[@class='shared']")]
+        mine = {f'e{index}' for index in used}
+        self.assertTrue(any(set(names) == mine for names in named))
+        self.assertTrue(all(len(names) > 1 and (set(names) <= mine or not set(names) & mine) for names in named))
+        # The drawing carries the dots in the group of their edge, so that the page dims them with it.
+        tree = ElementTree.fromstring(draw.render(data, 'layered')[0])
+        drawn = {edge.get('id'): edge.find(f"{SVG}path[@class='dot']") for edge in tree.findall(f".//{SVG}g[@class='edge']")}
+        for index, points in enumerate(dots):
+            self.assertEqual(drawn[f'e{index}'] is not None, bool(points))
+            self.assertEqual(drawn[f'e{index}'].get('d').count('M') if points else 0, len(points))
+
+    def test_a_card_grows_so_that_every_line_arrives_at_a_point_of_its_own(self):
+        data = self.map(hub_canon())
+        cards = {unit['id']: draw.card_of(unit) for unit in data['units']}
+        geometry = draw.layered(data, cards)
+        arrive = sorted(route['points'][-1][1] for edge, route in zip(data['edges'], geometry['edges']) if edge['target'] == 'Lib.root')
+        self.assertEqual(len(arrive), 14)
+        x, y, w, h = geometry['cards']['Lib.root']
+        self.assertGreater(h, cards['Lib.root']['height'])  # fourteen lines need more room than the words of the card
+        self.assertTrue(y < arrive[0] and arrive[-1] < y + h)
+        for first, second in zip(arrive, arrive[1:]):
+            self.assertGreaterEqual(second - first, draw.PORT_MIN - 0.01)
+        # A card at which few lines arrive keeps the height of its words.
+        self.assertEqual(geometry['cards']['Lib.first'][3], cards['Lib.first']['height'])
+
     def test_the_drawing_is_redone_from_the_data_without_the_instance(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -459,6 +671,58 @@ class Drawing(MapCase):
             engine, note = draw.render(data, 'auto', missing)[2:]
             self.assertEqual(engine, 'layered')
             self.assertIn('ELK was not used because it needs an elkjs package in ' + missing, note)
+
+    def test_the_built_in_layout_is_the_default_whether_or_not_elk_is_present(self):
+        # The folders of this canon use each other in one direction: the case in which `auto` takes ELK when it is present.
+        rows = [definition('Lib.object', 'unit', module='Lib.Objects.Defs'),
+                statement('Lib.a', 'unit', mentions=['Lib.object'], module='Lib.Parts.A'),
+                statement('Lib.root', 'unit', uses=['Lib.a'], module='Lib.Main.Root')]
+        data = self.map(rows)
+        self.assertFalse(draw.groups_in_a_cycle(data))
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        instance = write_canon(Path(temp.name) / 'instance', rows)
+
+        def command(*options):
+            with contextlib.redirect_stdout(io.StringIO()) as shown:
+                self.assertEqual(depmap.main([str(instance), '--out', str(Path(temp.name) / 'out'), *options]), 0)
+            return shown.getvalue()
+
+        def without_a_layout():
+            """What each level gives to a caller that names no layout: the drawing code, depmap.write, the command."""
+            written = depmap.write(data, Path(temp.name) / 'written')
+            return draw.render(data)[2:], (written['engine'], written['note']), command()
+
+        named = draw.render(data, 'layered')
+        self.assertEqual(draw.render(data), named)  # the same drawing as with the built-in layout named
+        # With ELK present, no level looks for it or runs it, and nothing is said about it.
+        with patch.object(draw, 'find_elk', return_value=(Path('elkjs'), None)) as looked, \
+                patch.object(draw, 'elk', side_effect=RuntimeError('no layout')) as ran:
+            drawn, written, printed = without_a_layout()
+            self.assertEqual((drawn, written), (('layered', None), ('layered', None)))
+            self.assertIn('layout: layered', printed)
+            self.assertNotIn('ELK', printed)
+            looked.assert_not_called()
+            ran.assert_not_called()
+            # `auto` is still a choice, and with it ELK is tried for this map.
+            self.assertIn('ELK failed (no layout)', draw.render(data, 'auto')[3])
+            self.assertIn('ELK failed (no layout)', command('--layout', 'auto'))
+            self.assertEqual(ran.call_count, 2)
+        # Without ELK the same, also when --elkjs names a folder that holds no package: ELK was not asked for.
+        with patch.object(draw.shutil, 'which', return_value=None):
+            drawn, written, printed = without_a_layout()
+            self.assertEqual((drawn, written), (('layered', None), ('layered', None)))
+            self.assertIn('layout: layered', printed)
+        with patch.dict(draw.os.environ, {'DO_MATH_ELKJS': ''}):
+            printed = command('--elkjs', str(Path(tempfile.gettempdir()) / 'no-elkjs-here'))
+            self.assertIn('layout: layered', printed)
+            self.assertNotIn('ELK', printed)
+        # Where Node and the package are really installed, `auto` draws this map with ELK and the default does not.
+        if draw.find_elk()[0]:
+            self.assertEqual(draw.render(data), named)
+            self.assertIn('layout: layered', command())
+            self.assertTrue(draw.render(data, 'auto')[2].startswith('ELK Layered'))
+            self.assertIn('layout: ELK Layered', command('--layout', 'auto'))
 
     def test_auto_takes_elk_only_when_the_groups_are_free_of_cycles(self):
         # In wide_canon the folder Lib holds the definition and the root, so it both feeds and uses the other folders.
@@ -507,6 +771,8 @@ class Page(MapCase):
 
     def test_the_page_finds_selects_follows_and_restores(self):
         data = self.map(wide_canon())
+        # The records write formulas in TeX. One description gets two: one in the TeX the page knows, one that it does not.
+        self.unit(data, 'Lib.count')['description'] = r'The sum $\sum_{i=1}^{n} a_i \le \frac12\binom{n}{2}$, and $\notacommand x$.'
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         depmap.write(data, temp.name, 'layered')
@@ -534,6 +800,22 @@ class Page(MapCase):
                 page.goto(address)
                 first = page.evaluate(seen)
                 self.assertEqual((first['hash'], first['focus'], first['head']), ('', False, data['title']))
+                # The page resizes nothing in the drawing: a card holds the words the drawing gave it, at every zoom.
+                words = '() => [...document.querySelectorAll("g.node text")].map(t => [t.textContent, t.getAttribute("font-size")])'
+                given = page.evaluate(words)
+                page.mouse.move(400, 400)
+                for _ in range(6):
+                    page.mouse.wheel(0, 100)
+                self.assertEqual(page.evaluate(words), given)
+                page.keyboard.press('0')
+                # A formula is typeset by the browser; one with a command the page does not know is shown as written.
+                page.goto(address + '#node=Lib.count')
+                page.reload()
+                self.assertEqual(page.evaluate('''() => [document.querySelectorAll('#content math').length,
+                    document.querySelectorAll('#content math mfrac').length,
+                    [...document.querySelectorAll('#content span.tex')].map(s => s.textContent)]'''), [1, 2, [r'\notacommand x']])
+                page.goto(address)
+                page.reload()
                 # A name typed in the search is found, among the units and among the folded steps.
                 page.fill('#query', 'unimodal')
                 self.assertEqual(page.locator('#results a').first.get_attribute('href'), '#node=Lib.root')
@@ -551,6 +833,29 @@ class Page(MapCase):
                 near = page.evaluate(seen)
                 self.assertEqual(near['hash'], '#node=Lib.root&mode=direct')
                 self.assertEqual(near['kept'], sorted({'Lib.root'} | {edge['source'] for edge in data['edges'] if edge['target'] == 'Lib.root'}))
+                # The dot of a branch is dimmed with the line it belongs to.
+                dots = page.evaluate("""() => [...document.querySelectorAll('g.edge path.dot')].map(dot =>
+                    [dot.parentNode.classList.contains('hi'), getComputedStyle(dot).fillOpacity])""")
+                self.assertTrue(dots)
+                self.assertEqual({(kept, opacity) for kept, opacity in dots} - {(True, '1'), (False, '0.13')}, set())
+                # A stretch that several edges share is lit when one of them is, and dimmed otherwise.
+                shared = page.evaluate("""() => [...document.querySelectorAll('g.shared')].map(g =>
+                    [g.classList.contains('hi'), g.dataset.edges.split(' ').some(id => document.getElementById(id).classList.contains('hi')),
+                     getComputedStyle(g).strokeOpacity])""")
+                self.assertTrue(shared)
+                self.assertEqual({(lit, wanted, opacity) for lit, wanted, opacity in shared} - {(True, True, '1'), (False, False, '0.13')}, set())
+                # A selection keeps a line as it is drawn and dims the others. So a line that leaves a definition is
+                # lighter than the others when it is kept, and dimmed like the others when it is not.
+                lines = page.evaluate("""() => [...document.querySelectorAll('g.edge')].map(g =>
+                    [g.dataset.source, g.classList.contains('hi'), g.getAttribute('stroke'), getComputedStyle(g).stroke,
+                     getComputedStyle(g).strokeOpacity])""")
+                shown = lambda colour: 'rgb(%d, %d, %d)' % tuple(int(colour[at:at + 2], 16) for at in (1, 3, 5))
+                self.assertEqual({(kept, opacity) for source, kept, _, _, opacity in lines if source == 'Lib.object'},
+                                 {(True, '1'), (False, '0.13')})
+                for source, kept, drawn, stroke, opacity in lines:
+                    self.assertEqual((stroke, opacity), (shown(drawn), '1' if kept else '0.13'), source)
+                    if source == 'Lib.object':
+                        self.assertIn(drawn, {draw.lighter(colour) for colour in draw.PALETTE})
                 # A unit in the list is a link, and following it selects that unit.
                 page.locator('#part-above + ul a', has_text='column').first.click()
                 self.assertEqual(page.evaluate(seen)['hash'], '#node=Lib.column')
@@ -579,11 +884,12 @@ class Page(MapCase):
                 # A card is reached and selected from the keyboard.
                 page.goto(address)
                 page.reload()
-                page.evaluate("() => document.querySelector('g.node[data-node=\\"Lib.count\\"]').focus()")
+                page.evaluate('name => [...document.querySelectorAll("g.node")].find(g => g.dataset.node === name).focus()', 'Lib.count')
                 page.keyboard.press('Enter')
                 self.assertEqual(page.evaluate(seen)['pick'], 'Lib.count')
                 page.keyboard.press('Escape')
                 # A trackpad sends many small wheel events for one movement; they do not run the zoom to its end.
+                page.keyboard.press('0')
                 whole = page.evaluate(seen)['width']
                 page.mouse.move(400, 400)
                 for _ in range(30):

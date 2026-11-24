@@ -4,15 +4,29 @@ This module reads the map's data and nothing of the runtime, so a map can be dra
 JSON alone. `render(data)` returns the SVG, the page, the name of the layout that was used and,
 when a requested layout could not be used, a sentence saying so.
 
+The drawing explains itself to a reader who was not told how it is made: its legend shows the lines,
+the cards and the standings that occur on it, and the page receives the same legend, a sentence on
+what the map shows and the meaning of the words on its cards (`guide_of`). The page is viewer.html
+with the drawing, that guide and the data put in; what it does with them is described at its head.
+
 Two layouts produce the same geometry (card rectangles, group rectangles, one path per edge):
 
     layered   written here, always available. Units are placed in layers from left to right so that
-              every edge runs to a later layer, and each group is a horizontal band. An edge that
-              spans several layers is led through a thread in each layer between, and the edges
-              that leave one card with one meaning for one band share their threads, running as one
-              line until they part. The order inside a layer is chosen by barycentre sweeps to
-              reduce crossings, and the vertical positions are relaxed towards the neighbours.
-              Edges are smooth curves.
+              every edge runs to a later layer, and each group is a horizontal band. The order
+              inside a layer is chosen by barycentre sweeps over the edges to the next layer, and
+              the vertical positions are relaxed towards those neighbours. The lines run at right
+              angles with rounded corners. The edges that leave one card with one meaning are one
+              net, drawn as one line that branches, with a dot at each branch. In the space after
+              its card a net has a trunk, an upright line on a track; an edge to the next layer
+              leaves the trunk level. An edge to a later layer runs on a lane, a level line under
+              the cards of the band it enters and outside the frame of the group, which the edges
+              of the net into that band share; it leaves the lane upright before the layer of its
+              target. So no line passes through a card or runs along the cards inside a group,
+              lines on neighbouring tracks and lanes keep one distance, and every edge arrives at
+              a card at a point of its own, for which a card grows where many arrive. A line is
+              written as a few pieces with narrow boxes, so that a browser draws only those in
+              its window. The words on a line name its folded steps where they cover no card, and
+              count them where the names would.
     elk       ELK Layered through Node and the elkjs package, with groups as compound nodes and
               orthogonal routing. It can be used only when both are present: Node on the PATH, and
               elkjs in `node_modules/elkjs` beside this file, in the folder named by --elkjs, or
@@ -27,6 +41,15 @@ met the same difficulty with hand-chosen columns of chapters, which a script tha
 judgment cannot choose. So `auto` takes ELK only when it is present and the groups are free of
 cycles; `--layout elk` asks for it regardless.
 
+The built-in layout is the default, at every level: of `render`, of `write` in depmap.py and of
+the command. ELK is used only when the caller names `elk` or `auto`. There are two reasons. The
+two maps of whole researches that were drawn with both so far (173 and 211 cards) have folders
+that use each other in a cycle, and on them ELK gave a sheet several times larger, most of it
+parallel lines, which was harder to read; the more compact drawings of ELK were seen on maps of
+some ten cards, and no map of a whole research with folders free of cycles has been drawn. And
+a default that looked for the package would draw one command differently on two machines,
+according to what is installed beside this file.
+
 What was taken from the dependency-map generator of the previous research (the folder
 dependency_map/scripts/지도 of that research) and what was left there:
 
@@ -37,12 +60,22 @@ dependency_map/scripts/지도 of that research) and what was left there:
               "through intermediate results", dotted reference, heavy "each complete"), the white
               casing under a line that separates crossings, rounded corners of orthogonal lines,
               the arrowheads, the palette that gives all edges leaving one card one colour, the
-              group boxes, and the colours of cards, of the goal and of a completing proof.
+              lighter drawing of the lines that would otherwise fill the sheet (there the lines of
+              hubs, at 62 % opacity; here the lines that leave a definition, see LIGHT), the
+              group boxes, and the colours of cards, of the goal and of a completing proof; the
+              dot where a net branches, read from the finished routes (`빌드/배치.py`,
+              분기점_재계산); and from its rails (`빌드/열배치.py`) the lane of a net with far
+              targets and the one branch before each column, which the built-in layout gives to
+              every line that goes further than the next layer, under each group.
     left      everything bound to a manuscript: chapter parsing, numbering and label resolution,
               translation, the stored graph and its overlay, candidate and review rounds; the
               compartments of a card with ports and endpoint lists; column placement of chapters,
-              rails, bundles, nudging and untwisting; the label placer; the endpoint and geometry
-              audits; font measurement with fontTools and embedded fonts, and inline TeX; PDF and
+              bundles, and the nudging and untwisting that repair the routes of two routers laid
+              over one another (here one router puts every line on a track or a lane, so nothing
+              is left to push apart); the colouring by neighbours (colours given in the order the
+              cards stand in already differ between neighbours); the label placer; the endpoint
+              and geometry audits, whose checks of the lines are tests here; font measurement with
+              fontTools and embedded fonts, and inline TeX; PDF and
               PNG export through a headless browser. Text widths are estimated here from character
               classes, which is why cards keep a margin, and formulas are not typeset.
 """
@@ -61,31 +94,54 @@ HERE = Path(__file__).resolve().parent
 
 # ----------------------------------------------------------------------------- the visual grammar
 
-SANS = "'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-MONO = "Consolas, 'DejaVu Sans Mono', Menlo, monospace"
-INK, SUBTLE, FAINT = '#203549', '#526A7D', '#60788B'
-LINES = {'direct': ('', 2.4), 'contracted': ('12 7', 2.4), 'mention': ('2 7', 2.4), 'alternative': ('', 5.0),
-         'refutation': ('16 6', 5.0)}
-LEGEND = {'direct': 'named in the proof', 'contracted': 'through folded steps (named or counted on the line)',
+# Two faces, each a list of fonts that the common systems carry, since the drawing embeds none. The words are set
+# as a mathematical text sets them: a Palatino in regular weight for the names of results, its italic for the
+# small words beside them, and a fixed-width face for Lean names. Nothing is bold.
+SERIF = ("'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', P052, 'TeX Gyre Pagella', Cambria, 'Noto Serif', "
+         "Georgia, serif")
+MONO = "'Cascadia Mono', 'SF Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace"
+INK, SUBTLE, FAINT = '#16283A', '#56697B', '#8497A8'
+LINES = {'direct': ('', 1.7), 'contracted': ('10 6', 1.7), 'mention': ('1.7 6', 1.7), 'alternative': ('', 3.6),
+         'refutation': ('14 6', 3.6)}
+LEGEND = {'direct': 'named in the proof, or in the body of a definition',
+          'contracted': 'through folded steps (named or counted on the line)',
           'mention': 'mentioned in the statement', 'alternative': 'a proof drawn as its own card, to its statement',
           'refutation': 'refutes the root: its statement is the negation of the root'}
-ARROWS = {'alternative': (11, 4.6), 'refutation': (11, 4.6)}
-ARROW = (8.2, 3.5)
-CASING = 6
+# The page shows the drawing without the words on its lines, so its legend says where the steps are named instead.
+PAGE_LEGEND = {'contracted': 'through folded steps (the panel names them for a selected unit)'}
+LIGHT_WORDS = 'a lighter line leaves a definition'
+COLOUR_WORDS = 'lines that leave one card have one colour'
+BRANCH_WORDS = 'a dot: lines that run as one separate here; lines that cross without a dot are not connected'
+ARROWS = {'alternative': (11, 4), 'refutation': (11, 4)}
+ARROW = (8, 2.9)
+CASING = 4.6
+DOT = 3.1  # the radius of the dot where a net branches
 CORNER = 7
 PALETTE = ['#256D9D', '#B56527', '#277E65', '#965C9D', '#B64258', '#5A778D', '#78842E', '#9B5A35', '#4D62A9',
            '#268487', '#9B4277', '#5F7844', '#6F65A5', '#AF7339', '#376E63', '#8D5969', '#1F6F8B', '#A0522D',
            '#2E8B57', '#7B3F9E', '#C0392B', '#4A6FA5', '#8A7A1E', '#B5651D', '#3B6E8F', '#6B8E23', '#9C4F96',
            '#2A7F62']
 ALTERNATIVE_COLOUR = '#7350A3'
-MENTION_COLOUR = '#7B92A4'
 REFUTATION_COLOUR = '#A83232'
-FIXED_COLOURS = {'alternative': ALTERNATIVE_COLOUR, 'mention': MENTION_COLOUR, 'refutation': REFUTATION_COLOUR}
-GROUP_FILL, GROUP_STROKE = '#F8FAFC', '#BECBD6'
-CARD = {'statement': ('#FFFFFF', '#8096A7', 1.6), 'definition': ('#F1F5F8', '#8096A7', 1.6),
-        'proof': ('#EEE5F6', '#82719D', 1.6), 'root': ('#FFF0B8', '#8A7E58', 3.0)}
-STANDINGS = {'no_proof': ('no proof', '#B64258'), 'not_confirmed': ('proof not confirmed', '#C8742B'),
-             'held': ('correct, held back', '#C2A21E'), 'accepted': ('accepted', '#2E8B57')}
+# The two heavy lines have a colour of their own. Every other line has the colour of the card it leaves.
+FIXED_COLOURS = {'alternative': ALTERNATIVE_COLOUR, 'refutation': REFUTATION_COLOUR}
+SAMPLE_COLOUR = '#4B6072'  # in the legend, a line that stands for the lines of every card
+# A line that leaves a definition is drawn lighter than a line that leaves a statement: where the definitions are
+# used by most statements, as in a finished proof, their lines are most of the lines, and at full strength they
+# hide how the statements rest on each other. LIGHT is the share of its colour that such a line keeps; the rest is
+# white, which is what an opacity of that value shows on the white casing a line lies on. The value was chosen
+# on a map of 173 cards whose definitions send 656 of its 916 lines: at 0.45 and below a dotted line that runs
+# alone is hard to see at reading size, and from 0.65 the lanes between the groups read as dense as at full strength.
+LIGHT = 0.55
+GROUP_FILL, GROUP_STROKE, GROUP_TITLE = '#F7F9FB', '#D5DEE6', '#3F566A'
+# A card: its fill, its outline and the width of the outline. The outline is a hairline, and a soft shade under
+# the card lifts it from the lines that pass behind it.
+CARD = {'statement': ('#FFFFFF', '#AEBDC9', 1.1), 'definition': ('#F4F7F9', '#B4C1CC', 1.1),
+        'proof': ('#F6F1FB', '#AD9FC6', 1.1), 'root': ('#FFF8E1', '#C9A63C', 1.8)}
+CARD_RADIUS, SHADE, SHADE_OPACITY, SHADE_DROP = 9, '#16283A', 0.06, 3
+BAR_LEFT, BAR_WIDTH, BAR_INSET = 8, 4, 11  # the mark of a standing: a rounded bar inside the left edge of its card
+STANDINGS = {'no_proof': ('no proof', '#B8475A'), 'not_confirmed': ('proof not confirmed', '#C57A35'),
+             'held': ('correct, held back', '#BFA02A'), 'accepted': ('accepted', '#3C9068')}
 KINDS = {'theorem': 'statement', 'def': 'definition', 'opaque': 'opaque definition', 'inductive': 'inductive type'}
 CARD_WORDS = {'statement': 'a statement', 'definition': 'a definition', 'proof': 'a proof on its own card', 'root': 'the root'}
 ROOT_STATES = {'formal_proved': 'the root is proved, and the proof is complete in Lean',
@@ -121,17 +177,19 @@ GLOSSARY = {
     'from the literature': 'The result is taken from a published source, which its record names.'}
 
 CARD_WIDTH = 300
-TEXT_LEFT, TEXT_RIGHT, TEXT_TOP, TEXT_BOTTOM = 20, 12, 12, 12
-LABEL_SIZE, NAME_SIZE, STATUS_SIZE = 17, 11.5, 12.5
-LABEL_LINE, NAME_LINE, STATUS_LINE = 22, 15, 17
+TEXT_LEFT, TEXT_RIGHT, TEXT_TOP, TEXT_BOTTOM = 22, 12, 12, 12
+LABEL_SIZE, NAME_SIZE, STATUS_SIZE = 17, 11, 13
+LABEL_LINE, NAME_LINE, STATUS_LINE = 22, 15, 18
 VIA_SIZE, VIA_HEIGHT, VIA_SHOWN = 12.5, 19, 3
-GROUP_TITLE_SIZE = 19
+GROUP_TITLE_SIZE = 72  # the name of a group is the heading of a region of the map, several times the name of a card
 MARGIN = 40
 
 # the layered layout
-LAYER_GAP, CARD_GAP, THREAD_GAP, THREAD = 170, 26, 12, 12
-GROUP_PAD_X, GROUP_PAD_TOP, GROUP_PAD_BOTTOM, GROUP_GAP = 28, 50, 24, 30
-PORT_GAP, PORT_MARGIN = 14, 12
+LAYER_GAP, CARD_GAP = 130, 26
+TRACK_GAP, TRACK_MARGIN, TRACK_CLEAR = 9, 34, 36  # between two tracks, from a card to the first track, between two lines on one track
+LANE_GAP, LANE_MARGIN = 9, 20  # between two lanes, from the frame of a group to its first lane
+GROUP_PAD_X, GROUP_PAD_TOP, GROUP_PAD_BOTTOM, GROUP_GAP = 28, 108, 24, 30
+PORT_GAP, PORT_MARGIN, PORT_MIN = 14, 12, 7  # between two ends on a card, from its corner to the first; a card grows to keep the last
 SWEEPS, RELAXATIONS = 24, 24
 
 # ELK: the profile the existing generator was run with, and the padding of a group around its cards
@@ -228,7 +286,7 @@ def status_of(unit, bare=()):
 def card_of(unit, bare=()):
     """The lines of a card and its height. The width is fixed, so a layout never depends on a font."""
     inner = CARD_WIDTH - TEXT_LEFT - TEXT_RIGHT
-    label = wrap(unit['label'], LABEL_SIZE, inner, bold=True)
+    label = wrap(unit['label'], LABEL_SIZE, inner)
     name = wrap(unit['id'], NAME_SIZE, inner, mono=True, after='.')
     status, line = [], ''
     for word in status_of(unit, bare):  # a line never ends in a separator
@@ -321,34 +379,33 @@ def layered(data, cards):
     bands = sorted(members, key=lambda g: (sum(layer[n] for n in members[g]) / len(members[g]), g))
     band = {name: bands.index(group[name]) for name in ids}
 
-    # An edge across several layers is led through a thread in each layer between, in the band it enters.
-    # The edges of one net share their threads: they leave one card with one meaning for one band, run
-    # together as one line and part where their targets are. A definition that a hundred statements
-    # mention then takes one thread in a layer and not a hundred.
-    height = {name: cards[name]['height'] for name in ids}
-    up, down = {name: [] for name in ids}, {name: [] for name in ids}
-    chains, nets = [], []
-    for number, (a, b) in enumerate(oriented):
-        net = ('turned', number) if number in turned else (a, data['edges'][number]['kind'], band[b])
-        chain = [a]
-        for at in range(layer[a] + 1, layer[b]):
-            key = ('thread', net, at)
-            if key not in layer:
-                layer[key], height[key], band[key], up[key], down[key] = at, THREAD, band[b], [], []
-            chain.append(key)
-        chain.append(b)
-        chains.append(chain)
-        nets.append(net)
-        for first, second in zip(chain, chain[1:]):
-            if second not in down[first]:
-                down[first].append(second)
-                up[second].append(first)
+    # A net is the set of edges that leave one card with one meaning. It is drawn as one line that branches: the
+    # edges leave the card at one point and part where their targets are. An edge that closes a cycle is a net alone.
+    nets = [('turned', number) if number in turned else (a, data['edges'][number]['kind'])
+            for number, (a, b) in enumerate(oriented)]
+    far = [layer[b] - layer[a] > 1 for a, b in oriented]
 
+    # A card is as tall as its words and as the lines that arrive at it need: each arrives at a point of its own.
+    arriving = {name: 0 for name in ids}
+    for _, b in oriented:
+        arriving[b] += 1
+    height = {name: max(cards[name]['height'], 2 * PORT_MARGIN + (arriving[name] - 1) * PORT_MIN) for name in ids}
+
+    # The order inside a layer follows the edges to the next layer and from the one before, which are drawn in the
+    # space between the two. Among the cards these edges do not order, the ones more far lines arrive at stand lower,
+    # nearer the lanes their lines come from.
+    up, down, distant = {name: [] for name in ids}, {name: [] for name in ids}, {name: 0 for name in ids}
+    for number, (a, b) in enumerate(oriented):
+        if far[number]:
+            distant[b] += 1
+        elif b not in down[a]:
+            down[a].append(b)
+            up[b].append(a)
     rows = [[] for _ in range(count)]
-    for key in layer:
-        rows[layer[key]].append(key)
+    for name in ids:
+        rows[layer[name]].append(name)
     for row in rows:
-        row.sort(key=lambda key: band[key])
+        row.sort(key=lambda name: (band[name], distant[name]))
 
     def ranks(row):
         """A number per element of a layer that respects the bands and the order inside each."""
@@ -390,10 +447,31 @@ def layered(data, cards):
             best, least = [list(row) for row in rows], found
     rows = best
 
-    # Coordinates. A band is as tall as its tallest layer; inside it every layer is first centred, then relaxed.
-    def gap(first, second):
-        return CARD_GAP if isinstance(first, str) and isinstance(second, str) else THREAD_GAP
+    # An edge to a later layer than the next runs on a lane: a level line under the cards of the band it enters,
+    # outside the frame of the group, from the space after its source to the space before its target. The edges of
+    # a net into one band share one lane, so a definition that fifty statements use sends one line along each band
+    # and drops a branch before each layer where it is used. Two lanes share a row where they do not meet; the
+    # lanes with the most branches lie nearest the cards, so that their branches cross the fewest lanes.
+    lanes = {}  # (net, band) -> the first space, the last space, the spaces a branch leaves in
+    for number, (a, b) in enumerate(oriented):
+        if far[number]:
+            lane = lanes.setdefault((nets[number], band[b]), [layer[a], layer[a], set()])
+            lane[1] = max(lane[1], layer[b] - 1)
+            lane[2].add(layer[b] - 1)
+    row_of, deep = {}, [0] * len(bands)
+    for index in range(len(bands)):
+        taken = []
+        mine = [key for key in lanes if key[1] == index]
+        for key in sorted(mine, key=lambda key: (-len(lanes[key][2]), lanes[key][0], lanes[key][1], str(key))):
+            first, last, _ = lanes[key]
+            at = next((r for r, spans in enumerate(taken) if all(last < f or l < first for f, l in spans)), len(taken))
+            if at == len(taken):
+                taken.append([])
+            taken[at].append((first, last))
+            row_of[key] = at
+        deep[index] = len(taken)
 
+    # Coordinates. A band is as tall as its tallest layer; inside it every layer is first centred, then relaxed.
     parts = [{} for _ in range(count)]
     for index, row in enumerate(rows):
         for key in row:
@@ -401,22 +479,22 @@ def layered(data, cards):
     need = [0.0] * len(bands)
     for index in range(count):
         for number, keys in parts[index].items():
-            tall = sum(height[key] for key in keys) + sum(gap(a, b) for a, b in zip(keys, keys[1:]))
-            need[number] = max(need[number], tall)
-    above, below, cursor = [], [], 0.0
+            need[number] = max(need[number], sum(height[key] for key in keys) + CARD_GAP * (len(keys) - 1))
+    head, above, below, foot, cursor = [], [], [], [], 0.0
     for number in range(len(bands)):
+        head.append(cursor)
         above.append(cursor + GROUP_PAD_TOP)
         below.append(above[-1] + need[number])
-        cursor = below[-1] + GROUP_PAD_BOTTOM + GROUP_GAP
-    left = {key: GROUP_PAD_X + layer[key] * (CARD_WIDTH + LAYER_GAP) for key in layer}
+        foot.append(below[-1] + GROUP_PAD_BOTTOM)
+        cursor = foot[-1] + (2 * LANE_MARGIN + (deep[number] - 1) * LANE_GAP if deep[number] else 0) + GROUP_GAP
+    level = {key: foot[key[1]] + LANE_MARGIN + row_of[key] * LANE_GAP for key in lanes}
     top = {}
     for index in range(count):
         for number, keys in parts[index].items():
-            tall = sum(height[key] for key in keys) + sum(gap(a, b) for a, b in zip(keys, keys[1:]))
-            y = above[number] + (need[number] - tall) / 2
-            for position, key in enumerate(keys):
+            y = above[number] + (need[number] - sum(height[key] for key in keys) - CARD_GAP * (len(keys) - 1)) / 2
+            for key in keys:
                 top[key] = y
-                y += height[key] + (gap(key, keys[position + 1]) if position + 1 < len(keys) else 0)
+                y += height[key] + CARD_GAP
 
     def middle(key):
         return top[key] + height[key] / 2
@@ -432,22 +510,21 @@ def layered(data, cards):
                 floor = above[number]
                 for position, key in enumerate(keys):
                     wanted[position] = max(wanted[position], floor)
-                    if position + 1 < len(keys):
-                        floor = wanted[position] + height[key] + gap(key, keys[position + 1])
+                    floor = wanted[position] + height[key] + CARD_GAP
                 ceiling = below[number]
                 for position in range(len(keys) - 1, -1, -1):
                     key = keys[position]
                     wanted[position] = min(wanted[position], ceiling - height[key])
-                    if position:
-                        ceiling = wanted[position] - gap(keys[position - 1], key)
+                    ceiling = wanted[position] - CARD_GAP
                     top[key] = wanted[position]
 
     # Where a line meets a card: the ends on one side are spread in the order of where they lead. A net
     # leaves its card at one point, so that its edges are one line until they part; every edge enters at its own.
     sides = {}
-    for number, chain in enumerate(chains):
-        sides.setdefault((chain[0], 'right'), {}).setdefault(nets[number], []).append(middle(chain[1]))
-        sides.setdefault((chain[-1], 'left'), {})[number] = [middle(chain[-2])]
+    for number, (a, b) in enumerate(oriented):
+        lane = level.get((nets[number], band[b])) if far[number] else None
+        sides.setdefault((a, 'right'), {}).setdefault(nets[number], []).append(middle(b) if lane is None else lane)
+        sides.setdefault((b, 'left'), {})[number] = [middle(a) if lane is None else lane]
     port = {}
     for (name, side), ends in sides.items():
         order = sorted(ends, key=lambda end: (sum(ends[end]) / len(ends[end]), str(end)))
@@ -455,63 +532,139 @@ def layered(data, cards):
         for position, end in enumerate(order):
             port[(end, side)] = middle(name) + (position - (len(order) - 1) / 2) * step
 
-    routes = []
-    for number, chain in enumerate(chains):
-        points = [(left[chain[0]] + CARD_WIDTH, port[(nets[number], 'right')])]
-        for key in chain[1:-1]:
-            points += [(left[key], middle(key)), (left[key] + CARD_WIDTH, middle(key))]
-        points.append((left[chain[-1]], port[(number, 'left')]))
-        routes.append(points[::-1] if number in turned else points)
+    # In the space between two layers a line turns at right angles. A net leaves its card level and meets its
+    # trunk, an upright line from which a branch leaves level to each target in the next layer and to each lane.
+    # Before the layer of a far target a branch leaves the lane upright and reaches the cards it serves there. Every
+    # upright line stands on a track; two share a track only where they are well apart, and a space is as wide as
+    # its tracks need. The trunks stand nearer the cards the lines leave, the branches nearer the cards they reach.
+    trunks, drops = [{} for _ in range(count)], [{} for _ in range(count)]
+
+    def widen(found, key, *values):
+        span = found.setdefault(key, [values[0], values[0]])
+        span[0], span[1] = min(span[0], *values), max(span[1], *values)
+
+    for number, (a, b) in enumerate(oriented):
+        y1, y2 = port[(nets[number], 'right')], port[(number, 'left')]
+        if far[number]:
+            y = level[(nets[number], band[b])]
+            widen(trunks[layer[a]], nets[number], y1, y)
+            widen(drops[layer[b] - 1], (nets[number], band[b]), y, y2)
+        else:
+            widen(trunks[layer[a]], nets[number], y1, y2)
+    # A net leaves its card on a level stub as far as its trunk, and a branch arrives at a card of the next layer on
+    # a level stub from its trunk. Where two such stubs of different nets lie at nearly one height, the trunk of
+    # the leaving one is kept to the left of the other, so that the two stubs do not run along each other.
+    track, edge = {}, [GROUP_PAD_X]
+    for index in range(count):
+        stubs = {}  # net -> the heights at which its branches arrive in the next layer
+        for number, (a, b) in enumerate(oriented):
+            if layer[a] == index and not far[number]:
+                stubs.setdefault(nets[number], []).append(port[(number, 'left')])
+        before = [(first, second) for first in trunks[index] for second, heights in stubs.items() if first != second
+                  and any(abs(port[(first, 'right')] - y) < PORT_MIN for y in heights)]
+        used = 0
+        for kind, found in (('trunk', trunks[index]), ('drop', drops[index])):
+            taken, at = [], {}
+
+            def place(key, least=0):
+                low, high = found[key]
+                free = (t for t in range(least, len(taken))
+                        if all(high + TRACK_CLEAR <= l or h + TRACK_CLEAR <= low for l, h in taken[t].values()))
+                at[key] = next(free, len(taken))
+                if at[key] == len(taken):
+                    taken.append({})
+                taken[at[key]][key] = (low, high)
+
+            for key in sorted(found, key=lambda key: (found[key][0], found[key][1], str(key))):
+                if found[key][1] - found[key][0] >= 0.01:  # a net whose only edge runs level needs no track
+                    place(key)
+            for _ in range(len(before) if kind == 'trunk' else 0):
+                wrong = next(((first, second) for first, second in before
+                              if first in at and second in at and at[second] < at[first]), None)
+                if not wrong:
+                    break
+                del taken[at[wrong[1]]][wrong[1]]
+                place(wrong[1], at[wrong[0]])
+            for key, where in at.items():
+                track[(index, kind, key)] = used + where
+            used += len(taken)
+        edge.append(edge[-1] + CARD_WIDTH + max(LAYER_GAP, 2 * TRACK_MARGIN + max(used - 1, 0) * TRACK_GAP))
+    left = {name: edge[layer[name]] for name in ids}
+
+    def upright(index, kind, key):
+        return edge[index] + CARD_WIDTH + TRACK_MARGIN + track[(index, kind, key)] * TRACK_GAP
+
+    # A line is written in pieces, each with a narrow box around it: the part in the space after its source, the
+    # lane, and the part in the space before its target. A piece ends in the middle of a level run, so that the
+    # corners of the line are whole. `places` are where the words on the line may stand.
+    routes, cuts, places = [], [], []
+    for number, (a, b) in enumerate(oriented):
+        net, first, last = nets[number], layer[a], layer[b] - 1
+        x1, y1, x2, y2 = left[a] + CARD_WIDTH, port[(nets[number], 'right')], left[b], port[(number, 'left')]
+        if far[number]:
+            y, xt, xd = level[(net, band[b])], upright(first, 'trunk', net), upright(last, 'drop', (net, band[b]))
+            points = [(x1, y1), (xt, y1), (xt, y), (xd, y), (xd, y2), (x2, y2)]
+            enters, leaves = edge[first + 1], edge[last] + CARD_WIDTH  # where the lane passes the first and the last layer
+            pieces = [[(x1, y1), (xt, y1), (xt, y), (enters, y)], [(enters, y), (leaves, y)],
+                      [(leaves, y), (xd, y), (xd, y2), (x2, y2)]]
+            where = [('end', x2, y2), ('middle', xd, (y + y2) / 2), ('middle', edge[last] + CARD_WIDTH / 2, y)]
+        elif abs(y1 - y2) < 0.01:
+            points = [(x1, y1), (x2, y2)]
+            pieces, where = [points], [('middle', (x1 + x2) / 2, y1)]
+        else:
+            x = upright(first, 'trunk', net)
+            points = [(x1, y1), (x, y1), (x, y2), (x2, y2)]
+            pieces, where = [points], [('end', x2, y2), ('middle', x, (y1 + y2) / 2), ('start', x1, y1)]
+        if number in turned:
+            points, pieces = points[::-1], [piece[::-1] for piece in pieces[::-1]]
+        routes.append(points)
+        cuts.append(pieces)
+        places.append(where)
 
     boxes = {name: (left[name], top[name], CARD_WIDTH, height[name]) for name in ids}
     frames = {}
     for number, key in enumerate(bands):
         x0 = min(left[name] for name in members[key]) - GROUP_PAD_X
         x1 = max(left[name] for name in members[key]) + CARD_WIDTH + GROUP_PAD_X
-        x1 = max(x1, x0 + text_width(key, GROUP_TITLE_SIZE, bold=True) + 44)
-        frames[key] = (x0, above[number] - GROUP_PAD_TOP, x1 - x0, need[number] + GROUP_PAD_TOP + GROUP_PAD_BOTTOM)
+        x1 = max(x1, x0 + text_width(key, GROUP_TITLE_SIZE) + 48)
+        frames[key] = (x0, head[number], x1 - x0, foot[number] - head[number])
 
-    # A label is put on a stretch between two layers, nearest the target first, where the line is the edge's own,
-    # at the first place where it covers no card and no other label. The names of three steps are often wider
-    # than the space between two layers, and a label that found no free place used to lie across the cards beside
-    # it and hide their words. So a label that finds no place names one step fewer and tries again, down to the
-    # number of steps alone; the data keeps every name, and the page lists them for the selected unit.
+    # The words on a line stand at its end before the target, else on its last upright part, else on its lane, at the
+    # first of these where they cover no card and no other words. The names of three steps are often wider than
+    # the room there, and words that found no free place used to lie across the cards beside them. So words that
+    # find no place name one step fewer and try again, down to the number of steps alone; the data keeps every
+    # name, and the page lists them for the selected unit.
     taken = [(x - 4, y - 4, w + 8, h + 8) for x, y, w, h in boxes.values()]
     labels = []
-    for number, edge in enumerate(data['edges']):
-        if not edge['via']:
+    for number, edge_data in enumerate(data['edges']):
+        if not edge_data['via']:
             labels.append((None, None))
             continue
-        points = routes[number]
-        stretches = [(points[i], points[i + 1]) for i in range(0, len(points) - 1, 2)][::-1][:3]
         found, words = None, None
         for shown in range(VIA_SHOWN, -1, -1):
-            shorter = via_text(data, edge, shown)
+            shorter = via_text(data, edge_data, shown)
             if shorter == words:
                 continue
             words = shorter
             wide, tall = via_box(words)
-            places = []
-            for t in (0.5, 0.32, 0.68):
-                for (x1, y1), (x2, y2) in stretches:
-                    x, y = curve_point(x1, y1, x2, y2, t)
-                    places.append((x - wide / 2, y - tall / 2, wide, tall))
-            found = next((place for place in places if not any(overlap(place, other) for other in taken)), None)
+            spots = [(x - {'end': wide + 14, 'middle': wide / 2, 'start': -14}[how], y - tall / 2, wide, tall)
+                     for how, x, y in places[number]]
+            found = next((spot for spot in spots if not any(overlap(spot, other) for other in taken)), None)
             if found:
                 break
-        found = found or places[0]  # nothing is free: the shortest words, where the line is most its own
+        found = found or spots[0]  # nothing is free: the shortest words, where the line is most its own
         taken.append(found)
         labels.append((found, words))
 
-    right = max([x + w for x, _, w, _ in frames.values()] + [x + w for x, _, w, _ in boxes.values()])
+    right = max([x + w for x, _, w, _ in frames.values()] + [edge[-1] - LAYER_GAP + GROUP_PAD_X])
     shared = {net: index for index, net in enumerate(dict.fromkeys(nets))}
     return {'engine': 'layered', 'width': right, 'height': cursor - GROUP_GAP, 'cards': boxes, 'groups': frames,
-            'edges': [{'points': routes[n], 'smooth': True, 'label': labels[n][0], 'words': labels[n][1],
+            'edges': [{'points': routes[n], 'pieces': cuts[n], 'label': labels[n][0], 'words': labels[n][1],
                        'net': shared[nets[n]]} for n in range(len(pairs))]}
 
 
 def curve_point(x1, y1, x2, y2, t):
-    """A point of the curve that joins two points with horizontal tangents (see smooth_path)."""
+    """A point between two points, eased at both ends; on a level stretch it lies on the stretch."""
     xm = (x1 + x2) / 2
     a, b, c, d = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3
     return a * x1 + (b + c) * xm + d * x2, (a + b) * y1 + (c + d) * y2
@@ -520,6 +673,146 @@ def curve_point(x1, y1, x2, y2, t):
 def overlap(first, second):
     return (first[0] < second[0] + second[2] and second[0] < first[0] + first[2]
             and first[1] < second[1] + second[3] and second[1] < first[1] + first[3])
+
+
+def stretches(routes):
+    """The straight parts of the lines of one net, each once: parts that lie on one another or touch are joined.
+
+    A part that is neither level nor upright is kept as it is."""
+    level, upright, found = {}, {}, []
+    for points in routes:
+        for (x1, y1), (x2, y2) in zip(points, points[1:]):
+            if abs(y1 - y2) < 0.01 and abs(x1 - x2) >= 0.01:
+                level.setdefault(round(y1, 2), []).append((min(x1, x2), max(x1, x2)))
+            elif abs(x1 - x2) < 0.01 and abs(y1 - y2) >= 0.01:
+                upright.setdefault(round(x1, 2), []).append((min(y1, y2), max(y1, y2)))
+            elif abs(x1 - x2) >= 0.01:
+                found.append(((x1, y1), (x2, y2)))
+    for spans, flat in ((level, True), (upright, False)):
+        for at, parts in spans.items():
+            parts.sort()
+            low, high = parts[0]
+            for first, last in parts[1:] + [(math.inf, math.inf)]:
+                if first <= high + 0.01:
+                    high = max(high, last)
+                else:
+                    found.append(((low, at), (high, at)) if flat else ((at, low), (at, high)))
+                    low, high = first, last
+    return found
+
+
+def runs(lines):
+    """The lines of one net cut into runs, so that each stretch of the net is drawn once.
+
+    `lines` holds, for each edge of the net, the pieces of its line; the edges leave one point and run together
+    until they part. A run is a stretch along which the same edges run; it ends where one of them leaves the
+    others, and where a piece of any of them ends. Returned for each run: its points, how far along the line it
+    begins, and which edges run along it, as their positions in `lines`. Where a line turns at the start of a
+    run, the run begins a little before the turn, so that the corner is drawn round."""
+    def key(point):
+        return round(point[0], 2), round(point[1], 2)
+
+    def heading(a, b):
+        return (b[0] > a[0] + 0.01) - (b[0] < a[0] - 0.01), (b[1] > a[1] + 0.01) - (b[1] < a[1] - 0.01)
+
+    marks, cuts = {}, set()  # on each level and each upright line, where a line of the net has a corner; where a piece ends
+    for pieces in lines:
+        for piece in pieces:
+            cuts.update((key(piece[0]), key(piece[-1])))
+            for x, y in piece:
+                marks.setdefault((0, round(x, 2)), set()).add(y)
+                marks.setdefault((1, round(y, 2)), set()).add(x)
+    walks, users = [], {}
+    for index, pieces in enumerate(lines):
+        walk, distance = [], 0.0  # the line in its shortest parts: from, to, how far along the line the part begins
+        for piece in pieces:
+            for a, b in zip(piece, piece[1:]):
+                stops = [a, b]
+                for axis in (0, 1):  # an upright part is cut at the heights marked on its line, a level part likewise
+                    if abs(a[axis] - b[axis]) < 0.01 and abs(a[1 - axis] - b[1 - axis]) >= 0.01:
+                        low, high = sorted((a[1 - axis], b[1 - axis]))
+                        between = sorted((at for at in marks[(axis, round(a[axis], 2))] if low + 0.01 < at < high - 0.01),
+                                         reverse=a[1 - axis] > b[1 - axis])
+                        stops = [a] + [(a[0], at) if axis == 0 else (at, a[1]) for at in between] + [b]
+                for first, second in zip(stops, stops[1:]):
+                    long = math.hypot(second[0] - first[0], second[1] - first[1])
+                    if long >= 0.01:
+                        walk.append((first, second, distance))
+                        users.setdefault(frozenset((key(first), key(second))), set()).add(index)
+                        distance += long
+        walks.append(walk)
+
+    def along(part):
+        return users[frozenset((key(part[0]), key(part[1])))]
+
+    found, seen = [], set()
+    for walk in walks:
+        start = 0
+        while start < len(walk):
+            end = start
+            while end + 1 < len(walk) and key(walk[end][1]) not in cuts and along(walk[end + 1]) == along(walk[start]):
+                end += 1
+            name = (key(walk[start][0]), key(walk[end][1]))
+            if name not in seen:
+                seen.add(name)
+                points = [walk[start][0]]
+                for first, second, _ in walk[start:end + 1]:
+                    if len(points) > 1 and heading(points[-2], points[-1]) == heading(first, second):
+                        points[-1] = second  # a point on a straight part is left out
+                    else:
+                        points.append(second)
+                distance = walk[start][2]
+                if start and heading(*walk[start - 1][:2]) != heading(*walk[start][:2]):
+                    back = start - 1  # the straight part before the turn
+                    while back and heading(*walk[back - 1][:2]) == heading(*walk[start - 1][:2]):
+                        back -= 1
+                    (x, y), (cx, cy) = walk[back][0], walk[start][0]
+                    straight = math.hypot(cx - x, cy - y)
+                    lead = min(2 * CORNER, straight)
+                    points.insert(0, (cx + (x - cx) / straight * lead, cy + (y - cy) / straight * lead))
+                    distance -= lead
+                found.append((points, distance, sorted(along(walk[start]))))
+            start = end + 1
+    return found
+
+
+def junctions(edges):
+    """For each edge, the points where it turns off a line that another edge of its net follows further.
+
+    They are read from the finished routes: a corner of one edge that lies on the route of another edge of the net,
+    which leaves the point in another direction. Where two edges only run together, and where two lines cross,
+    there is none. A point belongs to the first edge that turns there, so a dot is drawn once."""
+    def heading(a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        return (0, 0) if abs(dx) < 0.01 and abs(dy) < 0.01 else ((dx > 0) - (dx < 0), 0) if abs(dx) >= abs(dy) else (0, (dy > 0) - (dy < 0))
+
+    def leaves(points, at):
+        """The direction in which a route goes on from a point on it; None where the route does not pass the point."""
+        for a, b in zip(points, points[1:]):
+            if abs(a[0] - at[0]) < 0.01 and abs(a[1] - at[1]) < 0.01:
+                return heading(a, b)
+            if (min(a[0], b[0]) - 0.01 <= at[0] <= max(a[0], b[0]) + 0.01 and min(a[1], b[1]) - 0.01 <= at[1] <= max(a[1], b[1]) + 0.01
+                    and abs((b[0] - a[0]) * (at[1] - a[1]) - (b[1] - a[1]) * (at[0] - a[0])) < 0.01
+                    and not (abs(b[0] - at[0]) < 0.01 and abs(b[1] - at[1]) < 0.01)):
+                return heading(a, b)
+        return None
+
+    nets = {}
+    for index, edge in enumerate(edges):
+        nets.setdefault(edge['net'], []).append(index)
+    found = [[] for _ in edges]
+    for indices in nets.values():
+        seen = set()
+        for index in indices if len(indices) > 1 else ():
+            points = edges[index]['points']
+            for corner, onward in zip(points[1:-1], points[2:]):
+                key = (round(corner[0], 2), round(corner[1], 2))
+                mine = heading(corner, onward)
+                if key not in seen and any(leaves(edges[other]['points'], corner) not in (None, mine)
+                                           for other in indices if other != index):
+                    seen.add(key)
+                    found[index].append(corner)
+    return found
 
 
 # ----------------------------------------------------------------------------- the ELK layout
@@ -584,7 +877,7 @@ def elk(data, cards, package):
         points = [section['startPoint'], *(section.get('bendPoints') or []), section['endPoint']]
         found = (routed[f'e{index}'].get('labels') or [None])[0]
         label = (found['x'], found['y'], found['width'], found['height']) if found and 'x' in found else None
-        routes.append({'points': [(p['x'], p['y']) for p in points], 'smooth': False, 'label': label,
+        routes.append({'points': [(p['x'], p['y']) for p in points], 'label': label,
                        'words': via_text(data, data['edges'][index]), 'net': index})
 
     def box(key):
@@ -603,20 +896,32 @@ def esc(text):
     return html.escape(str(text), quote=True)
 
 
+def lighter(colour, share=None):
+    """A colour mixed with white: what a line of `colour` shows on white at the opacity `share` (LIGHT if not given).
+
+    The colour is written out and the line stays opaque. So the parts of a net that are drawn over one another,
+    the line before a branch and the line and its arrowhead, are as light as the rest, and the page dims a
+    lighter line as it dims every other line, by the opacity of its stroke."""
+    share = LIGHT if share is None else share
+    return '#' + ''.join(f'{round(255 - (255 - int(colour[at:at + 2], 16)) * share):02X}' for at in (1, 3, 5))
+
+
+def light_sources(data):
+    """The definitions that lines leave. Their lines are drawn lighter than the lines that leave a statement."""
+    definitions = {unit['id'] for unit in data['units'] if unit['role'] == 'definition'}
+    return {edge['source'] for edge in data['edges']} & definitions
+
+
+def colour_words(kinds):
+    """The sentence of the legend on the colours, for a map with these kinds of line.
+
+    A heavy line has the colour of its kind, which its entry in the legend shows, so where heavy lines occur the
+    sentence speaks of the thin ones."""
+    return ('thin ' if any(kind in FIXED_COLOURS for kind in kinds) else '') + COLOUR_WORDS
+
+
 def fmt(value):
     return f'{value:.2f}'.rstrip('0').rstrip('.')
-
-
-def smooth_path(points):
-    """Curves with horizontal tangents between layers, straight across a layer."""
-    parts = [f'M {fmt(points[0][0])} {fmt(points[0][1])}']
-    for (x1, y1), (x2, y2) in zip(points, points[1:]):
-        if abs(y1 - y2) < 0.01:
-            parts.append(f'L {fmt(x2)} {fmt(y2)}')
-        else:
-            xm = (x1 + x2) / 2
-            parts.append(f'C {fmt(xm)} {fmt(y1)} {fmt(xm)} {fmt(y2)} {fmt(x2)} {fmt(y2)}')
-    return ' '.join(parts)
 
 
 def cornered_path(points, radius=CORNER):
@@ -634,10 +939,11 @@ def cornered_path(points, radius=CORNER):
     return ' '.join(parts)
 
 
-def text(x, y, content, size, colour=INK, weight=400, anchor='start', family=None):
+def text(x, y, content, size, colour=INK, anchor='start', family=None, italic=False):
+    """A line of words. The face is that of the drawing, a serif in regular weight, unless `family` names another."""
     font = f' font-family="{esc(family)}"' if family else ''
-    bold = f' font-weight="{weight}"' if weight != 400 else ''
-    return (f'<text x="{fmt(x)}" y="{fmt(y)}" font-size="{size}" fill="{colour}" text-anchor="{anchor}"{bold}{font}>'
+    slant = ' font-style="italic"' if italic else ''
+    return (f'<text x="{fmt(x)}" y="{fmt(y)}" font-size="{size}" fill="{colour}" text-anchor="{anchor}"{slant}{font}>'
             f'{esc(content)}</text>')
 
 
@@ -672,27 +978,34 @@ def legend(limit, y, data, bare=()):
         x += width
         return x - width
 
-    for kind in kinds:
-        (dash, width), words = LINES[kind], LEGEND[kind]
-        colour = FIXED_COLOURS.get(kind, '#4B6072')
+    def line(colour, words, dash='', width=LINES['direct'][1]):
         at = place(62 + text_width(words, 14) + 30)
         parts.append(f'<path d="M {fmt(at)} {y - 5} h 46" fill="none" stroke="{colour}" stroke-width="{width}"{dashed(dash)}/>')
         parts.append(f'<path d="M {fmt(at + 54)} {y - 5} l -9 -4 v 8 Z" fill="{colour}"/>')
         parts.append(text(at + 62, y, words, 14, SUBTLE))
+
+    for kind in kinds:
+        line(FIXED_COLOURS.get(kind, SAMPLE_COLOUR), LEGEND[kind], *LINES[kind])
+    if light_sources(data):
+        line(lighter(SAMPLE_COLOUR), LIGHT_WORDS)
     for role in roles:
         (fill, border, _), words = CARD[role], CARD_WORDS[role]
         at = place(26 + text_width(words, 14) + 22)
-        parts.append(f'<rect x="{fmt(at)}" y="{y - 12}" width="20" height="14" rx="3" fill="{fill}" stroke="{border}" '
-                     f'stroke-width="1.4"/>')
+        parts.append(f'<rect x="{fmt(at)}" y="{y - 12}" width="20" height="14" rx="3.5" fill="{fill}" stroke="{border}" '
+                     f'stroke-width="1.2"/>')
         parts.append(text(at + 26, y, words, 14, SUBTLE))
     for standing in standings:
         words, colour = STANDINGS[standing]
         at = place(14 + text_width(words, 14) + 22)
-        parts.append(f'<rect x="{fmt(at)}" y="{y - 12}" width="8" height="14" rx="2" fill="{colour}"/>')
+        parts.append(f'<rect x="{fmt(at + 2)}" y="{y - 12}" width="{BAR_WIDTH}" height="14" rx="{BAR_WIDTH / 2}" fill="{colour}"/>')
         parts.append(text(at + 14, y, words, 14, SUBTLE))
     if kinds:
-        words = 'lines that leave one card have one colour'
+        words = colour_words(kinds)
         parts.append(text(place(text_width(words, 14) + 22), y, words, 14, SUBTLE))
+        at = place(40 + text_width(BRANCH_WORDS, 14) + 22)
+        parts.append(f'<path d="M {fmt(at)} {y - 5} h 30 M {fmt(at + 15)} {y - 5} v -9" fill="none" stroke="{SAMPLE_COLOUR}" stroke-width="1.7"/>'
+                     f'<circle cx="{fmt(at + 15)}" cy="{y - 5}" r="{DOT}" fill="{SAMPLE_COLOUR}"/>')
+        parts.append(text(at + 40, y, BRANCH_WORDS, 14, SUBTLE))
     return parts, y
 
 
@@ -721,64 +1034,102 @@ def svg_of(data, cards, geometry, bare=()):
     subtitle = (f"{data.get('root_label') or ''} · {state_words(data)} · {number(counts['units'], 'unit')} in "
                 f"{number(counts['groups'], 'group')}, {number(counts['edges'], 'line')}, "
                 f"{number(len(data.get('folded') or {}), 'step')} folded into the lines · {scope_words(data)}{library}")
-    width = max(geometry['width'], text_width(subtitle, 15), text_width(data['title'], 30, bold=True), 640) + 2 * MARGIN
+    width = max(geometry['width'], text_width(subtitle, 15), text_width(data['title'], 30), 640) + 2 * MARGIN
     head, baseline = legend(width - MARGIN, 104, data, bare)
     header = baseline + 28
     height = geometry['height'] + header + MARGIN
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(width)}" height="{fmt(height)}" '
-             f'viewBox="0 0 {fmt(width)} {fmt(height)}" font-family="{esc(SANS)}">',
+             f'viewBox="0 0 {fmt(width)} {fmt(height)}" font-family="{esc(SERIF)}" style="font-variant-numeric: lining-nums">',
              f'<title>{esc(data["title"])}</title>',
              f'<rect width="{fmt(width)}" height="{fmt(height)}" fill="#FFFFFF"/>',
-             text(MARGIN, 46, data['title'], 30, weight=700), text(MARGIN, 74, subtitle, 15, SUBTLE)]
-    parts += head
+             text(MARGIN, 46, data['title'], 30), text(MARGIN, 74, subtitle, 15, SUBTLE, italic=True)]
+    # The legend is one part of the drawing, so that the page, whose panel explains the same, can leave it out.
+    parts += ['<g id="legend">', *head, '</g>']
     parts.append(f'<g id="drawing" transform="translate({MARGIN},{header})">')
 
+    # The frame of a group lies under the lines, and its name is written over them, so that the name can be read
+    # where lines cross the corner it stands in.
+    names = []
     for group in data['groups']:
         x, y, w, h = geometry['groups'][group['id']]
         parts.append(f'<g class="group" data-group="{esc(group["id"])}"><rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" '
-                     f'height="{fmt(h)}" rx="14" fill="{GROUP_FILL}" stroke="{GROUP_STROKE}" stroke-width="1.8"/>'
-                     + text(x + 20, y + 32, group['label'], GROUP_TITLE_SIZE, weight=700) + '</g>')
+                     f'height="{fmt(h)}" rx="16" fill="{GROUP_FILL}" stroke="{GROUP_STROKE}" stroke-width="1.3"/></g>')
+        at = (x + 24, y + 18 + 0.74 * GROUP_TITLE_SIZE, group['label'], GROUP_TITLE_SIZE)
+        # A copy with a wide edge in the colour of the ground lies under the name, so that no line cuts through it.
+        names.append(text(*at, GROUP_FILL, italic=True).replace('<text ', f'<text stroke="{GROUP_FILL}" stroke-width="14" '
+                                                                          'stroke-linejoin="round" ', 1))
+        names.append(text(*at, GROUP_TITLE, italic=True))
 
-    # Every edge that leaves one card has one colour; the cards are taken in the order they stand in.
-    sources = sorted({edge['source'] for edge in data['edges'] if edge['kind'] in ('direct', 'contracted')},
+    # Every thin line that leaves one card has one colour, whatever its kind; the cards are taken in the order they
+    # stand in. A line that leaves a definition has that colour lighter.
+    sources = sorted({edge['source'] for edge in data['edges'] if edge['kind'] not in FIXED_COLOURS},
                      key=lambda name: (geometry['cards'][name][0], geometry['cards'][name][1], name))
     colour = {name: PALETTE[index % len(PALETTE)] for index, name in enumerate(sources)}
+    light = light_sources(data)
     # A white casing under a line separates it from the lines it crosses. The edges of one net run together
     # before they part, so the casings of a net are all drawn before its lines; otherwise the casing of one
     # edge would cut the line of another where it leaves the common stretch, and a branch would read as a crossing.
+    # The lighter lines are drawn first, so that at a crossing the stronger line is the one that is not cut.
     parts.append('<g id="routes">')
     behind = {'mention': 0, 'contracted': 1, 'direct': 2, 'alternative': 3, 'refutation': 4}
     nets = {}
-    for index in sorted(range(len(data['edges'])), key=lambda i: (behind[data['edges'][i]['kind']], i)):
+    for index in sorted(range(len(data['edges'])),
+                        key=lambda i: (data['edges'][i]['source'] not in light, behind[data['edges'][i]['kind']], i)):
         nets.setdefault(geometry['edges'][index]['net'], []).append(index)
+    dots = junctions(geometry['edges'])
     for indices in nets.values():
-        casings, lines = [], []
+        kind = data['edges'][indices[0]]['kind']  # the edges of a net are of one kind and leave one card
+        dash, stroke = LINES[kind]
+        source = data['edges'][indices[0]]['source']
+        ink = FIXED_COLOURS.get(kind) or colour[source]
+        if source in light:
+            ink = lighter(ink)
+        long, half = ARROWS.get(kind, ARROW)
+        period = sum(float(part) for part in dash.split())
+        style = (f'fill="none" stroke="{ink}" stroke-width="{stroke}"{dashed(dash)} stroke-linecap="round" '
+                 f'stroke-linejoin="round"')
+        lines, tips = [], []
         for index in indices:
-            edge, route = data['edges'][index], geometry['edges'][index]
-            dash, stroke = LINES[edge['kind']]
-            ink = FIXED_COLOURS.get(edge['kind']) or colour[edge['source']]
-            long, half = ARROWS.get(edge['kind'], ARROW)
-            points = list(route['points'])
-            (px, py), (ex, ey) = points[-2], points[-1]
-            if route['smooth']:
-                dx, dy = (1.0 if ex >= px else -1.0), 0.0
-            else:
-                span = math.hypot(ex - px, ey - py) or 1.0
-                dx, dy = (ex - px) / span, (ey - py) / span
-            points[-1] = (ex - dx * (long - 1), ey - dy * (long - 1))
-            d = smooth_path(points) if route['smooth'] else cornered_path(points)
+            route = geometry['edges'][index]
+            (px, py), (ex, ey) = route['points'][-2:]
+            span = math.hypot(ex - px, ey - py) or 1.0
+            dx, dy = (ex - px) / span, (ey - py) / span
+            pieces = [list(piece) for piece in route.get('pieces') or [route['points']]]
+            pieces[-1][-1] = (ex - dx * (long - 1), ey - dy * (long - 1))  # the line ends inside its arrowhead
+            lines.append(pieces)
             bx, by = ex - dx * long, ey - dy * long
-            tip = (f'M {fmt(ex)} {fmt(ey)} L {fmt(bx - dy * half)} {fmt(by + dx * half)} '
-                   f'L {fmt(bx + dy * half)} {fmt(by - dx * half)} Z')
-            casings.append(f'<path class="casing" d="{d}" fill="none" stroke="#FFFFFF" stroke-width="{stroke + CASING}" '
-                           f'stroke-linecap="round" stroke-linejoin="round"/>')
-            lines.append(
+            tips.append(f'M {fmt(ex)} {fmt(ey)} L {fmt(bx - dy * half)} {fmt(by + dx * half)} '
+                        f'L {fmt(bx + dy * half)} {fmt(by - dx * half)} Z')
+        # The edges of a net lie on one another until they part. Each stretch of the net is drawn once: a stretch
+        # that several edges share stands in a group of its own, which names those edges, and the rest of an edge
+        # in the group of the edge. Drawn once, a line that the page dims is as faint where fifty edges share it as
+        # where one runs alone, and a browser strokes it once. The distance lets a dashed line keep its rhythm.
+        own, common = [[] for _ in indices], {}
+        for points, distance, users in runs(lines):
+            wire = (f'<path class="wire" d="{cornered_path(points)}"'
+                    + (f' stroke-dashoffset="{fmt(distance % period)}"' if period and distance % period >= 0.01 else '') + '/>')
+            if len(users) == 1:
+                own[users[0]].append(wire)
+            else:
+                common.setdefault(tuple(users), []).append(wire)
+        # The casing is drawn once for each straight part of the net and before its lines; the rounded corner of a
+        # line stays inside the casing of the two parts it joins.
+        parts.append(f'<g class="casing" fill="none" stroke="#FFFFFF" stroke-width="{stroke + CASING}" stroke-linecap="round">'
+                     + ''.join(f'<path d="M {fmt(x1)} {fmt(y1)} L {fmt(x2)} {fmt(y2)}"/>' for (x1, y1), (x2, y2)
+                               in stretches([geometry['edges'][index]['points'] for index in indices])) + '</g>')
+        for users, wires in common.items():
+            parts.append(f'<g class="shared" data-edges="{" ".join(f"e{indices[user]}" for user in users)}" {style}>'
+                         + ''.join(wires) + '</g>')
+        for position, index in enumerate(indices):
+            edge = data['edges'][index]
+            # A dot marks each point where this edge turns off the line of its net; a crossing has none.
+            marks = ''.join(f'M {fmt(x - DOT)} {fmt(y)} a {DOT} {DOT} 0 1 0 {2 * DOT} 0 a {DOT} {DOT} 0 1 0 {-2 * DOT} 0 Z '
+                            for x, y in dots[index])
+            parts.append(
                 f'<g class="edge" id="e{index}" data-source="{esc(edge["source"])}" data-target="{esc(edge["target"])}" '
-                f'data-kind="{edge["kind"]}">'
-                f'<path class="wire" d="{d}" fill="none" stroke="{ink}" stroke-width="{stroke}"{dashed(dash)} '
-                f'stroke-linecap="round" stroke-linejoin="round"/>'
-                f'<path class="arrow" d="{tip}" fill="{ink}"/></g>')
-        parts += casings + lines
+                f'data-kind="{edge["kind"]}" {style}>' + ''.join(own[position])
+                + (f'<path class="dot" d="{marks.strip()}" fill="{ink}" stroke="none"/>' if marks else '')
+                + f'<path class="arrow" d="{tips[position]}" fill="{ink}" stroke="none"/></g>')
     parts.append('</g>')
 
     parts.append('<g id="cards">')
@@ -786,19 +1137,20 @@ def svg_of(data, cards, geometry, bare=()):
         x, y, w, h = geometry['cards'][name]
         card = cards[name]
         fill, border, thick = CARD['root' if unit.get('root') else unit['role']]
-        tooltip = unit['id'] + (' — ' + unit['description'] if unit.get('description') else '')
+        tooltip = f"{unit['label']} ({unit['id']})"  # names a card that is too small to read; the panel has its description
         parts.append(f'<g class="node" data-node="{esc(name)}" data-role="{unit["role"]}" '
                      f'data-status="{esc(" · ".join(status_of(unit, bare)))}"><title>{esc(tooltip)}</title>'
-                     f'<rect class="card" x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="8" '
+                     f'<rect class="shade" x="{fmt(x)}" y="{fmt(y + SHADE_DROP)}" width="{fmt(w)}" height="{fmt(h)}" '
+                     f'rx="{CARD_RADIUS}" fill="{SHADE}" fill-opacity="{SHADE_OPACITY}"/>'
+                     f'<rect class="card" x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="{CARD_RADIUS}" '
                      f'fill="{fill}" stroke="{border}" stroke-width="{thick}"/>')
         if unit.get('standing') and name not in bare:  # the proof of a statement in `bare` is a card of its own
-            parts.append(f'<path class="standing" d="M {fmt(x + 8)} {fmt(y)} Q {fmt(x)} {fmt(y)} {fmt(x)} {fmt(y + 8)} '
-                         f'V {fmt(y + h - 8)} Q {fmt(x)} {fmt(y + h)} {fmt(x + 8)} {fmt(y + h)} Z" '
-                         f'fill="{STANDINGS[unit["standing"]][1]}"/>')
+            parts.append(f'<rect class="standing" x="{fmt(x + BAR_LEFT)}" y="{fmt(y + BAR_INSET)}" width="{BAR_WIDTH}" '
+                         f'height="{fmt(h - 2 * BAR_INSET)}" rx="{BAR_WIDTH / 2}" fill="{STANDINGS[unit["standing"]][1]}"/>')
         line = y + TEXT_TOP
         for words in card['label']:
             line += LABEL_LINE
-            parts.append(text(x + TEXT_LEFT, line - 5, words, LABEL_SIZE, weight=700))
+            parts.append(text(x + TEXT_LEFT, line - 5, words, LABEL_SIZE))
         line += 3
         for words in card['name']:
             line += NAME_LINE
@@ -806,7 +1158,7 @@ def svg_of(data, cards, geometry, bare=()):
         line += 5
         for words in card['status']:
             line += STATUS_LINE
-            parts.append(text(x + TEXT_LEFT, line - 5, words, STATUS_SIZE, SUBTLE))
+            parts.append(text(x + TEXT_LEFT, line - 5, words, STATUS_SIZE, SUBTLE, italic=True))
         parts.append('</g>')
     parts.append('</g>')
 
@@ -818,10 +1170,10 @@ def svg_of(data, cards, geometry, bare=()):
         x, y, w, h = place
         whole = 'via ' + ', '.join(edge['via'])
         parts.append(f'<g class="route-label" data-edge="e{index}"><title>{esc(whole)}</title>'
-                     f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="4" fill="#FFFFFF" '
-                     f'fill-opacity="0.93" stroke="#DDE5EB" stroke-width="1"/>'
-                     + text(x + w / 2, y + h - 5.5, words, VIA_SIZE, INK, anchor='middle') + '</g>')
-    parts.append('</g></g></svg>')
+                     f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="{fmt(h / 2)}" fill="#FFFFFF" '
+                     f'fill-opacity="0.95" stroke="#DFE6EC" stroke-width="1"/>'
+                     + text(x + w / 2, y + h - 5.5, words, VIA_SIZE, SUBTLE, anchor='middle', italic=True) + '</g>')
+    parts += ['</g>', '<g id="names">', *names, '</g>', '</g></svg>']
     return '\n'.join(parts) + '\n'
 
 
@@ -845,13 +1197,19 @@ def guide_of(data, bare=()):
     kinds, roles, standings = occurring(data, bare)
     parts.append('<div class="legend"><h3>How to read the map</h3>'
                  '<p>An arrow runs from what is used to what uses it, so the map is read from the left, where the '
-                 'definitions and the first results stand, towards the root. Lines that leave one card have one colour.</p><ul>')
-    for kind in kinds:
-        dash, width = LINES[kind]
-        colour = FIXED_COLOURS.get(kind, '#4B6072')
+                 f'definitions and the first results stand, towards the root. {esc(colour_words(kinds).capitalize())}; '
+                 'where they run as one line, a dot marks each point at which one of them leaves it. Lines that cross '
+                 'without a dot are not connected.</p><ul>')
+
+    def line(colour, words, dash='', width=LINES['direct'][1]):
         parts.append(f'<li><svg class="sample" width="56" height="12" viewBox="0 0 56 12" aria-hidden="true">'
                      f'<path d="M 1 6 h 44" fill="none" stroke="{colour}" stroke-width="{width}"{dashed(dash)}/>'
-                     f'<path d="M 55 6 l -10 -4.5 v 9 Z" fill="{colour}"/></svg>{esc(LEGEND[kind])}</li>')
+                     f'<path d="M 55 6 l -10 -4.5 v 9 Z" fill="{colour}"/></svg>{esc(words)}</li>')
+
+    for kind in kinds:
+        line(FIXED_COLOURS.get(kind, SAMPLE_COLOUR), PAGE_LEGEND.get(kind, LEGEND[kind]), *LINES[kind])
+    if light_sources(data):
+        line(lighter(SAMPLE_COLOUR), LIGHT_WORDS)
     for role in roles:
         fill, border, _ = CARD[role]
         parts.append(f'<li><span class="sample card" style="background:{fill};border-color:{border}"></span>'
@@ -896,12 +1254,14 @@ def groups_in_a_cycle(data):
     return False
 
 
-def render(data, layout='auto', elkjs=None):
-    """(SVG, page, layout used, note). `layout` is 'auto', 'layered' or 'elk'.
+def render(data, layout='layered', elkjs=None):
+    """(SVG, page, layout used, note). `layout` is 'layered', 'elk' or 'auto'.
 
-    'auto' takes ELK when it is present and the groups do not depend on each other in a cycle. ELK
-    draws a group as one box placed along the flow, so a cycle among groups sends lines backwards
-    around the whole drawing; the built-in layout draws a group as a band and has no such case."""
+    'layered', the default, is the built-in layout; it does not look whether ELK is present. 'elk'
+    asks for ELK and is an error without it. 'auto' takes ELK when it is present and the groups do
+    not depend on each other in a cycle. ELK draws a group as one box placed along the flow, so a
+    cycle among groups sends lines backwards around the whole drawing; the built-in layout draws a
+    group as a band and has no such case."""
     bare = proved_apart(data)
     cards = {unit['id']: card_of(unit, bare) for unit in data['units']}
     geometry, note = None, None

@@ -1,6 +1,6 @@
 """The dependency map of a research instance, drawn from its canon by script.
 
-    python depmap.py <instance> --out <folder> [--all] [--layout auto|layered|elk] [--elkjs <folder>]
+    python depmap.py <instance> --out <folder> [--all] [--layout layered|elk|auto] [--elkjs <folder>]
     python depmap.py <folder>/dependency_map.json --out <folder>     draw again, without the instance
 
 The map is a view. It is computed from the model that knowledge.replay derives from the structural
@@ -9,12 +9,16 @@ in the instance. The command writes three files into the output folder:
 
     dependency_map.json   the semantic data: units, edges, groups, and the folded elements edges pass through
     dependency_map.svg    the drawing
-    dependency_map.html   the same drawing in a page that zooms, follows a unit up and down, and shows its details
+    dependency_map.html   the same drawing in a page that zooms, finds a unit or a folded step by name, follows a
+                          unit up and down, and shows its details
 
-The drawing is laid out by code that ships with the skill and needs nothing beyond Python. ELK,
-the layout engine of the previous research's map, is used instead when Node and the elkjs package
-are present and the map is one ELK draws well; depmap/draw.py says when that is, what was taken
-from that generator and what was left. Nothing is installed by this command.
+The drawing is laid out by code that ships with the skill and needs nothing beyond Python. This
+built-in layout is the default, whether or not ELK is installed. ELK, the layout engine of the
+previous research's map, is used when `--layout elk` asks for it, which needs Node and the elkjs
+package to be installed; with `--layout auto` the command chooses ELK itself when both are present
+and the map is one ELK draws well. depmap/draw.py says when that is, why the built-in layout is
+the default, what was taken from that generator and what was left. Nothing is installed by this
+command.
 
 How the map is derived. The words are those of docs/do-math/lean-canon-design.md, sections 4.4, 5 and 13.1.
 
@@ -285,7 +289,7 @@ def from_instance(instance, everything=False):
     return derive(model, everything, statements)
 
 
-def write(data, out, layout='auto', elkjs=None):
+def write(data, out, layout='layered', elkjs=None):
     """Write the map's data and its two drawings into a folder; returns what was written and how it was laid out."""
     from runtime_support import write_json, write_text
     out = Path(out)
@@ -310,10 +314,12 @@ def main(argv=None):
     parser.add_argument('source', help='an instance folder, or a dependency_map.json to draw again')
     parser.add_argument('--out', required=True, help='the folder the map is written into')
     parser.add_argument('--all', action='store_true', help='every unit of the canon, not only what the proof of the root rests on')
-    parser.add_argument('--layout', choices=('auto', 'layered', 'elk'), default='auto',
-                        help='layered: the built-in layout; elk: ELK through Node and elkjs; auto: elk when both are '
-                             'present and the groups do not depend on each other in a cycle, else layered')
-    parser.add_argument('--elkjs', help='the folder of an installed elkjs package (default: depmap/node_modules/elkjs)')
+    parser.add_argument('--layout', choices=('layered', 'elk', 'auto'), default='layered',
+                        help='layered, the default: the built-in layout, which needs only Python; elk: ELK, available '
+                             'once Node and the elkjs package are installed; auto: elk when both are present and the '
+                             'groups do not depend on each other in a cycle, else layered')
+    parser.add_argument('--elkjs', help='with --layout elk or auto: the folder of an installed elkjs package '
+                                        '(default: depmap/node_modules/elkjs)')
     args = parser.parse_args(argv)
     source = Path(args.source)
     try:

@@ -16,110 +16,120 @@
   What the page adds for a reader who was not told how it works. Each was missing when the page was
   first used on a map of 173 units, where the whole drawing fitted to a window shows cards of 20 by 7
   pixels:
-    the far view   while a card is too small to read, the names of the groups and a mark on the root keep
-                   a readable size, the words of the cards and of the lines are left out, the highlighted
-                   lines are drawn at a visible width, and pointing at a card names it; while a card is
-                   still large enough to hold a few words, it shows the beginning of its name at a
-                   readable size, so that a group seen whole can be read;
+    the zoom       changes the viewBox and nothing else, as before: the page neither resizes nor hides
+                   nor adds anything in the drawing with the scale, so a card, its words and every line
+                   simply grow smaller and larger;
     the search     finds a unit by its short name, its Lean name or its description, and a folded step,
                    which has no card, with the lines it is folded into (`#step=<Lean name>`);
     the selection  is the address of the page, so a link in the panel is a real link, Back returns to the
                    previous selection, and a selection made from the panel or from an address is brought
                    into view; the panel names the way out of it and the two extents of the highlight;
     the controls   work with the wheel, a trackpad, touch, the keyboard and three buttons;
-    the window     the panel stands below the map when the window is narrow.
+    the formulas   the records write TeX; the page turns it into MathML, which a browser draws itself,
+                   and shows a formula as written when it holds a command the page does not know;
+    the window     the panel stands below the map when the window is narrow, or upright and not wide.
   The drawing marks what this script reads: g.node[data-node][data-status], g.group[data-group],
-  g.edge[id][data-source][data-target], [data-edge] on the parts of an edge that are drawn outside
-  its group (its label), and the translation of g#drawing. The guide (what the map shows, the legend
-  and the meaning of the words on the cards) is written by draw.py into #guide.
+  g.edge[id][data-source][data-target] with its stroke on the group, its line in path.wire pieces and the
+  dots of its branches in path.dot, g.shared[data-edges] with the stretches that the named edges share,
+  g.casing, [data-edge] on the parts of an edge that are drawn outside its group (its label), and the
+  translation of g#drawing. The guide (what the map shows, the legend and the meaning of the words on
+  the cards) is written by draw.py into #guide.
 -->
 <style>
+:root { --serif: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', P052, 'TeX Gyre Pagella', Cambria, 'Noto Serif', Georgia, serif;
+  --sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif;
+  --mono: 'Cascadia Mono', 'SF Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace;
+  --ink: #16283A; --subtle: #56697B; --faint: #8497A8; --line: #D9E1E8; --link: #1F5F8D; }
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white;
-  font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; color: #203549; }
+  font-family: var(--sans); color: var(--ink); font-variant-numeric: lining-nums; }
 body { display: flex; }
 #stage { order: 1; flex: 1 1 auto; min-width: 0; height: 100%; position: relative; overflow: hidden; }
 #stage svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none;
   -webkit-user-select: none; }
 #stage svg.dragging { cursor: grabbing; }
+/* The page shows the drawing without its legend and without the words on its lines: the panel explains the lines
+   and the cards, and names the folded steps of every line of a selected unit. The SVG file keeps both. */
+#stage #legend, #stage #labels { display: none; }
 g.node { cursor: pointer; outline: none; }
-g.node:focus-visible > rect.card { stroke: #0B57D0; stroke-width: 5; }
-body.focus g.node:not(.hi), body.focus g.edge:not(.hi), body.focus g.route-label:not(.hi) { opacity: .13; }
-body.focus g.node.pick > rect.card { stroke-width: 3.4; }
-/* the far view: a card is too small to read */
-#titles text, #flag { paint-order: stroke; stroke: #FFFFFF; stroke-width: .22em; stroke-linejoin: round; pointer-events: none; }
-#flag { display: none; }
-svg.far #flag { display: inline; }
-svg.far #titles text { pointer-events: auto; cursor: zoom-in; }
-svg.far #cards text:not(.brief), svg.far #labels, svg.far path.casing { display: none; }
-#cards text.brief { display: none; }
-svg.mid #cards text.brief { display: inline; }
-svg.far g.edge.hi path.wire { vector-effect: non-scaling-stroke; stroke-width: 1.5px; }
-body.focus svg.far g.node.hi > rect.card { vector-effect: non-scaling-stroke; stroke: #203549; stroke-width: 1.2px; }
-body.focus svg.far g.node.pick > rect.card { stroke-width: 3px; }
+g.node:focus-visible > rect.card { stroke: #0B57D0; stroke-width: 4; }
+body.focus g.node:not(.hi) { opacity: .13; }
+/* a line is dimmed through its stroke: the opacity of a group would have every line drawn apart and blended */
+body.focus g.edge:not(.hi), body.focus g.shared:not(.hi) { stroke-opacity: .13; }
+body.focus g.edge:not(.hi) path.arrow, body.focus g.edge:not(.hi) path.dot { fill-opacity: .13; }
+body.focus g.node.pick > rect.card { stroke: #16283A; stroke-width: 2.2; }
 #tools { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; }
-button { font: inherit; color: #203549; background: white; border: 1px solid #9FB2C1; border-radius: 6px; padding: 4px 10px;
-  cursor: pointer; }
-button:hover { background: #EEF3F7; }
-button:focus-visible, a:focus-visible, input:focus-visible, #panel h2:focus-visible { outline: 2px solid #0B57D0; outline-offset: 2px; }
-button[aria-pressed="true"] { background: #DCE9F3; border-color: #256D9D; }
-#tools button { min-width: 36px; min-height: 34px; font-size: 15px; box-shadow: 0 1px 3px rgba(32, 53, 73, .18); }
-#tip { position: absolute; z-index: 2; max-width: 320px; padding: 5px 9px; background: #203549; color: white; border-radius: 6px;
-  font-size: 13px; line-height: 1.35; pointer-events: none; }
-#tip code { display: block; font-family: Consolas, 'DejaVu Sans Mono', Menlo, monospace; font-size: 11.5px; opacity: .8;
-  word-break: break-all; }
-#panel { order: 2; flex: 0 0 380px; max-width: 42vw; height: 100%; overflow-y: auto; box-sizing: border-box; padding: 14px 20px 18px;
-  border-left: 1px solid #BECBD6; background: #F8FAFC; font-size: 14px; line-height: 1.45; }
-@media (max-width: 820px) {
+button { font: inherit; color: var(--ink); background: white; border: 1px solid #B9C7D3; border-radius: 7px; padding: 4px 11px;
+  cursor: pointer; box-shadow: 0 1px 1.5px rgba(28, 47, 66, .08); }
+button:hover { background: #F1F5F8; border-color: #9FB2C1; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #0B57D0; outline-offset: 2px; }
+#stage svg:focus-visible { outline: 2px solid #0B57D0; outline-offset: -2px; }
+#panel h2:focus { outline: none; }
+button[aria-pressed="true"] { background: #E4EEF6; border-color: #3B7BA8; box-shadow: inset 0 0 0 1px #3B7BA8; }
+#tools button { min-width: 36px; min-height: 34px; font-size: 15px; box-shadow: 0 1px 4px rgba(28, 47, 66, .16); }
+#panel { order: 2; flex: 0 0 390px; max-width: 42vw; height: 100%; overflow-y: auto; box-sizing: border-box; padding: 16px 22px 22px;
+  border-left: 1px solid var(--line); background: #FBFCFD; font-family: var(--serif); font-size: 15.5px; line-height: 1.5;
+  box-shadow: -6px 0 18px -14px rgba(22, 40, 58, .3); }
+#panel button, #panel .chip, #panel kbd, #query, #panel h3 { font-family: var(--sans); }
+/* a narrow window, or an upright one that is not wide: the panel stands below the map */
+@media (max-width: 700px), (max-width: 900px) and (orientation: portrait) {
   body { flex-direction: column; }
   #stage { flex: 0 0 55%; height: auto; }
-  #panel { flex: 1 1 0; min-height: 0; max-width: none; width: 100%; height: auto; border-left: none; border-top: 1px solid #BECBD6; }
+  #panel { flex: 1 1 0; min-height: 0; max-width: none; width: 100%; height: auto; border-left: none; border-top: 1px solid var(--line); }
 }
-#query { width: 100%; box-sizing: border-box; font: inherit; color: inherit; padding: 6px 9px; border: 1px solid #9FB2C1;
-  border-radius: 6px; background: white; }
+#query { width: 100%; box-sizing: border-box; font: inherit; color: inherit; padding: 7px 11px; border: 1px solid #B9C7D3;
+  border-radius: 8px; background: white; box-shadow: inset 0 1px 2px rgba(28, 47, 66, .06); }
 #results { margin: 4px 0 0; }
 #results a { display: block; padding: 5px 8px; border-radius: 5px; }
 #results a:hover, #results a:focus-visible { background: #E7EEF4; text-decoration: none; }
-#results a b { display: block; font-weight: 600; color: #203549; }
-#results a code, #results a span { font-size: 12px; color: #60788B; }
-#results p { margin: 6px 0; color: #526A7D; }
+#results a b { display: block; font-size: 16px; font-weight: 400; color: var(--ink); }
+#results a code { font-size: 11px; color: var(--faint); }
+#results a span { font-size: 13px; font-style: italic; color: var(--subtle); }
+#results p { margin: 6px 0; color: var(--subtle); }
 #content { margin-top: 12px; }
-#panel h1 { font-size: 16px; margin: 0 0 6px; }
-#panel h2 { font-size: 19px; margin: 10px 0 2px; outline-offset: 4px; }
-#panel h3 { font-size: 12px; margin: 16px 0 4px; text-transform: uppercase; letter-spacing: .05em; color: #526A7D; }
+#panel h1 { font-size: 22px; font-weight: 400; line-height: 1.25; margin: 2px 0 10px; }
+#panel h2 { font-size: 24px; font-weight: 400; line-height: 1.22; margin: 14px 0 4px; }
+#panel h3 { font-size: 10.5px; font-weight: 600; margin: 22px 0 7px; padding-bottom: 4px; border-bottom: 1px solid var(--line);
+  text-transform: uppercase; letter-spacing: .1em; color: var(--faint); }
 #panel p { margin: 6px 0; }
-#panel code, #panel pre, #panel .tex { font-family: Consolas, 'DejaVu Sans Mono', Menlo, monospace; font-size: 12.5px; }
-#panel pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; padding: 8px 10px; background: white;
-  border: 1px solid #DDE5EB; border-radius: 6px; }
-#panel .prose { white-space: pre-wrap; overflow-wrap: anywhere; }
-#panel .statement { margin: 4px 0; padding: 8px 10px; background: white; border: 1px solid #DDE5EB; border-radius: 6px; }
+#panel code, #panel pre, #panel .tex { font-family: var(--mono); font-size: 11.5px; }
+#panel pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; padding: 10px 12px; background: white; line-height: 1.5;
+  border: 1px solid var(--line); border-radius: 8px; }
+#panel .prose { line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+#panel .statement { margin: 4px 0; padding: 10px 14px; background: white; border: 1px solid var(--line); border-radius: 8px; }
+#panel math { font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Noto Sans Math', math; font-size: 1.04em; }
+#panel .display { display: block; margin: 8px 0; overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+#panel mtable.left mtd { text-align: left; padding: .15em .5em .15em 0; }
+#panel mtable.stack mtd { padding: 0; }
 #panel .tex { background: #EEF2F5; border-radius: 3px; padding: 0 2px; }
 #panel .tex.display { display: block; margin: 4px 0; padding: 4px 8px; }
-#panel .name { color: #60788B; word-break: break-all; }
-#panel .chips { margin: 8px 0; }
-#panel .chip { display: inline-block; margin: 0 6px 4px 0; padding: 1px 8px; border: 1px solid #BECBD6; border-radius: 10px;
-  background: white; font-size: 12.5px; cursor: help; }
+#panel .name { color: var(--faint); word-break: break-all; }
+#panel .chips { margin: 9px 0; }
+#panel .chip { display: inline-block; margin: 0 6px 5px 0; padding: 1px 9px; border: 1px solid #C9D4DD; border-radius: 11px;
+  background: white; font-size: 12px; color: var(--subtle); cursor: help; }
 #panel ul { margin: 4px 0; padding-left: 18px; }
 #panel li { margin: 3px 0; }
-#panel a { color: #256D9D; cursor: pointer; text-decoration: none; }
+#panel a { color: var(--link); cursor: pointer; text-decoration: none; }
 #panel a:hover { text-decoration: underline; }
-#panel .how { color: #526A7D; }
-#panel .help { color: #526A7D; }
+#panel .how { color: var(--subtle); font-size: 14.5px; }
+#panel .help { color: var(--subtle); font-style: italic; }
 #panel .bar { display: flex; flex-wrap: wrap; gap: 6px; }
 #panel .extent { margin: 10px 0 4px; }
 #panel .extent button { display: block; width: 100%; text-align: left; margin: 4px 0; font-size: 13px; }
 #panel .jump { margin: 8px 0 0; font-size: 13px; }
 #panel .jump button { margin-right: 12px; white-space: nowrap; }
-button.link { border: none; background: none; padding: 0; color: #256D9D; font-size: inherit; text-align: left; }
+button.link { border: none; background: none; box-shadow: none; padding: 0; color: var(--link); font-size: inherit; text-align: left; }
 button.link:hover { background: none; text-decoration: underline; }
 #panel .legend ul { list-style: none; padding-left: 0; }
 #panel .legend li { display: flex; align-items: center; gap: 8px; }
 #panel .sample { flex: 0 0 56px; }
-#panel .sample.card { box-sizing: border-box; height: 14px; flex-basis: 22px; margin: 0 17px; border: 1.5px solid; border-radius: 3px; }
-#panel .sample.bar { height: 14px; flex-basis: 8px; margin: 0 24px; border-radius: 2px; }
+#panel .sample.card { box-sizing: border-box; height: 15px; flex-basis: 24px; margin: 0 16px; border: 1.2px solid; border-radius: 4px;
+  box-shadow: 0 1.5px 0 rgba(28, 47, 66, .07); }
+#panel .sample.bar { height: 15px; flex-basis: 5px; margin: 0 25.5px; border-radius: 2.5px; }
 #panel dl { margin: 4px 0; }
-#panel dt { font-weight: 600; margin-top: 6px; }
-#panel dd { margin: 0; color: #526A7D; }
-#panel kbd { font-family: inherit; font-size: 12.5px; padding: 0 5px; border: 1px solid #BECBD6; border-radius: 4px; background: white; }
+#panel dt { font-style: italic; margin-top: 8px; }
+#panel dd { margin: 0; color: var(--subtle); }
+#panel kbd { font-family: inherit; font-size: 12px; padding: 0 5px; border: 1px solid #C9D4DD; border-bottom-width: 2px; border-radius: 4px;
+  background: white; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
@@ -128,7 +138,7 @@ button.link:hover { background: none; text-decoration: underline; }
 <div role="search">
 <input id="query" type="search" placeholder="Find by name or Lean name   ( / )" autocomplete="off" spellcheck="false"
   aria-label="Find a unit or a folded step by its name, its Lean name or its description">
-<div id="results"></div>
+<div id="results" aria-live="polite"></div>
 </div>
 <p id="live" class="sr" role="status"></p>
 <div id="content"></div>
@@ -143,7 +153,6 @@ __GUIDE__
 <button type="button" id="whole" title="Show the whole map (0)">Whole map</button>
 </div>
 __SVG__
-<div id="tip" hidden></div>
 </div>
 <script type="application/json" id="map-data">__DATA__</script>
 <script>
@@ -155,7 +164,7 @@ __SVG__
   var stage = document.getElementById('stage'), panel = document.getElementById('panel');
   var content = document.getElementById('content'), guide = document.getElementById('guide');
   var query = document.getElementById('query'), results = document.getElementById('results');
-  var tip = document.getElementById('tip'), live = document.getElementById('live');
+  var live = document.getElementById('live');
 
   // ---- the map's data and the parts of the drawing, by name
   var unit = {}, into = {}, out = {};
@@ -169,7 +178,11 @@ __SVG__
     adj(g.dataset.target).into.push(g.id);
   });
   svg.querySelectorAll('g.node').forEach(function (g) { nodeEl[g.dataset.node] = g; });
-  var tagged = Array.prototype.slice.call(svg.querySelectorAll('[data-edge]'));
+  // A stretch that several edges of a net share is drawn once, in a group that names them; it is lit with any of them.
+  var sharedEl = {};
+  svg.querySelectorAll('g.shared').forEach(function (g) {
+    g.dataset.edges.split(' ').forEach(function (id) { (sharedEl[id] = sharedEl[id] || []).push(g); });
+  });
   var drawing = svg.querySelector('#drawing');
   var shift = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/.exec((drawing && drawing.getAttribute('transform')) || '');
   var OX = shift ? parseFloat(shift[1]) : 0, OY = shift ? parseFloat(shift[2]) : 0;
@@ -190,32 +203,11 @@ __SVG__
     return node;
   }
 
-  // ---- what stays readable in the far view: the names of the groups, above the lines, and a mark on the root
-  var titles = [], groupBox = {};
-  var layer = svgEl('g', { id: 'titles' });
+  var groupBox = {};
   svg.querySelectorAll('g.group').forEach(function (g) {
-    var words = g.querySelector('text'), rect = g.querySelector('rect');
-    if (!words || !rect) return;
-    groupBox[g.dataset.group] = box(rect);
-    words.dataset.group = g.dataset.group;
-    titles.push({ el: words, size: parseFloat(words.getAttribute('font-size')),
-                  top: parseFloat(words.getAttribute('y')) - parseFloat(words.getAttribute('font-size')) });
-    layer.appendChild(words);
+    var rect = g.querySelector('rect');
+    if (rect) groupBox[g.dataset.group] = box(rect);
   });
-  var flag = null;
-  if (drawing) {
-    drawing.appendChild(layer);
-    if (nodeEl[data.root]) {
-      var rootRect = nodeEl[data.root].querySelector('rect.card');
-      var rx = parseFloat(rootRect.getAttribute('x')), rw = parseFloat(rootRect.getAttribute('width'));
-      var right = rx + rw / 2 > parseFloat(svg.getAttribute('width')) / 2;
-      flag = svgEl('text', { id: 'flag', x: right ? rx + rw : rx, 'text-anchor': right ? 'end' : 'start', 'font-weight': 700,
-                             fill: '#8A5A00' });
-      flag.textContent = 'the root';
-      flag.bottom = parseFloat(rootRect.getAttribute('y'));
-      drawing.appendChild(flag);
-    }
-  }
   svg.setAttribute('role', 'group');
   svg.setAttribute('aria-label', data.title + ': ' + data.counts.units + ' units. Every card is a button; the panel lists what a selected unit rests on and what rests on it.');
   svg.querySelectorAll('#routes, #labels').forEach(function (g) { g.setAttribute('aria-hidden', 'true'); });
@@ -226,43 +218,9 @@ __SVG__
     g.setAttribute('aria-label', unit[n].label + ', ' + n + ', ' + (g.dataset.status || '').split(' · ').join(', '));
   });
 
-  // Between the far view and the near one a card holds the beginning of its name, at a size that can be read.
-  var briefs = Object.keys(nodeEl).map(function (n) {
-    var rect = nodeEl[n].querySelector('rect.card');
-    var words = svgEl('text', { 'class': 'brief', 'font-weight': 600, fill: '#203549' });
-    nodeEl[n].appendChild(words);
-    return { el: words, words: unit[n].label.split(' '), x: parseFloat(rect.getAttribute('x')), y: parseFloat(rect.getAttribute('y')),
-             w: parseFloat(rect.getAttribute('width')), h: parseFloat(rect.getAttribute('height')), key: '' };
-  });
-  function brief(b, u) {
-    var size = 11 * u, pitch = 13 * u;
-    var most = Math.max(1, Math.min(3, Math.floor((b.h - 4 * u) / pitch))), wide = Math.max(2, Math.floor((b.w - 22) / (0.56 * size)));
-    if (b.key !== most + ':' + wide) {
-      b.key = most + ':' + wide;
-      var lines = [], line = '';
-      b.words.forEach(function (word) {
-        if (!line || (line + ' ' + word).length <= wide) line = line ? line + ' ' + word : word;
-        else { lines.push(line); line = word; }
-      });
-      lines.push(line);
-      if (lines.length > most) { lines = lines.slice(0, most); lines[most - 1] += ' …'; }
-      b.el.textContent = '';
-      lines.forEach(function (text) {
-        var span = svgEl('tspan', { x: b.x + 14 });
-        span.textContent = text.length > wide ? text.slice(0, wide - 1) + '…' : text;
-        b.el.appendChild(span);
-      });
-    }
-    b.el.setAttribute('font-size', size);
-    var count = b.el.childNodes.length, first = b.y + (b.h - count * pitch) / 2 + size;
-    for (var i = 0; i < count; i++) b.el.childNodes[i].setAttribute('y', first + i * pitch);
-  }
-
   // ---- the view: fit, zoom and drag by changing the viewBox only
   var W = parseFloat(svg.getAttribute('width')), H = parseFloat(svg.getAttribute('height'));
   var vb = { x: 0, y: 0, w: W, h: H };
-  var FAR = 2.6;      // drawing units per screen pixel above which the words of a card cannot be read
-  var MID = 6;        // and above which a card is too small for the beginning of its name
   var NEAR = 1.1;     // the scale a card is brought to when the view moves to it
   function size() { return svg.getBoundingClientRect(); }
   function unitsPerPx() {       // how many SVG units one screen pixel covers (the scale of preserveAspectRatio meet)
@@ -271,16 +229,6 @@ __SVG__
   }
   function apply() {
     svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
-    var u = unitsPerPx();
-    svg.classList.toggle('far', u > FAR);
-    svg.classList.toggle('mid', u > FAR && u <= MID);
-    if (u > FAR && u <= MID) briefs.forEach(function (b) { brief(b, u); });
-    titles.forEach(function (t) {
-      var s = Math.max(t.size, 13 * u);
-      t.el.setAttribute('font-size', s);
-      t.el.setAttribute('y', t.top + s);
-    });
-    if (flag) { flag.setAttribute('font-size', 13 * u); flag.setAttribute('y', flag.bottom - 5 * u); }
   }
   function fit() { vb = { x: 0, y: 0, w: W, h: H }; apply(); }
   function showBox(b, margin) {
@@ -352,7 +300,7 @@ __SVG__
       pinch = { d: d, x: x, y: y };
     } else if (drag) {
       var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
-      if (!moved && Math.abs(dx) + Math.abs(dy) > 4) { moved = true; svg.classList.add('dragging'); tip.hidden = true; }
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 4) { moved = true; svg.classList.add('dragging'); }
       if (moved) { vb.x = drag.vx - dx * drag.u; vb.y = drag.vy - dy * drag.u; apply(); }
     }
   });
@@ -369,33 +317,236 @@ __SVG__
   document.getElementById('zoom-in').addEventListener('click', function () { zoomBy(1 / 1.4); });
   document.getElementById('zoom-out').addEventListener('click', function () { zoomBy(1.4); });
   document.getElementById('whole').addEventListener('click', fit);
-  // In the far view pointing at a card names it, since its words cannot be read there.
-  svg.addEventListener('mousemove', function (ev) {
-    var g = !moved && svg.classList.contains('far') && ev.target.closest ? ev.target.closest('g.node') : null;
-    if (!g) { tip.hidden = true; return; }
-    if (tip.dataset.node !== g.dataset.node) {
-      tip.dataset.node = g.dataset.node;
-      tip.textContent = '';
-      tip.appendChild(el('b', unit[g.dataset.node].label));
-      tip.appendChild(el('code', g.dataset.node));
-    }
-    tip.hidden = false;
-    var r = stage.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
-    tip.style.left = Math.max(4, Math.min(x + 14, r.width - tip.offsetWidth - 4)) + 'px';
-    tip.style.top = (y > tip.offsetHeight + 16 ? y - tip.offsetHeight - 10 : y + 18) + 'px';
-  });
-  svg.addEventListener('mouseleave', function () { tip.hidden = true; });
 
-  // ---- words: the records write TeX and Markdown; the page sets emphasis and code, links a Lean name to its
-  // unit or step, and leaves a formula as it was written, set apart from the prose around it
+  // ---- formulas. The records write them in TeX. The page turns the TeX that records use into MathML, which a
+  // browser draws by itself, so that the page still needs no library and no network. A formula that holds a
+  // command this code does not know is shown as it was written.
+  var MML = 'http://www.w3.org/1998/Math/MathML';
+  function M(tag, inside, attributes) {
+    var node = document.createElementNS(MML, tag);
+    if (typeof inside === 'string') node.textContent = inside;
+    else (inside || []).forEach(function (child) { node.appendChild(child); });
+    Object.keys(attributes || {}).forEach(function (key) { node.setAttribute(key, attributes[key]); });
+    return node;
+  }
+  var SPACE = { ',': '0.167em', ':': '0.222em', ';': '0.278em', ' ': '0.278em', '!': '-0.167em', quad: '1em', qquad: '2em' };
+  var OPERATOR = { le: '≤', leq: '≤', ge: '≥', geq: '≥', ne: '≠', neq: '≠', lt: '<', gt: '>', approx: '≈', sim: '∼', simeq: '≃',
+    equiv: '≡', cong: '≅', ll: '≪', gg: '≫', 'in': '∈', notin: '∉', ni: '∋', subset: '⊂', subseteq: '⊆', supset: '⊃', supseteq: '⊇',
+    cup: '∪', cap: '∩', setminus: '∖', times: '×', cdot: '⋅', circ: '∘', pm: '±', mp: '∓', div: '÷', ast: '∗', star: '⋆',
+    oplus: '⊕', otimes: '⊗', wedge: '∧', vee: '∨', land: '∧', lor: '∨', neg: '¬', lnot: '¬', mid: '∣', nmid: '∤', parallel: '∥',
+    to: '→', rightarrow: '→', leftarrow: '←', gets: '←', mapsto: '↦', Rightarrow: '⇒', Leftarrow: '⇐', Leftrightarrow: '⇔',
+    leftrightarrow: '↔', implies: '⟹', iff: '⟺', longrightarrow: '⟶', uparrow: '↑', downarrow: '↓', hookrightarrow: '↪',
+    dots: '…', ldots: '…', cdots: '⋯', vdots: '⋮', ddots: '⋱', colon: ':', forall: '∀', exists: '∃', nexists: '∄',
+    lfloor: '⌊', rfloor: '⌋', lceil: '⌈', rceil: '⌉', langle: '⟨', rangle: '⟩', lvert: '|', rvert: '|', vert: '|', lVert: '‖',
+    rVert: '‖', Vert: '‖', '|': '‖', '{': '{', '}': '}', '#': '#', '%': '%', '&': '&', '$': '$', '_': '_', lbrace: '{', rbrace: '}',
+    sum: '∑', prod: '∏', coprod: '∐', bigcup: '⋃', bigcap: '⋂', bigoplus: '⨁', bigotimes: '⨂', int: '∫', oint: '∮',
+    prime: '′', backslash: '\\', top: '⊤', bot: '⊥', perp: '⊥', vdash: '⊢', models: '⊨', propto: '∝', asymp: '≍', prec: '≺',
+    succ: '≻', preceq: '⪯', succeq: '⪰', triangle: '△', bullet: '∙', dagger: '†', angle: '∠' };
+  var LIMITS = { sum: 1, prod: 1, coprod: 1, bigcup: 1, bigcap: 1, bigoplus: 1, bigotimes: 1 };
+  var LETTER = { alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ϵ', varepsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ',
+    vartheta: 'ϑ', iota: 'ι', kappa: 'κ', varkappa: 'ϰ', lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', varpi: 'ϖ', rho: 'ρ',
+    varrho: 'ϱ', sigma: 'σ', varsigma: 'ς', tau: 'τ', upsilon: 'υ', phi: 'ϕ', varphi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω',
+    ell: 'ℓ', hbar: 'ℏ', imath: 'ı', jmath: 'ȷ', partial: '∂', aleph: 'ℵ', wp: '℘' };
+  var UPRIGHT = { Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π', Sigma: 'Σ', Upsilon: 'Υ', Phi: 'Φ', Psi: 'Ψ',
+    Omega: 'Ω', infty: '∞', emptyset: '∅', varnothing: '∅', nabla: '∇', Re: 'ℜ', Im: 'ℑ' };
+  var NAMED = { log: 0, ln: 0, exp: 0, sin: 0, cos: 0, tan: 0, cot: 0, sinh: 0, cosh: 0, tanh: 0, arg: 0, deg: 0, dim: 0, ker: 0,
+    hom: 0, det: 1, gcd: 1, min: 1, max: 1, sup: 1, inf: 1, lim: 1, liminf: 1, limsup: 1, Pr: 1 };
+  var ACCENT = { bar: '‾', overline: '‾', hat: '^', widehat: '^', tilde: '~', widetilde: '~', vec: '→', dot: '˙', ddot: '¨',
+    check: 'ˇ', breve: '˘' };
+  var SIZE = { big: '1.2em', bigl: '1.2em', bigr: '1.2em', bigm: '1.2em', Big: '1.8em', Bigl: '1.8em', Bigr: '1.8em', Bigm: '1.8em',
+    bigg: '2.4em', biggl: '2.4em', biggr: '2.4em', Bigg: '3em', Biggl: '3em', Biggr: '3em' };
+  // The alphabets of Unicode for letters set in another face: where capitals, small letters and digits begin, and
+  // the letters that stand elsewhere because they were in Unicode before the alphabet was.
+  var FACE = { mathbb: [0x1D538, 0x1D552, 0x1D7D8, { C: 'ℂ', H: 'ℍ', N: 'ℕ', P: 'ℙ', Q: 'ℚ', R: 'ℝ', Z: 'ℤ' }],
+    mathsf: [0x1D5A0, 0x1D5BA, 0x1D7E2, {}], mathbf: [0x1D400, 0x1D41A, 0x1D7CE, {}], boldsymbol: [0x1D468, 0x1D482, 0x1D7CE, {}],
+    mathtt: [0x1D670, 0x1D68A, 0x1D7F6, {}],
+    mathcal: [0x1D49C, 0x1D4B6, 0, { B: 'ℬ', E: 'ℰ', F: 'ℱ', H: 'ℋ', I: 'ℐ', L: 'ℒ', M: 'ℳ', R: 'ℛ', e: 'ℯ', g: 'ℊ', o: 'ℴ' }],
+    mathscr: [0x1D49C, 0x1D4B6, 0, { B: 'ℬ', E: 'ℰ', F: 'ℱ', H: 'ℋ', I: 'ℐ', L: 'ℒ', M: 'ℳ', R: 'ℛ', e: 'ℯ', g: 'ℊ', o: 'ℴ' }],
+    mathfrak: [0x1D504, 0x1D51E, 0, { C: 'ℭ', H: 'ℌ', I: 'ℑ', R: 'ℜ', Z: 'ℨ' }] };
+  function mathml(tex, display) {
+    var tokens = tex.match(/\\[A-Za-z]+|\\[^A-Za-z]|\d+(?:\.\d+)?|\s+|[^\s]/g) || [], at = 0;
+    function peek() { while (at < tokens.length && /^\s+$/.test(tokens[at])) at++; return tokens[at]; }
+    function next() { var token = peek(); at++; return token; }
+    function fail(what) { throw new Error(what); }
+    function expect(token) { if (next() !== token) fail(token); }
+    function one(nodes) { return nodes.length === 1 ? nodes[0] : M('mrow', nodes); }
+    function written() {          // the text of a braced group, as it was written
+      expect('{');
+      var depth = 1, text = '';
+      while (at < tokens.length) {
+        var token = tokens[at++];
+        if (token === '{') depth++;
+        else if (token === '}' && !--depth) return text;
+        text += token;
+      }
+      fail('}');
+    }
+    function argument() {         // a braced group, or the one thing that follows; of a number that is one digit
+      var token = peek();
+      if (token !== '{') {
+        if (!/^\d./.test(token || '')) return atom();
+        tokens[at] = token.slice(1);
+        return M('mn', token[0]);
+      }
+      at++;
+      var nodes = until(['}']);
+      expect('}');
+      return one(nodes);
+    }
+    function delimiter() {
+      var token = next();
+      if (token === undefined) fail('delimiter');
+      if (token === '.') return '';
+      if (token[0] !== '\\') return token;
+      return OPERATOR[token.slice(1)] || fail(token);
+    }
+    function table(stops) {       // rows parted by \\ and cells parted by &
+      var rows = [], cells = [];
+      for (;;) {
+        cells.push(M('mtd', until(['&', '\\\\'].concat(stops))));
+        var token = peek();
+        if (token === '&') { at++; continue; }
+        rows.push(M('mtr', cells));
+        cells = [];
+        if (token !== '\\\\') return rows;
+        at++;
+        if (peek() === '[') { while (at < tokens.length && tokens[at++] !== ']'); }      // a distance between two rows
+        if (stops.indexOf(peek()) >= 0) return rows;
+      }
+    }
+    function faced(node, name) {
+      var face = FACE[name];
+      [node].concat(Array.prototype.slice.call(node.querySelectorAll('mi, mn'))).forEach(function (leaf) {
+        if (leaf.localName !== 'mi' && leaf.localName !== 'mn') return;
+        if (!face) { if (leaf.localName === 'mi') leaf.setAttribute('mathvariant', 'normal'); return; }
+        leaf.textContent = Array.from(leaf.textContent).map(function (letter) {
+          if (face[3][letter]) return face[3][letter];
+          var code = letter.charCodeAt(0);
+          if (code >= 65 && code <= 90) return String.fromCodePoint(face[0] + code - 65);
+          if (code >= 97 && code <= 122) return String.fromCodePoint(face[1] + code - 97);
+          if (code >= 48 && code <= 57 && face[2]) return String.fromCodePoint(face[2] + code - 48);
+          return letter;
+        }).join('');
+      });
+      return node;
+    }
+    function scripts(nodes) {     // what stands below and above the thing before
+      var base = nodes.pop() || M('mrow'), below = null, above = null, primes = '';
+      for (;;) {
+        var token = peek();
+        if (token === '_' && !below) { at++; below = argument(); }
+        else if (token === '^' && !above) { at++; above = argument(); }
+        else if (token === "'") { at++; primes += '′'; }
+        else break;
+      }
+      if (primes) above = above ? M('mrow', [M('mo', primes), above]) : M('mo', primes);
+      nodes.push(below && above ? M(base.limits ? 'munderover' : 'msubsup', [base, below, above])
+               : below ? M(base.limits ? 'munder' : 'msub', [base, below]) : M(base.limits ? 'mover' : 'msup', [base, above]));
+    }
+    function until(stops) {       // the things in a row, up to one of the stops
+      var nodes = [];
+      for (;;) {
+        var token = peek();
+        if (token === undefined || stops.indexOf(token) >= 0) return nodes;
+        if (token === '^' || token === '_' || token === "'") scripts(nodes);
+        else if (token === '\\displaystyle' || token === '\\textstyle') {
+          at++;
+          nodes.push(M('mstyle', until(stops), { displaystyle: token === '\\displaystyle' ? 'true' : 'false' }));
+        } else nodes.push(atom());
+      }
+    }
+    function sign(mark) {         // a bracket keeps its size and takes no space, as TeX sets it; so does a slash
+      if ('([{⌊⌈⟨'.indexOf(mark) >= 0) return M('mo', mark, { form: 'prefix', stretchy: 'false' });
+      if (')]}⌋⌉⟩'.indexOf(mark) >= 0) return M('mo', mark, { form: 'postfix', stretchy: 'false' });
+      if (mark === '/') return M('mo', mark, { lspace: '0', rspace: '0' });
+      if (mark === '|' || mark === '‖') return M('mo', mark, { stretchy: 'false', lspace: '0.1em', rspace: '0.1em' });
+      return M('mo', mark === '-' ? '−' : mark);
+    }
+    function atom() {
+      var token = next();
+      if (token === undefined || token === '}' || token === '&') fail(token || 'end');
+      if (token === '{') { var nodes = until(['}']); expect('}'); return M('mrow', nodes); }
+      if (/^\d/.test(token)) return M('mn', token);
+      if (/^[A-Za-z]$/.test(token)) return M('mi', token);
+      if (token[0] !== '\\') return sign(token);
+      var name = token.slice(1), node;
+      if (SPACE[name] !== undefined) return M('mspace', null, { width: SPACE[name] });
+      if (OPERATOR[name]) { node = sign(OPERATOR[name]); node.limits = !!LIMITS[name]; return node; }
+      if (LETTER[name]) return M('mi', LETTER[name]);
+      if (UPRIGHT[name]) return M('mi', UPRIGHT[name], { mathvariant: 'normal' });
+      if (NAMED[name] !== undefined) {
+        if (!NAMED[name]) return M('mi', name);
+        node = M('mo', name, { movablelimits: 'true', lspace: '0', rspace: '0.167em' });
+        node.limits = true;
+        return node;
+      }
+      if (ACCENT[name]) return M('mover', [argument(), M('mo', ACCENT[name], { stretchy: /^(bar|overline|wide)/.test(name) ? 'true' : 'false' })], { accent: 'true' });
+      if (SIZE[name]) return M('mo', delimiter(), { stretchy: 'true', symmetric: 'true', minsize: SIZE[name], maxsize: SIZE[name] });
+      if (FACE[name] || name === 'mathrm' || name === 'mathit' || name === 'mathnormal') return name === 'mathit' || name === 'mathnormal' ? argument() : faced(argument(), name);
+      switch (name) {
+        case 'frac': case 'dfrac': case 'tfrac':
+          node = M('mfrac', [argument(), argument()]);
+          return name === 'frac' ? node : M('mstyle', [node], { displaystyle: name === 'dfrac' ? 'true' : 'false' });
+        case 'binom': case 'dbinom': case 'tbinom':
+          return M('mrow', [M('mo', '('), M('mfrac', [argument(), argument()], { linethickness: '0' }), M('mo', ')')]);   // these brackets stretch
+        case 'sqrt':
+          if (peek() !== '[') return M('msqrt', [argument()]);
+          at++;
+          var index = one(until([']']));
+          expect(']');
+          return M('mroot', [argument(), index]);
+        case 'underline': return M('munder', [argument(), M('mo', '_', { stretchy: 'true' })], { accentunder: 'true' });
+        case 'text': case 'textrm': case 'mbox': case 'textit': case 'textbf': return M('mtext', written().replace(/ /g, '\u00a0'));
+        case 'operatorname': return M('mi', written().trim(), { mathvariant: 'normal' });
+        case 'left':
+          var open = delimiter(), inner = until(['\\right']);
+          expect('\\right');
+          return M('mrow', [M('mo', open)].concat(inner, [M('mo', delimiter())]));
+        case 'substack':
+          expect('{');
+          node = M('mtable', table(['}']), { 'class': 'stack' });
+          expect('}');
+          return node;
+        case 'begin':
+          var kind = written(), rows = table(['\\end']);
+          expect('\\end');
+          if (written() !== kind) fail(kind);
+          node = M('mtable', rows, { 'class': kind === 'cases' || kind === 'aligned' || kind === 'align' ? 'left' : 'centre' });
+          var fences = { cases: ['{', ''], pmatrix: ['(', ')'], bmatrix: ['[', ']'], vmatrix: ['|', '|'], matrix: ['', ''], aligned: ['', ''],
+                         align: ['', ''], array: ['', ''] }[kind] || fail(kind);
+          return M('mrow', [M('mo', fences[0]), node, M('mo', fences[1])]);
+        default: fail(token);
+      }
+    }
+    var nodes = until([]);
+    return M('math', nodes, { display: display ? 'block' : 'inline' });
+  }
+  function formula(tex, display) {
+    var node;
+    try { node = mathml(tex, display); } catch (error) { return el('span', tex, 'tex' + (display ? ' display' : '')); }
+    if (!display) return node;
+    var frame = el('span', null, 'display');
+    frame.appendChild(node);
+    return frame;
+  }
+
+  // ---- words: the records write Markdown around their formulas; the page sets emphasis and code, and links a
+  // Lean name to its unit or step
   function prose(text, cls) {
     var node = el('div', null, 'prose' + (cls ? ' ' + cls : ''));
-    var pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|`[^`\n]+`|\*\*[^*\n]+?\*\*|\*[^*\s][^*\n]*?\*)/g, at = 0, m;
+    var pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|`[^`\n]+`|\*\*[^*\n]+?\*\*|\*[^*\s][^*\n]*?\*)/g, at = 0, m, after = false;
+    function words(until, before) {       // the prose between two marked pieces; a displayed formula takes the line breaks beside it
+      var part = text.slice(at, until);
+      if (after) part = part.replace(/^\n+/, '');
+      if (before) part = part.replace(/\n+$/, '');
+      if (part) node.appendChild(document.createTextNode(part));
+    }
     while ((m = pattern.exec(text))) {
-      if (m.index > at) node.appendChild(document.createTextNode(text.slice(at, m.index)));
-      var piece = m[0];
-      if (piece.slice(0, 2) === '$$') node.appendChild(el('span', piece.slice(2, -2).trim(), 'tex display'));
-      else if (piece[0] === '$') node.appendChild(el('span', piece.slice(1, -1), 'tex'));
+      var piece = m[0], shown = piece.slice(0, 2) === '$$';
+      words(m.index, shown);
+      after = shown;
+      if (shown) node.appendChild(formula(piece.slice(2, -2).trim(), true));
+      else if (piece[0] === '$') node.appendChild(formula(piece.slice(1, -1), false));
       else if (piece[0] === '`') {
         var name = piece.slice(1, -1), code = el('code', name);
         if (unit[name] || data.folded[name]) {
@@ -409,7 +560,7 @@ __SVG__
       else node.appendChild(el('em', piece.slice(1, -1)));
       at = m.index + piece.length;
     }
-    if (at < text.length) node.appendChild(document.createTextNode(text.slice(at)));
+    words(text.length, false);
     return node;
   }
   function meaning(word) {
@@ -468,8 +619,10 @@ __SVG__
   function mark(N, E, pick) {
     Object.keys(N).forEach(function (m) { if (nodeEl[m]) nodeEl[m].classList.add('hi'); });
     if (pick) nodeEl[pick].classList.add('pick');
-    Object.keys(E).forEach(function (id) { if (edgeEl[id]) edgeEl[id].classList.add('hi'); });
-    tagged.forEach(function (g) { if (E[g.dataset.edge]) g.classList.add('hi'); });
+    Object.keys(E).forEach(function (id) {
+      if (edgeEl[id]) edgeEl[id].classList.add('hi');
+      (sharedEl[id] || []).forEach(function (g) { g.classList.add('hi'); });
+    });
     document.body.classList.add('focus');
   }
   function render(move) {
@@ -554,7 +707,9 @@ __SVG__
   }
   function bar(n) {             // the way out of a selection, and the way to the selected card
     var row = el('div', null, 'bar');
-    row.appendChild(button('← Whole map', function () { fit(); go({}); }));
+    var leave = button('✕ Clear selection', function () { fit(); go({}); });
+    leave.title = 'Clear the selection and show the whole map. Esc clears it and leaves the view where it is.';
+    row.appendChild(leave);
     if (n) row.appendChild(button('Zoom to this card', function () { centreOn(cardBox(n), NEAR); }));
     content.appendChild(row);
   }
@@ -746,8 +901,6 @@ __SVG__
   }
   svg.addEventListener('click', function (ev) {
     if (moved) { moved = false; return; }                   // it was a drag
-    var title = ev.target.closest ? ev.target.closest('#titles text') : null;
-    if (title && groupBox[title.dataset.group]) { showBox(groupBox[title.dataset.group], 30); return; }
     var g = ev.target.closest ? ev.target.closest('g.node') : null;
     if (g) pick(g.dataset.node);
     else if (state.node || state.step) go({});

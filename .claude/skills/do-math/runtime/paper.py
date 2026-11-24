@@ -1,7 +1,8 @@
 """Write the paper of an instance whose root is settled by a formal proof.
 
     python paper.py <instance> --out <folder> [--resume] [--parallel <n>] [--dry-run]
-                    [--model <provider/model>] [--effort <effort>] [--typeset-only] [--tex <command...>]
+                    [--model <provider/model>] [--effort <effort>] [--typeset-only]
+                    [--open-findings [<numbers>]] [--tex <command...>]
 
 One command produces the paper to the end without stopping for the user. What the sessions it
 launches do not decide is fixed in ../reference/paper-method.md, which they receive. The stages:
@@ -20,14 +21,17 @@ launches do not decide is fixed in ../reference/paper-method.md, which they rece
                statements of the elements of other sections that those name. It reads the account
                of the papers and the two papers of its section. The introduction is written first;
                the other sections are written side by side, up to --parallel at a time
-  settle       the script assembles paper.tex, checks it by machine and typesets it; what fails
-               goes to repair sessions, and the manuscript is assembled and checked again
+  settle       the script assembles paper.tex, checks it by machine and typesets it, and typesets
+               it once more, in typeset/displays, only to measure which displayed formulas have
+               less room than they need; what fails goes to repair sessions, and the manuscript is
+               assembled and checked again
   reading      a session that has only the manuscript reads it as the paper's reader, and repair
-               sessions take up what it found; the last such reading is followed by no repair, so
-               that no text goes unread, and what it found stays open
+               sessions take up what it found; the manuscript is read again after each repair
+               but the last, which is narrow and of which only the changes are read (see below)
   likeness     a session that has the manuscript and four papers the plan did not choose reports
                where the manuscript is written otherwise than they are; repair sessions take up
-               what it found, until two such readings in succession find nothing
+               what it found, until two such readings in succession find nothing. When the bound
+               of these readings is reached first, the repair after the last of them is narrow
   rereading    when a repair after a reading beside real papers rewrote the manuscript, it is read
                by itself again as under "reading": a rewriting for manner can change a proof
   comparison   for each section a session compares its numbered statements with the statements of
@@ -42,19 +46,61 @@ session that may change every part, after the others. Each session runs in its o
 <out>/sessions with its prompt and the files it is given, and the script reads the files the prompt
 asked for.
 
+A repair may rewrite, and a rewriting can lose a step of a proof, so the text that a repair leaves
+is read. After every reading but the last of its stage, the next reading does that. The repair
+after the last reading is followed by no reading of the whole manuscript, so it is made narrowly,
+and what it changed is read:
+
+  repair   the repair sessions are told to change the passages that their findings name and
+           nothing else
+  settle   the manuscript is assembled, checked by machine and typeset, as after every repair
+  read     one session has the manuscript and every passage that differs from the text which the
+           last reading read, each with its text before and after. It reads each where it stands
+           and says whether the change is sound (no step lost, no statement changed in what it
+           says, notation and references consistent with the rest), for which findings it was
+           made, and for each finding whether the changes answer it
+  undo     a change found unsound is put back as it was read, and with it the other changes made
+           for the same findings; the manuscript is checked and typeset once more, without
+           repairs. When the manuscript fails its checks here or under "settle", every change
+           of the repair is put back
+
+No further round follows. Every passage of the manuscript is then text that the last reading read,
+or a change that was found sound. A finding that stays open says why under "open_because": the
+repair session kept the text, or its change was undone, or its change is sound and stays and does
+not answer the finding. Such a repair is not a rewriting for the stage "rereading", which follows
+the repairs that may rewrite. The statements are compared after it, in the stage "comparison".
+
 <out> receives paper.tex, references.bib, paper.pdf, plan.json, correspondence.json (which element
 each numbered statement states; never inside the paper), materials.md and log.json (what was
 launched and what each check found). The work stays beside them: materials.json, study.md (the
 planning session's account of how the chosen papers are written), parts/ (the abstract and the
-sections as they stand), state.json, sessions/ and typeset/. --typeset-only does not use the
-collection.
+sections as they stand), state.json, sessions/ and typeset/, and narrow/ while a narrow repair is
+under way (the parts as they were read, and the texts that are put back). --typeset-only does not
+use the collection.
 
 Everything a later step needs is in <out> as soon as it exists, so a run that was stopped is
 continued with --resume and the same --out. The materials are taken from the canon again and have to
 be those of materials.json; a plan that is there and passes the check is used; a part that is there
 is not written again; and state.json says which of the stages after the writing are complete, with
 what the later ones need from them. A stage that was interrupted is made again from its start, on
-the parts as they stand. Without --resume, <out> is new or empty.
+the parts as they stand. The one exception is a run that was stopped inside a narrow repair or the
+reading of its changes: state.json records the step it was in and the findings, and the run goes on
+at that step, without making the readings before it again; a repair that was stopped is made again
+from the parts as they were read. Without --resume, <out> is new or empty.
+
+--open-findings takes up a run that came to its end with findings left open (exit code 2) and acts
+on them in one pass. With --dry-run it lists the open findings of the last `end` event of log.json,
+numbered, each with the check it comes from and the place it points to, and launches nothing.
+Without numbers it acts on all of them; followed by numbers of that list, as in
+--open-findings 2,5-7, it acts on those, and the others stay open as they were. The findings of the
+readings and of the comparison go to a narrow repair with its settling and the reading of its
+changes, as above. Then the numbered statements whose text the pass changed, and the chosen ones
+that were never compared, are compared with their elements, once: a statement that differs then is
+reported as open and is not repaired in the same pass. A line wider than the text block is not
+taken up finding by finding: the settling sends every such line to repair whenever the pass changed
+a part or such a line was chosen, because the typesetting cannot tell an old wide line from a new
+one. The pass ends with a new `end` event. It needs the canon to be what the run began with, as
+--resume does, and a pass that was stopped is continued with --resume.
 
 --parallel is the number of sessions that run side by side where the work allows it: the sections
 after the introduction, the repairs of different sections, the comparisons of different sections.
@@ -73,6 +119,7 @@ Exit codes: 0 the paper is complete; 1 refused or failed; 2 produced with findin
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor, wait
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -104,7 +151,7 @@ MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'categ
 PLAN_ATTEMPTS = 3      # planning sessions before the command gives up on a plan it can carry out
 SESSION_ATTEMPTS = 2   # sessions of any other kind before it gives up on output it can read
 REPAIR_ROUNDS = 3      # repair sessions for one round of machine checks and typesetting
-READING_ROUNDS = 3     # independent readings at one time; a repair follows every one but the last
+READING_ROUNDS = 3     # independent readings at one time; the repair after the last one is narrow (narrow_run)
 CHOSEN_PAPERS = 6      # papers of the collection the plan chooses for the paper to be written like
 SECTION_PAPERS = 2     # of those, the papers the plan names for one section; its writer reads them whole
 PARALLEL = 4           # sessions side by side, unless --parallel says otherwise; a session mostly waits on the network
@@ -120,6 +167,24 @@ WIDE = 'lines wider than the text block'
 UNCOMPARED = 'numbered statements whose present text was not compared with their elements'
 READING = 'reading of the manuscript by itself'
 LIKENESS = 'reading of the manuscript beside real papers'
+COMPARISON = 'comparison of the numbered statements with their elements'
+MACHINE = 'machine checks of the manuscript'
+TYPESETTING = 'typesetting'
+# The checks whose findings a repair session can take up one by one, each with the kind of repair that does. The last
+# repair that a reading receives, and every repair of findings that a finished run left open, is a narrow one: it
+# changes the passages its findings name, and a session then reads the passages it changed (Paper.narrow_run).
+NARROW_KINDS = {READING: 'reading', LIKENESS: 'likeness', COMPARISON: 'comparison'}
+# Why a finding is open after the last repair it received, as the open list says it under "open_because".
+KEPT = 'the repair session kept the text: '
+UNDONE = 'changed, and the change was undone, because the reading of the changed passages found it unsound: '
+UNANSWERED = 'changed, and the reading of the changed passages found that the change does not answer the finding; the change stays: '
+FAILING = ('changed, and every change of this repair was undone, because the manuscript did not pass its machine checks '
+           'or could not be typeset with them: ')
+NO_CHANGE = 'the repair session reported a change, and the manuscript does not differ from the text that was read'
+ONCE_CONFIRMED = ('repaired after the reading that reported it; the one reading that followed found no departure, and '
+                  'the readings ended at their bound before a second reading confirmed that')
+DIFFERS_NOW = ('the statement was changed by a repair of open findings, and the comparison that followed found this '
+               'difference')
 # The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
           ('comparison', 'compare'))
@@ -152,7 +217,17 @@ PREAMBLE = r'''\documentclass{amsart}
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 \numberwithin{equation}{section}
+\makeatletter
+\def\subsection{\@startsection{subsection}{2}\z@{.5\linespacing\@plus.7\linespacing}{-.5em}{\normalfont\bfseries\boldmath}}
+\makeatother
 '''
+# The definition of \subsection is that of amsart with \boldmath added: the heading of a subsection is bold, and
+# a formula in it is then bold as well, where the class alone leaves the formula in the weight of the text.
+# amsart centres the running head in the line that carries the page number at its outer end, and does not shorten
+# it. A head wider than this share of the line would be printed over the page number and out into the margin, so
+# such a head is left out and the line carries the page number alone.
+RUNNING_HEAD = (r'\sbox0{\normalfont\scriptsize\RunningHead}\ifdim\wd0>.85\textwidth\markboth{}{}'
+                r'\else\markboth{\RunningHead}{\RunningHead}\fi')
 
 
 # runtime_support builds every file it writes in one buffer that the whole process shares, which suits the single
@@ -644,6 +719,8 @@ def check_plan(materials, plan, keys):
     for key in ('title', 'outline'):
         if not is_text(plan.get(key)):
             bad(f'"{key}" is a nonempty text')
+    if 'short_title' in plan and not is_text(plan['short_title']):
+        bad('"short_title", when the plan has it, is a nonempty text')
     problems += choice_problems(plan, keys)
     sections, statements, others = plan.get('sections'), plan.get('statements'), plan.get('others')
     for key, value in (('sections', sections), ('statements', statements), ('others', others)):
@@ -687,7 +764,8 @@ def check_plan(materials, plan, keys):
     # The titles stand in the manuscript as the plan has them, and a repair keeps the plan. A Lean name or the
     # word Lean in a title is therefore reported here, where a planning session can still change it.
     pattern = identifier_pattern(materials['identifiers'])
-    titles = [('the title', plan.get('title'))] + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections]
+    titles = [('the title', plan.get('title')), ('the short title', plan.get('short_title'))] \
+        + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections]
     for where, title in titles:
         if is_text(title):
             plain = title.replace('\\_', '_')
@@ -1150,8 +1228,9 @@ def assemble(plan, parts):
     cites = any(CITE.search(uncommented(text)) for text in parts.values())
     title = plan['title'].strip()
     # The manuscript names no author. amsart then takes the title for the running head of the even pages and
-    # puts it in capitals a second time, the letters of its formulas included. The head is set here instead.
-    lines = (PREAMBLE + '\\newcommand{\\RunningHead}{' + title
+    # puts it in capitals a second time, the letters of its formulas included. The head is set here instead,
+    # from the short title when the plan gives one.
+    lines = (PREAMBLE + '\\newcommand{\\RunningHead}{' + plan.get('short_title', title).strip()
              + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n\\title{' + title
              + '}\n\\begin{abstract}').split('\n')
     spans = []
@@ -1162,7 +1241,7 @@ def assemble(plan, parts):
         lines.extend(body)
 
     add('abstract')
-    lines += ['\\end{abstract}', '\\maketitle', '\\markboth{\\RunningHead}{\\RunningHead}']
+    lines += ['\\end{abstract}', '\\maketitle', RUNNING_HEAD]
     for section in plan['sections']:
         lines += ['', '\\section{' + section['title'].strip() + '}\\label{sec:' + section['id'] + '}']
         add(section['id'])
@@ -1170,6 +1249,39 @@ def assemble(plan, parts):
         lines += ['', '\\bibliographystyle{amsplain}', '\\bibliography{references}']
     lines += ['\\end{document}', '']
     return '\n'.join(lines), spans
+
+
+TITLE_FIELD = re.compile(r'^\s*title\s*=\s*\{', re.M | re.I)
+
+
+def capitals_kept(bibliography):
+    """The bibliography for BibTeX, with the capitals of its titles kept where a TeX command writes them.
+
+    A BibTeX style puts a title in lower case after its first letter and leaves alone what stands in
+    braces. A group that begins with a command, as in {\\L}ukasiewicz or {\\'E}tale, is the exception:
+    BibTeX reads it as one letter and lowers it with the rest, so that the name is printed with a small
+    letter. A second pair of braces around such a group keeps the capital that the entry wrote."""
+    out, position = [], 0
+    for field in TITLE_FIELD.finditer(bibliography):
+        index, depth = field.end(), 1  # just inside the braces of the field
+        while index < len(bibliography) and depth:
+            char = bibliography[index]
+            if char == '{':
+                depth += 1
+                if depth == 2 and bibliography[index + 1:index + 2] == '\\':
+                    end, inner = index + 1, 1
+                    while end < len(bibliography) and inner:
+                        inner += {'{': 1, '}': -1}.get(bibliography[end], 0)
+                        end += 1
+                    group = bibliography[index:end]
+                    if not inner and re.search(r'[A-Z]', group):
+                        out += [bibliography[position:index], '{', group, '}']
+                        position = end
+                    index, depth = end - 1, depth - 1 if not inner else depth
+            elif char == '}':
+                depth -= 1
+            index += 1
+    return ''.join(out) + bibliography[position:]
 
 
 def found_statements(plan, parts):
@@ -1378,6 +1490,46 @@ def wide_lines(log):
     return list(dict.fromkeys(found))
 
 
+# A displayed formula that is too long for its line does not always stand out into the margin. TeX first closes
+# up the spaces around its + and - signs, and when the formula has a number it moves the number to a line of its
+# own; neither is an "Overfull" line of the log. So the manuscript is typeset a second time, only to be measured:
+# with these lines in its preamble a display cannot close up its spaces, and a numbered `equation` has the width
+# of its line less the room of its number, which is then left out. What TeX then reports as too wide is a display
+# that has less room than it needs. The PDF of this typesetting is not used.
+DISPLAY_ROOM = (r'\makeatletter\everydisplay\expandafter{\the\everydisplay\medmuskip=4mu plus 2mu\relax}'
+                r'\let\paper@equation\equation\def\equation{\paper@equation'
+                r'\setbox\z@\hbox{\maketag@@@{(\theequation)}}'
+                r'\advance\displaywidth-\dimexpr\wd\z@+\fontdimen6\textfont2\relax\def\maketag@@@##1{}}\makeatother')
+TIGHT = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) detected at line (\d+)')
+
+
+def tight_displays(folder, recipe):
+    """The displayed formulas of the typeset manuscript in `folder` that have less room than they need.
+
+    Each is given by the line of paper.tex at which it ends. A display that the log of the manuscript itself
+    reports as too wide is left to `wide_lines`. When the second typesetting fails, nothing is reported: the
+    manuscript itself was typeset, and this measurement adds to that and decides nothing about it."""
+    folder = Path(folder)
+    measured = folder / 'displays'
+    measured.mkdir(exist_ok=True)
+    write_text(measured / 'paper.tex',
+               read_file(folder / 'paper.tex').replace('\\begin{document}', DISPLAY_ROOM + '\\begin{document}', 1))
+    if (folder / 'references.bib').is_file():
+        shutil.copyfile(folder / 'references.bib', measured / 'references.bib')
+    if typeset(measured, recipe):
+        return []
+    logs = [path.read_text(encoding='utf-8', errors='replace') if path.is_file() else ''
+            for path in (folder / 'paper.log', measured / 'paper.log')]
+    known = {line for _, line in TIGHT.findall(logs[0])}
+    found = {}
+    for width, line in TIGHT.findall(logs[1]):
+        if float(width) > WIDE_PT and line not in known:
+            found[line] = max(found.get(line, 0.0), float(width))
+    return [f'paper.tex, line {line}: the displayed formula that ends here is {width:.0f}pt wider than the room it has '
+            'on its line (beside its number, when it has one), so TeX closed up the spaces in it or moved its number to '
+            'a line of its own' for line, width in sorted(found.items(), key=lambda item: int(item[0]))]
+
+
 WIDE_LINE = re.compile(r'paper\.tex, lines? (\d+)')
 
 
@@ -1436,6 +1588,10 @@ title, a symbol) is LaTeX; inside a JSON string a backslash is written twice.
 - "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
 `exemplars.md` gives them.
 - "title": the title of the paper.
+- "short_title": the title in a shorter form, for the running head. The head is one line of small capitals at the top \
+of every page, beside the page number, and it has room for about fifty-five letters and spaces. Leave the key out when \
+the title itself is no longer than that. A head that does not fit is not printed, and the pages then carry their \
+numbers alone.
 - "outline": a few sentences for the writers saying how the proof goes and at which step its difficulty lies. The outline \
 of the proof in the introduction, and the room each proof receives, follow it.
 - "sections": the sections in the order of the paper, each {"id", "title", "content", "exemplars"}. "id" is a short \
@@ -1591,47 +1747,72 @@ order, {"finding": <its number, from 1>, "action": "revised" or "kept", "note": 
 an empty array when there is no finding.'''
 
 # What a repair session is told about its findings: for a session that repairs one section, and for the session that
-# takes up what concerns no single section and may change every part.
-SECTION_KINDS = {
-    'machine': '''The script's checks of the assembled manuscript found in this section the problems listed in \
-`findings.json`. Each is a requirement of the method or of the plan. Correct every one.''',
-    'wide': '''TeX typeset the manuscript, and some lines of this section came out wider than the text block, so that they \
-stand out into the margin of the printed page. `findings.json` lists them, with the lines of `paper.tex` they come from \
-and by how much each is too wide. Where the line is a displayed formula, break the formula over two or more lines, with \
-an environment such as `multline*` or `align*`. Where it is a line of a paragraph, TeX found no place to break it: display \
-the long formula, or reword the sentence. Change nothing in what the text says.''',
-    'reading': '''A session that had the manuscript and nothing else read it as the reader the method describes. \
+# takes up what concerns no single section and may change every part. Each text says first what the findings are and
+# then what the session does with them; a narrow repair is told the first in the same words and the second otherwise.
+READ_SECTION = '''A session that had the manuscript and nothing else read it as the reader the method describes. \
 `findings.json` holds, under "findings", the places in this section where that reader could not follow, missed something, \
 found an error, or met text that does not belong in a paper. Under "understanding" it holds what the reader took the whole \
-paper to prove and how, so that you see how the paper was read; another session compares that understanding with the \
-research.
-
-Decide for each finding whether the manuscript has to change. A reader can misread, and a finding can ask for something \
-the method excludes; in that case keep the text and say why. So do you when the cause of a finding lies in another \
-section, which this session does not change: say in the note which section, and what would have to change there. In every \
-other case revise so that the next reader does not meet the same difficulty, which may mean rewriting the passage from \
-the records in your brief instead of adjusting its wording.''',
-    'comparison': '''A session compared the numbered statements of this section with the statements of their elements. \
+paper to prove and how, so that you see how the paper was read{compared}.'''
+READ_DECIDE = '''Decide for each finding whether the manuscript has to change. A reader can misread, and a finding can ask \
+for something the method excludes; in that case keep the text and say why.'''
+READ_ELSEWHERE = ''' So do you when the cause of a finding lies in another \
+section, which this session does not change: say in the note which section, and what would have to change there.'''
+READ_WHOLE = '''A session that had the manuscript and nothing else read it as the reader the method describes. \
+`findings.json` holds its report: "understanding" is what that reader took the paper to prove and how; "findings" are the \
+places where the reader could not follow, missed something, found an error, or met text that does not belong in a paper, \
+as far as they concern no single section. What the reader found in one section has gone to a session that repaired that \
+section, and `paper.tex` is the manuscript as those sessions left it.'''
+COMPARED_SECTION = '''A session compared the numbered statements of this section with the statements of their elements. \
 `findings.json` lists the statements it found to differ. A numbered statement says exactly what its element says \
 (method, section "Every numbered statement says what its element says"). Correct each statement that differs, and adjust \
 its proof and the places of this section that use it where the correction requires it. When a reported difference is one \
 the method permits, keep the statement and say why. The proof of a statement, or a use of it, can stand in another \
 section, which this session does not change. The writer of that section worked from the statement of the element, as \
 your brief gives it, and not from the wording that you now correct; where the correction nevertheless requires a change \
-there, say in the note which section and what. The whole manuscript is read again after this repair.''',
-    'likeness': '''A session that had the manuscript and four research articles from refereed journals, and nothing \
+there, say in the note which section and what.'''
+COMPARED_WHOLE = '''A session compared every numbered statement of the manuscript with the statement of its element. \
+`findings.json` lists the statements it found to differ. A numbered statement says exactly what its element says \
+(method, section "Every numbered statement says what its element says"). Correct each statement that differs, and adjust \
+its proof and the places that use it where the correction requires it. When a reported difference is one the method \
+permits, keep the statement and say why.'''
+LIKE_SECTION = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
 else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
 describes. `findings.json` holds what it found in this section: places where the manuscript is written otherwise than \
 real papers are written. Each finding gives the place ("where"), the passage of the manuscript ("quote", empty when the \
 finding is that something is missing), passages from those papers that show what they do at such a place ("evidence"), \
-and the difference ("difference").
+and the difference ("difference").'''
+LIKE_WHOLE = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
+else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
+describes. `findings.json` holds what it found, as far as it concerns no single section: places where the manuscript is \
+written otherwise than real papers are written. Each finding gives the place ("where"), the passage of the manuscript \
+("quote", empty when the finding is that something is missing), passages from those papers that show what they do at \
+such a place ("evidence"), and the difference ("difference").'''
+LIKE_KEPT = '''The mathematics stays as it is, and so do the plan and the decisions of the method; the passages show \
+manner, and no sentence of theirs is copied or paraphrased into the manuscript. Where following a finding would change \
+the mathematics, depart from the plan or undo a decision of the method, such as that the paper names no author or that \
+it does not mention Lean, keep the text and say why.'''
+
+SECTION_KINDS = {
+    'machine': '''The script's checks of the assembled manuscript found in this section the problems listed in \
+`findings.json`. Each is a requirement of the method or of the plan. Correct every one.''',
+    'wide': '''TeX typeset the manuscript, and some lines of this section came out wider than the text block, so that they \
+stand out into the margin of the printed page. Some displayed formulas may also have less room on their line than they \
+need: TeX then closes up the spaces inside the formula, or moves the number of the formula to a line of its own. \
+`findings.json` lists these lines and formulas, with the lines of `paper.tex` they come from and by how much each is too \
+wide. Where the line is a displayed formula, break the formula over two or more lines, with an environment such as \
+`multline*` or `align*`; a formula with a number keeps its number and its label, in `multline` or in `equation` with \
+`split` inside. Where it is a line of a paragraph, TeX found no place to break it: display the long formula, or reword \
+the sentence. Change nothing in what the text says.''',
+    'reading': READ_SECTION.format(compared='; another session compares that understanding with the research') + '''
+
+''' + READ_DECIDE + READ_ELSEWHERE + ''' In every \
+other case revise so that the next reader does not meet the same difficulty, which may mean rewriting the passage from \
+the records in your brief instead of adjusting its wording.''',
+    'comparison': COMPARED_SECTION + ' The whole manuscript is read again after this repair.',
+    'likeness': LIKE_SECTION + '''
 
 Rewrite this section so that at each of these places the manuscript does what the papers do: in the structure, the \
-wording, the manner and the flow that the passages show, and as the papers in `exemplars/` write. The mathematics stays \
-as it is, and so do the plan and the decisions of the method; the passages show manner, and no sentence of theirs is \
-copied or paraphrased into the manuscript. Where following a finding would change the mathematics, depart from the plan \
-or undo a decision of the method, such as that the paper names no author or that it does not mention Lean, keep the text \
-and say why.'''}
+wording, the manner and the flow that the passages show, and as the papers in `exemplars/` write. ''' + LIKE_KEPT}
 
 WHOLE_KINDS = {
     'machine': '''The script's checks of the assembled manuscript found the problems listed in `findings.json`. Each is a \
@@ -1640,15 +1821,14 @@ requirement of the method or of the plan. Correct every one.''',
 them are lines of `paper.tex`. Correct the cause of each error in the part where it lies, which need not be the part in \
 which TeX noticed it.''',
     'wide': '''TeX typeset the manuscript, and some lines came out wider than the text block, so that they stand out into \
-the margin of the printed page. `findings.json` lists them, with the lines of `paper.tex` they come from and by how much \
-each is too wide. Where the line is a displayed formula, break the formula over two or more lines, with an environment \
-such as `multline*` or `align*`. Where it is a line of a paragraph, TeX found no place to break it: display the long \
-formula, or reword the sentence. Change nothing in what the text says.''',
-    'reading': '''A session that had the manuscript and nothing else read it as the reader the method describes. \
-`findings.json` holds its report: "understanding" is what that reader took the paper to prove and how; "findings" are the \
-places where the reader could not follow, missed something, found an error, or met text that does not belong in a paper, \
-as far as they concern no single section. What the reader found in one section has gone to a session that repaired that \
-section, and `paper.tex` is the manuscript as those sessions left it.
+the margin of the printed page. Some displayed formulas may also have less room on their line than they need: TeX then \
+closes up the spaces inside the formula, or moves the number of the formula to a line of its own. `findings.json` lists \
+these lines and formulas, with the lines of `paper.tex` they come from and by how much each is too wide. Where the line \
+is a displayed formula, break the formula over two or more lines, with an environment such as `multline*` or `align*`; a \
+formula with a number keeps its number and its label, in `multline` or in `equation` with `split` inside. Where it is a \
+line of a paragraph, TeX found no place to break it: display the long formula, or reword the sentence. Change nothing in \
+what the text says.''',
+    'reading': READ_WHOLE + '''
 
 First compare the understanding with the research: with `root.md`, with the outline of the plan, and with the records \
 of the main result and of the elements that its proof names. Where the reader understood something other than what \
@@ -1656,24 +1836,57 @@ these say, the manuscript did not convey it, whether or not a finding points the
 the manuscript has to change. A reader can misread, and a finding can ask for something the method excludes; in that case \
 keep the text and say why. In every other case revise so that the next reader does not meet the same difficulty, which \
 may mean rewriting the passage from the records instead of adjusting its wording.''',
-    'comparison': '''A session compared every numbered statement of the manuscript with the statement of its element. \
-`findings.json` lists the statements it found to differ. A numbered statement says exactly what its element says \
-(method, section "Every numbered statement says what its element says"). Correct each statement that differs, and adjust \
-its proof and the places that use it where the correction requires it. When a reported difference is one the method \
-permits, keep the statement and say why.''',
-    'likeness': '''A session that had the manuscript and four research articles from refereed journals, and nothing \
-else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
-describes. `findings.json` holds what it found, as far as it concerns no single section: places where the manuscript is \
-written otherwise than real papers are written. Each finding gives the place ("where"), the passage of the manuscript \
-("quote", empty when the finding is that something is missing), passages from those papers that show what they do at \
-such a place ("evidence"), and the difference ("difference").
+    'comparison': COMPARED_WHOLE,
+    'likeness': LIKE_WHOLE + '''
 
 Rewrite the parts so that at each of these places the manuscript does what the papers do: in the structure, the wording, \
-the manner and the flow that the passages show, and as the papers in `exemplars/` write. The mathematics stays as it is, \
-and so do the plan and the decisions of the method; the passages show manner, and no sentence of theirs is copied or \
-paraphrased into the manuscript. Where following a finding would change the mathematics, depart from the plan or undo a \
-decision of the method, such as that the paper names no author or that it does not mention Lean, keep the text and \
-say why.'''}
+the manner and the flow that the passages show, and as the papers in `exemplars/` write. ''' + LIKE_KEPT}
+
+# What a narrow repair is told in the place of the second half, the same for a section and for the whole. It is the
+# last repair that its findings receive: no reading of the whole manuscript follows it, only a reading of the passages
+# it changed, so it changes the passages that its findings name and nothing else.
+NARROW = '''After this repair no session reads the whole manuscript again. The session that reported the findings has read \
+every passage of the manuscript as it stands. After the repair another session reads the passages that the repair \
+changed, and those only. For each of them it has the text before and the text after. It reads the new text where it \
+stands in the manuscript and judges whether the change is sound: whether every step of an argument is still there, \
+whether every statement still says what it said, and whether the notation and the references still agree with the rest \
+of the manuscript. A change that it finds unsound is undone by the script, together with the other changes that were \
+made for the same finding, and the finding is then reported as open. A change that it finds sound stays in the paper, and \
+nobody reads that passage again. A finding for which you keep the text is reported as open as well, with your note.
+
+So this repair is narrow. For each finding change the passage that the finding names, and change it only as far as the \
+finding requires. What a finding requires can lie beside the passage it names, as when a term has to be defined before \
+the sentence that uses it; such a change belongs to the answer and is made. Leave every other passage exactly as it is, \
+also where you would write it otherwise or see a slip in it: a passage that is changed without a finding asking for it \
+is one more passage that has to be judged, and when a change in it is found unsound, the repair of a finding can be \
+undone with it. A finding that speaks of the manuscript throughout and names places as examples is answered at the \
+places it names; say in the note that the other places stand as they were. Where a finding can be answered only by more \
+than this, for example by rearranging a section or by writing a proof anew, keep the text and say in the note what would \
+have to change.
+
+In the note of a finding that you revise, say which passages you changed for it. The session that reads the changes \
+has the notes, and tells from them which change belongs to which finding.'''
+NARROW_AGAIN = '''
+
+A finding that carries "open_because" was taken up before and left open, and the text under that key says why: an \
+earlier repair kept the text; or its change was found unsound and undone, so that the text is again as it was; or its \
+change stayed in the text and was found not to answer the finding; or the finding was repaired and too few readings \
+followed to confirm the repair. Decide about such a finding anew, on the text as it stands, with that reason in view.'''
+NARROW_READ = ''' In every other case revise the passage that the finding names, so that a reader of the paper does not \
+meet the same difficulty there.'''
+NARROW_LIKE = '''At each of these places change the passage that the finding quotes, or add what the finding misses at the \
+place it names, so that the manuscript does there what the papers do, in the manner that the passages under "evidence" \
+show. '''
+NARROW_TITLE = ''' The title of the paper stands in the plan, which a repair keeps: for a finding about the title, keep \
+the text and say so.'''
+NARROW_SECTION_KINDS = {
+    'reading': READ_SECTION.format(compared='') + '\n\n' + READ_DECIDE + READ_ELSEWHERE + NARROW_READ + '\n\n' + NARROW,
+    'comparison': COMPARED_SECTION + '\n\n' + NARROW,
+    'likeness': LIKE_SECTION + '\n\n' + NARROW_LIKE + LIKE_KEPT + '\n\n' + NARROW}
+NARROW_WHOLE_KINDS = {
+    'reading': READ_WHOLE + '\n\n' + READ_DECIDE + NARROW_READ + NARROW_TITLE + '\n\n' + NARROW,
+    'comparison': COMPARED_WHOLE + '\n\n' + NARROW,
+    'likeness': LIKE_WHOLE + '\n\n' + NARROW_LIKE + LIKE_KEPT + NARROW_TITLE + '\n\n' + NARROW}
 
 SECTION_REPAIR_PROMPT = CONTEXT + '''
 
@@ -1801,7 +2014,7 @@ In this folder:
 - `paper-method.md` is the method the manuscript was written by. Its sections "What of the canon the paper leaves out" and \
 "Every numbered statement says what its element says" say what a numbered statement has to say and which differences from \
 the record are permitted.
-- `statements.json` lists the numbered statements of this section: for each its label, its number, the element it \
+- `statements.json` lists {listed}: for each its label, its number, the element it \
 states, the statement of that element in words as its record gives it, the element's Lean statement, and the statement \
 as the manuscript has it.
 - `records.md` holds the records in full of the elements that these statements state, and, by what they say, the \
@@ -1824,6 +2037,88 @@ Write `output/comparison.json`: an array with one object for each entry, {{"labe
 "differs", "difference": "<what differs, exactly; empty when the verdict is same>", "record_disagreement": "<where the \
 statement in words and the Lean statement of the element disagree, exactly; empty when they agree>"}}. Use no source \
 other than the files in this folder.
+'''
+
+CHANGES_PROMPT = '''This folder holds the manuscript of a mathematical paper, `paper.tex`, its LaTeX source, with its \
+bibliography `references.bib`, and a file `changes.json`. The manuscript was read from beginning to end, and what that \
+reading found went to repair sessions, which then changed some passages. Nobody has read the manuscript since. \
+`changes.json` lists every passage that differs from the text that was read, each with its text before and after. This \
+session reads each changed passage where it now stands and says whether the change may stay.
+
+Your report decides that. The script undoes a change that you report as unsound, so that the passage reads again as it \
+did when it was read. A change that you report as sound becomes part of the paper, and no one reads that passage again \
+before the paper is handed over. So a change that is passed without having been read in its place lets an unread passage \
+into the paper, and a sound change that is faulted for its wording throws away a repair.
+
+The reader for whom the paper is written:
+
+{reader}
+
+`changes.json` is a JSON object with two keys.
+
+- "findings": the findings that the repair sessions answered by changing the manuscript, each {{"finding": <its number>, \
+"check": <what reported it>, "reported": <the finding as it was reported>, "repair": <what the repair session says it \
+changed>}}. A finding of a reading of the manuscript by itself gives a place where a reader could not follow, missed \
+something or found an error ("where", "quote", "problem"). A finding of a reading beside real papers gives a place where \
+the manuscript is written otherwise than research articles are, with passages from such articles that show what they do \
+there ("where", "quote", "evidence", "difference"). A finding of the comparison comes from a session that compared each numbered statement of the \
+manuscript with the result of the research which it states. It gives a statement, by its label, that was found to say \
+something else, and the difference ("label", "difference"); you do not have the research, and the difference as it is \
+reported is what such a finding asks to be corrected. The array is empty when the only changes are corrections of the \
+LaTeX.
+- "changes": the changed passages in the order of the manuscript, each {{"change": <its number>, "part": <"abstract", or \
+the id of the section, which follows `sec:` in the label after its heading>, "lines": <the lines of `paper.tex` at which \
+the new text stands, or the line after which text was taken out>, "before": <the passage as it was read>, "after": <the \
+passage as it stands now, empty when text was taken out>, "findings": <the numbers of the findings whose repair session \
+changed this part, so that the change can have been made for any of them>}}. A passage is a run of whole lines of the source, so "before" and "after" may begin or end inside a \
+sentence; the sentence is whole in `paper.tex`. A change whose "findings" is empty was made by a session that corrected \
+the LaTeX after the script's checks or the typesetting, for example by breaking a formula over two lines.
+
+Read the manuscript far enough to know its notation and how its proof goes. Then, for each change, read `paper.tex` \
+around the lines given, as far as the passage reaches into its surroundings: the whole proof when the change lies in a \
+proof, the statement and the places that use it when the change lies in a statement or a definition, the paragraphs \
+around it otherwise. Compare the new text with "before". The change is sound when all of this holds of the new text in \
+its place:
+
+- No step of an argument is lost. What the old text proved, derived or justified is still proved, derived or justified, \
+and for the same cases: a bound that was shown for every value of a parameter is not now shown at one value, and a case \
+that the old argument covered is still covered by the new one, whether or not it has a sentence of its own.
+- Every statement says what it said: the hypotheses, the quantifiers, the ranges and the conclusion of a numbered \
+statement, a definition, a formula. The one exception is a correction that a finding asked for, which changes what the \
+finding says is wrong and nothing else.
+- The notation and the references agree with the rest of the manuscript. A symbol or a term of the new text is defined \
+before it is used and means what it means elsewhere. A symbol or a term that the old text introduced, and that later \
+text uses, is still introduced. Every `\\ref`, `\\eqref` and `\\cite` of the new text points to something that the \
+manuscript has, and a label that the old text defined, and that other text refers to, is still defined.
+- The new text is correct mathematics and correct LaTeX, as far as reading it shows.
+
+How you would have worded the passage is not in question. A change that makes the text longer or shorter, plainer or \
+stiffer, is sound when these hold. The passages that were not changed are not in question either, since they were read \
+before. They count as the surroundings of a change: a change that is wrong because of what stands around it is not \
+sound.
+
+Say also for which findings each change was made: those among the numbers at the change to whose "reported" or \
+"repair" the change corresponds. The changes made for one finding are one answer to it, and when one of them is \
+unsound the script undoes all of them together. So name a finding at every change that belongs to its answer, and name \
+none at a change that corresponds to no finding. Judge each change by itself all the same: a change that is sound is \
+reported as sound, also when another change made for the same finding is not.
+
+Then say for each finding whether the changes made for it answer it, that is, whether at the place the finding names \
+the manuscript no longer has what the finding reported. Judge this from the finding as it was reported and from the \
+manuscript as it stands, with every change in it. A change can be sound and leave its finding unanswered; it then stays \
+in the paper, and the finding is reported as open with your reason.
+
+Use the three files and nothing else: no other file on this machine, and nothing from the web.
+
+Write `output/verdicts.json`, a JSON object with two keys.
+
+- "changes": an array with one object for each change of `changes.json`, in their order: {{"change": <its number>, \
+"sound": true or false, "findings": [<the numbers of the findings it was made for>], "reason": "..."}}. For a change that \
+is not sound, "reason" says exactly what is lost, altered or inconsistent, with the words of the manuscript. For a sound \
+change it says in a sentence what you read to judge it.
+- "findings": an array with one object for each finding of `changes.json`, in their order: {{"finding": <its number>, \
+"answered": true or false, "reason": "..."}}. For a finding that is not answered, "reason" says what the manuscript \
+still has at that place; otherwise it may be empty.
 '''
 
 AGAIN = '''
@@ -1857,6 +2152,60 @@ def changed_materials(stored, fresh):
     return found
 
 
+def part_lines(text):
+    """The lines of a part as `assemble` puts them into paper.tex."""
+    return text.strip('\n').split('\n')
+
+
+def changed_passages(before, after):
+    """The passages in which two texts of one part differ, each as (i1, i2, j1, j2): the lines i1 to i2 - 1 of the
+    text before became the lines j1 to j2 - 1 of the text after, counted from 0 in `part_lines`.
+
+    A passage is a run of lines. Two runs of changed lines belong to one passage when no empty line stands in the
+    unchanged lines between them, so that a passage never ends inside a paragraph: it can then be read, and put
+    back as it was, by itself."""
+    old, new = part_lines(before), part_lines(after)
+    passages = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes():
+        if tag == 'equal':
+            continue
+        if passages and all(line.strip() for line in new[passages[-1][3]:j1]):
+            passages[-1] = (passages[-1][0], i2, passages[-1][2], j2)
+        else:
+            passages.append((i1, i2, j1, j2))
+    return passages
+
+
+def with_passages_undone(before, after, undone):
+    """The text after, with the passages of `changed_passages` whose positions are in `undone` as they were before."""
+    passages = changed_passages(before, after)
+    if all(position in undone for position in range(len(passages))):
+        return before
+    old, new = part_lines(before), part_lines(after)
+    lines, at = [], 0
+    for position, (i1, i2, j1, j2) in enumerate(passages):
+        lines += new[at:j1] + (old[i1:i2] if position in undone else new[j1:j2])
+        at = j2
+    return '\n'.join(lines + new[at:]) + '\n'
+
+
+def chosen_numbers(text, count):
+    """The numbers that --open-findings was given, as in "2,5-7"; every number of the list for "all"."""
+    if text == 'all':
+        return list(range(1, count + 1))
+    numbers = set()
+    for piece in text.split(','):
+        match = re.fullmatch(r'\s*(\d+)\s*(?:-\s*(\d+)\s*)?', piece)
+        if not match:
+            raise Stop(f'--open-findings takes the numbers of the findings as its dry run lists them, such as 2,5-7, or '
+                       f'nothing for all of them; it was given "{text}". The instance comes before the options')
+        first, last = int(match[1]), int(match[2] or match[1])
+        if not 1 <= first <= last <= count:
+            raise Stop(f'--open-findings {text}: the run has {count} open findings, numbered from 1 to {count}')
+        numbers.update(range(first, last + 1))
+    return sorted(numbers)
+
+
 def size(files, wanted=lambda name: True):
     """The bytes of the files of a session whose names `wanted` accepts."""
     return sum(len(text.encode('utf-8')) for name, text in files.items() if wanted(name))
@@ -1884,6 +2233,9 @@ class Paper:
         self.count = max(numbers, default=0)
         self.materials = self.plan = self.layout = self.research = None
         self.parts, self.compared, self.open = {}, {}, []
+        # A narrow repair that is under way, with the reading of what it changed: its step, the findings it takes
+        # up, and what its later steps need of the earlier ones (narrow_begin). None when none is under way.
+        self.narrow = None
         # How often the manuscript was read by itself, and whether a repair that followed a reading beside real
         # papers or a comparison has changed a part since it was last read in that way (read_again).
         self.readings, self.rewritten = 0, False
@@ -1904,7 +2256,8 @@ class Paper:
         with self.lock:
             if not self.dry:
                 write_json(self.out / 'state.json', {'done': self.done, 'open': self.open, 'readings': self.readings,
-                                                     'rewritten': self.rewritten, 'compared': self.compared})
+                                                     'rewritten': self.rewritten, 'compared': self.compared,
+                                                     'narrow': self.narrow})
 
     # -- sessions ---------------------------------------------------------------------------------------
 
@@ -2154,7 +2507,7 @@ class Paper:
         """paper.tex, references.bib and the correspondence file from the parts as they stand."""
         tex, spans = assemble(self.plan, self.parts)
         write_text(self.out / 'paper.tex', tex)
-        write_text(self.out / 'references.bib', self.materials['bibliography'])
+        write_text(self.out / 'references.bib', capitals_kept(self.materials['bibliography']))
         elements = {e['name']: e for e in self.materials['elements']}
         by_label = {item['label']: item for item in self.plan['statements']}
         rows = []
@@ -2177,14 +2530,17 @@ class Paper:
             'revision': self.materials['revision'], 'statements': rows, 'others': self.plan['others']})
         return tex, spans, rows
 
-    def settle(self):
-        """Assemble, check by machine and typeset, with repair sessions for what fails; True when nothing fails."""
-        for round_number in range(REPAIR_ROUNDS + 1):
+    def settle(self, rounds=REPAIR_ROUNDS):
+        """Assemble, check by machine and typeset, with repair sessions for what fails; True when nothing fails.
+
+        `rounds` is the number of repairs at the most. With 0 the manuscript is assembled, checked and
+        typeset once, and what fails is reported and not repaired."""
+        for round_number in range(rounds + 1):
             tex, spans, _ = self.assemble()
             (self.out / 'paper.pdf').unlink(missing_ok=True)  # a PDF beside the manuscript is always a PDF of it
             found = machine_findings(self.materials, self.plan, self.parts)
             kind, problems, where = 'machine', [item['problem'] for item in found], [item['part'] for item in found]
-            self.event('check', check='machine checks of the manuscript', problems=problems)
+            self.event('check', check=MACHINE, problems=problems)
             if not problems and self.recipe:
                 folder = self.out / 'typeset'
                 folder.mkdir(exist_ok=True)
@@ -2194,10 +2550,10 @@ class Paper:
                 # part that caused it. So an error of the typesetting goes to the session that may change every part.
                 kind, problems = 'typeset', typeset(folder, self.recipe)
                 where = [None] * len(problems)
-                self.event('check', check='typesetting', command=self.recipe[0], problems=problems)
+                self.event('check', check=TYPESETTING, command=self.recipe[0], problems=problems)
                 if not problems:
                     shutil.copyfile(folder / 'paper.pdf', self.out / 'paper.pdf')
-                    kind, problems = 'wide', wide_lines(folder / 'paper.log')
+                    kind, problems = 'wide', wide_lines(folder / 'paper.log') + tight_displays(folder, self.recipe)
                     where = [part_at(spans, int(WIDE_LINE.match(problem)[1])) for problem in problems]
                     self.event('check', check=WIDE, problems=problems)
             # What an earlier pass left open about wide lines is replaced by what this pass finds.
@@ -2205,27 +2561,33 @@ class Paper:
             if not problems:
                 self.save()
                 return True
-            if round_number < REPAIR_ROUNDS:
+            if round_number < rounds:
                 self.repair(kind, problems, where, tex, spans)
         if kind == 'wide':
             # The paper is typeset. A line that still stands out into the margin is reported and stops nothing.
-            self.open.append({'check': WIDE, 'after_repairs': REPAIR_ROUNDS, 'problems': problems})
+            self.open.append({'check': WIDE, 'after_repairs': rounds, 'problems': problems})
             self.save()
             return True
-        self.open.append({'check': 'typesetting' if kind == 'typeset' else 'machine checks of the manuscript',
-                          'after_repairs': REPAIR_ROUNDS, 'problems': problems})
+        self.open.append({'check': TYPESETTING if kind == 'typeset' else MACHINE, 'after_repairs': rounds,
+                          'problems': problems})
         self.save()
         return False
 
-    def repair(self, kind, findings, where, tex=None, spans=None):
-        """Sessions that change the parts for what a check or a reader found; returns the parts they changed.
+    def repair(self, kind, findings, where, tex=None, spans=None, narrow=False, numbers=None):
+        """Sessions that change the parts for what a check or a reader found; returns what the log has of the repair.
 
         `where` names for each finding the part it concerns, or None. The findings of one section go to a
         session for that section, which has the section's brief and changes that section only, and
         these sessions run side by side; the abstract goes with the introduction. What concerns no
         single section goes to one session that may change every part, after the others, on the
         manuscript as they left it. After a reading that session is always launched: it is the one that
-        compares what the reader understood with the research."""
+        compares what the reader understood with the research.
+
+        A narrow repair is the last one its findings receive: its sessions are told to change the
+        passages their findings name and nothing else, the session for the whole is launched only for
+        findings that concern no single section, and what they change does not count as a rewriting of
+        the manuscript, because narrow_run has every changed passage read. `numbers` are then the
+        numbers under which the log knows the findings; without it they are counted from 1."""
         if tex is None:
             tex, spans, _ = self.assemble()
         sections = self.plan['sections']
@@ -2236,12 +2598,13 @@ class Paper:
         groups = [(section, numbers) for section, numbers in groups if numbers]
         rest = [n for n, sid in enumerate(where) if sid is None]
 
-        def one(section, numbers, tex, spans):
-            return self.repair_session(kind, section, [items[n] for n in numbers], findings, tex, spans)
+        def one(section, places, tex, spans):
+            return self.repair_session(kind, section, [items[n] for n in places], findings, tex, spans, narrow)
 
-        results = self.side_by_side([lambda section=section, numbers=numbers: one(section, numbers, tex, spans)
-                                     for section, numbers in groups])
-        if rest or kind == 'reading':
+        number = lambda n: numbers[n] if numbers else n + 1
+        results = self.side_by_side([lambda section=section, places=places: one(section, places, tex, spans)
+                                     for section, places in groups])
+        if rest or (kind == 'reading' and not narrow):
             if any(changed for changed, _ in results):
                 tex, spans, _ = self.assemble()
             results.append(one(None, rest, tex, spans))
@@ -2250,15 +2613,16 @@ class Paper:
         response = None
         if kind in ('reading', 'comparison', 'likeness'):
             # The answers of the sessions, in the order and with the numbers of the findings as they were reported.
-            answers = {n: {**answer, 'finding': n + 1} for (_, numbers), (_, answered) in zip(groups, results)
-                       for n, answer in zip(numbers, answered)}
+            answers = {n: {**answer, 'finding': number(n)} for (_, places), (_, answered) in zip(groups, results)
+                       for n, answer in zip(places, answered)}
             response = [answers[n] for n in sorted(answers)]
-        self.event('repair', of=kind, changed=changed, response=response,
-                   sessions=[{'section': section['id'] if section else None, 'findings': [n + 1 for n in numbers],
-                              'changed': names} for (section, numbers), (names, _) in zip(groups, results)])
-        return changed
+        report = {'changed': changed, 'response': response,
+                  'sessions': [{'section': section['id'] if section else None, 'findings': [number(n) for n in places],
+                                'changed': names} for (section, places), (names, _) in zip(groups, results)]}
+        self.event('repair', of=kind, **({'narrow': True} if narrow else {}), **report)
+        return report
 
-    def repair_session(self, kind, section, items, report, tex, spans):
+    def repair_session(self, kind, section, items, report, tex, spans, narrow=False):
         """One repair session, for one section or, without `section`, for the whole; the parts it changed and its answers."""
         sections = self.plan['sections']
         first = section is sections[0]
@@ -2285,6 +2649,9 @@ class Paper:
         given = {'paper.tex': tex, 'findings.json': json.dumps(found, ensure_ascii=False, indent=2) + '\n',
                  **{f'parts/{name}.tex': self.parts[name] for name in names}}
         lines = '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans if name in names)
+        told = ((NARROW_WHOLE_KINDS if section is None else NARROW_SECTION_KINDS)[kind]
+                + (NARROW_AGAIN if any('open_because' in item for item in items) else '')) if narrow \
+            else (WHOLE_KINDS if section is None else SECTION_KINDS)[kind]
         if section is None:
             papers = {s['id']: self.section_papers(s) for s in sections}
             files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
@@ -2293,7 +2660,7 @@ class Paper:
                 files['study.md'] = self.study
                 files.update({f'exemplars/{key}.tex': self.papers[key] for keys in papers.values() for key in keys})
             prompt = REPAIR_PROMPT.format(
-                kind=WHOLE_KINDS[kind], response=RESPONSE if answers else '', spans='Its ' + lines + '.',
+                kind=told, response=RESPONSE if answers else '', spans='Its ' + lines + '.',
                 papers=REPAIR_PAPERS.format(papers='; '.join(
                     f"section `{sid}`, " + ' and '.join(f'`exemplars/{key}.tex`' for key in keys)
                     for sid, keys in papers.items())) if self.collection is not None else '',
@@ -2302,7 +2669,7 @@ class Paper:
             papers = self.section_papers(section)
             files = {**self.kit(section), **given}
             prompt = SECTION_REPAIR_PROMPT.format(
-                id=section['id'], title=section['title'], kind=SECTION_KINDS[kind], response=RESPONSE if answers else '',
+                id=section['id'], title=section['title'], kind=told, response=RESPONSE if answers else '',
                 also=' As the first section it is the introduction, and this session repairs the abstract with it.' if first else '',
                 spans='Its ' + lines + '.', held=' and '.join(f'`parts/{name}.tex`' for name in names),
                 what='each part you change' if first else 'the part',
@@ -2311,9 +2678,9 @@ class Paper:
                     f'`exemplars/{key}.tex`' for key in papers)) if self.collection is not None else '',
                 **self.research_note(section))
         changed, response = self.session('repair', prompt, files, read, self.writer,
-                                         kind if section is None else f"{kind}-{section['id']}")
+                                         ('narrow-' if narrow else '') + (kind if section is None else f"{kind}-{section['id']}"))
         with self.lock:
-            if changed and kind in ('likeness', 'comparison'):
+            if changed and kind in ('likeness', 'comparison') and not narrow:
                 # Recorded before the parts are replaced, so that a run stopped just here still reads what was rewritten.
                 self.rewritten = True
                 self.save()
@@ -2321,11 +2688,17 @@ class Paper:
         return sorted(changed), response
 
     def read_and_repair(self):
-        """Independent readings of the manuscript; a repair of what the reader found follows all but the last.
+        """Independent readings of the manuscript; a repair of what the reader found follows each of them.
 
-        The last thing done is always a reading, so the manuscript these readings leave is one that a
-        reader has read to the end. What the last reading found stays open and is reported. A reading
-        speaks for the manuscript as it then stands, so it replaces what an earlier reading left open."""
+        The repair after every reading but the last may rewrite, and the next reading reads what it
+        left. The repair after the last reading is narrow, and a session reads the passages it changed
+        (narrow_run). So the manuscript these readings leave consists of text that the last reader read
+        and of changes that were found sound, and what stays open is what that repair kept, what was
+        undone, or what a sound change did not answer. A reading speaks for the manuscript as it then stands, so it replaces what an earlier
+        reading left open. A run that was stopped inside the narrow repair or the reading of its changes
+        is continued there, and its readings are not made again."""
+        if self.narrowing(READING):
+            return self.narrow_finish() and self.read_through()
         reader = method_part(READER_SECTION)
 
         def read(output):
@@ -2347,15 +2720,24 @@ class Paper:
             if not report['findings']:
                 break
             if number == READING_ROUNDS:
-                # After the last reading no repair is made.
+                # What the last reading found is open until the narrow repair and the reading of its changes are done.
                 self.open.append({'check': READING, 'after_repairs': READING_ROUNDS - 1, 'problems': report['findings']})
+                self.narrow_begin(READING, understanding=report['understanding'])
+                if not self.narrow_finish():
+                    return False
                 break
             self.repair('reading', {'understanding': report['understanding'], 'findings': report['findings']},
                         [named_part(self.plan, finding.get('section')) for finding in report['findings']])
             if not self.settle():
                 return False
-        # The manuscript as it stands has been read. This is recorded only here, at the end: a run that is stopped
-        # before this point makes these readings again.
+        return self.read_through()
+
+    def read_through(self):
+        """Record that the manuscript as it stands has been read by itself.
+
+        This is recorded only at the end of the readings: a run that is stopped before this point makes
+        them again. A narrow repair leaves the record as it is: every passage it changed was read
+        where it stands and found sound, or put back as the last reader read it."""
         self.rewritten = False
         self.save()
         return True
@@ -2377,12 +2759,20 @@ class Paper:
 
         They go on until LIKENESS_CLEAN readings in succession find no departure, and there are at most
         LIKENESS_ROUNDS. When the papers of the list are used up, the readings take them again from the
-        first. A reading with departures is followed by a repair, except the last. When the
-        readings end otherwise, the departures of the last reading that had any stay open; the
-        comparison is made in either case, after read_again when a repair changed a part. False only
-        when a repair leaves the manuscript failing."""
+        first. A reading with departures is followed by a repair. After the last reading that the bound
+        allows, the repair is narrow and a session reads the passages it changed (narrow_run); what it
+        kept, what was undone, or what a sound change did not answer stays open. When the last reading found nothing and the one before it
+        had departures, those were repaired and one reading has confirmed the repair where two are asked
+        for, so they stay open with that reason. The comparison is made in either case, after read_again
+        when a repair that may rewrite changed a part. False only when a repair leaves the manuscript
+        failing. A run that was stopped inside the narrow repair or the reading of its changes is
+        continued there."""
+        if self.narrowing(LIKENESS):
+            return self.narrow_finish()
         section = method_part(LIKENESS_SECTION)
         order = likeness_papers(self.collection, self.plan['exemplars'])
+        # These readings speak for the manuscript as they find it, so they replace what earlier ones left open.
+        self.open = [item for item in self.open if item['check'] != LIKENESS]
         clean, repairs, left = 0, 0, None
         for round_number in range(1, LIKENESS_ROUNDS + 1):
             start = (round_number - 1) * LIKENESS_PAPERS
@@ -2410,14 +2800,18 @@ class Paper:
                 continue
             clean, left = 0, departures
             if round_number == LIKENESS_ROUNDS:
-                break  # after the last reading no repair is made
+                # What the last reading found is open until the narrow repair and the reading of its changes are done.
+                self.open.append({'check': LIKENESS, 'after_repairs': repairs, 'problems': departures})
+                self.narrow_begin(LIKENESS)
+                return self.narrow_finish()
             # A repair that changed a part has recorded that the manuscript is to be read by itself again; one
             # that kept every passage leaves nothing to read again.
             self.repair('likeness', departures, [named_part(self.plan, departure.get('section')) for departure in departures])
             repairs += 1
             if not self.settle():
                 return False
-        self.open.append({'check': LIKENESS, 'after_repairs': repairs, 'problems': left})
+        self.open.append({'check': LIKENESS, 'after_repairs': repairs,
+                          'problems': [{**departure, 'open_because': ONCE_CONFIRMED} for departure in left]})
         self.save()
         return True
 
@@ -2453,8 +2847,7 @@ class Paper:
             if not differing:
                 return True
             if round_number == COMPARISON_ROUNDS:
-                self.open.append({'check': 'comparison of the numbered statements with their elements',
-                                  'after_repairs': COMPARISON_ROUNDS - 1, 'problems': differing})
+                self.open.append({'check': COMPARISON, 'after_repairs': COMPARISON_ROUNDS - 1, 'problems': differing})
                 self.save()
                 return False
             # A repair that changed a part corrected statements and adjusted proofs, so the manuscript is read by
@@ -2463,7 +2856,7 @@ class Paper:
             if not self.settle() or not self.read_again():
                 return False
 
-    def compare_section(self, section, rows, tex, spans):
+    def compare_section(self, section, rows, tex, spans, listed='the numbered statements of this section'):
         """One session that compares the numbered statements of one section; its verdicts, in their order."""
         labels = [row['label'] for row in rows]
 
@@ -2483,8 +2876,8 @@ class Paper:
                  'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
                  **{name: text for name, text in self.records().items() if name.startswith('elements')}}
         lines = next(f'Its lines {a} to {b} are this section.' for name, a, b in spans if name == section['id'])
-        return self.session('compare', COMPARE_PROMPT.format(title=section['title'], spans=lines), files, read,
-                            self.assessor, section['id'])
+        return self.session('compare', COMPARE_PROMPT.format(title=section['title'], spans=lines, listed=listed), files,
+                            read, self.assessor, section['id'])
 
     def after_writing(self):
         """The checks, the readings and the comparison of the manuscript, each stage once.
@@ -2493,7 +2886,8 @@ class Paper:
         the parts as they stand. state.json then says which stages are complete; a stage that was begun
         and not ended is made again from its start, which every stage allows, since each works on the
         parts as they stand and is bounded."""
-        if False in self.done.values() or not self.settle():
+        # A narrow repair that is under way settles the manuscript itself, from the text that was read.
+        if False in self.done.values() or (self.narrow is None and not self.settle()):
             return
         for name, method in STAGES:
             if name not in self.done:
@@ -2520,6 +2914,9 @@ class Paper:
             print('Findings are left open after the bounded repairs:')
             for item in self.open:
                 print(f"- {item['check']}: {len(item['problems'])} left; log.json has them")
+            if not any(item['check'] in (MACHINE, TYPESETTING) for item in self.open):
+                print('This command with the same --out and --open-findings --dry-run lists them with their numbers; '
+                      'with --open-findings, or --open-findings and some of those numbers, it acts on them.')
         if not self.recipe:
             print('No TeX command was available (none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given), '
                   'so paper.pdf was not typeset. Everything else is done. When a TeX command is available, run this '
@@ -2527,6 +2924,339 @@ class Paper:
         elif (self.out / 'paper.pdf').is_file():
             print(f'The paper is {self.out / "paper.pdf"}.')
         return {'complete': 0, 'open_findings': 2, 'no_tex': 3}[status]
+
+    # -- the last repair of findings, and the reading of what it changed ------------------------------------
+
+    def narrowing(self, check):
+        """Whether a narrow repair of findings of this check is under way, as in a run that was stopped inside one."""
+        return self.narrow is not None and not self.narrow.get('pass') \
+            and any(entry['check'] == check for entry in self.narrow['findings'])
+
+    def narrow_begin(self, check=None, chosen=None, understanding=None, **more):
+        """Begin the last repair of findings that the open list holds: keep the parts as they were read, and record it.
+
+        `chosen` gives the findings as (number, check, position among the problems of the open item of that
+        check); with `check` they are all the findings of that item, numbered from 1. The parts as they
+        stand are those the reading read. They are kept in <out>/narrow/before, because the reading of the
+        changes compares with them and puts back from them, and the state records the repair only when they
+        are there."""
+        if chosen is None:
+            item = next(item for item in self.open if item['check'] == check)
+            chosen = [(position + 1, check, position) for position in range(len(item['problems']))]
+        problems = {item['check']: item['problems'] for item in self.open}
+        folder = self.out / 'narrow'
+        shutil.rmtree(folder, ignore_errors=True)
+        (folder / 'before').mkdir(parents=True, exist_ok=True)
+        for name, text in self.parts.items():
+            write_text(folder / 'before' / (name + '.tex'), text)
+        self.narrow = {'step': 'repair', 'understanding': understanding, **more,
+                       'findings': [{'number': number, 'check': check, 'position': position,
+                                     'finding': problems[check][position]} for number, check, position in chosen]}
+        self.save()
+
+    def narrow_finish(self):
+        """The narrow repair that is under way, to its end, with the open list as it leaves it; False as narrow_run."""
+        passed = self.narrow_run()
+        self.narrow_end()
+        return passed
+
+    def narrow_run(self):
+        """The last repair of findings, and the reading of what it changed; False only when the manuscript is left failing.
+
+        What has to hold at the end: every passage of the manuscript is text that the reading which
+        reported the findings read, or a change that the reading of the changed passages found sound.
+        The steps, each recorded in the state when it is complete, so that a run that is stopped is
+        continued at the step it was in:
+
+          repair   repair sessions change the passages that the findings name. A repair that was stopped
+                   is made again from the parts as they were read.
+          settle   the manuscript is assembled, checked by machine and typeset, with the repairs of the
+                   LaTeX that this needs. When it still fails after them, every change is undone.
+          read     one session has the manuscript and every passage that now differs from the text that
+                   was read, with its text before and after, the changes of the settling among them. It
+                   says for each whether the change is sound and for which findings it was made, and
+                   for each finding whether the changes answer it.
+          undo     a change that was found unsound is put back as it was, and with it every other change
+                   made for the same findings. The manuscript is then checked and typeset once more,
+                   without repairs; when it fails, every change is undone.
+
+        `left` then holds, for every finding that stays open, why: the repair session kept the text,
+        or its change was undone, or its change was found not to answer it. A change that is sound and
+        does not answer its finding stays, since the text is sound with it. No further round follows."""
+        narrow = self.narrow
+        before = {name: read_file(self.out / 'narrow' / 'before' / (name + '.tex')) for name in self.parts}
+        changed = lambda: [name for name in self.parts if self.parts[name] != before[name]]
+        if narrow['step'] == 'repair':
+            self.keep({name: before[name] for name in changed()})
+            sessions, response = [], []
+            home = {item['label']: item['section'] for item in self.plan['statements']}
+            for check, kind in NARROW_KINDS.items():
+                taken = [entry for entry in narrow['findings'] if entry['check'] == check]
+                if not taken:
+                    continue
+                items = [entry['finding'] for entry in taken]
+                where = [home.get(item['label']) for item in items] if kind == 'comparison' \
+                    else [named_part(self.plan, item.get('section')) for item in items]
+                found = {'understanding': narrow['understanding'], 'findings': items} if kind == 'reading' else items
+                report = self.repair(kind, found, where, narrow=True, numbers=[entry['number'] for entry in taken])
+                sessions += report['sessions']
+                response += report['response']
+            narrow.update(step='settle', sessions=sessions, response=response)
+            self.save()
+        revised = [answer['finding'] for answer in narrow['response'] if answer['action'] == 'revised']
+        kept = [{'number': answer['finding'], 'because': KEPT + answer['note']}
+                for answer in narrow['response'] if answer['action'] == 'kept']
+        if narrow['step'] == 'settle':
+            if (changed() or narrow.get('typeset')) and not self.settle():
+                # The text that was read passed these checks. The changes are given up, and the run goes on.
+                failed = [item for item in self.open if item['check'] in (MACHINE, TYPESETTING)]
+                self.open = [item for item in self.open if item not in failed]
+                reason = FAILING + ' '.join(str(problem) for item in failed for problem in item['problems'])[:600]
+                self.narrow_undo(before, kept + [{'number': number, 'because': reason} for number in revised])
+            else:
+                narrow['step'] = 'read'
+                self.save()
+        if narrow['step'] == 'read':
+            tex, spans, _ = self.assemble()
+            changes = self.changes(before, spans)
+            left, undone = list(kept), {}
+            if changes:
+                verdicts = self.read_changes(tex, changes)
+                made_for = {change['change']: set(verdict['findings']) for change, verdict in zip(changes, verdicts['changes'])}
+                unsound = {verdict['change']: verdict['reason'] for verdict in verdicts['changes'] if not verdict['sound']}
+                # The changes made for one finding are one answer to it: they are undone together.
+                gone = set(unsound)
+                while True:
+                    reopened = set().union(*(made_for[number] for number in gone))
+                    more = {number for number, findings in made_for.items() if findings & reopened} - gone
+                    if not more:
+                        break
+                    gone |= more
+                for number in sorted(reopened):
+                    own = [reason for change, reason in unsound.items() if number in made_for[change]]
+                    left.append({'number': number, 'because': UNDONE + ' '.join(own or unsound.values())})
+                left += [{'number': verdict['finding'], 'because': UNANSWERED + verdict['reason']}
+                         for verdict in verdicts['findings'] if not verdict['answered'] and verdict['finding'] not in reopened]
+                for name in dict.fromkeys(change['part'] for change in changes):
+                    here = [change for change in changes if change['part'] == name]
+                    positions = {position for position, change in enumerate(here) if change['change'] in gone}
+                    if positions:
+                        undone[name] = with_passages_undone(before[name], self.parts[name], positions)
+                self.event('changes', findings=revised,
+                           changes=[{**{key: change[key] for key in ('change', 'part', 'lines')},
+                                     **{key: verdict[key] for key in ('sound', 'findings', 'reason')}}
+                                    for change, verdict in zip(changes, verdicts['changes'])],
+                           answered=verdicts['findings'], undone=sorted(gone))
+            else:
+                left += [{'number': number, 'because': NO_CHANGE} for number in revised]
+            self.narrow_undo(undone, left)
+        if narrow['step'] == 'undo':
+            folder = self.out / 'narrow' / 'undone'
+            undone = {path.stem: read_file(path) for path in sorted(folder.glob('*.tex'))}
+            if undone:
+                # Settled also when the texts are already back, as in a run that was stopped after it put them back:
+                # paper.tex and the PDF are then made from the parts as they stand.
+                self.keep(undone)
+                if not self.settle(0):
+                    # Without the changes that were undone, the others no longer pass: all of them are given up.
+                    failed = [item for item in self.open if item['check'] in (MACHINE, TYPESETTING)]
+                    self.open = [item for item in self.open if item not in failed]
+                    reason = FAILING + ' '.join(str(problem) for item in failed for problem in item['problems'])[:600]
+                    back = {name: before[name] for name in changed()}
+                    self.narrow_undo(back, kept + [{'number': number, 'because': reason} for number in revised])
+                    self.keep(back)
+                    if not self.settle(0):
+                        return False
+            narrow['step'] = 'done'
+            self.save()
+        return True
+
+    def narrow_undo(self, texts, left):
+        """Record what is to be put back and which findings stay open, before anything is put back.
+
+        The texts are files in <out>/narrow/undone, so that a run that is stopped while it puts them back
+        does so again from the same texts; the passages are counted on the parts as they stand now, and a
+        part that was put back counts otherwise."""
+        folder = self.out / 'narrow' / 'undone'
+        shutil.rmtree(folder, ignore_errors=True)
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, text in texts.items():
+            if text != self.parts[name]:
+                write_text(folder / (name + '.tex'), text)
+        self.narrow.update(step='undo', left=left)
+        self.save()
+
+    def changes(self, before, spans):
+        """The passages in which the parts differ from the text that was read, in the order of the manuscript."""
+        first = {name: start for name, start, _ in spans}
+        answered = {answer['finding'] for answer in self.narrow['response'] if answer['action'] == 'revised'}
+        changes = []
+        for name, _, _ in spans:
+            old, new = part_lines(before[name]), part_lines(self.parts[name])
+            for i1, i2, j1, j2 in changed_passages(before[name], self.parts[name]):
+                lines = f'after line {first[name] + j1 - 1}' if j1 == j2 \
+                    else f'{first[name] + j1} to {first[name] + j2 - 1}' if j2 - j1 > 1 else str(first[name] + j1)
+                changes.append({'change': len(changes) + 1, 'part': name, 'lines': lines, 'before': '\n'.join(old[i1:i2]),
+                                'after': '\n'.join(new[j1:j2]),
+                                'findings': sorted({number for session in self.narrow['sessions'] if name in session['changed']
+                                                    for number in session['findings'] if number in answered})})
+        return changes
+
+    def read_changes(self, tex, changes):
+        """The session that reads the changed passages; its verdicts on the changes and on the findings."""
+        notes = {answer['finding']: answer['note'] for answer in self.narrow['response'] if answer['action'] == 'revised'}
+        findings = [{'finding': entry['number'], 'check': entry['check'], 'reported': entry['finding'],
+                     'repair': notes[entry['number']]} for entry in self.narrow['findings'] if entry['number'] in notes]
+        numbers = [entry['finding'] for entry in findings]
+
+        def read(output):
+            verdicts = self.load(output / 'verdicts.json')
+            judged, answered = verdicts.get('changes'), verdicts.get('findings')
+            problems = []
+            if not isinstance(judged, list) or [v.get('change') if isinstance(v, dict) else None for v in judged] \
+                    != [change['change'] for change in changes] \
+                    or not all(isinstance(v.get('sound'), bool) and isinstance(v.get('reason'), str)
+                               and (v['sound'] or v['reason'].strip()) and isinstance(v.get('findings'), list)
+                               and all(number in numbers for number in v['findings']) for v in judged):
+                problems.append('output/verdicts.json: "changes" has one object for each change of changes.json, in their '
+                                'order, with its "change", "sound" as true or false, "findings" as an array of numbers of '
+                                'findings of changes.json, and a "reason", which is not empty when the change is not sound')
+            if not isinstance(answered, list) or [v.get('finding') if isinstance(v, dict) else None for v in answered] \
+                    != numbers or not all(isinstance(v.get('answered'), bool) and isinstance(v.get('reason', ''), str)
+                                          and (v['answered'] or v.get('reason', '').strip()) for v in answered):
+                problems.append('output/verdicts.json: "findings" has one object for each finding of changes.json, in their '
+                                'order, with its "finding", "answered" as true or false, and a "reason", which is not empty '
+                                'when the finding is not answered')
+            if problems:
+                raise Unusable(problems)
+            return {'changes': [{'change': v['change'], 'sound': v['sound'], 'findings': sorted(set(v['findings'])),
+                                 'reason': v['reason'].strip()} for v in judged],
+                    'findings': [{'finding': v['finding'], 'answered': v['answered'], 'reason': v.get('reason', '').strip()}
+                                 for v in answered]}
+
+        files = {'paper.tex': tex, 'references.bib': self.materials['bibliography'],
+                 'changes.json': json.dumps({'findings': findings, 'changes': changes}, ensure_ascii=False, indent=2) + '\n'}
+        return self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read, self.assessor)
+
+    def narrow_end(self):
+        """Leave in the open list, of the findings that the repair took up, those that stay open, each with the reason."""
+        narrow = self.narrow
+        left = {entry['number']: entry['because'] for entry in narrow.get('left', [])}
+        taken = {(entry['check'], entry['position']): entry['number'] for entry in narrow['findings']}
+        if narrow['step'] != 'done':
+            # The manuscript was left failing, which the open list says by itself; the findings stay as they were.
+            left = {number: left.get(number, 'the repair did not come to its end') for number in taken.values()}
+        for item in self.open:
+            if any(check == item['check'] for check, _ in taken):
+                item['after_repairs'] += 1
+                item['problems'] = [
+                    problem if (item['check'], position) not in taken
+                    else {**problem, 'open_because': left[taken[item['check'], position]]}
+                    for position, problem in enumerate(item['problems'])
+                    if (item['check'], position) not in taken or taken[item['check'], position] in left]
+        self.open = [item for item in self.open if item['problems']]
+        self.narrow = None
+        self.save()
+        shutil.rmtree(self.out / 'narrow', ignore_errors=True)
+
+    # -- the findings that a finished run left open ----------------------------------------------------------
+
+    def listed(self):
+        """The findings of the open list, in its order, each as (number, check, position in its item, the finding)."""
+        found = [(item['check'], position, problem) for item in self.open for position, problem in enumerate(item['problems'])]
+        return [(number, *entry) for number, entry in enumerate(found, 1)]
+
+    def listing(self, lines):
+        """The open findings for the user: numbered, each with the check it comes from and the place it points to."""
+        say = lines.append
+        does = {READING: 'a repair session changes the passage that the finding names, and a session reads what was changed',
+                LIKENESS: 'a repair session changes the passage that the finding names, and a session reads what was changed',
+                COMPARISON: 'a repair session corrects the statement, a session reads what was changed, and the statement '
+                            'is compared with its element again',
+                UNCOMPARED: 'the statement is compared with its element',
+                WIDE: 'the manuscript is typeset again and every line that is too wide goes to repair; this is done '
+                      'whenever a finding is acted on, since the typesetting cannot tell these lines from new ones'}
+        listed = self.listed()
+        for item in self.open:
+            say('')
+            say(f"{item['check']}: {len(item['problems'])} open after {item['after_repairs']} repairs. Acting on one: "
+                f"{does.get(item['check'], 'nothing')}.")
+            for number, check, _, problem in listed:
+                if check != item['check']:
+                    continue
+                if isinstance(problem, str):
+                    say(f'  {number:3d}. {problem}')
+                    continue
+                if 'label' in problem:
+                    say(f"  {number:3d}. {problem.get('number') or 'the statement'} with \\label{{{problem['label']}}}")
+                else:
+                    part = named_part(self.plan, problem.get('section'))
+                    say(f"  {number:3d}. {collapsed(str(problem.get('where', '')))}"
+                        f" [{'part ' + part if part else 'no single section'}]")
+                for key in ('quote', 'problem', 'difference', 'open_because'):
+                    if is_text(problem.get(key)):
+                        say(f"       {key.replace('_', ' ')}: {shortened(collapsed(problem[key]), 320)}")
+        return lines
+
+    def act(self):
+        """Act on the findings that a finished run left open and that the user chose; then the run ends anew.
+
+        The findings of the readings and of the comparison go to a narrow repair, with the settling and
+        the reading of its changes (narrow_run). Then the numbered statements whose text this changed,
+        and the chosen ones that were never compared, are compared with their elements, once: a
+        statement that differs then is reported as open and is not repaired in the same pass."""
+        narrow = self.narrow
+        if self.narrow_run():
+            before = {name: read_file(self.out / 'narrow' / 'before' / (name + '.tex')) for name in self.parts}
+            old = {found['label']: found['text'] for found in found_statements(self.plan, before)}
+            tex, spans, rows = self.assemble()
+            rows = [row for row in rows if row['comparison']['verdict'] == 'not compared'
+                    and (row['label'] in narrow['uncompared'] or old.get(row['label']) != row['paper_statement'])]
+            if rows:
+                home = {item['label']: item['section'] for item in self.plan['statements']}
+                groups = [(section, [row for row in rows if home[row['label']] == section['id']])
+                          for section in self.plan['sections']]
+                listed = ('those numbered statements of this section whose present text has not been compared with '
+                          'their elements, because a repair changed it or because the comparison did not reach it')
+                results = self.side_by_side([lambda section=section, stated=stated:
+                                             self.compare_section(section, stated, tex, spans, listed)
+                                             for section, stated in groups if stated])
+                verdicts = [verdict for result in results for verdict in result]
+                digests = {row['label']: row['paper_statement_sha256'] for row in rows}
+                self.compared.update({v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
+                                                   'record_disagreement': v['record_disagreement']
+                                                   if is_text(v.get('record_disagreement')) else '',
+                                                   'sha256': digests[v['label']]} for v in verdicts})
+                self.save()
+                self.event('comparison', round=1 + sum(event['event'] == 'comparison' for event in self.log),
+                           statements=[row['label'] for row in rows],
+                           differing=[{'label': v['label'], 'difference': v['difference']}
+                                      for v in verdicts if v['verdict'] == 'differs'],
+                           record_disagreements=[{'label': v['label'], 'record_disagreement': v['record_disagreement']}
+                                                 for v in verdicts if is_text(v.get('record_disagreement'))])
+        # The statements that differ, for their present text. One that was not taken up, and whose text is as it
+        # was, stands as it stood; the others say why they are open.
+        _, _, rows = self.assemble()
+        reasons = {entry['number']: entry['because'] for entry in narrow.get('left', [])}
+        taken = {entry['finding']['label']: reasons.get(entry['number']) for entry in narrow['findings']
+                 if entry['check'] == COMPARISON}
+        item = next((item for item in self.open if item['check'] == COMPARISON), None)
+        known = {problem['label']: problem for problem in item['problems']} if item else {}
+        differing = []
+        for row in rows:
+            if row['comparison']['verdict'] != 'differs':
+                continue
+            label, difference = row['label'], row['comparison']['difference']
+            if label in known and label not in taken and known[label]['difference'] == difference:
+                differing.append(known[label])
+            else:
+                differing.append({'label': label, 'difference': difference, 'open_because': taken.get(label) or DIFFERS_NOW})
+        if item:
+            item.update(after_repairs=item['after_repairs'] + bool(taken), problems=differing)
+        elif differing:
+            self.open.append({'check': COMPARISON, 'after_repairs': 0, 'problems': differing})
+        narrow['findings'] = [entry for entry in narrow['findings'] if entry['check'] != COMPARISON]
+        self.narrow_end()
 
     # -- a run that is continued, and a run that is only looked at ----------------------------------------
 
@@ -2563,6 +3293,7 @@ class Paper:
             # nothing that was read or compared holds for the manuscript that will come of it.
             if all(self.written(section) for section in sections):
                 self.done, self.open, self.rewritten, self.compared = (state[key] for key in ('done', 'open', 'rewritten', 'compared'))
+                self.narrow = state.get('narrow')
 
     def preview(self, lines):
         """What the run would do next and what its sessions would be given, without launching one or writing a file."""
@@ -2591,6 +3322,12 @@ class Paper:
                 say('Sections that are still to be written, ' + ('the introduction first and the others '
                                                                  if todo[0] == sections[0]['id'] and len(todo) > 1 else '')
                     + f'up to {self.parallel} at a time: ' + ', '.join(todo) + '.')
+            elif self.narrow is not None:
+                step = 'compare' if self.narrow['step'] == 'done' else self.narrow['step']
+                say(f"Every section is written. The run was stopped in the last repair of {len(self.narrow['findings'])} "
+                    f'findings, at the step "{step}" of repair, settle, read, undo'
+                    + (' and compare; it would be continued there, and then end.' if self.narrow.get('pass')
+                       else '; it would be continued there, and the stages after it would run.'))
             else:
                 done = [name for name, _ in STAGES if name in self.done]
                 say('Every section is written. The manuscript would be settled, and then the stages after the writing would '
@@ -2670,10 +3407,83 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         print('\n'.join(run.preview(said)))
         return 0
     try:
-        if run.plan is None:
-            run.make_plan()
-        run.write_parts()
-        run.after_writing()
+        if run.narrow is not None and run.narrow.get('pass'):
+            run.act()  # the run had come to its end and was stopped while it acted on findings it had left open
+        else:
+            if run.plan is None:
+                run.make_plan()
+            run.write_parts()
+            run.after_writing()
+    except Stop as exc:
+        run.event('end', status='failed', error=str(exc))
+        raise
+    return run.finish()
+
+
+def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False):
+    """Take up a run that came to its end with findings left open, and act on them; returns the exit code.
+
+    The open findings are those of the last event of the log, which is the `end` of the run. With `dry`
+    they are listed with their numbers and nothing else is done. Otherwise those whose numbers
+    `numbers` names, or all of them, are acted on as Paper.act describes, and the run ends anew; the
+    findings that were not chosen stay open as they were. The run is continued with --resume when it
+    is stopped. As for --resume, the canon has to be what the run began with, since the repair
+    sessions work from the records."""
+    out = Path(out)
+    if not all((out / name).is_file() for name in ('materials.json', 'plan.json', 'state.json', 'log.json')):
+        raise Stop(f'{out} holds no run of this command that came to its end (materials.json, plan.json, state.json, log.json)')
+    run = Paper(instance, out, tex, choice or {}, parallel, dry)
+    ended = run.log[-1] if run.log and run.log[-1]['event'] == 'end' and run.log[-1].get('status') != 'failed' else None
+    if ended is None:
+        raise Stop(f'the run in {out} has not come to its end, so it has no list of open findings to act on: the last '
+                   'event of its log.json is not the end of a run. A run that is going comes to its end by itself; '
+                   'a run that was stopped is continued with --resume')
+    left = json.loads(json.dumps(ended['open']))
+    if any(item['check'] in (MACHINE, TYPESETTING) for item in left):
+        raise Stop(f'the run in {out} ended before its readings and its comparison were made, because the machine checks '
+                   'or the typesetting stayed open; --open-findings acts on what the readings and the comparison of a '
+                   'run left open')
+    if not left:
+        raise Stop(f"the run in {out} came to its end with no finding left open ({ended['status']}); there is nothing "
+                   'to act on')
+    model = replay(instance)
+    settling_proof(model)
+    if dry:
+        manifest, wrong = collection_state()
+        run.collection = manifest
+        run.papers = {entry['key']: read_file(EXEMPLARS / (entry['key'] + '.tex')) if entry['key'] not in wrong else ''
+                      for entry in manifest}
+    else:
+        run.collection, run.papers, _ = load_collection()
+    run.materials = read_json(out / 'materials.json')
+    differing = changed_materials(run.materials, extract(instance, model))
+    if differing:
+        raise Stop(f'what the proof of the root rests on is no longer what {out / "materials.json"} holds, so the canon '
+                   'has changed since the run began, and its open findings cannot be repaired from the records as they '
+                   'are now; start a new run in a new folder. They differ in ' + '; '.join(differing))
+    run.take_up()
+    if run.plan is None or not all(run.written(section) for section in run.plan['sections']):
+        raise Stop(f'{out} does not hold the plan and every part of the manuscript whose findings its log lists')
+    run.open = left
+    listed = run.listed()
+    if dry:
+        print('\n'.join(run.listing([
+            'Dry run: no session is launched and nothing is written.',
+            f"The run in {out} came to its end ({ended['status']}) with {len(listed)} findings left open. --open-findings "
+            'acts on all of them; followed by numbers of this list, as in --open-findings 2,5-7, it acts on those, and '
+            'the others stay open as they are.'])))
+        return 0
+    chosen = set(chosen_numbers(numbers, len(listed)))
+    run.event('open findings', chosen=sorted(chosen), listed=len(listed), parallel=run.parallel)
+    understanding = next((event['understanding'] for event in reversed(run.log) if event['event'] == 'reading'), None)
+    run.narrow_begin(chosen=[(number, check, position) for number, check, position, _ in listed
+                             if number in chosen and check in NARROW_KINDS],
+                     understanding=understanding,
+                     **{'pass': True, 'typeset': any(number in chosen and check == WIDE for number, check, _, _ in listed),
+                        'uncompared': [problem['label'] for number, check, _, problem in listed
+                                       if number in chosen and check == UNCOMPARED]})
+    try:
+        run.act()
     except Stop as exc:
         run.event('end', status='failed', error=str(exc))
         raise
@@ -2699,10 +3509,13 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL):
     produced = next((event for event in run.log if event['event'] == 'end' and event.get('status') != 'failed'), {})
     left = produced.get('open', [])
     if produced.get('status') not in ('complete', 'no_tex', 'open_findings') \
-            or any(item['check'] in ('machine checks of the manuscript', 'typesetting') for item in left):
+            or any(item['check'] in (MACHINE, TYPESETTING) for item in left):
         raise Stop(f'{out} holds a manuscript whose reading and comparison did not run to their end; --typeset-only '
                    'typesets only a manuscript that an earlier run finished apart from the typesetting')
-    run.open = list(left)
+    # What is open now is what the last end that is not a failure lists: --open-findings may have acted on what the
+    # run left. The machine checks and the typesetting are made again here, so what they left before is not kept.
+    latest = next(event for event in reversed(run.log) if event['event'] == 'end' and event.get('status') != 'failed')
+    run.open = [item for item in latest.get('open', []) if item['check'] not in (MACHINE, TYPESETTING)]
     run.materials = read_json(out / 'materials.json')
     run.take_plan(read_json(out / 'plan.json'), read_file(out / 'study.md') if (out / 'study.md').is_file() else '')
     run.parts = {name: read_file(out / 'parts' / (name + '.tex')) for name in ['abstract'] + [s['id'] for s in run.plan['sections']]}
@@ -2712,6 +3525,9 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL):
                         if row['comparison']['verdict'] != 'not compared'}
     if (out / 'state.json').is_file():
         state = read_json(out / 'state.json')
+        if state.get('narrow'):
+            raise Stop(f'the run in {out} was stopped in the last repair of findings and the reading of its changes; '
+                       'continue it with --resume before the manuscript is typeset')
         run.done, run.readings, run.rewritten = state['done'], state['readings'], state['rewritten']
     run.event('typeset only', tex=run.recipe[0])
     try:
@@ -2740,17 +3556,27 @@ def main(argv=None):
                                          'is given; default: that of the instance\'s first model, and, for the readings '
                                          'and the comparison without --model, that of the review role\'s first model')
     parser.add_argument('--typeset-only', action='store_true', help='typeset the manuscript that --out already holds')
+    parser.add_argument('--open-findings', nargs='?', const='all', metavar='NUMBERS',
+                        help='take up the run that --out holds, which came to its end with findings left open, and act '
+                             'on them: on all, or on those whose numbers follow, as in 2,5-7. With --dry-run: list the '
+                             'open findings with their numbers')
     parser.add_argument('--tex', nargs=argparse.REMAINDER, help='the TeX command; takes the rest of the command line')
     args = parser.parse_args(argv)
     try:
-        options = {'--out', '--model', '--effort', '--typeset-only', '--resume', '--parallel', '--dry-run'}
+        options = {'--out', '--model', '--effort', '--typeset-only', '--resume', '--parallel', '--dry-run',
+                   '--open-findings'}
         if args.tex is not None and (not args.tex or options & set(args.tex)):
             raise Stop('--tex takes the rest of the command line: name a command after it, and put it last')
         if args.parallel < 1:
             raise Stop('--parallel is the number of sessions that run side by side, at least 1')
         if args.typeset_only and (args.resume or args.dry_run):
             raise Stop('--typeset-only typesets a finished manuscript; it goes with neither --resume nor --dry-run')
+        if args.open_findings is not None and (args.typeset_only or args.resume):
+            raise Stop('--open-findings takes up a run that came to its end; it goes with neither --typeset-only nor '
+                       '--resume. A pass over open findings that was stopped is continued with --resume alone')
         choice = {'model': args.model, 'effort': args.effort}
+        if args.open_findings is not None:
+            return act_on_open(args.instance, args.out, args.tex, choice, args.parallel, args.open_findings, args.dry_run)
         if args.typeset_only:
             return typeset_only(args.instance, args.out, args.tex, choice, args.parallel)
         return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run)
