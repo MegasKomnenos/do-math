@@ -270,6 +270,21 @@ def output_identities(files):
     return {"public": identity([f for f in files if f[0] in PUBLIC_SUFFIXES]), "full": identity(files)}
 
 
+def link_or_copy(source, target):
+    """Put the file `source` at `target` as a hard link to it, or as a copy where no link can be made.
+
+    A link takes no room of its own. None can be made to another volume, on a file system without
+    hard links, or to a file that already has as many links as the file system allows (1023 on
+    NTFS), and the file is copied then. Whatever stood at `target` is removed first and never
+    written into, because it may itself be a link to a file that others read."""
+    target = Path(target)
+    target.unlink(missing_ok=True)
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copyfile(source, target)
+
+
 # ---------------------------------------------------------------------- processes
 
 def process_tree(pid):
@@ -971,7 +986,7 @@ class Broker:
             if not (build["fresh_targets"] and name in build["targets"]):
                 try:
                     identities = self.restore_module(entry["key"], Path(entry["olean"]))
-                except OSError as exc:  # the copy into the build's lib failed; compile the module instead
+                except OSError as exc:  # the files could not be placed in the build's lib; compile the module instead
                     self.log(event="restore_failed", build=build["id"], module=name, error=str(exc))
             if identities:
                 entry.update(status="cached", exit_code=0, **identities)
@@ -1284,14 +1299,30 @@ class Broker:
         return suffixes, identities
 
     def restore_module(self, key, olean):
-        """Copy a cached module's emitted files into a build's lib and return its output identities; None on a miss."""
+        """Put a cached module's emitted files into a build's lib and return its output identities; None on a miss.
+
+        Each file is placed as a hard link to the cache's file where one can be made (link_or_copy),
+        so a restored module takes no room in the lib beyond what the cache already holds. Sharing
+        the file is safe because neither name is written through afterwards: cache_module puts a
+        cache file in place by a rename and leaves a complete entry as it is, and launch() clears the
+        place of a compile's output before Lean writes there. A restore that fails part of the way
+        takes back the files it placed, so that the compile which follows finds none of them."""
         entry = self.cached_module(key)
         if entry is None:
             return None
         suffixes, identities = entry
         olean.parent.mkdir(parents=True, exist_ok=True)
-        for suffix in suffixes:
-            shutil.copyfile(self.paths.cache / (key + suffix), olean.with_name(olean.stem + suffix))
+        targets = [olean.with_name(olean.stem + suffix) for suffix in suffixes]
+        try:
+            for suffix, target in zip(suffixes, targets):
+                link_or_copy(self.paths.cache / (key + suffix), target)
+        except OSError:
+            for target in targets:
+                try:
+                    target.unlink(missing_ok=True)
+                except OSError:
+                    pass  # launch() clears the place again before the module is compiled
+            raise
         return identities
 
     def cache_module(self, key, files, identities, job_dir):
@@ -1525,6 +1556,12 @@ class Broker:
                 raise OSError('source changed after submission; submit the completed source again')
             if job.get("olean"):
                 Path(job["olean"]).parent.mkdir(parents=True, exist_ok=True)
+                # Lean writes its output into the file that stands at the path. A file left there, by a
+                # restore that was cut short or by an earlier run of this job, can be a link to the
+                # cache's file (restore_module), and output written into it would change the cache's
+                # entry for every later build. So the place is cleared before Lean starts.
+                for _, leftover in emitted_files(job["olean"]):
+                    leftover.unlink()
             argv.append(job["source"])
             write_json(job_dir / "launch.json", {"argv": argv, "cwd": job["cwd"], "env": env,
                                                  "priority": self.config["priority"], "broker": self.identity})

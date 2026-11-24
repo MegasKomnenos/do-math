@@ -1364,6 +1364,103 @@ class BuildTests(BrokerFixture):
                                       for p in olean.parent.glob(olean.stem + '.*')},
                                      original_files[name])
 
+    def need_hard_links(self):
+        probe = self.root / "probe"
+        probe.write_bytes(b"")
+        try:
+            os.link(probe, self.root / "probe-link")
+        except OSError:
+            self.skipTest("the file system of the temporary folder makes no hard links")
+
+    def emitted(self, record):
+        """(the lib's file, the cache's file) for each emitted file of each module of a build."""
+        pairs = []
+        for module in record["modules"].values():
+            olean = Path(module["olean"])
+            for suffix in (".olean", ".olean.private", ".olean.server", ".ir"):
+                pairs.append((olean.with_name(olean.stem + suffix), self.paths.cache / (module["key"] + suffix)))
+        return pairs
+
+    def test_a_cached_module_is_linked_into_the_lib_and_copied_where_no_link_can_be_made(self):
+        # A build's lib names the cache's own file for each module it takes from the cache, so the lib
+        # holds no second copy of that module. Where the file system makes no link, the file is copied.
+        self.need_hard_links()
+        self.start_broker()
+        root = self.tree()
+        warm = self.built(root, [root / "D.lean"])
+        self.assertEqual(warm["status"], "finished", warm)
+        linked = self.built(root, [root / "D.lean"])
+        self.assertTrue(all(m["status"] == "cached" for m in linked["modules"].values()))
+        for in_lib, in_cache in self.emitted(linked):
+            self.assertTrue(os.path.samefile(in_lib, in_cache), in_lib)
+        with patch.object(lean_broker.os, "link", side_effect=OSError("no link can be made")):
+            copied = self.built(root, [root / "D.lean"])
+        self.assertTrue(all(m["status"] == "cached" for m in copied["modules"].values()))
+        for in_lib, in_cache in self.emitted(copied):
+            self.assertFalse(os.path.samefile(in_lib, in_cache), in_lib)
+            self.assertEqual(in_lib.read_bytes(), in_cache.read_bytes())
+
+    def test_a_restore_cut_short_takes_back_its_files_and_the_module_is_compiled(self):
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        target = source(root / "Target.lean", imports=())
+        warm = self.built(root, [target])
+        self.assertEqual(warm["status"], "finished", warm)
+        key = warm["modules"]["Target"]["key"]
+        cached = {p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}
+        original, placed = lean_broker.link_or_copy, []
+
+        def fail_on_the_third(source_file, target_file):
+            if len(placed) == 2:
+                raise OSError("the third file could not be placed")
+            original(source_file, target_file)
+            placed.append(Path(target_file))
+
+        # The restore alone: the two files placed before the failure are gone again.
+        olean = self.root / "a lib" / "Target.olean"
+        with patch.object(lean_broker, "link_or_copy", side_effect=fail_on_the_third):
+            with self.assertRaises(OSError):
+                self.broker.restore_module(key, olean)
+        self.assertEqual(len(placed), 2)
+        self.assertEqual(list(olean.parent.iterdir()), [])
+        # In a build: the module is compiled instead, and the cache's entry is as it was.
+        placed.clear()
+        with patch.object(lean_broker, "link_or_copy", side_effect=fail_on_the_third):
+            rebuilt = self.built(root, [target])
+        module = rebuilt["modules"]["Target"]
+        self.assertEqual((rebuilt["status"], module["status"], module["exit_code"]), ("finished", "finished", 0))
+        self.assertIsNotNone(module["job"])
+        self.assertEqual({p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}, cached)
+        for in_lib, in_cache in self.emitted(rebuilt):
+            self.assertFalse(os.path.samefile(in_lib, in_cache), in_lib)
+
+    def test_a_compile_does_not_write_into_a_file_left_at_its_output(self):
+        # Lean writes into the file that stands at its output path. A file left there can be a link to
+        # the cache's file, and a compile must leave the cache's entry as it was.
+        self.need_hard_links()
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        target = source(root / "Target.lean", imports=(), marker="FIRST")
+        warm = self.built(root, [target])
+        self.assertEqual(warm["status"], "finished", warm)
+        key = warm["modules"]["Target"]["key"]
+        cached = {p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}
+        source(root / "Target.lean", imports=(), marker="SECOND")
+        build_id = self.build(root, [target])
+        self.broker.ingest()  # the build is registered and its compile queued; no Lean has started
+        module = self.build_record(build_id)["modules"]["Target"]
+        self.assertNotEqual(module["key"], key)
+        olean = Path(module["olean"])
+        olean.parent.mkdir(parents=True, exist_ok=True)
+        for suffix in (".olean", ".olean.private", ".olean.server", ".ir"):
+            os.link(self.paths.cache / (key + suffix), olean.with_name(olean.stem + suffix))
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        module = self.build_record(build_id)["modules"]["Target"]
+        self.assertEqual((module["status"], module["exit_code"]), ("finished", 0))
+        self.assertEqual({p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}, cached)
+        self.assertFalse(os.path.samefile(olean, self.paths.cache / (key + ".olean")))
+        self.assertIn("SECOND", olean.with_name("Target.olean.private").read_text(encoding="utf-8"))
+
     def test_failed_module_fails_its_dependents_with_the_reason(self):
         self.start_broker()
         root = self.tree(A={"exit": 1})
