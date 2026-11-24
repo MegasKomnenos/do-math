@@ -1,0 +1,201 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+version: "v0.4"
+
+project:
+  name: "Unimodality of parking functions by maximum displacement"
+  description: >-
+    Let b(n, l) be the number of parking functions of length n whose maximum
+    displacement is exactly l, where the displacement of a car is the distance
+    between the spot it takes and its preferred spot. The formalization proves
+    in Lean 4 with Mathlib that for every n >= 1 the sequence
+    b(n, 0), b(n, 1), ..., b(n, n-1) is unimodal, which is Conjecture 6.5 of
+    Celano, Elder, Hadaway, Harris, Martin, Priestley and Udell
+    (arXiv:2507.07243). The numbers b(n, l) are defined directly from the
+    parking process. The proof starts from a recursion for the number of
+    parking functions whose maximum displacement is at most a given bound,
+    proved in the library from the parking process, and follows the sign of
+    the difference b(n, k) - b(n, k-1) along columns k as n grows. Rows with
+    n <= 16 and several finite ranges are settled by tables that Lean's kernel
+    evaluates in exact integer arithmetic; analytic estimates, including
+    Robbins' bounds for the factorial, settle the remaining ranges. The proof
+    depends only on the axioms propext, Classical.choice and Quot.sound. It
+    was found, written and formalized by AI sessions of an autonomous
+    research system; no person has refereed it.
+  authors:
+    - "Jaehyoung Kim"
+  license: "Apache-2.0"
+  responsible_maintainers:
+    - "Jaehyoung Kim"
+
+classification:
+  arxiv: [math.CO]
+  msc2020: [05A20, 05A15, 05A16]
+
+sources:
+  - title: "Unimodality of the maximum-displacement counts of parking functions (Conjecture 6.5 of arXiv:2507.07243), proved for every n"
+    type: original-proof
+    relationship: other
+    note: >-
+      The proof is first presented by this formalization and the repository
+      it accompanies. The conjecture itself is from the source below.
+  - title: "ℓ-Interval parking functions: Foata invariance, statistic generating functions, and ciphers"
+    authors:
+      - "K. Celano"
+      - "J. Elder"
+      - "K. P. Hadaway"
+      - "P. E. Harris"
+      - "J. L. Martin"
+      - "A. Priestley"
+      - "G. Udell"
+    id: "arXiv:2507.07243v2"
+    type: paper
+    location: "https://arxiv.org/abs/2507.07243"
+    relationship: other
+    note: >-
+      Poses the statement as Conjecture 6.5 and tabulates b(n, l) for n <= 9;
+      it gives no proof. Version 1 (9 July 2025) is titled "Statistics on
+      ℓ-interval parking functions" and numbers the conjecture the same way;
+      arXiv's listing still shows that title.
+    author_endorsement: not-contacted
+  - title: "Interval and ℓ-interval rational parking functions"
+    authors:
+      - "T. Aguilar-Fraga"
+      - "J. Elder"
+      - "R. E. Garcia"
+      - "K. P. Hadaway"
+      - "P. E. Harris"
+      - "K. J. Harry"
+      - "I. B. Hogan"
+      - "J. Johnson"
+      - "J. Kretschmann"
+      - "K. Lawson-Chavanu"
+      - "J. C. Martínez Mori"
+      - "C. D. Monroe"
+      - "D. Quiñonez"
+      - "D. Tolson III"
+      - "D. A. Williams II"
+    id: "arXiv:2311.14055"
+    type: paper
+    location: "Discrete Math. Theor. Comput. Sci. 26(1) (2024), Paper 10; https://arxiv.org/abs/2311.14055"
+    relationship: background
+    note: >-
+      The recursion on which the proof starts was identified with Theorem
+      3.7 of this paper during the research. The library does not import or assume it:
+      it proves the recursion from the definition of the parking process.
+
+  - title: "parking-unimodality-2026-11-10 (knowledge base of the earlier research run)"
+    id: "doi:10.5281/zenodo.24110810"
+    type: other
+    location: "https://doi.org/10.5281/zenodo.24110810"
+    relationship: other
+    note: >-
+      Zenodo record published 12 November 2026 by the same project. It
+      archives the earlier of the two research runs, which reached an
+      informal, unrefereed proof resting partly on computer-assisted inputs,
+      including floating-point computations under an assumed error model; the
+      record itself states that the conjecture remains open. The proof
+      formalized here is a different proof, found by the later run, and is
+      presented here for the first time as a complete proof.
+
+related_formalizations: []
+
+status:
+  scope: >-
+    Formalized: the unimodality asserted by Conjecture 6.5, for every
+    n >= 1, about the numbers b(n, l) defined from the parking process
+    itself. Not restated: the conjecture's displayed chain also records the
+    end values b(n, 0) = n! and b(n, n-1) = n^(n-2), which its source proves;
+    the Lean theorem does not restate them, and it neither asserts nor
+    assumes the count (n+1)^(n-1) of parking functions. Spots and preferences are numbered from 0 instead of
+    from 1, which does not change any displacement.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: []
+  main_results:
+    - "Parking.root_unimodal: for every n >= 1 the sequence b(n, 0), ..., b(n, n-1) is unimodal."
+
+automation:
+  methods:
+    - method: autonomous
+      models:
+        - "Claude Fable 5 family (Anthropic): attempts, explorations, formalization, peer review, organization"
+        - "Claude Opus 5 family (Anthropic): review sessions"
+        - "GPT-6.1 (OpenAI): part of the earlier run only"
+      framework: "do-math, an autonomous research system built in the maintainer's own repository"
+      tool_setup: >-
+        Parallel AI sessions in fixed roles (attempt, explore, formalize, peer
+        review, review, organize) worked on a shared Lean library; a review
+        session decided each publication. Lean 4 with Mathlib was used
+        throughout. Two runs: an earlier run (5-13 November 2026) reached an
+        informal proof that was not formalized; the later run (19-23 November
+        2026), on Claude models only, found the proof that this library
+        formalizes. An AI operator session started and tended the runs.
+      cost:
+        wall_time: "about three weeks of calendar time, 5-24 November 2026"
+        spend_usd: "subscription-based"
+        hardware: "local Windows machine; models used through their providers' services"
+      prompting_notes: >-
+        The person who commissioned the research chose the conjecture and gave
+        standing written inputs to the running research, for example to give
+        more weight to understanding the problem than to large computations.
+        The proofs and the Lean code were written by AI sessions.
+    - method: agent
+      models: []
+      framework: "Claude Code"
+      tool_setup: >-
+        After the research, AI agent sessions simplified the library from 114
+        to 61 modules, extended it to 62 so that it states every numbered
+        statement of the accompanying paper, and made the module-system port
+        and the Palomar files of this repository. The models of these
+        sessions are not recorded here.
+      cost:
+        wall_time: "about two days, 23-25 November 2026"
+        spend_usd: "subscription-based"
+        hardware: "local Windows machine"
+      prompting_notes: "n/a"
+  spend_usd: "subscription-based"
+  notes: >-
+    The mathematics, the Lean proof, the informal records and the
+    accompanying paper were produced by AI sessions. The human role was to
+    commission the research, set its goals and standards, steer it through
+    standing inputs, and decide what to publish. README.md gives the
+    production account in more detail.
+
+fidelity:
+  divergences: >-
+    Spots and preferences are numbered 0, ..., n-1 instead of 1, ..., n; a
+    displacement is a difference of a spot and a preference and is unchanged.
+    b n l is defined for every natural number l and is 0 when l >= n; the
+    theorem uses it only for l <= n-1. The second range of the unimodality
+    condition, l <= n-2 in the conjecture, is written l + 1 <= n - 1 so that
+    it is empty for n = 1 under natural-number subtraction, as it is in the
+    conjecture. No other divergence is known.
+
+review:
+  status: agent-reviewed
+  reviewers:
+    - "AI review sessions of the research system (Claude Opus 5 family)"
+    - "Jaehyoung Kim (the Lean statement only)"
+  notes: >-
+    Every published result of the research was accepted by an AI review
+    session before publication, and the correspondence of the Lean statement
+    with the conjecture was judged by AI review sessions. Jaehyoung Kim, the
+    maintainer, read the Lean statement in Challenge.lean against Conjecture
+    6.5 before submission. Lean's kernel checks the proof. No person has
+    refereed the mathematics.
+
+alignment:
+  namespace: "Parking"
+  statements:
+    - source: "Conjecture 6.5 of arXiv:2507.07243"
+      lean: "Parking.root_unimodal"
+      module: "Parking.Unimodal"
+      status: proved
+      note: >-
+        Stated in Challenge.lean with the definitions of Parking/Defs.lean
+        copied verbatim; the conventions are listed under fidelity.
+
+acknowledgements: >-
+  Mathlib and the Lean 4 toolchain. The conjecture and the data that
+  motivated it are due to Celano, Elder, Hadaway, Harris, Martin, Priestley
+  and Udell.
