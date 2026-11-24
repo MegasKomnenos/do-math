@@ -325,6 +325,6 @@ theorem A_eq_pow {n k : ℕ} (h : n ≤ k + 1) : A n k = (n + 1) ^ (n - 1) := by
   have h1 : (A n k : ℝ) / (n.factorial : ℝ) = ((n : ℝ) + 1) ^ (n - 1) / (n.factorial : ℝ) := by
     rw [show (A n k : ℝ) / (n.factorial : ℝ) = zr (k + 1) n from rfl, hz, cc_eq, hfac, hpow,
       mul_div_mul_right _ _ hn1]
-  exact_mod_cast (div_left_inj₀ hF).mp h1
+  exact_mod_cast (div_left_inj' hF).mp h1
 
 end Parking
