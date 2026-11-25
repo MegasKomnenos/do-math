@@ -1,0 +1,22 @@
+Windows System event log of this machine, 2026-11-05 to 2026-11-15 (local time, KST), events 6005, 6006, 6008, 1074, 41, 12, 13.
+Read by the operating session at 2026-11-23 10:55 KST with Get-WinEvent, after the user approved the command. Message texts are in Korean as the log gives them.
+
+11-06 09:56:16 1074 User32  restart initiated by RuntimeBroker.exe on behalf of user <account>, reason: other (unplanned) ["다시 시작 ... 기타(계획되지 않음)"]
+11-06 09:56:31 6006 EventLog  event log service stopped
+11-06 09:56:38 13   Kernel-General  operating system shutting down at 2026-11-06T00:56:38Z
+11-06 09:58:39 12   Kernel-General  operating system started at 2026-11-06T00:58:39Z
+11-06 09:58:55 13   Wininit  Credential Guard started
+11-06 09:58:57 6005 EventLog  event log service started
+11-10 10:08:34 12   Kernel-General  operating system started at 2026-11-10T01:08:34Z
+11-10 10:08:34 41   Hyper-V-Hypervisor  hypervisor could not start (VMX absent or disabled in BIOS)
+11-10 10:08:36 41   Kernel-Power  the system rebooted after shutting down abnormally (stopped responding, crashed, or lost power)
+11-10 10:08:43 6008 EventLog  the previous system shutdown at 9:58:59 AM on 11/10/2026 was unexpected
+11-10 10:08:43 6005 EventLog  event log service started
+11-13 00:59:34 1074 User32  restart initiated by RuntimeBroker.exe on behalf of user <account>, reason: other (unplanned)
+11-13 00:59:42 6006 EventLog  event log service stopped
+11-13 00:59:48 13   Kernel-General  operating system shutting down at 2026-11-12T15:59:48Z
+11-13 01:01:08 12   Kernel-General  operating system started at 2026-11-12T16:01:08Z
+11-13 01:01:13 13   Wininit  Credential Guard started
+11-13 01:01:15 6005 EventLog  event log service started
+
+Summary: two user-initiated restarts (11-06 09:56 to 09:58; 11-13 00:59 to 01:01) and one unexpected shutdown (last alive 11-10 09:58:59, booted again 11-10 10:08:34). No other start or shutdown events in the range.
