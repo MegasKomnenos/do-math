@@ -1,0 +1,358 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+version: "v0.4"
+
+project:
+  name: "The staircase theorem for parking functions counted by maximum displacement"
+  description: >-
+    Let b(n, l) be the number of parking functions of length n whose maximum
+    displacement is exactly l, where the displacement of a car is the distance
+    between the spot it takes and its preferred spot, and call the sequence
+    b(n, 0), b(n, 1), ..., b(n, n-1) row n. The formalization proves two
+    theorems in Lean 4 with Mathlib. The first, the staircase
+    (Parking.staircase), says that for every n >= 2 there is a position p
+    such that row n rises strictly up to b(n, p), satisfies
+    b(n, p+1) <= b(n, p), and falls strictly from b(n, p+1) on, and such that
+    row n+1 either has the same shape with the same p or rises strictly up to
+    b(n+1, p+1) and falls strictly after it. So every row is strictly
+    increasing and then strictly decreasing, except that the entry directly
+    after the peak may be equal to the peak, and the peak stays or moves one
+    position to the right when the length grows by one. The second
+    (Parking.unimodal_via_staircase) is the corollary that for every n >= 1
+    row n is unimodal, which is Conjecture 6.5 of Celano, Elder, Hadaway,
+    Harris, Martin, Priestley and Udell (arXiv:2507.07243). The numbers
+    b(n, l) are defined directly from the parking process. The staircase is
+    obtained by induction on n from two rules for the sign of the step
+    b(n, k) - b(n, k-1): a positive step stays positive one row down in the
+    same column, and a step that is not positive is followed by a negative
+    step one row down and one column to the right. The rules are proved
+    region by region: tables that Lean's kernel evaluates in exact integer
+    arithmetic settle the small columns, and analytic estimates settle the
+    large ones. The proof depends only on the axioms propext,
+    Classical.choice and Quot.sound. The unimodality had been proved before,
+    by another route, in the formalization MegasKomnenos/parking-unimodality
+    (PALOMAR-2026-11-25-000002), on whose library this proof is built. As
+    far as a literature search found, the staircase is first presented by
+    this formalization and the package from which it was made; that it is
+    new is not established. The proof was found, written and formalized by
+    AI sessions. A person has read the two Lean statements, with the
+    definitions they use, against the statements in words; no person has
+    refereed the mathematics.
+  authors:
+    - "Jaehyoung Kim"
+  license: "CC-BY-4.0"
+  responsible_maintainers:
+    - "Jaehyoung Kim"
+
+classification:
+  arxiv: [math.CO]
+  msc2020: [05A20, 05A15, 05A16]
+
+sources:
+  - title: "The staircase theorem for the maximum-displacement counts of parking functions: every row rises strictly to a peak and falls strictly after it, with at most one pair of equal neighbours directly after the peak, and the peak stays or moves one position to the right when the length grows by one"
+    type: original-proof
+    relationship: other
+    note: >-
+      The result recorded by this entry is the staircase
+      (Parking.staircase). As far as the literature search described in
+      README.md found, it is first presented publicly, as a proved theorem,
+      by the package from which this repository was made, the folder
+      solved/parking-staircase of the repository MegasKomnenos/do-math
+      (commit f70448b977718d449348874d98098e6e803d1299), which holds the
+      same proof on stable Lean together with written records of its public
+      declarations and an unrefereed paper, and by this formalization. That
+      the staircase is new is not established. The second compared theorem,
+      the unimodality of every row, is known and is not first presented
+      here: the formalization named under related_formalizations proved it
+      earlier by another route, and here it is a corollary of the staircase.
+  - title: "ℓ-Interval parking functions: Foata invariance, statistic generating functions, and ciphers"
+    authors:
+      - "K. Celano"
+      - "J. Elder"
+      - "K. P. Hadaway"
+      - "P. E. Harris"
+      - "J. L. Martin"
+      - "A. Priestley"
+      - "G. Udell"
+    id: "arXiv:2507.07243v2"
+    type: paper
+    location: "Conjecture 6.5; Table 1; Example 2.8 and Section 6; https://arxiv.org/abs/2507.07243"
+    relationship: other
+    note: >-
+      Poses the unimodality of every row, the second compared theorem, as
+      Conjecture 6.5, and gives no proof of it. It tabulates b(n, l) for
+      n <= 9 (Table 1) and gives the end values b(n, 0) = n! and
+      b(n, n-1) = n^(n-2) (Example 2.8 and Section 6). It does not state the
+      staircase. Version 1 (9 July 2025) is titled "Statistics on ℓ-interval
+      parking functions" and numbers the conjecture the same way; arXiv's
+      listing still shows that title.
+    author_endorsement: not-contacted
+  - title: "Interval and ℓ-interval rational parking functions"
+    authors:
+      - "T. Aguilar-Fraga"
+      - "J. Elder"
+      - "R. E. Garcia"
+      - "K. P. Hadaway"
+      - "P. E. Harris"
+      - "K. J. Harry"
+      - "I. B. Hogan"
+      - "J. Johnson"
+      - "J. Kretschmann"
+      - "K. Lawson-Chavanu"
+      - "J. C. Martínez Mori"
+      - "C. D. Monroe"
+      - "D. Quiñonez"
+      - "D. Tolson III"
+      - "D. A. Williams II"
+    id: "doi:10.46298/dmtcs.12598"
+    type: paper
+    location: "Theorem 3.7; Discrete Math. Theor. Comput. Sci. 26(1) (2024), Paper 10; arXiv:2311.14055"
+    relationship: background
+    note: >-
+      Theorem 3.7 is a recursion, on the spot of the car that arrives last,
+      for the number of parking functions whose maximum displacement is at
+      most a given bound. The proof starts from this recursion. The library
+      does not import or assume it: it proves the recursion from the
+      definition of the parking process (Parking.A_succ).
+  - title: "The maximum displacement for linear probing hashing"
+    authors:
+      - "N. Petersson"
+    id: "ISBN 978-91-506-2050-4"
+    type: other
+    location: "Theorem 2.1 of the summary; doctoral thesis, Uppsala Dissertations in Mathematics 63, Uppsala University, 2009"
+    relationship: background
+    note: >-
+      A limit theorem for the maximum displacement in hashing with linear
+      probing. Read for a uniform random parking function, it places all but
+      an arbitrarily small fraction of the sum of row n at a distance of
+      order n^(2/3) from the right end of the row. It is a statement of
+      convergence in distribution and compares no two neighbouring entries
+      of a row, so it decides neither theorem. The proof does not use it.
+  - title: "Unimodality of the number of parking functions with a given maximum displacement"
+    id: "https://github.com/MegasKomnenos/do-math/tree/f70448b977718d449348874d98098e6e803d1299/solved/parking-unimodality"
+    type: other
+    location: "paper/paper.pdf, 143 pages, in the folder solved/parking-unimodality of MegasKomnenos/do-math at commit f70448b977718d449348874d98098e6e803d1299"
+    relationship: other
+    note: >-
+      Unrefereed paper of the same project, written by AI sessions. It
+      presents in words the earlier proof of the unimodality, the proof that
+      the formalization named under related_formalizations holds in Lean. It
+      does not speak of the staircase, so it is not a source of the result
+      recorded here; it is listed because it is the written account of the
+      second compared theorem as it was first proved.
+  - title: "parking-unimodality-2026-11-10 (knowledge base of the earlier research run)"
+    id: "doi:10.5281/zenodo.24110810"
+    type: other
+    location: "https://doi.org/10.5281/zenodo.24110810"
+    relationship: other
+    note: >-
+      Zenodo record published 12 November 2026 by the same project. It
+      archives the knowledge base of the earlier of the two research runs
+      on the conjecture as it stood then, 340 records by its description.
+      According to the history of the research in the package named above
+      (history/timeline.md, section 4.8), that run recorded on 10 November
+      2026 two things. One is the observation that in exactly computed rows
+      up to n = 170 the peak moves by zero or one position from each row to
+      the next, which the run did not prove. The other is a reduction,
+      proved in words and accepted by the run's reviews: if the step of
+      every column, once it is not negative, stays so in all later rows,
+      and the first such row does not decrease from one column to the next,
+      then every row is unimodal; for rows without equal neighbours a
+      converse holds, under which the peak moves by at most one position
+      exactly when a negative step stays negative one row down and one
+      column to the right. The induction on the row by which the staircase
+      follows here from the two sign rules is of the same kind. The run
+      proved neither compared theorem formally. The record's description
+      says that the run reached an informal proof of the conjecture, some of
+      whose steps rest on finite checks and on floating-point computations
+      under a stated error model, and that the conjecture remains open; this
+      is taken from a summary of the record's landing page kept in the
+      package (history/sources/between/structure-document). The archive was
+      not opened for this repository, so it was not checked that it contains
+      the two records of 10 November.
+
+related_formalizations:
+  - id: "https://github.com/MegasKomnenos/parking-unimodality"
+    relationship: builds-on
+    note: >-
+      Registered in Palomar as PALOMAR-2026-11-25-000002, at commit
+      61ecdf2eb6b2e81ae61fae5df07cae879f3bd157, by the same author. It
+      proves the unimodality of every row as Parking.root_unimodal, whose
+      Lean statement is the one of Parking.unimodal_via_staircase here, over
+      the same definitions. Its route is different: it excludes, in each
+      row, a descent that is followed by an ascent, and it does not
+      determine how the peak of a row stands to the peak of the next row.
+      The present work builds on its library: of the 62 modules of that
+      library, 52 are in this repository under Parking/, with the same code
+      and with the module comments of five of them reworded, and the 28
+      modules under Staircase/ are new. The staircase is not proved there.
+      One module of that library, Parking/Peak.lean, which is not among the
+      52 and whose statements are not compared declarations of that entry,
+      contains Parking.row_peak: for n >= 335, row n does not decrease up to
+      a position p, rises strictly from b(n, 81) to b(n, p), satisfies
+      b(n, p+1) <= b(n, p) and falls strictly from b(n, p+1) on, and p lies
+      within a stated distance of order n^(2/3) of the right end of the row.
+      The staircase says more in three respects, since it holds for every
+      n >= 2, is strict from the first entry on, and relates the peaks of
+      consecutive rows, and less in one, since it gives no bound for the
+      position of the peak. No other formalization of either theorem is
+      known.
+
+status:
+  scope: >-
+    Formalized: the staircase for every n >= 2 and the unimodality of row n
+    for every n >= 1, both about the numbers b(n, l) defined from the
+    parking process itself; the second is derived from the first in Lean.
+    Not asserted by either theorem: the position of the peak as a function
+    of n; whether the entry after the peak is ever equal to the peak, which
+    the staircase allows in one place and does not decide; the end values
+    b(n, 0) = n! and b(n, n-1) = n^(n-2) that the conjecture's displayed
+    chain also records and that its source gives; and the count
+    (n+1)^(n-1) of the parking functions of length n. The staircase is
+    stated from n = 2 on, the rows for which the two sign rules behind it
+    are proved; its instance for n = 1, which would say that rows 1 and 2
+    both have their peak at position 0, is true and is not part of the
+    theorem.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: [propext, Classical.choice, Quot.sound]
+  main_results:
+    - declaration: "Parking.staircase"
+      file: "Staircase/Main.lean"
+      sorry_count: 0
+      axioms: [propext, Classical.choice, Quot.sound]
+      comparator_config: "comparator.json"
+    - declaration: "Parking.unimodal_via_staircase"
+      file: "Staircase/Main.lean"
+      sorry_count: 0
+      axioms: [propext, Classical.choice, Quot.sound]
+      comparator_config: "comparator.json"
+
+automation:
+  methods:
+    - method: autonomous
+      models:
+        - "Claude Fable (Anthropic), launched as claude/fable, version not recorded in the run's history: attempts, explorations, formalization, peer checks, organization"
+        - "Claude Opus (Anthropic), launched as claude/opus, version not recorded in the run's history: review sessions"
+      framework: "do-math, an autonomous research system built in the maintainer's own repository"
+      tool_setup: >-
+        Parallel AI sessions in fixed roles (attempt, explore, formalize,
+        peer check, review, organize) worked on a shared Lean library; a
+        review session decided each publication. The run that found this
+        proof ran from 19 to 23 November 2026 on Claude models only. On 23
+        November it published a record whose Lean modules prove the
+        staircase, without hypotheses, by way of the two sign rules; a
+        review session of the run accepted the record after compiling its
+        modules. An earlier run on the same conjecture (5-13 November 2026,
+        on GPT-6.1 of OpenAI and Claude models) had observed the staircase
+        pattern in computed rows and proved in words a reduction of the
+        unimodality to statements about columns; it proved neither theorem
+        formally and did not prove the staircase. An AI operator session
+        started and tended the runs. Four times in the later run the
+        operator changed published verdicts of reviews directly, each time
+        setting results back rather than accepting them.
+      cost:
+        wall_time: "19-23 November 2026 for the run that found the proof"
+        spend_usd: "subscription-based"
+        hardware: "local Windows machine; models used through their provider's service"
+      prompting_notes: >-
+        The person who commissioned the research chose the conjecture and
+        gave standing written inputs to the running research. The proofs and
+        the Lean code were written by AI sessions.
+    - method: agent
+      models:
+        - "Claude models of Anthropic. The agent types recorded for the sessions are defined on Claude Fable 5 and Claude Opus 5, and the session that made the port and the Palomar files ran on Claude Fable 5.2; the model of each session is not recorded here"
+      framework: "Claude Code"
+      tool_setup: >-
+        On 24 November 2026 AI agent sessions rebuilt the run's Lean proof
+        of the staircase on the library Parking of the formalization named
+        under related_formalizations: one session read the whole proof and
+        divided the work, further sessions each built one part, and one
+        arranged the whole; three places of the proofs were simplified
+        afterwards. Agent sessions also wrote the records and the paper of
+        the package, and on 25 November 2026 one agent session made the
+        module-system port and the Palomar files of this repository.
+      cost:
+        wall_time: "two days, 24-25 November 2026"
+        spend_usd: "subscription-based"
+        hardware: "local Windows machine"
+      prompting_notes: >-
+        The person who commissioned the research asked for the staircase
+        proof to be rebuilt on the library and prepared as a package, and
+        decided what to publish.
+  spend_usd: "subscription-based"
+  notes: >-
+    The mathematics, the Lean proof, the records, the paper of the package
+    and the texts of this repository were produced by AI sessions. The human
+    role was to commission the research, to set its goals and standards, to
+    decide what to publish, and to read the two Lean statements against the
+    statements in words. README.md gives the production account in more
+    detail.
+
+fidelity:
+  divergences: >-
+    Spots and preferences are numbered 0, ..., n-1 instead of 1, ..., n; a
+    displacement is a difference of a spot and a preference and is
+    unchanged. b n l is defined for every natural number l; for l >= n >= 1
+    it is 0, since no displacement exceeds n-1, and the theorems use it only
+    for l <= n-1 in row n and for l <= n in row n+1. All subtractions are
+    subtractions of natural numbers; in the two theorems each is the
+    ordinary difference, because n-1 occurs for rows n >= 1 only and k-1,
+    l-1 occur under 1 <= k, 1 <= l, and the difference of a spot and a
+    preference in the definition of the displacements is exact because a car
+    parks at or after its preference. The second range of the unimodality
+    condition, l <= n-2 in the conjecture, is written l + 1 <= n - 1, so
+    that it is empty for n = 1, as it is in the conjecture. The hypothesis
+    1 <= n of the corollary belongs to the conjecture; the Lean proof does
+    not use it. The peak of a row is defined for an arbitrary array of
+    natural numbers (Parking.IsPeak, Parking.IsStrictPeak) and applied to
+    the array b; for a peak at the last position of a row, the conditions on
+    the entries after it are empty. The staircase is not a statement of the
+    conjecture's source, so it has no source statement to diverge from. No
+    other divergence is known.
+
+review:
+  status: agent-reviewed
+  reviewers:
+    - "AI review sessions of the research system (Claude Opus 5 family)"
+    - "AI agent sessions that compared the written records of the staircase modules with the Lean and had written none of them"
+    - "Jaehyoung Kim (the two Lean statements only)"
+  notes: >-
+    A review session of the research system accepted the run's Lean proof
+    of the staircase before it was published in the run's library. The
+    proof in this repository is that proof rebuilt on the library Parking;
+    Lean's kernel checks it, and no review session judged the rebuilt
+    proof as a whole. In the package, each of the 107 records written for
+    the staircase modules, which state every public declaration of these
+    modules in words, was compared with the Lean, statement by statement
+    and proof by proof, by an AI session that had not written it. Human
+    review, limited to the statements: Jaehyoung Kim, the maintainer,
+    read the two Lean statements in Challenge.lean, with the definitions
+    they use, against the statements in words. No person has reviewed the proof, and no person has refereed the
+    mathematics.
+
+alignment:
+  namespace: "Parking"
+  statements:
+    - source: "First presented by this formalization; not a statement of the conjecture's source"
+      lean: "Parking.staircase"
+      module: "Staircase.Main"
+      status: proved
+      note: >-
+        Stated in Challenge.lean with the definitions of Parking/Defs.lean
+        and Staircase/Peak.lean copied verbatim. In words: for every n >= 2
+        there is p such that row n has its peak at p, and row n+1 has its
+        peak at p or a strict peak at p+1.
+    - source: "Conjecture 6.5 of arXiv:2507.07243"
+      lean: "Parking.unimodal_via_staircase"
+      module: "Staircase.Main"
+      status: proved
+      note: >-
+        Stated in Challenge.lean with the definitions of Parking/Defs.lean
+        copied verbatim; the conventions are listed under fidelity. The
+        conjecture's displayed chain also records the end values n! and
+        n^(n-2), which the theorem does not restate.
+
+acknowledgements: >-
+  Mathlib and the Lean 4 toolchain. The conjecture and the data that
+  motivated it are due to Celano, Elder, Hadaway, Harris, Martin, Priestley
+  and Udell.
