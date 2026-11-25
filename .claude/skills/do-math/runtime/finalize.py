@@ -50,6 +50,9 @@ PLACEHOLDER = re.compile(r'\{\{([a-z_]+)\}\}')
 LEAN_SECTIONS = ('Reading the imported library', 'Compiling', 'What every Lean file of the library keeps')
 WITHOUT_LEAN = ('history-write', 'history-read', 'readme-write')
 FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
+# What the entry of a cited work holds for each sentence of a record that cites it (bring_records): the record, the
+# sentence, the place in the work, and the words of the work at that place as they were read.
+ATTRIBUTION = ('declaration', 'sentence', 'place', 'quote')
 KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
 # Why a record is written again although its declaration did not change (records_again).
 DISAGREES = 'its statement in words says something that its Lean statement does not'
@@ -247,12 +250,18 @@ class Run:
 
         return PLACEHOLDER.sub(value, text)
 
-    def task(self, kind, instruction, files, read, model, label=None, names=None, servers=None):
+    def task(self, kind, instruction, files, read, model, label=None, names=None, servers=None, check=None):
         """One task of a session: launched until `read` accepts its output, and not launched again once it was accepted.
 
         The accepted output is hashed and entered in state.json with the identity of what the session
         was given. When the run is started again and gives the task the same prompt and files, the
-        output is read from its folder; an accepted output that has changed since stops the run."""
+        output is read from its folder; an accepted output that has changed since stops the run.
+
+        `check` says, for a task that is a check of what the run has made, what the check is, in the
+        words of a report. When a safeguard of the AI system stopped every session of such a task, it
+        is recorded as not done and None is returned (Sessions.session); nothing is entered as
+        accepted, so a run that makes the step again tries the check again. A task without `check`
+        makes something the run needs, and the run stops when every session of it was stopped."""
         prompt = self.prompt(instruction, names)
         given = given_digest(prompt, files)
         key = kind + (':' + label if label else '')
@@ -274,12 +283,26 @@ class Run:
             found['output'] = output
             return result
 
-        result = self.sessions.session(kind, prompt, files, reading, model, section=label, servers=servers)
+        result = self.sessions.session(kind, prompt, files, reading, model, section=label, servers=servers,
+                                       check={None: check} if check else None)
+        if result is None and check:
+            return None
         with self.lock:
             self.state['accepted'][key] = {'given': given, 'hash': canon.tree_hash(found['output']),
                                            'folder': found['output'].parent.relative_to(self.work).as_posix()}
             self.save()
         return result
+
+    def not_done(self):
+        """The checks that were not made, each named in words: those of the run and of its two runs of the paper command.
+
+        A safeguard of the AI system stopped every session that had such a check (Sessions.session).
+        Each of the three keeps its list in the file not-done.json of its folder."""
+        entries = list(self.sessions.undone)
+        for name in ('draft', 'paper'):
+            path = self.work / name / 'not-done.json'
+            entries += read_json(path) if path.is_file() else []
+        return [entry['what'] for entry in entries]
 
     def discardable(self, what, work):
         """A simplification: when its sessions leave nothing usable it is discarded and the fact recorded.
@@ -613,7 +636,10 @@ class Run:
 
         given = {**files, 'decision.json': as_json(chosen['decision']),
                  **{f'derivations/{oid}.lean': text for oid, text in chosen['derivations'].items()}}
-        reading = self.task('selection-read', 'selection-read', given, read_reading, self.sessions.assessor)
+        reading = self.task('selection-read', 'selection-read', given, read_reading, self.sessions.assessor,
+                            check='the independent reading of what the selection claims about the theorems it compared')
+        if reading is None:
+            reading = {'claims': []}  # not made: the decision stands as the selection made it, and the report says so
         wrong = [claim for claim in reading['claims'] if not claim['holds']]
         # The sentence and the registry's texts go into the package as the decision has them, and no later step
         # rewrites them: a corrected claim there is acted on by a decision made once more, as a changed ground is.
@@ -1106,8 +1132,14 @@ class Run:
                     raise Unusable(problems)
                 return [verdicts[item['declaration']] for item in group], texts
 
-            return self.task('records-compare', 'records-compare', given, read, self.sessions.assessor,
-                             label=f'{tag}-{number}')
+            names = ', '.join(f"`{item['declaration']}`" for item in group)
+            found = self.task('records-compare', 'records-compare', given, read, self.sessions.assessor,
+                              label=f'{tag}-{number}',
+                              check='the comparison, by a session that did not write them, of these records with the Lean '
+                                    f'text: {names}')
+            # Not made: the records stand as their writers left them, each with a verdict that says so.
+            return found if found is not None else (
+                [{'declaration': item['declaration'], 'verdict': 'not compared'} for item in group], {})
 
         compared = self.sessions.side_by_side([lambda n=n, g=g: compare(n, g) for n, g in groups])
         verdicts = []
@@ -1118,7 +1150,9 @@ class Run:
 
         # A source that an earlier step verified is not verified again, unless a record that cites it is listed now.
         listed = {item['declaration'] for item in todo}
-        every = package.cited(records, index)
+        # A record cites a work in its header, as the source of its result, and in its text, as `[key, place]`.
+        known = package.bibliography_keys(package.read_text(bibliography))
+        every = package.cited(records, index, known)
         cited = [item for item in every if not any(row['key'] == item['key'] and row.get('status') == 'verified'
                                                    for row in earlier)
                  or any(row['declaration'] in listed for row in item['records'])]
@@ -1149,19 +1183,50 @@ class Run:
                 paths = {name_path(name) + '.md': name for name in index['entries']}
                 problems += [f'records/{relative} belongs to no declaration of the library' for relative in changed
                              if relative not in paths]
+                texts = {}  # the records as this session leaves them, by declaration
                 for name in index['entries']:
                     relative = name_path(name) + '.md'
                     text = changed.get(relative) or (package.read_text(records / relative)
                                                      if (records / relative).is_file() else None)
-                    if text is None:
+                    if text is not None:
+                        texts[name] = text
+                # Every work that a record cites, in its header or in its text, is a verified entry of the returned
+                # bibliography. And every citation rests on words of the work that were read: the entry of the work
+                # holds, for each record that cites it, the sentence, the place and the words of the work there.
+                for item in package.cited_in(texts, keys | known):
+                    key, row = item['key'], rows.get(item['key'], {})
+                    if key in settled and key in keys:
                         continue
-                    try:
-                        key = parse_record(text, relative)['meta'].get('source')
-                    except CanonError:
-                        continue
-                    if key and (key not in keys or (key not in settled and rows.get(key, {}).get('status') != 'verified')):
-                        problems.append(f'the record of {name} cites {key}, which is not a verified entry of the '
+                    names = ', '.join(record['declaration'] for record in item['records'])
+                    if key not in keys or row.get('status') != 'verified':
+                        problems.append(f'the records of {names} cite {key}, which is not a verified entry of the '
                                         'returned bibliography')
+                        continue
+                    if row.get('opened') == 'none':
+                        problems.append(f'{key} could not be opened, and the records of {names} still cite it. A record '
+                                        'says of a work only what was read in it: let each sentence cite a work that was '
+                                        'opened and states the same, or take the citation and what it attributed to '
+                                        f'{key} out of the sentence, and the header key `source` where it names {key}')
+                        continue
+                    held = row.get('attributions')
+                    if not isinstance(held, list) or not all(
+                            isinstance(entry, dict) and all(is_text(entry.get(field)) for field in ATTRIBUTION)
+                            for entry in held):
+                        problems.append(f'sources.json: "attributions" of {key} is an array of objects, each with '
+                                        + ', '.join(f'"{field}"' for field in ATTRIBUTION) + ' as texts that are not empty')
+                        continue
+                    for record in item['records']:
+                        mine = [entry for entry in held if entry['declaration'] == record['declaration']
+                                and collapsed(entry['sentence']) in collapsed(record['text'])]
+                        lacking = [citation for citation in record['citations']
+                                   if not any(collapsed(citation) in collapsed(entry['sentence']) for entry in mine)]
+                        if lacking or (record['header'] and not mine):
+                            problems.append(
+                                f"sources.json: \"attributions\" of {key} has no entry for "
+                                + ('the citations ' + ', '.join(lacking) if lacking else 'the result that the header '
+                                   'attributes to the work') + f" in the record of {record['declaration']}: an entry "
+                                'gives the sentence exactly as the record you return has it, the place in the work, and '
+                                'the words of the work at that place')
                 answered = Sessions.load(output / 'requests.json', list) if requests else []
                 by_name = {a.get('declaration'): a for a in answered if isinstance(a, dict)}
                 problems += [f"requests.json does not say whether a source was found for {r['declaration']}"
@@ -1175,6 +1240,16 @@ class Run:
                         problems.append(f'requests.json: "stronger" of {name} goes with "found": false, and it gives the '
                                         '"key" of a verified entry of the returned bibliography, what the source "states" '
                                         'and "where"')
+                    instance = answer.get('instance')
+                    if instance is not None and (answer.get('found') or not (
+                            isinstance(instance, dict)
+                            and all(is_text(instance.get(field)) for field in ('states', 'where', 'specialisation'))
+                            and instance.get('key') in keys
+                            and (instance['key'] in settled or rows.get(instance['key'], {}).get('status') == 'verified'))):
+                        problems.append(f'requests.json: "instance" of {name} goes with "found": false, and it gives the '
+                                        '"key" of a verified entry of the returned bibliography, what the theorem '
+                                        '"states", "where" it stands, and the "specialisation" by which the library\'s '
+                                        'statement follows from it')
                 if problems:
                     raise Unusable(problems)
                 return list(rows.values()), package.read_text(output / 'bibliography.bib'), changed, answered
@@ -1202,7 +1277,7 @@ class Run:
         keys = package.bibliography_keys(package.read_text(bibliography))
         verified = {row['key'] for row in sources if row.get('status') == 'verified'}
         problems += [f"the record of {row['declaration']} cites {item['key']}, which is not verified in the bibliography"
-                     for item in package.cited(records, index) for row in item['records']
+                     for item in package.cited(records, index, keys | known) for row in item['records']
                      if item['key'] not in keys or item['key'] not in verified]
         if problems:
             raise Stop('the records do not pass their check: ' + '; '.join(problems))
@@ -1293,6 +1368,13 @@ class Run:
                 'result': request['result']})
             if free:
                 item['gap'] = f'c{number}'
+        # A result that is an instance of a general theorem which a source states: the paper will state the result,
+        # cite the theorem and give the specialisation as its proof (compare_draft decides which of these stand).
+        draft['instances'] = [
+            {'element': request['declaration'], 'result': request['result'],
+             **{key: answers[request['declaration']]['instance'][key].strip()
+                for key in ('key', 'where', 'states', 'specialisation')}}
+            for request in requests if isinstance(answers.get(request['declaration'], {}).get('instance'), dict)]
         write_json(target / 'draft.json', draft)
 
     def foldback(self):
@@ -1405,14 +1487,26 @@ class Run:
         entered = {answer.get('declaration'): answer for answer in read_json(folded / 'requests.json')
                    if isinstance(answer, dict)}
         gaps = {gap['element']: gap for gap in raised}
+        # The works that are verified now, after the records of the fold-back were written: a theorem of which a
+        # result is an instance is cited by the paper only while a record still cites its work.
+        verified = {row.get('key') for row in read_json(folded / 'sources.json') if row.get('status') == 'verified'}
         lines = []
         for answer in read_json(searched / 'requests.json'):
             name = answer.get('declaration') if isinstance(answer, dict) else None
             if not name:
                 continue
             gap, note = gaps.get(name), f" {answer['note'].strip()}" if is_text(answer.get('note')) else ''
+            instance = answer.get('instance') if isinstance(answer.get('instance'), dict) \
+                and answer['instance'].get('key') in verified else None
+            # What the paper does with a result that a cited general theorem contains, when the library keeps its form.
+            specialised = (f" {instance['key']} states a general theorem of which the result is an instance "
+                           f"({collapsed(instance['where'])}). The paper states the result in the library's form, cites "
+                           'that theorem and gives the specialisation as its proof; the library proves the result by '
+                           'an argument of its own.') if instance else ''
             if answer.get('found'):
                 lines.append(f"- `{name}`: cited from {answer.get('key')}.{note}")
+            elif gap is None and instance:
+                lines.append(f'- `{name}`: no source found that states it in the form the library has.{specialised}{note}')
             elif gap is None:
                 lines.append(f'- `{name}`: no source found that states it in the form the library has; the paper proves '
                              f'it.{note}')
@@ -1427,6 +1521,10 @@ class Run:
                         f"The paper cites it from {checked.get('key')} and does not prove it." if checked.get('found')
                         else 'The check of the source did not find that it states the declaration as it now is, so '
                              'the paper proves it.' + (f" {checked['note'].strip()}" if is_text(checked.get('note')) else '')))
+                elif instance:
+                    lines.append(f'{said} The library could not be brought to that form, so it keeps its own. '
+                                 + (item.get('note', '').strip() or 'The fold-back did not take the gap up.')
+                                 + specialised)
                 else:
                     lines.append(f'{said} The library could not be brought to that form, so it keeps its own, and the '
                                  f'paper proves `{name}`. '
@@ -1523,6 +1621,19 @@ class Run:
                     for item in listed if not item.get('cut') and item.get('element') not in entries]
         if problems:
             raise Stop('the draft asks for more than the library has: ' + '; '.join(problems))
+        # What the draft carries to the paper about the literature. A result is taken from a cited general theorem
+        # by a specialisation when its element is still in the library, the library was not given the form of the
+        # source after all, and the work is verified. And the paper is held to the words of the cited works: for
+        # every sentence of a record that cites a work, the place and what the work says there.
+        sources = [row for row in read_json(folded / 'sources.json') if row.get('status') == 'verified']
+        verified = {row['key'] for row in sources}
+        given_form = {gap['element'] for gap in gaps.values() if gap.get('source') and gap.get('closed_by')}
+        draft['instances'] = [entry for entry in draft.get('instances') or []
+                              if entry['element'] in entries and entry['element'] not in given_form
+                              and entry['key'] in verified]
+        draft['attributions'] = [{'key': row['key'], **{field: entry[field] for field in ATTRIBUTION}}
+                                 for row in sources for entry in row.get('attributions') or []
+                                 if entry.get('declaration') in entries]
         target.mkdir(parents=True, exist_ok=True)
         for name in ('plan.json', 'study.md'):
             shutil.copyfile(self.work / 'draft' / name, target / name)
@@ -1731,7 +1842,11 @@ class Run:
                          'list': (found[entry['event']].get('list') or []) if corrected(entry) else entry['list']}
                         for entry in entries]
 
-            return self.task('history-read', 'history-read', given, read, self.sessions.assessor, label=number)
+            found = self.task('history-read', 'history-read', given, read, self.sessions.assessor, label=number,
+                              check=f"the reading of the timeline's entries for the events {entries[0]['event']} to "
+                                    f"{entries[-1]['event']} against the records of the archive")
+            # Not made: the entries stand as they were written, each with a verdict that says so.
+            return found if found is not None else [{**entry, 'verdict': 'not read'} for entry in entries]
 
         read_through = self.sessions.side_by_side([lambda n=n, g=g, e=e: check(n, g, e)
                                                    for (n, g), e in zip(groups, written)])
@@ -1762,8 +1877,10 @@ class Run:
     def write_paper(self):
         out = self.work / 'paper'
         page = self.work / 'title-page.json'
+        # The subject classification of the paper is the one that the selection chose for the registry.
+        codes = read_json(self.work / 'lib' / '0-selected' / 'decision.json')['registry']['msc2020']
         write_json(page, {'authors': [{key: author[key] for key in ('name', 'address', 'email') if key in author}
-                                      for author in self.config['authors']]})
+                                      for author in self.config['authors']], 'msc2020': list(codes)})
         code = self.paper_run(self.work / 'view' / 'frozen', out, from_draft=self.work / 'lib' / '6-draft', title_page=page,
                               main=self.paper_main())
         log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
@@ -1792,8 +1909,10 @@ class Run:
         if closed:
             self.decide('Stage 4: what the paper lost so that it says no more than the library', '\n'.join([
                 'The bounded repairs of the paper command left these open, and it closed them without asking. A passage '
-                'that was removed asserted mathematics that no declaration of the library states. Whether the library '
-                'should have had it is a question about the research; the paper cannot say more than the library.', '',
+                'that was removed asserted mathematics that no declaration of the library states, or it said of a '
+                'cited work something that the words copied from that work do not show. Whether the library should '
+                'have had the mathematics is a question about the research; the paper cannot say more than the '
+                'library, nor more about a work than was read.', '',
                 *package.closed_lines(closed)]))
         kept = end.get('kept') or []
 
@@ -1869,10 +1988,12 @@ class Run:
                 facts, result, entries[self.root]['statement'],
                 entries[main]['statement'], texts['outline.md'], texts['obtained.md'], freeze['check_output'],
                 self.config, self.config['licence'], fails, cited,
-                package.provenance(decision['registry'], self.package / 'lean' / 'formalization.yaml')))
+                package.provenance(decision['registry'], self.package / 'lean' / 'formalization.yaml'),
+                instances=correspondence.get('instances') or [], not_done=self.not_done()))
 
         texts = self.task('readme-write', 'readme-write', given, prose, self.sessions.writer)
         compose(texts)
+        unmade = self.not_done()
         copy = {'package/' + relative: path.read_bytes() for relative, path in package.files_under(self.package).items()
                 if relative != 'knowledge/' + archive['archive']}
 
@@ -1885,7 +2006,11 @@ class Run:
                                 'for a document that could not be read'])
             return findings
 
-        findings = self.task('package-read', 'package-read', copy, read_findings, self.sessions.assessor)
+        findings = self.task('package-read', 'package-read', copy, read_findings, self.sessions.assessor,
+                             check="the reading of the package's documents by a session that has the package and nothing "
+                                   'else') or []  # not made: nothing was found, and the report says that nobody looked
+        if self.not_done() != unmade:
+            compose(texts)  # the README says which checks were not made, and this reading is now one of them
         # A finding in one of the two prose sections is corrected by a session. Any other finding is in a sentence
         # that the program writes or that an earlier stage fixed, which no session of this stage may rewrite: it is
         # reported to the user with the package, and the run goes on.
@@ -1984,6 +2109,7 @@ class Run:
         count = lambda kind: sum(entry['kind'] == kind for entry in closed)
         differing = [entry for entry in closed if entry['kind'] == 'differs'
                      or (entry['kind'] == 'restated' and entry['verdict'] != 'same')]
+        unmade = self.not_done()
         found = self.work / 'findings.json'
         uncorrected = [f for f in (read_json(found) if found.is_file() else []) if not f.get('in_prose')]
         self.stop_broker()
@@ -2027,10 +2153,18 @@ class Run:
             "- The registry's verifier and Lean's comparator were not run on the package.",
             '- No second complete check of the frozen library was made beyond the Lake build and the axioms Lean reports.',
             '- No person read the Lean statement against the proposition, unless the configuration says so.',
-            *[f"- In the paper, {entry['number']} still differs from the declaration `{entry['element']}` that it states: "
+            *[f"- In the paper, {entry['number']} was restated as the declaration `{entry['element']}` says it, and the "
+              'restated text was not compared with the declaration.'
+              if entry['kind'] == 'restated' and entry['verdict'] == 'not compared' else
+              f"- In the paper, {entry['number']} still differs from the declaration `{entry['element']}` that it states: "
               + collapsed(entry.get('difference_after') or entry['difference']) for entry in differing],
             *([f"- {count('wide')} lines of the typeset paper are wider than the text block; `decisions.md` names them."]
-              if count('wide') else []), '',
+              if count('wide') else []),
+            *(['- Some of the checks that the list above describes were not made. A safeguard of the AI system stopped '
+               'the session that had the task. The run started the session again with the same prompt, as often as it '
+               'allows for a task, and each time the session was stopped; the run then recorded the check as not done '
+               'and went on. The README of the package names these checks as well, and `paper/correspondence.json` '
+               'those of the paper. They are:', *['  - ' + what + '.' for what in unmade]] if unmade else []), '',
             *(['## What the reader of the package found and the run did not correct', '',
                'One session read the package as a visitor who has nothing else. What it found in the two prose sections '
                'of the README was corrected. What it found elsewhere is listed here and stands in the package as it '
@@ -2106,12 +2240,14 @@ class Run:
                           [folded + name for name in ('records', 'bibliography.bib', 'findings.json', 'sources.json',
                                                       'verdicts.json', 'requests.json')], self.records_again)
                 self.step('2.6-compare', [lib + '4-arranged', 'draft', lib + '6-sources', folded + 'lean', folded + 'index.json',
-                                          folded + 'foldback.json', folded + 'records'], [lib + '6-draft'], self.compare_draft)
+                                          folded + 'foldback.json', folded + 'records', folded + 'sources.json'],
+                          [lib + '6-draft'], self.compare_draft)
                 self.step('2.7-freeze', ['source', 'first', lib + '0-selected', lib + '6-draft', folded + 'lean',
                                          folded + 'index.json', folded + 'records', folded + 'bibliography.bib'],
                           ['package/lean', 'package/records', 'view/frozen', 'freeze.json'], self.freeze)
                 self.step('4-map', ['view/frozen'], ['package/dependency-map'], self.depmap)
-                self.step('4-paper', ['view/frozen', lib + '6-draft'], ['paper', 'package/paper', 'title-page.json'],
+                self.step('4-paper', [lib + '0-selected', 'view/frozen', lib + '6-draft'],
+                          ['paper', 'package/paper', 'title-page.json'],
                           self.write_paper, keep=('paper',))
             finally:
                 history.join()

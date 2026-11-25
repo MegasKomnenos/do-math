@@ -20,9 +20,12 @@ stages, each with the place in this file that says what it does:
   comparison   Paper.compare
   resolve      Paper.resolve
   coverage     Paper.cover
+  placement    Paper.place
 
 Every loop is bounded by the constants below. Paper.repair says how a repair is divided among
-sessions, and Sessions how a session is launched and its output read.
+sessions, and Sessions how a session is launched and its output read. Sessions.session says what
+follows when a safeguard of the AI system stopped a session, and <out>/not-done.json keeps the
+checks that were not made for that reason.
 
 A repair may rewrite, and a rewriting can lose a step of a proof, so the text that a repair leaves
 is read. After every reading but the last of its stage, the next reading does that. The repair
@@ -45,7 +48,8 @@ paper from a draft (read_draft, extract, carried_plan, Paper.plan_from_draft).
 
 --main <declaration> names the theorem that the paper is built around when that is not the
 declaration that settles the root (chosen_main, extract, produce). --title-page <file> names the
-authors of the title page (read_title_page, author_lines).
+authors of the title page and can give the codes of the subject classification (read_title_page,
+read_classification, author_lines, assemble).
 
 --resume with the same --out continues a run that was stopped, from what <out> holds: Paper.take_up
 reads it, Paper.after_writing says how the stages after the writing go on, and Paper.narrow_run and
@@ -86,6 +90,7 @@ from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, rea
 from cli_adapter import build_command, detect_usage_limit, provider_for_model
 from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
 from launch import worker_command, worker_environment
+from retention import events
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
 from settings import load_settings
 
@@ -139,6 +144,8 @@ FAILING = ('changed, and every change of this repair was undone, because the man
 NO_CHANGE = 'the repair session reported a change, and the manuscript does not differ from the text that was read'
 ONCE_CONFIRMED = ('repaired after the reading that reported it; the one reading that followed found no departure, and '
                   'the readings ended at their bound before a second reading confirmed that')
+NOT_CONFIRMED = ('repaired after the reading that reported it; the readings ended at their bound before a reading '
+                 'confirmed the repair, because the reading that was to follow was not made')
 DIFFERS_NOW = ('the statement was changed by a repair of open findings, and the comparison that followed found this '
                'difference')
 DIFFERS_LATE = ('the statement was changed after the comparisons of the statements had ended, and the one comparison '
@@ -149,9 +156,13 @@ CLOSING_ATTEMPTS = 3   # sessions that restate statements or take passages out, 
 NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
              'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
              'and the sessions could not do.')
+# What a person does when a safeguard of the AI system stopped every session of a task that the run needs.
+STOPPED = ('Nothing is to be repaired by hand. Start the same command again: it starts the session again, with the '
+           'same prompt and the same files. The folders of the stopped sessions, which are named above, hold what '
+           'each session was given and what the CLI answered.')
 # The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
-          ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'))
+          ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'), ('placement', 'place'))
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
 NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
@@ -169,6 +180,7 @@ CITE = re.compile(r'\\cite(?:\[[^\]]*\])?\{([^}]*)\}')
 REF = re.compile(r'\\(?:eq|page)?ref\{([^}]*)\}')
 LABEL = re.compile(r'\\label\{([^}]*)\}')
 SECTION_ID = re.compile(r'[a-z][a-z0-9-]*')
+MSC_CODE = re.compile(r'\d\d[A-Z-](?:[0-9]{2}|[xX]{2})')  # a code of the MSC 2020, such as 05A15 (package.MSC is the same)
 LABEL_FORM = re.compile(r'[a-z]+:[a-z0-9-]+')
 OVERFULL = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) '
                       r'(?:detected at line (\d+)|in (?:paragraph|alignment) at lines (\d+)--(\d+))')
@@ -227,6 +239,28 @@ class Unusable(Exception):
 
 def is_text(value):
     return isinstance(value, str) and bool(value.strip())
+
+
+def stopped_by_safeguard(folder, provider):
+    """Whether a safeguard of the AI system ended the session in `folder` before it had finished.
+
+    The sign is in what the CLI wrote to its standard output, cli.stdout.jsonl. The model refused a
+    request and the CLI had no other model to give it to, so the turn ended there: the result of the
+    turn, the last event of the call, is an error with the stop reason "refusal". The research's
+    runner knows a refusal of the model by the same sign (retention.refusal), and a change of the
+    CLI has to be made in both places. The sign is known for the Claude CLI only; a session of
+    another provider is never taken to be stopped in this way. The exit code does not tell such a
+    session from another that failed, and its folder `output` can hold files that the session wrote
+    before it was stopped, so nothing of it is read."""
+    return provider == 'claude' and any(
+        event.get('type') == 'result' and event.get('is_error') is True and event.get('stop_reason') == 'refusal'
+        for event in events(Path(folder) / 'cli.stdout.jsonl'))
+
+
+def not_done_lines(entries):
+    """The checks that a run records as not done (Sessions.session), one sentence for each, as a report gives them."""
+    return [f"Not made: {entry['what']}. A safeguard of the AI system stopped the session that had this task, in each "
+            f"of its {entry['attempts']} attempts." for entry in entries]
 
 
 def read_file(path):
@@ -834,6 +868,10 @@ def check_plan(materials, plan, keys):
             bad(f'"{key}" is a nonempty text')
     if 'short_title' in plan and not is_text(plan['short_title']):
         bad('"short_title", when the plan has it, is a nonempty text')
+    keywords = plan.get('keywords', [])
+    if not isinstance(keywords, list) or not all(is_text(word) and all(ord(char) < 128 for char in word) for word in keywords):
+        bad('"keywords", when the plan has it, is an array of key words and phrases, each a nonempty text in ASCII')
+        keywords = []
     problems += choice_problems(plan, keys)
     sections, statements, others = plan.get('sections'), plan.get('statements'), plan.get('others')
     for key, value in (('sections', sections), ('statements', statements), ('others', others)):
@@ -892,13 +930,39 @@ def check_plan(materials, plan, keys):
     order = {section.get('id'): number for number, section in enumerate(sections)}
     if len(order) != len(sections):
         bad('two sections have the same id')
+    # A formula that more than one section needs has one place and one label, which the plan fixes: the writers do
+    # not see each other's text, so nothing else lets the second of them refer to the formula of the first.
+    displays, shared = plan.get('displays', []), set()
+    if not isinstance(displays, list) or not all(isinstance(entry, dict) for entry in displays):
+        bad('"displays", when the plan has it, is an array of objects, each with "label", "section", "element", '
+            '"formula" and "used_in"')
+        displays = []
+    for entry in displays:
+        label, owner, users = entry.get('label'), entry.get('section'), entry.get('used_in')
+        if not isinstance(owner, str) or owner not in order:
+            bad(f'displays: {label!r}: "section" is the id of the section that displays the formula')
+            continue
+        if not (isinstance(label, str) and LABEL_FORM.fullmatch(label) and label.startswith(f'eq:{owner}-')
+                and label not in shared):
+            bad(f'displays: the label {label!r} begins with eq:{owner}-, the id of the section that displays the formula, '
+                'and is used once')
+        shared.add(label)
+        if not isinstance(entry.get('element'), str) or entry['element'] not in elements:
+            bad(f"displays: {label!r}: \"element\" is the name of the element of the materials that states the formula")
+        if not is_text(entry.get('formula')):
+            bad(f'displays: {label!r}: "formula" is the formula in LaTeX')
+        if not (isinstance(users, list) and users and all(isinstance(user, str) and user in order
+                                                           and order[user] > order[owner] for user in users)):
+            bad(f'displays: {label!r}: "used_in" lists the ids of the sections after {owner} that refer to the formula; '
+                'the section that displays it is the first that needs it')
     # The titles stand in the manuscript as the plan has them, and a repair keeps the plan. A Lean name or the
     # word Lean in a title is therefore reported here, where a planning session can still change it. So is a
     # character of the title of the paper that is not ASCII: the machine checks of the manuscript report it as
     # they do in a part (machine_findings), and no repair session can change the title.
     pattern = identifier_pattern(materials['identifiers'])
     titles = [('the title', plan.get('title')), ('the short title', plan.get('short_title'))] \
-        + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections]
+        + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections] \
+        + [('"keywords"', word) for word in keywords]
     for where, title in titles:
         if is_text(title):
             plain = title.replace('\\_', '_')
@@ -1283,6 +1347,73 @@ def drafted_lines(plan, section, draft):
     return lines
 
 
+def display_lines(plan, section):
+    """The displayed formulas that several sections use, as lines of the brief of one section; none when it has none.
+
+    The plan gives each such formula one section that displays it and one label (check_plan). The
+    brief tells the section that owns a formula to display it under that label, and every section
+    that uses it to refer to it and not to display it again."""
+    sid = section['id']
+    own = [entry for entry in plan.get('displays') or [] if entry['section'] == sid]
+    used = [entry for entry in plan.get('displays') or [] if sid in entry['used_in']]
+    if not own and not used:
+        return []
+    lines = ['## Displayed formulas that several sections use', '',
+             'The sections are written side by side, so a formula that two sections need would be displayed twice, '
+             'under two numbers, and the reader would meet the same formula as two. The plan therefore gives each '
+             'such formula one place and one label. The section that the plan names displays the formula once, in '
+             '`equation` or `align`, with exactly that label. Every other section refers to it with `\\eqref` and does '
+             'not display it again. These labels exist whoever writes the other sections, like the labels of the '
+             'numbered statements.', '']
+    for entry in own:
+        lines += [f"- This section displays the formula below with `\\label{{{entry['label']}}}`. The element "
+                  f"`{entry['element']}` states it, and the sections " + ', '.join(f'`{user}`' for user in entry['used_in'])
+                  + ' refer to it:', '', *('  ' + line for line in entry['formula'].strip().splitlines()), '']
+    for entry in used:
+        lines += [f"- The section `{entry['section']}` displays the formula below, which the element "
+                  f"`{entry['element']}` states. This section refers to it as `\\eqref{{{entry['label']}}}`:", '',
+                  *('  ' + line for line in entry['formula'].strip().splitlines()), '']
+    return lines
+
+
+def instance_lines(section, draft, layout, keys):
+    """The results of one section that a cited general theorem contains, as lines of its brief; none without them.
+
+    Before the library was frozen, the session that looks for sources found for some results a
+    general theorem of which the result is an instance, and wrote down the specialisation. The draft
+    carries these under "instances" (read_draft). The brief gives each to the section that writes
+    the proof of the result, or into whose proofs the plan absorbs it. `keys` are the keys of the
+    bibliography; a theorem whose work is not in it cannot be cited and is left out."""
+    sid, found = section['id'], []
+    for entry in draft.get('instances') or []:
+        name = entry.get('element')
+        if entry.get('key') not in keys:
+            continue
+        if name in layout.numbered and layout.proof_of(layout.numbered[name]) == sid:
+            found.append((layout.called(name) + f', which states `{name}`', entry))
+        elif name in layout.others and sid in layout.homes(name):
+            found.append((f'`{name}`, which this section writes into a proof', entry))
+    if not found:
+        return []
+    lines = ['## Results of this section that a cited theorem contains', '',
+             'Each result below is an instance of a general theorem of the literature. It follows from that theorem by '
+             'the specialisation given with it, in a line or two. A session read the theorem in the source, at the '
+             'place named, and wrote the specialisation down. A paper does not prove at length what a theorem it can '
+             'cite contains, so the proof of such a result in this section is the citation and the specialisation. It '
+             'cites the theorem at that place, says with which choice of the data of the theorem the result follows, '
+             'and carries out whatever the specialisation leaves to be done. The longer proof in the record of the '
+             'element is not written into the paper. A result that is a numbered statement is stated as the plan has '
+             'it, in the form of its element and not in the general form of the source, and this short proof follows '
+             'it. A result that the plan writes into a proof is taken from the theorem in the same way, at the place '
+             'where that proof uses it. Write the specialisation in your own sentences and check each of its steps; '
+             'what is given below is the argument, and it was not written as text for the paper.', '']
+    for what, entry in found:
+        lines += [f"- {what}: an instance of `\\cite[{collapsed(entry['where'])}]{{{entry['key']}}}`.", '',
+                  '  The theorem states: ' + collapsed(entry['states']), '',
+                  '  The specialisation: ' + collapsed(entry['specialisation']), '']
+    return lines
+
+
 def render_brief(materials, plan, section, layout=None, draft=None):
     """brief.md: what the session that writes or repairs one section works from, made from the plan and the materials.
 
@@ -1332,7 +1463,9 @@ def render_brief(materials, plan, section, layout=None, draft=None):
                         if proof not in (None, item['section']) else '')
                      + f" · {element['short'] or shortened(element['description'] or '')} · `{item['element']}`")
     lines += ['', '## What the plan puts into this section', '', collapsed(section['content']), '', *layout.assignment(sid), '',
-              *(drafted_lines(plan, section, draft) if draft else []),
+              *display_lines(plan, section),
+              *(drafted_lines(plan, section, draft)
+                + instance_lines(section, draft, layout, materials['bibliography_keys']) if draft else []),
               '## The records in full', '',
               f'{len(full)} elements in dependence order: each comes after everything among them that it names. They are '
               'the elements that the plan puts into this section and, where the first line under a name says so, elements '
@@ -1508,6 +1641,22 @@ def read_title_page(path):
     return [{key: author[key] for key in ('name', 'address', 'email') if key in author} for author in authors]
 
 
+def read_classification(path):
+    """The subject classification that a title page file gives under "msc2020": codes of the MSC 2020; stops on another form.
+
+    The key is optional. The codes are not chosen by a session of this command: whoever runs it gives
+    them, as the pipeline gives those that its selection chose for the registry."""
+    try:
+        page = json.loads(read_file(path))
+    except (OSError, ValueError) as exc:
+        raise Stop(f'the title page {path} cannot be read as JSON: {exc}')
+    codes = page.get('msc2020', []) if isinstance(page, dict) else None
+    if not isinstance(codes, list) or not all(isinstance(code, str) and MSC_CODE.fullmatch(code) for code in codes):
+        raise Stop(f'the title page {path}: "msc2020", when it is given, is an array of codes of the Mathematics Subject '
+                   'Classification 2020, such as 05A15')
+    return list(codes)
+
+
 def author_lines(authors):
     r"""The lines of the manuscript that name its authors, for amsart: \author, and \address and \email where given."""
     lines = []
@@ -1517,11 +1666,13 @@ def author_lines(authors):
     return lines
 
 
-def assemble(plan, parts, authors=()):
+def assemble(plan, parts, authors=(), codes=()):
     """paper.tex from the parts, in the order of the plan, and the lines each part occupies in it.
 
     `authors` are the authors of the title page, each with a name and, where given, an address and
-    an email. Without them the manuscript has no author line."""
+    an email. Without them the manuscript has no author line. `codes` are the codes of the subject
+    classification, and the key words are those of the plan; amsart prints both at the foot of the
+    first page, and a manuscript that is given neither has neither."""
     cites = any(CITE.search(uncommented(text)) for text in parts.values())
     title = plan['title'].strip()
     # Without an author, amsart takes the title for the running head of the even pages and puts it in capitals
@@ -1529,7 +1680,10 @@ def assemble(plan, parts, authors=()):
     # also when the title page names authors, from the short title when the plan gives one.
     lines = (PREAMBLE + '\\newcommand{\\RunningHead}{' + plan.get('short_title', title).strip()
              + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n\\title{' + title
-             + '}\n' + ''.join(line + '\n' for line in author_lines(authors)) + '\\begin{abstract}').split('\n')
+             + '}\n' + ''.join(line + '\n' for line in author_lines(authors))
+             + ('\\subjclass[2020]{' + ', '.join(codes) + '}\n' if codes else '')
+             + ('\\keywords{' + ', '.join(word.strip() for word in plan['keywords']) + '}\n' if plan.get('keywords') else '')
+             + '\\begin{abstract}').split('\n')
     spans = []
 
     def add(name):
@@ -1609,11 +1763,13 @@ def identifier_pattern(names):
                       + r")(?![A-Za-z0-9_'])")
 
 
-def machine_findings(materials, plan, parts):
+def machine_findings(materials, plan, parts, instances=()):
     """What a machine can check in the manuscript: each finding with the part in which it is to be corrected.
 
     A finding is {"part", "problem"}. "problem" is a sentence for a repair session. "part" is the name
-    of a part, or None when the finding concerns no single part: the title, which the plan holds."""
+    of a part, or None when the finding concerns no single part: the title, which the plan holds.
+    `instances` are the numbered statements that the paper proves from a cited general theorem, each
+    as (label, key of the bibliography, section that writes the proof) (Paper.instances)."""
     found_problems = []
 
     def bad(part, problem):
@@ -1666,9 +1822,21 @@ def machine_findings(materials, plan, parts):
                                                         for k in m[1].split(',')]:
             bad(item['section'], f"part {item['section']}: the plan cites the result with the bibliography key {key} "
                 'here, and the part does not')
+    # A formula that several sections use is displayed by the section the plan names, under the plan's label.
+    for entry in plan.get('displays') or []:
+        if '\\label{' + entry['label'] + '}' not in uncommented(parts[entry['section']]):
+            bad(entry['section'], f"part {entry['section']}: the plan has this section display a formula to which the "
+                'sections ' + ', '.join(entry['used_in']) + f" refer, with \\label{{{entry['label']}}}, and the part has "
+                'no such label: ' + shortened(entry['formula'], 200))
+    # A statement that the draft found to be an instance of a cited theorem is proved by that citation.
+    for label, key, proof in instances:
+        if key not in [k.strip() for m in CITE.finditer(uncommented(parts[proof])) for k in m[1].split(',')]:
+            bad(proof, f"part {proof}: the proof of {label} takes the result from a theorem of the literature, by the "
+                f"specialisation that the brief gives; it carries \\cite{{{key}}}")
     # Labels and citations resolve. A label the plan gives to a section is that section's: when it is defined twice
     # the other part gives it up, and when it is missing the part that owes it is the one to correct.
-    owner = {item['label']: item['section'] for item in plan['statements']}
+    owner = {**{item['label']: item['section'] for item in plan['statements']},
+             **{entry['label']: entry['section'] for entry in plan.get('displays') or []}}
     defined = [(name, m[1]) for name, text in texts.items() for m in LABEL.finditer(uncommented(text))]
     labels = ['sec:' + s['id'] for s in plan['sections']] + [label for _, label in defined]
     for label in sorted({label for label in labels if labels.count(label) > 1}):
@@ -1897,6 +2065,8 @@ written with TeX's accent command.
 of every page, beside the page number, and it has room for about fifty-five letters and spaces. Leave the key out when \
 the title itself is no longer than that. A head that does not fit is not printed, and the pages then carry their \
 numbers alone.
+- "keywords": a few key words and phrases under which a reader of the field would look for this paper, as an array of \
+texts in ASCII. The script prints them at the foot of the first page, where a research article has them.
 - "outline": a few sentences for the writers saying how the proof goes and at which step its difficulty lies. The outline \
 of the proof in the introduction, and the room each proof receives, follow it.
 - "sections": the sections in the order of the paper, each {"id", "title", "content", "exemplars"}. "id" is a short \
@@ -1923,6 +2093,20 @@ name in words of an object that has no symbol. "meaning" says exactly what it de
 index starts, how a quantity is normalised. "elements" are the names of the definitions of the materials whose object \
 the entry denotes. It names several where the canon spreads one mathematical object over several declarations, it is \
 empty for an entry that denotes no element, and a definition is named in one entry only.
+- "displays": the displayed formulas that more than one section needs, each {"label", "section", "element", "formula", \
+"used_in"}; an empty array when there is none. The sections are written side by side, and a writer cannot refer to a \
+formula that another writer numbers, because nothing tells the first that it will be there. A formula that two \
+sections need is then displayed twice, under two numbers; a reading of an earlier paper found twenty-five such places. \
+The plan prevents this by giving the formula one place. "section" is the id of the section that displays it: the first \
+of the sections that need it, in the order of the paper. "label" is the label under which every section refers to it; \
+it begins with `eq:`, the id of that section and a hyphen, as in "eq:tools-recursion". "element" is the name of the \
+element that states the formula, which may be a step that the plan absorbs there or a definition; a formula that no \
+element states cannot be used as a result by another section, as the method's section "What the running text asserts" \
+says. "formula" is the formula in LaTeX, in the notation of the plan, so that every section speaks of the same one. \
+"used_in" are the ids of the later sections that refer to it. List a formula when the materials show that two sections \
+will need it displayed: a recursion that one section derives and a later one applies, a bound that several proofs in \
+different sections quote. What an element states as a whole is better given a number, since every section can refer \
+to a numbered statement already.
 '''
 # One more key, which only the plan of a draft is asked for (--draft): the results the paper would cite.
 PLAN_CITATIONS = '''- "citations": the results that this paper would cite and not prove if their records named a \
@@ -1961,7 +2145,9 @@ definition, and no proof comes before a numbered statement it rests on; when an 
 statement is one that statement or its proof rests on; when only results with a source in the literature are cited; \
 when an element that is not stated has in its place an element its proof names, another proof of the same statement, or \
 the definition it is stated to agree with; when "exemplars" names ''' + str(CHOSEN_PAPERS) + ''' different keys \
-of `exemplars.md` and every section names ''' + str(SECTION_PAPERS) + ''' different ones of them; and when every \
+of `exemplars.md` and every section names ''' + str(SECTION_PAPERS) + ''' different ones of them; when every entry \
+of "displays" names an element of the materials, a section, later sections that use the formula, and a label that \
+begins with `eq:` and the id of its section; and when every \
 definition of the materials that the writers of two sections meet, because their elements state it, absorb it, name it \
 or mention it, is named in "elements" of an entry of "notation". That last check sees only the definitions of the \
 materials; for every other object the notation rests on your reading.'''
@@ -2030,7 +2216,9 @@ Your section has to stand whatever the writers of the other sections write, so i
 - Refer to another section as `Section~\\ref{{sec:<id>}}`, and to a result or a definition of another section by its \
 numbered statement, as in `Lemma~\\ref{{<label>}}`, with the ids and the labels of the brief. These exist whoever writes \
 the other sections. An equation, a subsection or a remark of another section cannot be referred to, also where you see \
-one in `parts/`: a repair of that section may remove it.
+one in `parts/`: a repair of that section may remove it. The one exception is a formula that the brief lists under \
+"Displayed formulas that several sections use", when the brief has that heading: the plan fixes the label of such a \
+formula and the section that displays it.
 - Use the notation of the plan for every object that the plan names. An object that the plan does not name is yours to \
 name: introduce its notation inside your section, where it is first used, and do not rely on another section having \
 introduced it.
@@ -2048,7 +2236,8 @@ The script checks afterwards that the numbered statements of your part are those
 resolves, that your part contains no Lean name of the canon and neither of the words Lean and Mathlib, its comments \
 and labels included, and that TeX typesets the whole. Later sessions compare each numbered statement with its element, \
 and the text outside the statements and the proofs with the records: a sentence there that asserts mathematics which no \
-element states is cut or reworded, as the method's section "What the running text asserts" describes. Before \
+element states is cut or reworded, as the method's section "What the running text asserts" describes. That section \
+also says where a derivation belongs that a proof uses: inside that proof, at the place where the proof uses it. Before \
 you finish, read your part from its first line as the reader of the method would, and correct what that reader could not \
 follow. Use no source other than the files in this folder.
 '''
@@ -2119,7 +2308,13 @@ outside the numbered statements and outside the proofs, together with the displa
 outside that proof refers. `findings.json` lists the passages that it found to assert mathematics which no element \
 states. Each finding gives the place ("where"), the exact words ("quote"), what the passage asserts ("asserts"), the \
 element whose statement comes nearest to it ("nearest", whose record is in `elements/`), and what the passage asserts \
-beyond that element ("difference").'''
+beyond that element ("difference"). A finding can have "source" in the place of "nearest". It then concerns a \
+sentence that says something of a cited work, and "source" is the key of that work in the bibliography. \
+`attributions.json`, which is in this folder whenever there is such a finding, holds the words of the cited works at \
+the places where the records of the research cite them: each entry has the key of the work, the sentence of the \
+record, the place in the work, and the words of the work there ("quote"). These quotations are all that was read of \
+the works. The session that compared the text found that none of them shows what the sentence attributes to the \
+work, and "difference" says what the sentence attributes to the work and the quotations do not show.'''
 COVERED_DECIDE = '''The paper asserts only what the research proved (method, section "What the running text asserts"), \
 and it is written from the research as it stands: nothing is added to the library for the sake of a sentence. For each \
 finding, therefore, cut the passage, or reword it so that it says no more than the element named with it. Reword where \
@@ -2129,7 +2324,34 @@ argument written now has been checked by nobody, and this comparison exists to k
 later passage rests on what you cut, adjust it as far as the cut requires. A formula of a proof may stay in its proof \
 as a step of the argument; what the finding asks for is that text outside the proof no longer uses it as a result that \
 no element states, which a reference to the numbered statement that the element states can replace. When you find that \
-an element does state what the passage asserts, keep the text and name that element in the note.'''
+an element does state what the passage asserts, keep the text and name that element in the note.
+
+A finding about a cited work names no element, and it is answered from the quotations. Reword the sentence so that \
+it says of the work what a quotation in `attributions.json` shows, at the place that the quotation has. The \
+quotations of the work often show something near to what the sentence says: the result at another place, as a remark \
+where the sentence has a theorem, for another quantity, or under another name. The sentence is then reworded to \
+that. Where no quotation shows anything that the sentence could say of the work, take out what the sentence says of \
+the work; the citation goes with it, unless the sentence says something else of that work which a quotation shows. \
+The bibliography is the script's and stays as it is. The paper says no more about a work than was read (method, \
+section "Results from the literature"), and what was read is what is quoted. What the sentence says about the \
+objects of the paper is not the subject of such a finding and stays as it is. When you find that a quotation does \
+show what the sentence says, keep the text and name the place of that quotation in the note.
+
+One kind of passage has a third answer. A derivation that a proof of this section uses can stand outside that proof, \
+as a computation that is carried out before the lemma whose proof relies on its result. Such a passage is a step of \
+that proof. Outside the proof it reads as a result of the paper, which no element states; inside the proof it is part \
+of the argument for the statement that the proof proves, and there the method does not hold it to the elements. So \
+move the derivation into the proof, to the place where the proof uses it, and leave its words and its formulas \
+exactly as they are. Change around it only what the move requires, such as the sentence that led up to the \
+derivation or a reference to it. Answer such a finding with the action "moved". The script accepts a move when the \
+passage that the finding quotes stands inside a proof of this section, unchanged, and no longer outside one, and \
+when every formula of that passage which carries a label stands before each place that refers to it. It compares \
+the words and the formulas of the quoted passage, with their labels, and disregards line breaks and spaces. A move \
+does not answer the finding when text outside that proof relies on the result as well, be it the running text or \
+another proof: the paper then uses the passage as a result. It is then cut or reworded as described above, or, \
+where a cut would leave a proof without a step that it needs, kept with that reason.'''
+# The answers that a repair of findings about the running text may give: "moved" is the third answer just described.
+RESPONSE_MOVED = RESPONSE.replace('"revised" or "kept"', '"revised", "moved" or "kept"')
 
 SECTION_KINDS = {
     'machine': '''The script's checks of the assembled manuscript found in this section the problems listed in \
@@ -2369,6 +2591,12 @@ that the statement was carried over correctly, case by case at the boundary. Whe
 statement of an element disagree with each other, say so in "record_disagreement": the Lean statement is the one that \
 was proved, and such a disagreement lies in the element's record, which no repair of the manuscript can change.
 
+A statement that the paper takes from the literature carries its citation in the brackets that follow the opening of \
+its environment: the work, and the place in it where the result stands. The record of its element names the work in \
+its header and the place in its part "Literature". Hold the citation to the record as well. When the manuscript names \
+another work, or another place in the work, such as another theorem number or a remark where the record has a \
+theorem, the verdict is "differs", and "difference" says what the record gives.
+
 Write `output/comparison.json`: an array with one object for each entry, {{"label": "...", "verdict": "same" or \
 "differs", "difference": "<what differs, exactly; empty when the verdict is same>", "record_disagreement": "<where the \
 statement in words and the Lean statement of the element disagree, exactly; empty when they agree>"}}. Use no source \
@@ -2503,7 +2731,8 @@ hypothesis, in the notation and the conventions of the paper, written from the r
 numbered statement says what its element says" describes. "gap" is null when the text says exactly what its element \
 says. Sometimes a paper would state the result otherwise than the element does: a classical bound in the strict form in \
 which the literature has it where the element proves a weaker one, a lemma in its general form where the element has \
-one value of a parameter, a statement at the parameters that the later proofs of the paper use. Then write the text as \
+one value of a parameter, a statement at the parameters that the later proofs of the paper use, or only those parts of \
+a result that the paper uses where the element states several parts together. Then write the text as \
 the paper should state it, and give under "gap" an object {{"wanted": "...", "has": "...", "reason": "..."}}: "wanted" is \
 the mathematical statement that the library would have to contain for the text to be covered, complete enough that a \
 session which has the library and not this sketch can formalise it; "has" is what the element states instead; \
@@ -2528,6 +2757,19 @@ of a result in a special case each have to be stated by an element. What an elem
 form of it, is no gap. Neither is a step of a proof that the record of the element gives, a fact that the reader \
 knows from the textbooks of the area, or a sentence that says what the section does. An empty array when there is \
 nothing of this kind.
+
+Look in particular for a step that two proofs share. When a proof of this section derives a fact that another proof \
+of the paper also uses, in this section or in another, the paper can state that fact once only if an element states \
+it. Without such an element the second proof repeats the derivation, or it refers to a formula inside the first \
+proof, and the paper then uses as a result something that no element states. This holds also for a step that the \
+record of an element gives inside its proof and that is no element itself: inside the one proof it is no gap, and \
+once a second proof uses it, it is used as a result. A fact of the textbooks stays what it is, however many proofs \
+use it. Whether another proof uses a fact, you judge from the records of the elements. So where no element states \
+the shared fact, and the proof that derives it first, in the order of the paper, belongs to this section, list it: \
+under "formulas", with its gap, when it will be a displayed formula, and under "assertions" otherwise, with the \
+fact that both proofs use as "wanted", the label of the statement in whose proof it is derived as "host", and under \
+"reason" the two proofs that use it. Where that first proof belongs to another section, the session of that section \
+lists the fact. The library can then receive it as a declaration, which both proofs use as they use a lemma.
 
 A gap is not a fault of the sketch, and a sketch without gaps is not a better one. Each gap goes to a session that \
 tries to add the wanted statement to the library; where that fails, the paper will state what the library has. What \
@@ -2578,12 +2820,32 @@ that differs is a slip of the sketch. For such an entry give under "text" the st
 complete, in the notation of the plan, written as the method describes, so that it can stand in the paper in the place \
 of the sketched text. The script puts it there, and nobody compares it again before the paper is written.
 
+One difference of an entry without a declared gap is treated otherwise. An element can state several things together, \
+for example a lemma in four parts, or two bounds joined by "and". A sketched text that gives some of these parts and \
+leaves the others out says less than its element, so it differs. If the script put the full statement in its place, \
+the paper would state parts that it never uses. An earlier paper did: one of its lemmas had four parts of which two \
+were used, two readers asked what the other two were for, and they could not be dropped, because a numbered \
+statement says what its element says. While the library can still be changed, there is a better answer, which is a \
+declaration that states the used parts alone. So when the sketched text states some of the parts of its element, \
+each as the element states it, up to the differences that the method permits, and asserts nothing else, give the \
+verdict "differs", say under "difference" which parts the text states and which it leaves out, and set "partial" to \
+true. The script then keeps the sketched text and asks the sessions that extend the library for a declaration that \
+states those parts alone, so "text" stays empty for such an entry. A text that leaves out a part and also changes \
+one of the parts it keeps is a slip like any other, and "partial" is false. So is a text that states the whole \
+element more weakly, for one value of a parameter or on a smaller range: it leaves out no part.
+
 Write `output/comparison.json`: an array with one object for each entry, in their order, {{"label": "...", "verdict": \
 "same" or "differs", "difference": "<what differs, exactly; empty when the verdict is same>", "text": "<for an entry \
-without a declared gap that differs: the statement as the element says it; otherwise empty>", "record_disagreement": \
+without a declared gap that differs, unless it is partial: the statement as the element says it; otherwise empty>", \
+"partial": <true when an entry without a declared gap differs only by leaving out parts of its element, as \
+described above; otherwise false>, "record_disagreement": \
 "<where the statement in words and the Lean statement of the element disagree, exactly; empty when they agree>"}}. Use \
 no source other than the files in this folder.
 '''
+# Why a drafted text that states only some of the parts of its element is a gap, in the words of the gap (Paper.draft).
+PARTIAL = ('The paper uses only these parts of what the element states. A statement of the paper says exactly what one '
+           'declaration states, so the paper can state these parts alone only when a declaration states them alone; '
+           'such a declaration follows from the element at once.')
 
 PLAN_REPAIR_PROMPT = CONTEXT + '''
 
@@ -2732,7 +2994,7 @@ every other element that the proof of the root rests on by what it says, each wi
 and the symbol or name under which the paper knows it.
 - `elements/` holds the full record of every element, one file each, and `elements.md` lists the elements with their \
 files. Open one when the statement in `records.md` does not settle whether an element covers an assertion.
-- `paper.tex` is the manuscript, for the definitions and the notation in which its text is read, and for the place of \
+{attributions}- `paper.tex` is the manuscript, for the definitions and the notation in which its text is read, and for the place of \
 each entry. {spans}
 
 Read each entry where it stands in `paper.tex`. Find in it every assertion of mathematics about the objects of the \
@@ -2751,14 +3013,105 @@ That section of the method also says what in the running text is no assertion in
 reported: for example a sentence that says what the paper, a section or a proof does or will do; a definition, and the \
 introduction of a notation; a sentence that says where a hypothesis is used or why a definition is made as it is; a \
 fact that the reader of the method knows from the textbooks of the area and that the text uses with an ordinary \
-phrase. What the text says about the literature is not the subject of this comparison either: the method's section \
-"Results from the literature" governs it. And how a passage is worded is not in question.
+phrase. And how a passage is worded is not in question.{main}
 
-Write `output/coverage.json`: an array, empty when an element covers every assertion. Each object is {{"entry": <the \
+{literature}
+
+Write `output/coverage.json`: an array, empty when an element covers every assertion{sourced}. Each object is {{"entry": <the \
 number of the entry>, "quote": "<the sentence or the formula, copied exactly from the entry>", "asserts": "<what it \
 asserts, in a sentence>", "nearest": "<the name of the element whose statement comes nearest to it>", "difference": \
-"<what the passage asserts that this element does not state, exactly>"}}. Use no source other than the files in this \
+"<what the passage asserts that this element does not state, exactly>"}}.{source} Use no source other than the files in this \
 folder.
+'''
+# What a session that compares the running text is told about sentences on the literature: without the quotations
+# from the cited works they are not its subject, and with them (a paper written from a draft that carries
+# "attributions") each such sentence is held to what was quoted.
+COVER_LITERATURE = ('What the text says about the literature is not the subject of this comparison: the method\'s '
+                    'section "Results from the literature" governs it.')
+COVER_ATTRIBUTIONS = '''What the text says about the literature is compared as well, against another source. Before \
+this paper was written, a session opened the works that the records of the research cite and copied, for every \
+sentence of a record that attributes something to a work, the words of the work at the place which that sentence \
+names. `attributions.json` holds these: for each the key of the work in the bibliography ("key"), the element whose \
+record has the sentence ("declaration"), the sentence of the record ("sentence"), the place in the work ("place"), \
+and the words of the work there ("quote"). They are all that anybody read of these works for this paper, and the \
+paper says no more about a work than was read (method, section "Results from the literature"). An earlier paper was \
+written from records that nobody had held against the works in this way, and when the works were opened afterwards \
+five of its attributions did not stand: a theorem was cited for a quantity that it does not treat, a remark was \
+cited as a theorem, a family of objects was called by a name that the cited authors do not use, a number was said to \
+be printed at a place where it is not, and one work could not be opened at all.
+
+So go through the entries once more for every sentence of the manuscript that says something of a cited work: what \
+it states, proves, defines or tabulates, what its authors call an object, where in it a result stands. Such a \
+sentence is supported when a quotation from that work in `attributions.json` shows what the sentence attributes to \
+the work. Where the sentence of the manuscript names a place in the work, such as the number of a theorem or a page, \
+the quotation that supports it is one from that place; where it names none, a quotation from any place of the work \
+supports it. Report each sentence that no quotation supports, also when what it attributes is plausible, and report \
+a sentence about a work of which `attributions.json` has no quotation. A sentence that only names a work, without \
+saying what is in it, attributes nothing and is not reported. A sentence that says what a work does not contain, or \
+does not do, cannot be shown by words of the work; it is supported when a sentence of a record in \
+`attributions.json` says the same of that work. A sentence can do two things at once: assert \
+mathematics about the objects of the paper, and attribute it to a work. It is then held to both. An element has to \
+cover what it asserts, a quotation has to support what it attributes, and it is reported once for each of the two \
+that fails.'''
+COVER_SOURCE = (' For a sentence about a cited work, as described above, the object has "source": "<the key of the '
+                'work in the bibliography>" in the place of "nearest"; its other keys are those of every object, and '
+                '"difference" says what the sentence attributes to the work that the quotations do not show.')
+
+# What the session that covers the first section is told about the abstract, which states the main result.
+COVER_ABSTRACT = '''
+
+The abstract is among the entries, and it states the main result of the paper. A reader meets the abstract without \
+the paper, so nothing in the paper can supply a restriction that the abstract leaves out. Hold what the abstract says \
+of the main result to the element of the main result, `{name}`, as a numbered statement is held to its element. The \
+abstract may say the result in words, and it need not repeat everything that the theorem says. But what it says has \
+to hold in every case that it speaks of. Where it drops a restriction of a range or a hypothesis, so that its \
+sentence claims cases which the element does not state, it asserts more than was proved: an abstract that says "for \
+every $n$" where the theorem has $n \\ge 1$ is such a case. Report it like every other assertion that no element \
+covers, with that element under "nearest". Every other assertion of the abstract is treated as the running text of \
+the section is.'''
+
+PLACE_PROMPT = CONTEXT + '''
+
+This session checks one list of a file that the script writes beside the paper, `correspondence.json`. The paper \
+has numbered statements: its theorems, propositions, lemmas, corollaries and numbered definitions. Not every element \
+of the research has one. The plan of the paper, which an earlier session made and from which the sections were \
+written, wrote some elements into the statement or the proof of a numbered statement, or into the running text of a \
+section, that is, the text outside the numbered statements and the proofs; and it had some results from the \
+literature cited in the running text of a section. The list says for each of these elements where the paper has its \
+content, so that somebody who starts from a declaration of the library finds the place in the paper. It was made \
+from the plan. Since the sections were written they have been repaired, and a repair can reword a sentence, move it \
+into a proof or cut it, so the plan no longer shows where the content stands. This session reads the manuscript as \
+it stands and says, for each element of the list, whether the manuscript has its content and where.
+
+In this folder:
+- `paper.tex` is the manuscript, in LaTeX. {spans}
+- `placed.json` holds the entries of that list. Each entry has the name of the element ("element"), its statement in \
+words, or in Lean where its record has none in words ("statement"), what the plan did with it ("treatment": "absorbed" \
+or "cited"), and the places that the plan gave it ("planned"). For an absorbed element these are the label of each \
+numbered statement into whose statement or proof it was written, and the label of each section, such as \
+`sec:tools`, into whose running text it was written. For a cited element it is the label of the section whose \
+running text cites the result.
+- `elements/` holds the full record of every element, one file each, and `elements.md` lists the elements with their \
+files. Open the record of an element when its statement does not tell you what to look for in the text, as with a \
+definition that the paper gives only as a notation, or a step that is one line of a computation.
+
+The manuscript names no element, so an element is found by its content. An absorbed element has no numbered \
+statement of its own in the paper. Its content is a definition given in a sentence, a step carried out inside a \
+proof, or a fact used in a clause. The manuscript has it when, at some place, it says or carries out what the \
+element states, in the notation of the paper; the words of the record need not be there. A cited element is in the \
+manuscript when the text cites the result from its source and says what the result is. The manuscript does not have \
+an element when no place has anything of its content, as when the sentence that gave a definition was cut or a proof \
+now reaches its conclusion without the step. Where the content is there only in part, in a weaker or a stronger \
+form, or otherwise than the plan had it, as with a result that is now proved where the plan had it cited, the \
+element counts as found, and the note says what differs.
+
+Write `output/placement.json`: an array with one object for each entry of `placed.json`, in their order: \
+{{"element": "<its name>", "found": true or false, "where": "<each place that has its content now, in the order of \
+the manuscript, with a semicolon between two places; a place is the label of the section, or the word abstract, \
+followed by a comma and the label of the numbered statement when the place is that statement or its proof, as in \
+sec:tools, lem:step; an empty text when found is false>", "note": "<what differs, when a place is not one that the \
+plan gave or the content is not there as the element states it; when found is false, what stands now at the place \
+that the plan gave; otherwise an empty text>"}}. Change nothing in the manuscript. Use no source other than the files in this folder.
 '''
 
 REMOVE_PROMPT = CONTEXT + '''
@@ -2934,6 +3287,15 @@ def read_draft(folder):
         raise Stop(f'the draft in {folder} does not have the form of a draft of this command: plan.json with "sections", '
                    '"statements" and "others", draft.json with "statements", "formulas" and "gaps", each an array of '
                    'objects, and a study.md that is not empty')
+    # Two lists that whoever brought the draft to the library may have added: the results that are an instance of
+    # a cited general theorem (instance_lines), and what the cited works say at the places the records cite
+    # (Paper.cover_section). Each is optional, and each has a fixed form.
+    for key, fields in (('instances', ('element', 'key', 'where', 'states', 'specialisation')),
+                        ('attributions', ('key', 'declaration', 'sentence', 'place', 'quote'))):
+        if not all(isinstance(entry, dict) and all(is_text(entry.get(field)) for field in fields)
+                   for entry in draft.get(key) or []) or not isinstance(draft.get(key) or [], list):
+            raise Stop(f'the draft in {folder}: "{key}" in draft.json, when it is there, is an array of objects, each with '
+                       + ', '.join(f'"{field}"' for field in fields) + ' as texts that are not empty')
     return plan, study, draft
 
 
@@ -3049,6 +3411,10 @@ def carried_plan(materials, plan, draft):
     if isinstance(plan.get('citations'), list):
         plan['citations'] = [entry for entry in plan['citations'] if isinstance(entry, dict)
                              and entry.get('element') in elements and not elements[entry['element']]['source']]
+    if isinstance(plan.get('displays'), list):
+        # A formula that several sections use names the element that states it now, and leaves with that element.
+        named = lambda entry: renamed.get(entry.get('element'), entry.get('element')) if isinstance(entry, dict) else None
+        plan['displays'] = [{**entry, 'element': named(entry)} for entry in plan['displays'] if named(entry) in elements]
     return plan, notes
 
 
@@ -3073,6 +3439,10 @@ class Sessions:
         self.lock = threading.RLock()
         self.stopping, self.running = threading.Event(), set()
         self.log = read_json(self.out / 'log.json') if (self.out / 'log.json').is_file() else []
+        # The checks that were not made, because a safeguard of the AI system stopped every session that had the
+        # task (session): each with the kind of the session, its section, what the check speaks for ("about"),
+        # the words that name it in a report ("what"), and the number of attempts. Kept in <out>/not-done.json.
+        self.undone = read_json(self.out / 'not-done.json') if (self.out / 'not-done.json').is_file() else []
         numbers = [int(match[0]) for path in (self.out / 'sessions').iterdir() if (match := re.match(r'\d+', path.name))] \
             if (self.out / 'sessions').is_dir() else []
         self.count = max(numbers, default=0)
@@ -3150,27 +3520,70 @@ class Sessions:
                 raise Stop('the command was interrupted')
         return folder
 
-    def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS, servers=None):
+    def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS, servers=None,
+                check=None):
         """Launch sessions for one task until one leaves output that `read` accepts; returns what `read` returns.
 
         `read` is given the folder `output` of the session and returns what the caller wants, or raises
-        Unusable with the reasons, which the next session is told."""
-        problems, previous = None, {}
+        Unusable with the reasons, which the next session is told.
+
+        A session that a safeguard of the AI system stopped (stopped_by_safeguard) is another case. Its
+        output is not read, and the session is started again as it was: with the same prompt and the
+        same files, and without a word about the stop. It counts among the `attempts`. When every
+        attempt was stopped, what follows depends on the task. A task that makes something the run
+        needs stops the run. A task that is a check of what the run has made is given `check`: a
+        mapping from each thing the check speaks for (None when that is the whole of what the session
+        is given, otherwise for example the label of a statement) to the words that name the check
+        in a report. Each of them is then recorded as not done (`undone`, <out>/not-done.json), and
+        None is returned in the place of what `read` returns. A check that is made later for the same
+        thing takes the record away, since it speaks for the text as it then stands."""
+        problems, previous, stopped = None, {}, []
+        provider = provider_for_model(choice['model'])
         for _ in range(attempts):
             text = prompt if problems is None else prompt + AGAIN.format(problems='\n'.join('- ' + p for p in problems))
             folder = self.launch(kind, text, {**files, **previous}, choice, section, servers)
+            if stopped_by_safeguard(folder, provider):
+                stopped.append(folder.relative_to(self.out).as_posix())
+                self.event('safeguard', folder=stopped[-1], kind=kind, section=section)
+                continue
             try:
-                return read(folder / 'output')
+                result = read(folder / 'output')
             except Unusable as exc:
                 problems = exc.problems
             except (TypeError, KeyError, AttributeError, UnicodeDecodeError) as exc:
                 problems = [f'the output does not have the form the prompt describes ({type(exc).__name__}: {exc})']
+            else:
+                if check is not None:
+                    self.record_undone(kind, section, check, None)
+                return result
             self.event('check', check='output of the ' + kind + ' session', problems=problems)
             previous = {'previous-output/' + path.relative_to(folder / 'output').as_posix():
                         path.read_text(encoding='utf-8', errors='replace')
                         for path in sorted((folder / 'output').rglob('*')) if path.is_file()}
-        raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts: ' + '; '.join(problems),
-                   todo=NO_OUTPUT)
+        if len(stopped) < attempts:
+            raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts'
+                       + (f', of which a safeguard of the AI system stopped {len(stopped)}' if stopped else '') + ': '
+                       + '; '.join(problems), todo=NO_OUTPUT)
+        if check is None:
+            raise Stop(f'a safeguard of the AI system stopped every {kind} session' + (f' of {section}' if section else '')
+                       + f', in {attempts} attempts, before it had finished (' + ', '.join(stopped) + '). The run needs '
+                       'what this session makes, so it cannot go on without it', todo=STOPPED)
+        self.record_undone(kind, section, check, attempts)
+        self.event('not done', kind=kind, section=section, checks=list(check.values()), attempts=attempts, sessions=stopped)
+        return None
+
+    def record_undone(self, kind, section, check, attempts):
+        """Record the checks of `check` as not done after `attempts` stopped sessions, or with None as made after all."""
+        with self.lock:
+            left = [entry for entry in self.undone
+                    if (entry['kind'], entry['section']) != (kind, section) or entry['about'] not in check]
+            if attempts is not None:
+                left += [{'kind': kind, 'section': section, 'about': about, 'what': what, 'attempts': attempts}
+                         for about, what in check.items()]
+            if left != self.undone:
+                self.undone = left
+                if not self.dry:
+                    write_json(self.out / 'not-done.json', self.undone)
 
     def side_by_side(self, tasks):
         """Run tasks that do not depend on each other, up to `parallel` at a time; their results, in the order of the tasks.
@@ -3241,6 +3654,8 @@ class Paper(Sessions):
         self.recipe = tex_recipe(tex)
         # The authors of the title page; a run keeps the file it was given as <out>/title-page.json.
         self.authors = read_title_page(self.out / 'title-page.json') if (self.out / 'title-page.json').is_file() else []
+        # The codes of the subject classification, which the same file gives; none without it.
+        self.codes = read_classification(self.out / 'title-page.json') if (self.out / 'title-page.json').is_file() else []
         self.materials = self.plan = self.layout = self.research = None
         self.parts, self.compared, self.open = {}, {}, []
         # What the readings found and the stage `resolve` or the last narrow repair answered with a reason: each
@@ -3249,6 +3664,9 @@ class Paper(Sessions):
         # What a run left open and `close` then closed without a person: each passage that was taken out, each
         # statement that was restated, and what is recorded and left as it is. The `end` event carries it.
         self.closed = []
+        # Where the manuscript has the elements without a number, as the last check of it found (place): the
+        # digest of the text that was checked, and for each element whether and where it was found.
+        self.placed = None
         # The stage `resolve` while it is under way: its step, the findings it took up and the answers of its
         # session (resolve). None when it is not under way.
         self.resolving = None
@@ -3273,7 +3691,8 @@ class Paper(Sessions):
                 write_json(self.out / 'state.json', {'done': self.done, 'open': self.open, 'readings': self.readings,
                                                      'rewritten': self.rewritten, 'compared': self.compared,
                                                      'narrow': self.narrow, 'kept': self.kept,
-                                                     'closed': self.closed, 'resolve': self.resolving})
+                                                     'closed': self.closed, 'resolve': self.resolving,
+                                                     'placed': self.placed})
 
     # -- what a session is given ------------------------------------------------------------------------
 
@@ -3505,13 +3924,15 @@ class Paper(Sessions):
                 if [v.get('label') if isinstance(v, dict) else None for v in found] != labels \
                         or not all(v.get('verdict') in ('same', 'differs') for v in found) \
                         or not all(is_text(v.get('difference')) for v in found if v['verdict'] == 'differs') \
-                        or not all(is_text(v.get('text')) for v in found if v['verdict'] == 'differs' and v['label'] in slips):
+                        or not all(is_text(v.get('text')) for v in found
+                                   if v['verdict'] == 'differs' and v['label'] in slips and v.get('partial') is not True):
                     raise Unusable(['output/comparison.json has one object for each entry of statements.json, in their '
                                     'order, with its "label", a "verdict" of "same" or "differs", for "differs" the '
-                                    '"difference", and for an entry without a declared gap that differs the "text": the '
-                                    'statement as the element says it'])
+                                    '"difference", and for an entry without a declared gap that differs, unless it is '
+                                    'partial, the "text": the statement as the element says it'])
                 return [{'label': v['label'], 'verdict': v['verdict'], 'difference': v.get('difference') or '',
                          'text': v['text'].strip() if is_text(v.get('text')) else '',
+                         'partial': v['verdict'] == 'differs' and v['label'] in slips and v.get('partial') is True,
                          'record_disagreement': v['record_disagreement'] if is_text(v.get('record_disagreement')) else ''}
                         for v in found]
 
@@ -3520,7 +3941,13 @@ class Paper(Sessions):
                      'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
                      **{name: text for name, text in self.records().items() if name.startswith('elements')}}
             verdicts = self.session('compare', DRAFT_COMPARE_PROMPT.format(title=section['title']), files, read,
-                                    self.assessor, section['id'])
+                                    self.assessor, section['id'],
+                                    check={None: 'the comparison of the drafted statements and formulas of the section "'
+                                                 + collapsed(section['title']) + '" with their elements'})
+            if verdicts is None:
+                # Not made (session): the sketch stands as it was sketched, and the comparisons after the draft and
+                # of the paper are the ones that judge these texts.
+                return []
         write_json(kept, verdicts)
         return verdicts
 
@@ -3545,7 +3972,7 @@ class Paper(Sessions):
                  # The draft records the main result it was made around when that is not the settling declaration,
                  # so that the paper is written from it around the same theorem.
                  **({'main': self.materials['main']} if 'settles' in self.materials else {})}
-        slips, dropped, disagreements = [], [], []
+        slips, dropped, disagreements, trimmed = [], [], [], []
 
         def gap(kind, section, label, host, element, said):
             draft['gaps'].append({'id': f"g{len(draft['gaps']) + 1}", 'kind': kind, 'section': section, 'label': label,
@@ -3560,7 +3987,13 @@ class Paper(Sessions):
             for kind, entries in (('statement', sketch['statements']), ('formula', sketch['formulas'])):
                 for entry in entries:
                     verdict, text, said = judged.get(entry['label']), entry['text'], entry['gap']
-                    if verdict and verdict['verdict'] == 'differs' and said is None:
+                    if verdict and verdict['verdict'] == 'differs' and said is None and verdict.get('partial'):
+                        # The text states some of the parts of its element and nothing else. It stays, as a gap
+                        # that a declaration of those parts alone closes.
+                        said = {'element': entry.get('element'), 'wanted': text, 'has': verdict['difference'],
+                                'reason': PARTIAL}
+                        trimmed.append(entry['label'])
+                    elif verdict and verdict['verdict'] == 'differs' and said is None:
                         slips.append({'label': entry['label'], 'difference': verdict['difference']})
                         text = verdict['text']
                     elif verdict and verdict['verdict'] == 'same' and said is not None:
@@ -3582,10 +4015,12 @@ class Paper(Sessions):
         self.event('draft', statements=len(draft['statements']), formulas=len(draft['formulas']),
                    gaps=[{key: entry[key] for key in ('id', 'kind', 'section', 'label', 'element')} for entry in draft['gaps']],
                    citations=[entry['element'] for entry in draft['citations']], slips=slips, gaps_dropped=dropped,
-                   record_disagreements=disagreements)
-        self.event('end', status='draft', open=[], kept=[])
+                   partial=trimmed, record_disagreements=disagreements)
+        self.event('end', status='draft', open=[], kept=[], **({'not_done': list(self.undone)} if self.undone else {}))
         print(f'The draft is {self.out / "draft.json"}, beside the plan and the account of the papers (plan.json, '
               f'study.md); the log is {self.out / "log.json"}.')
+        for line in not_done_lines(self.undone):
+            print(line)
         print(f"{len(draft['statements'])} statements and {len(draft['formulas'])} formulas were drafted; "
               f"{len(draft['gaps'])} gaps and {len(draft['citations'])} results to cite are listed.")
         return 0
@@ -3649,12 +4084,12 @@ class Paper(Sessions):
 
     def assemble(self):
         """paper.tex, references.bib and the correspondence file from the parts as they stand."""
-        tex, spans = assemble(self.plan, self.parts, self.authors)
+        tex, spans = assemble(self.plan, self.parts, self.authors, self.codes)
         write_text(self.out / 'paper.tex', tex)
         write_text(self.out / 'references.bib', capitals_kept(self.materials['bibliography']))
         elements = {e['name']: e for e in self.materials['elements']}
         by_label = {item['label']: item for item in self.plan['statements']}
-        rows = []
+        rows, instances = [], self.instances()
         for found in found_statements(self.plan, self.parts):
             if found['label'] not in by_label:
                 continue  # the machine check reports it
@@ -3664,18 +4099,47 @@ class Paper(Sessions):
             # A statement that the paper cites and does not prove is proved in the library all the same, as every
             # element here is. The paper does not say so; this file does, by naming the source the paper cites.
             cited = element['source'] if self.layout.proof_of(by_label[found['label']]) == 'cited' else None
+            # A statement that the paper proves from a cited general theorem, by a specialisation, names the theorem.
+            instance = next((entry for entry in instances if entry['label'] == found['label']), None)
             rows.append({'number': f"{found['kind'].capitalize()} {found['number']}", 'label': found['label'],
                          'element': element['name'], 'states': element['states'] or element['name'], 'cited': cited,
+                         **({'instance_of': {'key': instance['key'], 'where': instance['where']}} if instance else {}),
                          'record_statement': element['statement'], 'record_statement_from': element['statement_from'],
                          'lean_statement': element['lean'], 'paper_statement': found['text'],
                          'paper_statement_sha256': digest,
                          'comparison': ({'verdict': judged['verdict'], 'difference': judged['difference'],
                                          'record_disagreement': judged['record_disagreement']}
                                         if judged and judged['sha256'] == digest else {'verdict': 'not compared'})})
+        # A comparison that was not made (session) is recorded for a statement as long as its present text has no
+        # verdict; the row then says why it has none.
+        pending = {row['label'] for row in rows if row['comparison']['verdict'] == 'not compared'}
+        with self.lock:
+            kept = [entry for entry in self.undone
+                    if entry['kind'] != 'compare' or entry['about'] is None or entry['about'] in pending]
+            if kept != self.undone:
+                self.undone = kept
+                if not self.dry:
+                    write_json(self.out / 'not-done.json', self.undone)
+            stopped = {entry['about']: entry for entry in self.undone if entry['kind'] == 'compare'}
+        for row in rows:
+            if row['label'] in stopped and row['label'] in pending:
+                row['comparison']['not_done'] = not_done_lines([stopped[row['label']]])[0]
+        # An element without a number carries, under "in_text", what the check of the manuscript found of it
+        # (place), as long as the manuscript is the text that was checked.
+        found = (self.placed or {}).get('found') if (self.placed or {}).get('digest') == self.text_digest() else None
         write_json(self.out / 'correspondence.json', {
             'root': self.materials['root']['name'], 'main_result': self.materials['main'],
             **({'settled_by': self.materials['settles']} if 'settles' in self.materials else {}),
-            'revision': self.materials['revision'], 'statements': rows, 'others': self.plan['others']})
+            'revision': self.materials['revision'], 'statements': rows,
+            'others': [{**item, **({'in_text': found[item['element']]} if found and item['element'] in found else {})}
+                       for item in self.plan['others']],
+            # The elements that the paper takes from a cited general theorem by a specialisation, numbered or not.
+            # The library proves each of them by itself; the paper does not say so, and this file does.
+            'instances': [{key: entry[key] for key in ('element', 'key', 'where')}
+                          for entry in (self.sketched or {}).get('instances') or []
+                          if entry['key'] in self.materials['bibliography_keys'] and entry['element'] in elements],
+            # The checks of this run that were not made, each in a sentence; an empty list when every one was made.
+            'not_done': not_done_lines(self.undone)})
         return tex, spans, rows
 
     def settle(self, rounds=REPAIR_ROUNDS):
@@ -3686,7 +4150,8 @@ class Paper(Sessions):
         for round_number in range(rounds + 1):
             tex, spans, _ = self.assemble()
             (self.out / 'paper.pdf').unlink(missing_ok=True)  # a PDF beside the manuscript is always a PDF of it
-            found = machine_findings(self.materials, self.plan, self.parts)
+            found = machine_findings(self.materials, self.plan, self.parts,
+                                     [(row['label'], row['key'], row['proof']) for row in self.instances()])
             kind, problems, where = 'machine', [item['problem'] for item in found], [item['part'] for item in found]
             self.event('check', check=MACHINE, problems=problems)
             if not problems and self.recipe:
@@ -3786,6 +4251,9 @@ class Paper(Sessions):
         first = section is sections[0]
         names = list(self.parts) if section is None else [section['id']] + (['abstract'] if first else [])
         answers = kind in NARROW_KINDS.values()  # the kinds whose session answers each finding: revised, or kept and why
+        # A finding about the running text has a third answer: its passage was moved into the proof that uses it.
+        actions = ('revised', 'moved', 'kept') if kind == 'coverage' else ('revised', 'kept')
+        told_response = RESPONSE_MOVED if kind == 'coverage' else RESPONSE
 
         def read(output):
             changed = {name: read_file(output / (name + '.tex')) for name in names
@@ -3794,10 +4262,16 @@ class Paper(Sessions):
             response = None
             if answers:
                 response = self.load(output / 'response.json', list)
-                if len(response) != len(items) or not all(isinstance(r, dict) and r.get('action') in ('revised', 'kept')
+                if len(response) != len(items) or not all(isinstance(r, dict) and r.get('action') in actions
                                                           and is_text(r.get('note')) for r in response):
                     raise Unusable([f'output/response.json has one object for each of the {len(items)} findings, with an '
-                                    '"action" of "revised" or "kept" and a "note"'])
+                                    '"action" of ' + ' or '.join(f'"{action}"' for action in actions) + ' and a "note"'])
+                faults = [fault for item, r in zip(items, response) if r['action'] == 'moved'
+                          for fault in self.move_faults(item, {**self.parts, **changed}, spans)]
+                if faults:
+                    raise Unusable(faults)
+                # A move is a change like every other from here on: it is settled and read with the others.
+                response = [{**r, 'action': 'revised', 'moved': True} if r['action'] == 'moved' else r for r in response]
             if not changed and (not answers or any(r['action'] == 'revised' for r in response)):
                 raise Unusable(['no part was changed: write the complete new text of each part you change as '
                                 'output/<name>.tex, with the file name it has in parts/'])
@@ -3806,6 +4280,10 @@ class Paper(Sessions):
         found = {'understanding': report['understanding'], 'findings': items} if kind == 'reading' else items
         given = {'paper.tex': tex, 'findings.json': json.dumps(found, ensure_ascii=False, indent=2) + '\n',
                  **{f'parts/{name}.tex': self.parts[name] for name in names}}
+        if kind == 'coverage' and any('source' in item for item in items):
+            # A finding about a cited work is answered from what the work says, which the draft carries.
+            given['attributions.json'] = json.dumps((self.sketched or {}).get('attributions') or [],
+                                                    ensure_ascii=False, indent=2) + '\n'
         lines = '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans if name in names)
         told = ((NARROW_WHOLE_KINDS if section is None else NARROW_SECTION_KINDS)[kind]
                 + (NARROW_AGAIN if any('open_because' in item for item in items) else '')) if narrow \
@@ -3818,7 +4296,7 @@ class Paper(Sessions):
                 files['study.md'] = self.study
                 files.update({f'exemplars/{key}.tex': self.papers[key] for keys in papers.values() for key in keys})
             prompt = REPAIR_PROMPT.format(
-                kind=told, response=RESPONSE if answers else '', spans='Its ' + lines + '.',
+                kind=told, response=told_response if answers else '', spans='Its ' + lines + '.',
                 papers=REPAIR_PAPERS.format(papers='; '.join(
                     f"section `{sid}`, " + ' and '.join(f'`exemplars/{key}.tex`' for key in keys)
                     for sid, keys in papers.items())) if self.collection is not None else '',
@@ -3827,7 +4305,7 @@ class Paper(Sessions):
             papers = self.section_papers(section)
             files = {**self.kit(section), **given}
             prompt = SECTION_REPAIR_PROMPT.format(
-                id=section['id'], title=section['title'], kind=told, response=RESPONSE if answers else '',
+                id=section['id'], title=section['title'], kind=told, response=told_response if answers else '',
                 also=' As the first section it is the introduction, and this session repairs the abstract with it.' if first else '',
                 spans='Its ' + lines + '.', held=' and '.join(f'`parts/{name}.tex`' for name in names),
                 what='each part you change' if first else 'the part',
@@ -3844,6 +4322,37 @@ class Paper(Sessions):
                 self.save()
             self.keep(changed)
         return sorted(changed), response
+
+    def move_faults(self, finding, parts, spans):
+        """Why a repair session's move of a passage is not accepted, as sentences for the next session; none when it is.
+
+        `finding` is a finding about the running text whose passage the session says it moved into
+        the proof that uses it, and `parts` are the parts as the session left them. A move changes
+        where a passage stands and not what it says, so the passage that the finding quotes has to
+        stand inside a proof, word for word, and no longer in the text that is compared with the
+        elements (running_text). A formula of the passage that carries a label has to stand before
+        every reference to it, since a derivation can be moved behind a place that uses it."""
+        quote, faults = collapsed(finding['quote']), []
+        inside = collapsed(' '.join(proof[0] for text in parts.values() for proof in PROOF_ENVIRONMENT.finditer(text)))
+        compared = collapsed(' '.join(entry['text'] for entries in running_text(self.plan, parts, spans).values()
+                                      for entry in entries))
+        said = shortened(quote, 160)
+        if quote not in inside:
+            faults.append(f'the passage "{said}" was answered with "moved", and it does not stand inside a proof '
+                          'unchanged: move it as it is, or answer with "revised" when you reworded it')
+        if quote in compared:
+            faults.append(f'the passage "{said}" was answered with "moved", and it still stands outside the proofs, or '
+                          'text outside its proof still refers to its formula')
+        order = ['abstract'] + [section['id'] for section in self.plan['sections']]
+        whole = '\n'.join(uncommented(parts[name]) for name in order)
+        for label in LABEL.findall(finding['quote']):
+            at = whole.find('\\label{' + label + '}')
+            early = [match for match in REF.finditer(whole) if label in [target.strip() for target in match[1].split(',')]
+                     and match.start() < at]
+            if at >= 0 and early:
+                faults.append(f'the formula with \\label{{{label}}} now stands after a place that refers to it; put the '
+                              'derivation before its first use')
+        return faults
 
     def read_and_repair(self):
         """Independent readings of the manuscript; a repair of what the reader found follows each of them.
@@ -3872,7 +4381,13 @@ class Paper(Sessions):
             self.readings += 1  # counted over the whole run, so the log tells the later readings from the first ones
             self.save()
             files = {'paper.tex': read_file(self.out / 'paper.tex'), 'references.bib': self.materials['bibliography']}
-            report = self.session('read', READ_PROMPT.format(reader=reader), files, read, self.assessor)
+            report = self.session('read', READ_PROMPT.format(reader=reader), files, read, self.assessor,
+                                  check={None: 'the reading of the manuscript as it then stood by a session that has the '
+                                               'manuscript and nothing else'})
+            if report is None:
+                # The reading was not made (session). The same manuscript would be given to the next one, so the
+                # readings end here, and what an earlier reading left open stays as it is.
+                break
             self.event('reading', round=self.readings, understanding=report['understanding'], findings=report['findings'])
             self.open = [item for item in self.open if item['check'] != READING]
             if not report['findings']:
@@ -3948,7 +4463,10 @@ class Paper(Sessions):
                      **{f'exemplars/{key}.tex': self.papers[key] for key in keys}}
             prompt = LIKENESS_PROMPT.format(section=section,
                                             papers=', '.join(f'`exemplars/{key}.tex`' for key in keys))
-            report = self.session('likeness', prompt, files, read, self.assessor)
+            report = self.session('likeness', prompt, files, read, self.assessor,
+                                  check={None: 'the last reading of the manuscript beside published papers'})
+            if report is None:
+                continue  # not made (session): it counts as one of the readings and confirms nothing
             departures = report['departures']
             self.event('likeness', round=round_number, exemplars=keys, likeness=report['likeness'], departures=departures)
             if not departures:
@@ -3968,8 +4486,11 @@ class Paper(Sessions):
             repairs += 1
             if not self.settle():
                 return False
-        self.open.append({'check': LIKENESS, 'after_repairs': repairs,
-                          'problems': [{**departure, 'open_because': ONCE_CONFIRMED} for departure in left]})
+        if left:
+            # Reached with one clean reading after the last repair, or with none where a reading was not made.
+            reason = ONCE_CONFIRMED if clean else NOT_CONFIRMED
+            self.open.append({'check': LIKENESS, 'after_repairs': repairs,
+                              'problems': [{**departure, 'open_because': reason} for departure in left]})
         self.save()
         return True
 
@@ -3992,7 +4513,8 @@ class Paper(Sessions):
             groups = [(section, [row for row in rows if home[row['label']] == section['id']]) for section in sections]
             results = self.side_by_side([lambda section=section, stated=stated: self.compare_section(section, stated, tex, spans)
                                          for section, stated in groups if stated])
-            verdicts = [verdict for result in results for verdict in result]
+            # A section whose comparison was not made (session) has no verdicts; its statements stay not compared.
+            verdicts = [verdict for result in results if result for verdict in result]
             digests = {row['label']: row['paper_statement_sha256'] for row in rows}
             self.compared = {v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
                                           'record_disagreement': v['record_disagreement']
@@ -4031,7 +4553,7 @@ class Paper(Sessions):
         results = self.side_by_side([lambda section=section, stated=stated:
                                      self.compare_section(section, stated, tex, spans, listed)
                                      for section, stated in groups if stated])
-        verdicts = [verdict for result in results for verdict in result]
+        verdicts = [verdict for result in results if result for verdict in result]
         digests = {row['label']: row['paper_statement_sha256'] for row in rows}
         self.compared.update({v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
                                            'record_disagreement': v['record_disagreement']
@@ -4047,7 +4569,10 @@ class Paper(Sessions):
         return verdicts
 
     def compare_section(self, section, rows, tex, spans, listed='the numbered statements of this section'):
-        """One session that compares the numbered statements of one section; its verdicts, in their order."""
+        """One session that compares the numbered statements of one section; its verdicts, in their order.
+
+        None when the comparison was not made (session); each of these statements is then recorded as
+        not compared for that reason."""
         labels = [row['label'] for row in rows]
 
         def read(output):
@@ -4067,7 +4592,9 @@ class Paper(Sessions):
                  **{name: text for name, text in self.records().items() if name.startswith('elements')}}
         lines = next(f'Its lines {a} to {b} are this section.' for name, a, b in spans if name == section['id'])
         return self.session('compare', COMPARE_PROMPT.format(title=section['title'], spans=lines, listed=listed), files,
-                            read, self.assessor, section['id'])
+                            read, self.assessor, section['id'],
+                            check={row['label']: f"the comparison of {row['number']} (\\label{{{row['label']}}}) with "
+                                                 f"the element `{row['element']}` that it states" for row in rows})
 
     # -- what the readings left open ----------------------------------------------------------------------
 
@@ -4240,11 +4767,15 @@ class Paper(Sessions):
         after the comparison of the statements, or the session of the stage `resolve`, may have changed
         them. One that differs then is open, and is not repaired here. Then, for each section, a
         session reports the sentences of the running text, and the formulas of a proof that are
-        referred to from outside it, that assert mathematics which no element states. What is
-        reported goes to one narrow repair, whose changes are read (narrow_run). The sections that
-        the repair changed are covered once more, and what is reported then, with what the repair
-        kept in the other sections, is open. No further round follows. A run that was stopped inside
-        the repair, the reading of its changes or the second covering is continued there."""
+        referred to from outside it, that assert mathematics which no element states. When the paper
+        is written from a draft that carries the words of the cited works, the session also reports
+        each sentence about a cited work that none of those words supports (cover_section). What is
+        reported goes to one narrow repair, which cuts a passage, rewords it, or moves a derivation
+        into the proof that uses it (repair_session, move_faults), and whose changes are read
+        (narrow_run). The sections that the repair changed are covered once more, and what is
+        reported then, with what the repair kept in the other sections, is open. No further round
+        follows. A run that was stopped inside the repair, the reading of its changes or the second
+        covering is continued there."""
         if not self.narrowing(COVERAGE):
             tex, spans, rows = self.assemble()
             rows = [row for row in rows if row['comparison']['verdict'] == 'not compared']
@@ -4294,15 +4825,23 @@ class Paper(Sessions):
         """One session that compares the running text of one section with the elements; what it reports, as findings."""
         elements, numbers = self.layout.elements, {entry['entry']: entry for entry in entries}
         first = section is self.plan['sections'][0]
+        # What the cited works say at the places where the records cite them, when the draft carries it: the
+        # sentences of the running text about the literature are then held to these quotations.
+        store = (self.sketched or {}).get('attributions') or []
+        keys = set(self.materials['bibliography_keys'])
 
         def read(output):
             found = self.load(output / 'coverage.json', list)
+            # A finding names the element that comes nearest, or, for a sentence about a cited work, the work.
+            named = lambda item: (store and isinstance(item['source'], str) and item['source'] in keys) \
+                if 'source' in item else item.get('nearest') in elements
             if not all(isinstance(item, dict) and not isinstance(item.get('entry'), bool) and item.get('entry') in numbers
-                       and is_text(item.get('quote')) and is_text(item.get('difference'))
-                       and item.get('nearest') in elements for item in found):
+                       and is_text(item.get('quote')) and is_text(item.get('difference')) and named(item) for item in found):
                 raise Unusable(['output/coverage.json is an array, empty when an element covers every assertion; each '
                                 'object has "entry", the number of an entry of text.json, "quote" and "difference" as '
-                                'texts that are not empty, and "nearest", the name of an element as elements.md gives it'])
+                                'texts that are not empty, and "nearest", the name of an element as elements.md gives it'
+                                + (', or in its place "source", a key of references.bib, for a sentence about a cited '
+                                   'work' if store else '')])
             loose = [item['entry'] for item in found
                      if collapsed(item['quote']) not in collapsed(numbers[item['entry']]['text'])]
             if loose:
@@ -4314,14 +4853,26 @@ class Paper(Sessions):
         files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
                  'text.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_section_records(self.materials, self.plan, section, self.layout),
-                 **{name: text for name, text in self.records().items() if name.startswith('elements')}}
+                 **{name: text for name, text in self.records().items() if name.startswith('elements')},
+                 **({'attributions.json': json.dumps(store, ensure_ascii=False, indent=2) + '\n',
+                     'references.bib': self.materials['bibliography']} if store else {})}
         lines = ' '.join(f"Its lines {a} to {b} are {'the abstract' if name == 'abstract' else 'this section'}."
                          for name, a, b in spans if name == section['id'] or (first and name == 'abstract'))
         prompt = COVER_PROMPT.format(
             title=section['title'], spans=lines,
-            abstract=', or "abstract" for the abstract, which is compared with this section' if first else '')
-        found = self.session('cover', prompt, files, read, self.assessor, section['id'])
+            abstract=', or "abstract" for the abstract, which is compared with this section' if first else '',
+            main=COVER_ABSTRACT.format(name=self.materials['main']) if first else '',
+            attributions=('- `attributions.json` holds what the cited works say at the places where the records cite '
+                          'them, and `references.bib` is the bibliography; the text below says how they are used.\n')
+            if store else '',
+            literature=COVER_ATTRIBUTIONS if store else COVER_LITERATURE,
+            sourced=' and a quotation supports every sentence about a cited work' if store else '',
+            source=COVER_SOURCE if store else '')
         title = collapsed(section['title'])
+        found = self.session('cover', prompt, files, read, self.assessor, section['id'],
+                             check={None: f'the comparison of the running text of the section "{title}" with the elements'})
+        if found is None:
+            return []  # not made (session): nothing is reported for this section, and the record says so
 
         def where(entry):
             if entry['part'] == 'abstract':
@@ -4332,7 +4883,9 @@ class Paper(Sessions):
         return [{'where': where(numbers[item['entry']]),
                  'section': 'abstract' if numbers[item['entry']]['part'] == 'abstract' else 'sec:' + section['id'],
                  'quote': item['quote'].strip(), 'asserts': item['asserts'].strip() if is_text(item.get('asserts')) else '',
-                 'nearest': item['nearest'], 'difference': item['difference'].strip()} for item in found]
+                 'nearest': '' if 'source' in item else item['nearest'],
+                 **({'source': item['source']} if 'source' in item else {}),
+                 'difference': item['difference'].strip()} for item in found]
 
     def cover_again(self):
         """The running text of the sections that a narrow repair changed, compared with the elements once more.
@@ -4350,6 +4903,81 @@ class Paper(Sessions):
         tex, spans, _ = self.assemble()
         return self.cover_sections(changed, tex, spans)
 
+    def instances(self):
+        """The numbered statements that the paper proves from a cited general theorem, as the draft found them.
+
+        The draft that the paper is written from lists, under "instances", the elements that are an
+        instance of a theorem of the literature, each with the work, the place in it, the theorem and
+        the specialisation (instance_lines). Returned are those whose element the plan numbers and
+        proves, each with its label, the section that writes its proof, and what the draft says of it.
+        A paper that is not written from a draft has none."""
+        found = []
+        for entry in (self.sketched or {}).get('instances') or []:
+            item = self.layout.numbered.get(entry.get('element'))
+            proof = self.layout.proof_of(item) if item else None
+            if proof in self.layout.ids and entry.get('key') in self.materials['bibliography_keys']:
+                found.append({'label': item['label'], 'proof': proof, **{key: entry[key] for key in
+                                                                        ('element', 'key', 'where', 'states', 'specialisation')}})
+        return found
+
+    def text_digest(self):
+        """What a check of the places speaks for: the parts as they stand, and what the plan does with the other elements."""
+        return sha256_text(json.dumps([sorted(self.parts.items()), self.plan['others']], sort_keys=True))
+
+    def place(self):
+        """The stage `placement`: where the manuscript has the elements that the paper gives no number; always True.
+
+        The correspondence file says of every element without a number what the plan did with it: into
+        which proofs or into which section it was absorbed, or which section cites it. The writers
+        wrote the sections from that plan. A repair can reword such a sentence, move it into a proof
+        or cut it. So when a part is no longer as its writer left it, one session reads the
+        manuscript as it stands and says of each of these elements whether the manuscript has its
+        content, and where. What it says stands in the correspondence file under "in_text" of the
+        element, and no repair follows it. The check is made once for a text: at the end of the
+        stages, and again after a pass that changed a part (act, close). A manuscript that no repair
+        changed needs none, and its elements carry no "in_text". When the check was not made
+        (session), they carry none either, and the file lists the check under "not_done"."""
+        entries = [item for item in self.plan['others'] if item['treatment'] in ('absorbed', 'cited')]
+        digest = self.text_digest()
+        if not entries or (self.placed or {}).get('digest') == digest:
+            return True
+        tex, spans, _ = self.assemble()
+        elements = self.layout.elements
+        labels = {item['element']: item['label'] for item in self.plan['statements']}
+        listed = [{'element': item['element'],
+                   'statement': elements[item['element']]['statement'] or elements[item['element']]['lean'],
+                   'treatment': item['treatment'],
+                   'planned': [labels.get(target) or 'sec:' + target for target in item['into']]
+                   if item['treatment'] == 'absorbed' else ['sec:' + item['section']]} for item in entries]
+        names = [entry['element'] for entry in listed]
+
+        def read(output):
+            found = self.load(output / 'placement.json', list)
+            if [entry.get('element') if isinstance(entry, dict) else None for entry in found] != names \
+                    or not all(isinstance(entry.get('found'), bool) and isinstance(entry.get('where', ''), str)
+                               and isinstance(entry.get('note', ''), str)
+                               and (not entry['found'] or entry.get('where', '').strip()) for entry in found):
+                raise Unusable(['output/placement.json has one object for each entry of placed.json, in their order, with '
+                                'its "element", "found" as true or false, "where" as a text that is not empty when the '
+                                'element is found, and "note" as a text'])
+            return {entry['element']: {'found': entry['found'],
+                                       'where': entry.get('where', '').strip() if entry['found'] else '',
+                                       'note': entry.get('note', '').strip()} for entry in found}
+
+        files = {'paper.tex': tex, 'placed.json': json.dumps(listed, ensure_ascii=False, indent=2) + '\n',
+                 **{name: text for name, text in self.records().items() if name.startswith('elements')}}
+        lines = ' '.join(f"Its lines {a} to {b} are {'the abstract' if name == 'abstract' else 'the section sec:' + name}."
+                         for name, a, b in spans)
+        found = self.session('place', PLACE_PROMPT.format(spans=lines), files, read, self.assessor,
+                             check={None: 'the check of where the manuscript has the content of the elements that have '
+                                          'no numbered statement'})
+        self.placed = {'digest': digest, 'found': found}
+        self.save()
+        if found is not None:
+            self.event('placement', missing=[name for name in names if not found[name]['found']])
+        self.assemble()
+        return True
+
     def after_writing(self):
         """The checks, the readings and the comparison of the manuscript, each stage once.
 
@@ -4357,6 +4985,11 @@ class Paper(Sessions):
         the parts as they stand. state.json then says which stages are complete; a stage that was begun
         and not ended is made again from its start, which every stage allows, since each works on the
         parts as they stand and is bounded."""
+        # The parts as their writers left them are the text for which the plan says where each element without a
+        # number stands. A check of that (place) is due once a repair has changed a part.
+        if self.placed is None and not self.done:
+            self.placed = {'digest': self.text_digest(), 'found': None}
+            self.save()
         # A narrow repair that is under way settles the manuscript itself, from the text that was read.
         if False in self.done.values() or (self.narrow is None and not self.settle()):
             return
@@ -4372,16 +5005,21 @@ class Paper(Sessions):
         # A verdict of the comparison holds for the text that was compared. A statement without one for its present
         # text stays open, because nothing after this point compares it: the comparison did not reach it, or a repair
         # changed it afterwards, as a repair of the typesetting under --typeset-only can.
+        # A statement whose comparison was not made (session) is not open either: the comparison was tried within its
+        # attempts, and the run records it as not done.
         uncompared = [{'label': row['label'], 'number': row['number']}
-                      for row in rows if row['comparison']['verdict'] == 'not compared']
+                      for row in rows if row['comparison']['verdict'] == 'not compared' and 'not_done' not in row['comparison']]
         self.open = [item for item in self.open if item['check'] != UNCOMPARED]
         if uncompared:
             self.open.append({'check': UNCOMPARED, 'after_repairs': 0, 'problems': uncompared})
         self.save()
         status = 'open_findings' if self.open else 'complete' if self.recipe else 'no_tex'
         self.event('end', status=status, open=list(self.open), kept=list(self.kept),
-                   **({'closed': list(self.closed)} if self.closed else {}))
+                   **({'closed': list(self.closed)} if self.closed else {}),
+                   **({'not_done': list(self.undone)} if self.undone else {}))
         print(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
+        for line in not_done_lines(self.undone):
+            print(line)
         if self.closed:
             count = lambda kind: sum(entry['kind'] == kind for entry in self.closed)
             print(f"What the bounded repairs had left open was closed without a person: {count('removed')} passages that "
@@ -4616,7 +5254,20 @@ class Paper(Sessions):
 
         files = {'paper.tex': tex, 'references.bib': self.materials['bibliography'],
                  'changes.json': json.dumps({'findings': findings, 'changes': changes}, ensure_ascii=False, indent=2) + '\n'}
-        return self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read, self.assessor)
+        # Each reading of changes is a check of its own: a later one reads other changes and does not stand for it.
+        about = 'changes ' + str(1 + sum(event['event'] in ('changes', 'not done') for event in self.log))
+        checks = ' and of the '.join(sorted({entry['check'] for entry in findings}))
+        verdicts = self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read,
+                                self.assessor,
+                                check={about: f'the reading of the passages ({len(changes)}) that the last repair changed '
+                                              f'for findings of the {checks}; the changes stay in the paper as the '
+                                              'repair left them'})
+        if verdicts is None:
+            # Not made (session). The changes stay in the paper, and the record says that nobody read them.
+            return {'changes': [{'change': change['change'], 'sound': True, 'findings': change['findings'], 'reason': ''}
+                                for change in changes],
+                    'findings': [{'finding': number, 'answered': True, 'reason': ''} for number in numbers]}
+        return verdicts
 
     def narrow_end(self, covered=None):
         """Leave in the open list, of the findings that the repair took up, those that stay open, each with the reason.
@@ -4672,9 +5323,9 @@ class Paper(Sessions):
                 COMPARISON: 'a repair session corrects the statement, a session reads what was changed, and the statement '
                             'is compared with its element again',
                 UNCOMPARED: 'the statement is compared with its element',
-                COVERAGE: 'a repair session cuts the passage or rewords it so that it says no more than the element '
-                          'named with it, a session reads what was changed, and the running text of the section is '
-                          'compared with the elements again',
+                COVERAGE: 'a repair session cuts the passage, rewords it so that it says no more than the element '
+                          'named with it, or moves a derivation into the proof that uses it; a session reads what was '
+                          'changed, and the running text of the section is compared with the elements again',
                 WIDE:'the manuscript is typeset again and every line of a part that is too wide goes to repair, while '
                       'one in the title, a heading, the author line or the bibliography is text that no repair '
                       'changes and is reported again; this is done whenever a finding is acted on, since the '
@@ -4745,6 +5396,8 @@ class Paper(Sessions):
             self.open.append({'check': COMPARISON, 'after_repairs': 0, 'problems': differing})
         narrow['findings'] = [entry for entry in narrow['findings'] if entry['check'] != COMPARISON]
         self.narrow_end(self.cover_again() if passed else None)
+        if passed:
+            self.place()  # where the elements without a number stand, for the text as this pass left it
 
     # -- what the bounded repairs left open, closed without a person -------------------------------------
 
@@ -4794,7 +5447,9 @@ class Paper(Sessions):
                 self.open = [other for other in self.open if other['check'] != COVERAGE]
                 self.save()
         tex, spans, rows = self.assemble()
-        late = {row['label']: row for row in rows if row['comparison']['verdict'] == 'not compared'}
+        # One whose comparison was not made in this pass (session) is recorded as such and is not tried once more.
+        late = {row['label']: row for row in rows
+                if row['comparison']['verdict'] == 'not compared' and 'not_done' not in row['comparison']}
         if late:
             self.closed += [{'kind': 'differs', 'label': verdict['label'], 'number': late[verdict['label']]['number'],
                              'element': late[verdict['label']]['element'], 'difference': verdict['difference']}
@@ -4805,6 +5460,7 @@ class Paper(Sessions):
             self.closed += [{'kind': 'wide', 'problem': problem} for problem in wide['problems']]
             self.open = [item for item in self.open if item['check'] != WIDE]
         self.save()
+        self.place()  # where the elements without a number stand, for the text as this pass left it
         self.assemble()
         return True
 
@@ -4931,7 +5587,8 @@ class Paper(Sessions):
         if changed and not self.settle():
             return None
         return [{'kind': 'removed', **{key: problem.get(key, '') for key in ('where', 'section', 'quote', 'asserts',
-                                                                           'nearest', 'difference')}}
+                                                                           'nearest', 'difference')},
+                 **({'source': problem['source']} if 'source' in problem else {})}  # a sentence about a cited work
                 for problem in problems]
 
     # -- a run that is continued, and a run that is only looked at ----------------------------------------
@@ -4987,7 +5644,7 @@ class Paper(Sessions):
             if all(self.written(section) for section in sections):
                 self.done, self.open, self.rewritten, self.compared = (state[key] for key in ('done', 'open', 'rewritten', 'compared'))
                 self.narrow, self.kept, self.resolving = state.get('narrow'), state.get('kept', []), state.get('resolve')
-                self.closed = state.get('closed', [])
+                self.closed, self.placed = state.get('closed', []), state.get('placed')
 
     def preview(self, lines):
         """What the run would do next and what its sessions would be given, without launching one or writing a file."""
@@ -5072,6 +5729,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
     settling_proof(model)  # refuses before anything is written
     chosen = chosen_main(model, main)  # and so does a main result that is no settled formal theorem
     authors = read_title_page(title_page) if title_page else None  # a file that cannot be used stops the run here
+    codes = read_classification(title_page) if title_page else []
     given = read_draft(from_draft) if from_draft and not resume else None  # and so does a folder that holds no draft
     if dry:
         # A paper that is missing is fetched by a run, over the network; a dry run names it and fetches nothing.
@@ -5146,9 +5804,9 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                      if from_draft else {}))
         run.event('collection', folder=str(EXEMPLARS), papers=[entry['key'] for entry in manifest], fetched=fetched)
     if authors is not None:
-        run.authors = authors
+        run.authors, run.codes = authors, codes
         if not dry:
-            write_json(run.out / 'title-page.json', {'authors': authors})
+            write_json(run.out / 'title-page.json', {'authors': authors, **({'msc2020': codes} if codes else {})})
     if dry:
         if draft:
             said.append('This run makes the draft of the paper: after the plan, each section is sketched and the '
@@ -5308,6 +5966,7 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
     if not all(path.is_file() for path in needed):
         raise Stop(f'{out} does not hold a manuscript of this command (materials.json, plan.json, parts/)')
     authors = read_title_page(title_page) if title_page else None
+    codes = read_classification(title_page) if title_page else []
     run = Paper(instance, out, tex, choice or {}, parallel)
     if run.recipe is None:
         raise Stop('no TeX command is available: none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given')
@@ -5330,8 +5989,8 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
     run.take_plan(read_json(out / 'plan.json'), read_file(out / 'study.md') if (out / 'study.md').is_file() else '')
     run.sketched = run.recorded_draft()  # the briefs of a repair carry the drafted statements, as before
     if authors is not None:
-        run.authors = authors
-        write_json(out / 'title-page.json', {'authors': authors})
+        run.authors, run.codes = authors, codes
+        write_json(out / 'title-page.json', {'authors': authors, **({'msc2020': codes} if codes else {})})
     run.parts = {name: read_file(out / 'parts' / (name + '.tex')) for name in ['abstract'] + [s['id'] for s in run.plan['sections']]}
     if (out / 'correspondence.json').is_file():
         run.compared = {row['label']: {**row['comparison'], 'sha256': row['paper_statement_sha256']}
@@ -5343,6 +6002,7 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
             raise Stop(f'the run in {out} was stopped in the last repair of findings and the reading of its changes; '
                        'continue it with --resume before the manuscript is typeset')
         run.done, run.readings, run.rewritten = state['done'], state['readings'], state['rewritten']
+        run.placed = state.get('placed')
     run.event('typeset only', tex=run.recipe[0])
     try:
         run.settle()
@@ -5383,8 +6043,9 @@ def main(argv=None):
                              'plan is brought to this instance by script, and the sections are written with the '
                              'drafted statements')
     parser.add_argument('--title-page', type=Path, metavar='FILE',
-                        help='a JSON file {"authors": [{"name", "address", "email"}]} with the authors of the paper; '
-                             'without it, or with an empty list, the manuscript has no author line')
+                        help='a JSON file {"authors": [{"name", "address", "email"}]} with the authors of the paper, '
+                             'and optionally "msc2020", the codes of its subject classification; without it, or '
+                             'with an empty list, the manuscript has no author line')
     parser.add_argument('--main', metavar='DECLARATION',
                         help='the theorem of the instance that the paper is built around, when that is not the '
                              'declaration that settles the root: a settled formal theorem, as a rule one from which '

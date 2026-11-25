@@ -566,22 +566,49 @@ def drop_orphans(records_root, index):
     return gone
 
 
-def cited(records_root, index):
-    """`cited.json`: for every bibliography key a record names as its source, the records that name it."""
+CITATION = re.compile(r'\[([A-Za-z0-9][A-Za-z0-9_.+:-]*)(?:\s*,[^\]\n]*)?\]')
+
+
+def citations(text, keys):
+    """The citations in a record's text, as written, each with its key: `[key]` or `[key, place]` for a key of `keys`.
+
+    The records cite a work by its key in the bibliography between square brackets, alone or followed
+    by a comma and the place in the work. The keys tell such a citation from other text in brackets."""
+    return [(match[1], match[0]) for match in CITATION.finditer(text) if match[1] in keys]
+
+
+def cited_in(texts, keys=()):
+    """For every bibliography key that a record cites, the records that cite it; `texts` maps a declaration to its record.
+
+    A record cites a work in two ways: its header names the key as the source of the result, and its
+    text has a citation of the key (citations). Each record is given with its path, its text, whether
+    its header names the key ("header") and its citations of the key as they are written
+    ("citations"). Without `keys`, the keys of the bibliography, only the headers are read."""
     found = {}
-    for name in sorted(index['entries']):
-        path = Path(records_root) / (name_path(name) + '.md')
-        if not path.is_file():
-            continue
-        text = read_text(path)
+    for name in sorted(texts):
+        text = texts[name]
         try:
-            key = parse_record(text, name)['meta'].get('source')
+            source = parse_record(text, name)['meta'].get('source')
         except CanonError:
             continue
-        if key:
+        written = {}
+        for key, citation in citations(text, keys):
+            written.setdefault(key, []).append(citation)
+        for key in sorted(set(written) | ({source} if source else set())):
             found.setdefault(key, []).append({'declaration': name, 'path': 'records/' + name_path(name) + '.md',
-                                              'text': text})
+                                              'text': text, 'header': key == source,
+                                              'citations': list(dict.fromkeys(written.get(key, [])))})
     return [{'key': key, 'records': records} for key, records in sorted(found.items())]
+
+
+def cited(records_root, index, keys=()):
+    """`cited.json`: for every bibliography key that a record of the library cites, the records that cite it (cited_in)."""
+    texts = {}
+    for name in index['entries']:
+        path = Path(records_root) / (name_path(name) + '.md')
+        if path.is_file():
+            texts[name] = read_text(path)
+    return cited_in(texts, keys)
 
 
 def bibliography_keys(text):
@@ -1405,10 +1432,13 @@ def provenance_lines(given):
 
 
 def readme_text(facts, root_words, root_statement, main_statement, outline, obtained, check_output, config, licence,
-                fails, cited_rows, origin=None):
+                fails, cited_rows, origin=None, instances=(), not_done=()):
     """`README.md` of a package. The two prose sections come from a session; every other sentence is written here.
 
-    `origin` is what `provenance` returns; its texts are the selection's and stand under the result."""
+    `origin` is what `provenance` returns; its texts are the selection's and stand under the result.
+    `instances` are the statements that the paper proves from a cited general theorem, as the
+    correspondence file lists them. `not_done` are the checks of the run that were not made, each
+    in a sentence."""
     review = config['human_review']
     human = ('No person reviewed the proof, and no person read the Lean statement against the proposition in words.'
              if review['status'] == 'none' else
@@ -1454,7 +1484,12 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '- Not checked: the files under `lean/` that are prepared for a formal-proof registry, which the last '
               "section of this document describes. That registry's verifier was not run on them, and the "
               'classification codes in `lean/formalization.yaml` were checked for their form and not against its '
-              'lists.', '',
+              'lists.',
+              *(['- Not made: some of the checks that the items above describe. A safeguard of the AI system stopped '
+                 'the session that had the task, each time the session was started, so the check was recorded as not '
+                 'done and the rest of the work went on. These checks were not made: '
+                 + '; '.join(f'({number}) {what}' for number, what in enumerate(not_done, 1)) + '.']
+                if not_done else []), '',
               '## Building', '',
               f"The library is built with {release_of(facts['toolchain'])}"
               + (f" and {facts['requires']}" if facts['requires'] else '') + '. Lean is installed through elan, its '
@@ -1483,7 +1518,11 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               'The paper proves the result for a mathematical reader and mentions no formal proof.'
               + (' It attributes these statements to the literature, each to the source that '
                  '`paper/correspondence.json` names for it, and the library proves each of them formally: '
-                 + ', '.join(f'`{name}`' for name in cited_rows) + '.' if cited_rows else ''), '',
+                 + ', '.join(f'`{name}`' for name in cited_rows) + '.' if cited_rows else '')
+              + (' These statements it proves from a general theorem of the literature, which it cites, by '
+                 'specialising that theorem: ' + ', '.join(f"`{entry['element']}`" for entry in instances)
+                 + '. `paper/correspondence.json` names the theorem for each. The library does not rest on the cited '
+                   'theorems; it proves each of these statements by an argument of its own.' if instances else ''), '',
               '## The licence', '',
               f'Everything in this folder is under {licence}; the text is in [LICENSE](LICENSE).', '',
               '## The registry', '',
@@ -1513,7 +1552,11 @@ def closed_lines(closed):
 
     lines = []
     for entry in closed:
-        if entry['kind'] == 'removed':
+        if entry['kind'] == 'removed' and entry.get('source'):
+            lines.append(f"- Removed from {entry.get('where') or 'the manuscript'}: \"{said(entry['quote'])}\" It said of "
+                         f"the cited work `{entry['source']}` something that the words copied from that work do not "
+                         f"show. {said(entry.get('difference', ''))}")
+        elif entry['kind'] == 'removed':
             lines.append(f"- Removed from {entry.get('where') or 'the manuscript'}: \"{said(entry['quote'])}\" It asserted: "
                          f"{said(entry.get('asserts') or 'not said')} The declaration that came nearest is "
                          f"`{entry.get('nearest')}`. {said(entry.get('difference', ''))}")

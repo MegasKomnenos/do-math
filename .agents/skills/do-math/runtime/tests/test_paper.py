@@ -65,18 +65,39 @@ def stand_in_session(scenario):
             break
         except (FileExistsError, PermissionError):
             time.sleep(0.01)
+    stopped = False
     try:
         calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
         if key is not None:
             entries = script[key]
-            for name, content in entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)].items():
-                (folder / name).parent.mkdir(parents=True, exist_ok=True)
-                (folder / name).write_text(content, encoding='utf-8', newline='\n')
+            entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
+            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped.
+            stopped = '@stopped' in entry
+            for name, content in entry.items():
+                if name != '@stopped':
+                    (folder / name).parent.mkdir(parents=True, exist_ok=True)
+                    (folder / name).write_text(content, encoding='utf-8', newline='\n')
+        elif task['kind'] == 'place':
+            # A scenario that says nothing of the check of the places has a session that finds every element
+            # at the first place the plan gave it.
+            listed = json.loads((folder / 'placed.json').read_text(encoding='utf-8'))
+            (folder / 'output' / 'placement.json').write_text(json.dumps([
+                {'element': entry['element'], 'found': True, 'where': entry['planned'][0], 'note': ''}
+                for entry in listed]), encoding='utf-8', newline='\n')
         calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
                       'given': given, 'prompt': prompt, 'met': met})
         record.write_text(json.dumps(calls), encoding='utf-8')
     finally:
         lock.unlink()
+    if stopped:
+        # What the Claude CLI writes when the model refuses a request and the CLI has no other model to give it to.
+        message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."
+        print(json.dumps({'type': 'assistant', 'is_api_error_message': True, 'error': 'invalid_request',
+                          'message': {'model': '<synthetic>', 'role': 'assistant', 'stop_reason': 'refusal',
+                                      'content': [{'type': 'text', 'text': message}]}}))
+        print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal',
+                          'terminal_reason': 'api_error', 'result': message}))
+        return 1
     print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Scripted session.'}}))
     return 0
 
@@ -335,6 +356,9 @@ COMPARED = [('compare', 'intro'), ('compare', 'tools')]
 # The sessions of one comparison of the running text with the elements, in the order of the sections; the section
 # `proof` consists of one proof, so it has no running text and no session.
 COVERED = [('cover', 'intro'), ('cover', 'tools')]
+# The session that looks for the elements without a number in the manuscript. A run launches it at its end
+# when a repair has changed a part since the sections were written, and a pass that changed a part does too.
+PLACED = [('place', None)]
 # The files of the records that a session finds in its folder besides those of its own task.
 RECORD_FILES = ['root.md', 'elements.md', 'references.bib'] + [
     f'elements/Small.{name}.md' for name in ('expand', 'oddSum', 'oddSum_mono', 'oddSum_mono_weak', 'oddSum_succ',
@@ -721,10 +745,66 @@ class PlanTests(PaperCase):
             {'symbol': '$n$', 'meaning': 'the number of terms, a natural number'})), '')
 
 
+    def test_a_formula_that_several_sections_need_has_one_section_one_label_and_an_element(self):
+        display = {'label': 'eq:tools-gain', 'section': 'tools', 'element': 'Small.oddSum_succ',
+                   'formula': 'S_{n+1} = S_n + (2n + 1)', 'used_in': ['proof']}
+        self.assertEqual(self.problems(lambda plan: plan.update(displays=[display], keywords=['odd numbers', 'squares'])), '')
+        for change, words in (({'section': 'nowhere'}, '"section" is the id of the section that displays the formula'),
+                              ({'label': 'eq:proof-gain'}, "the label 'eq:proof-gain' begins with eq:tools-"),
+                              ({'element': 'Small.nothing'}, '"element" is the name of the element of the materials'),
+                              ({'formula': ' '}, '"formula" is the formula in LaTeX'),
+                              # The section that displays the formula is the first that needs it.
+                              ({'used_in': ['intro']}, '"used_in" lists the ids of the sections after tools'),
+                              ({'used_in': []}, '"used_in" lists the ids of the sections after tools')):
+            self.assertIn(words, self.problems(lambda plan: plan.update(displays=[{**display, **change}])), change)
+        self.assertIn('the label', self.problems(lambda plan: plan.update(displays=[display, display])))
+        self.assertIn('"displays", when the plan has it, is an array of objects',
+                      self.problems(lambda plan: plan.update(displays='eq:tools-gain')))
+        # The key words are printed, so they are held to what a title is held to.
+        self.assertIn('"keywords", when the plan has it, is an array', self.problems(lambda plan: plan.update(keywords='sums')))
+        self.assertIn('"keywords" has Small.oddSum_succ',
+                      self.problems(lambda plan: plan.update(keywords=['Small.oddSum_succ'])))
+        # The briefs: the section that owns the formula displays it under the label, and a section that uses it
+        # refers to it; a section that neither owns nor uses one is told nothing.
+        plan = {**copy.deepcopy(PLAN), 'displays': [display]}
+        materials = self.materials()
+        intro, tools, proof = (paper.render_brief(materials, plan, section) for section in plan['sections'])
+        self.assertIn('## Displayed formulas that several sections use', tools)
+        self.assertIn('- This section displays the formula below with `\\label{eq:tools-gain}`. The element '
+                      '`Small.oddSum_succ` states it, and the sections `proof` refer to it:\n\n  S_{n+1} = S_n + (2n + 1)\n', tools)
+        self.assertIn('- The section `tools` displays the formula below, which the element `Small.oddSum_succ` states. This '
+                      'section refers to it as `\\eqref{eq:tools-gain}`:', proof)
+        self.assertNotIn('Displayed formulas that several sections use', intro)
+        self.assertEqual(paper.render_brief(materials, PLAN, PLAN['sections'][1]),
+                         paper.render_brief(materials, {**PLAN, 'displays': []}, PLAN['sections'][1]))
+
+
 class ManuscriptTests(PaperCase):
     def problems(self, plan=PLAN, **changed):
         found = paper.machine_findings(self.materials(), plan, {**PARTS, **changed})
         return ' | '.join(finding['problem'] for finding in found)
+
+    def test_the_formula_that_several_sections_use_stands_in_the_section_that_the_plan_names(self):
+        display = {'label': 'eq:tools-gain', 'section': 'tools', 'element': 'Small.oddSum_succ',
+                   'formula': 'S_{n+1} = S_n + (2n + 1)', 'used_in': ['proof']}
+        plan = {**PLAN, 'displays': [display]}
+        self.assertIn('part tools: the plan has this section display a formula to which the sections proof refer, with '
+                      '\\label{eq:tools-gain}, and the part has no such label', self.problems(plan))
+        labelled = TOOLS.replace('The sum $S_{n+1}$ exceeds $S_n$ by $2n + 1$.',
+                                 'We have\n\\begin{equation}\\label{eq:tools-gain}\nS_{n+1} = S_n + (2n + 1).\n\\end{equation}')
+        referring = PROOF.replace('The sums increase', 'The sums increase by \\eqref{eq:tools-gain}, that is,')
+        self.assertEqual(self.problems(plan, tools=labelled, proof=referring), '')
+        # A reference to it from a section that uses it is owed by the section that owns it.
+        found = paper.machine_findings(self.materials(), plan, {**PARTS, 'proof': referring})
+        self.assertEqual({finding['part'] for finding in found}, {'tools'})
+
+    def test_a_statement_that_is_an_instance_of_a_cited_theorem_carries_the_citation_in_its_proof(self):
+        check = lambda instances: ' | '.join(finding['problem'] for finding in paper.machine_findings(
+            self.materials(), PLAN, PARTS, instances))
+        # The part that proves the lemma cites the work, so the check passes; for a work it does not cite, it fails.
+        self.assertEqual(check([('lem:square', 'euclid', 'tools')]), '')
+        self.assertIn('part tools: the proof of lem:square takes the result from a theorem of the literature, by the '
+                      'specialisation that the brief gives; it carries \\cite{other}', check([('lem:square', 'other', 'tools')]))
 
     def test_the_manuscript_of_the_plan_passes_and_is_assembled_in_its_order(self):
         self.assertEqual(self.problems(), '')
@@ -1329,7 +1409,7 @@ class RunTests(PaperCase):
         # what it changed, and by no other reading of the manuscript by itself.
         self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1)
                          + [('read', None), ('repair', 'narrow-reading'), ('changes', None)]
-                         + [('likeness', None)] * paper.LIKENESS_CLEAN + COMPARED + COVERED)
+                         + [('likeness', None)] * paper.LIKENESS_CLEAN + COMPARED + COVERED + PLACED)
         repair = self.calls('repair')[0]
         findings = read_json(self.out / 'sessions' / repair['folder'] / 'findings.json')
         self.assertEqual((findings['findings'], findings['understanding']), (FOUND['findings'], FOUND['understanding']))
@@ -1388,8 +1468,8 @@ class RunTests(PaperCase):
         self.assertEqual([len(e['differing']) for e in self.events('comparison')], [1, 0])
         # The repair changed a statement and may have adjusted its proof, so the manuscript was read by itself
         # again before its statements were compared once more.
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][-8:],
-                         [*COMPARED, ('repair', 'comparison-tools'), ('read', None), *COMPARED, *COVERED])
+        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][-9:],
+                         [*COMPARED, ('repair', 'comparison-tools'), ('read', None), *COMPARED, *COVERED, *PLACED])
         again = self.calls('read')[-1]
         self.assertIn('k^2 + (2k + 1)', (self.out / 'sessions' / again['folder'] / 'paper.tex').read_text(encoding='utf-8'))
         rows = read_json(self.out / 'correspondence.json')['statements']
@@ -1549,7 +1629,7 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 0)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
-                                 ('read', None), *COMPARED, *COVERED])
+                                 ('read', None), *COMPARED, *COVERED, *PLACED])
         repair = self.calls('repair')[0]
         self.assertEqual(read_json(self.out / 'sessions' / repair['folder'] / 'findings.json'),
                          [departure('The abstract says more than theirs.')])
@@ -1586,7 +1666,7 @@ class RunTests(PaperCase):
         self.assertEqual(self.run_paper(script), 0)
         kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None)] * (rounds // 2)
-                         + [('read', None), *COMPARED, ('resolve', None), *COVERED])
+                         + [('read', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         self.assertEqual(len(self.calls('likeness')), rounds)
         # The last reading found nothing, and the departures of the one before it stayed open: one clean reading
         # after their repair is not two. The resolving session was given them with that reason. It kept the text,
@@ -1621,7 +1701,7 @@ class RunTests(PaperCase):
         # manuscript is read by itself once more, as before.
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness')] * (rounds - 1)
                          + [('likeness', None), ('repair', 'narrow-likeness'), ('read', None), *COMPARED,
-                            ('resolve', None), *COVERED])
+                            ('resolve', None), *COVERED, *PLACED])
         narrow = self.calls('repair')[-1]
         self.assertEqual(read_json(self.folder(narrow) / 'findings.json'), [departure(f'reading {rounds}')])
         self.assertIn('So this repair is narrow.', narrow['prompt'])
@@ -1659,7 +1739,7 @@ class RunTests(PaperCase):
         # the changes of the narrow repair were read where they stand, so the manuscript is not read by itself again.
         self.assertEqual([(c['kind'], c['section']) for c in self.calls()][4:],
                          [('read', None), ('likeness', None), ('repair', 'narrow-likeness-tools'),
-                          ('repair', 'narrow-likeness'), ('changes', None), *COMPARED, ('resolve', None), *COVERED])
+                          ('repair', 'narrow-likeness'), ('changes', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         tools, whole = self.calls('repair')
         self.assertEqual(read_json(self.folder(tools) / 'findings.json'), [named, kept])
         for call in (tools, whole):
@@ -1704,7 +1784,7 @@ class RunTests(PaperCase):
         # Both findings lie in one section, so one session repairs them, and none is launched for the whole.
         self.assertEqual([(c['kind'], c['section']) for c in self.calls()][4:],
                          [('read', None), ('repair', 'narrow-reading-tools'), ('changes', None), ('likeness', None),
-                          ('likeness', None), *COMPARED, ('resolve', None), *COVERED])
+                          ('likeness', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         repair = self.calls('repair')[0]
         self.assertIn('In every other case revise the passage that the finding names', repair['prompt'])
         self.assertNotIn('which may mean rewriting the passage', repair['prompt'])
@@ -1815,7 +1895,7 @@ class RunTests(PaperCase):
         kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
         self.assertEqual(kinds, [('read', None), ('likeness', None), ('repair', 'likeness'), ('likeness', None),
                                  ('likeness', None), ('read', None), ('repair', 'reading'), ('read', None),
-                                 *COMPARED, *COVERED])
+                                 *COMPARED, *COVERED, *PLACED])
         self.assertEqual([e['of'] for e in self.events('repair')], ['likeness', 'reading'])
         # The readings are counted over the whole run: one before the readings beside real papers and two after.
         self.assertEqual([(e['round'], len(e['findings'])) for e in self.events('reading')], [(1, 0), (2, 1), (3, 0)])
@@ -1847,7 +1927,7 @@ class RunTests(PaperCase):
         kinds = [(c['kind'], c['section']) for c in self.calls()][9:]
         self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1)
                          + [('read', None), ('repair', 'narrow-reading'), ('changes', None), *COMPARED,
-                            ('resolve', None), *COVERED])
+                            ('resolve', None), *COVERED, *PLACED])
         self.assertEqual([e['round'] for e in self.events('reading')], list(range(1, paper.READING_ROUNDS + 2)))
         # The change is undone, so the finding goes on to the resolving session, and the comparison has the text
         # that the last reader read.
@@ -2265,8 +2345,8 @@ class SideBySideTests(PaperCase):
         again = good()
         again['repair:typeset'] = [{'output/proof.tex': PROOF}]
         state = self.continued(script, [('repair', 'typeset'), ('read', None), ('likeness', None), ('likeness', None), *COMPARED,
-                                        *COVERED], again=again)
-        self.assertIsNone(state)  # no stage after the writing had been reached
+                                        *COVERED, *PLACED], again=again)
+        self.assertEqual((state['done'], state['open']), ({}, []))  # no stage after the writing had been reached
         self.assertEqual(len(self.calls('write')), 3)
 
     def test_a_run_stopped_in_the_first_reading_is_continued_with_that_reading(self):
@@ -2286,7 +2366,7 @@ class SideBySideTests(PaperCase):
                                       'output/response.json': answered('The opening is rewritten.')}]
         # The continuation finds no departure. The repair of the stopped run had rewritten the introduction, which
         # the state recorded when it happened, so the manuscript is read by itself again all the same.
-        state = self.continued(script, [('likeness', None), ('likeness', None), ('read', None), *COMPARED, *COVERED])
+        state = self.continued(script, [('likeness', None), ('likeness', None), ('read', None), *COMPARED, *COVERED, *PLACED])
         self.assertEqual((state['done'], state['rewritten']), ({'reading': True}, True))
         self.assertEqual(len(self.calls('read')), 2)
         reread = self.calls('read')[-1]
@@ -2294,7 +2374,7 @@ class SideBySideTests(PaperCase):
         final = read_json(self.out / 'state.json')
         self.assertEqual((final['done'], final['rewritten']),
                          ({'reading': True, 'likeness': True, 'rereading': True, 'comparison': True, 'resolve': True,
-                           'coverage': True}, False))
+                           'coverage': True, 'placement': True}, False))
         self.assertEqual(self.events('end')[-1], {**self.events('end')[-1], 'status': 'complete', 'open': []})
 
     def test_a_run_stopped_in_the_reading_after_those_readings_is_continued_with_it(self):
@@ -2304,7 +2384,7 @@ class SideBySideTests(PaperCase):
         script['repair:likeness'] = [{'output/intro.tex': INTRO + 'Version 0 of the introduction.\n',
                                       'output/response.json': answered('The opening is rewritten.')}]
         script['read'] = [{'output/reading.json': json.dumps(CLEAN)}, {}]
-        state = self.continued(script, [('read', None), *COMPARED, *COVERED])
+        state = self.continued(script, [('read', None), *COMPARED, *COVERED, *PLACED])
         self.assertEqual((state['done'], state['rewritten']), ({'reading': True, 'likeness': True}, True))
         self.assertEqual(len(self.calls('likeness')), 3)
 
@@ -2324,7 +2404,7 @@ class SideBySideTests(PaperCase):
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
         script['repair:comparison'] = [{'output/tools.tex': TOOLS, 'output/response.json': answered('The term 1 is restored.')}]
         script['read'] = [{'output/reading.json': json.dumps(CLEAN)}, {}]  # the reading after the repair leaves nothing
-        state = self.continued(script, [('read', None), *COMPARED, *COVERED])
+        state = self.continued(script, [('read', None), *COMPARED, *COVERED, *PLACED])
         self.assertEqual((state['done'], state['rewritten']), ({'reading': True, 'likeness': True, 'rereading': True}, True))
         self.assertEqual((self.out / 'parts/tools.tex').read_text(encoding='utf-8'), TOOLS)
         rows = read_json(self.out / 'correspondence.json')['statements']
@@ -2360,7 +2440,7 @@ class SideBySideTests(PaperCase):
         # The repair is made again from the text that was read, by the sessions of both sections, and is followed by
         # the reading of the changes. The manuscript is not read by itself again.
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-tools'), ('repair', 'narrow-reading-proof'),
-                                                ('changes', None), ('likeness', None), ('likeness', None), *COMPARED, *COVERED])
+                                                ('changes', None), ('likeness', None), ('likeness', None), *COMPARED, *COVERED, *PLACED])
         tools = self.calls()[launched]
         self.assertEqual((self.folder(tools) / 'parts/tools.tex').read_text(encoding='utf-8'), TOOLS)
         self.assertEqual((self.part('tools'), self.part('proof')), (TOOLS_BOTH, PROOF_BASED))
@@ -2368,7 +2448,7 @@ class SideBySideTests(PaperCase):
         final = read_json(self.out / 'state.json')
         self.assertEqual((final['done'], final['narrow'], final['open']),
                          ({'reading': True, 'likeness': True, 'rereading': True, 'comparison': True, 'resolve': True,
-                           'coverage': True}, None, []))
+                           'coverage': True, 'placement': True}, None, []))
         self.assertEqual([e['status'] for e in self.events('end')], ['failed', 'complete'])
         self.assertFalse((self.out / 'narrow').exists())
 
@@ -2421,7 +2501,7 @@ class SideBySideTests(PaperCase):
         self.assertEqual(self.kinds(4), [
             ('read', None), ('repair', 'reading-intro'), ('repair', 'reading-tools'), ('repair', 'reading'),
             ('read', None), ('repair', 'reading-proof'), ('repair', 'reading'),
-            ('read', None), ('likeness', None), ('likeness', None), *COMPARED, *COVERED])
+            ('read', None), ('likeness', None), ('likeness', None), *COMPARED, *COVERED, *PLACED])
         intro, tools, whole, proof, last = self.calls('repair')
         found = lambda call: read_json(self.folder(call) / 'findings.json')
         # Each session of a section has the findings of that section, in the order of the report, and what the reader
@@ -2479,7 +2559,7 @@ class SideBySideTests(PaperCase):
                                             'output/response.json': answered('A sentence was added.')}]
         self.assertEqual(self.run_paper(script), 0)
         self.assertEqual(self.kinds(5), [('likeness', None), ('repair', 'likeness-tools'), ('likeness', None), ('likeness', None),
-                                         ('read', None), *COMPARED, *COVERED])
+                                         ('read', None), *COMPARED, *COVERED, *PLACED])
         repair = self.calls('repair')[0]
         self.assertEqual(read_json(self.folder(repair) / 'findings.json'), [named])
         self.assertIn('Rewrite this section so that at each of these places the manuscript does what the papers do', repair['prompt'])
@@ -2498,7 +2578,7 @@ class SideBySideTests(PaperCase):
         script['repair:comparison-tools'] = [{'output/tools.tex': TOOLS, 'output/response.json': answered('The term 1 is restored.')}]
         self.assertEqual(self.run_paper(script), 0)
         self.assertEqual(self.kinds(7), [('compare', 'intro'), ('compare', 'tools'), ('compare', 'tools'),
-                                         ('repair', 'comparison-tools'), ('read', None), *COMPARED, *COVERED])
+                                         ('repair', 'comparison-tools'), ('read', None), *COMPARED, *COVERED, *PLACED])
         intro, tools, again = self.calls('compare')[:3]
         self.assertIn('one object for each entry of statements.json, in their order', again['prompt'])
         # A session has the statements of its section, the records of their elements in full, and what those mention.
@@ -2615,7 +2695,7 @@ class OpenFindingsTests(PaperCase):
         script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Read with the proof of Lemma 2.2.')], [(1, True, '')])}]
         self.assertEqual(self.run_paper(script, open_findings='1'), 2)
         # The pass changed the section `tools`, so its running text is compared with the elements afterwards.
-        self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-tools'), ('changes', None), ('cover', 'tools')])
+        self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-tools'), ('changes', None), ('cover', 'tools'), *PLACED])
         repair = self.calls()[launched]
         self.assertEqual(read_json(self.folder(repair) / 'findings.json'),
                          {'understanding': CLEAN['understanding'], 'findings': [{**EXPANSION, 'open_because': self.kept}]})
@@ -2642,7 +2722,7 @@ class OpenFindingsTests(PaperCase):
         script['compare:tools'] = [{'output/comparison.json': json.dumps(SAME[2:])}]
         self.assertEqual(self.run_paper(script, open_findings='all'), 0)
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-proof'), ('repair', 'narrow-comparison-tools'),
-                                                ('changes', None), ('compare', 'tools'), ('cover', 'tools')])
+                                                ('changes', None), ('compare', 'tools'), ('cover', 'tools'), *PLACED])
         corrected = self.calls()[launched + 1]
         self.assertEqual(read_json(self.folder(corrected) / 'findings.json'), [{'label': 'lem:square', 'difference': self.DIFFERENCE}])
         self.assertIn('So this repair is narrow.', corrected['prompt'])
@@ -2684,7 +2764,7 @@ class OpenFindingsTests(PaperCase):
         script['compare:tools'] = [{'output/comparison.json': json.dumps([{**SAME[2], 'verdict': 'differs', 'difference': still}])}]
         self.assertEqual(self.run_paper(script, open_findings='3'), 2)
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-comparison-tools'), ('changes', None), ('compare', 'tools'),
-                                                ('cover', 'tools')])
+                                                ('cover', 'tools'), *PLACED])
         # It is not repaired again in the same pass: it is open with the difference that was found now.
         end = self.events('end')[-1]
         self.assertEqual(end['open'], [self.left[0], {
@@ -2722,7 +2802,7 @@ class OpenFindingsTests(PaperCase):
         # The repair is not made again: the changes are read, the running text of the section that changed is
         # compared, and the run ends anew. The statement that differs was not chosen and is open as it was; the
         # finding that the repair kept is open with the new reason.
-        self.assertEqual(self.kinds(launched), [('changes', None), ('cover', 'tools')])
+        self.assertEqual(self.kinds(launched), [('changes', None), ('cover', 'tools'), *PLACED])
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('open_findings', [
             {'check': paper.READING, 'after_repairs': 2,
@@ -2934,6 +3014,29 @@ class TitlePageTests(unittest.TestCase):
         with self.assertRaisesRegex(paper.Stop, 'cannot be read as JSON'):
             paper.read_title_page(page)
 
+    def test_the_classification_and_the_key_words_stand_before_the_abstract_when_they_are_given(self):
+        folder = Path(tempfile.mkdtemp(prefix='do-math-title-'))
+        self.addCleanup(shutil.rmtree, folder, True)
+        page = folder / 'title-page.json'
+        write_json(page, {'authors': [], 'msc2020': ['05A15', '11B83']})
+        self.assertEqual(paper.read_classification(page), ['05A15', '11B83'])
+        write_json(page, {'authors': []})
+        self.assertEqual(paper.read_classification(page), [])
+        for wrong in ({'msc2020': '05A15'}, {'msc2020': ['5A15']}, {'msc2020': [5]}, ['05A15']):
+            write_json(page, wrong)
+            with self.assertRaisesRegex(paper.Stop, '"msc2020", when it is given, is an array of codes'):
+                paper.read_classification(page)
+        # The codes come from the title page and the key words from the plan; amsart prints both on the first page.
+        plan = {**PLAN, 'keywords': ['odd numbers', ' squares ']}
+        lines = paper.assemble(plan, PARTS, [{'name': 'A. Author'}], ['05A15', '11B83'])[0].split('\n')
+        title = lines.index('\\title{The sum of the first odd numbers}')
+        self.assertEqual(lines[title + 1:title + 5], ['\\author{A. Author}', '\\subjclass[2020]{05A15, 11B83}',
+                                                      '\\keywords{odd numbers, squares}', '\\begin{abstract}'])
+        # Each is written only when it is given: a manuscript without them is as it was.
+        self.assertEqual(paper.assemble(PLAN, PARTS, [], [])[0], paper.assemble(PLAN, PARTS)[0])
+        self.assertNotIn('\\subjclass', paper.assemble(plan, PARTS)[0])
+        self.assertNotIn('\\keywords', paper.assemble(PLAN, PARTS, [], ['05A15'])[0])
+
 
 # ----------------------------------------------------------------------------- the draft, and the paper from it
 
@@ -3066,6 +3169,31 @@ class DraftTests(PaperCase):
         # A run makes the draft of a paper or writes the paper from a draft, and not both.
         with self.assertRaisesRegex(paper.Stop, 'a run is one of the two'):
             paper.produce(self.instance, self.root / 'other', TEX, draft=True, from_draft=self.out)
+
+    def test_a_sketched_statement_that_gives_only_some_parts_of_its_element_stays_and_becomes_a_gap(self):
+        script = drafting()
+        # The comparison finds that the sketch of the first lemma gives one part of what its element states.
+        difference = 'The text gives the inequality and leaves out that it is strict.'
+        found = [dict(row) for row in DRAFT_VERDICTS['tools']]
+        found[0].update(difference=difference, partial=True, text='')  # the sketched text stays, so none is given
+        # A text with a declared gap is no such case, whatever the session says of it.
+        found[1].update(partial=True)
+        script['compare:tools'] = [{'output/comparison.json': json.dumps(found)}]
+        self.assertEqual(self.run_paper(script, draft=True), 0)
+        draft = read_json(self.out / 'draft.json')
+        # The sketched text stays, and what it wants is asked of the library: a declaration of that part alone.
+        self.assertEqual(draft['statements'][1], {'label': 'lem:increasing', 'section': 'tools',
+                                                  'element': 'Small.oddSum_mono', 'text': WEAK, 'gap': 'g1'})
+        self.assertEqual(draft['gaps'][0], {'id': 'g1', 'kind': 'statement', 'section': 'tools', 'label': 'lem:increasing',
+                                            'host': None, 'element': 'Small.oddSum_mono', 'wanted': WEAK, 'has': difference,
+                                            'reason': paper.PARTIAL, 'closed_by': None})
+        self.assertEqual([gap['label'] for gap in draft['gaps']], ['lem:increasing', 'lem:square', 'eq:tools-bound', None])
+        drafted = self.events('draft')[0]
+        self.assertEqual((drafted['slips'], drafted['partial']), ([], ['lem:increasing']))
+        # The comparison is told of the case, and the sketch of the step that two proofs share.
+        self.assertIn('set "partial" to true', self.calls('compare')[1]['prompt'])
+        self.assertIn('Look in particular for a step that two proofs share.', self.calls('sketch')[0]['prompt'])
+        self.assertIn('or only those parts of a result that the paper uses', self.calls('sketch')[0]['prompt'])
 
     def test_the_results_to_cite_are_statements_whose_record_names_no_source(self):
         materials = self.materials()
@@ -3258,6 +3386,62 @@ class FromDraftTests(PaperCase):
         self.assertEqual(self.run_paper(good(), only=True, title_page=page), 0)
         self.assertNotIn('\\author', (self.out / 'paper.tex').read_text(encoding='utf-8'))
         self.assertEqual(len(self.calls()), launched)
+
+    def test_the_draft_carries_what_the_cited_works_say_and_the_results_that_a_cited_theorem_contains(self):
+        quoted = {'key': 'euclid', 'declaration': 'Small.expand', 'place': 'Book II, Proposition 4',
+                  'sentence': 'The square of a sum is expanded in [euclid, Book II, Proposition 4].',
+                  'quote': 'The stand-in words of the work at that place.'}
+        instance = {'element': 'Small.sq_step', 'key': 'euclid', 'where': 'Book II, Proposition 4', 'states': EXPAND_TEXT,
+                    'specialisation': 'Take $a = k$ and $b = 1$.'}
+        # A draft whose lists do not have their form is refused before anything is written.
+        with self.assertRaisesRegex(paper.Stop, '"instances" in draft.json, when it is there, is an array of objects'):
+            self.run_paper(written_from_draft(), from_draft=self.draft_folder(draft={**DRAFT, 'instances': [{'element': 'x'}]}))
+        shutil.rmtree(self.root / 'draft')
+        folder = self.draft_folder(draft={**DRAFT, 'attributions': [quoted], 'instances': [instance]})
+        # The introduction says of the cited work something that the words kept of it do not show.
+        claim = 'The expansion of a square goes back to the first book of the Elements \\cite[Book I]{euclid}.'
+        reported = {'entry': 4, 'quote': claim, 'asserts': 'The work has the expansion in its first book.', 'source': 'euclid',
+                    'difference': 'The words kept of the work are those of Book II, Proposition 4.'}
+        script = written_from_draft()
+        script['write:intro'] = [{'output/intro.tex': INTRO + '\n' + claim + '\n', 'output/abstract.tex': ABSTRACT}]
+        script['cover:intro'] = [{'output/coverage.json': json.dumps([reported])}, {'output/coverage.json': '[]'}]
+        script['repair:narrow'] = [{'output/intro.tex': INTRO, 'output/response.json': answered('The sentence is cut.')}]
+        script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], '')], [(1, True, '')])}]
+        self.assertEqual(self.run_paper(script, from_draft=folder), 0)
+        self.assertEqual(self.kinds(6), [*COMPARED, ('cover', 'intro'), ('repair', 'narrow-coverage-intro'), ('changes', None),
+                                         ('cover', 'intro'), ('place', None)])
+        # The session that compares the running text has the words of the cited works and is told what they are for.
+        covering = self.calls('cover')[0]
+        self.assertTrue({'attributions.json', 'references.bib'} <= set(covering['given']))
+        self.assertEqual(read_json(self.folder(covering) / 'attributions.json'), [quoted])
+        self.assertIn('What the text says about the literature is compared as well', covering['prompt'])
+        self.assertIn('the object has "source": "<the key of the work in the bibliography>" in the place of "nearest"',
+                      covering['prompt'])
+        self.assertNotIn('is not the subject of this comparison', covering['prompt'])
+        # What it reports goes to the repair with the same words of the works, as a finding that names the work.
+        repair = self.calls('repair')[0]
+        self.assertIn('attributions.json', repair['given'])
+        self.assertEqual(read_json(self.folder(repair) / 'findings.json'), [
+            {'where': 'the running text of the section "Introduction"', 'section': 'sec:intro', 'quote': claim,
+             'asserts': reported['asserts'], 'nearest': '', 'source': 'euclid', 'difference': reported['difference']}])
+        self.assertIn('A finding about a cited work names no element, and it is answered from the quotations.', repair['prompt'])
+        self.assertEqual(self.part('intro'), INTRO)
+        # The section that proves the second lemma is told that a cited theorem contains it, with the specialisation.
+        brief = (self.folder(self.calls('write')[1]) / 'brief.md').read_text(encoding='utf-8')
+        self.assertIn('## Results of this section that a cited theorem contains', brief)
+        self.assertIn('- lemma `lem:square`, which states `Small.sq_step`: an instance of '
+                      '`\\cite[Book II, Proposition 4]{euclid}`.', brief)
+        self.assertIn('  The specialisation: Take $a = k$ and $b = 1$.', brief)
+        self.assertNotIn('a cited theorem contains', (self.folder(self.calls('write')[0]) / 'brief.md').read_text(encoding='utf-8'))
+        # The correspondence file names the theorem at the statement and lists the element.
+        correspondence = read_json(self.out / 'correspondence.json')
+        row = next(row for row in correspondence['statements'] if row['label'] == 'lem:square')
+        self.assertEqual(row['instance_of'], {'key': 'euclid', 'where': 'Book II, Proposition 4'})
+        self.assertEqual(correspondence['instances'], [{'element': 'Small.sq_step', 'key': 'euclid',
+                                                        'where': 'Book II, Proposition 4'}])
+        self.assertNotIn('instance_of', correspondence['statements'][0])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
 
     def test_a_plan_that_fails_the_check_is_repaired_by_a_session_that_does_not_read_the_collection(self):
         # The draft's plan says nothing of the object of the problem, which the script cannot place.
@@ -3660,7 +3844,7 @@ class ResolveTests(PaperCase):
         self.assertEqual(self.kinds(4), [
             ('read', None), ('repair', 'narrow-reading-tools'), ('likeness', None), ('likeness', None), *COMPARED,
             ('resolve', None), ('resolve', None), ('read', None), ('repair', 'narrow-reading-proof'),
-            ('compare', 'proof'), ('cover', 'intro'), ('cover', 'proof')])
+            ('compare', 'proof'), ('cover', 'intro'), ('cover', 'proof'), *PLACED])
         # The resolving session has what a repair of the whole manuscript has, and every open finding of the readings
         # with the reason it was left open. It is a session of the model that writes.
         first, second = self.calls('resolve')
@@ -3709,7 +3893,7 @@ class ResolveTests(PaperCase):
         state = read_json(self.out / 'state.json')
         self.assertEqual((state['done'], state['resolve'], state['kept']),
                          ({'reading': True, 'likeness': True, 'rereading': True, 'comparison': True, 'resolve': True,
-                           'coverage': True}, None, end['kept']))
+                           'coverage': True, 'placement': True}, None, end['kept']))
         self.assertFalse((self.out / 'resolve').exists())
         self.assertTrue((self.out / 'paper.pdf').is_file())
 
@@ -3735,7 +3919,7 @@ class ResolveTests(PaperCase):
             self.assertEqual(self.run_paper(again, resume=True), 0)
         # The resolving session is not launched again: what it returned is put in place, and the run goes on with
         # the reading, the comparison of the reworded lemma and the comparison of the running text.
-        self.assertEqual(self.kinds(launched), [('read', None), ('compare', 'proof'), ('cover', 'intro'), ('cover', 'proof')])
+        self.assertEqual(self.kinds(launched), [('read', None), ('compare', 'proof'), ('cover', 'intro'), ('cover', 'proof'), *PLACED])
         self.assertEqual(read_json(self.out / 'plan.json'), JOINED_PLAN)
         self.assertEqual(sorted(path.name for path in (self.out / 'parts').iterdir()), ['abstract.tex', 'intro.tex', 'proof.tex'])
         self.assertEqual(self.part('proof'), JOINED_PROOF)
@@ -3807,7 +3991,7 @@ class CoverageTests(PaperCase):
                                  {'output/coverage.json': '[]'}]
         self.assertEqual(self.run_paper(script), 0)
         self.assertEqual(self.kinds(7), [*COMPARED, ('cover', 'intro'), ('cover', 'intro'), ('cover', 'tools'),
-                                         ('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools')])
+                                         ('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools'), *PLACED])
         # The session of a section has the running text of the section as a list, the records in full of the
         # section's elements and every other element by what it says, and the manuscript.
         again, covering = self.calls('cover')[1:3]
@@ -3875,7 +4059,7 @@ class CoverageTests(PaperCase):
         script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Read with the lemma before it.')], [(1, True, '')])}]
         script['cover:tools'] = [{}, {'output/coverage.json': json.dumps([still])}]
         self.assertEqual(self.run_paper(script, open_findings='all'), 2)
-        self.assertEqual(self.kinds(launched), [('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools')])
+        self.assertEqual(self.kinds(launched), [('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools'), *PLACED])
         repair = self.calls()[launched]
         self.assertEqual(read_json(self.folder(repair) / 'findings.json'), left[0]['problems'])
         self.assertIn('A finding that carries "open_because" was left open before this repair', repair['prompt'])
@@ -3893,7 +4077,7 @@ class CoverageTests(PaperCase):
         script['remove'] = [{'output/tools.tex': TOOLS_SHARP.replace('this bound is sharp', 'equality holds for some $n$')},
                             {'output/tools.tex': TOOLS}]
         self.assertEqual(self.close(script), 0)
-        self.assertEqual(self.kinds(launched), [('remove', None), ('remove', None)])
+        self.assertEqual(self.kinds(launched), [('remove', None), ('remove', None), *PLACED])
         first, second = self.calls('remove')
         self.assertEqual(read_json(self.folder(first) / 'removals.json'), [
             {'number': 1, 'part': 'tools', **{key: REPORTED[key] for key in ('where', 'quote', 'asserts', 'nearest')}}])
@@ -3933,7 +4117,7 @@ class CoverageTests(PaperCase):
         script['restate'] = [{'output/tools.tex': off + '\n% a comment\n'}, {'output/tools.tex': TOOLS}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps([SAME[2]])}]
         self.assertEqual(self.close(script), 0)
-        self.assertEqual(self.kinds(launched), [('restate', None), ('restate', None), ('compare', 'tools')])
+        self.assertEqual(self.kinds(launched), [('restate', None), ('restate', None), ('compare', 'tools'), *PLACED])
         first, second = self.calls('restate')
         given = read_json(self.folder(first) / 'statements.json')
         self.assertEqual([(entry['label'], entry['difference']) for entry in given], [('lem:square', difference)])
@@ -3967,10 +4151,261 @@ class CoverageTests(PaperCase):
         self.assertEqual((state['narrow']['step'], self.part('tools')), ('done', TOOLS))
         # The repair and the reading of its change are not made again: the section is compared, and the run ends.
         self.assertEqual(self.run_paper(again, resume=True), 0)
-        self.assertEqual(self.kinds(launched), [('cover', 'tools')])
+        self.assertEqual(self.kinds(launched), [('cover', 'tools'), *PLACED])
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('complete', []))
         self.assertEqual(read_json(self.out / 'state.json')['narrow'], None)
+
+    def test_a_derivation_that_a_proof_uses_is_moved_into_that_proof_as_it_is(self):
+        # The section ends with a derivation that the proof of its second lemma uses.
+        derived = 'Indeed $(k + 1)^2 = k^2 + 2k + 1$.'
+        outside = {'entry': 2, 'quote': derived, 'asserts': 'The square of $k + 1$, expanded.', 'nearest': 'Small.sq_step',
+                   'difference': 'No element states the expansion by itself.'}
+        inside = TOOLS.replace('Expand the right-hand side.', 'Expand the right-hand side. ' + derived)
+        moved = json.dumps([{'finding': 1, 'action': 'moved', 'note': 'Into the proof of the second lemma.'}])
+        script = good()
+        script['write:tools'] = [{'output/tools.tex': TOOLS + '\n' + derived + '\n'}]
+        script['cover:tools'] = [{'output/coverage.json': json.dumps([outside])}, {'output/coverage.json': '[]'}]
+        # The first session says that it moved the passage, and reworded it on the way. The second moves it as it is.
+        script['repair:narrow'] = [
+            {'output/tools.tex': TOOLS.replace('Expand the right-hand side.', 'Expand: $(k + 1)^2 = k^2 + 2k + 1$.'),
+             'output/response.json': moved},
+            {'output/tools.tex': inside, 'output/response.json': moved}]
+        # The place it left and the place it went to are one passage: no empty line stands between them.
+        script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], '')], [(1, True, '')])}]
+        self.assertEqual(self.run_paper(script), 0)
+        first, second = self.calls('repair')
+        self.assertIn('One kind of passage has a third answer.', first['prompt'])
+        self.assertIn('"action": "revised", "moved" or "kept"', first['prompt'])
+        self.assertIn('was answered with "moved", and it does not stand inside a proof unchanged', second['prompt'])
+        self.assertEqual(self.part('tools'), inside)
+        # From there the move is a change like every other: it is read, and the section is compared once more.
+        self.assertEqual(self.events('repair')[-1]['response'],
+                         [{'finding': 1, 'action': 'revised', 'moved': True, 'note': 'Into the proof of the second lemma.'}])
+        self.assertEqual(self.kinds(7), [*COMPARED, *COVERED, ('repair', 'narrow-coverage-tools'),
+                                         ('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools'),
+                                         ('place', None)])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        # A repair of findings of another kind has two answers, as before.
+        self.assertNotIn('"moved"', paper.RESPONSE)
+
+    def test_a_move_is_refused_when_the_passage_still_stands_outside_or_behind_a_place_that_uses_it(self):
+        run = paper.Paper.__new__(paper.Paper)
+        run.plan = PLAN
+        display = '\\begin{equation}\\label{eq:tools-gain}\nS_{n+1} = S_n + (2n + 1).\n\\end{equation}'
+        finding = {'quote': display}
+        # The formula went into the proof of the second lemma, and the proof of the first refers to it.
+        behind = TOOLS.replace('The sum $S_{n+1}$ exceeds $S_n$ by $2n + 1$.', 'This is \\eqref{eq:tools-gain}.') \
+            .replace('Expand the right-hand side.', 'Expand the right-hand side.\n' + display)
+        parts = {**PARTS, 'tools': behind}
+        spans = paper.assemble(PLAN, parts)[1]
+        faults = run.move_faults(finding, parts, spans)
+        self.assertEqual(len(faults), 2)
+        self.assertIn('still stands outside the proofs, or text outside its proof still refers to its formula', faults[0])
+        self.assertIn('the formula with \\label{eq:tools-gain} now stands after a place that refers to it', faults[1])
+        # Inside the proof that uses it, and before that use, the move stands.
+        within = TOOLS.replace('The sum $S_{n+1}$ exceeds $S_n$ by $2n + 1$.', display + '\nSo the sums increase by \\eqref{eq:tools-gain}.')
+        parts = {**PARTS, 'tools': within}
+        self.assertEqual(run.move_faults(finding, parts, paper.assemble(PLAN, parts)[1]), [])
+        # A passage that is not in a proof at all was not moved into one.
+        self.assertIn('does not stand inside a proof unchanged', run.move_faults(finding, PARTS, paper.assemble(PLAN, PARTS)[1])[0])
+
+    def test_the_abstract_is_held_to_the_main_result_as_a_numbered_statement_is(self):
+        self.assertEqual(self.run_paper(good()), 0)
+        intro, tools = self.calls('cover')
+        self.assertIn('Hold what the abstract says of the main result to the element of the main result, `Small.root`, as a '
+                      'numbered statement is held to its element.', intro['prompt'])
+        self.assertIn('so that its sentence claims cases which the element does not state, it asserts more than was proved',
+                      intro['prompt'])
+        # It follows what the method says is no assertion, so that "that section" still points to the section named before.
+        self.assertLess(intro['prompt'].index('That section of the method also says'),
+                        intro['prompt'].index('The abstract is among the entries'))
+        self.assertNotIn('The abstract is among the entries', tools['prompt'])
+        # Without the words of the cited works, what the text says about the literature is not compared.
+        self.assertIn('What the text says about the literature is not the subject of this comparison', tools['prompt'])
+        self.assertNotIn('attributions.json', tools['given'])
+        # No repair changed a part, so nothing looked for the elements without a number, and the file says no more
+        # of them than the plan does.
+        self.assertEqual(self.calls('place'), [])
+        correspondence = read_json(self.out / 'correspondence.json')
+        self.assertEqual(correspondence['others'], PLAN['others'])
+        self.assertEqual((correspondence['instances'], correspondence['not_done']), ([], []))
+
+
+class PlacementTests(PaperCase):
+    """Where the manuscript has the elements without a number, once a repair has changed a part."""
+
+    def test_the_elements_without_a_number_are_looked_for_in_the_text_that_a_repair_left(self):
+        note = 'The proof of the first lemma gives the difference and no longer the recursion.'
+        found = [{'element': 'Small.oddSum', 'found': True, 'where': 'sec:intro', 'note': ''},
+                 {'element': 'Small.oddSum_succ', 'found': False, 'where': 'sec:tools', 'note': note},
+                 {'element': 'Small.expand', 'found': True, 'where': ' sec:tools ', 'note': ''}]
+        script = asserting()  # a sentence of the section `tools` is cut by the repair of the running text
+        # The first session answers for two of the three elements.
+        script['place'] = [{'output/placement.json': json.dumps(found[:2])}, {'output/placement.json': json.dumps(found)}]
+        self.assertEqual(self.run_paper(script), 0)
+        self.assertEqual(self.kinds()[-3:], [('cover', 'tools'), ('place', None), ('place', None)])
+        first, second = self.calls('place')
+        self.assertIn('output/placement.json has one object for each entry of placed.json', second['prompt'])
+        self.assertNotIn('A session before this one', first['prompt'])
+        # The session has the manuscript, the list, and the records of the elements.
+        self.assertTrue({'paper.tex', 'placed.json', 'elements.md', 'elements/Small.oddSum_succ.md'} <= set(first['given']))
+        listed = read_json(self.folder(first) / 'placed.json')
+        self.assertEqual([(entry['element'], entry['treatment'], entry['planned']) for entry in listed],
+                         [('Small.oddSum', 'absorbed', ['sec:intro']),
+                          ('Small.oddSum_succ', 'absorbed', ['thm:main', 'lem:increasing']),
+                          ('Small.expand', 'cited', ['sec:tools'])])
+        self.assertTrue(all(entry['statement'].strip() for entry in listed))
+        # The correspondence file carries what was found beside what the plan did; an element that the paper does
+        # not state has no place to look at.
+        others = {item['element']: item for item in read_json(self.out / 'correspondence.json')['others']}
+        self.assertEqual(others['Small.oddSum']['in_text'], {'found': True, 'where': 'sec:intro', 'note': ''})
+        self.assertEqual(others['Small.oddSum_succ']['in_text'], {'found': False, 'where': '', 'note': note})
+        self.assertEqual(others['Small.expand']['in_text'], {'found': True, 'where': 'sec:tools', 'note': ''})
+        self.assertNotIn('in_text', others['Small.oddSum_mono_weak'])
+        self.assertEqual({key: value for key, value in others['Small.expand'].items() if key != 'in_text'}, PLAN['others'][3])
+        self.assertEqual(self.events('placement')[-1]['missing'], ['Small.oddSum_succ'])
+        state = read_json(self.out / 'state.json')
+        self.assertEqual((state['done']['placement'], state['placed']['found']['Small.oddSum_succ']['found']), (True, False))
+        # Typesetting the manuscript later changes no part: nothing is looked for again, and the file keeps it.
+        self.assertEqual(self.run_paper(good(), only=True), 0)
+        self.assertEqual(len(self.calls('place')), 2)
+        self.assertIn('in_text', read_json(self.out / 'correspondence.json')['others'][0])
+
+    def test_the_check_is_made_again_after_a_pass_that_changed_a_part(self):
+        self.assertEqual(self.run_paper(asserting(kept='The bound is the content of Lemma 2.1.')), 2)
+        # The repair kept the sentence, so the parts are as their writers left them, and nothing was looked for.
+        self.assertEqual(self.calls('place'), [])
+        script = good()
+        script['remove'] = [{'output/tools.tex': TOOLS}]
+        self.assertEqual(self.close(script), 0)
+        self.assertEqual(self.kinds()[-2:], [('remove', None), ('place', None)])
+        self.assertTrue(all('in_text' in item for item in read_json(self.out / 'correspondence.json')['others']
+                            if item['treatment'] != 'not_stated'))
+
+
+class SafeguardTests(PaperCase):
+    """Sessions that a safeguard of the AI system stops before they have finished."""
+
+    STOPPED = [{'@stopped': ''}]
+    # The sign of such a stop is known for the Claude CLI, so these runs put every session on a Claude model.
+    CLAUDE = {'model': 'claude/opus', 'effort': 'high'}
+
+    def test_the_sign_is_the_result_of_the_turn_with_the_stop_reason_refusal_in_the_claude_cli(self):
+        folder = self.root / 'session'
+        folder.mkdir()
+        stream = folder / 'cli.stdout.jsonl'
+        self.assertFalse(paper.stopped_by_safeguard(folder, 'claude'))  # a session that left no stream
+        refused = [{'type': 'system', 'subtype': 'init'},
+                   {'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal', 'result': 'API Error'}]
+        stream.write_text('\n'.join(map(json.dumps, refused)) + '\nnot json\n', encoding='utf-8')
+        self.assertTrue(paper.stopped_by_safeguard(folder, 'claude'))
+        self.assertFalse(paper.stopped_by_safeguard(folder, 'codex'))
+        # A turn that ended well and speaks of a refusal is none, and neither is another error.
+        for other in ({'type': 'result', 'is_error': False, 'stop_reason': 'end_turn', 'result': 'The stop reason "refusal".'},
+                      {'type': 'result', 'is_error': True, 'stop_reason': 'max_tokens'},
+                      {'type': 'assistant', 'is_error': True, 'stop_reason': 'refusal'}):
+            stream.write_text(json.dumps(other) + '\n', encoding='utf-8')
+            self.assertFalse(paper.stopped_by_safeguard(folder, 'claude'), other)
+
+    def test_a_stopped_session_is_started_again_with_the_same_prompt_and_no_word_of_the_stop(self):
+        script = good()
+        script['write:tools'] = self.STOPPED + good()['write:tools']
+        script['read'] = self.STOPPED + good()['read']
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 0)
+        for stopped, again in ([call for call in self.calls('write') if call['section'] == 'tools'], self.calls('read')):
+            self.assertEqual((stopped['prompt'], stopped['given']), (again['prompt'], again['given']))
+            self.assertNotIn('A session before this one', again['prompt'])
+        self.assertEqual([(event['kind'], event['section']) for event in self.events('safeguard')],
+                         [('write', 'tools'), ('read', None)])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open'], 'not_done' in end), ('complete', [], False))
+        self.assertFalse((self.out / 'not-done.json').exists())
+        self.assertEqual(self.part('tools'), TOOLS)
+
+    def test_a_check_that_is_stopped_every_time_is_recorded_as_not_done_and_the_run_goes_on(self):
+        script = good()
+        script['compare:tools'] = self.STOPPED
+        script['cover:intro'] = self.STOPPED
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 0)
+        # The comparison of the section was tried in its stage and once more before the running text was compared,
+        # each time within its two attempts and each time with the same prompt.
+        compared = [call for call in self.calls('compare') if call['section'] == 'tools']
+        self.assertEqual(len(compared), 4)
+        self.assertEqual(len({call['prompt'] for call in compared[:2]}), 1)
+        self.assertEqual(len(self.calls('cover')), 3)
+        made = [(event['kind'], event['section']) for event in self.events('not done')]
+        self.assertEqual(made, [('compare', 'tools'), ('compare', 'tools'), ('cover', 'intro')])
+        # The statements stay without a verdict, with the reason, and are not open; the file lists what was not made.
+        correspondence = read_json(self.out / 'correspondence.json')
+        rows = {row['label']: row['comparison'] for row in correspondence['statements']}
+        self.assertEqual(rows['thm:main']['verdict'], 'same')
+        said = ('Not made: the comparison of Lemma 2.1 (\\label{lem:increasing}) with the element `Small.oddSum_mono` that '
+                'it states. A safeguard of the AI system stopped the session that had this task, in each of its 2 attempts.')
+        self.assertEqual(rows['lem:increasing'], {'verdict': 'not compared', 'not_done': said})
+        self.assertEqual(rows['lem:square']['verdict'], 'not compared')
+        self.assertEqual(len(correspondence['not_done']), 3)
+        self.assertIn(said, correspondence['not_done'])
+        self.assertIn('Not made: the comparison of the running text of the section "Introduction" with the elements. A '
+                      'safeguard of the AI system stopped the session that had this task, in each of its 2 attempts.',
+                      correspondence['not_done'])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        self.assertEqual([(entry['kind'], entry['section'], entry['about'], entry['attempts']) for entry in end['not_done']],
+                         [('compare', 'tools', 'lem:increasing', 2), ('compare', 'tools', 'lem:square', 2),
+                          ('cover', 'intro', None, 2)])
+        self.assertEqual(read_json(self.out / 'not-done.json'), end['not_done'])
+
+    def test_a_check_that_is_made_later_takes_the_record_away(self):
+        script = good()
+        # The comparison of the section is stopped twice in its stage, and made before the running text is compared.
+        script['compare:tools'] = self.STOPPED * 2 + good()['compare:tools']
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 0)
+        self.assertEqual(len(self.events('not done')), 1)
+        correspondence = read_json(self.out / 'correspondence.json')
+        self.assertEqual({row['comparison']['verdict'] for row in correspondence['statements']}, {'same'})
+        self.assertFalse(any('not_done' in row['comparison'] for row in correspondence['statements']))
+        self.assertEqual((correspondence['not_done'], read_json(self.out / 'not-done.json')), ([], []))
+        self.assertNotIn('not_done', self.events('end')[-1])
+
+    def test_a_reading_that_is_not_made_ends_the_readings_and_unread_changes_stay(self):
+        script = asserting()  # the repair of the running text cuts a sentence, and a session reads the change
+        script['read'] = self.STOPPED
+        script['changes'] = self.STOPPED
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 0)
+        self.assertEqual((len(self.calls('read')), len(self.calls('changes')), self.events('reading')), (2, 2, []))
+        # The change of the repair stays, and the record says that nobody read it.
+        self.assertEqual(self.part('tools'), TOOLS)
+        whats = [entry['what'] for entry in self.events('end')[-1]['not_done']]
+        self.assertEqual(whats, [
+            'the reading of the manuscript as it then stood by a session that has the manuscript and nothing else',
+            'the reading of the passages (1) that the last repair changed for findings of the comparison of the running '
+            'text with the elements; the changes stay in the paper as the repair left them'])
+        self.assertEqual(self.events('end')[-1]['status'], 'complete')
+
+    def test_a_session_that_makes_what_the_run_needs_and_is_stopped_every_time_stops_the_run(self):
+        script = good()
+        script['write:tools'] = self.STOPPED
+        with self.assertRaises(paper.Stop) as stopped:
+            self.run_paper(script, choice=self.CLAUDE)
+        self.assertIn('a safeguard of the AI system stopped every write session of tools, in 2 attempts, before it had '
+                      'finished (sessions/', str(stopped.exception))
+        self.assertEqual(stopped.exception.todo, paper.STOPPED)
+        self.assertEqual(self.events('end')[-1]['status'], 'failed')
+        # Continued, the run starts the same session again, and comes to its end.
+        launched = len(self.calls())
+        self.assertEqual(self.run_paper(good(), resume=True, choice=self.CLAUDE), 0)
+        self.assertEqual(self.kinds(launched)[:2], [('write', 'tools'), ('write', 'proof')])
+
+    def test_a_session_of_another_provider_that_leaves_nothing_is_told_so_as_before(self):
+        self.assertEqual(provider_for_model(read_json(self.instance / 'settings.json')['models'][0]['model']), 'codex')
+        script = good()
+        script['cover:intro'] = self.STOPPED
+        with self.assertRaisesRegex(paper.Stop, 'no cover session left output the script can use, in 2 attempts'):
+            self.run_paper(script)
+        self.assertIn('A session before this one had the same task', self.calls('cover')[1]['prompt'])
+        self.assertEqual(self.events('safeguard'), [])
 
 
 if __name__ == '__main__':

@@ -319,7 +319,7 @@ What was run to check the current implementation, and what no run has shown, is 
 - A research run that imports Mathlib was started on 22 November 2026. The document reports its first day, including the faults it showed and the changes made in response, and states that the quantities which decide the cost of research at that scale have not yet been measured.
 - The guides and the runtime went through two rounds of review and repair. The rounds were ended after the second, which still found defects of substance, and the document gives that as a reason to expect that some remain.
 
-The runtime tests replace the AI sessions by scripted programs and the Lean compiler by a stand-in that reads a small subset of Lean; they use real Git. The suite has 23 modules with 906 test functions. Each module passed the last time it was run, but the modules were last run at different points, and the suite has not been run as a whole since the runtime was last changed; the verification document gives the last run of each module up to the time it was written. Each module is run by itself from the `runtime` folder:
+The runtime tests replace the AI sessions by scripted programs and the Lean compiler by a stand-in that reads a small subset of Lean; they use real Git. The suite has 23 modules with 985 test functions. Each module passed the last time it was run, but the modules were last run at different points, and the suite has not been run as a whole since the runtime was last changed; the verification document gives the last run of each module up to the time it was written. Each module is run by itself from the `runtime` folder:
 
 ```powershell
 cd .claude/skills/do-math/runtime

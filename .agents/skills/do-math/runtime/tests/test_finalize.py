@@ -46,12 +46,15 @@ def stand_in_session(scenario):
             break
         except (FileExistsError, PermissionError):
             time.sleep(0.01)
+    stopped = False
     try:
         record = scenario / 'calls.json'
         calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
         if key is not None:
             entries = script[key]
             entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
+            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped.
+            stopped = '@stopped' in entry
             for source, target in entry.get('@copy', []):
                 if (folder / source).is_dir():
                     shutil.copytree(folder / source, folder / target, dirs_exist_ok=True)
@@ -59,7 +62,7 @@ def stand_in_session(scenario):
                     (folder / target).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(folder / source, folder / target)
             for name, content in entry.items():
-                if name != '@copy':
+                if name not in ('@copy', '@stopped'):
                     (folder / name).parent.mkdir(parents=True, exist_ok=True)
                     (folder / name).write_text(content, encoding='utf-8', newline='\n')
         calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
@@ -67,6 +70,15 @@ def stand_in_session(scenario):
         record.write_text(json.dumps(calls), encoding='utf-8')
     finally:
         lock.unlink()
+    if stopped:
+        # What the Claude CLI writes when the model refuses a request and the CLI has no other model to give it to.
+        message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."
+        print(json.dumps({'type': 'assistant', 'is_api_error_message': True, 'error': 'invalid_request',
+                          'message': {'model': '<synthetic>', 'role': 'assistant', 'stop_reason': 'refusal',
+                                      'content': [{'type': 'text', 'text': message}]}}))
+        print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal',
+                          'terminal_reason': 'api_error', 'result': message}))
+        return 1
     print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Scripted session.'}}))
     return 0
 
@@ -173,6 +185,10 @@ RECORDS = {
                                  short='odd numbers sum to a square'),
 }
 ACCOUNT = 'The stand-in account of the chosen proof: induction on n through the step.'
+# What the session that checks the sources keeps of the one work the records cite: the sentence of the record whose
+# header names the work, the place in the work, and the words of the work there.
+QUOTED = {'declaration': 'Small.sq_step', 'sentence': 'Passing from n to n + 1 adds the odd number 2n + 1.',
+          'place': 'Section 1', 'quote': 'The stand-in words of the work at that place.'}
 INSTRUCTIONS = ('selection', 'selection-read', 'restore', 'review', 'simplify', 'arrange', 'records-write',
                 'records-compare', 'sources', 'foldback', 'draft-compare', 'history-write', 'history-read',
                 'readme-write', 'package-read')
@@ -228,7 +244,7 @@ def script(**changes):
             {'declaration': name, 'verdict': 'agrees', 'difference': ''} for name in ('Small.added_six', 'Small.named_four')])}],
         'sources': [{'@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/requests.json': '[]',
                      'output/sources.json': json.dumps([{'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1',
-                                                         'opened': 'parts', 'note': ''}])}],
+                                                         'opened': 'parts', 'note': '', 'attributions': [QUOTED]}])}],
         'foldback': [{'output/lean/Small/Step.lean': STEP.replace('\n\nend Small', '\n\n' + theorem(
             'sq_step_strict', '(n : Nat) : oddSum n < oddSum (n + 1)', uses=['sq_step'], proof='rfl') + '\n\nend Small'),
             'output/report.json': json.dumps({'deleted': [], 'items': [
@@ -357,9 +373,11 @@ class FinalizeCase(InstanceCase):
         (out / 'paper.tex').write_text('\\documentclass{amsart}\n', encoding='utf-8', newline='\n')
         (out / 'paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
         (out / 'references.bib').write_text(BIBLIOGRAPHY, encoding='utf-8', newline='\n')
+        instances = (read_json(Path(from_draft) / 'draft.json').get('instances') or []) if from_draft else []
         write_json(out / 'correspondence.json', {'root': 'Small.root', 'statements': [
             {'label': 'thm:main', 'element': 'Small.root', 'cited': None},
-            {'label': 'lem:step', 'element': 'Small.sq_step', 'cited': 'gauss1801'}]})
+            {'label': 'lem:step', 'element': 'Small.sq_step', 'cited': 'gauss1801'}],
+            'instances': [{key: entry[key] for key in ('element', 'key', 'where')} for entry in instances]})
         write_json(out / 'log.json', [session, {'event': 'end', 'status': 'complete', 'open': [],
                                                 'kept': [{'check': 'reading', 'finding': 'The title is long.',
                                                           'reason': 'It names the result.'}],
@@ -578,6 +596,24 @@ class RecordTests(FinalizeCase):
         self.assertEqual([(item['key'], [row['declaration'] for row in item['records']]) for item in cited],
                          [('gauss1801', ['Small.sq_step'])])
         self.assertEqual(package.bibliography_field(BIBLIOGRAPHY, 'gauss1801', 'title'), 'Disquisitiones Arithmeticae')
+
+    def test_a_citation_in_the_text_of_a_record_is_listed_with_the_work_it_cites(self):
+        index = canon.read_index(self.instance / 'canon' / 'index.json')
+        records = self.root / 'records'
+        shutil.copytree(self.instance / 'canon' / 'records', records)
+        # A record cites a work by its key in brackets, with or without the place. A bracket that holds no key of the
+        # bibliography is other text: an interval, a set of indices, a key that the bibliography does not have.
+        said = ('The empty sum is zero. The step is in the first section [gauss1801, Section 1], and the sums over the '
+                'interval [0, n] are tabulated there as well [gauss1801]. See also [nobody1900, p. 2] and the set [n].')
+        (records / 'Small' / 'helper_zero.md').write_text(record_text(said), encoding='utf-8', newline='\n')
+        keys = package.bibliography_keys(BIBLIOGRAPHY)
+        cited = package.cited(records, index, keys)
+        self.assertEqual([(item['key'], [(row['declaration'], row['header'], row['citations']) for row in item['records']])
+                          for item in cited],
+                         [('gauss1801', [('Small.helper_zero', False, ['[gauss1801, Section 1]', '[gauss1801]']),
+                                         ('Small.sq_step', True, [])])])
+        # Without the keys of the bibliography only the headers are read, as before.
+        self.assertEqual([row['declaration'] for row in package.cited(records, index)[0]['records']], ['Small.sq_step'])
 
 
 class RegistryTests(FinalizeCase):
@@ -1276,7 +1312,12 @@ class RunTests(FinalizeCase):
         self.assertEqual((draft['parallel'], written['parallel']), (2, 2))
         # Both are given the main theorem that the selection chose, which is not the root here.
         self.assertEqual((draft['main'], written['main']), ('Small.sq_step', 'Small.sq_step'))
-        self.assertEqual(written['title_page'], {'authors': [{'name': 'A. Author', 'email': 'a@example.org'}]})
+        # The title page names the authors, and the subject classification that the selection chose for the registry.
+        self.assertEqual(written['title_page'], {'authors': [{'name': 'A. Author', 'email': 'a@example.org'}],
+                                                 'msc2020': ['05A15']})
+        # What the works say at the places where the records cite them goes to the paper with the draft.
+        self.assertEqual(written['drafted']['attributions'], [{'key': 'gauss1801', **QUOTED}])
+        self.assertEqual(written['drafted']['instances'], [])
         # Before --from-draft reads the draft, it was brought to the library.
         drafted = written['drafted']
         step = next(item for item in drafted['statements'] if item['label'] == 'lem:step')
@@ -1448,7 +1489,7 @@ class RunTests(FinalizeCase):
         self.assertNotIn('A. Author', (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertIn('names no author and no responsible maintainer', (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertIn('`project.authors` and `project.responsible_maintainers`', (self.work / 'report.md').read_text(encoding='utf-8'))
-        self.assertEqual(self.produced[-1]['title_page'], {'authors': []})
+        self.assertEqual(self.produced[-1]['title_page'], {'authors': [], 'msc2020': ['05A15']})
         # What the paper command closed without a person is in the decisions and in the report.
         decisions, report = self.decisions(), (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('## Stage 4: what the paper lost so that it says no more than the library', decisions)
@@ -1639,6 +1680,11 @@ class RunTests(FinalizeCase):
                 'where': 'Chapter 1, section 2'}
     EULER = BIBLIOGRAPHY + '@book{euler1748,\n  author = {Euler, Leonhard},\n  title = {Introductio},\n  year = {1748}\n}\n'
     VERIFIED = json.dumps([{'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'parts', 'note': ''}])
+    # The same entry once a record cites the work: with the sentence of that record and the words of the work.
+    ENTERED = json.dumps([{'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'parts', 'note': '',
+                           'attributions': [{'declaration': 'Small.block_sum', 'place': 'Chapter 1, section 2',
+                                             'sentence': 'Every block of consecutive odd numbers has a closed sum.',
+                                             'quote': 'The stand-in words of the work at that place.'}]}])
 
     def asking_to_cite(self):
         """A scenario whose draft asks to cite `Small.helper_zero`, of which the search finds a stronger form in a source."""
@@ -1670,7 +1716,7 @@ class RunTests(FinalizeCase):
             'output/verdicts.json': json.dumps([{'declaration': name, 'verdict': 'agrees', 'difference': ''}
                                                 for name in ('Small.block_sum', 'Small.sq_step_strict')])}]
         plan['sources:6'] = [{
-            '@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/sources.json': self.VERIFIED,
+            '@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/sources.json': self.ENTERED,
             'output/requests.json': json.dumps([{'declaration': 'Small.block_sum', 'found': True, 'key': 'euler1748',
                                                  'note': 'It is Theorem 2.', 'stronger': None}]),
             'output/records/Small/block_sum.md': record_text('Every block of consecutive odd numbers has a closed sum.',
@@ -1737,6 +1783,136 @@ class RunTests(FinalizeCase):
         self.assertIn('The run stopped at the step `2.6-sources`', report)
         self.assertIn('"stronger" of Small.helper_zero goes with "found": false', report)
         self.assertEqual(self.calls('foldback'), [])
+
+    def not_closed(self, plan):
+        """The scenario `plan` with a fold-back that does not close the gap of the source, and a comparison that cuts it."""
+        report = json.loads(plan['foldback'][0]['output/report.json'])
+        report['items'].append({'id': 'c1', 'closed': False, 'declarations': [], 'note': 'It does not compile.'})
+        plan['foldback'][0]['output/report.json'] = json.dumps(report)
+        plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
+            {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'}, {'id': 'c1', 'verdict': 'cut'}])}]
+        return plan
+
+    def test_a_sentence_that_cites_a_work_is_kept_with_the_words_of_the_work_and_an_unopened_work_is_not_cited(self):
+        plan = self.not_closed(self.asking_to_cite())
+        # Step 5: the first session verifies the work and keeps words for a sentence that the record does not have.
+        loose = json.dumps([{'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1', 'opened': 'parts', 'note': '',
+                             'attributions': [{**QUOTED, 'sentence': 'It adds an odd number.'}]}])
+        plan['sources:5'] = [{**plan['sources'][0], 'output/sources.json': loose}, plan['sources'][0]]
+        # The search: the first session enters a work that it could not open into a record, in brackets.
+        unopened = json.dumps([{'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'none',
+                                'note': '', 'attributions': []}])
+        plan['sources:6-search'] = [{
+            'output/bibliography.bib': self.EULER, 'output/sources.json': unopened,
+            'output/requests.json': json.dumps([{'declaration': 'Small.helper_zero', 'found': False, 'key': None, 'note': ''}]),
+            'output/records/Small/helper_zero.md': record_text('The empty sum is zero, as in [euler1748, Chapter 1].')},
+            plan['sources:6-search'][0]]
+        self.halted_after_the_freeze(plan)
+        first, second = [call for call in self.calls('sources') if call['section'] == '5']
+        # The session is given every work that a record cites, with how each record cites it.
+        self.assertEqual([(item['key'], [(r['declaration'], r['header'], r['citations']) for r in item['records']])
+                          for item in self.session_file(first, 'cited.json')], [('gauss1801', [('Small.sq_step', True, [])])])
+        self.assertIn('sources.json: "attributions" of gauss1801 has no entry for the result that the header attributes to '
+                      'the work in the record of Small.sq_step', second['prompt'])
+        search = [call for call in self.calls('sources') if call['section'] == '6-search']
+        self.assertEqual(len(search), 2)
+        self.assertIn('euler1748 could not be opened, and the records of Small.helper_zero still cite it', search[1]['prompt'])
+        # The record that cited the unopened work was not taken, and what was kept of the works goes to the paper.
+        folded = self.work / 'lib' / '6-folded'
+        self.assertNotIn('euler1748', (folded / 'records' / 'Small' / 'helper_zero.md').read_text(encoding='utf-8'))
+        self.assertEqual(read_json(self.work / 'lib' / '6-draft' / 'draft.json')['attributions'],
+                         [{'key': 'gauss1801', **QUOTED}])
+        self.assertEqual([row.get('attributions') for row in read_json(folded / 'sources.json')], [[QUOTED]])
+
+    def test_a_result_that_a_cited_theorem_contains_is_proved_in_the_paper_from_that_theorem(self):
+        self.draft = {**DRAFT, 'citations': [{'element': 'Small.helper_zero', 'result': 'the empty sum',
+                                              'reason': 'It is classical.'}]}
+        instance = {**self.STRONGER, 'specialisation': 'Take $m = 0$ and $n = 0$; both sides are then $s(0)$ and $0$.'}
+        sentence = 'The statement is the case of no terms of a theorem on blocks [euler1748, Chapter 1, section 2].'
+        literature = record_text('The empty sum is zero.') + '## Literature\n\n' + sentence + '\n'
+        entered = json.dumps([{'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'parts', 'note': '',
+                               'attributions': [{'declaration': 'Small.helper_zero', 'sentence': sentence,
+                                                 'place': 'Chapter 1, section 2',
+                                                 'quote': 'The stand-in words of the work at that place.'}]}])
+        plan = script()
+        answer = {'declaration': 'Small.helper_zero', 'found': False, 'key': None, 'note': 'No work has the empty sum alone.'}
+        # The first session reports the theorem without saying how the statement follows from it.
+        plan['sources:6-search'] = [
+            {'output/bibliography.bib': self.EULER, 'output/sources.json': entered,
+             'output/records/Small/helper_zero.md': literature,
+             'output/requests.json': json.dumps([{**answer, 'instance': self.STRONGER}])},
+            {'output/bibliography.bib': self.EULER, 'output/sources.json': entered,
+             'output/records/Small/helper_zero.md': literature,
+             'output/requests.json': json.dumps([{**answer, 'instance': instance}])}]
+        self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
+        search = [call for call in self.calls('sources') if call['section'] == '6-search']
+        self.assertIn('"instance" of Small.helper_zero goes with "found": false', search[1]['prompt'])
+        # Nothing is asked of the library for it, and the paper is given the theorem with the specialisation.
+        self.assertEqual([call['section'] for call in self.calls('sources')], ['5', '6-search', '6-search'])
+        drafted = self.produced[-1]['drafted']
+        self.assertEqual(drafted['instances'], [{'element': 'Small.helper_zero', 'result': 'the empty sum', **instance}])
+        self.assertEqual([gap['id'] for gap in drafted['gaps']], ['g1'])
+        self.assertIn({'key': 'euler1748', 'declaration': 'Small.helper_zero', 'sentence': sentence,
+                       'place': 'Chapter 1, section 2', 'quote': 'The stand-in words of the work at that place.'},
+                      drafted['attributions'])
+        # The record says where the result comes from and names no source in its header.
+        record = (self.solved / 'records' / 'Small' / 'helper_zero.md').read_text(encoding='utf-8')
+        self.assertIn(sentence, record)
+        self.assertNotIn('source:', record)
+        self.assertIn('- `Small.helper_zero`: no source found that states it in the form the library has. euler1748 states a '
+                      'general theorem of which the result is an instance (Chapter 1, section 2). The paper states the '
+                      "result in the library's form, cites that theorem and gives the specialisation as its proof; the "
+                      'library proves the result by an argument of its own. No work has the empty sum alone.', self.decisions())
+        self.assertIn('These statements it proves from a general theorem of the literature, which it cites, by specialising '
+                      'that theorem: `Small.helper_zero`.', (self.solved / 'README.md').read_text(encoding='utf-8'))
+
+    def test_a_check_that_a_safeguard_stops_every_time_is_recorded_as_not_done_and_the_run_goes_on(self):
+        # The sign of such a stop is known for the Claude CLI, so the sessions that check are given a Claude model.
+        self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
+        plan = script()
+        plan['records-compare:5-01'] = [{'@stopped': ''}]
+        plan['package-read'] = [{'@stopped': ''}]
+        # A session that was stopped once is started again as it was, and what it then leaves is taken.
+        plan['selection-read'] = [{'@stopped': ''}, plan['selection-read'][0]]
+        self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
+        for kind, section in (('records-compare', '5-01'), ('package-read', None), ('selection-read', None)):
+            first, second = [call for call in self.calls(kind) if call['section'] == section]
+            # The same prompt and the same files, with no word of the stop and nothing of the stopped session.
+            self.assertEqual((first['prompt'], first['given']), (second['prompt'], second['given']), kind)
+        log = read_json(self.work / 'log.json')
+        self.assertEqual([(event['kind'], event['section']) for event in log if event['event'] == 'safeguard'].count(
+            ('selection-read', None)), 1)
+        self.assertEqual(sorted((event['kind'], event['section'], event['attempts']) for event in log
+                                if event['event'] == 'not done'), [('package-read', None, 2), ('records-compare', '5-01', 2)])
+        readme = (self.solved / 'README.md').read_text(encoding='utf-8')
+        self.assertIn('- Not made: some of the checks that the items above describe. A safeguard of the AI system stopped '
+                      'the session that had the task, each time the session was started', readme)
+        self.assertIn('the comparison, by a session that did not write them, of these records with the Lean text: '
+                      '`Small.added_six`, `Small.named_four`', readme)
+        self.assertIn("the reading of the package's documents by a session that has the package and nothing else", readme)
+        self.assertNotIn('independent reading of what the selection claims', readme)  # that reading was made
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('- Some of the checks that the list above describes were not made.', report)
+        self.assertIn("  - the reading of the package's documents by a session that has the package and nothing else.", report)
+        # The README is in the manifest as it stands, with that item.
+        self.assertEqual(package.standalone_problems(
+            self.solved, self.work, package.account_name(),
+            {'folders': {name: canon.tree_hash(self.solved / name) for name in ('lean', 'records')}, 'files': {}}), [])
+
+    def test_a_session_that_makes_what_the_run_needs_and_is_stopped_every_time_stops_the_run(self):
+        self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
+        plan = script(sources=[{'@stopped': ''}])
+        self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.5-records`', report)
+        self.assertIn('a safeguard of the AI system stopped every sources session of 5, in 2 attempts', report)
+        self.assertIn('## What to do\n\nNothing is to be repaired by hand. Start the same command again: it starts the '
+                      'session again, with the same prompt and the same files.', report)
+        first, second = self.calls('sources')
+        self.assertEqual((first['prompt'], first['given']), (second['prompt'], second['given']))
+        # Started again, the command tries the same session again, and the run comes to its end.
+        self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
+        self.assertEqual(len(self.calls('sources')), 3)
 
     def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
         said = 'The record adds that both sides are 0 for n = 0, which the Lean statement does not say.'
