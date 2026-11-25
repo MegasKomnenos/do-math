@@ -47,6 +47,8 @@ PART_ID = re.compile(r'[a-z0-9][a-z0-9-]*')
 PLACEHOLDER = re.compile(r'\{\{([a-z_]+)\}\}')
 FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
 KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
+# Why a record is written again although its declaration did not change (records_again).
+DISAGREES = 'its statement in words says something that its Lean statement does not'
 BUILD_SECONDS = 10      # one wait for a build before the broker is looked at again
 BROKER_SECONDS = 5      # how often the run looks whether its broker is alive
 
@@ -991,17 +993,29 @@ class Run:
 
     # -- stage 2, step 5 and the records of step 6 ------------------------------------------------------
 
-    def bring_records(self, tag, lean, index, base, records_in, bibliography_in, requests, target, earlier=()):
+    def bring_records(self, tag, lean, index, base, records_in, bibliography_in, requests, target, earlier=(),
+                      disagreeing=None):
         """Write the records that are due, have each compared by a session that did not write it, and check the sources.
 
         `base` is the index the lists are made against, `requests` the results the draft asks to cite,
-        `earlier` the sources an earlier step verified. The records go to <target>/records, with
-        bibliography.bib, findings.json, sources.json, verdicts.json and requests.json beside them."""
+        `earlier` the sources an earlier step verified. `disagreeing` gives, for elements whose record
+        says in its statement something the Lean statement does not, what was reported: such a record
+        is due as well, and its writer is told what was reported. The records go to <target>/records,
+        with bibliography.bib, findings.json, sources.json, verdicts.json and requests.json beside them."""
         records, bibliography = target / 'records', target / 'bibliography.bib'
         package.copy_tree(records_in, records)
         shutil.copyfile(bibliography_in, bibliography)
         dropped = package.drop_orphans(records, index)
         todo = package.record_todo(index, base, records)
+        disagreeing = disagreeing or {}
+        for item in todo:
+            if item['declaration'] in disagreeing:
+                item['disagreement'] = disagreeing[item['declaration']]
+        due = {item['declaration'] for item in todo}
+        todo += [{'declaration': name, 'file': index['entries'][name]['file'], 'why': DISAGREES,
+                  'record': 'records/' + name_path(name) + '.md', 'disagreement': text}
+                 for name, text in sorted(disagreeing.items())
+                 if name in index['entries'] and name not in due and (records / (name_path(name) + '.md')).is_file()]
         groups = package.batches(todo, package.WRITER_BATCH, key=lambda item: PurePosixPath(item['file']).parent.as_posix())
         library = tree('lean/', lean)
         reference = SKILL / 'reference'
@@ -1132,6 +1146,15 @@ class Run:
                 by_name = {a.get('declaration'): a for a in answered if isinstance(a, dict)}
                 problems += [f"requests.json does not say whether a source was found for {r['declaration']}"
                              for r in requests if type(by_name.get(r['declaration'], {}).get('found')) is not bool]
+                for name, answer in by_name.items():
+                    stronger = answer.get('stronger')
+                    if stronger is not None and (answer.get('found') or not (
+                            isinstance(stronger, dict) and is_text(stronger.get('states')) and is_text(stronger.get('where'))
+                            and stronger.get('key') in keys
+                            and (stronger['key'] in settled or rows.get(stronger['key'], {}).get('status') == 'verified'))):
+                        problems.append(f'requests.json: "stronger" of {name} goes with "found": false, and it gives the '
+                                        '"key" of a verified entry of the returned bibliography, what the source "states" '
+                                        'and "where"')
                 if problems:
                     raise Unusable(problems)
                 return list(rows.values()), package.read_text(output / 'bibliography.bib'), changed, answered
@@ -1191,12 +1214,71 @@ class Run:
         if not all(isinstance(draft.get(key), list) for key in ('statements', 'formulas', 'gaps', 'citations')):
             raise Stop('draft.json does not hold "statements", "formulas", "gaps" and "citations"')
 
+    def record_disagreements(self, draft):
+        """The elements whose record says, in its statement in words, something that its Lean statement does not.
+
+        The comparison of the draft reports this beside its verdict on a drafted statement or formula,
+        and the paper command keeps it in the `draft` event of its log. Returns what was reported, by
+        element."""
+        log = self.work / 'draft' / 'log.json'
+        event = next((e for e in reversed(read_json(log) if log.is_file() else []) if e.get('event') == 'draft'), {})
+        states = {item.get('label'): item.get('element') for item in draft['statements'] + draft['formulas']}
+        found = {}
+        for entry in event.get('record_disagreements') or []:
+            name = states.get(entry.get('label'))
+            if name and is_text(entry.get('record_disagreement')):
+                found[name] = ' '.join(filter(None, [found.get(name), entry['record_disagreement'].strip()]))
+        return found
+
+    def search_sources(self):
+        """Step 6, before the fold-back: the search for sources of the results that the draft asks to cite.
+
+        The search is made on the library and the records of step 5, by the session that checks
+        sources. A source that states a result in the form the library has is entered into the record.
+        A source that states a stronger or a more general form is not entered: the session reports it,
+        and it becomes a gap of the draft, so that the fold-back can give the library that form. The
+        draft with these gaps is <lib>/6-sources/draft.json, which the later steps of step 6 read in
+        the place of the draft that the paper command made. Such a gap carries the key of the source,
+        the place in it, and the name of the result; where the element is a numbered statement of the
+        draft that has no gap of its own, it is that statement's gap."""
+        arranged, written, target = (self.work / 'lib' / name for name in ('4-arranged', '5-records', '6-sources'))
+        index = read_json(arranged / 'index.json')
+        draft = read_json(self.work / 'draft' / 'draft.json')
+        requests = [{'declaration': c['element'], 'result': c['result'], 'reason': c['reason']}
+                    for c in draft['citations'] if c['element'] in index['entries']]
+        self.bring_records('6-search', arranged / 'lean', index, index, written / 'records', written / 'bibliography.bib',
+                           requests, target, read_json(written / 'sources.json'))
+        answers = {answer.get('declaration'): answer for answer in read_json(target / 'requests.json')
+                   if isinstance(answer, dict)}
+        stated = {item['element']: item for item in draft['statements']}
+        sections = read_json(self.work / 'draft' / 'plan.json')['sections']
+        for number, request in enumerate(requests, 1):
+            name = request['declaration']
+            stronger = answers.get(name, {}).get('stronger')
+            if not stronger:
+                continue
+            item = stated.get(name)
+            free = item is not None and not item.get('gap')
+            draft['gaps'].append({
+                'id': f'c{number}', 'kind': 'statement' if free else 'assertion',
+                'section': item['section'] if item else sections[0]['id'], 'label': item['label'] if free else None,
+                'host': None, 'element': name, 'wanted': stronger['states'].strip(),
+                'has': f'`{name}`, which is weaker or more special',
+                'reason': f"The work {stronger['key']} states this form ({stronger['where'].strip()}), and the "
+                          "library's form of the result follows from it.",
+                'closed_by': None, 'source': stronger['key'], 'where': stronger['where'].strip(),
+                'result': request['result']})
+            if free:
+                item['gap'] = f'c{number}'
+        write_json(target / 'draft.json', draft)
+
     def foldback(self):
         arranged, folded = self.work / 'lib' / '4-arranged', self.work / 'lib' / '6-folded'
         index = read_json(arranged / 'index.json')
         entries = index['entries']
-        draft = read_json(self.work / 'draft' / 'draft.json')
-        items = [{'id': gap['id'], 'from': 'draft', 'declaration': gap['element'], 'kind': gap['kind'],
+        draft = read_json(self.work / 'lib' / '6-sources' / 'draft.json')
+        items = [{'id': gap['id'], 'from': 'source' if gap.get('source') else 'draft', 'declaration': gap['element'],
+                  'kind': gap['kind'],
                   'detail': f"{gap['reason']} What the library has: {gap['has']}", 'wanted': gap['wanted']}
                  for gap in draft['gaps']]
         items += [{'id': f'r{number}', 'from': 'records', 'declaration': finding['declaration'], 'kind': finding['kind'],
@@ -1281,21 +1363,60 @@ class Run:
         self.decide('Step 6: the fold-back', '\n'.join(lines) or 'Nothing was to be folded back.')
 
     def records_again(self):
-        folded, arranged = self.work / 'lib' / '6-folded', self.work / 'lib' / '4-arranged'
+        folded, arranged, searched = (self.work / 'lib' / name for name in ('6-folded', '4-arranged', '6-sources'))
         index = read_json(folded / 'index.json')
-        draft = read_json(self.work / 'draft' / 'draft.json')
-        requests = [{'declaration': c['element'], 'result': c['result'], 'reason': c['reason']}
-                    for c in draft['citations'] if c['element'] in index['entries']]
-        late = self.bring_records('6', folded / 'lean', index, read_json(arranged / 'index.json'),
-                                  self.work / 'lib' / '5-records' / 'records',
-                                  self.work / 'lib' / '5-records' / 'bibliography.bib', requests, folded,
-                                  read_json(self.work / 'lib' / '5-records' / 'sources.json'))
-        answers = read_json(folded / 'requests.json')
-        if requests:
-            self.decide('Step 6: the sources the draft asked for', '\n'.join(
-                f"- `{a['declaration']}`: " + (f"cited from {a.get('key')}" if a.get('found') else 'no source found that '
-                                               'states it in the form the library has; the paper proves it')
-                + (f". {a['note'].strip()}" if is_text(a.get('note')) else '') for a in answers))
+        draft = read_json(searched / 'draft.json')
+        outcome = {item['id']: item for item in read_json(folded / 'foldback.json')['items']}
+        raised = [gap for gap in draft['gaps'] if gap.get('source')]
+        # A declaration that the fold-back gave the library in the form of a source. The session that checks sources
+        # opens the source once more, and enters it into the record only if it states the declaration as it now is.
+        requests = [{'declaration': outcome[gap['id']]['declarations'][0], 'result': gap['result'], 'source': gap['source'],
+                     'reason': f"This declaration was added so that the library states the form that {gap['source']} "
+                               f"was found to state ({gap['where']})."}
+                    for gap in raised if outcome.get(gap['id'], {}).get('closed')]
+        disagreeing = {name: text for name, text in self.record_disagreements(draft).items() if name in index['entries']}
+        late = self.bring_records('6', folded / 'lean', index, read_json(arranged / 'index.json'), searched / 'records',
+                                  searched / 'bibliography.bib', requests, folded, read_json(searched / 'sources.json'),
+                                  disagreeing)
+        entered = {answer.get('declaration'): answer for answer in read_json(folded / 'requests.json')
+                   if isinstance(answer, dict)}
+        gaps = {gap['element']: gap for gap in raised}
+        lines = []
+        for answer in read_json(searched / 'requests.json'):
+            name = answer.get('declaration') if isinstance(answer, dict) else None
+            if not name:
+                continue
+            gap, note = gaps.get(name), f" {answer['note'].strip()}" if is_text(answer.get('note')) else ''
+            if answer.get('found'):
+                lines.append(f"- `{name}`: cited from {answer.get('key')}.{note}")
+            elif gap is None:
+                lines.append(f'- `{name}`: no source found that states it in the form the library has; the paper proves '
+                             f'it.{note}')
+            else:
+                item = outcome.get(gap['id'], {})
+                said = (f"- `{name}`: {gap['source']} states a stronger or more general form ({gap['where']}): "
+                        f"{collapsed(gap['wanted'])}")
+                if item.get('closed'):
+                    new = item['declarations'][0]
+                    checked = entered.get(new, {})
+                    lines.append(f'{said} The fold-back gave the library that form as `{new}`. ' + (
+                        f"The paper cites it from {checked.get('key')} and does not prove it." if checked.get('found')
+                        else 'The check of the source did not find that it states the declaration as it now is, so '
+                             'the paper proves it.' + (f" {checked['note'].strip()}" if is_text(checked.get('note')) else '')))
+                else:
+                    lines.append(f'{said} The library could not be brought to that form, so it keeps its own, and the '
+                                 f'paper proves `{name}`. '
+                                 + (item.get('note', '').strip() or 'The fold-back did not take the gap up.')
+                                 + ' A reader who knows the source will ask why the paper does not cite it; this is '
+                                   'the answer.')
+        if lines:
+            self.decide('Step 6: the sources the draft asked for', '\n'.join(lines))
+        if disagreeing:
+            self.decide('Step 6: records whose statement said more than the Lean statement', '\n'.join([
+                'The comparison of the draft found that the statement in words of these records asserts something that '
+                'the Lean statement does not. Each was written again from the Lean and compared by a session that did '
+                'not write it. A remark that is true and worth keeping stands in the explanation of the record.', '',
+                *[f'- `{name}`: {collapsed(text)}' for name, text in sorted(disagreeing.items())]]))
         if late:
             self.decide('Step 6: the records', '\n'.join([
                 f'The writers of the records of what the fold-back changed reported {len(late)} further findings. The '
@@ -1306,14 +1427,18 @@ class Run:
         folded, target = self.work / 'lib' / '6-folded', self.work / 'lib' / '6-draft'
         index, before = read_json(folded / 'index.json'), read_json(self.work / 'lib' / '4-arranged' / 'index.json')
         entries = index['entries']
-        draft = read_json(self.work / 'draft' / 'draft.json')
+        draft = read_json(self.work / 'lib' / '6-sources' / 'draft.json')
         closed = {item['id']: item['declarations'][0] for item in read_json(folded / 'foldback.json')['items']
                   if item['closed']}
         gaps = {gap['id']: gap for gap in draft['gaps']}
+        # A drafted text was made from the record of its element. Where that record said more than the Lean
+        # statement and was written again, the text is compared with the declaration as a changed one is.
+        disagreeing = self.record_disagreements(draft)
 
         def changed(name):
             return name is not None and (name not in entries or name not in before['entries']
-                                         or entries[name]['source_sha'] != before['entries'][name]['source_sha'])
+                                         or entries[name]['source_sha'] != before['entries'][name]['source_sha']
+                                         or name in disagreeing)
 
         def row(rid, kind, item, text, declaration):
             declaration = declaration if declaration in entries else None
@@ -1946,12 +2071,15 @@ class Run:
                 self.step('2.6-draft', ['source', lib + '0-selected', lib + '4-arranged', lib + '5-records'],
                           ['view/4', 'draft'], self.draft, keep=('draft',))
                 folded = lib + '6-folded/'
-                self.step('2.6-foldback', [lib + '4-arranged', lib + '5-records', 'draft'],
+                self.step('2.6-sources', [lib + '4-arranged', lib + '5-records', 'draft'], [lib + '6-sources'],
+                          self.search_sources)
+                self.step('2.6-foldback', [lib + '4-arranged', lib + '5-records', 'draft', lib + '6-sources'],
                           [lib + '6-parts', folded + 'lean', folded + 'index.json', folded + 'foldback.json'], self.foldback)
-                self.step('2.6-records', [lib + '4-arranged', lib + '5-records', 'draft', folded + 'lean', folded + 'index.json'],
+                self.step('2.6-records', [lib + '4-arranged', lib + '5-records', 'draft', lib + '6-sources', folded + 'lean',
+                                          folded + 'index.json', folded + 'foldback.json'],
                           [folded + name for name in ('records', 'bibliography.bib', 'findings.json', 'sources.json',
                                                       'verdicts.json', 'requests.json')], self.records_again)
-                self.step('2.6-compare', [lib + '4-arranged', 'draft', folded + 'lean', folded + 'index.json',
+                self.step('2.6-compare', [lib + '4-arranged', 'draft', lib + '6-sources', folded + 'lean', folded + 'index.json',
                                           folded + 'foldback.json', folded + 'records'], [lib + '6-draft'], self.compare_draft)
                 self.step('2.7-freeze', ['source', 'first', lib + '0-selected', lib + '6-draft', folded + 'lean',
                                          folded + 'index.json', folded + 'records', folded + 'bibliography.bib'],

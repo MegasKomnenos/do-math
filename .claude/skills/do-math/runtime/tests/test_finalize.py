@@ -303,6 +303,7 @@ class FinalizeCase(InstanceCase):
         self.produced, self.paper_code, self.draft = [], 0, DRAFT
         self.closed = []  # what the stand-in for the paper command says it closed without a person
         self.failing = False  # whether the stand-in leaves a manuscript that fails its typesetting
+        self.disagreements = []  # what the stand-in's comparison of the draft reports of the records
         self.addCleanup(stop_broker, self.work)
 
     def command(self, cli, model, effort, cwd, servers=None, **options):
@@ -325,7 +326,8 @@ class FinalizeCase(InstanceCase):
         if draft:
             (out / 'study.md').write_text('How the chosen papers are written.\n', encoding='utf-8')
             write_json(out / 'draft.json', self.draft)
-            write_json(out / 'log.json', [session])
+            write_json(out / 'log.json', [session] + ([{'event': 'draft', 'record_disagreements': self.disagreements}]
+                                                      if self.disagreements else []))
             return self.paper_code
         if self.failing:
             write_json(out / 'log.json', [session, {'event': 'end', 'status': 'open_findings', 'kept': [], 'open': [
@@ -1105,7 +1107,8 @@ class RunTests(FinalizeCase):
         steps = self.steps()
         main = [step for step in steps if not step.startswith('3-')]
         self.assertEqual(main, ['1-selection', '2.1-take', '2.2-review', '2.3-simplify', '2.4-merge', '2.4-arrange',
-                                '2.5-records', '2.6-draft', '2.6-foldback', '2.6-records', '2.6-compare', '2.7-freeze',
+                                '2.5-records', '2.6-draft', '2.6-sources', '2.6-foldback', '2.6-records', '2.6-compare',
+                                '2.7-freeze',
                                 '4-map', '4-paper', '5-documents', '6-check'])
         self.assertLess(steps.index('3-archive'), steps.index('3-history'))
         self.assertLess(steps.index('3-history'), steps.index('5-documents'))
@@ -1487,6 +1490,131 @@ class RunTests(FinalizeCase):
         self.assertEqual([call['section'] for call in self.calls('records-write')], ['5-01'])
         # The sources step 5 verified were not verified again in step 6.
         self.assertEqual([call['section'] for call in self.calls('sources')], ['5'])
+
+    STRONGER = {'key': 'euler1748', 'states': 'For all $m$ and $n$, $s(m+n) = s(m) + n(2m+n)$.',
+                'where': 'Chapter 1, section 2'}
+    EULER = BIBLIOGRAPHY + '@book{euler1748,\n  author = {Euler, Leonhard},\n  title = {Introductio},\n  year = {1748}\n}\n'
+    VERIFIED = json.dumps([{'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'parts', 'note': ''}])
+
+    def asking_to_cite(self):
+        """A scenario whose draft asks to cite `Small.helper_zero`, of which the search finds a stronger form in a source."""
+        self.draft = {**DRAFT, 'citations': [{'element': 'Small.helper_zero', 'result': 'the empty sum',
+                                              'reason': 'It is classical.'}]}
+        plan = script()
+        plan['sources:6-search'] = [{
+            'output/bibliography.bib': self.EULER, 'output/sources.json': self.VERIFIED,
+            'output/requests.json': json.dumps([{'declaration': 'Small.helper_zero', 'found': False, 'key': None,
+                                                 'note': 'It has every block.', 'stronger': self.STRONGER}])}]
+        return plan
+
+    def session_file(self, call, name):
+        return read_json(self.work / 'sessions' / call['folder'] / name)
+
+    def test_a_source_that_states_more_than_the_library_becomes_a_gap_and_is_cited_once_the_library_has_its_form(self):
+        plan = self.asking_to_cite()
+        block = theorem('block_sum', '(m n : Nat) : oddSum (m + n) = oddSum m + n * (2 * m + n)', proof='rfl')
+        strict = theorem('sq_step_strict', '(n : Nat) : oddSum n < oddSum (n + 1)', uses=['sq_step'], proof='rfl')
+        plan['foldback'] = [{
+            'output/lean/Small/Step.lean': STEP.replace('\n\nend Small', '\n\n' + strict + '\n\n' + block + '\n\nend Small'),
+            'output/report.json': json.dumps({'deleted': [], 'items': [
+                {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': ''},
+                {'id': 'r1', 'closed': False, 'declarations': [], 'note': 'The lemma is wanted by the cross-part item.'},
+                {'id': 'c1', 'closed': True, 'declarations': ['Small.block_sum'], 'note': ''}]})}]
+        closed = record_text('Every block of consecutive odd numbers has a closed sum.', weight='unit')
+        plan['records-write:6-01'][0]['output/records/Small/block_sum.md'] = closed
+        plan['records-compare:6-01'] = [{
+            'output/verdicts.json': json.dumps([{'declaration': name, 'verdict': 'agrees', 'difference': ''}
+                                                for name in ('Small.block_sum', 'Small.sq_step_strict')])}]
+        plan['sources:6'] = [{
+            '@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/sources.json': self.VERIFIED,
+            'output/requests.json': json.dumps([{'declaration': 'Small.block_sum', 'found': True, 'key': 'euler1748',
+                                                 'note': 'It is Theorem 2.', 'stronger': None}]),
+            'output/records/Small/block_sum.md': record_text('Every block of consecutive odd numbers has a closed sum.',
+                                                             weight='unit', source='euler1748')}]
+        plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
+            {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'}, {'id': 'c1', 'verdict': 'same'}])}]
+        self.halted_after_the_freeze(plan)
+        # The search comes before the fold-back, and the source is checked against the new declaration after it.
+        kinds = [(call['kind'], call['section']) for call in self.calls()
+                 if call['kind'] in ('sources', 'foldback') and call['section'] != '5']
+        self.assertEqual(kinds, [('sources', '6-search'), ('foldback', 'Small'), ('sources', '6')])
+        search, _, check = [call for call in self.calls() if (call['kind'], call['section']) in kinds]
+        self.assertEqual(self.session_file(search, 'requests.json'), [
+            {'declaration': 'Small.helper_zero', 'result': 'the empty sum', 'reason': 'It is classical.'}])
+        self.assertEqual(self.session_file(search, 'cited.json'), [])  # what step 5 verified is not verified again
+        # What the source states is a gap of the draft, and the fold-back has it as an item of its own kind.
+        gap = read_json(self.work / 'lib' / '6-sources' / 'draft.json')['gaps'][-1]
+        self.assertEqual({key: gap[key] for key in ('id', 'kind', 'element', 'source', 'where', 'wanted', 'closed_by')},
+                         {'id': 'c1', 'kind': 'assertion', 'element': 'Small.helper_zero', 'source': 'euler1748',
+                          'where': 'Chapter 1, section 2', 'wanted': self.STRONGER['states'], 'closed_by': None})
+        item = next(item for item in self.session_file(self.calls('foldback')[0], 'items.json') if item['id'] == 'c1')
+        self.assertEqual((item['from'], item['declaration'], item['wanted']),
+                         ('source', 'Small.helper_zero', self.STRONGER['states']))
+        self.assertIn('The work euler1748 states this form (Chapter 1, section 2)', item['detail'])
+        # The source is entered for the declaration that has its form, by the session that opened it again.
+        self.assertEqual([(r['declaration'], r['source'], r['result']) for r in self.session_file(check, 'requests.json')],
+                         [('Small.block_sum', 'euler1748', 'the empty sum')])
+        folded = self.work / 'lib' / '6-folded'
+        self.assertIn('source: euler1748', (folded / 'records' / 'Small' / 'block_sum.md').read_text(encoding='utf-8'))
+        self.assertIn('euler1748', (folded / 'bibliography.bib').read_text(encoding='utf-8'))
+        self.assertEqual(read_json(self.work / 'lib' / '6-draft' / 'draft.json')['gaps'][-1]['closed_by'], 'Small.block_sum')
+        self.assertIn('- `Small.helper_zero`: euler1748 states a stronger or more general form (Chapter 1, section 2): For '
+                      'all $m$ and $n$, $s(m+n) = s(m) + n(2m+n)$. The fold-back gave the library that form as '
+                      '`Small.block_sum`. The paper cites it from euler1748 and does not prove it.', self.decisions())
+
+    def test_a_source_whose_form_the_library_cannot_be_given_is_recorded_and_the_paper_proves_the_result(self):
+        plan = self.asking_to_cite()
+        report = json.loads(plan['foldback'][0]['output/report.json'])
+        report['items'].append({'id': 'c1', 'closed': False, 'declarations': [],
+                                'note': 'The general form needs a lemma on products that does not compile.'})
+        plan['foldback'][0]['output/report.json'] = json.dumps(report)
+        plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
+            {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'}, {'id': 'c1', 'verdict': 'cut'}])}]
+        self.halted_after_the_freeze(plan)
+        # Nothing has the source's form, so nothing is entered and no source is checked a second time.
+        self.assertEqual([call['section'] for call in self.calls('sources')], ['5', '6-search'])
+        self.assertIsNone(read_json(self.work / 'lib' / '6-draft' / 'draft.json')['gaps'][-1]['closed_by'])
+        self.assertNotIn('source:', (self.work / 'lib' / '6-folded' / 'records' / 'Small' / 'helper_zero.md')
+                         .read_text(encoding='utf-8'))
+        self.assertIn('The library could not be brought to that form, so it keeps its own, and the paper proves '
+                      '`Small.helper_zero`. The general form needs a lemma on products that does not compile. A reader who '
+                      'knows the source will ask why the paper does not cite it; this is the answer.', self.decisions())
+
+    def test_a_report_of_a_stronger_form_names_a_verified_entry_and_what_the_source_states(self):
+        plan = self.asking_to_cite()
+        loose = json.loads(plan['sources:6-search'][0]['output/requests.json'])
+        loose[0]['stronger'] = {'key': 'absent1900', 'states': 'More.', 'where': 'Somewhere.'}
+        plan['sources:6-search'] = [{**plan['sources:6-search'][0], 'output/requests.json': json.dumps(loose)}]
+        self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.6-sources`', report)
+        self.assertIn('"stronger" of Small.helper_zero goes with "found": false', report)
+        self.assertEqual(self.calls('foldback'), [])
+
+    def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
+        said = 'The record adds that both sides are 0 for n = 0, which the Lean statement does not say.'
+        self.disagreements = [{'label': 'thm:main', 'record_disagreement': said}]
+        plan = script()
+        plan['records-write:6-01'][0]['output/records/Small/root.md'] = RECORDS['Small/root.md']
+        plan['records-compare:6-01'] = [{
+            'output/verdicts.json': json.dumps([{'declaration': name, 'verdict': 'agrees', 'difference': ''}
+                                                for name in ('Small.root', 'Small.sq_step_strict')])}]
+        plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
+            {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'},
+            {'id': 's:thm:main', 'verdict': 'same'}])}]
+        self.halted_after_the_freeze(plan)
+        # The record is due like one whose declaration changed, and its writer and its comparer are told why.
+        entry = {'declaration': 'Small.root', 'file': 'Small/Root.lean', 'why': finalize.DISAGREES,
+                 'record': 'records/Small/root.md', 'disagreement': said}
+        write = next(call for call in self.calls('records-write') if call['section'] == '6-01')
+        compare = next(call for call in self.calls('records-compare') if call['section'] == '6-01')
+        self.assertIn(entry, self.session_file(write, 'todo.json'))
+        self.assertIn(entry, self.session_file(compare, 'todo.json'))
+        # The drafted statement that was made from that record is compared with the declaration again.
+        rows = self.session_file(self.calls('draft-compare')[0], 'rows.json')
+        self.assertEqual([row['id'] for row in rows], ['s:thm:main', 'g1'])
+        self.assertIn('## Step 6: records whose statement said more than the Lean statement', self.decisions())
+        self.assertIn('- `Small.root`: ' + said, self.decisions())
 
     def test_axioms_beyond_the_three_at_the_freeze_stop_the_run(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}

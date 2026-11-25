@@ -17,7 +17,7 @@ The second task comes from the same paper. It gave full proofs of several classi
 [{"key": "abel1826", "records": [{"declaration": "Lib.abel", "path": "records/Lib/abel.md", "text": "..."}]}]
 ```
 
-- `requests.json`: the results for which a source is wanted, each with the declaration that states it, the name under which the result is known, and the reason. It can be an empty array.
+- `requests.json`: the results for which a source is wanted, each with the declaration that states it, the name under which the result is known, and the reason. An entry can also carry `source`, the key of a bibliography entry; the section "The requests" says what that means. It can be an empty array.
 
 ```json
 [{"declaration": "Lib.abel", "result": "Abel's binomial identity", "reason": "..."}]
@@ -36,7 +36,7 @@ Read the outcome of each search exactly. An empty result says that this source r
 For each key of `cited.json`:
 
 1. **Find the work.** Search by title, authors and year, in more than one source where the first returns nothing. A work is found when a registry has an entry that is plainly this work. Take from that entry the identifier that fixes which document it is: a DOI, an arXiv number with its version, a Zbl or MR number.
-2. **Correct the entry.** Bring authors, title, place of publication, year and pages in `bibliography.bib` to what the registry gives, and add the identifier. The key stays.
+2. **Correct the entry.** Bring authors, title, place of publication, year and pages in `bibliography.bib` to what the registry gives, and add the identifier. The key stays. An entry holds what a reference list prints, and nothing else: authors, title, where the work appeared, year, pages, identifier. The paper prints every field of an entry it cites, so nothing in an entry may be addressed to the sessions of the research. One bibliography had an entry whose `note` said which version "the records cite" and how the numbering of its theorems had changed between versions; the reference list of the paper printed that, and two of its readers objected. Take such a remark out of the entry. Where a record needs it to say where a statement stands, it belongs in that record's `## Literature`, and you put it there. A note that describes the work itself stays, such as the translator of an edition.
 3. **Open it as far as it opens**, and note how far: the full text, parts of it, the abstract only, or nothing.
 4. **Check what the records say of it.** `cited.json` gives each passage. Does the work state what the record says it states, at the place the record gives, under the hypotheses the record gives, and is it attributed to the right author? Where the record says how the source's notation corresponds to the library's, does that hold?
 
@@ -58,6 +58,12 @@ When you find such a source: add its entry to `bibliography.bib` under a new key
 
 When you find none, the answer is that none was found. Say in the note what you searched and, where you found something close, what it is and in what it differs from the library's statement. The paper will then prove the result.
 
+One case in which the source does not state the library's form is reported, because the library can still be changed when you search: a source that states a stronger or a more general form, from which the library's statement follows. You do not enter it, since it does not state the library's form. But a later step tries to give the library the source's form, as a declaration of its own that is proved; where that succeeds, the paper cites the source for that declaration and obtains the library's present form from it. Without your report the paper proves at length what a cited theorem contains. An earlier paper of this kind did: it proved two bounds by two hundred lines of calculus where a known theorem gives both with a better constant, and it derived over two pages series identities that follow from Lagrange inversion; its readers objected to each in every round. Report such a source under `stronger`. Give under `states` the statement of the source in full, in the notation and the conventions of the library, with every hypothesis and every constant as the source has them: the session that proves it works from your words and does not open the source. Give under `where` its place in the source. Add the source's entry to `bibliography.bib` and list its key in `sources.json`, as for a source you enter.
+
+The other direction stays closed. A source that states less than the library is not reported, and no record is given a source for a form that the library does not prove.
+
+A request that carries `source` is the second half of such a report. Its declaration was added to the library so that the library states what that source states. Open the source again and compare it with the declaration as it now stands in `lean/`. Where the source states exactly this form, enter it as described above and list its key in `sources.json`. Where the declaration says something else after all, the answer is that none was found, and the note says in what the two differ.
+
 ## What you write
 
 - `output/sources.json`, with one entry for each key of `cited.json` and for each key you added:
@@ -73,9 +79,9 @@ When you find none, the answer is that none was found. Say in the note what you 
 - `output/requests.json`, with one entry for each entry of the `requests.json` you were given, an empty array if that was empty:
 
 ```json
-[{"declaration": "Lib.abel", "found": true, "key": "abel1826", "note": "..."}]
+[{"declaration": "Lib.abel", "found": true, "key": "abel1826", "note": "...", "stronger": null}]
 ```
 
-`key` is the key of the source you entered, `null` when `found` is false.
+`key` is the key of the source you entered, `null` when `found` is false. `stronger` is `null`, or, for a source that states a stronger or a more general form than the library, `{"key": "...", "states": "...", "where": "..."}`; `found` is then false.
 
 The program requires that every key a record cites is in the bibliography and has the status `verified`. Before you end, search the records you return, and those you left, for the keys you removed, and see that none is cited any more.
