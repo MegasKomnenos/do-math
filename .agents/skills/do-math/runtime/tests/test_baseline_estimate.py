@@ -122,9 +122,13 @@ class EstimatedBaselines(BrokerFixture):
     def setUp(self):
         super().setUp()
         SIZES.clear()
-        patcher = patch.object(lean_broker.Broker, "closure_mb", lambda broker, imports: SIZES.get(tuple(imports)))
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        # The baselines entered below are a real library's, hundreds of MiB, and the machine gate would hold each
+        # stand-in compile until the test machine had its baseline free. The gate is given ample memory instead.
+        for target, name, value in ((lean_broker.Broker, "closure_mb", lambda broker, imports: SIZES.get(tuple(imports))),
+                                    (lean_broker, "available_memory", lambda: 1024 * 1024 * lean_broker.MIB)):
+            patcher = patch.object(target, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self.start_broker()
 
     def measured(self, name, size, baseline, **changed):

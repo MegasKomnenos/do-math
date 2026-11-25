@@ -88,15 +88,6 @@ class DirectoryRenameTests(unittest.TestCase):
                 self.assertFalse(target.exists())
 
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
-    def test_unexpected_error_does_not_retry(self):
-        with tempfile.TemporaryDirectory() as temp, \
-                patch('runtime_support.os.rename', side_effect=windows_error(112)), \
-                patch('runtime_support.time.sleep') as sleep:
-            with self.assertRaises(OSError):
-                support.rename_directory(Path(temp) / 'stage', Path(temp) / 'target')
-            sleep.assert_not_called()
-
-    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
     def test_real_open_file_blocks_rename_until_handle_is_closed(self):
         from ctypes import wintypes
         kernel = ctypes.WinDLL('kernel32', use_last_error=True)

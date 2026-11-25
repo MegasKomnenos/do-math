@@ -6,9 +6,7 @@ The package contains a history of the research that led to its result: a timelin
 
 The user asked for the history as "a somewhat more digestible version, than just reading them directly, of the research records timeline". The reading agreed with the user is that the timeline is the research's own reviewed record in time order, made easier to read; that each entry says in plain words what happened and points to the record it condenses; and that an entry makes no claim of its own and does not retell the mathematics.
 
-An entry can fall short of this reading in two ways, and you check for both.
-
-An entry can say what its record does not say. The timeline has no authority of its own. Whatever it says, the record has to say, and a reader of the package who opens the record behind an entry must find there what the entry told. A session that writes about research is drawn to add: to say which step was decisive, to connect two events, to state a judgment as a fact. Such additions read well and are in no record, and nobody reviewed them.
+An entry can say what its record does not say. The timeline has no authority of its own: a reader of the package who opens the record behind an entry must find there what the entry told. A session that writes about research is drawn to add: to say which step was decisive, to connect two events, to state a judgment as a fact. Such additions read well and are in no record, and nobody reviewed them.
 
 An entry can also be true and no easier to read than its record. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, how it was judged, what was tried on a statement, which question was opened or answered. With that the reader decides which record to open, and the record gives the mathematics, complete and reviewed. An entry therefore reports the event, and the content of the record stays in the record. A session that condenses a record is drawn to the opposite, because the record is full of mathematics that is true and reviewed, and every sentence repeated from it is faithful. In an earlier run, the entry for a publication of nineteen elements was a single paragraph of more than nine hundred words, which restated every element with its formula. The check of that run compared each sentence with the record and found nothing to correct, and the timeline was harder to read than the records it condensed. An entry of this kind is returned corrected, however exactly it agrees with its record.
 
@@ -81,7 +79,7 @@ The heading and the last line come from the program. An entry therefore carries 
 
 ## What an entry has to be
 
-An entry is two to four sentences. What they say depends on the sort of entry.
+An entry is two to four sentences.
 
 **The entry of a publication** says what was published and whose work it was. It names each element and says in one clause what the element is. It gives the reviewing session's judgment in one sentence. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
 
@@ -131,7 +129,7 @@ Where an entry does not pass, correct it, and keep what the writer wrote whereve
 - Supply what is missing, such as an element that was not named or the judgment, from the record and in the record's sense.
 - Reword what a reader could not follow.
 
-A corrected entry is held to the same standard as a written one. It says nothing that the record does not say, and it explains nothing.
+A corrected entry is held to the same standard as a written one.
 
 ## What you write
 
@@ -141,7 +139,7 @@ A corrected entry is held to the same standard as a written one. It says nothing
 [{"event": 17, "verdict": "stands", "text": "...", "list": [{"group": "", "items": ["..."]}]}]
 ```
 
-`verdict` is `stands` or `corrected`. `text` and `list` are the entry as the timeline is to carry it: unchanged for `stands`, your corrected text and list for `corrected`. In `list`, the items that belong together stand in one group, whose `group` says in a few words what they have in common; a list that is not divided has one group with an empty `group`; and `list` is an empty array where the sentences name the elements themselves.
+`verdict` is `stands` or `corrected`. `text` and `list` are the entry as the timeline is to carry it: unchanged for `stands`, your corrected text and list for `corrected`. In `list`, `group` holds the name of a group; a list that is not divided has one group with an empty `group`; and `list` is an empty array where the sentences name the elements themselves.
 
 The program counts as a word whatever stands between two spaces. It refuses a corrected `text` of more than 120 words and a corrected item of more than 30 words. Both numbers are ceilings, and neither is a length to reach.
 

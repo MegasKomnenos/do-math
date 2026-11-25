@@ -1,6 +1,6 @@
 # Comparing the records of one group with the Lean
 
-Every public declaration of the library has a record: its statement in ordinary mathematical language, an explanation, and its proof in words. The library in your folder is what the chosen proof rests on, with `{{root}}` as its root and `{{main}}` as its main theorem. The records of the declarations that were new or had changed have just been written by another session. This session compares each of them with the Lean it describes and corrects what differs. You did not write them, and that is the point: an error of understanding tends to pass its author's own check.
+The library in your folder is what the chosen proof rests on, with `{{root}}` as its root and `{{main}}` as its main theorem. The records of the declarations that were new or had changed have just been written by another session. This session compares each of them with the Lean it describes and corrects what differs. You did not write them, and that is the point: an error of understanding tends to pass its author's own check.
 
 ## Why every record is compared
 

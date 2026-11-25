@@ -1,142 +1,28 @@
 """The finalize command and its scripts, with stand-in sessions, the stand-in compiler and a stand-in Lake.
 
 No AI session, no Lean and no Lake is run. The launch of a session is patched as tests/test_paper.py
-patches it: the command the program starts is this file itself, which then plays the session. Run as
-`test_finalize.py session <scenario folder>` it reads session.json in its working folder and writes
-what `script.json` of the scenario gives for that kind of session: for the key `<kind>:<section>`,
-or else `<kind>`, one entry for each session in turn and the last entry for every later one. An
-entry maps a path under the session's folder to its text; the key `@copy` lists pairs of paths, each
-a file or folder of the session copied to another place in it. Every call is recorded with the files
-the session was given. Run as `test_finalize.py lake ...` it is Lake: `build` succeeds unless
-`lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
-runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms line for every name
-that Check.lean asks about, and fails at a name that no module Check.lean imports declares; and every
-call fails when `lake.json` names under `needs_variable` a variable that its environment does not have.
-Run as `test_finalize.py version` it is Lean's version command.
+patches it: the command the program starts is tests/finalize_cli.py, which then plays the session. The
+same file is Lake and Lean's version command, and its description says what `script.json` and
+`lake.json` of a scenario make the stand-ins do.
 
 The paper command is not run: `finalize.produce` is replaced by a function that writes the files the
 pipeline reads of a run of that command and records what it was called with. Its own tests are test_paper.py.
 """
+import functools
+import hashlib
 import json
-import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
-import time
-
-THIS = Path(__file__).resolve()
-
-
-def stand_in_session(scenario):
-    folder = Path.cwd()
-    task = json.loads((folder / 'session.json').read_text(encoding='utf-8'))
-    sys.stdin.reconfigure(encoding='utf-8')  # the program hands over the bytes of a UTF-8 file, whatever the locale
-    prompt = sys.stdin.read()
-    script = json.loads((scenario / 'script.json').read_text(encoding='utf-8'))
-    own = f"{task['kind']}:{task['section']}"
-    key = next((k for k in (own, task['kind']) if k in script), None)
-    given = sorted(p.relative_to(folder).as_posix() for p in folder.rglob('*')
-                   if p.is_file() and not p.name.startswith(('cli.', 'worker-')))
-    lock = scenario / 'calls.lock'
-    while True:
-        try:
-            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-            break
-        except (FileExistsError, PermissionError):
-            time.sleep(0.01)
-    stopped = False
-    try:
-        record = scenario / 'calls.json'
-        calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
-        if key is not None:
-            entries = script[key]
-            entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
-            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped.
-            stopped = '@stopped' in entry
-            for source, target in entry.get('@copy', []):
-                if (folder / source).is_dir():
-                    shutil.copytree(folder / source, folder / target, dirs_exist_ok=True)
-                else:
-                    (folder / target).parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(folder / source, folder / target)
-            for name, content in entry.items():
-                if name not in ('@copy', '@stopped'):
-                    (folder / name).parent.mkdir(parents=True, exist_ok=True)
-                    (folder / name).write_text(content, encoding='utf-8', newline='\n')
-        calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
-                      'given': given, 'prompt': prompt, 'model': task.get('model')})
-        record.write_text(json.dumps(calls), encoding='utf-8')
-    finally:
-        lock.unlink()
-    if stopped:
-        # What the Claude CLI writes when the model refuses a request and the CLI has no other model to give it to.
-        message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."
-        print(json.dumps({'type': 'assistant', 'is_api_error_message': True, 'error': 'invalid_request',
-                          'message': {'model': '<synthetic>', 'role': 'assistant', 'stop_reason': 'refusal',
-                                      'content': [{'type': 'text', 'text': message}]}}))
-        print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal',
-                          'terminal_reason': 'api_error', 'result': message}))
-        return 1
-    print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Scripted session.'}}))
-    return 0
-
-
-def stand_in_lake(scenario, arguments):
-    settings = json.loads((scenario / 'lake.json').read_text(encoding='utf-8')) if (scenario / 'lake.json').exists() else {}
-    with (scenario / 'lake-calls.txt').open('a', encoding='utf-8') as stream:
-        stream.write(' '.join(arguments) + '\n')
-    needed = settings.get('needs_variable')
-    if needed and not os.environ.get(needed):
-        print(f'error: the stand-in for Lake was started without {needed} in its environment')
-        return 1
-    if arguments == ['build']:
-        failing = settings.get('build_fails_when')
-        if failing and failing in Path('Challenge.lean').read_text(encoding='utf-8'):
-            print('error: Challenge.lean: the stand-in refuses this text')
-            return 1
-        manifest = json.loads(Path('lake-manifest.json').read_text(encoding='utf-8'))
-        Path('built.json').write_text(json.dumps({'packagesDir': manifest['packagesDir']}), encoding='utf-8')
-        return 0
-    if arguments[:2] == ['env', 'lean'] and arguments[2] == 'DoMathExtract.lean':
-        sys.path.insert(0, str(THIS.parent))
-        import canon_lean
-        return canon_lean.extract('.', 'DoMathExtract.lean')
-    if arguments[:2] == ['env', 'lean'] and arguments[2] == 'Check.lean':
-        sys.path.insert(0, str(THIS.parent))
-        import canon_lean
-        text = Path('Check.lean').read_text(encoding='utf-8')
-        # As in Lean, a name is known when a module that the file imports, directly or through others, declares it.
-        visible = canon_lean.imported('.', re.findall(r'^import (\S+)$', text, re.M))
-        declared = {declaration['user'] for declaration in canon_lean.library('.')
-                    if declaration['module'] in visible and not declaration['private']}
-        for name in re.findall(r'^#print axioms (\S+)$', text, re.M):
-            if name not in declared:
-                print(f'Check.lean: the stand-in finds no declaration {name} in the modules the file imports')
-                return 1
-            axioms = settings.get('axioms', {}).get(name, ['propext', 'Quot.sound'])
-            print(f"{name} : a statement\n'{name}' depends on axioms: [{', '.join(axioms)}]" if axioms
-                  else f"'{name}' does not depend on any axioms")
-        return 0
-    return 2
-
-
-if __name__ == '__main__' and sys.argv[1:2] == ['session']:
-    raise SystemExit(stand_in_session(Path(sys.argv[2])))
-if __name__ == '__main__' and sys.argv[1:2] == ['lake']:
-    raise SystemExit(stand_in_lake(Path(sys.argv[2]), sys.argv[3:]))
-if __name__ == '__main__' and sys.argv[1:2] == ['version']:
-    print('Lean (version 4.99.0, stand-in)')
-    raise SystemExit(0)
-
-import functools
-import hashlib
 import threading
 import unittest
 from unittest.mock import patch
 
 import yaml
+
+THIS = Path(__file__).resolve()
+CLI = THIS.with_name('finalize_cli.py')  # the stand-in for the CLI of a session, for Lake and for Lean's version command
 
 sys.path[:0] = [str(THIS.parents[1]), str(THIS.parent)]
 import canon
@@ -193,6 +79,7 @@ INSTRUCTIONS = ('selection', 'selection-read', 'restore', 'review', 'simplify', 
                 'records-compare', 'sources', 'foldback', 'draft-compare', 'history-write', 'history-read',
                 'readme-write', 'package-read')
 _SETTLED = None
+_RECORDED = None  # the repository and the scenario of a run that stopped before the draft (FinalizeCase.from_the_records)
 # What the paper command closed without a person, as the `end` event of its log carries it.
 CLOSED = [{'kind': 'removed', 'where': 'the abstract', 'section': 'abstract',
            'quote': 'equivalently, the block sums to a difference of squares',
@@ -247,9 +134,10 @@ def script(**changes):
                                                          'opened': 'parts', 'note': '', 'attributions': [QUOTED]}])}],
         'foldback': [{'output/lean/Small/Step.lean': STEP.replace('\n\nend Small', '\n\n' + theorem(
             'sq_step_strict', '(n : Nat) : oddSum n < oddSum (n + 1)', uses=['sq_step'], proof='rfl') + '\n\nend Small'),
+            # Where the session has nothing to say it writes null: no note for the item it closed, no declaration for the other.
             'output/report.json': json.dumps({'deleted': [], 'items': [
-                {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': ''},
-                {'id': 'r1', 'closed': False, 'declarations': [], 'note': 'The lemma is wanted by the cross-part item.'}]})}],
+                {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': None},
+                {'id': 'r1', 'closed': False, 'declarations': None, 'note': 'The lemma is wanted by the cross-part item.'}]})}],
         'records-write:6-01': [{'output/records/Small/sq_step_strict.md': record_text('The sums increase strictly.'),
                                 'output/findings.json': json.dumps([{'declaration': 'Small.sq_step_strict', 'kind': 'other',
                                                                      'detail': 'Its doc comment says less than it states.'}])}],
@@ -324,7 +212,7 @@ class FinalizeCase(InstanceCase):
             (folder / 'bibliography.bib').write_text(BIBLIOGRAPHY, encoding='utf-8')
             self.prepare(folder)
             self.publish(folder)
-            self.configure(lean={'version_command': [sys.executable, '-B', str(THIS), 'version']})
+            self.configure(lean={'version_command': [sys.executable, '-B', str(CLI), 'version']})
             _SETTLED = kept_copy(self.instance, 'do-math-finalize-')
         self.repository = self.root / 'repository'
         self.repository.mkdir()
@@ -341,7 +229,7 @@ class FinalizeCase(InstanceCase):
         self.addCleanup(stop_broker, self.work)
 
     def command(self, cli, model, effort, cwd, servers=None, **options):
-        return Command(provider_for_model(model), [sys.executable, '-B', str(THIS), 'session', str(self.scenario)], Path(cwd))
+        return Command(provider_for_model(model), [sys.executable, '-B', str(CLI), 'session', str(self.scenario)], Path(cwd))
 
     def produce(self, instance, out, tex=None, choice=None, parallel=4, resume=False, dry=False, draft=False,
                 from_draft=None, title_page=None, gate=None, main=None):
@@ -408,10 +296,10 @@ class FinalizeCase(InstanceCase):
             write_json(self.root / 'config.json', config)
             arguments += ['--config', str(self.root / 'config.json')]
         with patch('finalize.REPOSITORY', self.repository), patch('finalize.SKILL', self.skill), \
-                patch('paper.worker_command', side_effect=self.command), patch('finalize.produce', side_effect=self.produce), \
+                patch('command_sessions.worker_command', side_effect=self.command), patch('finalize.produce', side_effect=self.produce), \
                 patch('paper.load_collection', return_value=([], {}, None)), \
                 patch('package.reduced_settings', side_effect=reduced), \
-                patch('package.lake_command', return_value=[sys.executable, '-B', str(THIS), 'lake', str(self.scenario)]), \
+                patch('package.lake_command', return_value=[sys.executable, '-B', str(CLI), 'lake', str(self.scenario)]), \
                 patch('builtins.print') as shown:
             code = finalize.main(arguments)
         self.said = shown.call_args.args[0] if shown.call_args else ''
@@ -429,6 +317,28 @@ class FinalizeCase(InstanceCase):
 
     def decisions(self):
         return (self.work / 'decisions.md').read_text(encoding='utf-8')
+
+    def from_the_records(self):
+        """Begin this test at a run that has passed every step before the draft, with the plain script.
+
+        The first test that asks makes that run with the command itself, stopped at the draft, and a copy
+        of its repository and of its scenario is kept for the test process. Every test that asks then
+        has that run in its own folders, and its next start of the command continues at the draft, as
+        the command continues any run that stopped. A run names its instance by the path, so these
+        tests give the command the kept instance itself; the command reads an instance and writes
+        nothing into it. This is for a test whose subject lies after the records: its script entries for
+        the earlier steps, its configuration and its instance are the plain ones."""
+        global _RECORDED
+        self.instance = _SETTLED
+        if _RECORDED is None:
+            with patch('finalize.Run.draft', side_effect=paper.Stop('halted for the test')):
+                self.assertEqual(self.run_command(script(), config=self.config()), 2, self.said)
+            self.assertIn('The run stopped at the step `2.6-draft`', (self.work / 'report.md').read_text(encoding='utf-8'))
+            # The run has ended its broker, so nothing writes into the folders while they are copied.
+            _RECORDED = (kept_copy(self.repository, 'do-math-finalize-run-'), kept_copy(self.scenario, 'do-math-finalize-run-'))
+        else:
+            for kept, folder in zip(_RECORDED, (self.repository, self.scenario)):
+                shutil.copytree(kept, folder, dirs_exist_ok=True)
 
 
 # ----------------------------------------------------------------------------- the scripts, each alone
@@ -592,7 +502,7 @@ class RecordTests(FinalizeCase):
 
     def test_the_cited_sources_are_listed_with_the_records_that_cite_them(self):
         index = canon.read_index(self.instance / 'canon' / 'index.json')
-        cited = package.cited(self.instance / 'canon' / 'records', index)
+        cited = package.cited(self.instance / 'canon' / 'records', index, package.bibliography_keys(BIBLIOGRAPHY))
         self.assertEqual([(item['key'], [row['declaration'] for row in item['records']]) for item in cited],
                          [('gauss1801', ['Small.sq_step'])])
         self.assertEqual(package.bibliography_field(BIBLIOGRAPHY, 'gauss1801', 'title'), 'Disquisitiones Arithmeticae')
@@ -612,8 +522,6 @@ class RecordTests(FinalizeCase):
                           for item in cited],
                          [('gauss1801', [('Small.helper_zero', False, ['[gauss1801, Section 1]', '[gauss1801]']),
                                          ('Small.sq_step', True, [])])])
-        # Without the keys of the bibliography only the headers are read, as before.
-        self.assertEqual([row['declaration'] for row in package.cited(records, index)[0]['records']], ['Small.sq_step'])
 
 
 class RegistryTests(FinalizeCase):
@@ -898,7 +806,7 @@ class ArchiveTests(FinalizeCase):
         beside = package.event_members(rows[0], list(members))
         self.assertIn(rows[0]['record'], beside)
         self.assertTrue(all(name.startswith(rows[0]['record'].rsplit('/', 1)[0] + '/') for name in beside))
-        self.assertIn('by', rows[0])
+        self.assertEqual(rows[0]['by'], 'attempt')  # the kind of session whose work the publication carries
         self.assertEqual(rows[1]['by'], '')
         # What was tried on a statement that was proved later stands in the canon's history, and is a line too.
         tried = package.ledger({'canon/history/Small/root/000001-approaches/by-induction.md':
@@ -1152,9 +1060,10 @@ class PromptTests(FinalizeCase):
     def test_every_instruction_file_of_the_skill_is_filled_with_the_names_the_command_gives(self):
         run = self.prepared()
         common = package.read_text(INSTALLED / 'finalize' / 'common.md')
-        # What only the sections on Lean of the common text hold; a session that is given no Lean file has none of it.
-        lean = ('## Reading the imported library\n', '## Compiling\n', '## What every Lean file of the library keeps\n',
-                Path(sys.executable).as_posix(), INSTALLED.as_posix() + '/runtime/lean_broker.py', '--expect-mb 64')
+        # The two sections on Lean that every session given a Lean file has, and what only the section on compiling
+        # holds, which only a session whose step writes Lean has.
+        lean = ('## Reading the imported library\n', '## What every Lean file of the library keeps\n')
+        compiling = ('## Compiling\n', INSTALLED.as_posix() + '/runtime/lean_broker.py', '--expect-mb 64')
         for name in INSTRUCTIONS:
             text = run.prompt(name, {'part': 'core'} if name in ('simplify', 'foldback') else None)
             self.assertEqual(finalize.PLACEHOLDER.findall(text), [], name)
@@ -1162,6 +1071,10 @@ class PromptTests(FinalizeCase):
             self.assertIn('\n## One proof, presented by itself\n', text, name)
             given = name not in ('history-write', 'history-read', 'readme-write')
             self.assertEqual([part in text for part in lean], [given] * len(lean), name)
+            compiles = name in ('selection', 'restore', 'simplify', 'arrange', 'foldback')
+            self.assertEqual([part in text for part in compiling], [compiles] * len(compiling), name)
+            if compiles:
+                self.assertIn(Path(sys.executable).as_posix(), text, name)
         self.assertIn('There is none', run.prompt('review'))
         run.settings = {'lean': {'cwd': 'C:/toolchains/mathlib'}}
         self.assertIn('C:/toolchains/mathlib', run.prompt('review'))
@@ -1521,8 +1434,8 @@ class RunTests(FinalizeCase):
                         'output/renames.json': '{}', 'output/removed.json': '[]'},
             'records-write:5-01': {'output/records/Small/added_six.md': record_text('Six terms.'), 'output/findings.json': '[]'},
             'records-compare:5-01': {'output/verdicts.json': json.dumps([{'declaration': 'Small.added_six', 'verdict': 'agrees'}])},
-            'sources': {'@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/sources.json': '[]',
-                        'output/requests.json': '[]'},
+            'sources': {'@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/requests.json': '[]',
+                        'output/sources.json': json.dumps([{'status': 'verified', 'identifier': 'isbn:1'}])},
             'foldback': {'output/report.json': json.dumps({'deleted': [], 'items': [
                 {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': ''}]})},
             'records-write:6-01': {'output/records/Small/sq_step_strict.md': strict.replace('---\n', '---\nproves: Small.sq_step\n', 1),
@@ -1554,6 +1467,7 @@ class RunTests(FinalizeCase):
                 ('records-write:5-01', 'records/Small/named_four.md was not written'),
                 ('records-compare:5-01', 'Small.named_four has no verdict'),
                 ('sources:5', 'sources.json has no status of "verified" or "removed" for gauss1801'),
+                ('sources:5', 'sources.json has an entry without "key"'),
                 ('foldback:Small', 'report.json does not say whether the item r1 is closed'),
                 ('records-write:6-01', '"proves: Small.sq_step" is a claim that Lean did not confirm'),
                 ('records-compare:6-01', 'records/Small/sq_step_strict.md was not written'),
@@ -1597,6 +1511,7 @@ class RunTests(FinalizeCase):
         self.assertIn('theorem added_six', (merged / 'Helper.lean').read_text(encoding='utf-8'))
 
     def test_a_manuscript_that_fails_its_typesetting_stops_the_run_and_the_next_start_writes_the_paper_anew(self):
+        self.from_the_records()
         self.failing = True
         self.assertEqual(self.run_command(script(), config=self.config()), 2)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
@@ -1608,8 +1523,23 @@ class RunTests(FinalizeCase):
         self.assertNotIn('{"', report)
         # Nothing takes up a run whose manuscript failed: started again, the command deletes it and writes the paper anew.
         self.failing = False
-        self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
+        # At the end of this start another program holds the folder of the sessions, which Windows then refuses to delete.
+        real = finalize.remove_tree
+
+        def held(path):
+            if Path(path) == self.work / 'sessions':
+                raise PermissionError(13, 'The folder is in use by another program', str(path))
+            real(path)
+
+        with patch('finalize.remove_tree', side_effect=held):
+            self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
         self.assertEqual([call['resume'] for call in self.produced if call['out'] == 'paper'], [False, False])
+        # The run has come to its end all the same: the package is in place, and the report names what is left.
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The package is in place: `solved/odd/`', report)
+        self.assertIn('## What could not be deleted', report)
+        self.assertIn('- `sessions`: ', report)
+        self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md', 'sessions'])
 
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
@@ -1701,6 +1631,7 @@ class RunTests(FinalizeCase):
         return read_json(self.work / 'sessions' / call['folder'] / name)
 
     def test_a_source_that_states_more_than_the_library_becomes_a_gap_and_is_cited_once_the_library_has_its_form(self):
+        self.from_the_records()
         plan = self.asking_to_cite()
         block = theorem('block_sum', '(m n : Nat) : oddSum (m + n) = oddSum m + n * (2 * m + n)', proof='rfl')
         strict = theorem('sq_step_strict', '(n : Nat) : oddSum n < oddSum (n + 1)', uses=['sq_step'], proof='rfl')
@@ -1756,13 +1687,8 @@ class RunTests(FinalizeCase):
                       '`Small.block_sum`. The paper cites it from euler1748 and does not prove it.', self.decisions())
 
     def test_a_source_whose_form_the_library_cannot_be_given_is_recorded_and_the_paper_proves_the_result(self):
-        plan = self.asking_to_cite()
-        report = json.loads(plan['foldback'][0]['output/report.json'])
-        report['items'].append({'id': 'c1', 'closed': False, 'declarations': [],
-                                'note': 'The general form needs a lemma on products that does not compile.'})
-        plan['foldback'][0]['output/report.json'] = json.dumps(report)
-        plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
-            {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'}, {'id': 'c1', 'verdict': 'cut'}])}]
+        self.from_the_records()
+        plan = self.not_closed(self.asking_to_cite(), 'The general form needs a lemma on products that does not compile.')
         self.halted_after_the_freeze(plan)
         # Nothing has the source's form, so nothing is entered and no source is checked a second time.
         self.assertEqual([call['section'] for call in self.calls('sources')], ['5', '6-search'])
@@ -1774,6 +1700,7 @@ class RunTests(FinalizeCase):
                       'knows the source will ask why the paper does not cite it; this is the answer.', self.decisions())
 
     def test_a_report_of_a_stronger_form_names_a_verified_entry_and_what_the_source_states(self):
+        self.from_the_records()
         plan = self.asking_to_cite()
         loose = json.loads(plan['sources:6-search'][0]['output/requests.json'])
         loose[0]['stronger'] = {'key': 'absent1900', 'states': 'More.', 'where': 'Somewhere.'}
@@ -1784,10 +1711,10 @@ class RunTests(FinalizeCase):
         self.assertIn('"stronger" of Small.helper_zero goes with "found": false', report)
         self.assertEqual(self.calls('foldback'), [])
 
-    def not_closed(self, plan):
+    def not_closed(self, plan, note='It does not compile.'):
         """The scenario `plan` with a fold-back that does not close the gap of the source, and a comparison that cuts it."""
         report = json.loads(plan['foldback'][0]['output/report.json'])
-        report['items'].append({'id': 'c1', 'closed': False, 'declarations': [], 'note': 'It does not compile.'})
+        report['items'].append({'id': 'c1', 'closed': False, 'declarations': [], 'note': note})
         plan['foldback'][0]['output/report.json'] = json.dumps(report)
         plan['draft-compare'] = [{'output/verdicts.json': json.dumps([
             {'id': 'g1', 'verdict': 'rewritten', 'text': 'For every $n$, $s(n) < s(n+1)$.'}, {'id': 'c1', 'verdict': 'cut'}])}]
@@ -1825,6 +1752,7 @@ class RunTests(FinalizeCase):
         self.assertEqual([row.get('attributions') for row in read_json(folded / 'sources.json')], [[QUOTED]])
 
     def test_a_result_that_a_cited_theorem_contains_is_proved_in_the_paper_from_that_theorem(self):
+        self.from_the_records()
         self.draft = {**DRAFT, 'citations': [{'element': 'Small.helper_zero', 'result': 'the empty sum',
                                               'reason': 'It is classical.'}]}
         instance = {**self.STRONGER, 'specialisation': 'Take $m = 0$ and $n = 0$; both sides are then $s(0)$ and $0$.'}
@@ -1915,6 +1843,7 @@ class RunTests(FinalizeCase):
         self.assertEqual(len(self.calls('sources')), 3)
 
     def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
+        self.from_the_records()
         said = 'The record adds that both sides are 0 for n = 0, which the Lean statement does not say.'
         self.disagreements = [{'label': 'thm:main', 'record_disagreement': said}]
         plan = script()
@@ -1966,6 +1895,7 @@ class RunTests(FinalizeCase):
                          {'Small.named_four': 'names a declaration that is gone', 'Small.root': 'changed'})
 
     def test_axioms_beyond_the_three_at_the_freeze_stop_the_run(self):
+        self.from_the_records()
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         self.assertEqual(self.run_command(script(), config=self.config(), lake={'axioms': {'Small.root': ['propext', 'sorryAx']}}), 2)
         report = (self.work / 'report.md').read_text(encoding='utf-8')

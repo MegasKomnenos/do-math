@@ -1,6 +1,6 @@
 # Sections: choosing and registering what you take on
 
-The common introduction explains sections, their occupancy, the element's lease and the division of a statement under "Seeing work that is still underway: the board". Attempts and peers are the roles that register sections, and this guide gives what they need in order to do it.
+The common introduction explains sections, their occupancy, the element's lease and the division of a statement under "Seeing work that is still underway: the board". This guide gives what an attempt or a peer needs in order to register one.
 
 ## Stating a section
 
@@ -12,7 +12,7 @@ A statement that is not implied by the statement of the element is not a part of
 
 The breadth of a section follows the work you actually intend to do. An idea that could settle the whole statement calls for the whole statement; an approach to one regime calls for that regime. There is no merit in taking a small part for its own sake. A pattern that appears only across the whole problem may resolve many parts at once, and an attempt pursuing it needs the whole statement.
 
-An attempt registers its section once it has decided what to pursue, and then does its research inside that section, because work that is not registered is invisible to other sessions, which may repeat it without knowing. Registering early has a cost as well. A boundary chosen before the shape of the difficulty is understood tends to follow what looks manageable rather than what the mathematics suggests, and it then fixes what counts as settled. When the shape is not yet clear, a breadth set by the approach you intend serves the research better than one set by the range you expect to cover. Understanding gained later can still be acted on, because you can register a further section when the mathematics calls for it.
+An attempt registers its section once it has decided what to pursue, and then does its research inside that section, because work that is not registered is invisible to other sessions, which may repeat it without knowing. Registering early has a cost as well. A boundary chosen before the shape of the difficulty is understood tends to follow what looks manageable rather than what the mathematics suggests, and it then fixes what counts as settled. When the shape is not yet clear, a breadth set by the approach you intend serves the research better than one set by the range you expect to cover.
 
 Taking responsibility for a section does not limit the knowledge you can use to work on it. Results about other sections or other statements may provide a definition, an argument or a useful comparison. You can read those results and use them without taking on the problems they concern.
 
@@ -20,9 +20,9 @@ Your work may also develop beyond the section you first chose. You can register 
 
 ## Choosing under the lease
 
-While you hold the lease of an element, no other section can appear on the element, so the sections you read are the sections you have to respect. Registering your section ends your lease and lets the next waiting session choose, and a further section is chosen through the lease again. A statement whose own proof is accepted and which is not settled, because of what that proof rests on, can still be taken, and a statement of your own that would give it by another route is registered there.
+While you hold the lease of an element, no other section can appear on the element, so the sections you read are the sections you have to respect. Registering your section ends your lease and lets the next waiting session choose, and a further section is chosen through the lease again.
 
-The registration tool refuses what it can decide by itself, namely an identical statement, any conflict with a section that covers the whole element, and missing reasons. Two sections overlap when both ask for the same requirement in the same case. Sections covering the same cases but different required conditions do not overlap, and neither do sections asking for the same condition in different cases. Whether two differently stated sections overlap is a mathematical judgment, and it is yours. A registration therefore records, for every section other sessions hold on that element, your reason that the two sections are disjoint. Disjoint sections can still use each other's established results.
+The registration tool refuses what it can decide by itself, namely an identical statement, any conflict with a section that covers the whole element, and missing reasons. Two sections overlap when both ask for the same requirement in the same case. Sections covering the same cases but different required conditions do not overlap, and neither do sections asking for the same condition in different cases. Whether two differently stated sections overlap is a mathematical judgment, and it is yours. A registration therefore records, for every section other sessions hold on that element, your reason that the two sections are disjoint.
 
 ## The commands
 

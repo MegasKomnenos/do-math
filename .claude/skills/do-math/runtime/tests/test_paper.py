@@ -1,151 +1,36 @@
 """The paper command, with scripted stand-in sessions and a stand-in TeX command.
 
 No AI session and no TeX is run. The launch is patched as tests/test_pipeline.py patches it: the
-command the script starts is this file itself, which then plays the session. Run as
-`test_paper.py session <scenario folder>` it reads session.json in its working folder, writes the
-files the scenario scripts for that kind of session, and records what the session was given. Run
-as `test_paper.py tex paper.tex` it is the TeX command: it fails on `\\undefinedmacro` and otherwise
-leaves paper.pdf and paper.log. In the log, a line of the manuscript with `% wide` is reported as set
-69pt wider than the text block and one with `% nearly` as 2.5pt wider, in the words of TeX. A line with
-`% tight` is reported as 12.5pt too wide only when the manuscript carries the lines with which the script
-measures the room of the displays.
-
-The script of a scenario gives, for a key, what the sessions with that key write, one entry for each
-session in turn and the last entry for every later one. A session looks for `<kind>:<section>`, then,
-when its section is `<word>-<rest>`, as that of a repair of one section is, for `<kind>:<word>`, then
-for `<kind>`. Sessions may run side by side, so the record of the calls is kept under a lock file.
-The last repair of findings is a narrow one, and its sessions have the section `narrow-<kind>` or
-`narrow-<kind>-<section>`, so `repair:narrow` scripts all of them; the session that then reads the
-changed passages has the kind `changes`. The session that resolves what the readings left open has
-the kind `resolve`, and a session that compares the running text of a section with the elements
-has the kind `cover` and the section as its section. In a draft, the session that sketches a
-section has the kind `sketch`, and the session that repairs the plan of a draft for the paper is a
-`plan` session with the section `from-draft`.
-
-`together.json` in the scenario folder lists groups of keys: a session whose own key is in a group
-waits, before it writes anything, until a session of every key of the group has started, and its
-call records under "met" whether they all did. Sessions that the command runs one after another
-never meet.
+command the script starts is tests/paper_cli.py, which then plays the session, and the TeX command
+the tests give is the same file. Its head says what a session writes for the `script.json` of a
+scenario, when the sessions that `together.json` names wait for each other, and what the TeX command
+reports.
 """
-import json
-import os
-from pathlib import Path
-import sys
-import time
-
-THIS = Path(__file__).resolve()
-
-
-def stand_in_session(scenario):
-    folder = Path.cwd()
-    task = json.loads((folder / 'session.json').read_text(encoding='utf-8'))
-    sys.stdin.reconfigure(encoding='utf-8')  # the command hands over the bytes of a UTF-8 file, whatever the locale
-    prompt = sys.stdin.read()
-    script = json.loads((scenario / 'script.json').read_text(encoding='utf-8'))
-    record = scenario / 'calls.json'
-    own = f"{task['kind']}:{task['section']}"
-    names = [own] + ([own.split('-')[0]] if '-' in (task['section'] or '') else []) + [task['kind']]
-    key = next((k for k in names if k in script), None)
-    given = sorted(p.relative_to(folder).as_posix() for p in folder.rglob('*')
-                   if p.is_file() and not p.name.startswith(('cli.', 'worker-')))
-    # Sessions of one group wait for each other, which they can only do when the command runs them side by side.
-    groups = scenario / 'together.json'
-    group = next((g for g in (json.loads(groups.read_text(encoding='utf-8')) if groups.exists() else []) if own in g), None)
-    met = None
-    if group:
-        present = lambda k: scenario / ('present-' + k.replace(':', '-'))
-        present(own).touch()
-        deadline = time.time() + 20
-        while not (met := all(present(k).exists() for k in group)) and time.time() < deadline:
-            time.sleep(0.05)
-    lock = scenario / 'calls.lock'
-    while True:
-        try:
-            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-            break
-        except (FileExistsError, PermissionError):
-            time.sleep(0.01)
-    stopped = False
-    try:
-        calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
-        if key is not None:
-            entries = script[key]
-            entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
-            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped.
-            stopped = '@stopped' in entry
-            for name, content in entry.items():
-                if name != '@stopped':
-                    (folder / name).parent.mkdir(parents=True, exist_ok=True)
-                    (folder / name).write_text(content, encoding='utf-8', newline='\n')
-        elif task['kind'] == 'place':
-            # A scenario that says nothing of the check of the places has a session that finds every element
-            # at the first place the plan gave it.
-            listed = json.loads((folder / 'placed.json').read_text(encoding='utf-8'))
-            (folder / 'output' / 'placement.json').write_text(json.dumps([
-                {'element': entry['element'], 'found': True, 'where': entry['planned'][0], 'note': ''}
-                for entry in listed]), encoding='utf-8', newline='\n')
-        calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
-                      'given': given, 'prompt': prompt, 'met': met})
-        record.write_text(json.dumps(calls), encoding='utf-8')
-    finally:
-        lock.unlink()
-    if stopped:
-        # What the Claude CLI writes when the model refuses a request and the CLI has no other model to give it to.
-        message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."
-        print(json.dumps({'type': 'assistant', 'is_api_error_message': True, 'error': 'invalid_request',
-                          'message': {'model': '<synthetic>', 'role': 'assistant', 'stop_reason': 'refusal',
-                                      'content': [{'type': 'text', 'text': message}]}}))
-        print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal',
-                          'terminal_reason': 'api_error', 'result': message}))
-        return 1
-    print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Scripted session.'}}))
-    return 0
-
-
-def stand_in_tex(arguments):
-    text = Path(arguments[-1]).read_text(encoding='utf-8')
-    for number, line in enumerate(text.splitlines(), 1):
-        if '\\undefinedmacro' in line:
-            print(f'./paper.tex:{number}: Undefined control sequence.\nl.{number} \\undefinedmacro')
-            return 1
-    log = ['This is a stand-in for TeX.']
-    for number, line in enumerate(text.splitlines(), 1):
-        if '% wide' in line:
-            log += [f'Overfull \\hbox (69.23543pt too wide) detected at line {number}', '[]']
-        if '% nearly' in line:
-            log += [f'Overfull \\hbox (2.5pt too wide) in paragraph at lines {number}--{number + 1}', '[]']
-        # A display that fits its line only with its spaces closed up shows in the typesetting that measures the
-        # displays and not in the manuscript's own; the lines the script adds for the measuring name \paper@equation.
-        if '% tight' in line and '\\paper@equation' in text:
-            log += [f'Overfull \\hbox (12.5pt too wide) detected at line {number}', '[]']
-    Path('paper.log').write_text('\n'.join(log) + '\n', encoding='utf-8')
-    Path('paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
-    return 0
-
-
-if __name__ == '__main__' and sys.argv[1:2] == ['session']:
-    raise SystemExit(stand_in_session(Path(sys.argv[2])))
-if __name__ == '__main__' and sys.argv[1:2] == ['tex']:
-    raise SystemExit(stand_in_tex(sys.argv[2:]))
-
 import copy
 import hashlib
+import json
+from pathlib import Path
 import shutil
+import sys
 import tempfile
 import threading
+import time
 import types
 import unittest
 from unittest.mock import patch
 
+THIS = Path(__file__).resolve()
+STAND_IN = THIS.parent / 'paper_cli.py'  # what the tests launch in place of the CLI of a session and of TeX
+
 sys.path[:0] = [str(THIS.parents[1]), str(THIS.parent)]
+import command_sessions
 import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay, rests_on
 from runtime_support import read_json, write_json
-from support import InstanceCase, kept_copy, module_text, record_text, theorem
-from test_research import RefutedRootCase
+from support import InstanceCase, RefutedRootCase, kept_copy, module_text, record_text, theorem
 
-TEX = [sys.executable, '-B', str(THIS), 'tex']
+TEX = [sys.executable, '-B', str(STAND_IN), 'tex']
 
 # ----------------------------------------------------------------------------- the collection of real papers
 
@@ -168,7 +53,7 @@ FETCH = '\n'.join([
     "    stream.write('run ' + ' '.join(sys.argv[1:]) + chr(10))",
     "for path in sorted((here / 'stash').glob('*.tex')):",
     '    shutil.copyfile(path, here / path.name)',
-    "print('stand-in fetch')", ''])
+    "print('stand-in fetch: ' + chr(233))", ''])
 
 
 def passage(key):
@@ -379,8 +264,9 @@ def good():
             'cover': [{'output/coverage.json': '[]'}]}
 
 
-def answered(note):
-    return json.dumps([{'finding': 1, 'action': 'revised', 'note': note}])
+def answered(note, action='revised'):
+    """The answer of a repair session to its one finding: what it did, 'revised' unless given, with its note."""
+    return json.dumps([{'finding': 1, 'action': action, 'note': note}])
 
 
 def answers(*actions):
@@ -460,14 +346,14 @@ class PaperCase(InstanceCase):
     def command(self, cli, model, effort, cwd, servers=None, **options):
         self.servers.append(servers)
         self.options.append(options)
-        return Command(provider_for_model(model), [sys.executable, '-B', str(THIS), 'session', str(self.scenario)], Path(cwd))
+        return Command(provider_for_model(model), [sys.executable, '-B', str(STAND_IN), 'session', str(self.scenario)], Path(cwd))
 
     def run_paper(self, script, tex=TEX, only=False, parallel=1, resume=False, open_findings=None, **options):
         """One run of the command. Sessions run one at a time unless `parallel` says otherwise, so that the
         order of the calls is the order of the work. `open_findings` is what --open-findings is given, and
         `options` are draft, from_draft and title_page as `produce` takes them."""
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             if only:
                 return paper.typeset_only(self.instance, self.out, tex, **options)
             if open_findings is not None:
@@ -477,12 +363,12 @@ class PaperCase(InstanceCase):
     def close(self, script):
         """The pass that closes what a finished run left open, as a caller with nobody to ask makes it."""
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             return paper.close_open(self.instance, self.out, TEX, parallel=1)
 
     def said(self, arguments):
         """What the command prints last when it is run with these arguments after the instance, and its exit code."""
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             code = paper.main([str(self.instance), '--out', str(self.out), *arguments])
         return code, shown.call_args.args[0]
 
@@ -515,14 +401,14 @@ class RefusalTests(InstanceCase):
     def test_a_root_without_a_formal_proof_is_refused_before_anything_is_written(self):
         out = self.root / 'paper'
         self.assertEqual(replay(self.instance)['root_state'], 'unresolved')
-        with patch('paper.worker_command') as launch, patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command') as launch, patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(out), '--tex', *TEX]), 1)
         self.assertIn('the root is unresolved; the paper is written once the root is settled by a formal proof',
                       shown.call_args.args[0])
         launch.assert_not_called()
         self.assertFalse(out.exists())
         # Called as another command calls it, the function refuses for the same reason and launches nothing.
-        with patch('paper.worker_command') as launch, self.assertRaisesRegex(paper.Stop, 'the root is unresolved'):
+        with patch('command_sessions.worker_command') as launch, self.assertRaisesRegex(paper.Stop, 'the root is unresolved'):
             paper.produce(self.instance, out)
         launch.assert_not_called()
         self.assertFalse(out.exists())
@@ -1000,14 +886,14 @@ class CollectionTests(PaperCase):
     def test_a_missing_paper_is_fetched_once_and_the_command_stops_when_it_stays_missing(self):
         (self.exemplars / 'gamma.tex').unlink()
         write_json(self.scenario / 'script.json', good())
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             with self.assertRaises(paper.Stop) as stopped:
                 paper.produce(self.instance, self.out, TEX)
         self.assertEqual(self.runs(), ['run '])
         message = str(stopped.exception)
         self.assertIn('after fetch.py ran (exit code 0): gamma.', message)
         self.assertIn(f'"{sys.executable}" "{self.exemplars / "fetch.py"}" --only gamma', message)
-        self.assertIn('stand-in fetch', message)
+        self.assertIn('stand-in fetch: é', message)  # as it was printed, whatever encoding the locale gives a pipe
         # Nothing was launched and nothing was written.
         self.assertFalse((self.scenario / 'calls.json').exists())
         self.assertFalse(self.out.exists())
@@ -1112,7 +998,7 @@ class RunTests(PaperCase):
         wrong['exemplars'] = CHOSEN[:5] + ['alpha']
         script['plan'].insert(0, {'output/plan.json': json.dumps(wrong), 'output/study.md': STUDY})
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--parallel', '1', '--tex', *TEX]), 0)
         self.assertIn('paper.pdf', ' '.join(str(call.args[0]) for call in shown.call_args_list))
         for name in ('paper.tex', 'references.bib', 'paper.pdf', 'plan.json', 'correspondence.json', 'log.json',
@@ -1238,7 +1124,7 @@ class RunTests(PaperCase):
         script = good()
         script['plan'] = [{}]  # the planning session leaves nothing
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--model', 'claude/sonnet',
                                          '--effort', 'low', '--tex', *TEX]), 1)
         self.assertEqual([tuple(read_json(self.folder(call) / 'session.json')[key] for key in ('kind', 'model', 'effort'))
@@ -1320,7 +1206,7 @@ class RunTests(PaperCase):
         script['write:proof'] = [{'output/proof.tex': PROOF + '\\[ a = b \\] % wide\n'}]
         script['repair:wide'] = [{'output/proof.tex': PROOF + f'\\[ a = b \\] % wide, attempt {n}\n'} for n in range(9)]
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             self.assertEqual(paper.produce(self.instance, self.out, TEX, parallel=1), 2)
         self.assertEqual(len(self.calls('repair')), paper.REPAIR_ROUNDS)
         # The paper is typeset, so the reading and the comparison are made as for any other manuscript.
@@ -1395,7 +1281,7 @@ class RunTests(PaperCase):
     def test_the_reading_loop_is_bounded(self):
         script = good()
         script['read'] = [{'output/reading.json': json.dumps(FOUND)}]
-        answer = json.dumps([{'finding': 1, 'action': 'revised', 'note': 'The expansion is now written out.'}])
+        answer = answered('The expansion is now written out.')
         script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', f'Expand, version {n}.'),
                                      'output/response.json': answer} for n in range(9)]
         # What the last reading finds goes to a narrow repair, and a session reads the passage that it changed.
@@ -1404,7 +1290,7 @@ class RunTests(PaperCase):
         script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Read with the proof of Lemma 2.2.')],
                                                                [(1, True, '')])}]
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
+        kinds = self.kinds(4)
         # A repair follows every reading. The one after the last reading is narrow and is followed by a reading of
         # what it changed, and by no other reading of the manuscript by itself.
         self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1)
@@ -1455,35 +1341,14 @@ class RunTests(PaperCase):
         self.assertEqual(self.events('note'), [])
         self.assertTrue((self.out / 'paper.pdf').is_file())
 
-    def test_a_statement_that_differs_is_repaired_and_compared_again(self):
-        script = good()
-        differs = [dict(row) for row in SAME]
-        differs[2].update(verdict='differs', difference='The manuscript has k^2 + 2k = (k + 1)^2.')
-        script['write:tools'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')}]
-        script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])},
-                                   {'output/comparison.json': json.dumps(SAME[1:])}]
-        script['repair:comparison'] = [{'output/tools.tex': TOOLS, 'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'revised', 'note': 'The term 1 is restored.'}])}]
-        self.assertEqual(self.run_paper(script), 0)
-        self.assertEqual([len(e['differing']) for e in self.events('comparison')], [1, 0])
-        # The repair changed a statement and may have adjusted its proof, so the manuscript was read by itself
-        # again before its statements were compared once more.
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][-9:],
-                         [*COMPARED, ('repair', 'comparison-tools'), ('read', None), *COMPARED, *COVERED, *PLACED])
-        again = self.calls('read')[-1]
-        self.assertIn('k^2 + (2k + 1)', (self.out / 'sessions' / again['folder'] / 'paper.tex').read_text(encoding='utf-8'))
-        rows = read_json(self.out / 'correspondence.json')['statements']
-        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
-        self.assertIn('k^2 + (2k + 1)', rows[2]['paper_statement'])
-
     def test_a_difference_that_the_bounded_repairs_leave_is_reported(self):
         script = good()
         differs = [dict(row) for row in SAME]
         differs[2].update(verdict='differs', difference='The manuscript has k^2 + 2k = (k + 1)^2.')
         script['write:tools'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
-        script['repair:comparison'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k + 0'), 'output/response.json':
-                                        json.dumps([{'finding': 1, 'action': 'revised', 'note': 'A term was added.'}])}]
+        script['repair:comparison'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k + 0'),
+                                        'output/response.json': answered('A term was added.')}]
         self.assertEqual(self.run_paper(script), 2)
         self.assertEqual([(c['kind'], c['section']) for c in self.calls('compare')], COMPARED * paper.COMPARISON_ROUNDS)
         self.assertEqual(len(self.calls('repair')), paper.COMPARISON_ROUNDS - 1)
@@ -1543,8 +1408,7 @@ class RunTests(PaperCase):
         script['write:tools'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
         script['repair:comparison'] = [{'output/tools.tex': TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k + 0'),
-                                        'output/response.json': json.dumps(
-                                            [{'finding': 1, 'action': 'revised', 'note': 'A term was added.'}])}]
+                                        'output/response.json': answered('A term was added.')}]
         with patch('paper.shutil.which', return_value=None):
             self.assertEqual(self.run_paper(script, tex=None), 2)
         self.assertFalse((self.out / 'paper.pdf').exists())
@@ -1627,7 +1491,7 @@ class RunTests(PaperCase):
         script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
                                       'output/response.json': answered('The opening is rewritten.')} for n in range(9)]
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        kinds = self.kinds(5)
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None), ('likeness', None),
                                  ('read', None), *COMPARED, *COVERED, *PLACED])
         repair = self.calls('repair')[0]
@@ -1664,7 +1528,7 @@ class RunTests(PaperCase):
                                       'output/response.json': answered('Rewritten.')} for n in range(rounds)]
         script['resolve'] = keeps(1)
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        kinds = self.kinds(5)
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness'), ('likeness', None)] * (rounds // 2)
                          + [('read', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         self.assertEqual(len(self.calls('likeness')), rounds)
@@ -1692,11 +1556,10 @@ class RunTests(PaperCase):
         script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
                                       'output/response.json': answered('Rewritten.')} for n in range(rounds)]
         # The repair after the last of these readings is narrow, and its session keeps the text.
-        script['repair:narrow'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'A shorter abstract would drop a hypothesis.'}])}]
+        script['repair:narrow'] = [{'output/response.json': answered('A shorter abstract would drop a hypothesis.', 'kept')}]
         script['resolve'] = keeps(1)
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][5:]
+        kinds = self.kinds(5)
         # It changed nothing, so no session reads changes. The repairs before it rewrote the introduction, so the
         # manuscript is read by itself once more, as before.
         self.assertEqual(kinds, [('likeness', None), ('repair', 'likeness')] * (rounds - 1)
@@ -1737,7 +1600,7 @@ class RunTests(PaperCase):
             self.assertEqual(self.run_paper(script), 0)
         # The first of these readings is here the last that the bound allows. No repair that may rewrite was made, and
         # the changes of the narrow repair were read where they stand, so the manuscript is not read by itself again.
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][4:],
+        self.assertEqual(self.kinds(4),
                          [('read', None), ('likeness', None), ('repair', 'narrow-likeness-tools'),
                           ('repair', 'narrow-likeness'), ('changes', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         tools, whole = self.calls('repair')
@@ -1782,7 +1645,7 @@ class RunTests(PaperCase):
         with patch('paper.READING_ROUNDS', 1):
             self.assertEqual(self.run_paper(script), 0)
         # Both findings lie in one section, so one session repairs them, and none is launched for the whole.
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][4:],
+        self.assertEqual(self.kinds(4),
                          [('read', None), ('repair', 'narrow-reading-tools'), ('changes', None), ('likeness', None),
                           ('likeness', None), *COMPARED, ('resolve', None), *COVERED, *PLACED])
         repair = self.calls('repair')[0]
@@ -1840,7 +1703,7 @@ class RunTests(PaperCase):
             self.assertEqual(self.run_paper(script), 0)
         # The bounded repairs of the typesetting did not help. The text that the reader read is put back, the finding
         # stays open for the resolving session, and the run goes on; no session reads changes, since none is left.
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][4:],
+        self.assertEqual(self.kinds(4),
                          [('read', None), ('repair', 'narrow-reading')] + [('repair', 'typeset')] * paper.REPAIR_ROUNDS
                          + [('likeness', None), ('likeness', None), *COMPARED, ('resolve', None), *COVERED])
         self.assertEqual(self.part('tools'), TOOLS)
@@ -1892,7 +1755,7 @@ class RunTests(PaperCase):
         script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', 'Expand, version 0.'),
                                      'output/response.json': answered('The expansion is now written out.')}]
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
+        kinds = self.kinds(4)
         self.assertEqual(kinds, [('read', None), ('likeness', None), ('repair', 'likeness'), ('likeness', None),
                                  ('likeness', None), ('read', None), ('repair', 'reading'), ('read', None),
                                  *COMPARED, *COVERED, *PLACED])
@@ -1924,7 +1787,7 @@ class RunTests(PaperCase):
                                                                [(1, False, 'Nothing is expanded.')])}]
         script['resolve'] = keeps(1)
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][9:]
+        kinds = self.kinds(9)
         self.assertEqual(kinds, [('read', None), ('repair', 'reading')] * (paper.READING_ROUNDS - 1)
                          + [('read', None), ('repair', 'narrow-reading'), ('changes', None), *COMPARED,
                             ('resolve', None), *COVERED, *PLACED])
@@ -1942,10 +1805,9 @@ class RunTests(PaperCase):
         script = good()
         script['likeness'] = [{'output/likeness.json': json.dumps(departed('The abstract says more than theirs.'))},
                               {'output/likeness.json': json.dumps(LIKE)}]
-        script['repair:likeness'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'Shortening the abstract would drop a hypothesis.'}])}]
+        script['repair:likeness'] = [{'output/response.json': answered('Shortening the abstract would drop a hypothesis.', 'kept')}]
         self.assertEqual(self.run_paper(script), 0)
-        kinds = [(c['kind'], c['section']) for c in self.calls()][4:]
+        kinds = self.kinds(4)
         # Nothing was rewritten, so the manuscript is as its one reader left it.
         self.assertEqual(kinds, [('read', None), ('likeness', None), ('repair', 'likeness'), ('likeness', None),
                                  ('likeness', None), *COMPARED, *COVERED])
@@ -2254,7 +2116,7 @@ class SideBySideTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'is not empty; give a new folder to --out'):
             self.run_paper(good())
         before = sorted((path.relative_to(self.out).as_posix(), path.stat().st_mtime_ns) for path in self.out.rglob('*'))
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--resume', '--dry-run', '--tex', *TEX]), 0)
         said = shown.call_args.args[0]
         self.assertIn('Dry run: no session is launched and nothing is written.', said)
@@ -2285,6 +2147,36 @@ class SideBySideTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'came to its end \\(complete\\); there is nothing to continue'):
             self.run_paper(good(), resume=True)
         self.assertEqual(self.run_paper(good(), only=True), 0)
+
+    def test_an_interrupt_ends_the_sessions_that_run_side_by_side_and_the_run_can_be_continued(self):
+        import _thread
+        import signal
+        # The sessions of the two later sections wait for a session that never starts, so both are running when the
+        # interrupt comes. It comes as Ctrl-C does: as a KeyboardInterrupt in the thread that waits for the sessions.
+        # A process started in the background of a shell may ignore the signal, so the test gives it Python's handler.
+        previous = signal.signal(signal.SIGINT, signal.default_int_handler)
+        self.addCleanup(signal.signal, signal.SIGINT, previous or signal.SIG_DFL)
+        self.together(('write:tools', 'write:proof', 'write:never'))
+        running = [self.scenario / f'present-write-{section}' for section in ('tools', 'proof')]
+        over = threading.Event()
+        self.addCleanup(over.set)
+
+        def interrupt():
+            while not over.wait(0.05):
+                if all(mark.exists() for mark in running):
+                    return _thread.interrupt_main()
+
+        threading.Thread(target=interrupt, daemon=True).start()
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_paper(good(), parallel=2)
+        # Both sessions were ended before they wrote a part or recorded their call, and no other session was begun.
+        self.assertEqual(self.kinds(), [('plan', None), ('write', 'intro')])
+        self.assertEqual(len(list((self.out / 'sessions').iterdir())), 4)
+        self.assertEqual(sorted(path.name for path in (self.out / 'parts').iterdir()), ['abstract.tex', 'intro.tex'])
+        # The folder holds a run that --resume continues with the two sections.
+        code, said = self.said(['--resume', '--dry-run', '--tex', *TEX])
+        self.assertEqual(code, 0)
+        self.assertIn('Sections that are still to be written, up to 4 at a time: tools, proof.', said)
 
     def test_a_run_is_not_continued_when_the_canon_or_the_plan_is_no_longer_what_it_was(self):
         script = good()
@@ -2605,11 +2497,18 @@ class SideBySideTests(PaperCase):
         self.assertIn('adjust its proof and the places of this section that use it', repair['prompt'])
         self.assertEqual(self.events('repair')[0]['sessions'], [{'section': 'tools', 'findings': [1], 'changed': ['tools']}])
         self.assertEqual([len(e['differing']) for e in self.events('comparison')], [1, 0])
+        # The repair changed a statement and may have adjusted its proof, so the manuscript was read by itself
+        # again before its statements were compared once more: that reader had the statement as the repair left it.
+        reread = self.calls('read')[-1]
+        self.assertIn('k^2 + (2k + 1)', (self.folder(reread) / 'paper.tex').read_text(encoding='utf-8'))
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+        self.assertIn('k^2 + (2k + 1)', rows[2]['paper_statement'])
 
     def test_a_dry_run_of_a_new_paper_launches_nothing_and_writes_nothing(self):
         write_json(self.scenario / 'script.json', good())
         (self.exemplars / 'gamma.tex').unlink()
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--dry-run', '--tex', *TEX]), 0)
         said = shown.call_args.args[0]
         for words in ('Dry run: no session is launched and nothing is written.',
@@ -2647,15 +2546,13 @@ class OpenFindingsTests(PaperCase):
         statement that differs from its element after the bounded comparisons; the number of sessions it launched."""
         script = good()
         script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION, BASE]})}]
-        script['repair:narrow'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'The reader is expected to expand a square.'}])}]
+        script['repair:narrow'] = [{'output/response.json': answered('The reader is expected to expand a square.', 'kept')}]
         if comparison:
             differs = [dict(row) for row in SAME]
             differs[2].update(verdict='differs', difference=self.DIFFERENCE)
             script['write:tools'] = [{'output/tools.tex': self.OFF}]
             script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
-            script['repair:comparison'] = [{'output/response.json': json.dumps(
-                [{'finding': 1, 'action': 'kept', 'note': 'The statement is that of the record.'}])}]
+            script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
         with patch('paper.READING_ROUNDS', 1), patch('paper.STAGES', paper.STAGES[:4]):
             self.assertEqual(self.run_paper(script), 2)
         self.kept = paper.KEPT + 'The reader is expected to expand a square.'
@@ -2779,11 +2676,10 @@ class OpenFindingsTests(PaperCase):
         script = good()
         script['repair:narrow-reading-tools'] = [{'output/tools.tex': self.OFF.replace('Expand the right-hand side.', EXPANDED),
                                                   'output/response.json': answers('revised')}]
-        script['repair:narrow-reading-proof'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'An induction on $n$ starts at $0$.'}])}]
+        script['repair:narrow-reading-proof'] = [{'output/response.json': answered('An induction on $n$ starts at $0$.', 'kept')}]
         script['changes'] = [{}]
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'), self.assertRaises(paper.Stop):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'), self.assertRaises(paper.Stop):
             paper.act_on_open(self.instance, self.out, TEX, parallel=1, numbers='1-2')
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-tools'), ('repair', 'narrow-reading-proof'),
                                                 ('changes', None), ('changes', None)])
@@ -2810,6 +2706,19 @@ class OpenFindingsTests(PaperCase):
         self.assertIn(EXPANDED, self.part('tools'))
         self.assertEqual(read_json(self.out / 'state.json')['narrow'], None)
         self.assertFalse((self.out / 'narrow').exists())
+
+    def test_the_listing_is_printed_where_the_output_cannot_encode_a_character_of_a_finding(self):
+        # Output that is redirected is encoded as the system's locale has it, and a finding quotes what a session
+        # wrote. A character that the encoding lacks is printed as an escape, and the command ends as it does otherwise.
+        import io
+        self.DIFFERENCE = 'The manuscript has k² + 2k = (k + 1)².'
+        self.leave_open()
+        shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
+        with patch('sys.stdout', shown):
+            code = paper.main([str(self.instance), '--out', str(self.out), '--open-findings', '--dry-run', '--tex', *TEX])
+        shown.flush()
+        self.assertEqual(code, 0)
+        self.assertIn(b'       difference: The manuscript has k\\xb2 + 2k = (k + 1)\\xb2.', shown.buffer.getvalue())
 
     def test_a_run_without_open_findings_and_a_run_that_has_not_ended_are_refused(self):
         self.assertEqual(self.run_paper(good()), 0)
@@ -2866,7 +2775,7 @@ class SessionsTests(PaperCase):
                                                              {'output/found.json': '{"found": 2}'}]})
         out = self.root / 'work'
         servers = {'literature': {'command': 'python', 'args': ['server.py']}}
-        with patch('paper.worker_command', side_effect=self.command):
+        with patch('command_sessions.worker_command', side_effect=self.command):
             sessions = paper.Sessions(self.instance, out, parallel=3)
             self.assertEqual((sessions.instance, sessions.out, sessions.parallel, sessions.dry, sessions.gate, sessions.log),
                              (self.instance.resolve(), out.resolve(), 3, False, None, []))
@@ -2907,7 +2816,7 @@ class SessionsTests(PaperCase):
         gate = threading.BoundedSemaphore(1)
         sessions = paper.Sessions(self.instance, self.root / 'work', gate=gate)
         missing = Command(provider_for_model(sessions.writer['model']), [str(self.root / 'no-such-cli')], self.root)
-        with patch('paper.worker_command', return_value=missing), \
+        with patch('command_sessions.worker_command', return_value=missing), \
                 self.assertRaisesRegex(paper.Stop, 'the probe session could not be started'):
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         # The gate is free for the sessions of whoever shares it, and no session is recorded as run.
@@ -2943,7 +2852,8 @@ class SessionsTests(PaperCase):
             seen.append(('limit', Gate.held))
             return limits.pop(0)
 
-        with patch('paper.worker_command', side_effect=command), patch('paper.detect_usage_limit', side_effect=limit):
+        with patch('command_sessions.worker_command', side_effect=command), \
+                patch('command_sessions.detect_usage_limit', side_effect=limit):
             sessions = paper.Sessions(self.instance, self.root / 'work', gate=Gate())
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         # The gate was taken for each run of the CLI and given back before the wait for the limit.
@@ -2953,7 +2863,7 @@ class SessionsTests(PaperCase):
         self.assertEqual(len(self.calls()), 2)
         # A semaphore is free again after a session, and a run of the paper command holds the gate it is given.
         gate = threading.BoundedSemaphore(1)
-        with patch('paper.worker_command', side_effect=self.command):
+        with patch('command_sessions.worker_command', side_effect=self.command):
             sessions = paper.Sessions(self.instance, self.root / 'work-2', gate=gate)
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         self.assertTrue(gate.acquire(blocking=False))
@@ -2970,7 +2880,7 @@ class SessionsTests(PaperCase):
             sessions.stopping.set()
             return self.command(*arguments, **options)
 
-        with patch('paper.worker_command', side_effect=command), \
+        with patch('command_sessions.worker_command', side_effect=command), \
                 self.assertRaisesRegex(paper.Stop, 'the command was interrupted'):
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         # The process was ended as soon as it existed: the session did nothing, and none is left running.
@@ -3089,7 +2999,7 @@ class DraftTests(PaperCase):
         script['plan'].insert(0, {'output/plan.json': json.dumps(PLAN), 'output/study.md': STUDY})
         script['sketch:proof'].insert(0, {'output/sketch.json': json.dumps({**SKETCHES['proof'], 'statements': SKETCHES['intro']['statements']})})
         write_json(self.scenario / 'script.json', script)
-        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--parallel', '1', '--draft', '--tex', *TEX]), 0)
         calls = self.calls()
         self.assertEqual([(c['kind'], c['section']) for c in calls],
@@ -3163,7 +3073,7 @@ class DraftTests(PaperCase):
         self.assertFalse((self.out / 'draft.json').exists())
         # The run is continued as the draft it was begun as, with the one session that is missing.
         self.assertEqual(self.run_paper(drafting(), resume=True), 0)
-        self.assertEqual([(c['kind'], c['section']) for c in self.calls()][launched:], [('compare', 'tools')])
+        self.assertEqual(self.kinds(launched), [('compare', 'tools')])
         self.assertEqual([entry['text'] for entry in read_json(self.out / 'draft.json')['statements']], [MAIN_TEXT, STRICT, REAL])
         self.assertEqual([e['status'] for e in self.events('end')], ['failed', 'draft'])
         # A run makes the draft of a paper or writes the paper from a draft, and not both.
@@ -3473,8 +3383,7 @@ class FromDraftTests(PaperCase):
         again['cover:intro'] = [{'output/coverage.json': json.dumps([{
             'entry': 2, 'quote': 'Which number is $S_n$?', 'asserts': 'Nothing.', 'nearest': 'Small.root',
             'difference': 'A question is put where a result is expected.'}])}]
-        again['repair:narrow'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'A question asserts nothing.'}])}]
+        again['repair:narrow'] = [{'output/response.json': answered('A question asserts nothing.', 'kept')}]
         # The continued run has the draft it recorded when it began, and takes from it the declarations that its
         # materials hold beside what the proof of the root rests on, whatever the folder of the draft says now.
         self.assertIn('Small.unused', [e['name'] for e in read_json(self.out / 'materials.json')['elements']])
@@ -3707,8 +3616,7 @@ class MainResultTests(PaperCase):
         again['cover:tools'] = [{'output/coverage.json': json.dumps([{
             'entry': 1, 'quote': 'The theorem is the expansion of a square', 'asserts': 'The theorem is a case of a known identity.',
             'nearest': 'Small.expand', 'difference': 'No element says that one is the other.'}])}]
-        again['repair:narrow'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'The sentence cites the identity and asserts nothing more.'}])}]
+        again['repair:narrow'] = [{'output/response.json': answered('The sentence cites the identity and asserts nothing more.', 'kept')}]
         self.assertEqual(self.run_paper(again, resume=True), 2)
         self.assertEqual(self.kinds(launched), [
             ('plan', None), ('plan', None), ('write', 'intro'), ('write', 'tools'), ('write', 'proof'), ('read', None),
@@ -3824,7 +3732,7 @@ def restructuring():
     script = good()
     script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION]})},
                       {'output/reading.json': json.dumps({**CLEAN, 'findings': [BASE]})}]
-    script['repair:narrow'] = [{'output/response.json': json.dumps([{'finding': 1, 'action': 'kept', 'note': EXPECTED}])}]
+    script['repair:narrow'] = [{'output/response.json': answered(EXPECTED, 'kept')}]
     moved = {'output/proof.tex': JOINED_PROOF,
              'output/response.json': answered('The lemma stands where it is used, with its expansion written out.')}
     script['resolve'] = [{**moved, 'output/plan.json': json.dumps({**JOINED_PLAN, 'others': JOINED_PLAN['others'][:2]
@@ -3945,7 +3853,7 @@ def asserting(kept=None):
     script = good()
     script['write:tools'] = [{'output/tools.tex': TOOLS_SHARP}]
     script['cover:tools'] = [{'output/coverage.json': json.dumps([UNCOVERED])}, {'output/coverage.json': '[]'}]
-    script['repair:narrow'] = [{'output/response.json': json.dumps([{'finding': 1, 'action': 'kept', 'note': kept}])}] if kept \
+    script['repair:narrow'] = [{'output/response.json': answered(kept, 'kept')}] if kept \
         else [{'output/tools.tex': TOOLS, 'output/response.json': answered('The sentence is cut.')}]
     script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Nothing after it rests on the sentence.')], [(1, True, '')])}]
     return script
@@ -4107,8 +4015,7 @@ class CoverageTests(PaperCase):
         script = good()
         script['write:tools'] = [{'output/tools.tex': off}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
-        script['repair:comparison'] = [{'output/response.json': json.dumps(
-            [{'finding': 1, 'action': 'kept', 'note': 'The statement is that of the record.'}])}]
+        script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
         self.assertEqual(self.run_paper(script), 2)
         self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.COMPARISON])
         launched = len(self.calls())
@@ -4162,7 +4069,7 @@ class CoverageTests(PaperCase):
         outside = {'entry': 2, 'quote': derived, 'asserts': 'The square of $k + 1$, expanded.', 'nearest': 'Small.sq_step',
                    'difference': 'No element states the expansion by itself.'}
         inside = TOOLS.replace('Expand the right-hand side.', 'Expand the right-hand side. ' + derived)
-        moved = json.dumps([{'finding': 1, 'action': 'moved', 'note': 'Into the proof of the second lemma.'}])
+        moved = answered('Into the proof of the second lemma.', 'moved')
         script = good()
         script['write:tools'] = [{'output/tools.tex': TOOLS + '\n' + derived + '\n'}]
         script['cover:tools'] = [{'output/coverage.json': json.dumps([outside])}, {'output/coverage.json': '[]'}]
@@ -4296,18 +4203,18 @@ class SafeguardTests(PaperCase):
         folder = self.root / 'session'
         folder.mkdir()
         stream = folder / 'cli.stdout.jsonl'
-        self.assertFalse(paper.stopped_by_safeguard(folder, 'claude'))  # a session that left no stream
+        self.assertFalse(command_sessions.stopped_by_safeguard(folder, 'claude'))  # a session that left no stream
         refused = [{'type': 'system', 'subtype': 'init'},
                    {'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal', 'result': 'API Error'}]
         stream.write_text('\n'.join(map(json.dumps, refused)) + '\nnot json\n', encoding='utf-8')
-        self.assertTrue(paper.stopped_by_safeguard(folder, 'claude'))
-        self.assertFalse(paper.stopped_by_safeguard(folder, 'codex'))
+        self.assertTrue(command_sessions.stopped_by_safeguard(folder, 'claude'))
+        self.assertFalse(command_sessions.stopped_by_safeguard(folder, 'codex'))
         # A turn that ended well and speaks of a refusal is none, and neither is another error.
         for other in ({'type': 'result', 'is_error': False, 'stop_reason': 'end_turn', 'result': 'The stop reason "refusal".'},
                       {'type': 'result', 'is_error': True, 'stop_reason': 'max_tokens'},
                       {'type': 'assistant', 'is_error': True, 'stop_reason': 'refusal'}):
             stream.write_text(json.dumps(other) + '\n', encoding='utf-8')
-            self.assertFalse(paper.stopped_by_safeguard(folder, 'claude'), other)
+            self.assertFalse(command_sessions.stopped_by_safeguard(folder, 'claude'), other)
 
     def test_a_stopped_session_is_started_again_with_the_same_prompt_and_no_word_of_the_stop(self):
         script = good()
@@ -4391,7 +4298,7 @@ class SafeguardTests(PaperCase):
             self.run_paper(script, choice=self.CLAUDE)
         self.assertIn('a safeguard of the AI system stopped every write session of tools, in 2 attempts, before it had '
                       'finished (sessions/', str(stopped.exception))
-        self.assertEqual(stopped.exception.todo, paper.STOPPED)
+        self.assertEqual(stopped.exception.todo, command_sessions.STOPPED)
         self.assertEqual(self.events('end')[-1]['status'], 'failed')
         # Continued, the run starts the same session again, and comes to its end.
         launched = len(self.calls())

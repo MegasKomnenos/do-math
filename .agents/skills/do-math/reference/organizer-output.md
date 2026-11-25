@@ -2,7 +2,7 @@
 
 Your work leaves `output/organization.json` and, when you add elements or rearrange modules, a change of your own in the same folder. `organization.json` says which published changes this session answers for and which questions ask the same thing. The change carries the Lean: elements stating that two definitions or two statements agree, each with a proof that is complete in Lean, and modules rearranged so that a proof can stand under its statement's own name.
 
-Nothing you submit goes through review. For the merging of questions the research relies on your judgment, as it always has. For everything in the change it relies on Lean: the runner publishes what compiles and passes the checks a machine can decide, and what you add enters as accepted. That is why an agreement you cannot prove in Lean is not yours to establish, and why a rearrangement may move a proof and may not change one.
+Nothing you submit goes through review. For the merging of questions the research relies on your judgment. For everything in the change it relies on Lean: the runner publishes what compiles and passes the checks a machine can decide, and what you add enters as accepted. That is why an agreement you cannot prove in Lean is not yours to establish, and why a rearrangement may move a proof and may not change one.
 
 ## `organization.json`
 
@@ -12,7 +12,7 @@ Nothing you submit goes through review. For the merging of questions the researc
 | `merge_questions` | Array of `{from, into, reason}` naming two questions that ask the same thing. Omit it or use an empty array when you merge none. |
 | `delete` | Array of module names to remove from the library, for example `"Parking.Columns.AltProof"`. It belongs to a rearrangement and takes effect only together with a change; omit it otherwise. |
 
-**The batch.** The automatic organizer is launched once the number of published changes that no organizer has yet taken into its batch reaches the instance's setting, four by default. Your batch was fixed when you were launched. Changes published during your session are not in it and remain for the next organizer, and acknowledging your batch does not mark them as processed. Organizer outputs and comprehensive reviews do not count toward the number. The transport check refuses a `batch` that differs from the assigned one.
+**The batch.** Your batch was fixed when you were launched. Changes published during your session are not in it and remain for the next organizer, and acknowledging your batch does not mark them as processed. The transport check refuses a `batch` that differs from the assigned one.
 
 **Merging questions.** `from` and `into` are IDs of existing questions, and `reason` explains why the two ask the same thing; the runner does not compare their wording. After publication the old identifier is an alias of the surviving question, and a resolution recorded against either resolves it. Question `q0` keeps its identity in both directions: it is not merged into another question, and no question is merged into it. A proposal that duplicates `q0` is declined at review. The merged question has one understanding so far. The text of the surviving question is the one the question's view shows from then on. When the surviving question has no text, the text of the question merged away becomes its text; when both have one, the text of the question merged away goes to the history of the merged question, where `question <id> --history` shows it. Your role guide explains what a merge leaves to the explorations that hold either question.
 
@@ -39,7 +39,7 @@ A new element goes into a new module under `lean/`, with its record under `recor
 
 Every statement you add must have a proof that is complete in Lean and depends, through everything of the canon it uses, only on the allowed axioms. `commands.prepare` reports any statement you add for which this fails, and such a change is not published. A proof that names an element whose own Lean proof ends in `sorry` fails in this way, because `sorryAx` is then among its axioms.
 
-Each of two statements shown to agree is settled through a proof of its own, and the agreement is what lets one of them be derived from the other in a line. A `replace` in your change is for one thing only, turning a reference to a retired declaration into a reference to the statement's own: the checks refuse a replacement that changes what a proof names or whether it is complete in Lean, because no review would have judged the new proof. A one-line derivation put in the place of a statement's own proof therefore enters through a peer's change and review. A derivation you add as a declaration of its own, another proof of an existing statement with `proves:` in its record, is an added element: like every statement you add, it needs a proof that is complete in Lean from the allowed axioms, and it then enters as accepted.
+A `replace` in your change is for one thing only, turning a reference to a retired declaration into a reference to the statement's own: the checks refuse a replacement that changes what a proof names or whether it is complete in Lean, because no review would have judged the new proof. A one-line derivation of one statement from another that agrees with it, put in the place of the statement's own proof, therefore enters through a peer's change and review. A derivation you add as a declaration of its own, another proof of an existing statement with `proves:` in its record, is an added element like every statement you add; your role guide says under "Join what is the same" when you can add it.
 
 ### Rearranging modules
 
@@ -50,9 +50,7 @@ A rearrangement, which your role guide explains under "Rearrange modules so that
 - In `retire` of `change.json`, list each separate declaration you remove, as `{"alternative": "<the declaration that is another proof>", "into": "<the statement's own declaration>", "reason": "..."}`, with exactly these three keys.
 - In `records/`, put the record of the statement's own declaration with the written proof that the alternative's record carried. The alternative's record leaves the canon with its declaration and is kept in the history, so without this the statement's record would go on describing the proof that no longer stands.
 
-In the rewritten files, the statement's own declaration carries the proof that stood under the alternative, the alternative is gone, and every reference to the alternative in the published library has become a reference to the statement's own declaration. A reference left behind would not compile.
-
-A module in which nothing changes except such a reference can be handled in either of two ways. You can rewrite the module under `rewrite/lean/`, or you can name the declaration in `replace` and give its new text, which leaves the rest of the file as the canon has it. Use one of the two for a module and not both: the files under `rewrite/lean/` are put in place after the replacements are made, so a rewritten module discards a replacement made in it.
+A module in which nothing changes except a reference to the alternative, which becomes a reference to the statement's own declaration, can be handled in either of two ways. You can rewrite the module under `rewrite/lean/`, or you can name the declaration in `replace` and give its new text, which leaves the rest of the file as the canon has it. Use one of the two for a module and not both: the files under `rewrite/lean/` are put in place after the replacements are made, so a rewritten module discards a replacement made in it.
 
 A rearrangement is valid when every other element has the name and the statement it had and everything compiles. `commands.prepare` checks the following by machine:
 
@@ -65,7 +63,7 @@ These checks compare names, kinds and statements. For a definition they also com
 
 ### Preparing the change
 
-Run `commands.prepare` when the change is assembled; [The candidate change](change-format.md) describes the command, its exit codes and how to wait for its build under "Preparing the candidate". It applies your change to a copy of the canon as it is now, builds it through the broker, and checks what a machine can decide: that everything compiles, the conditions listed above, that every declaration you add has a record and every record belongs to a declaration, that nothing you add is an axiom or a definition containing `sorry`, and that Lean confirms each claim in a record that one declaration proves or refutes the statement of another. Correct what it reports and run it again. Its result in `prepared.json` is bound to every file of your `output/`, `organization.json` included, so prepare again after any edit. The command is for a change; when you submit only `organization.json`, there is nothing to prepare.
+Run `commands.prepare` when the change is assembled; [The candidate change](change-format.md) describes the command, what it checks, its exit codes and how to wait for its build under "Preparing the candidate". Correct what it reports and run it again. Its result in `prepared.json` is bound to every file of your `output/`, `organization.json` included, so prepare again after any edit. The command is for a change; when you submit only `organization.json`, there is nothing to prepare.
 
 ## What happens to your output
 

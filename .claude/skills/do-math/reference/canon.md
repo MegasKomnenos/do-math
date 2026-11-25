@@ -1,8 +1,8 @@
 # The canon: reading it and writing in it
 
-The common introduction explains what the canon is: the instance's Lean library, a written record beside each of its declarations, and the written state attached to statements and questions. This guide gives what every session needs in order to work with it.
+The common introduction explains what the canon is. This guide gives what every session needs in order to work with it.
 
-The formats of the written files, namely the record, the approach entry and the understanding text, and the criteria for the weight of an element are in [The written texts of the canon](records.md). Peers and organizers, who write those texts into a change, and reviewers, who judge them, receive that guide. A producing session, an attempt, an explorer or a formalizer, writes Lean definitions and statements in its own working files and leaves its mathematics in its report; it does not write records.
+The formats of the written files, namely the record, the approach entry and the understanding text, and the criteria for the weight of an element are in [The written texts of the canon](records.md).
 
 ## Where the canon is
 
@@ -66,13 +66,15 @@ A statement is a `theorem`, and its proof takes one of three forms.
 - An informal proof names in Lean what it rests on and ends in `sorry`, as in the example above. Each statement the argument uses is named in a line of the plain form `have h := name arguments`, with the arguments given where the argument applies the statement to particular objects. Lean rejects a name that does not exist and arguments that do not fit, and the structural index reads these names as what the proof rests on. Use this plain form and no tactic of your own that wraps it: a wrapper written for the purpose lost the references when Lean simplified the proof term. The argument itself is the `## Proof` part of the record.
 - A complete proof is any Lean proof without `sorry`. It may depend only on the axioms the instance allows; [Lean](lean.md) explains which those are and how review checks them.
 
+Whichever form a proof takes, name in it the statements the argument uses, and those only. A statement that the argument uses and the Lean proof does not name is invisible to everyone who later asks what the result rests on, and a statement that is named and not used makes the result depend on it for nothing. Where a statement has several proofs under several declarations, it does not matter for whether your result is settled which of them you name, since a statement is settled as soon as one of its proofs is. It does matter for whether your proof is formal: a declaration whose own Lean proof ends in `sorry` brings `sorryAx` into every proof that names it, although its statement may have a formal proof under another declaration.
+
 Three things are refused. An `axiom` declaration is refused: what you want to assume is stated as a `theorem` whose proof is left open, and the frontier then shows it as work that remains. A definition whose body contains `sorry` is refused, because every statement that used it would be about an unknown object. And a `theorem` whose statement is not a proposition is refused.
 
 Keep prose out of the Lean source apart from a short doc comment. The broker that compiles the library keeps compiled modules under a key that includes their source, so prose in a source would cause the module to be compiled again each time the prose changed. What Lean must check is in the source, and what a reader needs is in the record.
 
 ## Reading the canon: the commands
 
-The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with the name of one of the commands of the table below, and append that command's arguments after the last element of the array. What the table writes after the name of a command are its arguments, so they follow the session directory and do not stand before it. With `python` for the interpreter and `<canon tool>` for the script, which are the first two elements of the array, the full view of an element is
+The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with the name of one of the commands of the table below, and append what the table writes after that name, the command's arguments, after the last element of the array: they follow the session directory and do not stand before it. With `python` for the interpreter and `<canon tool>` for the script, which are the first two elements of the array, the full view of an element is
 
 ```text
 python <canon tool> view <session directory> Tri.two_mul_tri --full
@@ -167,13 +169,9 @@ The Lean source of a statement is opened in two situations. One is to read or ch
 
 ## Occasions for reading
 
-The common introduction names four moments at which looking at earlier work is most likely to help, and asks for one reading in particular before you take on a statement. None of them is a schedule, and nothing checks that a traversal was made. What follows says which traversal answers which need.
-
 **When you take something on.** Read the element in full with `view <element> --full`: its Lean statement, what its record says of it, review's verdict and reason, and the approaches tried. Then, for each definition on its `objects` line, run `list --about` with that definition. This returns everything the canon states about the object, and it is the reading the common introduction asks for: it shows you whether a piece you were about to build is already there, and under which name. `list --uses <element> --deep` shows what the statement already rests on, and `list --used-by <element>` what depends on it. For a question, `question <question>` gives the grounds on which it was asked and the understanding so far.
 
-**When you need a tool or a lemma.** A lemma about an object is found from the object: `list --about` with its definition. A part of the mathematics is found from its modules: `list --module` with a prefix. These commands cover the instance's own library. The imported library, Mathlib and the toolchain, is searched by its own means and is used directly, without an element.
-
-Your `input.json` records where the imported library is installed. Its `settings.lean.command` names the toolchain's executable, and `settings.lean.cwd`, when it is set, is the project folder in which the instance's compiles run. The library's source files are found from those two paths. A search that starts from the root of the file system instead can run for longer than the shell tool waits, and its process can keep running after the tool has abandoned it, taking processor time from every session's compiles until your session ends.
+**When you need a tool or a lemma.** A lemma about an object is found from the object: `list --about` with its definition. A part of the mathematics is found from its modules: `list --module` with a prefix. These commands cover the instance's own library. The imported library, Mathlib and the toolchain, is searched by its own means and is used directly, without an element; [Lean](lean.md) opens with where its sources lie.
 
 **Before you present something as new.** Before you state a result, look at what the canon states about each definition your statement uses; the result, a stronger one or an equivalent one may be there. Before you define an object, look for a definition the library already has, in the canon and in the imported library. Because a traversal returns the whole of what its rule selects, you can say exactly what you examined, for example that `list --about Tri.tri` returned fourteen elements and none of them bounds the sequence from below, and a reviewer can run the same command.
 

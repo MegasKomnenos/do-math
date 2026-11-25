@@ -1,6 +1,6 @@
 # Writing a stretch of the research's history
 
-The package contains a history of the research that led to its result: a timeline that a reader can go through from the first event to the last. It also contains an archive with the research's own records, as the research wrote them. This session writes the entries of the timeline for one stretch of the research, twelve events in order. Other sessions write the other stretches at the same time, and the program lays all entries out in one file.
+The package contains a history of the research that led to its result: a timeline that a reader can go through from the first event to the last. It also contains an archive with the research's own records, as the research wrote them. This session writes the entries of the timeline for one stretch of the research, at most twelve events in order. Other sessions write the other stretches at the same time, and the program lays all entries out in one file.
 
 ## What the timeline is for
 
@@ -15,7 +15,7 @@ The reading of those words that was agreed with the user has four parts.
 
 Two requirements follow from this reading, and an entry has to meet both.
 
-The first requirement is that the timeline has no authority of its own. Everything an entry says is something the record says, and a judgment in it is given as the judgment of the session that made it. A session that writes about research is drawn to do more: to say which step was the decisive one, to connect two events, to tell the story as a story. Each of these adds something that no record contains and that nobody reviewed, in a package whose other texts were all checked against their sources.
+The first requirement is that the timeline has no authority of its own. Everything an entry says is something the record says. A session that writes about research is drawn to do more: to say which step was the decisive one, to connect two events, to tell the story as a story. Each of these adds something that no record contains and that nobody reviewed, in a package whose other texts were all checked against their sources.
 
 The second requirement is that an entry is easier to read than the record it condenses. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, what the reviewing session made of it, what was tried on a statement and how far it came, which question was opened or answered. An entry that tells this lets the reader decide which record to open, and the record then gives the mathematics, complete and reviewed. So an entry reports the event, and the content of the record stays in the record: its proofs, its reasons, its explanations, its formulas.
 
@@ -27,7 +27,7 @@ This text is one of the two in the package whose subject is the research, so the
 
 ## What you are given
 
-- `ledger.json`: your twelve events, in the order of the research, in this form.
+- `ledger.json`: your events, in the order of the research, in this form.
 
 ```json
 [{"event": 17, "date": "2026-11-22", "kind": "change", "by": "explore", "title": "...", "description": "...",
@@ -108,13 +108,11 @@ A reader who has looked up one heading reads the entry under it by itself. Each 
 
 An entry is two to four sentences. It reports, and the record explains. How a proof goes, why a statement holds, which picture or idea lies behind it, how one result follows from another, which axioms a proof uses, what the reviewing session remarked on single points: a reader finds all of this by opening the record, and none of it stands in an entry. Where a record says "induction on n, where the defining step oddSum (n + 1) = oddSum n + (2n + 1) meets the identity (n + 1)^2 = n^2 + (2n + 1)", the entry says that a proof by induction was added. A proof may be called by the name of its method in this way, where the record names the method. Its steps are the record's.
 
-What the sentences of an entry say depends on the sort of line.
-
 ### The entry of a publication
 
 The entry of a publication says what was published and whose work it was. It names each element and says in one clause what the element is. It gives the reviewing session's judgment in one sentence. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
 
-**Whose work it was.** Say it in the plain words of the table above: a session that was working on a proof of the statement, a session that was investigating a question, the operator of the research. Where `by` is empty, the entry does not say whose work it was. Where `by` holds a word that the table does not have, say what the record itself says about where the publication came from. That a second session prepared the change holds for every change, and an entry does not repeat it.
+**Whose work it was.** Say it in the plain words of the table of `by` above. Where `by` is empty, the entry does not say whose work it was. Where `by` holds a word that the table does not have, say what the record itself says about where the publication came from. That a second session prepared the change holds for every change, and an entry does not repeat it.
 
 **The elements.** Name each element of the line's `elements` by its Lean name between backticks, and follow the name with one clause in words that says what the element is: what a definition defines, what a statement asserts. The clause is a name that a mathematical reader understands without the library, and you take it from what the record says of the element. Three clauses of this kind are "the triangular numbers", "that two sequences with the same first value and the same increments are equal", and "a check of the definition on its first six values". The clause is not the statement in full. The hypotheses, the constants and the exact form are in the record and in the library, under the name that the entry gives. A formula stands in a clause only where words cannot name the statement, which is the case when a clause in words would fit a neighbouring statement equally well. The clause then carries the shortest formula that tells the two apart.
 
@@ -136,7 +134,7 @@ Use plain words. The record speaks in the vocabulary of the research's own proce
 
 Attribute judgments to their source. That a proof is correct, that a step was the important one, that an approach failed for a certain reason: these are the reviewing session's statements or the publication's own, and the entry says whose they are. Add no assessment of your own, however evident it seems from where you stand, and no connection between events that no record draws.
 
-Where a record refers to an earlier publication, the entry may say so as the record does. It does not refer to other entries of the timeline, since you see only your twelve and cannot know what the other sessions write.
+Where a record refers to an earlier publication, the entry may say so as the record does. It does not refer to other entries of the timeline, since you see only your own and cannot know what the other sessions write.
 
 ## What you write
 
@@ -150,7 +148,7 @@ Where a record refers to an earlier publication, the entry may say so as the rec
 
 - `event`, `date` and `record` are copied from the ledger line exactly.
 - `text` is the entry, two to four sentences.
-- `list` holds the elements of a publication that has more than three. Each item is the element's Lean name between backticks, a colon, and the one clause in words that says what the element is. The items that belong together stand in one group, whose `group` says in a few words what they have in common. A list that is not divided has one group with an empty `group`. `list` is an empty array when the text names the elements itself, and for every approach and every question.
+- `list` holds the elements of a publication that has more than three. Each item is the element's Lean name between backticks, a colon, and its one clause. `group` holds what the items of a group have in common, and it is empty in a list that is not divided, which has one group. `list` is an empty array when the text names the elements itself, and for every approach and every question.
 
 The program counts as a word whatever stands between two spaces. It refuses a `text` of more than 120 words and an item of more than 30 words. Both numbers are ceilings, and neither is a length to reach. A text that would pass 120 words is carrying something that belongs to the record. The program also requires that every entry has a path that is a member of the archive.
 

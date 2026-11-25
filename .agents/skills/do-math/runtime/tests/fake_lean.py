@@ -41,6 +41,9 @@ def option(argv, name):
 
 
 def main(argv):
+    # Lean writes UTF-8 whatever the locale. Left to the locale, the source path echoed below, which the broker
+    # tests make non-ASCII on purpose, is written in the ANSI code page on Windows or cannot be written at all.
+    sys.stdout.reconfigure(encoding="utf-8")
     if "--version" in argv:
         print("Lean (version 4.0.0-fake, x86_64-fake, commit 0000000, Release)")
         return 0

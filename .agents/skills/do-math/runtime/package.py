@@ -21,7 +21,7 @@ import time
 import canon
 from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file,
                    name_path, parse_record, path_name, sha256_text, tree_hash)
-from runtime_support import popen_options, read_json
+from runtime_support import popen_options, read_json, write_text as write_file
 
 MAX_LINES = 10_000       # physical lines of a Lean file, the registry's rule and the canon's
 CHALLENGE_LINES = 1_000   # the registry's limits on Challenge.lean
@@ -52,22 +52,11 @@ def write_text(path, content):
     """Write a complete UTF-8 file, with its folder, by writing beside it and replacing it.
 
     Every line of the file ends with a line feed alone: a text that came with Windows line endings,
-    from a file or from a value of a session's JSON, is written without their carriage returns."""
+    from a file or from a value of a session's JSON, is written without their carriage returns.
+    The file is written and put in place by the runtime's writer (runtime_support.write_text)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f'{path.name}.{os.getpid()}-{time.monotonic_ns()}.tmp')
-    try:
-        temporary.write_bytes(content.replace('\r\n', '\n').encode('utf-8'))
-        for attempt in range(50):  # a reader on Windows can hold the old file for a moment
-            try:
-                os.replace(temporary, path)
-                break
-            except PermissionError:
-                if attempt == 49:
-                    raise
-                time.sleep(0.05)
-    finally:
-        temporary.unlink(missing_ok=True)
+    write_file(path, content.replace('\r\n', '\n'))
 
 
 def write_json(path, value):
@@ -577,13 +566,13 @@ def citations(text, keys):
     return [(match[1], match[0]) for match in CITATION.finditer(text) if match[1] in keys]
 
 
-def cited_in(texts, keys=()):
+def cited_in(texts, keys):
     """For every bibliography key that a record cites, the records that cite it; `texts` maps a declaration to its record.
 
     A record cites a work in two ways: its header names the key as the source of the result, and its
-    text has a citation of the key (citations). Each record is given with its path, its text, whether
-    its header names the key ("header") and its citations of the key as they are written
-    ("citations"). Without `keys`, the keys of the bibliography, only the headers are read."""
+    text has a citation of the key (citations), where `keys` are the keys of the bibliography. Each
+    record is given with its path, its text, whether its header names the key ("header") and its
+    citations of the key as they are written ("citations")."""
     found = {}
     for name in sorted(texts):
         text = texts[name]
@@ -601,7 +590,7 @@ def cited_in(texts, keys=()):
     return [{'key': key, 'records': records} for key, records in sorted(found.items())]
 
 
-def cited(records_root, index, keys=()):
+def cited(records_root, index, keys):
     """`cited.json`: for every bibliography key that a record of the library cites, the records that cite it (cited_in)."""
     texts = {}
     for name in index['entries']:
@@ -868,7 +857,7 @@ def challenge_text(first_lean, definitions, root_module, main_statement=None):
         end = header_scan(lines)[0]
         for line in lines[:end]:
             found = IMPORT_LINE.match(line.strip())
-            if found and found[1] not in local and line.strip() not in externals:
+            if found and found[2] not in local and line.strip() not in externals:
                 externals.append(line.strip())
         bodies.append('\n'.join(lines[end:]).strip('\n'))
     text = 'module\n\n' + ('\n'.join(externals) + '\n\n' if externals else '') + '\n\n'.join(bodies) + '\n'

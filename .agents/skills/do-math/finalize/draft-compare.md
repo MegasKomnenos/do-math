@@ -4,7 +4,7 @@ A paper will be written from the library in your folder, which is what the chose
 
 ## What the step is for
 
-After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. The first paper made from such a library stated more than the library proved, in four places, and the difference was found after the paper was written. The library was extended, and its records and the documents around it were made again. Here the order is the other way round: the library was extended first, where it could be, and now the draft gives way wherever it still asks for more. The user's decision reads that if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
+After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. The first paper made from such a library stated more than the library proved, in four places, and the difference was found after the paper was written. The library was extended, and its records and the documents around it were made again. Here the order is the other way round, and now the draft gives way wherever it still asks for more. The user's decision reads that if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
 
 When you have ended, nothing in the draft says more than a declaration of the library says.
 
@@ -38,7 +38,7 @@ Then give one of three verdicts.
 
 A statement that the declaration makes and the draft only weakens is rewritten to the declaration's strength, like one that the draft overstates: the paper's numbered statements say what was proved, in both directions. An assertion follows the same three verdicts; its rewritten text is the assertion as the declaration supports it.
 
-Give a verdict to every row, also after you have found a difference in one. Do not rewrite for taste: a text with the verdict `same` is returned as it was drafted.
+Give a verdict to every row, also after you have found a difference in one. Do not rewrite for taste.
 
 ## What you write
 

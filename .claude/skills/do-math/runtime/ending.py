@@ -14,7 +14,6 @@ from retention import conversation_identity, events, output_limit, refusal
 from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
                              terminate_process, write_json, write_text)
 
-ROLES = ('attempt', 'formalizer', 'explore', 'peer')
 # A review and an organizer end with their output, an assessment or an organization, and write no end
 # decision. When a turn of theirs ends and that output does not pass the transport check, the host
 # resumes the same conversation with what the check found, instead of leaving the whole assignment to a
@@ -70,8 +69,6 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
 
     A role that ends with its output is told what the transport check found, in output.md; it is asked
     for no end decision, so that text carries no request ID."""
-    if role not in ROLES + OUTPUT_ROLES:
-        raise ValueError('no continuation guidance for role: ' + role)
     directory = Path(guidance_dir)
     frame = 'output.md' if role in OUTPUT_ROLES else 'common.md'
     markers = ('{{role_guidance}}', '{{previous_error}}') + (() if role in OUTPUT_ROLES else ('{{request_id}}',))

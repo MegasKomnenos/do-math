@@ -22,7 +22,6 @@ class Command:
 
 @dataclass(frozen=True)
 class UsageLimit:
-    provider: Provider
     retry_at: float  # UTC Unix seconds
     source: Literal["provider", "fallback"]
 
@@ -222,7 +221,7 @@ def detect_usage_limit(
                     info = params.get("rate_limit_info") if isinstance(params, dict) else None
                     reset = _claude_reset(info, now)
                 known = reset is not None and reset > now
-                candidate = UsageLimit(provider, reset if known else now + fallback_seconds,
+                candidate = UsageLimit(reset if known else now + fallback_seconds,
                                        "provider" if known else "fallback")
                 # Multiple genuine refusals can describe separate windows.
                 if result is None or candidate.retry_at > result.retry_at:

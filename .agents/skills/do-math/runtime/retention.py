@@ -89,6 +89,16 @@ def conversation_identity(event, provider):
     return event.get('session_id')
 
 
+def model_refused(event):
+    """Whether a Claude CLI stream event says that a refusal of the model ended the turn.
+
+    The model refused a request and the CLI had no other model to give it to, so the turn ended there:
+    the result of the turn, the last event of the call, is an error with the stop reason "refusal".
+    refusal below and the sessions of the paper and finalize commands (command_sessions.stopped_by_safeguard) both
+    read this rule here, so a change of the CLI is one edit."""
+    return event.get('type') == 'result' and event.get('is_error') is True and event.get('stop_reason') == 'refusal'
+
+
 def capture(session, provider):
     session = Path(session)
     ids = set()
@@ -201,12 +211,9 @@ def refusal(session, provider, model, started, retry_seconds):
             if event.get('api_error') == 'model_requires_usage_credits':
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_requires_usage_credits', 'source': 'backoff'}
-        if provider == 'claude' and event.get('type') == 'result' and event.get('is_error') is True:
-            # The model refused a request and the CLI had no other model to give it to, so the turn ended
-            # there: the result of the turn, the last event of the call, carries the stop reason "refusal".
-            if event.get('stop_reason') == 'refusal':
-                return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
-                        'reason': 'model_refusal', 'source': 'backoff'}
+        if provider == 'claude' and model_refused(event):
+            return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
+                    'reason': 'model_refusal', 'source': 'backoff'}
         if provider == 'codex':
             message = codex_error_message(event)
             if isinstance(message, str) and message.startswith('Selected model is at capacity'):

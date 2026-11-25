@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
+from availability import availability_view
 from canon import Canon
 from coordination import (board, claims_lock, lease, lease_table, main as coordination_main, message, release,
                           section, updates, wait)
@@ -20,9 +21,9 @@ from knowledge import STANDINGS, canonical_question, formalizable, render, repla
 from runner import Runner, archive_finished, initialize, main, start
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
-from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, ScenarioCase,
-                     comprehensive, finding, fixture_settings, module_text, record_text, stop_broker, take, theorem,
-                     write_canon)
+from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
+                     ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, stop_broker, take,
+                     theorem, write_canon)
 
 
 def concern(cid, *targets):
@@ -497,39 +498,6 @@ class KnowledgeTests(ScenarioCase):
         # Publications are never rewritten, and replaying them gives the same model.
         self.assertEqual({path: path.read_bytes() for path in published}, published)
         self.assertEqual(replay(self.instance), model)
-
-
-class RefutedRootCase(ScenarioCase):
-    """States in which a declaration refutes the root: its record says `refutes:` and Lean confirms the negation.
-
-    The root of these tests is the closed proposition of support.ROOT_CLOSED. The stand-in compiler
-    reads only the structure of a proof, so the "refutation" of a true statement compiles here."""
-    root_variant = 'closed'
-    NEGATION = ': ¬ (∀ n : Nat, oddSum n = n * n)'
-
-    def refuted(self):
-        def build():
-            folder = self.candidate(
-                modules={'Small/Against.lean': module_text(theorem('notRoot', self.NEGATION))},
-                records={'Small/notRoot.md': record_text('Some initial sum of odd numbers is not a square.', weight='unit',
-                                                         proof='The sum of the first two is taken to be five.',
-                                                         refutes='Small.root')})
-            self.publish(folder)
-        self.scenario('refuted', build)
-
-    def formally_refuted(self):
-        def build():
-            self.refuted()
-            folder = self.candidate(replace={'Small.notRoot': theorem(
-                'notRoot', self.NEGATION, proof='intro h\n  exact absurd (h 2) (by decide)')})
-            self.publish(folder)
-        self.scenario('formally refuted', build)
-
-    def contested(self):
-        def build():
-            self.formally_refuted()
-            self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
-        self.scenario('contested', build)
 
 
 class RefutationTests(RefutedRootCase):
@@ -1105,6 +1073,30 @@ class CoordinationTests(ScenarioCase):
         self.assertNotIn('Small.monoB', available)
         self.assertNotIn('Small.monoBAlt', available)
 
+    def test_the_availability_view_holds_only_the_work_that_remains(self):
+        self.split()
+        runner = self.runner()
+        part = take(self.session(runner, 'sa'), 'Small.sumZero', 'The empty sum, read from the definition.')['section']
+        view = availability_view(runner.model, board(self.instance, runner.state, runner.model), 3)
+        # The root's proof is accepted and sumTwo is not on the way to the root; neither is work that remains.
+        self.assertEqual(view, {'epoch': 3, 'elements': {'Small.sumSucc': [], 'Small.sumZero': [part['id']]}})
+
+    def test_a_section_on_a_statement_is_listed_under_each_of_its_proofs_that_remains(self):
+        # A section stands on the statement, so it occupies every proof of that statement that is work that remains.
+        self.ways()
+        runner = self.runner()
+        remaining = runner.model['remaining']
+        # monoB and its other proof monoBAlt both remain; of the root, only its other proof rootAlt does.
+        self.assertLessEqual({'Small.monoB', 'Small.monoBAlt', 'Small.rootAlt'}, set(remaining))
+        self.assertNotIn('Small.root', remaining)
+        mono = take(self.session(runner, 'sa'), 'Small.monoB', 'Three terms, added one at a time.')['section']
+        root = take(self.session(runner, 'sb'), 'Small.rootAlt', 'The case split of way 2.')['section']
+        self.assertEqual((mono['element'], root['element']), ('Small.monoB', 'Small.root'))
+        view = availability_view(runner.model, board(self.instance, runner.state, runner.model), 0)
+        self.assertEqual(sorted(view['elements']), remaining)
+        self.assertEqual({name: ids for name, ids in view['elements'].items() if ids},
+                         {'Small.monoB': [mono['id']], 'Small.monoBAlt': [mono['id']], 'Small.rootAlt': [root['id']]})
+
     def test_messages_reach_the_recipient_inbox_and_its_updates(self):
         runner = self.runner()
         sender, recipient = (self.session(runner, sid) for sid in ('ssender', 'srecipient'))
@@ -1562,6 +1554,31 @@ class RunnerTests(ScenarioCase):
         self.assertEqual(task['sections'], [{'id': taken['section']['id'], 'element': 'Small.root', 'whole': False,
                                              'statement': 'The identity for every even n.', 'new': None}])
         self.assertEqual((task['source_role'], task['element'], task['question']), ('attempt', None, None))
+
+    def test_the_sections_of_a_failed_peer_stay_with_its_pipeline_under_the_peer_that_replaces_it(self):
+        # A peer can register sections of its own. When it fails, its job launches another peer, which takes the
+        # pipeline's peer slot; what the failed peer registered still occupies its element until review ends.
+        runner = self.runner()
+        producer = self.session(runner, 'sa')
+        self.assertTrue(take(producer, 'Small.root', 'The identity for every even n.')['registered'])
+        pid = runner.state['jobs'][runner.state['sessions']['sa']['job']]['pipeline']
+        runner.state['pipelines'][pid]['stage'] = 'peer'
+        key = runner.enqueue('peer', {'source': str(producer), 'source_role': 'attempt'}, pid, pid + ':peer')
+        job = runner.state['jobs'][key]
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(key))
+            first = job['session']
+            self.assertTrue(take(runner.session_dir(first), 'Small.root')['registered'])
+            runner.retry(job, runner.state['sessions'][first], 'incomplete output', availability=False)
+            self.assertTrue(runner.dispatch(key))
+        second = job['session']
+        pipeline = runner.state['pipelines'][pid]
+        self.assertEqual((pipeline['previous_peers'], pipeline['peer']), ([first], second))
+        self.assertEqual(job['task']['previous_partial_sessions'], [str(runner.session_dir(first))])
+        [row] = board(self.instance, runner.state)
+        self.assertEqual([(s['session'], s['whole']) for s in row['sections']], [('sa', False), (first, True)])
+        self.assertEqual(runner.available_elements(), [])
 
     # -- launch spacing, exploration requests and priority ----------------------------------------------
 

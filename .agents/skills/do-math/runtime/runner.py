@@ -771,7 +771,7 @@ class Runner:
                     written, removed = apply_rearrangement(
                         stage / 'lean', candidate, read_json(candidate / 'organization.json').get('delete', []))
                     changed = sorted(set(changed) | set(written))
-            except (CanonError, OSError, ValueError, KeyError) as exc:
+            except (CanonError, OSError, ValueError) as exc:
                 return self.publication_failed(publication, str(exc))
             # A module that imports a changed one is compiled in a new environment, so its index is taken again
             # too: an unchanged statement can come out different when its module's imports bring more into scope.

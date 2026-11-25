@@ -302,8 +302,13 @@ class ContextTests(InstanceCase):
         self.assertEqual(shown('# Executable commands'), {'commands': inp['commands']})
         self.assertLess(pack.index('\n# Your assignment\n'), pack.index('<!-- begin '))
         self.assertLess(pack.rindex('<!-- end '), pack.index('\n# Executable commands\n'))
-        self.assertIn(str(folder / 'pack.md'), (folder / 'prompt.txt').read_text(encoding='utf-8'))
-        self.assertIn(str(folder / 'input.json'), (folder / 'prompt.txt').read_text(encoding='utf-8'))
+        prompt = (folder / 'prompt.txt').read_text(encoding='utf-8')
+        self.assertIn(str(folder / 'pack.md'), prompt)
+        self.assertIn(str(folder / 'input.json'), prompt)
+        # The prompt gives the size of the pack as the file on disk has it, for reading the pack in ranges.
+        written = (folder / 'pack.md').read_bytes()
+        lines, size = written.count(b'\n'), len(written)
+        self.assertIn(f'The file has {lines} lines in {size} bytes', prompt)
 
     def test_the_commands_of_input_json_run_once_their_placeholders_are_replaced(self):
         # A session has nothing but these argument arrays, so each kind is run as a session runs it.
@@ -335,6 +340,12 @@ class ContextTests(InstanceCase):
         code, text = run(commands['wait'], element='Small.oddSum')
         self.assertEqual(code, 1, text)
         self.assertIn('definition', json.loads(text)['reason'])
+        note = attempt / 'note.md'
+        note.write_text('Our sections meet at n = 7.', encoding='utf-8')
+        code, text = run(commands['message'], recipient='sattempt', file=str(note))
+        self.assertEqual(code, 0, text)
+        delivered = read_json(Path(json.loads(text)['delivered']))
+        self.assertEqual((delivered['from'], delivered['text']), ('sattempt', 'Our sections meet at n = 7.'))
         code, text = run(commands['check'])
         self.assertEqual((code, json.loads(text)), (0, {'ok': True, 'errors': []}))
         code, text = run(commands['lean'], command='status')

@@ -23,9 +23,9 @@ stages, each with the place in this file that says what it does:
   placement    Paper.place
 
 Every loop is bounded by the constants below. Paper.repair says how a repair is divided among
-sessions, and Sessions how a session is launched and its output read. Sessions.session says what
-follows when a safeguard of the AI system stopped a session, and <out>/not-done.json keeps the
-checks that were not made for that reason.
+sessions, and Sessions, in command_sessions.py, how a session is launched and its output read.
+Sessions.session says what follows when a safeguard of the AI system stopped a session, and
+<out>/not-done.json keeps the checks that were not made for that reason.
 
 A repair may rewrite, and a rewriting can lose a step of a proof, so the text that a repair leaves
 is read. After every reading but the last of its stage, the next reading does that. The repair
@@ -74,7 +74,6 @@ readings found and the resolving session or the last narrow repair answered with
 "kept" in that event and does not make the exit code 2.
 """
 import argparse
-from concurrent.futures import ThreadPoolExecutor, wait
 import difflib
 import hashlib
 import json
@@ -83,16 +82,13 @@ import re
 import shutil
 import subprocess
 import sys
-import threading
-import time
 
 from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
-from cli_adapter import build_command, detect_usage_limit, provider_for_model
+from cli_adapter import build_command, provider_for_model
+from command_sessions import PARALLEL, Sessions, Stop, Unusable, collapsed, is_text, read_file
+import depmap
 from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
-from launch import worker_command, worker_environment
-from retention import events
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
-from settings import load_settings
 
 REFERENCE = Path(__file__).resolve().parents[1] / 'reference'
 METHOD = REFERENCE / 'paper-method.md'
@@ -105,17 +101,14 @@ MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'categ
                    'abstract', 'sha256', 'why')
 
 PLAN_ATTEMPTS = 3      # planning sessions before the command gives up on a plan it can carry out
-SESSION_ATTEMPTS = 2   # sessions of any other kind before it gives up on output it can read
 REPAIR_ROUNDS = 3      # repair sessions for one round of machine checks and typesetting
 READING_ROUNDS = 3     # independent readings at one time; the repair after the last one is narrow (narrow_run)
 CHOSEN_PAPERS = 6      # papers of the collection the plan chooses for the paper to be written like
 SECTION_PAPERS = 2     # of those, the papers the plan names for one section; its writer reads them whole
-PARALLEL = 4           # sessions side by side, unless --parallel says otherwise; a session mostly waits on the network
 LIKENESS_PAPERS = 4   # papers the plan did not choose, given to one reading beside real papers
 LIKENESS_ROUNDS = 8    # readings beside real papers at the most
 LIKENESS_CLEAN = 2     # readings in succession without a departure that end those readings
 COMPARISON_ROUNDS = 2  # comparisons of the statements; a repair follows every one but the last
-LIMIT_WAITS = 12       # times one session is started again after the account's usage limit
 TEX_SECONDS = 600      # one TeX command
 FETCH_SECONDS = 3600   # one run of the collection's fetch.py
 WIDE_PT = 5.0          # a line this many points wider than the text block is sent back to be broken
@@ -153,13 +146,6 @@ DIFFERS_LATE = ('the statement was changed after the comparisons of the statemen
 COVERED_AGAIN = ('reported when the running text of the section was compared with the elements again, after the repair '
                  'of what the first comparison had reported; no repair follows that comparison')
 CLOSING_ATTEMPTS = 3   # sessions that restate statements or take passages out, before the run gives up (Paper.close)
-NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
-             'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
-             'and the sessions could not do.')
-# What a person does when a safeguard of the AI system stopped every session of a task that the run needs.
-STOPPED = ('Nothing is to be repaired by hand. Start the same command again: it starts the session again, with the '
-           'same prompt and the same files. The folders of the stopped sessions, which are named above, hold what '
-           'each session was given and what the CLI answered.')
 # The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
           ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'), ('placement', 'place'))
@@ -180,7 +166,7 @@ CITE = re.compile(r'\\cite(?:\[[^\]]*\])?\{([^}]*)\}')
 REF = re.compile(r'\\(?:eq|page)?ref\{([^}]*)\}')
 LABEL = re.compile(r'\\label\{([^}]*)\}')
 SECTION_ID = re.compile(r'[a-z][a-z0-9-]*')
-MSC_CODE = re.compile(r'\d\d[A-Z-](?:[0-9]{2}|[xX]{2})')  # a code of the MSC 2020, such as 05A15 (package.MSC is the same)
+from package import MSC as MSC_CODE  # a code of the MSC 2020, such as 05A15; the pipeline holds its selection to the same form
 LABEL_FORM = re.compile(r'[a-z]+:[a-z0-9-]+')
 OVERFULL = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) '
                       r'(?:detected at line (\d+)|in (?:paragraph|alignment) at lines (\d+)--(\d+))')
@@ -209,62 +195,10 @@ RUNNING_HEAD = (r'\sbox0{\normalfont\scriptsize\RunningHead}\ifdim\wd0>.85\textw
                 r'\else\markboth{\RunningHead}{\RunningHead}\fi')
 
 
-# The tools by which a session of the Claude CLI can arrange to be called again later. A session of this
-# command is launched without them. The command reads a session's output when its process has ended, and
-# the CLI does not exit while such a call is pending: a reading session that had set itself a reminder
-# while its sub-agents worked wrote its output, ended its turn, and held the run idle for eleven minutes
-# until the reminder fired. A session needs none of them, because its own sub-agents and background
-# commands call it back when they end.
-SELF_SCHEDULING = ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')
-
-
-class Stop(Exception):
-    """The command cannot go on; the message says why.
-
-    `todo` says what the person who reads the message does next, where that is something else than
-    putting right what the message names and starting the command again."""
-
-    def __init__(self, message='', todo=None):
-        super().__init__(message)
-        self.todo = todo
-
-
-class Unusable(Exception):
-    """A session left output the script cannot use; the problems go to the session that is started in its place."""
-
-    def __init__(self, problems):
-        super().__init__('; '.join(problems))
-        self.problems = list(problems)
-
-
-def is_text(value):
-    return isinstance(value, str) and bool(value.strip())
-
-
-def stopped_by_safeguard(folder, provider):
-    """Whether a safeguard of the AI system ended the session in `folder` before it had finished.
-
-    The sign is in what the CLI wrote to its standard output, cli.stdout.jsonl. The model refused a
-    request and the CLI had no other model to give it to, so the turn ended there: the result of the
-    turn, the last event of the call, is an error with the stop reason "refusal". The research's
-    runner knows a refusal of the model by the same sign (retention.refusal), and a change of the
-    CLI has to be made in both places. The sign is known for the Claude CLI only; a session of
-    another provider is never taken to be stopped in this way. The exit code does not tell such a
-    session from another that failed, and its folder `output` can hold files that the session wrote
-    before it was stopped, so nothing of it is read."""
-    return provider == 'claude' and any(
-        event.get('type') == 'result' and event.get('is_error') is True and event.get('stop_reason') == 'refusal'
-        for event in events(Path(folder) / 'cli.stdout.jsonl'))
-
-
 def not_done_lines(entries):
     """The checks that a run records as not done (Sessions.session), one sentence for each, as a report gives them."""
     return [f"Not made: {entry['what']}. A safeguard of the AI system stopped the session that had this task, in each "
             f"of its {entry['attempts']} attempts." for entry in entries]
-
-
-def read_file(path):
-    return Path(path).read_text(encoding='utf-8-sig').replace('\r\n', '\n')
 
 
 def method_part(title):
@@ -278,11 +212,6 @@ def method_part(title):
 # ----------------------------------------------------------------------------- the collection of real papers
 
 KEY_FORM = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.+-]*')
-
-
-def collapsed(text):
-    """The text with every run of whitespace replaced by one space."""
-    return re.sub(r'\s+', ' ', text).strip()
 
 
 def collection_state():
@@ -328,7 +257,8 @@ def load_collection():
             raise Stop(f'papers of the collection are missing or differ from {EXEMPLARS / "manifest.json"}: '
                        + ', '.join(wrong) + f'; and {fetch}, which fetches them, is missing')
         try:
-            done = subprocess.run([sys.executable, str(fetch)], cwd=EXEMPLARS, stdin=subprocess.DEVNULL,
+            # -X utf8: fetch.py then prints in UTF-8 whatever the locale, and its output is read as UTF-8 below.
+            done = subprocess.run([sys.executable, '-X', 'utf8', str(fetch)], cwd=EXEMPLARS, stdin=subprocess.DEVNULL,
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=FETCH_SECONDS,
                                   **popen_options())
             output = done.stdout.decode('utf-8', errors='replace').replace('\r\n', '\n')
@@ -2020,6 +1950,11 @@ an element, and beside it is a written record. The script launches AI sessions, 
 one part of the work. No session can ask another what it meant, and nobody answers questions while the script runs.'''
 
 METHOD_FILE = '''- `paper-method.md` is the method that every session follows. Read it in full before anything else.'''
+# The same entry for a session that writes, sketches or repairs. The last section of the method describes what the
+# script and other sessions do after the writing, and the prompt of such a session carries what of that concerns it.
+METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows. Read it before anything else, \
+in full up to its last section, "What is checked after writing". That section says what the script and other sessions \
+do with the manuscript once it is written; what of it concerns this session is in this prompt.'''
 
 PREFERENCES_FILE = '''- `user-writing-preferences.md` describes the writing that the person who will read the paper first \
 prefers, with the occasions on which the preferences came to light. The method says how it bears on a paper.'''
@@ -2096,7 +2031,7 @@ empty for an entry that denotes no element, and a definition is named in one ent
 - "displays": the displayed formulas that more than one section needs, each {"label", "section", "element", "formula", \
 "used_in"}; an empty array when there is none. The sections are written side by side, and a writer cannot refer to a \
 formula that another writer numbers, because nothing tells the first that it will be there. A formula that two \
-sections need is then displayed twice, under two numbers; a reading of an earlier paper found twenty-five such places. \
+sections need is then displayed twice, under two numbers, which happens often. \
 The plan prevents this by giving the formula one place. "section" is the id of the section that displays it: the first \
 of the sections that need it, in the order of the paper. "label" is the label under which every section refers to it; \
 it begins with `eq:`, the id of that section and a hyphen, as in "eq:tools-recursion". "element" is the name of the \
@@ -2193,7 +2128,7 @@ the plan, which an earlier session made and the script checked. It fixes the num
 labels, the section of each, what becomes of every other element, and the notation.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 ''' + BRIEF_FILE.format(tense='is') + ''' Follow the plan as the brief gives it: the same numbered statements with the same \
 kinds and labels in the same order, the same treatment of every element, the same notation.{drafted}
 ''' + RESEARCH_FILES + '''
@@ -2286,18 +2221,14 @@ the method permits, keep the statement and say why. The proof of a statement, or
 section, which this session does not change. The writer of that section worked from the statement of the element, as \
 your brief gives it, and not from the wording that you now correct; where the correction nevertheless requires a change \
 there, say in the note which section and what.'''
-LIKE_SECTION = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
+LIKE_FOUND = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
 else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
-describes. `findings.json` holds what it found in this section: places where the manuscript is written otherwise than \
-real papers are written. Each finding gives the place ("where"), the passage of the manuscript ("quote", empty when the \
-finding is that something is missing), passages from those papers that show what they do at such a place ("evidence"), \
-and the difference ("difference").'''
-LIKE_WHOLE = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
-else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
-describes. `findings.json` holds what it found, as far as it concerns no single section: places where the manuscript is \
-written otherwise than real papers are written. Each finding gives the place ("where"), the passage of the manuscript \
-("quote", empty when the finding is that something is missing), passages from those papers that show what they do at \
-such a place ("evidence"), and the difference ("difference").'''
+describes. `findings.json` holds what it found{scope}: places where the manuscript is written otherwise than real \
+papers are written. Each finding gives the place ("where"), the passage of the manuscript ("quote", empty when the \
+finding is that something is missing), passages from those papers that show what they do at such a place \
+("evidence"), and the difference ("difference").'''
+LIKE_SECTION, LIKE_WHOLE = (LIKE_FOUND.format(scope=scope)
+                            for scope in (' in this section', ', as far as it concerns no single section'))
 LIKE_KEPT = '''The mathematics stays as it is, and so do the plan and the decisions of the method; the passages show \
 manner, and no sentence of theirs is copied or paraphrased into the manuscript. Where following a finding would change \
 the mathematics, depart from the plan or undo a decision of the method, such as that the author line is the script's to \
@@ -2453,7 +2384,7 @@ This session repairs one section of the manuscript that earlier sessions wrote: 
 this session changes this section and no other.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 ''' + BRIEF_FILE.format(tense='was') + ''' A repair keeps the plan: the same numbered statements, kinds, labels and \
 order, the same notation.
 ''' + RESEARCH_FILES + '''
@@ -2485,7 +2416,7 @@ This session repairs the manuscript that earlier sessions wrote. It takes up wha
 found in one section goes to a session that repairs that section alone.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 - `plan.json` is the plan of the paper. A repair keeps it: the same numbered statements, kinds, labels and order, the \
 same notation.
 ''' + RESEARCH_FILES + '''
@@ -2706,7 +2637,7 @@ element states. Sessions after this one compare each sketched statement with its
 writing session receives the same files as you, with the statements and formulas of your sketch, and writes the section.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 ''' + BRIEF_FILE.format(tense='will be') + '''
 ''' + RESEARCH_FILES + '''
 ''' + STUDY_FILE + '''
@@ -2823,10 +2754,10 @@ of the sketched text. The script puts it there, and nobody compares it again bef
 One difference of an entry without a declared gap is treated otherwise. An element can state several things together, \
 for example a lemma in four parts, or two bounds joined by "and". A sketched text that gives some of these parts and \
 leaves the others out says less than its element, so it differs. If the script put the full statement in its place, \
-the paper would state parts that it never uses. An earlier paper did: one of its lemmas had four parts of which two \
-were used, two readers asked what the other two were for, and they could not be dropped, because a numbered \
-statement says what its element says. While the library can still be changed, there is a better answer, which is a \
-declaration that states the used parts alone. So when the sketched text states some of the parts of its element, \
+the paper would state parts that it never uses, readers would ask what those parts are for, and the parts could not \
+be dropped, because a numbered statement says what its element says. While the library can still be changed, there \
+is a better answer, which is a declaration that states the used parts alone. So when the sketched text states some \
+of the parts of its element, \
 each as the element states it, up to the differences that the method permits, and asserts nothing else, give the \
 verdict "differs", say under "difference" which parts the text states and which it leaves out, and set "partial" to \
 true. The script then keeps the sketched text and asks the sessions that extend the library for a declaration that \
@@ -3034,11 +2965,10 @@ sentence of a record that attributes something to a work, the words of the work 
 names. `attributions.json` holds these: for each the key of the work in the bibliography ("key"), the element whose \
 record has the sentence ("declaration"), the sentence of the record ("sentence"), the place in the work ("place"), \
 and the words of the work there ("quote"). They are all that anybody read of these works for this paper, and the \
-paper says no more about a work than was read (method, section "Results from the literature"). An earlier paper was \
-written from records that nobody had held against the works in this way, and when the works were opened afterwards \
-five of its attributions did not stand: a theorem was cited for a quantity that it does not treat, a remark was \
-cited as a theorem, a family of objects was called by a name that the cited authors do not use, a number was said to \
-be printed at a place where it is not, and one work could not be opened at all.
+paper says no more about a work than was read (method, section "Results from the literature"). Records that nobody \
+had held against the works have attributed wrongly in these ways: a theorem cited for a quantity that it does not \
+treat, a remark cited as a theorem, a family of objects called by a name that the cited authors do not use, a number \
+said to be printed at a place where it is not, and a work that could not be opened at all.
 
 So go through the entries once more for every sentence of the manuscript that says something of a cited work: what \
 it states, proves, defines or tabulates, what its authors call an object, where in it a result stands. Such a \
@@ -3177,15 +3107,6 @@ Change nothing else: no other numbered statement, and no text outside the number
 Write the complete new text of each part you change as `output/<name>.tex`, with the file name it has in `parts/`. The \
 script accepts the output when each listed statement has another text than before, every other numbered statement has \
 the text it had, and the text outside the statements and the proofs is unchanged.
-'''
-
-AGAIN = '''
-
-A session before this one had the same task, and the script could not use what it left, for these reasons:
-
-{problems}
-
-What it left is in `previous-output/`. Do the task again so that these reasons no longer hold.
 '''
 
 
@@ -3416,225 +3337,6 @@ def carried_plan(materials, plan, draft):
         named = lambda entry: renamed.get(entry.get('element'), entry.get('element')) if isinstance(entry, dict) else None
         plan['displays'] = [{**entry, 'element': named(entry)} for entry in plan['displays'] if named(entry) in elements]
     return plan, notes
-
-
-class Sessions:
-    """The sessions that a command launches, each in a folder of its own under <out>/sessions, and the log <out>/log.json.
-
-    `instance` is a folder with settings.json, from which the CLIs and the models are taken: `writer` is
-    the first entry of `models`, `assessor` the first entry of the role `review`, or of `models` when the
-    settings name none. `parallel` bounds the sessions that side_by_side runs at a time. `gate`, when it
-    is given, is a semaphore that bounds the CLI processes of every object that shares it: launch holds it
-    while the process of a session runs, and not while it waits for a usage limit to end. With `dry`
-    the log is kept in memory and not written."""
-
-    def __init__(self, instance, out, parallel=PARALLEL, dry=False, gate=None):
-        self.instance, self.out = Path(instance).resolve(), Path(out).resolve()
-        self.settings = load_settings(self.instance)
-        first = self.settings['models'][0]
-        self.writer = {'model': first['model'], 'effort': first['effort']}
-        self.assessor = self.settings['roles'].get('review', self.settings['models'])[0]
-        self.parallel, self.dry, self.gate = max(1, int(parallel)), dry, gate
-        # Sessions that run side by side share the log and the numbering of their folders.
-        self.lock = threading.RLock()
-        self.stopping, self.running = threading.Event(), set()
-        self.log = read_json(self.out / 'log.json') if (self.out / 'log.json').is_file() else []
-        # The checks that were not made, because a safeguard of the AI system stopped every session that had the
-        # task (session): each with the kind of the session, its section, what the check speaks for ("about"),
-        # the words that name it in a report ("what"), and the number of attempts. Kept in <out>/not-done.json.
-        self.undone = read_json(self.out / 'not-done.json') if (self.out / 'not-done.json').is_file() else []
-        numbers = [int(match[0]) for path in (self.out / 'sessions').iterdir() if (match := re.match(r'\d+', path.name))] \
-            if (self.out / 'sessions').is_dir() else []
-        self.count = max(numbers, default=0)
-
-    def event(self, name, **fields):
-        with self.lock:
-            self.log.append({'event': name, 'at': time.strftime('%Y-%m-%d %H:%M:%S'), **fields})
-            if not self.dry:
-                write_json(self.out / 'log.json', self.log)
-
-    def launch(self, kind, prompt, files, choice, section=None, servers=None):
-        """One session in its own folder: its prompt and its files are written, the CLI runs to its end.
-
-        `files` maps a path under the folder to its content, a text or bytes. `servers` are the MCP
-        servers of the session; without them it has none. Returns the folder."""
-        with self.lock:
-            if self.stopping.is_set():
-                raise Stop('the command was interrupted')
-            self.count += 1
-            folder = self.out / 'sessions' / f"{self.count:02d}-{kind}{'-' + section if section else ''}"
-            (folder / 'output').mkdir(parents=True)
-        for name, content in files.items():
-            (folder / name).parent.mkdir(parents=True, exist_ok=True)
-            if isinstance(content, bytes):
-                (folder / name).write_bytes(content)
-            else:
-                write_text(folder / name, content)
-        write_text(folder / 'prompt.txt', prompt)
-        write_json(folder / 'session.json', {'kind': kind, 'section': section, **choice})
-        provider = provider_for_model(choice['model'])
-        for _ in range(LIMIT_WAITS + 1):
-            # The gate is held from here to the end of the process, so that the sessions of everything that shares
-            # it are bounded together. It is given back before a wait for a usage limit, which can last hours.
-            while self.gate is not None and not self.gate.acquire(timeout=0.5):
-                if self.stopping.is_set():
-                    raise Stop('the command was interrupted')
-            try:
-                command = worker_command(self.settings['cli'][provider], choice['model'], choice['effort'], folder,
-                                         servers or {}, withheld=SELF_SCHEDULING)
-                started = time.time()
-                try:
-                    with (folder / 'prompt.txt').open('rb') as inp, (folder / 'cli.stdout.jsonl').open('wb') as out, \
-                            (folder / 'cli.stderr.log').open('wb') as err:
-                        process = subprocess.Popen(command.argv, cwd=command.cwd, env=worker_environment(), stdin=inp,
-                                                   stdout=out, stderr=err, shell=False, **popen_options())
-                        with self.lock:
-                            self.running.add(process)
-                            if self.stopping.is_set():  # the interrupt came before this process existed
-                                process.kill()
-                        try:
-                            code = process.wait()
-                        except BaseException:  # the command is interrupted while this thread waits: the session ends with it
-                            process.kill()
-                            process.wait()
-                            raise
-                        finally:
-                            with self.lock:
-                                self.running.discard(process)
-                except OSError as exc:
-                    raise Stop(f'the {kind} session could not be started: {exc}')
-            finally:
-                if self.gate is not None:
-                    self.gate.release()
-            if self.stopping.is_set():
-                raise Stop('the command was interrupted')
-            limit = detect_usage_limit(provider, folder / 'cli.stdout.jsonl', folder / 'cli.stderr.log', now=time.time(),
-                                       fallback_seconds=self.settings['retry_max_seconds'], session_started_at=started)
-            self.event('session', folder=folder.relative_to(self.out).as_posix(), kind=kind, section=section, **choice,
-                       exit_code=code, seconds=round(time.time() - started, 1),
-                       usage_limit_until=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(limit.retry_at)) if limit else None)
-            if limit is None:
-                break
-            # The same session is started again when the limit ends.
-            if self.stopping.wait(max(0.0, limit.retry_at - time.time())):
-                raise Stop('the command was interrupted')
-        return folder
-
-    def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS, servers=None,
-                check=None):
-        """Launch sessions for one task until one leaves output that `read` accepts; returns what `read` returns.
-
-        `read` is given the folder `output` of the session and returns what the caller wants, or raises
-        Unusable with the reasons, which the next session is told.
-
-        A session that a safeguard of the AI system stopped (stopped_by_safeguard) is another case. Its
-        output is not read, and the session is started again as it was: with the same prompt and the
-        same files, and without a word about the stop. It counts among the `attempts`. When every
-        attempt was stopped, what follows depends on the task. A task that makes something the run
-        needs stops the run. A task that is a check of what the run has made is given `check`: a
-        mapping from each thing the check speaks for (None when that is the whole of what the session
-        is given, otherwise for example the label of a statement) to the words that name the check
-        in a report. Each of them is then recorded as not done (`undone`, <out>/not-done.json), and
-        None is returned in the place of what `read` returns. A check that is made later for the same
-        thing takes the record away, since it speaks for the text as it then stands."""
-        problems, previous, stopped = None, {}, []
-        provider = provider_for_model(choice['model'])
-        for _ in range(attempts):
-            text = prompt if problems is None else prompt + AGAIN.format(problems='\n'.join('- ' + p for p in problems))
-            folder = self.launch(kind, text, {**files, **previous}, choice, section, servers)
-            if stopped_by_safeguard(folder, provider):
-                stopped.append(folder.relative_to(self.out).as_posix())
-                self.event('safeguard', folder=stopped[-1], kind=kind, section=section)
-                continue
-            try:
-                result = read(folder / 'output')
-            except Unusable as exc:
-                problems = exc.problems
-            except (TypeError, KeyError, AttributeError, UnicodeDecodeError) as exc:
-                problems = [f'the output does not have the form the prompt describes ({type(exc).__name__}: {exc})']
-            else:
-                if check is not None:
-                    self.record_undone(kind, section, check, None)
-                return result
-            self.event('check', check='output of the ' + kind + ' session', problems=problems)
-            previous = {'previous-output/' + path.relative_to(folder / 'output').as_posix():
-                        path.read_text(encoding='utf-8', errors='replace')
-                        for path in sorted((folder / 'output').rglob('*')) if path.is_file()}
-        if len(stopped) < attempts:
-            raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts'
-                       + (f', of which a safeguard of the AI system stopped {len(stopped)}' if stopped else '') + ': '
-                       + '; '.join(problems), todo=NO_OUTPUT)
-        if check is None:
-            raise Stop(f'a safeguard of the AI system stopped every {kind} session' + (f' of {section}' if section else '')
-                       + f', in {attempts} attempts, before it had finished (' + ', '.join(stopped) + '). The run needs '
-                       'what this session makes, so it cannot go on without it', todo=STOPPED)
-        self.record_undone(kind, section, check, attempts)
-        self.event('not done', kind=kind, section=section, checks=list(check.values()), attempts=attempts, sessions=stopped)
-        return None
-
-    def record_undone(self, kind, section, check, attempts):
-        """Record the checks of `check` as not done after `attempts` stopped sessions, or with None as made after all."""
-        with self.lock:
-            left = [entry for entry in self.undone
-                    if (entry['kind'], entry['section']) != (kind, section) or entry['about'] not in check]
-            if attempts is not None:
-                left += [{'kind': kind, 'section': section, 'about': about, 'what': what, 'attempts': attempts}
-                         for about, what in check.items()]
-            if left != self.undone:
-                self.undone = left
-                if not self.dry:
-                    write_json(self.out / 'not-done.json', self.undone)
-
-    def side_by_side(self, tasks):
-        """Run tasks that do not depend on each other, up to `parallel` at a time; their results, in the order of the tasks.
-
-        Each task keeps on disk what it makes, as soon as it has made it. When one fails for good, the
-        tasks that have not begun are not begun, those that are running come to their end and keep
-        what they make, and only then is the failure raised, so that a later --resume finds all of it."""
-        if len(tasks) < 2 or self.parallel < 2:
-            return [task() for task in tasks]
-        failed = threading.Event()
-
-        def run(task):
-            if failed.is_set() or self.stopping.is_set():
-                return None
-            try:
-                return task()
-            except BaseException:
-                failed.set()
-                raise
-
-        pool = ThreadPoolExecutor(max_workers=min(self.parallel, len(tasks)))
-        futures = [pool.submit(run, task) for task in tasks]
-        try:
-            while wait(futures, timeout=0.5).not_done:  # a wait with an end, so that an interrupt reaches this thread
-                pass
-        except BaseException:
-            # The command is being stopped from outside. The sessions that run end with it, and no other is started.
-            self.stopping.set()
-            with self.lock:
-                for process in list(self.running):
-                    process.kill()
-            pool.shutdown(wait=True)
-            raise
-        pool.shutdown()
-        for future in futures:
-            if future.exception() is not None:
-                raise future.exception()
-        return [future.result() for future in futures]
-
-    @staticmethod
-    def load(path, kind=dict):
-        """The JSON that a session left at `path`, an object or with `kind=list` an array; Unusable when it is not there."""
-        if not path.is_file():
-            raise Unusable([f'output/{path.name} was not written'])
-        try:
-            data = json.loads(read_file(path))
-        except ValueError as exc:
-            raise Unusable([f'output/{path.name} is not JSON: {exc}'])
-        if not isinstance(data, kind):
-            raise Unusable([f"output/{path.name} holds a JSON {'object' if kind is dict else 'array'}"])
-        return data
 
 
 class Paper(Sessions):
@@ -5902,7 +5604,9 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     run, ended = ended_run(instance, out, tex, choice, parallel, dry, None)
     listed = run.listed()
     if dry:
-        print('\n'.join(run.listing([
+        # A finding quotes texts of sessions, and output that is redirected is encoded as the system's locale has it.
+        # A character that encoding lacks is printed as an escape instead of ending the command (depmap.say).
+        depmap.say('\n'.join(run.listing([
             'Dry run: no session is launched and nothing is written.',
             f"The run in {out} came to its end ({ended['status']}) with {len(listed)} findings left open. --open-findings "
             'acts on all of them; followed by numbers of this list, as in --open-findings 2,5-7, it acts on those, and '

@@ -14,7 +14,7 @@ This program conducts: it holds the order of the stages and their exit checks, a
 either. A step writes into folders of its own, records the hashes of its products in state.json when
 its exit check has passed, and compares the hash of every product it reads before it reads it. What
 needs no session is in package.py; the sessions are launched as the paper command launches them
-(paper.Sessions), from the instruction files under <skill>/finalize/.
+(command_sessions.Sessions), from the instruction files under <skill>/finalize/.
 """
 import argparse
 import hashlib
@@ -31,10 +31,11 @@ import traceback
 
 import canon
 from canon import CanonError, module_file, name_path, parse_record
+from command_sessions import Sessions, Stop, Unusable, collapsed, is_text
 import knowledge
 import package
 import paper
-from paper import Sessions, Stop, Unusable, collapsed, is_text, produce
+from paper import produce
 from package import write_json, write_text  # they make a file's folder and write its lines with LF ends
 from runtime_support import alive, contain_session_processes, popen_options, read_json, remove_tree, rename_directory
 from settings import validate
@@ -46,9 +47,11 @@ NAME = re.compile(r'[a-z0-9][a-z0-9-]*')
 PART_ID = re.compile(r'[a-z0-9][a-z0-9-]*')
 PLACEHOLDER = re.compile(r'\{\{([a-z_]+)\}\}')
 # The sections of finalize/common.md that concern the library's Lean files, and the instructions whose sessions
-# are given no Lean file: their prompts carry the common text without those sections.
+# are given no Lean file: their prompts carry the common text without those sections. Of the other instructions,
+# those whose step writes Lean are the only ones that compile, and the only ones given the section on compiling.
 LEAN_SECTIONS = ('Reading the imported library', 'Compiling', 'What every Lean file of the library keeps')
 WITHOUT_LEAN = ('history-write', 'history-read', 'readme-write')
+COMPILING = ('selection', 'restore', 'simplify', 'arrange', 'foldback')
 FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
 # What the entry of a cited work holds for each sentence of a record that cites it (bring_records): the record, the
 # sentence, the place in the work, and the words of the work at that place as they were read.
@@ -228,12 +231,14 @@ class Run:
     def prompt(self, instruction, names=None):
         """`finalize/common.md` followed by the instruction file, with every `{{name}}` replaced.
 
-        An instruction of WITHOUT_LEAN is given the common text without its LEAN_SECTIONS, each of which runs
-        from its heading to the next line that begins with `## `."""
+        An instruction of WITHOUT_LEAN is given the common text without its LEAN_SECTIONS, and any other
+        instruction that is not of COMPILING without the section "Compiling". A section runs from its heading
+        to the next line that begins with `## `."""
         folder = SKILL / 'finalize'
         common = package.read_text(folder / 'common.md')
-        if instruction in WITHOUT_LEAN:
-            common = re.sub(r'^## (?:' + '|'.join(map(re.escape, LEAN_SECTIONS)) + r')\n.*?(?=^## |\Z)', '',
+        left_out = LEAN_SECTIONS if instruction in WITHOUT_LEAN else () if instruction in COMPILING else ('Compiling',)
+        if left_out:
+            common = re.sub(r'^## (?:' + '|'.join(map(re.escape, left_out)) + r')\n.*?(?=^## |\Z)', '',
                             common, flags=re.M | re.S)
         text = common + '\n' + package.read_text(folder / (instruction + '.md'))
         source = self.settings['lean']['cwd']
@@ -1165,8 +1170,12 @@ class Run:
                      'requests.json': as_json(requests), **tree('records/', records), **library}
 
             def read(output):
-                rows = {row.get('key'): row for row in Sessions.load(output / 'sources.json', list) if isinstance(row, dict)}
-                problems = [f"sources.json has no status of \"verified\" or \"removed\" for {item['key']}" for item in cited
+                loaded = [row for row in Sessions.load(output / 'sources.json', list) if isinstance(row, dict)]
+                # The steps after this one find every entry by its key, so an entry without one goes back to a session.
+                problems = ['sources.json has an entry without "key", the key of its work in the bibliography'] \
+                    if not all(is_text(row.get('key')) for row in loaded) else []
+                rows = {row['key']: row for row in loaded if is_text(row.get('key'))}
+                problems += [f"sources.json has no status of \"verified\" or \"removed\" for {item['key']}" for item in cited
                             if rows.get(item['key'], {}).get('status') not in ('verified', 'removed')]
                 problems += [f'{key} is verified without an identifier' for key, row in rows.items()
                              if row.get('status') == 'verified' and not is_text(row.get('identifier'))]
@@ -1455,11 +1464,14 @@ class Run:
         reports = {part: result['report'] for part, result in accepted}
         for part in parts:
             for item in by_part[part]:
-                answer = next((a for a in reports.get(part, {}).get('items', []) if a.get('id') == item['id']), None)
-                closes = [name for name in (answer or {}).get('declarations', []) if name in new['entries']]
-                closed = bool(part in merged and answer and answer['closed'] and closes)
+                answer = next((a for a in reports.get(part, {}).get('items', [])
+                               if isinstance(a, dict) and a.get('id') == item['id']), {})
+                # A report can give null where it has nothing to say: the declarations of an item it did not close, a note.
+                closes = [name for name in answer.get('declarations') or []
+                          if isinstance(name, str) and name in new['entries']]
+                closed = bool(part in merged and answer.get('closed') and closes)
                 outcome.append({**item, 'part': part, 'closed': closed, 'declarations': closes if closed else [],
-                                'note': (answer or {}).get('note', '') if part in merged else
+                                'note': str(answer.get('note') or '') if part in merged else
                                 'the part was discarded, so the library keeps the form it had'})
         write_json(folded / 'index.json', new)
         write_json(folded / 'foldback.json', {'items': outcome, 'merged': merged, 'discarded': discarded})
@@ -2175,9 +2187,20 @@ class Run:
               if uncorrected else []),
             '## What you fill in before a submission to the registry', '', *['- ' + item for item in fill], '',
             '## The choices', '', 'Every choice the run made, with its reason, is in `decisions.md` beside this file.', '']))
+        # The run is at its end here, so what cannot be deleted stops nothing and is named in the report. Windows
+        # refuses to delete a file that another program holds open, and a folder that holds one.
+        left = []
         for path in self.work.iterdir():
             if path.name not in KEPT_AT_END:
-                remove_tree(path) if path.is_dir() else path.unlink()
+                try:
+                    remove_tree(path) if path.is_dir() else path.unlink()
+                except OSError as error:
+                    left.append(f'- `{path.name}`: {error}')
+        if left:
+            write_text(self.work / 'report.md', package.read_text(self.work / 'report.md') + '\n'.join([
+                '', '## What could not be deleted', '',
+                'The package is complete. These temporary files of the run are still in the work folder, because another '
+                'program held them when the run came to its end. Delete them by hand.', '', *left, '']))
 
     def stopped(self, halt):
         """report.md of a run that stops: the step, what the check found, and what the user does."""

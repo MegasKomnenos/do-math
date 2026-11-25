@@ -148,21 +148,31 @@ def _write_chunks(path, chunks):
 
 
 
-def replace_file(source, destination):
-    """Move a complete file to its destination in one step, replacing a file that is there.
-
-    Windows readers, such as sessions reading the canon, may briefly hold the source or the destination
-    without delete sharing. Retry the move for up to a minute; until it succeeds both files stay as they were."""
+def _retried(operation, *paths):
+    """Carry out a file operation, repeating it for up to a minute while Windows refuses it for access or sharing."""
     deadline = time.monotonic() + 60.0
     while True:
         try:
-            os.replace(source, destination)
-            break
+            return operation(*paths)
         except OSError as exc:
             if (os.name != "nt" or getattr(exc, "winerror", None) not in (5, 32, 33)
                     or time.monotonic() >= deadline):
                 raise
             time.sleep(0.05)
+
+
+def replace_file(source, destination):
+    """Move a complete file to its destination in one step, replacing a file that is there.
+
+    Windows readers, such as sessions reading the canon, may briefly hold the source or the destination
+    without delete sharing. Retry the move for up to a minute; until it succeeds both files stay as they were."""
+    _retried(os.replace, source, destination)
+
+
+def remove_file(path):
+    """Remove a file that a Windows reader may briefly hold without delete sharing, with the retry of _retried;
+    until the removal succeeds the file stays."""
+    _retried(os.unlink, path)
 
 
 def rename_directory(source, destination):
@@ -421,6 +431,24 @@ def contain_session_processes():
     return {"contained": True}
 
 
+def wait_for_go(folder, starter):
+    """Wait at a host's gate: True once the host's folder holds GO, False when the host is not to start.
+
+    The runner starts a session host and the Lean broker a job host (lean_broker.job_host). Each records
+    the host's identity durably and only then writes GO into the host's folder, so a host that its starter
+    never recorded starts nothing, even if the starter dies while it spawns the host. The host is not to
+    start when CANCEL appears first, or when the starter has died without writing GO. The starter can die
+    right after it wrote GO, and the host outlives it, so a GO that appeared since the loop's test still
+    opens the gate."""
+    while not (folder / "GO").exists():
+        if (folder / "CANCEL").exists():
+            return False
+        if not alive(starter):
+            return (folder / "GO").exists()
+        time.sleep(0.1)
+    return True
+
+
 def session_host(session):
     """Supervise one logical session independently of the runner's lifetime.
 
@@ -428,16 +456,8 @@ def session_host(session):
     An unrecorded host cannot start a CLI, even if its parent dies mid-spawn.
     """
     job = read_json(session / "launch.json")
-    while not (session / "GO").exists():
-        if (session / "CANCEL").exists():
-            return 1
-        if not alive(job["runner"]):
-            # The runner writes GO once this host's identity is durable and can die right after it. The host
-            # outlives the runner, so a GO that appeared since the loop's test still starts the session.
-            if (session / "GO").exists():
-                break
-            return 1
-        time.sleep(0.1)
+    if not wait_for_go(session, job["runner"]):
+        return 1
     write_json(session / "process-job.json", {**contain_session_processes(), "at": time.time()})
     from ending import supervise
     result = supervise(session, job)

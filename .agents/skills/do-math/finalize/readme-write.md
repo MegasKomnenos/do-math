@@ -50,7 +50,7 @@ You may link to files of the package by a path relative to the package's root, w
 
 `output/outline.md` and `output/obtained.md`, both complete.
 
-The program requires that every placeholder is filled from `facts.json`. Before you end, search both files for digits and see that each one belongs to the mathematics or stands inside a placeholder, and compare every key you used with `facts.json`. Then read both sections as a visitor who has only the README.
+Before you end, search both files for digits and see that each one belongs to the mathematics or stands inside a placeholder, and compare every key you used with `facts.json`. Then read both sections as a visitor who has only the README.
 
 ## When this is the correcting session
 

@@ -164,6 +164,16 @@ class EndingTests(InstanceCase):
         self.assertLessEqual(receipt['at'], read_json(directory / 'turn-termination.json')['result']['invocation_started_at'])
         return read_json(directory / 'end-check.json')
 
+    def waiting(self, directory, status):
+        """The host's end-check record once it reports the given status, looked for over at most ten seconds."""
+        path = directory / 'end-check.json'
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and not (path.exists() and read_json(path)['status'] == status):
+            time.sleep(.05)
+        record = read_json(path)
+        self.assertEqual(record['status'], status)
+        return record
+
     def test_worker_end_resumes_exact_conversation_and_preserves_context(self):
         for role in ('attempt', 'formalizer', 'explore', 'peer'):
             with self.subTest(role=role):
@@ -478,14 +488,7 @@ class EndingTests(InstanceCase):
             thread = threading.Thread(target=lambda: result.append(session_host(directory)), daemon=True)
             thread.start()
             try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    path = directory / 'end-check.json'
-                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
-                        break
-                    time.sleep(.05)
-                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
-                self.assertEqual(read_json(path)['resumptions'], 0)
+                self.assertEqual(self.waiting(directory, 'waiting_dispatch')['resumptions'], 0)
                 self.assertTrue(thread.is_alive())
                 self.assertTrue(session_live(engine.state, sid))
                 self.assertEqual(board(self.instance)[0]['stage'], 'producing')
@@ -549,13 +552,7 @@ class EndingTests(InstanceCase):
             thread = threading.Thread(target=session_host, args=(directory,), daemon=True)
             thread.start()
             try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    path = directory / 'end-check.json'
-                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
-                        break
-                    time.sleep(.05)
-                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
+                self.waiting(directory, 'waiting_dispatch')
                 import io
                 with patch('sys.stdout', new=io.StringIO()):
                     self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
@@ -586,19 +583,12 @@ class EndingTests(InstanceCase):
             thread = threading.Thread(target=session_host, args=(directory,), daemon=True)
             thread.start()
             try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    path = directory / 'end-check.json'
-                    if path.exists() and read_json(path)['status'] == 'waiting_provider':
-                        break
-                    time.sleep(.05)
-                self.assertEqual(read_json(path)['status'], 'waiting_provider')
-                self.assertEqual(read_json(path)['resumptions'], 0)
+                self.assertEqual(self.waiting(directory, 'waiting_provider')['resumptions'], 0)
                 engine.state['blocks'].clear()
                 engine.save()
                 thread.join(10)
                 self.assertFalse(thread.is_alive())
-                self.assertEqual(read_json(path)['authorization']['basis'], 'resumption_limit')
+                self.assertEqual(read_json(directory / 'end-check.json')['authorization']['basis'], 'resumption_limit')
             finally:
                 (directory / 'CANCEL').touch()
                 thread.join(10)
@@ -619,13 +609,11 @@ class EndingConfigurationTests(unittest.TestCase):
     def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
         import shutil
         import tempfile
-        from ending import ROLES
-        self.assertEqual(set(ROLES), {'attempt', 'formalizer', 'explore', 'peer'})
         with tempfile.TemporaryDirectory() as tmp:
             guidance = Path(tmp) / 'resume'
             shutil.copytree(Path(__file__).resolve().parents[2] / 'resume', guidance)
             request = {'id': 'current-request', 'previous_error': 'Stale decision'}
-            for role in ROLES:
+            for role in ('attempt', 'formalizer', 'explore', 'peer'):
                 prompt = request_prompt(request, role, guidance)
                 self.assertIn((guidance / (role + '.md')).read_bytes().decode('utf-8-sig').strip(), prompt)
                 self.assertIn('current-request', prompt)
@@ -640,9 +628,6 @@ class EndingConfigurationTests(unittest.TestCase):
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('current-request', prompt)
                 self.assertNotIn('{{', prompt)
-            with self.assertRaises(ValueError) as refused:
-                request_prompt(request, 'operator', guidance)
-            self.assertEqual(str(refused.exception), 'no continuation guidance for role: operator')
             (guidance / 'peer.md').unlink()
             with self.assertRaises(FileNotFoundError):
                 request_prompt(request, 'peer', guidance)

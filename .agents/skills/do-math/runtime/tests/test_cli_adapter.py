@@ -66,6 +66,12 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(custom.argv[custom.argv.index("--model") + 1], "vendor/model")
         with self.assertRaisesRegex(ValueError, "Unsupported Claude effort: 'ultra'"):
             build_command("claude.exe", "claude/sonnet", "ultra", workdir)
+        # An executable or an effort that a settings file leaves blank is refused when the settings are read.
+        for cli, effort, reason in ((" ", "high", "cli_path must be a nonempty executable path or name"),
+                                    ("codex.exe", " ", "effort must be a nonempty string"),
+                                    ("codex.exe", 5, "effort must be a nonempty string")):
+            with self.subTest(cli=cli, effort=effort), self.assertRaisesRegex(ValueError, reason):
+                build_command(cli, "codex/gpt-6.1-sol", effort, workdir)
 
     def test_codex_explicit_date_and_stderr(self):
         message = "You’ve hit your usage limit. Try again at Oct 22nd, 2026 7:11 PM."
@@ -92,6 +98,7 @@ class AdapterTests(unittest.TestCase):
             "You’ve hit your usage limit. Try again later.",
             "You’ve hit your usage limit. Try again at Oct 20th, 2026 7:11 PM.",
             "You’ve hit your usage limit. Try again at Oct 32nd, 2026 7:11 PM.",
+            "You’ve hit your usage limit. Try again at Oct 22nd, 2026 13:11 PM.",
         ):
             with self.subTest(message=message):
                 limit = self.detect("codex", [{"type": "error", "message": message}])

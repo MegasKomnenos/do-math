@@ -8,9 +8,9 @@ import unittest
 from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
-from availability import availability_view, opening_since, snapshot_token
+from availability import opening_since, snapshot_token
 from check import check_session
-from coordination import board, updates
+from coordination import updates
 from knowledge import replay
 from runner import Runner, main
 from runtime_support import read_json, write_json
@@ -94,33 +94,6 @@ class AvailabilityTests(ScenarioCase):
         self.assertEqual((gate['mode'], gate['reported_by'], gate['snapshot'], gate['reason'], gate['baseline']),
                          ('suppressed', sid, token, 'all_unresolved_work_occupied', observed))
         self.assertEqual(session['availability_report'], {'status': 'accepted'})
-
-    def test_the_view_holds_only_the_work_that_remains(self):
-        self.split()
-        self.runner = Runner(self.instance, self.skill)
-        first, _, _ = self.attempt()
-        part = take(self.runner.session_dir(first), 'Small.sumZero', 'The empty sum, read from the definition.')['section']
-        view = availability_view(self.runner.model, board(self.instance, self.runner.state, self.runner.model), 3)
-        # The root's proof is accepted and sumTwo is not on the way to the root; neither is work that remains.
-        self.assertEqual(view, {'epoch': 3, 'elements': {'Small.sumSucc': [], 'Small.sumZero': [part['id']]}})
-
-    def test_a_section_on_a_statement_is_listed_under_each_of_its_proofs_that_remains(self):
-        # A section stands on the statement, so it occupies every proof of that statement that is work that remains.
-        self.ways()
-        self.runner = Runner(self.instance, self.skill)
-        remaining = self.runner.model['remaining']
-        # monoB and its other proof monoBAlt both remain; of the root, only its other proof rootAlt does.
-        self.assertLessEqual({'Small.monoB', 'Small.monoBAlt', 'Small.rootAlt'}, set(remaining))
-        self.assertNotIn('Small.root', remaining)
-        first, _, _ = self.attempt()
-        mono = take(self.runner.session_dir(first), 'Small.monoB', 'Three terms, added one at a time.')['section']
-        second, _, _ = self.attempt()
-        root = take(self.runner.session_dir(second), 'Small.rootAlt', 'The case split of way 2.')['section']
-        self.assertEqual((mono['element'], root['element']), ('Small.monoB', 'Small.root'))
-        view = availability_view(self.runner.model, board(self.instance, self.runner.state, self.runner.model), 0)
-        self.assertEqual(sorted(view['elements']), remaining)
-        self.assertEqual({name: ids for name, ids in view['elements'].items() if ids},
-                         {'Small.monoB': [mono['id']], 'Small.monoBAlt': [mono['id']], 'Small.rootAlt': [root['id']]})
 
     def test_valid_coverage_survives_restart_time_and_unrelated_publication(self):
         self.occupied()

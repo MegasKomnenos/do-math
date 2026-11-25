@@ -13,7 +13,7 @@ You check the facts on which the comparison rests. You do not check the choice. 
 - `index.json`: under `entries`, for each element by name, its `kind`, `module`, `file`, `statement` (the Lean statement as text), `statement_uses` and `uses` (what its statement mentions and its proof names), `lean_proof` and `axioms`.
 - `canon/`: the library under `lean/`, the records under `records/`, the research's understanding of its questions under `questions/`, the approaches tried under `approaches/`, and `bibliography.bib`.
 
-The root is the declaration `{{root}}`. You write no Lean and compile nothing.
+You write no Lean and compile nothing.
 
 ## What counts as a claim
 
@@ -35,7 +35,7 @@ A claim holds when the canon bears it out. When the canon shows something else, 
 
 For each claim that does not hold, decide whether the correction changes a ground of the comparison. It does when a reason the decision gives for ranking one option above another no longer stands with the corrected fact, or stands the other way round, or when the correction means that an option is not what the decision took it to be. It does not when the corrected fact leaves every such reason as it was: a count that is off by a little, a name misspelt, a detail of a proof that no reason mentions. This judgment matters, because one `true` sends the decision back to be made once more with your corrections, and nothing reads the selection after that. Mark as `true` what a careful decider would want to reconsider, and not every slip.
 
-Of each claim that does not hold, a second thing is recorded: whether it stands in a text that the package prints. `sentence` and the texts under `registry` go into the package as the decision has them, into the README and into the file the registry reads, and no later step rewrites them. A wrong statement there is therefore sent back to be corrected whether or not it touches the comparison, and you mark it `printed`. A claim in any other field is not printed.
+Of each claim that does not hold, a second thing is recorded: whether it stands in a text that the package prints. `sentence` and the texts under `registry` go into the package as the decision has them, into the README and into the file the registry reads, and no later step rewrites them. A wrong statement there is therefore sent back to be corrected whether or not it touches the comparison, and you mark it `printed`.
 
 ## What you write
 

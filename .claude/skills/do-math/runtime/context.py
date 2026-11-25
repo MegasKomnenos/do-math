@@ -135,9 +135,15 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
               'These are `commands` from input.json; that file also holds your session identity, settings and '
               'user-condition snapshot.', '',
               '```json', json.dumps({'commands': commands}, ensure_ascii=False, indent=2), '```', '']
-    write_text(session / 'pack.md', '\n'.join(parts))
+    pack = '\n'.join(parts)
+    write_text(session / 'pack.md', pack)
+    # A pack holds hundreds of thousands of bytes, more than the reading tool of a CLI returns in one call.
+    # The prompt gives the size, so that a session reads the pack in ranges from its first call.
+    lines, size = pack.count('\n'), len(pack.encode('utf-8'))
     write_text(session / 'prompt.txt',
                f'You are a do-math {role} session. Your working directory is {session}.\n'
-               f'Read {session / "pack.md"} in full, then carry out the role it describes.\n'
+               f'Read {session / "pack.md"} in full, then carry out the role it describes. The file has {lines} '
+               f'lines in {size} bytes, more than a reading tool returns in one call, so read it in consecutive '
+               'ranges of lines until its last line.\n'
                f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n')
     return inp

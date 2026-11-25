@@ -1035,8 +1035,8 @@ def guide_of(data, bare=()):
 
     It is written here, beside the visual grammar, so that the page explains the lines, the cards and the
     standings in the colours and dashes they are drawn with, and only those that occur on this map. The
-    glossary holds the words of the cards of this map; the page also shows an entry with each word of a
-    chosen card."""
+    glossary holds the words of the cards of this map and the kinds of its folded steps; the page also shows
+    an entry with each word of a chosen card or step."""
     counts, units = data['counts'], {unit['id']: unit for unit in data['units']}
     name = esc(data.get('root_label') or data['root'])
     if data['root'] in units:
@@ -1073,6 +1073,8 @@ def guide_of(data, bare=()):
                      f'the bar at the left of a card: {esc(words)}</li>')
     parts.append('</ul></div>')
     said = {word for unit in data['units'] for word in status_of(unit, bare)}
+    # The panel of a folded step names the kind of the step, a word that no card of the map may say.
+    said |= {KINDS.get(step['kind'], step['kind']) for step in (data.get('folded') or {}).values()}
     parts.append('<div class="glossary"><h3>The words on the cards</h3><dl>')
     for word, meaning in GLOSSARY.items():
         if word in said or word in ('unit', 'step'):

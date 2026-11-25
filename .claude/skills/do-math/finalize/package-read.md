@@ -45,7 +45,7 @@ Begin with the README, from its first line, and follow it as a visitor would.
 
 Then read the other documents. `knowledge/MANIFEST.md` and `lean/formalization.yaml` are read as the README was: what each asserts about the package is held against the package, and each has to be clear to a visitor. The paper and the timeline were read closely in steps of their own, the paper for its mathematics and its writing and the timeline against the research's records, and that reading is not repeated here. Read them for what they share with the other documents: whether all documents agree in the title, in the statement of the result, in names and in figures.
 
-Throughout, look for what must not be in a published package: a path of a drive or of a home folder, the name of an account, a reference to a folder or a tool that exists only where the package was made, and a sentence that speaks of the run that assembled the package.
+Throughout, look for what must not be in a published package: a path of a drive or of a home folder, the name of an account, a reference to a folder or a tool that exists only where the package was made, and, outside the statements of what was checked and of how the library and the archive were made, a sentence that speaks of the run that assembled the package.
 
 ## What you write
 

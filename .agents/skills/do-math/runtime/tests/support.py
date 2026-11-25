@@ -609,3 +609,36 @@ class ScenarioCase(InstanceCase):
                 'Small.rootAlt': {'accepted': False, 'reason': 'Way 2 repeats the case split of way 1.'},
                 'Small.monoBAlt': {'correct': 'not_confirmed', 'accepted': False, 'reason': 'The addition is not carried out.'}}))
         self.scenario('ways', build)
+
+
+class RefutedRootCase(ScenarioCase):
+    """States in which a declaration refutes the root: its record says `refutes:` and Lean confirms the negation.
+
+    The root of these tests is the closed proposition ROOT_CLOSED. The stand-in compiler
+    reads only the structure of a proof, so the "refutation" of a true statement compiles here."""
+    root_variant = 'closed'
+    NEGATION = ': ¬ (∀ n : Nat, oddSum n = n * n)'
+
+    def refuted(self):
+        def build():
+            folder = self.candidate(
+                modules={'Small/Against.lean': module_text(theorem('notRoot', self.NEGATION))},
+                records={'Small/notRoot.md': record_text('Some initial sum of odd numbers is not a square.', weight='unit',
+                                                         proof='The sum of the first two is taken to be five.',
+                                                         refutes='Small.root')})
+            self.publish(folder)
+        self.scenario('refuted', build)
+
+    def formally_refuted(self):
+        def build():
+            self.refuted()
+            folder = self.candidate(replace={'Small.notRoot': theorem(
+                'notRoot', self.NEGATION, proof='intro h\n  exact absurd (h 2) (by decide)')})
+            self.publish(folder)
+        self.scenario('formally refuted', build)
+
+    def contested(self):
+        def build():
+            self.formally_refuted()
+            self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.')
+        self.scenario('contested', build)

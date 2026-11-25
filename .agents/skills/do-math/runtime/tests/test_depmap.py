@@ -534,6 +534,12 @@ class Drawing(MapCase):
         said = {word for unit in data['units'] for word in draw.status_of(unit)}
         self.assertEqual(set(re.findall(r'<dt data-word="([^"]+)"', guide)), said | {'unit', 'step'})
         self.assertNotIn('refutes the root', guide)
+        # The panel of a folded step names the kind of the step, so the glossary has that word where no card says it.
+        through = self.map([statement('Lib.root', 'unit', mentions=['Lib.Shape']),
+                            definition('Lib.Shape', uses=['Lib.base'], kind='inductive'), definition('Lib.base', 'unit')])
+        self.assertEqual(through['folded']['Lib.Shape']['kind'], 'inductive')
+        self.assertNotIn('inductive type', [word for unit in through['units'] for word in draw.status_of(unit)])
+        self.assertIn('<dt data-word="inductive type">', draw.guide_of(through))
         # The page reads the words of a card from the drawing.
         nodes = ElementTree.fromstring(svg).findall(f".//{SVG}g[@class='node']")
         self.assertEqual({node.get('data-node'): node.get('data-status') for node in nodes},

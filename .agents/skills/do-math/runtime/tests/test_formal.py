@@ -50,7 +50,7 @@ ABOVE_RECORD = record_text('The same value, from the lemma.')
 DEFINITION_CHANGED = 'the text of the definition Small.oddSum is not the text the first commit has'
 
 
-def reindex(case, expect_mb=64, timeout=120):
+def reindex(case):
     """Take the index of the canon's sources again, as `init` takes it, and install it under the next revision.
 
     A test changes a source of the canon behind the runner and then calls this, so that the index says
@@ -62,8 +62,8 @@ def reindex(case, expect_mb=64, timeout=120):
     copy_tree(canon.lean, stage)
     modules = [module for module, _ in library_modules(stage, library)]
     before = canon.load_index()
-    outcome = wait_build(case.instance, start_build(case.instance, stage, library, 'operator', expect_mb, modules, []),
-                         timeout)
+    outcome = wait_build(case.instance, start_build(case.instance, stage, library, 'operator', case.expect_mb, modules, []),
+                         case.patience)
     case.assertTrue(outcome and outcome['ok'], outcome)
     index = update_index(empty_index(), outcome['rows'], {}, stage, before['revision'] + 1)
     index['pairs'] = before['pairs']
@@ -413,7 +413,7 @@ class LeanItselfTests(ScenarioCase):
     def test_a_changed_definition_under_the_root_is_found(self):
         self.formal()
         rewrite(self.instance / 'canon/lean/Small/Defs.lean', '| 0 => 0', '| 0 => 0 * 1')
-        reindex(self, EXPECT_MB, PATIENCE)
+        reindex(self)
         engine = runtime.Runner(self.instance, self.skill)
         self.assertEqual(engine.model['root_state'], 'formal_proved')  # the proof still compiles; the object is another
         engine.check_root()
@@ -427,7 +427,7 @@ class LeanItselfTests(ScenarioCase):
         posed = json.loads(runtime.git(self.instance, 'show', first + ':canon/index.json'))
         self.assertEqual(statement_differences(posed, Canon(self.instance).load_index(), 'Small.root'), [])
         rewrite(self.instance / 'canon/lean/Small/Root.lean', 'oddSum n = n * n', 'oddSum n = n * n + 0')
-        index = reindex(self, EXPECT_MB, PATIENCE)
+        index = reindex(self)
         self.assertEqual(statement_differences(posed, index, 'Small.root'),
                          ['the statement of Small.root is not the statement the first commit has'])
         # A runner does not start on such a canon at all.

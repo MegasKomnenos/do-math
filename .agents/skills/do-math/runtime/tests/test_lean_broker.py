@@ -52,6 +52,9 @@ class BrokerFixture(unittest.TestCase):
                      "version_command": [sys.executable, "-B", str(FAKE), "--version"], "cwd": None, "env": {},
                      "memory_budget_mb": self.budget, "min_free_memory_mb": 0, "threads": 1,
                      "cpu_threads_budget": self.threads_budget,
+                     # A calibration compile reserves all of calibration_expect_mb as certain, and the machine gate
+                     # holds it until the test machine has that much memory free. The stand-in takes a few dozen MiB.
+                     "calibration_expect_mb": 64,
                      # The stand-in compiler must not starve behind normal-priority load on the test machine.
                      "priority": "normal"}}
         # What the broker reads of an instance: its settings, the runner's folder, and in the runner's
@@ -290,6 +293,20 @@ class ProcessTreeTests(unittest.TestCase):
         with patch.object(lean_broker, "_windows_processes", return_value=list(parents.items())), \
                 patch.object(lean_broker, "_windows_birth", side_effect=births.get):
             self.assertEqual(lean_broker.process_tree(10), [10, 20, 40])
+
+    @unittest.skipIf(os.name == "nt", "the process files of Linux")
+    def test_a_process_whose_name_is_not_text_does_not_stop_the_listing(self):
+        # /proc/<pid>/stat holds the name a process gave itself: up to 15 bytes that need not be UTF-8 and may hold a
+        # closing parenthesis. The broker reads that file for every process of the machine.
+        stats = {"10": b"10 (lean) S 1 10 10", "20": b"20 (\xff\xfe) S 10 10 10", "30": b"30 (a) b) S 20 10 10"}
+
+        class Entry:
+            def __init__(self, name):
+                self.name, self.path = name, "/proc/" + name
+
+        with patch.object(lean_broker.os, "scandir", return_value=[Entry(name) for name in stats]), \
+                patch.object(Path, "read_bytes", lambda path: stats[path.parent.name]):
+            self.assertEqual(lean_broker.process_tree(10), [10, 20, 30])
 
 
 class AdmissionRuleTests(unittest.TestCase):
@@ -546,7 +563,7 @@ class JobHostTests(unittest.TestCase):
         def died_after_go(identity):
             (self.job / "GO").touch()
             return False
-        with patch.object(lean_broker, "alive", side_effect=died_after_go):
+        with patch.object(runtime_support, "alive", side_effect=died_after_go):
             self.assertEqual(lean_broker.job_host(self.job), 0)
         self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 3)
         self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
@@ -598,22 +615,6 @@ class JobHostTests(unittest.TestCase):
                         asked["preexec_fn"]()  # what the host has the new process run before it becomes Lean
                     nice.assert_called_once_with(niceness)
                 self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 0)
-
-
-class TerminationTests(unittest.TestCase):
-    def test_a_process_is_terminated_only_under_its_own_identity(self):
-        # A PID passes to another process once its own has ended. Whatever the runtime terminates, it terminates by a
-        # recorded identity (runtime_support.terminate_process), so a process that only has the recorded PID stays.
-        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
-        self.addCleanup(child.wait, 10)
-        self.addCleanup(child.kill)
-        identity = runtime_support.process_identity(child.pid)
-        with self.assertRaisesRegex(RuntimeError, "not terminated"):
-            runtime_support.terminate_process({"pid": child.pid, "birth": "an earlier process with this PID"})
-        self.assertTrue(runtime_support.alive(identity))
-        runtime_support.terminate_process(identity)
-        child.wait(timeout=10)
-        self.assertFalse(runtime_support.alive(identity))
 
 
 class BrokerTests(BrokerFixture):

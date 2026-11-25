@@ -29,9 +29,10 @@ import threading
 import time
 import uuid
 
+from canon import IMPORT_LINE, header_code
 from coordination import ACTIVE_STATUSES, session_live
 from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
-                    popen_options, process_identity, read_json, terminate_process, write_json,
+                    popen_options, process_identity, read_json, terminate_process, wait_for_go, write_json,
                     write_json_compact)
 from settings import load_settings
 
@@ -56,7 +57,6 @@ P90 = 1.2816  # the standard-normal 90th percentile: an estimate is read as a pr
 HISTORY = 20  # samples kept per import closure
 KEEP_FINISHED = 200  # finished job records kept in the broker state; result.json files stay
 READY_SECONDS = 20.0
-IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)")
 # The emitted files a `module` file reads of a module it imports. Of the others, `.olean.private` holds proofs
 # and `.olean.server` editor data; the `.ir.sig` that Lean 4.36 adds is written by `lean` without content of its own.
 PUBLIC_SUFFIXES = (".olean", ".ir")
@@ -100,45 +100,21 @@ class Paths:
 
 
 def read_header(data):
-    """What the header of a Lean source says, read from the source's bytes around ordinary and nested comments.
+    """What the header of a Lean source says, read from the source's bytes around ordinary and nested comments
+    (canon.header_code).
 
     `imports` are the imported module names, sorted. `module` says whether the file is written in
     Lean's module system: its first token that is not a comment or blank is `module`. `all` says
     whether some import is an `import all`, which reads the private data of what it imports."""
-    imports, depth = set(), 0
+    imports = set()
     module = private = False
     first = True
-    for number, raw in enumerate(data.splitlines()):
-        line = raw.decode("utf-8", errors="replace")
-        if number == 0:
-            line = line.removeprefix("\ufeff")
-        code = []
-        index = 0
-        while index < len(line):
-            if depth:
-                if line.startswith("/-", index):
-                    depth += 1
-                    index += 2
-                elif line.startswith("-/", index):
-                    depth -= 1
-                    index += 2
-                else:
-                    index += 1
-            elif line.startswith("--", index):
-                break
-            elif line.startswith("/-", index):
-                code.append(" ")
-                depth = 1
-                index += 2
-            else:
-                code.append(line[index])
-                index += 1
-        stripped = "".join(code).strip()
-        if not stripped:
-            continue
+    # A byte order mark hides neither the first import nor the first token.
+    lines = (raw.decode("utf-8", errors="replace") for raw in data.removeprefix(b"\xef\xbb\xbf").splitlines())
+    for _, stripped in header_code(lines):
         if first:
             module, first = stripped.split()[0] == "module", False
-        match = IMPORT.match(stripped)
+        match = IMPORT_LINE.match(stripped)
         if match:
             imports.add(match[2])
             private = private or bool(match[1])
@@ -318,10 +294,10 @@ def process_tree(pid):
             if not entry.name.isdigit():
                 continue
             try:
-                stat = Path(entry.path, "stat").read_text()
+                stat = Path(entry.path, "stat").read_bytes()  # as bytes: the name a process gave itself need not be text
             except OSError:
                 continue
-            children[int(stat.rsplit(")", 1)[1].split()[1])].append(int(entry.name))
+            children[int(stat.rsplit(b")", 1)[1].split()[1])].append(int(entry.name))
     order, stack = [], [pid]
     while stack:
         current = stack.pop()
@@ -437,16 +413,9 @@ def job_host(job_dir):
     """Parent of one Lean process; records its identity and exit like the session host."""
     job_dir = Path(job_dir)
     launch = read_json(job_dir / "launch.json")
-    while not (job_dir / "GO").exists():
-        if (job_dir / "CANCEL").exists():
-            return 1
-        if not alive(launch["broker"]):
-            # The broker writes GO once this host's identity is durable and can die right after it. A GO that
-            # appeared since the loop's test belongs to a job that the next broker adopts as started, so Lean runs.
-            if (job_dir / "GO").exists():
-                break
-            return 1
-        time.sleep(0.1)
+    # A GO that the broker wrote as it died belongs to a job that the next broker adopts as started, so Lean runs.
+    if not wait_for_go(job_dir, launch["broker"]):
+        return 1
     result = {"exit_code": None}
     with (job_dir / "stdout.log").open("wb") as out, (job_dir / "stderr.log").open("wb") as err:
         child = None

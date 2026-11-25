@@ -183,6 +183,17 @@ class PublicationCase(InstanceCase):
         engine.state['sessions'][sid] = session_record(sid, role, job, **extra)
         return folder
 
+    def held_sketch(self):
+        """The root with a first proof, correct and held back, in place of the test's instance: published
+        through the real path once for the test process (InstanceCase.scenario). Returns the change."""
+        def build():
+            first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
+            self.publish(first, self.verdicts(first, **HOLD))
+
+        self.scenario('held sketch', build)
+        [event] = self.events()
+        return event['id']
+
 
 class PublicationTests(PublicationCase):
     def test_a_publication_adds_modules_replaces_a_proof_in_place_and_regenerates_what_is_derived(self):
@@ -395,8 +406,7 @@ class PublicationTests(PublicationCase):
 
     def test_a_replacement_that_review_declined_leaves_declaration_and_record_while_the_rest_is_published(self):
         # The root has a proof already, correct and held back; review is asked whether a new one takes its place.
-        first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
-        held, engine = self.publish(first, self.verdicts(first, **HOLD))
+        held, engine = self.held_sketch(), runtime.Runner(self.instance, self.skill)
         before = self.canon_bytes()
         folder = self.induction(records={'Small/root.md': ROOT_RECORD.replace('By induction on $n$', 'By induction on $n$ again'),
                                          'Small/oddSum_succ.md': STEP_RECORD})
@@ -429,8 +439,7 @@ class PublicationTests(PublicationCase):
         self.assertEqual(model['changes'][cid]['replaced'], [])
 
     def test_a_declined_proof_without_an_approach_entry_is_kept_among_the_approaches_tried(self):
-        first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
-        held, engine = self.publish(first, self.verdicts(first, **HOLD))
+        held, engine = self.held_sketch(), runtime.Runner(self.instance, self.skill)
         before = self.canon_bytes()
         offered = 'Pair the k-th odd number with the gnomon of the k-th square, and add the gnomons.'
         folder = self.candidate(
@@ -541,6 +550,24 @@ class PublicationTests(PublicationCase):
         self.assertIsNone(record)
         self.assert_sent_to_a_replacement_peer(engine, folder, 'unknown constant Small.gone', before, [])
         self.assertFalse((self.canon().lean / 'Small/Step.lean').exists())
+
+    def test_a_defect_of_the_runner_met_while_a_candidate_is_applied_is_not_charged_to_the_candidate(self):
+        # A candidate fails to apply on its own account when its files conflict with the canon or cannot be read.
+        # A KeyError there comes from the runner's own tables, such as an index entry without a field, and no
+        # candidate causes it. It goes up to the runner's loop, which records it and ends (Runner.run), and the
+        # publication waits where it stood: once the defect is repaired, the same candidate is published.
+        folder = self.candidate(approaches={'Small/root/induction.md': APPROACH})
+        engine = runtime.Runner(self.instance, self.skill)
+        with patch('runner.apply_lean', side_effect=KeyError('span')), self.assertRaises(KeyError):
+            self.publish(folder, engine=engine, expect=False)
+        job = self.review_job(engine, folder)
+        self.assertEqual((job['status'], engine.state['publication']['stage']), ('running', 'apply'))
+        self.assertFalse([j for j in engine.state['jobs'].values() if j['role'] == 'peer'])
+        self.assertEqual(self.events(), [])
+        self.drain(engine)
+        [event] = self.events()
+        self.assertEqual((job['status'], job['record']), ('done', event['id']))
+        self.assertEqual(self.leftovers(), [])
 
     def test_two_queued_publications_are_made_one_at_a_time_in_the_order_they_were_queued(self):
         first = self.candidate(modules={'Small/Step.lean': STEP}, records={'Small/oddSum_succ.md': STEP_RECORD})
@@ -1494,8 +1521,8 @@ class TransportCheckTests(PublicationCase):
         a proof, a statement proved in Lean, and the root with a new informal proof. With proved, the canon
         already has a proof of the root, so the new one would take its place."""
         if proved:
-            first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
-            self.publish(first, self.verdicts(first, **HOLD), engine=self.engine)
+            self.held_sketch()
+            self.start_pipeline()  # the scenario stands in place of the instance that setUp prepared
         more = module_text('''/-- The sum of the first `n` even numbers. -/
 def evenSum : Nat → Nat
   | 0 => 0
@@ -1600,8 +1627,8 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
     def test_replaces_is_refused_on_an_element_the_candidate_adds(self):
         # The canon has a proof of the root. A declaration that proves the root under another name is an
         # addition all the same: it enters beside that proof with review's verdict, so "replaces" is not asked of it.
-        first = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
-        self.publish(first, self.verdicts(first, **HOLD), engine=self.engine)
+        self.held_sketch()
+        self.start_pipeline()  # the scenario stands in place of the instance that setUp prepared
         alternative = module_text('/-- Another proof of the root, by pairing terms. -/\n'
                                   'theorem root_alt (n : Nat) : oddSum n = n * n := by\n  sorry')
         folder = self.candidate(modules={'Small/Alt.lean': alternative},

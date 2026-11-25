@@ -24,7 +24,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 
-from runtime_support import read_json, replace_file, write_text
+from runtime_support import read_json, remove_file, replace_file, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -37,7 +37,7 @@ REVIEW_SECTION = 'Review'  # written by the runner from review's assessment, nev
 STATEMENT_KINDS = ('theorem',)
 ENTRY_KINDS = ('theorem', 'def', 'opaque', 'axiom', 'inductive')
 WINDOWS_RESERVED = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
-IMPORT_LINE = re.compile(r'^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)')
+IMPORT_LINE = re.compile(r'^(?:public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)')  # group 1: `all`, when it is there; group 2: the module
 
 
 class CanonError(ValueError):
@@ -273,9 +273,14 @@ def read_question_account(canon, question):
 
 # ----------------------------------------------------------------------------- Lean sources
 
-def header_scan(lines):
-    """The index after the last import line of a Lean file's header, whether it is a `module` file, and its imports."""
-    last, module, depth, imports = 0, False, 0, []
+def header_code(lines):
+    """The lines of a Lean file with their comments left out: (index, code) for each line that holds anything else.
+
+    Ordinary and nested comments are skipped, and a comment inside a line separates what stands on its two
+    sides, as it does for Lean. Every reader of a header reads through this, so that the commands, the runner
+    and the Lean broker take the same lines for the header of one file; a reader stops at the first line that
+    is no line of a header."""
+    depth = 0
     for number, line in enumerate(lines):
         code, index = [], 0
         while index < len(line):
@@ -289,20 +294,27 @@ def header_scan(lines):
             elif line.startswith('--', index):
                 break
             elif line.startswith('/-', index):
+                code.append(' ')
                 depth, index = 1, index + 2
             else:
                 code.append(line[index])
                 index += 1
         stripped = ''.join(code).strip()
-        if not stripped:
-            continue
+        if stripped:
+            yield number, stripped
+
+
+def header_scan(lines):
+    """The index after the last import line of a Lean file's header, whether it is a `module` file, and its imports."""
+    last, module, imports = 0, False, []
+    for number, stripped in header_code(lines):
         if stripped == 'module':
             module, last = True, number + 1
         elif stripped == 'prelude':
             last = number + 1
         elif found := IMPORT_LINE.match(stripped):
             last = number + 1
-            imports.append(found[1])
+            imports.append(found[2])
         else:
             break
     return last, module, imports
@@ -545,9 +557,9 @@ def sync_tree(source, target):
     """Make a module root hold exactly the files of another, changing only the files that differ.
 
     The canon is read by running sessions, and on Windows a folder with an open file cannot be renamed.
-    So the canon's module root is never swapped as a whole: each changed file is replaced by itself,
-    with the runtime's retry for a file that a reader holds for a moment, and a file that is gone from
-    the source is removed. Doing it again after an interruption completes it."""
+    So the canon's module root is never swapped as a whole: each changed file is replaced by itself and
+    a file that is gone from the source is removed, each with the runtime's retry for a file that a
+    reader holds for a moment. Doing it again after an interruption completes it."""
     source, target = Path(source), Path(target)
     wanted = set()
     for path in sorted(p for p in source.rglob('*') if p.is_file()):
@@ -563,7 +575,7 @@ def sync_tree(source, target):
         replace_file(temporary, destination)
     for path in sorted(p for p in target.rglob('*') if p.is_file()):
         if path.relative_to(target).as_posix() not in wanted:
-            path.unlink()
+            remove_file(path)
 
 
 def copy_tree(source, target):
@@ -1232,7 +1244,11 @@ def apply_written(canon, candidate, change, applied, revision, change_id, contri
         for path in sorted(p for p in (candidate / 'evidence').rglob('*') if p.is_file()):
             target = canon.evidence / path.relative_to(candidate / 'evidence')
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, target)
+            # Written beside the file and moved onto it, as a module is installed (sync_tree): a session that
+            # reads the evidence a record refers to has the earlier file or the new one, each of them whole.
+            temporary = target.with_name(target.name + '.installing')
+            shutil.copyfile(path, temporary)
+            replace_file(temporary, target)
     addition = candidate / 'bibliography.bib'
     if addition.is_file():
         merge_bibliography(canon.bibliography, addition.read_text(encoding='utf-8-sig'))

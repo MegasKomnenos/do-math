@@ -1,6 +1,6 @@
 # Searching and using literature
 
-You should actively look for earlier work you can use, and cite it, instead of building everything again yourself. The common introduction gives this guidance and its reasons under "Building on what already exists". This reference explains how to carry it out for the mathematical literature.
+This reference explains how to carry out, for the mathematical literature, the guidance the common introduction gives under "Building on what already exists".
 
 ## Decide what the search is for
 
@@ -16,7 +16,7 @@ When you take on a statement or a question, you may also search in order to lear
 
 Before searching outside, find out what earlier sessions of this instance have already obtained. Every source the canon uses has an entry in `canon/bibliography.bib`, and a text search of that file for an author's name or a title shows whether a paper is already there. A result taken from a source is an element whose record names the source's key in its header and says, in its `## Literature` part, how much of the source was read; a text search of `canon/records/` for the key finds those elements.
 
-In an earlier run three papers were each searched for by three different sessions working separately. Where a record gives the reference under which the scholarly tool retained a source, you can read that source with `extract` without retrieving it again. A source that an earlier session confirmed can be used at the depth its record states. If your use needs more than was read, for example the proof where only the statement was read, go to the source for that part and say so.
+Where a record gives the reference under which the scholarly tool retained a source, you can read that source with `extract` without retrieving it again. A source that an earlier session confirmed can be used at the depth its record states. If your use needs more than was read, for example the proof where only the statement was read, go to the source for that part and say so.
 
 Look also in the imported library. Mathlib contains a large part of classical mathematics, and a result it already has is used directly in a proof, by the library's name for it, without a citation and without an element.
 
@@ -42,7 +42,7 @@ Keep a search log as you go, in a file under `work/literature/`. Its purpose is 
 - what could not be read or was not consulted, such as a paper behind an access barrier or a scanned document without a text layer;
 - what was not searched for, when a reader might otherwise assume it was.
 
-The form is a recommendation and nothing checks it. It follows a log that one peer session of an earlier run kept without being asked.
+The form is a recommendation and nothing checks it.
 
 The log stays in your session's working files, which later sessions cannot open. What later sessions need therefore goes into the canon: the bibliography entry and the `## Literature` part described in the next section, and, wherever a record says that something is new or not in the literature, the scope of the search behind that statement.
 
@@ -92,6 +92,6 @@ The entry holds what a reference list prints, and nothing addressed to the sessi
 
 The wording and arrangement shown inside the `## Literature` part and the choice of BibTeX fields are recommendations; the same information arranged otherwise serves equally well. The parts and header keys of the record are those [The written texts of the canon](records.md) fixes. A source the bibliography already lists keeps its entry, and you cite it by its existing key.
 
-One consequence of taking a result from the literature should be known when you choose to rely on it. A cited result that the root comes to rest on is under the same final requirement as every other statement: before the research is complete, it needs a complete Lean proof. A deep theorem that the imported library does not contain therefore brings with it the work of proving it in Lean later. That is no reason to avoid a result the argument needs, and it is a reason to prefer, between two results that serve equally, the one the imported library has or the one whose proof is within reach.
+A cited result that the root comes to rest on is under the same final requirement as every other statement: before the research is complete, it needs a complete Lean proof. A deep theorem that the imported library does not contain therefore brings with it the work of proving it in Lean later. That is no reason to avoid a result the argument needs, and it is a reason to prefer, between two results that serve equally, the one the imported library has or the one whose proof is within reach.
 
 Distinguish checking a transcription from checking a calculation based on it. A correct calculation with a wrongly transcribed recurrence still concerns the wrong recurrence. Preserve what was checked and what remains unavailable. Respect the constraints on access to a source and on quoting from it; a faithful mathematical account can explain the needed definitions and argument in your own words with a precise citation.

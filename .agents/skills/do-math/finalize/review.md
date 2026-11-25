@@ -38,7 +38,7 @@ A cross-part item is a simplification that one part cannot carry out by itself: 
 
 Each item has one owner, which is a part. The owner is the part in whose modules the form that is to remain stands or will stand. Choose it so that the parts that will use the result can import the owner's module without an import cycle. Write under `what` the task of the owner, in a form the owner can carry out alone: which declaration it adds or restates, under which name the new form enters where a statement used by others would have to change, and that the old declaration stays under its name, derived from the new one. Under `touches`, name the other parts whose modules use what the item changes; the session that arranges the library after the merge reads this to finish the item there.
 
-A shared lemma is added only by the owner you name. If an item cannot be given to one part in a way that part can carry out alone, change the cut so that the modules concerned lie in one part, or leave the item out.
+If an item cannot be given to one part in a way that part can carry out alone, change the cut so that the modules concerned lie in one part, or leave the item out.
 
 ## What you write
 

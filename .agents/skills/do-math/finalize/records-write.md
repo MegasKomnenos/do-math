@@ -1,6 +1,6 @@
 # Writing the records of one group of declarations
 
-Every public declaration of the library has a record: a text that gives its statement in ordinary mathematical language, an explanation, and its proof in words. The library in your folder is what the chosen proof rests on, with `{{root}}` as its root and `{{main}}` as its main theorem, and it has been changed since its records were last written: simplified, rearranged, or extended. Some declarations are new, some were changed, and some records name declarations that no longer exist. This session writes the records of one group of such declarations. Other sessions write the other groups at the same time.
+The library in your folder is what the chosen proof rests on, with `{{root}}` as its root and `{{main}}` as its main theorem, and it has been changed since its records were last written: simplified, rearranged, or extended. Some declarations are new, some were changed, and some records name declarations that no longer exist. This session writes the records of one group of such declarations. Other sessions write the other groups at the same time.
 
 ## What the records are used for
 
@@ -18,7 +18,7 @@ A record is written from the Lean, not from the old record. Where a declaration 
 
 ## You are also the library's first careful reader
 
-To write the proof of a declaration in words you have to follow its Lean proof step by step, and nobody has read the simplified library that closely before you. In both earlier packagings the record writers were the ones who noticed what was wrong in the library itself: a hypothesis stronger than the proof needs, or never used; a conclusion that nothing uses; a comment that uses a symbol it does not define. Those findings came after the library had been declared finished, and it had to be opened again. Here they are asked for. What you notice is returned in `findings.json`. The library is repaired from such findings once, before the freeze, in the step that follows the first writing of the records. The records of what that step changed are then written by sessions that receive this same instruction; for what those sessions find the library is not changed again, and the program records for the user that they found it. Report what you notice in either case.
+To write the proof of a declaration in words you have to follow its Lean proof step by step, and nobody has read the simplified library that closely before you. In both earlier packagings the record writers were the ones who noticed what was wrong in the library itself, in a hypothesis, a conclusion or a comment. Those findings came after the library had been declared finished, and it had to be opened again. Here they are asked for. What you notice is returned in `findings.json`. The library is repaired from such findings once, before the freeze, in the step that follows the first writing of the records. The records of what that step changed are then written by sessions that receive this same instruction; for what those sessions find the library is not changed again, and the program records for the user that they found it. Report what you notice in either case.
 
 Do not repair the library yourself, and do not bend a record around a finding. The record says what the Lean says now. If the declaration is changed afterwards, its record is written again.
 

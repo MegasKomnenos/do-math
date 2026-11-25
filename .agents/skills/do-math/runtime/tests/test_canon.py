@@ -422,6 +422,9 @@ class LeanSourceTests(TempCase):
                  '/- between -/ public import Small.Step', '', 'theorem t : True := trivial',
                  'import After.The.Header']
         self.assertEqual(header_scan(lines), (9, True, ['Small.Defs', 'Small.Step']))
+        # A comment inside a line separates what stands on its two sides, as it does for Lean and for the Lean
+        # broker, which reads a header through the same code (lean_broker.read_header).
+        self.assertEqual(header_scan(['import/- why -/Small.Defs', 'def x := 1']), (1, False, ['Small.Defs']))
 
     def test_a_module_file_gets_a_public_import(self):
         text = 'module\n\npublic import Small.Defs\n\n@[expose] public section\n'
@@ -924,6 +927,20 @@ class TreeTests(TempCase):
         self.assertEqual(files, {'Small/Defs.lean': 'defs', 'Small/Root.lean': 'new root', 'Small/Sub/New.lean': 'new'})
         after = os.stat(target / 'Small/Defs.lean')
         self.assertEqual((after.st_mtime_ns, after.st_ino), (untouched.st_mtime_ns, untouched.st_ino))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_sync_tree_waits_for_a_reader_that_holds_a_file_it_removes(self):
+        # A rearrangement takes a module out of the canon while a session reads it. The reader holds the file
+        # open without delete sharing, as Python's `open` does, and Windows removes no file held so. The
+        # removal waits for the reader, as the replacement of a changed file does.
+        source = self.tree('source', {'Small/Defs.lean': 'defs'})
+        target = self.tree('target', {'Small/Defs.lean': 'defs', 'Small/Gone.lean': 'gone'})
+        reader = (target / 'Small/Gone.lean').open(encoding='utf-8')
+        self.addCleanup(reader.close)
+        with patch('runtime_support.time.sleep', side_effect=lambda seconds: reader.close()) as sleep:
+            sync_tree(source, target)
+        self.assertTrue(sleep.called)
+        self.assertEqual([p.relative_to(target).as_posix() for p in target.rglob('*') if p.is_file()], ['Small/Defs.lean'])
 
     def test_copy_tree_replaces_what_the_target_held(self):
         source = self.tree('source', {'Small/Defs.lean': 'defs'})
@@ -2162,6 +2179,29 @@ class WrittenPartTests(TempCase):
                                                            'Small/root/table.csv'])
         self.assertEqual((self.canon.evidence / 'Small/root/data.bin').read_bytes(), bytes(range(256)))
 
+    def test_a_replaced_evidence_file_is_put_in_place_whole(self):
+        # A session reads the evidence a record refers to while a publication brings a new file of the same
+        # name. The new file is written beside the old one and moved onto it, so the reader has the earlier
+        # text whole. Where an open file cannot be replaced, the move waits for the reader, as the runtime's
+        # writes do; the reader reads during that wait and lets the file go.
+        target = write(self.canon.evidence / 'Small/root/table.csv', 'n,sum\n1,1\n')
+        write(self.candidate / 'evidence/Small/root/table.csv', 'n,sum\n1,1\n2,4\n')
+        reader = target.open(encoding='utf-8')
+        self.addCleanup(reader.close)
+        seen = []
+
+        def release(seconds):
+            seen.append(reader.read())
+            reader.close()
+
+        with patch('runtime_support.time.sleep', side_effect=release):
+            self.apply([])
+        if not reader.closed:
+            seen.append(reader.read())
+        self.assertEqual(seen, ['n,sum\n1,1\n'])
+        self.assertEqual(target.read_text(encoding='utf-8'), 'n,sum\n1,1\n2,4\n')
+        self.assertEqual(self.files(self.canon.evidence), ['Small/root/table.csv'])
+
     def test_the_bibliography_of_a_candidate_is_merged(self):
         write(self.canon.bibliography, '@book{knuth1997,\n  title = {The Art of Computer Programming}\n}\n')
         write(self.candidate / 'bibliography.bib', '@book{knuth1997,\n  title = {Another title}\n}\n\n'
@@ -2310,6 +2350,7 @@ class CandidateToolTests(InstanceCase):
         output = session / 'output'
         self.fill(output, **self.induction())
         before = Canon(self.instance).load_index()
+        self.configure(lean={'calibration_expect_mb': 72})  # the estimate where the command line gives none
         # With no time to wait, the command returns while the build runs: exit code 124, and no receipt yet.
         code, answer = self.tool('prepare', session, '--timeout', 0)
         self.assertEqual((code, answer['waiting']), (124, True))
@@ -2343,9 +2384,10 @@ class CandidateToolTests(InstanceCase):
         self.assertTrue(step['statement_hash'] and step['statement'])
         source = (Canon(self.instance).lean / 'Small/Root.lean').read_text(encoding='utf-8')
         self.assertEqual(receipt['bases'], {'Small.root': sha256_text(declaration_text(source, before['entries']['Small.root']['span']))})
-        # The build is the session's own, finished, and the printed summary agrees with the receipt.
+        # The build is the session's own and finished. The command line gave no estimate of memory, so the build
+        # was asked for with the one the instance's settings hold. The printed summary agrees with the receipt.
         record = job_record(Paths(self.instance), receipt['build'])
-        self.assertEqual((record['status'], record['session']), ('finished', session.name))
+        self.assertEqual((record['status'], record['session'], record['expect_mb']), ('finished', session.name, 72))
         self.assertEqual({key: summary[key] for key in ('ok', 'build', 'added', 'replaced', 'records', 'errors')},
                          {key: receipt[key] for key in ('ok', 'build', 'added', 'replaced', 'records', 'errors')})
         self.assertEqual(summary['axioms'], {'Small.oddSum_succ': [], 'Small.root': ['sorryAx']})
@@ -2543,7 +2585,7 @@ class CandidateToolTests(InstanceCase):
 
         session = self.session('review', {'kind': 'candidate', 'candidate': str(folder)})
         frozen = tree_hash(folder)
-        code, summary = self.tool('verify', session, '--timeout', 120)
+        code, summary = self.tool('verify', session, '--expect-mb', 96, '--timeout', 120)
         self.assertEqual(code, 0, summary)
         outcome = read_json(session / 'work/verify/outcome.json')
         self.assertTrue(outcome['ok'])
@@ -2554,7 +2596,8 @@ class CandidateToolTests(InstanceCase):
         self.assertEqual(summary['build'], outcome['build'])
         self.assertEqual(summary['axioms'], {'Small.oddSum_succ': [], 'Small.root': ['sorryAx']})
         record = job_record(paths, outcome['build'])
-        self.assertEqual((record['status'], record['session']), ('finished', session.name))
+        # The build was asked for with the estimate given on the command line.
+        self.assertEqual((record['status'], record['session'], record['expect_mb']), ('finished', session.name, 96))
         for name in outcome['changed_modules']:
             self.assertEqual(record['modules'][name]['status'], 'finished', name)
             self.assertEqual(record['modules'][name]['exit_code'], 0, name)
