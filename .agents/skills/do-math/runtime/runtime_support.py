@@ -4,8 +4,7 @@ import copy, ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, ta
 from contextlib import AbstractContextManager
 from pathlib import Path
 
-WRITE_BUFFER = bytearray(64 * 1024)
-WRITE_VIEW = memoryview(WRITE_BUFFER)
+WRITE_BUFFER_BYTES = 64 * 1024  # the size of the buffer through which one write of a file goes
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
 COMPACT_ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(",", ":"))
 ARCHIVE_PRESET = 6
@@ -130,43 +129,34 @@ def write_text(path, content):
 
 
 def _write_chunks(path, chunks):
-    """No whole-document JSON/UTF-8 copy. Single-threaded runner buffer."""
+    """Write the chunks into a file beside `path` and replace `path` with it.
+
+    A chunk is encoded 16384 characters at a time, so no document is held a second time as bytes. Each
+    call writes through a buffer of its own, so several threads of one process may write at once."""
     path = Path(path)
     temp = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
     try:
-        with temp.open("wb", buffering=0) as stream:
-            used = 0
-            def flush_buffer(length):
-                offset = 0
-                while offset < length:
-                    written = stream.write(WRITE_VIEW[offset:length])
-                    if not written:
-                        raise OSError("State write made no progress")
-                    offset += written
+        with temp.open("wb", buffering=WRITE_BUFFER_BYTES) as stream:
             for chunk in chunks:
-                # UTF-8 takes at most four bytes per Unicode code point.
                 for start in range(0, len(chunk), 16384):
-                    data = chunk[start:start + 16384].encode("utf-8")
-                    if used + len(data) > len(WRITE_BUFFER):
-                        flush_buffer(used)
-                        used = 0
-                    WRITE_VIEW[used:used + len(data)] = data
-                    used += len(data)
-            flush_buffer(used)
+                    stream.write(chunk[start:start + 16384].encode("utf-8"))
+            stream.flush()
             os.fsync(stream.fileno())
-        _replace_file(temp, path)
+        replace_file(temp, path)
     finally:
         temp.unlink(missing_ok=True)
 
 
 
-def _replace_file(temp, path):
-    # Windows readers may briefly hold the destination without delete sharing.
-    # Retry that replacement for up to a minute; keep the old complete state.
+def replace_file(source, destination):
+    """Move a complete file to its destination in one step, replacing a file that is there.
+
+    Windows readers, such as sessions reading the canon, may briefly hold the source or the destination
+    without delete sharing. Retry the move for up to a minute; until it succeeds both files stay as they were."""
     deadline = time.monotonic() + 60.0
     while True:
         try:
-            os.replace(temp, path)
+            os.replace(source, destination)
             break
         except OSError as exc:
             if (os.name != "nt" or getattr(exc, "winerror", None) not in (5, 32, 33)

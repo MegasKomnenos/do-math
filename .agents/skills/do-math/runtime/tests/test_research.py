@@ -854,6 +854,38 @@ class CoordinationTests(ScenarioCase):
         runner.save()
         self.assertTrue(wait(c, 'Small.root', timeout=0)['leased'])
 
+    def test_a_wait_looks_again_until_the_lease_arrives_or_the_element_closes(self):
+        # Every other test asks with a timeout of 0, which is one look. A waiting command looks again after
+        # each pause until its timeout, and reference/sections.md promises both ways it then ends. Only the
+        # pause is replaced, and what happens during it is another session's command, so the test waits for
+        # nothing.
+        from types import SimpleNamespace
+        runner = self.runner()
+        a, b, c = (self.session(runner, sid) for sid in ('sa', 'sb', 'sc'))
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+
+        def waiting(session, meanwhile):
+            pauses = []
+
+            def pause(seconds):
+                pauses.append(seconds)
+                if len(pauses) == 1:
+                    meanwhile()
+
+            with patch('coordination.time', SimpleNamespace(time=time.time, monotonic=time.monotonic, sleep=pause)):
+                answer = wait(session, 'Small.root', timeout=60)
+            self.assertEqual(len(pauses), 1)
+            return answer
+
+        # sa gives the lease up while sb waits: the next look finds the lease sb's.
+        served = waiting(b, lambda: release(a, 'Small.root'))
+        self.assertEqual((served['leased'], served['holders']), (True, ['sb']))
+        # sb registers the whole element while sc waits: the next look refuses sc, which gives up its place.
+        refused = waiting(c, lambda: self.assertTrue(take(b, 'Small.root', leased=True)['registered']))
+        self.assertFalse(refused['leased'])
+        self.assertIn('holds this whole element', refused['reason'])
+        self.assertEqual(lease_table(self.instance), {})
+
     def test_element_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
         # Attempts and peers reach these commands only through the argv in input.json.
         runner = self.runner()

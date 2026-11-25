@@ -12,7 +12,7 @@ import knowledge
 from canon import Canon
 from coordination import board, lease, lease_table, wait
 from runner import Runner, main
-from runtime_support import InstanceLock, read_json, write_json
+from runtime_support import InstanceLock, file_stamp, read_json, write_json
 from support import (GAP_REASON, HELD_REASON, SUM_ZERO, ScenarioCase, comprehensive, finding, module_text, record_text,
                      take, theorem)
 
@@ -36,14 +36,22 @@ class ViewTests(ScenarioCase):
     def view(self, name):
         return (self.instance / 'knowledge' / name).read_text(encoding='utf-8')
 
+    def stamps(self):
+        """The identity of each rendered file; one that was written again, even with the same content, has another."""
+        return {name: file_stamp(self.instance / 'knowledge' / name)
+                for name in ('frontier.md', 'index.md', 'board.md', 'state.json')}
+
+    def rewritten(self, before):
+        """The rendered files written since the stamps `before` were taken, in the order render writes them."""
+        return [name for name, stamp in self.stamps().items() if stamp != before[name]]
+
     def test_identical_render_does_not_replace_files(self):
         self.ways()
         model = knowledge.replay(self.instance)
         knowledge.render(self.instance, model, [])
-        with patch('knowledge.write_text') as text, patch('knowledge.write_json') as data:
-            knowledge.render(self.instance, model, [])
-        text.assert_not_called()
-        data.assert_not_called()
+        before = self.stamps()
+        knowledge.render(self.instance, model, [])
+        self.assertEqual(self.rewritten(before), [])
 
     def test_a_board_change_writes_the_board_and_the_frontier_only_where_it_shows_the_holders(self):
         self.ways()
@@ -51,20 +59,16 @@ class ViewTests(ScenarioCase):
         knowledge.render(self.instance, model, [])
         row = {'pipeline': 'p1', 'session': 's1', 'role': 'attempt', 'stage': 'producing', 'elements': [],
                'sections': [], 'question': None}
-        with patch('knowledge.write_text', wraps=knowledge.write_text) as text, \
-                patch('knowledge.write_json') as data:
-            knowledge.render(self.instance, model, [row])
-        self.assertEqual([call.args[0].name for call in text.call_args_list], ['board.md'])
-        data.assert_not_called()
+        before = self.stamps()
+        knowledge.render(self.instance, model, [row])
+        self.assertEqual(self.rewritten(before), ['board.md'])
         self.assertIn('not process liveness', self.view('board.md'))
         self.assertIn('- p1 · producer: s1 · attempt · producing · elements: (choosing)', self.view('board.md'))
         # The frontier counts the sessions that hold each element, so it follows a change of what is held.
         section = {'id': 's1-1', 'element': 'Small.colA', 'session': 's1', 'whole': True, 'statement': None, 'new': None}
-        with patch('knowledge.write_text', wraps=knowledge.write_text) as text, \
-                patch('knowledge.write_json') as data:
-            knowledge.render(self.instance, model, [{**row, 'elements': ['Small.colA'], 'sections': [section]}])
-        self.assertEqual([call.args[0].name for call in text.call_args_list], ['frontier.md', 'board.md'])
-        data.assert_not_called()
+        before = self.stamps()
+        knowledge.render(self.instance, model, [{**row, 'elements': ['Small.colA'], 'sections': [section]}])
+        self.assertEqual(self.rewritten(before), ['frontier.md', 'board.md'])
         self.assertIn('  - `Small.colA` — Col — correct, held back: The two cases can be merged into one. · held by 1 session\n',
                       self.view('frontier.md'))
 
@@ -166,7 +170,7 @@ class ViewTests(ScenarioCase):
         self.assertNotIn('Grounds', view)
         self.assertNotIn('The proof uses the identity without saying what it shows.', view)
         # The proposals review did not admit are counted there. The command that prints them shows each with
-        # review's reason, in the words the view used to carry.
+        # review's reason.
         self.assertTrue(view.endswith('\n## Question proposals review did not admit\n\nReview returned 1 for revision '
                                       'and declined 1. `questions --proposals` prints each with the reason review gave.\n\n'))
         self.assertNotIn('## speer-vague', view)
@@ -286,12 +290,16 @@ class ViewTests(ScenarioCase):
 class CanonToolTests(ScenarioCase):
     """The text views of canon_tool, as a session runs them: `canon_tool.py <command> <session> ...`."""
 
-    def tool(self, command, *arguments, code=0):
+    def command_line(self, *argv):
+        """The exit code and the output of canon_tool for one command line."""
         stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
         with patch('sys.stdout', stream):
-            returned = canon_tool.main([command, str(self.reader()), *arguments])
+            returned = canon_tool.main([str(argument) for argument in argv])
         stream.flush()
-        text = stream.buffer.getvalue().decode('utf-8')
+        return returned, stream.buffer.getvalue().decode('utf-8')
+
+    def tool(self, command, *arguments, code=0):
+        returned, text = self.command_line(command, self.reader(), *arguments)
         self.assertEqual(returned, code, text)
         return text
 
@@ -423,19 +431,12 @@ class CanonToolTests(ScenarioCase):
         self.ways()
         self.note('Each odd number completes the next square.')
 
-        def run(folder, command, *arguments):
-            stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
-            with patch('sys.stdout', stream):
-                returned = canon_tool.main([command, str(folder), *arguments])
-            stream.flush()
-            return returned, stream.buffer.getvalue().decode('utf-8')
-
         for argv in (('frontier',), ('view', 'Small.colA'), ('view', 'Small.monoB', '--full'),
                      ('view', 'Small.colA', '--part', 'source'), ('list',), ('list', '--remaining'),
                      ('list', '--used-by', 'Small.leafH', '--deep'), ('question', 'q0'), ('question', 'q0', '--history'),
                      ('log',), ('log', '--last', '1')):
             with self.subTest(argv=argv):
-                code, text = run(self.instance, *argv)
+                code, text = self.command_line(argv[0], self.instance, *argv[1:])
                 self.assertEqual(code, 0, text)
                 self.assertEqual(text, self.tool(*argv))
         # The commands that build or copy work in a session folder only.
@@ -443,7 +444,7 @@ class CanonToolTests(ScenarioCase):
         target = self.root / 'checked-out'
         for argv in (('prepare',), ('verify',), ('checkout', str(target))):
             with self.subTest(argv=argv):
-                code, text = run(self.instance, *argv)
+                code, text = self.command_line(argv[0], self.instance, *argv[1:])
                 self.assertEqual((code, json.loads(text)), (1, {
                     'error': argv[0] + ' works in a session folder; the instance folder serves the reading commands only'}))
         self.assertFalse(target.exists())
@@ -602,11 +603,8 @@ class CanonToolTests(ScenarioCase):
 
     def test_an_argument_in_the_place_of_the_session_directory_is_named_in_the_error(self):
         # The element given first and the session directory after it, as sessions have called the command.
-        stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
-        with patch('sys.stdout', stream):
-            returned = canon_tool.main(['view', 'Small.root', str(self.reader())])
-        stream.flush()
-        error = json.loads(stream.buffer.getvalue().decode('utf-8'))['error']
+        returned, text = self.command_line('view', 'Small.root', self.reader())
+        error = json.loads(text)['error']
         self.assertEqual(returned, 1, error)
         self.assertEqual(error, 'Small.root is not a session directory: it holds no input.json. The session directory comes '
                                 'directly after the name of the command, and the arguments of the command follow it')

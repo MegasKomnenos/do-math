@@ -2,7 +2,7 @@
 
 A candidate change, called a candidate for short, is the change to the canon that a session proposes. The common introduction describes, under "Turning a session's work into the canon", who writes it, what it consists of, and how review and publication treat it.
 
-This guide gives the form of a candidate. It first says what a candidate can and cannot do to the canon, since everything else follows from that. It then goes through the folder and its manifest part by part, describes the command with which you prepare the candidate before you end, shows one small candidate in full, and says what happens to the candidate after your session. The formats of a record, of an approach entry and of an understanding text are in [The written texts of the canon](records.md), and the conventions of the Lean files are in [The canon](canon.md); neither is repeated here. An organizer writes a candidate of a restricted kind, described at the end.
+This guide gives the form of a candidate. The formats of a record, of an approach entry and of an understanding text are in [The written texts of the canon](records.md), and the conventions of the Lean files are in [The canon](canon.md); neither is repeated here. An organizer writes a candidate of a restricted kind, described at the end.
 
 ## What a candidate can do
 
@@ -144,8 +144,6 @@ It then writes `output/prepared.json` and prints a summary: `ok`, the build's ID
 `added` and `replaced` are exactly the elements review will judge, one verdict each, so read the two lists as a check on your own intention. A declaration you meant to add and do not find there was not picked up as an element, for example because it is private.
 
 `prepared.json` is a receipt for the files the command saw. You do not write or edit it, and it is valid only for those files: after any change to the candidate, including a file added or removed, prepare again. The transport check, `commands.check`, refuses a candidate that was not prepared, that changed after it was prepared, or whose preparation reported errors. For a peer it also confirms that the manifest and the written files are well formed, that every replaced declaration is one your pipeline holds a section on, that approach folders follow the names of elements and understanding files the identifiers of questions, and that the identifiers of proposals carry your session prefix. Neither command judges mathematics.
-
-The canon may change between your preparation and publication. Preparation is made against the canon as it is when you run it, and the runner builds the candidate again on the canon as it is when the candidate's turn comes.
 
 ### The builds that `commands.prepare` and `commands.verify` make
 

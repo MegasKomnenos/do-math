@@ -155,6 +155,16 @@ def stop_broker(instance):
             time.sleep(0.05)
 
 
+def kept_copy(instance, prefix):
+    """A copy of an instance that is kept for the whole test process: taken with the instance's broker
+    stopped, in a temporary folder that is removed when the process ends."""
+    stop_broker(instance)
+    base = Path(tempfile.mkdtemp(prefix=prefix))
+    atexit.register(remove_tree, base)
+    shutil.copytree(instance, base / 'instance')
+    return base / 'instance'
+
+
 _TEMPLATES = {}
 _SCENARIOS = {}
 
@@ -237,11 +247,7 @@ class InstanceCase(unittest.TestCase):
         if key not in _SCENARIOS:
             replace_instance(template(self.root_variant))
             build()
-            stop_broker(self.instance)
-            base = Path(tempfile.mkdtemp(prefix='do-math-scenario-'))
-            atexit.register(remove_tree, base)
-            shutil.copytree(self.instance, base / 'instance')
-            _SCENARIOS[key] = base / 'instance'
+            _SCENARIOS[key] = kept_copy(self.instance, 'do-math-scenario-')
         else:
             replace_instance(_SCENARIOS[key])
         write_json(self.instance / 'settings.json', settings)
@@ -282,7 +288,7 @@ class InstanceCase(unittest.TestCase):
             self.assertTrue(result['ok'], result['errors'])
         return result
 
-    def verdicts(self, folder, accepted=True, **overrides):
+    def verdicts(self, folder, **overrides):
         """An assessment that confirms and accepts every proof of a prepared candidate, unless overridden."""
         receipt = read_json(folder / 'prepared.json')
         change = read_json(folder / 'change.json')
@@ -291,7 +297,7 @@ class InstanceCase(unittest.TestCase):
             entry = receipt['entries'][name]
             proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
             row = {'element': name, 'correct': 'confirmed' if proved else 'not_applicable',
-                   'accepted': bool(proved and accepted), 'reason': 'Argument checked.'}
+                   'accepted': bool(proved), 'reason': 'Argument checked.'}
             if name in receipt['replaced']:
                 row['replaces'] = True
             row.update(overrides.get(name, {}))
@@ -360,10 +366,10 @@ class InstanceCase(unittest.TestCase):
         write_json(self.instance / 'knowledge/events' / (eid + '.json'),
                    {'id': eid, 'sequence': sequence, 'kind': kind, 'folder': 'reviews/' + eid})
 
-    def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
+    def questions(self, eid, items):
         """An operator publication of questions, made as the operator makes it."""
         source = self.root / ('questions-' + uuid.uuid4().hex + '.json')
-        write_json(source, {'reason': reason, 'questions': items})
+        write_json(source, {'reason': 'The operator placed these questions on the frontier.', 'questions': items})
         with patch('builtins.print') as shown:
             self.assertEqual(main(['questions', str(self.instance), '--file', str(source)]), 0, shown.call_args)
         with patch.object(subprocess, 'Popen', POPEN), \
@@ -373,11 +379,11 @@ class InstanceCase(unittest.TestCase):
         event = self.instance / 'knowledge/events' / (eid + '.json')
         self.assertTrue(event.is_file(), engine.state['last_error'])
 
-    def note(self, text='What has come to be understood about the root problem.', engine=None, **options):
+    def note(self, text, engine=None):
         """Publish a change that touches no Lean: an exploration's understanding so far of q0.
 
         Nothing is built for it, so it serves where a test needs a published change and not its mathematics."""
-        folder = self.candidate(understanding={'q0.md': text + '\n'}, **options)
+        folder = self.candidate(understanding={'q0.md': text + '\n'})
         return self.publish(folder, role='explore', question='q0', engine=engine)
 
     def organize(self, batch=None, merge_questions=(), engine=None):
@@ -414,6 +420,22 @@ class InstanceCase(unittest.TestCase):
         folder.mkdir(parents=True, exist_ok=True)
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
                                            'pipeline': None, 'task': {}, 'user_inputs': []})
+        return folder
+
+    def session(self, engine, sid, role='attempt'):
+        """A producing session as dispatch leaves it: its pipeline on the board and its input.json in place."""
+        key = engine.producer(role)
+        job = engine.state['jobs'][key]
+        folder = engine.session_dir(sid)
+        for name in ('output', 'work', 'inbox'):
+            (folder / name).mkdir(parents=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
+        engine.state['pipelines'][job['pipeline']]['producer'] = sid
+        engine.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running',
+                                         'host': None, 'cli': None}
+        job.update(status='running', session=sid)
+        engine.save()
         return folder
 
 
@@ -479,22 +501,6 @@ class ScenarioCase(InstanceCase):
                            statement='For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.',
                            short='odd numbers sum to a square')
 
-    def session(self, engine, sid, role='attempt'):
-        """A producing session as dispatch leaves it: its pipeline on the board and its input.json in place."""
-        key = engine.producer(role)
-        job = engine.state['jobs'][key]
-        folder = engine.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
-        engine.state['pipelines'][job['pipeline']]['producer'] = sid
-        engine.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running',
-                                         'host': None, 'cli': None}
-        job.update(status='running', session=sid)
-        engine.save()
-        return folder
-
     def peer_session(self, engine, producer, sid):
         """The peer of a producing session's pipeline, as dispatch leaves it."""
         pipeline = engine.state['jobs'][engine.state['sessions'][producer]['job']]['pipeline']
@@ -509,13 +515,12 @@ class ScenarioCase(InstanceCase):
         return folder
 
     def replace_proof(self, name, text, proof, weight='unit', description='A statement of the test canon.',
-                      imports=(), engine=None, **verdict):
+                      engine=None):
         """Publish a new proof of an existing statement: its Lean text and a record with the written proof."""
         short = name.rsplit('.', 1)[1]
         record = (self.root_record(proof) if short == 'root' else record_text(description, weight=weight, proof=proof))
-        folder = self.candidate(replace={name: text}, imports={name: list(imports)},
-                                records={f'Small/{short}.md': record})
-        return self.publish(folder, self.verdicts(folder, **{name: verdict}) if verdict else None, engine=engine)
+        folder = self.candidate(replace={name: text}, records={f'Small/{short}.md': record})
+        return self.publish(folder, engine=engine)
 
     def split(self):
         def build():

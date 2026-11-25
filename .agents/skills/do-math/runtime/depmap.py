@@ -13,8 +13,7 @@ in the instance. The command writes three files into the output folder:
                           unit up and down, and shows its details
 
 The drawing is laid out by code that ships with the skill and needs nothing beyond Python.
-depmap/draw.py describes the layout and says what was taken from the generator of the previous
-research's map and what was left.
+depmap/draw.py describes the layout.
 
 How the map is derived. The words are those of docs/do-math/lean-canon-design.md, sections 4.4, 5 and 13.1.
 
@@ -52,10 +51,9 @@ reference to its own statement is not an edge.
 
 Alternatives. Another proof of a unit statement is drawn as a card of its own, joined to the
 statement by an `alternative` edge, and what that proof names enters the proof's card and not the
-statement's. This is how the existing map of the previous research draws two complete proofs of
-one goal, so that they are not read as joint inputs. Another proof of a folded statement is folded
-with it. Alternatives can close a cycle (a later proof of S may rest on a result that uses S), so
-the map is not assumed to be acyclic.
+statement's, so that two complete proofs of one goal are not read as joint inputs. Another proof of
+a folded statement is folded with it. Alternatives can close a cycle (a later proof of S may rest on
+a result that uses S), so the map is not assumed to be acyclic.
 
 Each unit carries its Lean name as the stable identifier, a label (its short name, or the last
 component of the Lean name), its kind, and for a statement the standing of its own proof, whether

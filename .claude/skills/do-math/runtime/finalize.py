@@ -34,9 +34,9 @@ from canon import CanonError, module_file, name_path, parse_record
 import knowledge
 import package
 import paper
-from paper import Sessions, Stop, Unusable, produce
-from package import write_json, write_text  # safe from several threads, unlike the runtime's own writer
-from runtime_support import alive, contain_session_processes, popen_options, read_json, remove_tree
+from paper import Sessions, Stop, Unusable, collapsed, is_text, produce
+from package import write_json, write_text  # they make a file's folder and write its lines with LF ends
+from runtime_support import alive, contain_session_processes, popen_options, read_json, remove_tree, rename_directory
 from settings import validate
 
 RUNTIME = Path(__file__).resolve().parent
@@ -45,6 +45,10 @@ REPOSITORY = Path(__file__).resolve().parents[4]
 NAME = re.compile(r'[a-z0-9][a-z0-9-]*')
 PART_ID = re.compile(r'[a-z0-9][a-z0-9-]*')
 PLACEHOLDER = re.compile(r'\{\{([a-z_]+)\}\}')
+# The sections of finalize/common.md that concern the library's Lean files, and the instructions whose sessions
+# are given no Lean file: their prompts carry the common text without those sections.
+LEAN_SECTIONS = ('Reading the imported library', 'Compiling', 'What every Lean file of the library keeps')
+WITHOUT_LEAN = ('history-write', 'history-read', 'readme-write')
 FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
 KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
 # Why a record is written again although its declaration did not change (records_again).
@@ -89,19 +93,18 @@ def load_config(path):
     if unknown:
         raise Refusal('unknown configuration key: ' + ', '.join(unknown))
     config.update(raw)
-    text = lambda value: isinstance(value, str) and bool(value.strip())
     authors = config['authors']
     if not isinstance(authors, list) or not all(
-            isinstance(a, dict) and text(a.get('name')) and not set(a) - {'name', 'address', 'email', 'orcid', 'github'}
-            and all(text(value) for value in a.values()) for a in authors):
+            isinstance(a, dict) and is_text(a.get('name')) and not set(a) - {'name', 'address', 'email', 'orcid', 'github'}
+            and all(is_text(value) for value in a.values()) for a in authors):
         raise Refusal('"authors" is a list of objects with "name" and optionally "address", "email", "orcid", "github", '
                       'each a text that is not empty')
-    if not text(config['licence']):
+    if not is_text(config['licence']):
         raise Refusal('"licence" is an SPDX identifier')
     review = config['human_review']
     # The README names the reviewers in one sentence (package.readme_text), so each of them is a name in words.
-    if (not isinstance(review, dict) or set(review) - {'status', 'reviewers', 'notes'} or not text(review.get('status'))
-            or not isinstance(review.get('reviewers', []), list) or not all(map(text, review.get('reviewers', [])))
+    if (not isinstance(review, dict) or set(review) - {'status', 'reviewers', 'notes'} or not is_text(review.get('status'))
+            or not isinstance(review.get('reviewers', []), list) or not all(map(is_text, review.get('reviewers', [])))
             or not isinstance(review.get('notes', ''), str)):
         raise Refusal('"human_review" is an object with "status", "reviewers" (a list of names) and "notes"')
     config['human_review'] = {'status': review['status'], 'reviewers': list(review.get('reviewers', [])),
@@ -109,7 +112,7 @@ def load_config(path):
     if type(config['parallel']) is not int or config['parallel'] < 1:
         raise Refusal('"parallel" is the number of sessions that run at once, at least 1')
     if config['tex'] is not None and not (isinstance(config['tex'], list) and config['tex']
-                                          and all(text(word) for word in config['tex'])):
+                                          and all(is_text(word) for word in config['tex'])):
         raise Refusal('"tex" is the TeX command as an array, or null')
     return config
 
@@ -135,14 +138,6 @@ def given_digest(prompt, files):
         digest.update(name.encode('utf-8') + b'\0'
                       + hashlib.sha256(content if isinstance(content, bytes) else content.encode('utf-8')).digest())
     return digest.hexdigest()
-
-
-def is_text(value):
-    return isinstance(value, str) and bool(value.strip())
-
-
-def collapsed(text):
-    return ' '.join(text.split())
 
 
 class Run:
@@ -228,9 +223,16 @@ class Run:
     # -- sessions ---------------------------------------------------------------------------------------
 
     def prompt(self, instruction, names=None):
-        """`finalize/common.md` followed by the instruction file, with every `{{name}}` replaced."""
+        """`finalize/common.md` followed by the instruction file, with every `{{name}}` replaced.
+
+        An instruction of WITHOUT_LEAN is given the common text without its LEAN_SECTIONS, each of which runs
+        from its heading to the next line that begins with `## `."""
         folder = SKILL / 'finalize'
-        text = package.read_text(folder / 'common.md') + '\n' + package.read_text(folder / (instruction + '.md'))
+        common = package.read_text(folder / 'common.md')
+        if instruction in WITHOUT_LEAN:
+            common = re.sub(r'^## (?:' + '|'.join(map(re.escape, LEAN_SECTIONS)) + r')\n.*?(?=^## |\Z)', '',
+                            common, flags=re.M | re.S)
+        text = common + '\n' + package.read_text(folder / (instruction + '.md'))
         source = self.settings['lean']['cwd']
         values = {'work': self.work.as_posix(), 'skill': SKILL.as_posix(), 'python': Path(sys.executable).as_posix(),
                   'library': self.library, 'root': self.root, 'main': self.state.get('main') or '',
@@ -412,7 +414,7 @@ class Run:
                 problems = package.index_problems(index, self.root, self.statement_hash, self.allowed)
             if not problems and keep is not None:
                 (stage / (canon.EXTRACT_MODULE + '.lean')).unlink(missing_ok=True)
-                package.copy_tree(stage, keep)
+                canon.copy_tree(stage, keep)
         finally:
             remove_tree(stage.parent)
         self.sessions.event('check', check='library ' + label, problems=[p[:2000] for p in problems])
@@ -430,11 +432,8 @@ class Run:
             try:
                 self.ensure_broker()
                 if build is None:
-                    # The runtime's writer shares one buffer among its callers; the paper command holds this lock
-                    # around its own use of it, and the steps of this run build from several threads.
-                    with paper.WRITING:
-                        build = canon.start_build(self.work, stage, self.library, 'finalize', self.expect_mb, targets,
-                                                  pairs)
+                    build = canon.start_build(self.work, stage, self.library, 'finalize', self.expect_mb, targets,
+                                              pairs)
                 outcome = canon.wait_build(self.work, build, timeout=BUILD_SECONDS)
                 if outcome is not None:
                     break
@@ -1024,7 +1023,7 @@ class Run:
         is due as well, and its writer is told what was reported. The records go to <target>/records,
         with bibliography.bib, findings.json, sources.json, verdicts.json and requests.json beside them."""
         records, bibliography = target / 'records', target / 'bibliography.bib'
-        package.copy_tree(records_in, records)
+        canon.copy_tree(records_in, records)
         shutil.copyfile(bibliography_in, bibliography)
         dropped = package.drop_orphans(records, index)
         todo = package.record_todo(index, base, records)
@@ -1540,9 +1539,6 @@ class Run:
 
     def freeze(self):
         folded, lean = self.work / 'lib' / '6-folded', self.package / 'lean'
-        missing = [sid for sid in ('2.5-records', '2.6-records', '2.6-compare') if sid not in self.state['steps']]
-        if missing:
-            raise Stop('the checks of these steps do not stand in state.json: ' + ', '.join(missing))
         index = read_json(folded / 'index.json')
         entries, main = index['entries'], self.state['main']
         shutil.copytree(folded / 'lean', lean)
@@ -1928,7 +1924,10 @@ class Run:
         decision = read_json(self.work / 'lib' / '0-selected' / 'decision.json')
         if self.package.exists():
             self.solved.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(self.package), str(self.solved))
+            # One rename moves the whole folder or nothing. shutil.move copies and deletes where the rename is
+            # refused, which can leave a part of the package in each place, and it moves the package into a folder
+            # that already stands at the destination.
+            rename_directory(self.package, self.solved)
         package.add_solved_entry(REPOSITORY / 'README.md', self.name,
                                  f"- [{facts['title']}](solved/{self.name}/README.md): {collapsed(decision['sentence'])} "
                                  + package.release_of(freeze['toolchain'])

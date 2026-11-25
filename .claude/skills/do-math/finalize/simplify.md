@@ -36,7 +36,7 @@ Inside your part you may restate, merge, rename, move between your modules, make
 
 **A lemma that several parts would use is added only by the part that owns it.** In the first packaging of this kind, two sessions each added the same lemma to their own part, because both had been allowed to, and the merge found the same name declared in two files. The items of `cross` are yours: carry each out inside your own modules, keeping the old declaration under its name where others use it, and leave to the arranging session what follows in the other parts. A simplification that reaches into another part and is not in your `cross` is not yours to carry out; describe it in your report. If your own proofs need a general fact that other parts might equally want, keep it `private` in your module, where its name cannot meet another, and mention it in the report.
 
-The conventions of the common text hold for every file you return. Among them: the definition modules and the statement of the root are not changed, and the proof depends on no axiom beyond the three.
+The conventions of the common text hold for every file you return.
 
 ## How to work
 

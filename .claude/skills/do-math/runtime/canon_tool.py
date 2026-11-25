@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import sys
 
-from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, Conflict, apply_lean, apply_rearrangement,
+from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
                    build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
                    start_build, tree_hash, update_index, wait_build, with_importers)
@@ -469,7 +469,7 @@ def main(argv=None):
             text = log(model, args.last)
         sys.stdout.buffer.write((text + '\n').encode('utf-8'))
         return 0
-    except (CanonError, Conflict, OSError, ValueError, KeyError, RuntimeError) as exc:
+    except (CanonError, OSError, ValueError, KeyError, RuntimeError) as exc:
         print(json.dumps({'error': str(exc)}, ensure_ascii=True))
         return 1
 

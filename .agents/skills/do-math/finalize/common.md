@@ -2,7 +2,7 @@
 
 A program is turning a finished piece of mathematical research into a package that will be published. The research was carried out by AI sessions, and what it left is a Lean library in which the proposition it set out to settle is proved. The package presents that result to people who were not there when it was found: the library, a written record beside each of its declarations, a paper, a map of what rests on what, a history of the research, and a README. Whoever downloads the package has these files and nobody to ask.
 
-The program does the work in a fixed order of steps, and for each step that needs judgment it launches an AI session. You are one of those sessions. This text is the same for all of them and says what holds whatever the step; the instruction for your own step follows it. Some sessions run side by side on different parts of one step, and none sees another at work. Nobody answers questions while the program runs: not the program, not another session, not a person. Where this text and your instruction leave something open, you decide it, and the instruction explains what your step is for and which earlier failure it is there to prevent so that you can decide such a case as the step intends.
+The program does the work in a fixed order of steps, and for each step that needs judgment it launches an AI session. You are one of those sessions. This text says what holds whatever the step, and every session receives it, a session that is given no Lean file without its three sections on Lean; the instruction for your own step follows it. Some sessions run side by side on different parts of one step, and none sees another at work. Nobody answers questions while the program runs: not the program, not another session, not a person. Where this text and your instruction leave something open, you decide it, and the instruction explains what your step is for and which earlier failure it is there to prevent so that you can decide such a case as the step intends.
 
 ## The words the instructions use
 
@@ -32,7 +32,7 @@ The program reads `output/` once, when your process has ended. It does not read 
 
 Everything you write is in English.
 
-If you hand part of your work to sub-agents, remember that they have read none of this. Tell them which folder they may write in, where the imported library is, and whatever rule of this text their part depends on. What they return is material for your work, and you answer for the output.
+If you hand part of your work to sub-agents, remember that they have read none of this. Tell them which folder they may write in and whatever rule of this text their part depends on. What they return is material for your work, and you answer for the output.
 
 ## Reading the imported library
 
@@ -82,7 +82,5 @@ These hold for every Lean file a session returns. The program checks the first f
 ## One proof, presented by itself
 
 Every text of the package that presents mathematics presents the chosen proof and nothing beside it. A comment in a Lean file and a record speak of the mathematics: what a declaration states, what it means, how its proof goes. They do not speak of another proof of the same result, of the research that found the proof (its sessions, its reviews, its identifiers, the order in which things were found), or of this run and its steps. A reader of the package has one proof in hand. A remark that compares it with a route the package does not contain, or that explains a declaration by how it came about, points at something that reader cannot open.
-
-The rule comes from experience. A second proof of a theorem was once packaged after a first, and its comments and records described it by contrast with the first. The requirement that the package stand by itself was stated only after those texts existed, and they had to be rewritten. Here the proof is chosen before any text is written, and each session keeps the rule from the start.
 
 Two texts of the package have the research as their subject: the history, and one section of the README. The instructions for those steps say what they may say of it. And what a session writes for the program and not for the package, such as a report, a list of findings or the reasons for a decision, is outside the rule: say there plainly whatever the program or the person who reads its decisions needs to know.

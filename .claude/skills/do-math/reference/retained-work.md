@@ -2,7 +2,7 @@
 
 An attempt, an exploration or a formalizer leaves its work for a peer, who takes the same line of work over and writes the change to the canon. What the producing session leaves is material and not a finished product, and the peer reads all of it, including the conversation. Two things make that material usable: a report that says where everything is and what it means, and Lean files in which the session's definitions and statements are written and, as far as possible, compiled.
 
-This guide describes both, then the small outcome file written at the end, and then three matters of a session's lifecycle: how a session is asked to reconsider ending, how a session ends that never began research, and how an attempt reports that all the work that remains is occupied. A peer also receives this guide. The report and the outcome described here belong to the producing session whose work the peer develops; the peer's own output is the candidate that [The candidate change](change-format.md) describes. The sections on working Lean files and on continuing a session apply to the peer as well.
+A peer also receives this guide. The report and the outcome described here belong to the producing session whose work the peer develops; the peer's own output is the candidate that [The candidate change](change-format.md) describes. The sections on working Lean files and on continuing a session apply to the peer as well.
 
 ## The report
 

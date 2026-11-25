@@ -6,86 +6,30 @@
                     [--open-findings [<numbers>]] [--tex <command...>]
 
 One command produces the paper to the end without stopping for the user. What the sessions it
-launches do not decide is fixed in ../reference/paper-method.md, which they receive. The stages:
+launches do not decide is fixed in ../reference/paper-method.md, which they receive. For the person
+who runs the command, ../reference/operations.md describes it in the section "The paper". The
+stages, each with the place in this file that says what it does:
 
-  materials    everything the formal proof of the root rests on is taken from the canon, and the
-               collection of real papers in ../exemplars is checked against its manifest (fetch.py
-               is run once for papers that are missing or differ)
-  plan         a session reads a digest of the materials, which gives every element by its
-               statement and has the full record of each beside it as a file of its own; it
-               chooses the papers of the collection this paper is written like, reads them, writes
-               an account of how they are written, and decides how each element appears in the
-               paper, which notation the paper uses, and which two of the chosen papers each
-               section is written beside; the script checks the plan
-  write        one session per section writes its LaTeX. Each has a brief for its section, made by
-               the script: its part of the plan, the records of its own elements in full, and the
-               statements of the elements of other sections that those name. It reads the account
-               of the papers and the two papers of its section. The introduction is written first;
-               the other sections are written side by side, up to --parallel at a time
-  settle       the script assembles paper.tex, checks it by machine and typesets it, and typesets
-               it once more, in typeset/displays, only to measure which displayed formulas have
-               less room than they need; what fails goes to repair sessions, and the manuscript is
-               assembled and checked again
-  reading      a session that has only the manuscript reads it as the paper's reader, and repair
-               sessions take up what it found; the manuscript is read again after each repair
-               but the last, which is narrow and of which only the changes are read (see below)
-  likeness     a session that has the manuscript and four papers the plan did not choose reports
-               where the manuscript is written otherwise than they are; repair sessions take up
-               what it found, until two such readings in succession find nothing. When the bound
-               of these readings is reached first, the repair after the last of them is narrow
-  rereading    when a repair after a reading beside real papers rewrote the manuscript, it is read
-               by itself again as under "reading": a rewriting for manner can change a proof
-  comparison   for each section a session compares its numbered statements with the statements of
-               their elements, the sections side by side; when a repair of what they found changed
-               the manuscript, the manuscript is read by itself again before the statements are
-               compared once more
-  resolve      made when the readings left findings open. One session has the manuscript, the plan,
-               the records and every such finding, and may change wording and structure: rewrite a
-               part, move a numbered statement, change its kind, take away its number, join or
-               divide sections, change titles. It answers each finding by a change or by a reason.
-               A plan it returns is held to the check of the plan, the manuscript is settled, and
-               the manuscript is read by itself again as under "rereading". The findings of the
-               readings are closed by this stage: those answered by a reason are listed under
-               "kept" in the last event of the log and are not open
-  coverage     the numbered statements whose present text has no verdict are compared, once. Then,
-               for each section, a session compares the running text of the section, and the
-               displayed formulas of its proofs that are referred to from outside their proof,
-               with the records: it reports each sentence or formula that asserts mathematics
-               which no element states. What is reported goes to one narrow repair, which cuts the
-               sentence or rewords it so that it says no more than the element named with it; the
-               changes are read, the sections that changed are compared once more, and what is
-               then still reported is open
+  materials    extract, load_collection
+  plan         Paper.make_plan, check_plan
+  write        Paper.write_parts, render_brief
+  settle       Paper.settle; tight_displays for the second typesetting, in typeset/displays
+  reading      Paper.read_and_repair
+  likeness     Paper.read_beside_papers
+  rereading    Paper.read_again
+  comparison   Paper.compare
+  resolve      Paper.resolve
+  coverage     Paper.cover
 
-Every loop is bounded by the constants below. A repair is made section by section: what a check or
-a reader found in one section goes to a session that has that section's brief and changes that
-section only, and these sessions run side by side; what concerns no single section goes to one
-session that may change every part, after the others. Each session runs in its own folder under
-<out>/sessions with its prompt and the files it is given, and the script reads the files the prompt
-asked for.
+Every loop is bounded by the constants below. Paper.repair says how a repair is divided among
+sessions, and Sessions how a session is launched and its output read.
 
 A repair may rewrite, and a rewriting can lose a step of a proof, so the text that a repair leaves
 is read. After every reading but the last of its stage, the next reading does that. The repair
 after the last reading is followed by no reading of the whole manuscript, so it is made narrowly,
-and what it changed is read:
-
-  repair   the repair sessions are told to change the passages that their findings name and
-           nothing else
-  settle   the manuscript is assembled, checked by machine and typeset, as after every repair
-  read     one session has the manuscript and every passage that differs from the text which the
-           last reading read, each with its text before and after. It reads each where it stands
-           and says whether the change is sound (no step lost, no statement changed in what it
-           says, notation and references consistent with the rest), for which findings it was
-           made, and for each finding whether the changes answer it
-  undo     a change found unsound is put back as it was read, and with it the other changes made
-           for the same findings; the manuscript is checked and typeset once more, without
-           repairs. When the manuscript fails its checks here or under "settle", every change
-           of the repair is put back
-
-No further round follows. Every passage of the manuscript is then text that the last reading read,
-or a change that was found sound. A finding that stays open says why under "open_because": the
-repair session kept the text, or its change was undone, or its change is sound and stays and does
-not answer the finding. Such a repair is not a rewriting for the stage "rereading", which follows
-the repairs that may rewrite. The statements are compared after it, in the stage "comparison".
+and a session reads what it changed. Paper.narrow_run gives the steps of such a repair (repair,
+settle, read, undo), what holds of the manuscript when they are done, and why a finding can stay
+open after them.
 
 <out> receives paper.tex, references.bib, paper.pdf, plan.json, correspondence.json (which element
 each numbered statement states; never inside the paper), materials.md and log.json (what was
@@ -96,80 +40,20 @@ way (the parts as they were read, and the texts that are put back), and resolve/
 `resolve` is under way (the plan and the parts that its session returned). --typeset-only does not
 use the collection.
 
---draft makes the draft of a paper and no paper. After `materials` and `plan` it has one session for
-each section sketch that section: the numbered statements as the paper will state them, the
-displayed formulas that a later proof will refer to, and the gaps, that is, what the section wants
-to state and no element states. Sessions then compare the sketched statements and formulas with
-their elements, section by section. A statement that differs is a gap the sketch declared, which
-stays in the draft, or a slip, which is replaced by the statement as the element says it. <out>
-receives plan.json, study.md and draft.json (statements, formulas, gaps, and the results the plan
-would cite if their records named a source), and the run ends with exit code 0. The sketches and
-the verdicts are kept in <out>/sketch as they are accepted, and --resume continues a draft that
-was stopped.
+--draft makes the draft of a paper and no paper (Paper.draft). --from-draft <folder> writes the
+paper from a draft (read_draft, extract, carried_plan, Paper.plan_from_draft).
 
---from-draft <folder> writes the paper from a draft: <folder> holds plan.json, study.md and
-draft.json. The materials are then what the proof of the root rests on together with the
-declarations that closed a gap of the draft and everything those rest on, also where the proof of
-the root does not use them; the run keeps a copy of the draft in <out>, and a continued run takes
-them from that copy. No planning session reads the collection again. The plan of the draft is brought to the
-materials of this instance by script (an element that is gone leaves the plan, a declaration that
-closed a gap enters where the gap stood, a statement whose element now has a source is cited), and
-the check of the plan decides. Only when it finds problems does a planning session repair the plan,
-from the plan, the problems and study.md. The brief of each section then carries the statements and
-formulas of the section as they were drafted, and everything after the writing runs as in any run.
+--main <declaration> names the theorem that the paper is built around when that is not the
+declaration that settles the root (chosen_main, extract, produce). --title-page <file> names the
+authors of the title page (read_title_page, author_lines).
 
---main <declaration> names the theorem that the paper is built around, when that is not the
-declaration whose formal proof settles the root: as a rule a stronger theorem from which the root
-follows. It has to be a theorem of the instance that is settled by a formal proof; the command
-refuses another before it writes anything. The materials are then what that theorem rests on
-together with the settling declaration and what it rests on. The plan states the named theorem as
-the main theorem, first in the first section, and has the settling declaration as a numbered
-statement, so that the root stands in the paper with its exact statement, as a corollary of the main
-theorem or as a theorem beside it. The run records the main result in materials.json, and a draft
-in draft.json: --resume, --open-findings, --typeset-only and --from-draft take it from there, and
---main given to a continued run or with --from-draft has to name the same element. Without --main,
-or when it names the settling declaration, everything is as it is without the option.
+--resume with the same --out continues a run that was stopped, from what <out> holds: Paper.take_up
+reads it, Paper.after_writing says how the stages after the writing go on, and Paper.narrow_run and
+Paper.resolve say it for a run that was stopped inside one of them.
 
---title-page <file> names a JSON file {"authors": [{"name", "address", "email"}]}, of which
-"address" and "email" may be absent. The script writes \\author, \\address and \\email for each
-author after the title; with an empty list, as without the option, the manuscript has no author
-line. A copy of the file is kept in <out> as title-page.json, so a continued run and --typeset-only
-use it; --typeset-only with --title-page sets the author line of a finished manuscript.
-
-Everything a later step needs is in <out> as soon as it exists, so a run that was stopped is
-continued with --resume and the same --out. The materials are taken from the canon again and have to
-be those of materials.json; a plan that is there and passes the check is used; a part that is there
-is not written again; and state.json says which of the stages after the writing are complete, with
-what the later ones need from them. A stage that was interrupted is made again from its start, on
-the parts as they stand. The one exception is a run that was stopped inside a narrow repair or the
-reading of its changes: state.json records the step it was in and the findings, and the run goes on
-at that step, without making the readings before it again; a repair that was stopped is made again
-from the parts as they were read. The stage `resolve` records the step it is in as well (the session,
-the parts and the plan put in place, the settling, the reading), and what its session returned is
-kept in <out>/resolve until the stage ends. Without --resume, <out> is new or empty.
-
---open-findings takes up a run that came to its end with findings left open (exit code 2) and acts
-on them in one pass. With --dry-run it lists the open findings of the last `end` event of log.json,
-numbered, each with the check it comes from and the place it points to, and launches nothing.
-Without numbers it acts on all of them; followed by numbers of that list, as in
---open-findings 2,5-7, it acts on those, and the others stay open as they were. The statements that
-differ and the sentences of running text that no element covers go to a narrow repair with its
-settling and the reading of its changes, as above; so do findings of the readings, which only a
-run made before the stage `resolve` existed leaves open. Then the numbered statements whose text
-the pass changed, and the chosen ones that were never compared, are compared with their elements,
-once: a statement that differs then is reported as open and is not repaired in the same pass. The
-running text of every section that the pass changed is compared with the records once more, and
-what is reported then is open. A line wider than the text block is not
-taken up finding by finding: the settling sends every such line to repair whenever the pass changed
-a part or such a line was chosen, because the typesetting cannot tell an old wide line from a new
-one. The pass ends with a new `end` event. It needs the canon to be what the run began with, as
---resume does, and a pass that was stopped is continued with --resume.
-
---parallel is the number of sessions that run side by side where the work allows it: the sections
-after the introduction, the repairs of different sections, the comparisons of different sections.
---dry-run launches no session and writes nothing: it makes every check that comes before the first
-session, and prints what the run would do next and how large the files are that its sessions would
-be given.
+--open-findings takes up a run that came to its end with findings left open (act_on_open,
+Paper.act). --parallel bounds the sessions that run side by side (Sessions.side_by_side), and
+--dry-run launches no session and prints what the run would do next (Paper.preview).
 
 --tex takes the rest of the command line, so it comes last. It names tectonic, latexmk or pdflatex,
 which are run in the way each needs, or any other command, which is run once in the folder of the
@@ -202,8 +86,7 @@ from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, rea
 from cli_adapter import build_command, detect_usage_limit, provider_for_model
 from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
 from launch import worker_command, worker_environment
-import runtime_support
-from runtime_support import contain_session_processes, popen_options, read_json
+from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
 from settings import load_settings
 
 REFERENCE = Path(__file__).resolve().parents[1] / 'reference'
@@ -312,22 +195,6 @@ PREAMBLE = r'''\documentclass{amsart}
 # such a head is left out and the line carries the page number alone.
 RUNNING_HEAD = (r'\sbox0{\normalfont\scriptsize\RunningHead}\ifdim\wd0>.85\textwidth\markboth{}{}'
                 r'\else\markboth{\RunningHead}{\RunningHead}\fi')
-
-
-# runtime_support builds every file it writes in one buffer that the whole process shares, which suits the single
-# thread of the runner. This command runs sessions side by side in threads, so each of its writes, and the launch
-# helper that writes the settings of a session, takes this lock; a file is then whole whoever else is writing.
-WRITING = threading.RLock()
-
-
-def write_text(path, content):
-    with WRITING:
-        runtime_support.write_text(path, content)
-
-
-def write_json(path, value):
-    with WRITING:
-        runtime_support.write_json(path, value)
 
 
 # The tools by which a session of the Claude CLI can arrange to be called again later. A session of this
@@ -1984,9 +1851,7 @@ called the canon, whose main statement, the root, has been settled by a formal p
 an element, and beside it is a written record. The script launches AI sessions, some of them side by side, and each does \
 one part of the work. No session can ask another what it meant, and nobody answers questions while the script runs.'''
 
-METHOD_FILE = '''- `paper-method.md` is the method that every session follows. It fixes who the paper is for, what each of \
-its parts does, which elements become numbered statements, the order, what of the canon the paper leaves out, and the \
-manner of writing. Read it in full before anything else. Its decisions are made; your work applies them to this research.'''
+METHOD_FILE = '''- `paper-method.md` is the method that every session follows. Read it in full before anything else.'''
 
 PREFERENCES_FILE = '''- `user-writing-preferences.md` describes the writing that the person who will read the paper first \
 prefers, with the occasions on which the preferences came to light. The method says how it bears on a paper.'''
@@ -2001,12 +1866,8 @@ each other's text, and the script holds the manuscript to the plan.
 
 In this folder:
 ''' + METHOD_FILE + '''
-- `materials-digest.md` is a digest of everything the proof of the root rests on. It holds the root in words and in Lean \
-with its record; the account of the problem as a whole; the record in full of the declaration whose formal proof settles \
-the root; then every element in dependence order, with its name, kind and weight, its short name, its Lean form, what it \
-names and what names it, its description and its statement in words, and the lengths of its explanation and of its proof \
-in words; and the bibliography. With the files of the next entry it is the only source of the mathematics and of the \
-literature. Read it in full.
+- `materials-digest.md` is a digest of everything the proof of the root rests on. With the files of the next entry it is \
+the only source of the mathematics and of the literature. Read it in full.
 - `elements/` holds the full record of every element, one file each; the digest names the file at each element. The \
 digest leaves the explanations and the proofs to these files so that the whole proof can be planned in one reading, and \
 nothing is withheld by that. Open the file of an element whenever a decision needs what the digest leaves out: whether a \
@@ -2117,11 +1978,7 @@ Use no source other than the files in this folder. Write no part of the paper it
 '''
 
 BRIEF_FILE ='''- `brief.md` is what this section {tense} written from. The script made it from the plan and from the records of \
-the research. It holds the outline of the proof and the sections of the paper; the notation; the numbered statements of the \
-whole paper with their labels; what the plan puts into this section; the records in full of this section's elements, in an \
-order in which each comes after what it depends on; and, for every element of another section that those name, what it \
-says, where the paper has it, and the symbol or name under which the paper knows it. It is the source of the mathematics \
-of this section. Read it in full.'''
+the research. It is the source of the mathematics of this section. Read it in full.'''
 
 RESEARCH_FILES = '''- `root.md` holds the root in words and in Lean, the record of the root, and the account of the \
 problem as a whole that the research kept. {root}
@@ -2655,8 +2512,9 @@ session which has the library and not this sketch can formalise it; "has" is wha
 "...", "element": ..., "gap": null}}. A formula belongs here when text outside the argument in which it stands will \
 refer to it: a formula that is displayed in one proof and to which a later proof or the running text refers, or one \
 that is displayed in the running text and that a proof uses. A formula that is a line of one computation and is \
-referred to only inside that proof is not listed. "label" is the label the formula will carry, beginning with \
-`eq:{id}-`. "host" is the label of the numbered statement in whose proof the formula stands, or null when it stands in \
+referred to only inside that proof is not listed. "label" is the label the formula will carry: `eq:{id}-` followed by \
+lowercase letters, digits and hyphens. "host" is the label of the numbered statement in whose proof the formula stands, \
+or null when it stands in \
 the running text. "text" is the formula as it will be displayed, without its environment. "element" is the name of the \
 element that states exactly this formula, which may be a step that the plan absorbs at that place, or null when no \
 element states it. In the first case "gap" is null. In the second, "gap" is {{"element": "...", "wanted": "...", "has": \
@@ -2747,10 +2605,8 @@ In this folder:
 labels, each with the element that states it now. An entry with "cut" is not used.
 - `materials-digest.md` is a digest of the materials as the frozen library has them: everything the proof of the root \
 rests on, and the declarations that closed a gap of the draft with what they rest on, which the digest marks as added \
-for the draft where the proof of the root does not use them. It gives the root, the account of the problem as a whole, \
-and every element in dependence order with its name, kind and weight, its Lean form, what it names and what names it, \
-its description and its statement in words. `elements/` holds the full record of every element, one file each; the \
-digest names the file at each element.
+for the draft where the proof of the root does not use them. `elements/` holds the full record of every element, one \
+file each; the digest names the file at each element.
 - `study.md` is the account that the planning session wrote of how the papers it chose are written. The papers \
 themselves are not in this folder and are not read again. The plan keeps its "exemplars" as they are, and so does every \
 section; a section that you add names two of the plan's papers.
@@ -2770,10 +2626,6 @@ have cited; leave out of it every element whose record now names a source, and e
 {plan_keys}
 
 Use no source other than the files in this folder. Write no part of the paper itself.
-
-What the check found:
-
-{problems}
 '''
 
 RESOLVE_PROMPT = CONTEXT + '''
@@ -3258,9 +3110,8 @@ class Sessions:
                 if self.stopping.is_set():
                     raise Stop('the command was interrupted')
             try:
-                with WRITING:  # it writes the settings of the session into the folder
-                    command = worker_command(self.settings['cli'][provider], choice['model'], choice['effort'], folder,
-                                             servers or {}, withheld=SELF_SCHEDULING)
+                command = worker_command(self.settings['cli'][provider], choice['model'], choice['effort'], folder,
+                                         servers or {}, withheld=SELF_SCHEDULING)
                 started = time.time()
                 try:
                     with (folder / 'prompt.txt').open('rb') as inp, (folder / 'cli.stdout.jsonl').open('wb') as out, \
@@ -3269,6 +3120,8 @@ class Sessions:
                                                    stdout=out, stderr=err, shell=False, **popen_options())
                         with self.lock:
                             self.running.add(process)
+                            if self.stopping.is_set():  # the interrupt came before this process existed
+                                process.kill()
                         try:
                             code = process.wait()
                         except BaseException:  # the command is interrupted while this thread waits: the session ends with it
@@ -3536,8 +3389,7 @@ class Paper(Sessions):
                      'problems.md': '\n'.join(['# What the check of the plan found', '',
                                                *('- ' + problem for problem in problems)]) + '\n',
                      'draft.json': json.dumps(draft, ensure_ascii=False, indent=2) + '\n'}
-            prompt = PLAN_REPAIR_PROMPT.format(plan_keys=PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + main_note(self.materials),
-                                               problems='\n'.join('- ' + problem for problem in problems))
+            prompt = PLAN_REPAIR_PROMPT.format(plan_keys=PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + main_note(self.materials))
             carried = self.session('plan', prompt, files, read, self.writer, 'from-draft', attempts=PLAN_ATTEMPTS)
         self.take_plan(carried, study)
         self.sketched = draft
@@ -3585,7 +3437,8 @@ class Paper(Sessions):
                 where = f'formula {label}'
                 if not (isinstance(label, str) and LABEL_FORM.fullmatch(label) and label.startswith(f'eq:{sid}-')
                         and label not in labels):
-                    problems.append(f'{where}: "label" begins with eq:{sid}- and is used once')
+                    problems.append(f'{where}: "label" is eq:{sid}- followed by lowercase letters, digits and hyphens, '
+                                    'and is used once')
                 labels.add(label)
                 if not is_text(entry.get('text')):
                     problems.append(f'{where}: "text" is the formula as it will be displayed')
@@ -5379,7 +5232,7 @@ def ended_run(instance, out, tex, choice, parallel, dry, gate):
     return run, ended
 
 
-def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False, gate=None):
+def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False):
     """Take up a run that came to its end with findings left open, and act on them; returns the exit code.
 
     The open findings are those of the last event of the log, which is the `end` of the run. With `dry`
@@ -5388,7 +5241,7 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     findings that were not chosen stay open as they were. The run is continued with --resume when it
     is stopped. As for --resume, the canon has to be what the run began with, since the repair
     sessions work from the records."""
-    run, ended = ended_run(instance, out, tex, choice, parallel, dry, gate)
+    run, ended = ended_run(instance, out, tex, choice, parallel, dry, None)
     listed = run.listed()
     if dry:
         print('\n'.join(run.listing([

@@ -188,34 +188,12 @@ def detect_usage_limit(
 
     Times are Unix seconds. local_timezone=None uses the CLI host's current
     local timezone. session_started_at permits same-date Codex time inference.
-    Invalid caller settings raise ValueError; file errors propagate as OSError.
-    Malformed log records are ignored. See the operating guide for provider waits and model fallback.
+    File errors propagate as OSError. Malformed log records are ignored.
+    See the operating guide for provider waits and model fallback.
     """
-    if provider not in ("codex", "claude"):
-        raise ValueError(f"Unsupported provider: {provider!r}")
-    now_value = _epoch(now)
-    if now_value is None:
-        raise ValueError("now must be finite Unix seconds representable as a datetime")
-    now = now_value
-    if (isinstance(fallback_seconds, bool)
-            or not isinstance(fallback_seconds, (int, float))):
-        raise ValueError("fallback_seconds must be positive finite seconds")
-    try:
-        fallback = float(fallback_seconds)
-    except OverflowError:
-        fallback = math.inf
-    if (not math.isfinite(fallback) or fallback <= 0 or now + fallback <= now
-            or _epoch(now + fallback) is None):
-        raise ValueError("fallback_seconds must yield a finite future datetime")
-    if session_started_at is not None:
-        session_started_at = _epoch(session_started_at)
-        if session_started_at is None:
-            raise ValueError("session_started_at must be finite Unix seconds")
-        if session_started_at > now:
-            # The clock moved back during the session, so no date is inferred.
-            session_started_at = None
-    if local_timezone is not None and not isinstance(local_timezone, tzinfo):
-        raise ValueError("local_timezone must be a tzinfo or None")
+    if session_started_at is not None and session_started_at > now:
+        # The clock moved back during the session, so no date is inferred.
+        session_started_at = None
 
     result = None
     for path in (stdout_path, stderr_path):
@@ -244,7 +222,7 @@ def detect_usage_limit(
                     info = params.get("rate_limit_info") if isinstance(params, dict) else None
                     reset = _claude_reset(info, now)
                 known = reset is not None and reset > now
-                candidate = UsageLimit(provider, reset if known else now + fallback,
+                candidate = UsageLimit(provider, reset if known else now + fallback_seconds,
                                        "provider" if known else "fallback")
                 # Multiple genuine refusals can describe separate windows.
                 if result is None or candidate.retry_at > result.retry_at:

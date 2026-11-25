@@ -1,6 +1,6 @@
 # The canon: reading it and writing in it
 
-The common introduction explains what the canon is: the instance's Lean library, a written record beside each of its declarations, and the written state attached to statements and questions. This guide gives what every session needs in order to work with it. It says where the canon's files are, which conventions the Lean files follow, with which commands the canon is read and what those commands show, and on which occasions reading it is likely to help.
+The common introduction explains what the canon is: the instance's Lean library, a written record beside each of its declarations, and the written state attached to statements and questions. This guide gives what every session needs in order to work with it.
 
 The formats of the written files, namely the record, the approach entry and the understanding text, and the criteria for the weight of an element are in [The written texts of the canon](records.md). Peers and organizers, who write those texts into a change, and reviewers, who judge them, receive that guide. A producing session, an attempt, an explorer or a formalizer, writes Lean definitions and statements in its own working files and leaves its mathematics in its report; it does not write records.
 
@@ -72,13 +72,13 @@ Keep prose out of the Lean source apart from a short doc comment. The broker tha
 
 ## Reading the canon: the commands
 
-The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with the name of one of the commands below, which is `frontier`, `view`, `list`, `question`, `questions` or `log`, and append that command's arguments after the last element of the array. What the table writes after the name of a command are its arguments, so they follow the session directory and do not stand before it. With `python` for the interpreter and `<canon tool>` for the script, which are the first two elements of the array, the full view of an element is
+The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with the name of one of the commands of the table below, and append that command's arguments after the last element of the array. What the table writes after the name of a command are its arguments, so they follow the session directory and do not stand before it. With `python` for the interpreter and `<canon tool>` for the script, which are the first two elements of the array, the full view of an element is
 
 ```text
 python <canon tool> view <session directory> Tri.two_mul_tri --full
 ```
 
-The output is text. An error is reported as a JSON object with the key `error` and exit code 1.
+The output is text. An error, for instance that no element has the name given, is reported as a JSON object with the key `error` and exit code 1.
 
 | Command and arguments | What it returns |
 |---|---|

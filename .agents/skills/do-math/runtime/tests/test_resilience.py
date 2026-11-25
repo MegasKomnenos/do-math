@@ -3,6 +3,7 @@ import ctypes
 import io
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -197,6 +198,26 @@ class ProcessIdentityTests(unittest.TestCase):
             self.assertIsNone(support.process_identity(os.getpid()))
             self.assertFalse(support.alive(own))
 
+    def test_a_process_that_holds_the_number_of_a_recorded_one_is_not_terminated(self):
+        # A recorded identity outlives its process, and the system gives the number to a later process.
+        # kill-session, the stop of a broker and the cancellation of a compile all end a process through
+        # terminate_process, which compares the creation identity on the handle it terminates through. The
+        # identity given first has the number of a live process and another creation identity, as the record
+        # of an earlier process with that number has.
+        other = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdin.read()'], stdin=subprocess.PIPE,
+                                 **support.popen_options())
+        self.addCleanup(other.wait)
+        self.addCleanup(other.stdin.close)  # the process ends when its input ends
+        present = support.process_identity(other.pid)
+        with self.assertRaisesRegex(RuntimeError, 'not terminated'):
+            support.terminate_process({**present, 'birth': 'an earlier process with this number'})
+        self.assertIsNone(other.poll())
+        self.assertTrue(support.alive(present))
+        # With the identity of the process itself, the same call ends it.
+        support.terminate_process(present)
+        other.wait(timeout=30)
+        self.assertFalse(support.alive(present))
+
 
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
@@ -263,6 +284,22 @@ class PeerRecoveryTests(InstanceCase):
 
     def test_rename_failure_is_fatal_and_restart_creates_one_review(self):
         self.check_fatal_then_recover('runner.rename_directory')
+
+
+class RecordedFailureTests(InstanceCase):
+    def test_a_failure_of_any_kind_is_recorded_before_the_runner_ends(self):
+        # A failed read or write raises an OSError. A file whose content has another shape than the runner
+        # reads raises a TypeError or an AttributeError. Whatever its kind, the error that ends the runner is
+        # in last_error for status, and its call stack is in the stderr log (reference/operations.md).
+        engine = runtime.Runner(self.instance, self.skill)
+        stderr = io.StringIO()
+        with patch.object(engine, 'tick', side_effect=TypeError('injected failure of another kind')), \
+                patch('builtins.print'), contextlib.redirect_stderr(stderr), \
+                self.assertRaisesRegex(TypeError, 'injected failure of another kind'):
+            engine.run()
+        self.assertIn('Traceback (most recent call last)', stderr.getvalue())
+        self.assertEqual(support.read_json(engine.state_path)['last_error']['error'],
+                         'injected failure of another kind')
 
 
 class MemoryReserveTests(InstanceCase):
@@ -404,6 +441,29 @@ class LaunchFailureTests(InstanceCase):
         self.assertEqual((session['status'], job['status'], job['last_error']),
                          ('failed', 'pending', 'session ended without retained research material'))
         self.assertEqual(recovered.state['blocks'], {})
+
+
+class HeldCanonFileTests(InstanceCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_a_question_text_that_a_reader_holds_open_is_moved_once_the_reader_closes_it(self):
+        # Sessions read the canon while the runner publishes, and Windows refuses to move a file that a reader
+        # holds open without delete sharing, as Python's open does. The runner then waits for the handle, as it
+        # does when it replaces a state file. An organizer merges op-a, whose understanding text is held open,
+        # into op-b, which has none, so the publication moves that text to the place of op-b's.
+        self.questions('qops', [{'id': name, 'statement': f'What does {name} ask?', 'grounds': 'Unexplained.'}
+                                for name in ('op-a', 'op-b')])
+        folder = self.candidate(understanding={'op-a.md': 'Each odd number completes the next square.\n'})
+        _, engine = self.publish(folder, role='explore', question='op-a')
+        source, target = (self.instance / 'canon/questions' / name for name in ('op-a.md', 'op-b.md'))
+        text = source.read_text(encoding='utf-8')
+        held = source.open('rb')
+        self.addCleanup(held.close)
+        with patch('runtime_support.time.sleep', side_effect=lambda seconds: held.close()) as waited:
+            self.organize(merge_questions=[{'from': 'op-a', 'into': 'op-b', 'reason': 'Both ask the same thing.'}],
+                          engine=engine)
+        self.assertTrue(waited.called)
+        self.assertFalse(source.exists())
+        self.assertEqual(target.read_text(encoding='utf-8'), text)
 
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ from retention import capture, refusal
 from ending import authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
-                             session_host,
+                             replace_file, session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
 
@@ -196,6 +196,7 @@ class Runner:
         self.hosts = {}
         self.broker = None
         self.broker_attempt = 0
+        self.build_seen = None  # the build of a publication whose record this runner has read (advance_build)
         self.reserve = None
         self.model = replay(self.instance)
         self.last_board = None
@@ -670,7 +671,7 @@ class Runner:
                 target = (canon.history / 'questions' / into
                           / f"{publication['event']['sequence']:06d}-merged-{source.stem}.md")
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(source), str(target))
+            replace_file(source, target)
 
     def publication_candidate(self, publication):
         """The folder a publication applies to the canon: a peer's frozen candidate, or an organizer's output."""
@@ -727,7 +728,6 @@ class Runner:
         organizer = event['kind'] == 'organization'
         candidate = self.publication_candidate(publication)
         canon = Canon(self.instance)
-        index = canon.load_index()
         stage = self.instance / 'runner' / ('stage-' + event['id'])
         if organizer and not (candidate / 'change.json').exists():
             publication.update(stage='commit', applied=None)
@@ -738,6 +738,14 @@ class Runner:
             # another form. An earlier version of this code, which also had a stage `judge` after `check`, is
             # such a runner. The candidate is staged again; the modules come from the broker's cache.
             publication['stage'] = 'apply'
+        if publication['stage'] == 'build' and self.build_seen == publication['build']:
+            # Asked on every pass while the build runs. The broker writes a build's result file when the build
+            # ends and at no other time. Until that file is there, nothing has changed since this runner read
+            # the build's record below, and the broker's state and the index, each read whole, stay unread.
+            from lean_broker import Paths, result_file
+            if not result_file(Paths(self.instance), publication['build']).exists():
+                return False
+        index = canon.load_index()
         if publication['stage'] == 'apply':
             job = self.state['jobs'][publication['job']]
             if not organizer and tree_hashes(candidate) != job['task']['candidate_hashes']:
@@ -778,6 +786,7 @@ class Runner:
             self.save()
         if publication['stage'] == 'build':
             outcome = build_outcome(self.instance, publication['build'])
+            self.build_seen = publication['build']
             if outcome is None:
                 return False
             if not outcome['ok']:
@@ -883,7 +892,7 @@ class Runner:
                     if old.is_file():
                         target = canon.history / name_path(item['alternative']) / f"{event['sequence']:06d}-retired.md"
                         target.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(old), str(target))
+                        replace_file(old, target)
                 write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
             if kind == 'organization':
                 self.join_question_texts(publication)
@@ -1407,7 +1416,7 @@ class Runner:
                         return
                 except MemoryError:
                     self.reserve.release()
-                except (OSError, ValueError, KeyError, RuntimeError) as exc:
+                except Exception as exc:
                     # Log before saving: a second storage error must not erase
                     # the original failure's operation and call stack.
                     traceback.print_exc(file=sys.stderr)

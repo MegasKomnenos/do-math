@@ -23,7 +23,7 @@ Read `review.json` and all reports before the Lean, so that you read the library
 
 ## What you do
 
-**Finish the cross-part items.** For each item that its owner reports as done, find the new form and move every use of the old form to it. For an item that is not done, decide from the Lean as it stands whether you can carry it out now that you may change both sides; the review's `what` and the owner's note are your material. Take up in the same way what the reports' `notes` describe as seen and not done, where it is a simplification in the sense of the review and you can get it through the compiler.
+**Finish the cross-part items.** For each item that its owner reports as done, find the new form and move every use of the old form to it. For an item that is not done, decide from the Lean as it stands whether you can carry it out now that you may change both sides; the review's `what` and the owner's note are your material. Take up in the same way what the reports' `notes` describe as seen and not done, where it leaves a reader less mathematics to take in, as a proof made shorter by an opaque automation call or a lemma stated more generally than anything needs does not, and you can get it through the compiler.
 
 **Remove what was left behind.** Remove a superseded declaration once nothing uses it. Remove a declaration that nothing in the library uses and that states nothing a reader of this proof would look for. Unite duplicates under one name. Where a declaration is used only inside its own module and exists only because one proof was written in pieces, it can become `private`. Search all of `lean/` for a name before you remove or rename it, since a use in a notation or an attribute line appears in no list, and let the compile decide.
 

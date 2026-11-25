@@ -2,7 +2,7 @@
 
 Your review leaves two connected outputs. The feedback document explains the examination and its mathematical grounds for later readers. `output/assessment.json` states the judgments the runner applies: a verdict for each element, what the work contributed, the fate of proposed questions, and any concerns and findings. The structured assessment should point into the explanation, so that each recorded judgment can be understood in its actual scope.
 
-Write both outputs in your own directory. The candidate you assess and the canon remain unchanged. The sections below explain the assessment of a candidate, the verdict for each element, the evidence for a proof that is complete in Lean, what an exclusion may not contain, and concerns and findings about what is already published. A comprehensive review uses concerns and findings without assessing a candidate.
+Write both outputs in your own directory. The candidate you assess and the canon remain unchanged. A comprehensive review uses concerns and findings without assessing a candidate.
 
 ## The assessment of a candidate
 
@@ -58,9 +58,9 @@ Each entry has the element's name and four judgments.
 
 An element has a proof when it is a theorem whose Lean proof is complete or whose record has a nonempty `## Proof`. The transport check holds you to this: an element with a proof needs one of the first three values, and an element without one needs `not_applicable`.
 
-**`accepted`** is Boolean and is your second judgment, made only of a proof you confirmed. It can be true only with `confirmed`. A proof you found correct stays `accepted: false` when the answer to either of the two questions that your role guide asks under "Two considerations about a proof you have found correct" is yes. The element is then published as correct and held back. Other proofs can use it, it stays among the work that remains, and nothing is settled through it. For a definition and for a statement without a proof, `accepted` is false.
+**`accepted`** is Boolean and is your second judgment, made only of a proof you confirmed. It can be true only with `confirmed`. A proof you found correct stays `accepted: false` when the answer to either of the two questions that your role guide asks under "Two considerations about a proof you have found correct" is yes. The element is then published as correct and held back. For a definition and for a statement without a proof, `accepted` is false.
 
-**`replaces`** is required, as a Boolean, for each element in the `replaced` list whose declaration already has a proof in the canon. The canon has a declaration under that name with a proof, and the candidate brings a new proof for it. `replaces` says whether the new proof takes the place of the proof the canon has.
+**`replaces`** is required, as a Boolean, for each element in the `replaced` list whose declaration already has a proof in the canon. It says whether the candidate's new proof takes the place of the proof the canon has.
 
 - With `true`, the runner puts the candidate's declaration text and record in place, and your `correct` and `accepted` become the verdict of the element.
 - With `false`, the runner leaves the declaration and its record as the canon has them, and the element keeps the verdict of the proof it has. What the candidate tried stays among the approaches tried on that statement. When the candidate carries an approach entry for the statement, that entry is published. When it carries none, the runner writes one from the candidate's title and description, the written proof that was offered, and your `reason` for this element, which becomes the entry's account of where the approach stops. Write that reason so that a session reading it there, without your feedback, learns why the proof did not take the place of the old one.

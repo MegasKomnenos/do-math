@@ -71,7 +71,7 @@ class CompactWriter(unittest.TestCase):
                                          "modules": {f"M.N{k}": {"status": "cached", "key": "k" * 64} for k in range(12)}}
                           for n in range(300)}}
         runtime_support.write_json_compact(self.path, big)
-        self.assertGreater(self.path.stat().st_size, 4 * len(runtime_support.WRITE_BUFFER))
+        self.assertGreater(self.path.stat().st_size, 4 * runtime_support.WRITE_BUFFER_BYTES)
         self.assertEqual(runtime_support.read_json(self.path), big)
 
     def test_a_value_that_cannot_be_encoded_leaves_the_old_file(self):

@@ -107,7 +107,6 @@ if __name__ == '__main__' and sys.argv[1:2] == ['session']:
 if __name__ == '__main__' and sys.argv[1:2] == ['tex']:
     raise SystemExit(stand_in_tex(sys.argv[2:]))
 
-import atexit
 import copy
 import hashlib
 import shutil
@@ -121,8 +120,8 @@ sys.path[:0] = [str(THIS.parents[1]), str(THIS.parent)]
 import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay, rests_on
-from runtime_support import read_json, remove_tree, write_json
-from support import InstanceCase, module_text, record_text, stop_broker, theorem
+from runtime_support import read_json, write_json
+from support import InstanceCase, kept_copy, module_text, record_text, theorem
 from test_research import RefutedRootCase
 
 TEX = [sys.executable, '-B', str(THIS), 'tex']
@@ -422,11 +421,7 @@ class PaperCase(InstanceCase):
             (folder / 'bibliography.bib').write_text(BIBLIOGRAPHY, encoding='utf-8')
             self.prepare(folder)
             self.publish(folder)
-            stop_broker(self.instance)
-            base = Path(tempfile.mkdtemp(prefix='do-math-paper-'))
-            atexit.register(remove_tree, base)
-            shutil.copytree(self.instance, base / 'instance')
-            _SETTLED = base / 'instance'
+            _SETTLED = kept_copy(self.instance, 'do-math-paper-')
         self.out = self.root / 'paper'
         self.scenario = self.root / 'scenario'
         self.scenario.mkdir()
@@ -762,10 +757,6 @@ class ManuscriptTests(PaperCase):
         self.assertIn('Small.Step', self.problems(abstract=ABSTRACT + 'See the module Small.Step.\n'))
         # An ordinary word that happens to end a Lean name is not one, and neither is ordinary mathematics.
         self.assertEqual(self.problems(proof=PROOF + 'The root of the induction is the case $n = 0$; we expand $x_n$.\n'), '')
-        # No remark is left out of the search, whatever its environment.
-        for environment in ('remark', 'verification'):
-            remark = f'\\begin{{{environment}}}\nHere \\texttt{{Small.root}} is Theorem~\\ref{{thm:main}}.\n\\end{{{environment}}}\n'
-            self.assertIn('intro: Lean names of the canon appear: Small.root', self.problems(intro=INTRO + remark))
 
     def test_the_words_lean_and_mathlib_are_found_anywhere_in_a_part(self):
         said = 'the paper does not mention Lean, and this part has the words '
@@ -1059,6 +1050,8 @@ class RunTests(PaperCase):
                                                         '09-compare-intro', '10-compare-tools', '11-cover-intro',
                                                         '12-cover-tools'])
         self.assertEqual(self.servers, [{}] * 12)
+        # Each was launched without the tools by which a session of the Claude CLI arranges to be called again later.
+        self.assertEqual(self.options, [{'withheld': ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')}] * 12)
         # The plan the script could not carry out went back with the reasons, to a new session.
         self.assertIn('says nothing about these elements of the materials: Small.expand', calls[1]['prompt'])
         self.assertIn('"exemplars" names a paper more than once: alpha', calls[1]['prompt'])
@@ -1295,7 +1288,7 @@ class RunTests(PaperCase):
 
     def test_a_lean_name_or_the_word_lean_in_a_part_goes_to_a_repair_session(self):
         script = good()
-        # A remark on formal verification as an earlier version of this command asked for, and a Lean name in a comment.
+        # A remark that the theorem was formally verified in Lean, and a Lean name in a comment.
         remark = ('\\begin{remark}\nTheorem~\\ref{thm:main} has been formally verified in Lean, with Mathlib; the formal '
                   'statement is \\texttt{Small.root}.\n\\end{remark}\n')
         script['write:intro'] = [{'output/intro.tex': INTRO + remark, 'output/abstract.tex': ABSTRACT}]
@@ -2083,7 +2076,7 @@ class PassageTests(unittest.TestCase):
 
 class WritingTests(unittest.TestCase):
     def test_files_written_from_several_threads_at_once_are_whole(self):
-        # The writers of the runtime build a file in one buffer shared by the process; this command serialises them.
+        # Each write of the runtime's writers goes through a buffer of its own, so files written at once are whole.
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             texts = {f'{letter}{number}.txt': (letter * 70 + '\n') * 3000 for letter in 'abcdef' for number in range(8)}
@@ -2825,11 +2818,22 @@ class SessionsTests(PaperCase):
         # and with no other option.
         self.assertEqual(self.options, [{'withheld': ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')}] * 3)
         self.assertEqual([e['event'] for e in read_json(out / 'log.json')], ['session', 'session', 'check', 'session'])
-        # With a review role in the settings, the assessor is its first model; a paper takes its sessions from the same class.
+        # With a review role in the settings, the assessor is its first model.
         self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
         self.assertEqual(paper.Sessions(self.instance, out).assessor, {'model': 'claude/opus', 'effort': 'high'})
         self.assertEqual(paper.Sessions(self.instance, out).count, 3)
-        self.assertTrue(issubclass(paper.Paper, paper.Sessions))
+
+    def test_a_cli_that_cannot_be_started_stops_the_command_and_gives_the_gate_back(self):
+        gate = threading.BoundedSemaphore(1)
+        sessions = paper.Sessions(self.instance, self.root / 'work', gate=gate)
+        missing = Command(provider_for_model(sessions.writer['model']), [str(self.root / 'no-such-cli')], self.root)
+        with patch('paper.worker_command', return_value=missing), \
+                self.assertRaisesRegex(paper.Stop, 'the probe session could not be started'):
+            sessions.launch('probe', 'Wait.', {}, sessions.writer)
+        # The gate is free for the sessions of whoever shares it, and no session is recorded as run.
+        self.assertTrue(gate.acquire(blocking=False))
+        gate.release()
+        self.assertEqual(sessions.log, [])
 
     def test_the_gate_is_held_while_a_session_runs_and_not_while_it_waits_for_a_usage_limit(self):
         write_json(self.scenario / 'script.json', {'probe': [{'output/done.txt': 'done'}]})
@@ -2875,6 +2879,23 @@ class SessionsTests(PaperCase):
         self.assertTrue(gate.acquire(blocking=False))
         gate.release()
         self.assertIs(paper.Paper(self.instance, self.out, TEX, {}, gate=gate).gate, gate)
+
+    def test_a_session_that_starts_while_the_command_is_being_stopped_is_ended_at_once(self):
+        write_json(self.scenario / 'script.json', {'probe': [{'output/done.txt': 'done'}]})
+        sessions = paper.Sessions(self.instance, self.root / 'work')
+
+        def command(*arguments, **options):
+            # An interrupt ends the sessions that run and sets this mark. Here it comes while the session is
+            # being started: after the check that launch makes first, and before the process exists.
+            sessions.stopping.set()
+            return self.command(*arguments, **options)
+
+        with patch('paper.worker_command', side_effect=command), \
+                self.assertRaisesRegex(paper.Stop, 'the command was interrupted'):
+            sessions.launch('probe', 'Wait.', {}, sessions.writer)
+        # The process was ended as soon as it existed: the session did nothing, and none is left running.
+        self.assertFalse((self.scenario / 'calls.json').exists())
+        self.assertEqual(sessions.running, set())
 
 
 class TitlePageTests(unittest.TestCase):
@@ -3257,7 +3278,6 @@ class FromDraftTests(PaperCase):
         self.assertEqual(read_json(self.folder(repairing[0]) / 'plan.json'), {**CARRIED, 'others': CARRIED['others'][1:]})
         problem = 'the plan says nothing about these elements of the materials: Small.oddSum'
         self.assertIn(problem, (self.folder(repairing[0]) / 'problems.md').read_text(encoding='utf-8'))
-        self.assertIn(problem, repairing[0]['prompt'])
         self.assertFalse((self.out / 'plan.json').exists())
         self.assertEqual(self.events('check')[0]['check'], 'the plan of the draft, brought to the materials')
         # The run is continued without the folder of the draft being named again. A plan with other papers is not

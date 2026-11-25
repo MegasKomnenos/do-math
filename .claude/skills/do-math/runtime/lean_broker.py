@@ -1799,9 +1799,7 @@ def submit(paths, source, expect_mb, session):
     job_id = "j" + uuid.uuid4().hex
     request = {"id": job_id, "source": str(source), "expect_mb": expect_mb, "session": session,
                "source_sha256": source_hash, "submitted_at": time.time()}
-    temporary = paths.queue / ("." + job_id)
-    write_json(temporary, request)
-    temporary.rename(paths.queue / (job_id + ".json"))
+    write_json(paths.queue / (job_id + ".json"), request)  # appears whole: written beside the name, then moved onto it
     return {"job": job_id, "dir": str(paths.job(job_id)), "session": session, "expect_mb": expect_mb}
 
 
@@ -1827,9 +1825,7 @@ def build(paths, root, targets, expect_mb, session, fresh_targets=False):
     build_id = "b" + uuid.uuid4().hex
     request = {"id": build_id, "kind": "build", "root": str(root), "targets": [str(module_path(root, n)) for n in names], "fresh_targets": fresh_targets,
                "expect_mb": expect_mb, "session": session, "submitted_at": time.time()}
-    temporary = paths.queue / ("." + build_id)
-    write_json(temporary, request)
-    temporary.rename(paths.queue / (build_id + ".json"))
+    write_json(paths.queue / (build_id + ".json"), request)
     return {"build": build_id, "dir": str(paths.build(build_id)), "session": session, "expect_mb": expect_mb,
             "targets": names}
 
@@ -2128,6 +2124,10 @@ def main(argv=None):
             print(json.dumps(version(paths), ensure_ascii=True))
             return 0
     except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+        if args.command in ("serve", "_job") and isinstance(exc, (KeyError, TypeError)):
+            # The broker and a job host are detached, and their logs are all that says why one ended. A missing
+            # key or a wrong type inside them is a defect of the program, and its message does not say where.
+            raise
         print(json.dumps({"error": str(exc)}, ensure_ascii=True), file=sys.stderr)
         return 1
     return 0

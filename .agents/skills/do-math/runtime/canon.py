@@ -24,7 +24,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 
-from runtime_support import read_json, write_text
+from runtime_support import read_json, replace_file, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -548,7 +548,6 @@ def sync_tree(source, target):
     So the canon's module root is never swapped as a whole: each changed file is replaced by itself,
     with the runtime's retry for a file that a reader holds for a moment, and a file that is gone from
     the source is removed. Doing it again after an interruption completes it."""
-    from runtime_support import _replace_file
     source, target = Path(source), Path(target)
     wanted = set()
     for path in sorted(p for p in source.rglob('*') if p.is_file()):
@@ -561,7 +560,7 @@ def sync_tree(source, target):
         destination.parent.mkdir(parents=True, exist_ok=True)
         temporary = destination.with_name(destination.name + '.installing')
         temporary.write_bytes(data)
-        _replace_file(temporary, destination)
+        replace_file(temporary, destination)
     for path in sorted(p for p in target.rglob('*') if p.is_file()):
         if path.relative_to(target).as_posix() not in wanted:
             path.unlink()
@@ -1269,7 +1268,7 @@ def retire_approaches(canon, name, revision):
     target = canon.history / name_path(name) / f'{revision:06d}-approaches'
     target.mkdir(parents=True, exist_ok=True)
     for path in entries:
-        shutil.move(str(path), str(target / path.name))
+        replace_file(path, target / path.name)
     if not any(folder.iterdir()):
         folder.rmdir()
     return True

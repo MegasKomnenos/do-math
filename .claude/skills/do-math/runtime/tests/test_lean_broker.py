@@ -133,25 +133,25 @@ class BrokerFixture(unittest.TestCase):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
             return lean_broker.submit(self.paths, path, expect_mb, session)["job"]
 
-    def build(self, root, targets, expect_mb=60, session="s1"):
+    def build(self, root, targets, session="s1"):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
-            return lean_broker.build(self.paths, root, targets, expect_mb, session)["build"]
+            return lean_broker.build(self.paths, root, targets, 60, session)["build"]
 
-    def built(self, root, targets, **options):
+    def built(self, root, targets):
         """A build carried to its end; its record."""
-        build_id = self.build(root, targets, **options)
+        build_id = self.build(root, targets)
         self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
         return self.build_record(build_id)
 
-    def compiled(self, path, expect_mb=40, session="s1"):
+    def compiled(self, path):
         """A single-file compile carried to its end; its job record."""
-        job_id = self.submit(path, expect_mb=expect_mb, session=session)
+        job_id = self.submit(path, expect_mb=40)
         self.until(lambda: self.finished(job_id))
         return self.broker.state["jobs"][job_id]
 
-    def tree(self, session="s1", **overrides):
+    def tree(self, **overrides):
         """A imports the library, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
-        root = self.instance / "sessions" / session / "work" / "lean"
+        root = self.instance / "sessions" / "s1" / "work" / "lean"
         plan = {"A": (("Mathlib.Data.Nat.Basic",), {"sleep": 0.3}), "B": (("A",), {"sleep": 0.5}),
                 "C": (("A",), {"sleep": 0.5}), "D": (("B", "C"), {"marker": "TARGET-D"})}
         for name, (imports, fake) in plan.items():
@@ -183,7 +183,7 @@ class BrokerFixture(unittest.TestCase):
         """The broker's state as its file holds it, which can be behind the broker under test."""
         return runtime_support.read_json(self.paths.state)
 
-    def asking(self, call, limit=30):
+    def asking(self, call):
         """What a client's call returns when the broker under test is a live broker that writes on request.
 
         The broker runs in this process and has written no receipt, so the client is given the
@@ -201,7 +201,7 @@ class BrokerFixture(unittest.TestCase):
         with patch.object(lean_broker, "broker_alive", return_value=receipt):
             thread = threading.Thread(target=client)
             thread.start()
-            deadline = time.monotonic() + limit
+            deadline = time.monotonic() + 30
             while thread.is_alive() and time.monotonic() < deadline:
                 self.broker.tick()
                 time.sleep(0.02)
@@ -277,6 +277,19 @@ class StatusTests(unittest.TestCase):
             runtime_support.write_json(paths.state, {"jobs": jobs})
             listed = [j["id"] for j in lean_broker.broker_status(paths)["finished"]]
             self.assertEqual(listed, short[-19:] + [late])
+
+
+class ProcessTreeTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "nt", "only Windows keeps the PID of a parent that has ended in its children")
+    def test_a_process_created_before_its_recorded_parent_is_not_followed(self):
+        # Windows keeps the PID of a parent that has ended in its children and gives that PID to a later process.
+        # A cancellation terminates a compile's whole tree, so a process that only carries the compile's PID as
+        # its parent, and was created before the compile, must stay out of the tree, with everything below it.
+        parents = {20: 10, 30: 10, 40: 20, 50: 30, 60: 10}  # process -> the parent it records
+        births = {10: 100, 20: 150, 30: 50, 40: 160, 50: 170}  # 30 is older than 10; 60 cannot be opened
+        with patch.object(lean_broker, "_windows_processes", return_value=list(parents.items())), \
+                patch.object(lean_broker, "_windows_birth", side_effect=births.get):
+            self.assertEqual(lean_broker.process_tree(10), [10, 20, 40])
 
 
 class AdmissionRuleTests(unittest.TestCase):
@@ -538,6 +551,20 @@ class JobHostTests(unittest.TestCase):
         self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 3)
         self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
 
+    def test_a_host_that_ends_on_a_defect_of_the_program_leaves_a_traceback(self):
+        # A job host is detached, and its output, kept in host.log, is all that says why it ended. A launch file
+        # without the broker's identity ends the host; the name of the missing key alone would not say where.
+        self.write_launch(runtime_support.process_identity(os.getpid()))
+        launch = runtime_support.read_json(self.job / "launch.json")
+        del launch["broker"]
+        runtime_support.write_json(self.job / "launch.json", launch)
+        host = subprocess.run([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)],
+                              capture_output=True, text=True, encoding="utf-8", timeout=60)
+        self.assertEqual(host.returncode, 1)
+        self.assertIn("Traceback", host.stderr)
+        self.assertIn("KeyError: 'broker'", host.stderr)
+        self.assertFalse((self.job / "exit.json").exists())
+
     def test_the_host_starts_lean_at_the_priority_its_launch_file_names(self):
         # lean.priority is below_normal unless an instance sets another, and every fixture here runs at `normal`. A
         # stand-in started at a lowered priority starves behind the test machine's load, so none is started here: this
@@ -571,6 +598,22 @@ class JobHostTests(unittest.TestCase):
                         asked["preexec_fn"]()  # what the host has the new process run before it becomes Lean
                     nice.assert_called_once_with(niceness)
                 self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 0)
+
+
+class TerminationTests(unittest.TestCase):
+    def test_a_process_is_terminated_only_under_its_own_identity(self):
+        # A PID passes to another process once its own has ended. Whatever the runtime terminates, it terminates by a
+        # recorded identity (runtime_support.terminate_process), so a process that only has the recorded PID stays.
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        self.addCleanup(child.wait, 10)
+        self.addCleanup(child.kill)
+        identity = runtime_support.process_identity(child.pid)
+        with self.assertRaisesRegex(RuntimeError, "not terminated"):
+            runtime_support.terminate_process({"pid": child.pid, "birth": "an earlier process with this PID"})
+        self.assertTrue(runtime_support.alive(identity))
+        runtime_support.terminate_process(identity)
+        child.wait(timeout=10)
+        self.assertFalse(runtime_support.alive(identity))
 
 
 class BrokerTests(BrokerFixture):
@@ -2145,7 +2188,9 @@ class ClientAndLifecycleTests(BrokerFixture):
             engine.instance, engine.broker, engine.broker_attempt = self.instance, None, 0
             return engine
         engine = bare_runner()
+        before = time.monotonic()
         engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
+        self.assertGreaterEqual(engine.broker_attempt, before)  # the launch records its moment for the ten seconds below
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
             time.sleep(0.05)
@@ -2159,8 +2204,13 @@ class ClientAndLifecycleTests(BrokerFixture):
         runtime_support.terminate_process(first["process"])
         while runtime_support.alive(first["process"]):
             time.sleep(0.02)
-        engine.ensure_broker()  # within ten seconds of the last launch (runner.ensure_broker): no relaunch yet
-        time.sleep(0.5)
+        # Within ten seconds of the last launch no relaunch is made (runner.ensure_broker). The moment of that
+        # launch is set here, so that a machine slow enough to spend those seconds above changes nothing, and the
+        # launch itself is watched, because a relaunched broker writes its receipt only seconds later.
+        engine.broker_attempt = time.monotonic()
+        with patch.object(lean_broker, "launch_broker") as relaunch:
+            engine.ensure_broker()
+        relaunch.assert_not_called()
         self.assertIsNone(lean_broker.broker_alive(self.paths))
         engine.broker_attempt = float("-inf")
         engine.ensure_broker()

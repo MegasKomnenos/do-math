@@ -238,7 +238,7 @@ class ContextTests(InstanceCase):
                 self.pack(folder, role, {'batch': []} if role == 'organizer' else None)
                 views = self.views(folder)
                 self.assertIn(current, views)
-                self.assertIn(written, views)
+                self.assertIn(written, self.parts(views, VIEWS)[VIEWS[1]])
                 self.assertNotIn('No exploration has written it yet.', views)
 
     def test_launch_snapshot_keeps_references_research_views_and_assignment(self):

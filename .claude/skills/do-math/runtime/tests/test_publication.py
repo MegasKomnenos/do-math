@@ -171,6 +171,18 @@ class PublicationCase(InstanceCase):
         self.assertEqual(self.leftovers(), [])
         self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'canon'), '')
 
+    def session(self, engine, sid, role, job, task, pipeline, **extra):
+        """A session folder as its CLI left it, and the session's entry in the runner's state."""
+        folder = engine.session_dir(sid)
+        for name in ('output', 'work', 'inbox'):
+            (folder / name).mkdir(parents=True, exist_ok=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': pipeline, 'task': task, 'user_inputs': []})
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+        engine.state['sessions'][sid] = session_record(sid, role, job, **extra)
+        return folder
+
 
 class PublicationTests(PublicationCase):
     def test_a_publication_adds_modules_replaces_a_proof_in_place_and_regenerates_what_is_derived(self):
@@ -544,6 +556,14 @@ class PublicationTests(PublicationCase):
         self.assertEqual(engine.state['publication']['job'], self.review_job(engine, first)['id'])
         self.assertEqual([item['job'] for item in engine.state['publish_queue']], [self.review_job(engine, second)['id']])
         self.assertEqual(self.events(), [])
+        # While the build runs, a pass of the runner looks only for the build's result file, which the broker
+        # writes when the build ends. The broker's state and the canon's index, each read whole, stay unread.
+        reread = AssertionError('read again while the build runs')
+        with patch('lean_broker.result_file', return_value=self.root / 'no-result.json'), \
+                patch('runner.build_outcome', side_effect=reread), \
+                patch('runner.Canon.load_index', side_effect=reread):
+            engine.publish()
+        self.assertEqual(engine.state['publication']['job'], self.review_job(engine, first)['id'])
         self.drain(engine)
         events = self.events()
         self.assertEqual([event['sequence'] for event in events], [1, 2])
@@ -700,17 +720,6 @@ class InterruptedPublicationTests(PublicationCase):
 
 class ReviewedCandidateTests(PublicationCase):
     """What the runner does with a candidate when its review ends: Runner.finish and the paths from it."""
-
-    def session(self, engine, sid, role, job, task, pipeline, **extra):
-        folder = engine.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True, exist_ok=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': pipeline, 'task': task, 'user_inputs': []})
-        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
-        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
-        engine.state['sessions'][sid] = session_record(sid, role, job, **extra)
-        return folder
 
     def candidate_pipeline(self):
         """A pipeline at review: the producer holds the whole root, the peer's candidate is frozen, and the
@@ -1038,14 +1047,7 @@ class OrganizerTests(PublicationCase):
         sid = runtime.uid('s')
         task = {'batch': list(batch), 'batch_frozen': True}
         key = engine.enqueue('organizer', task)
-        folder = engine.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'organizer',
-                                           'pipeline': None, 'task': task, 'user_inputs': []})
-        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
-        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
-        engine.state['sessions'][sid] = session_record(sid, 'organizer', key)
+        folder = self.session(engine, sid, 'organizer', key, task, None)
         engine.state['jobs'][key].update(status='running', session=sid)
         engine.save()
         return sid, folder / 'output'
@@ -1258,15 +1260,23 @@ class TransportCheckTests(PublicationCase):
 
     def setUp(self):
         super().setUp()
-        self.questions('qops', [
-            {'id': 'op-scale', 'statement': 'Why do the sums complete squares?', 'grounds': 'Unexplained so far.'},
-            {'id': 'speer-taken', 'statement': 'What makes each step a square?', 'grounds': 'Unexplained so far.'}])
+        self.start_pipeline()
+
+    def start_pipeline(self):
+        """A runner on the instance as it stands, and a pipeline whose producer and peer the tests install."""
         self.engine = runtime.Runner(self.instance, self.skill)
         producer = self.engine.producer('attempt')
         self.pipeline = self.engine.state['jobs'][producer]['pipeline']
         self.engine.state['pipelines'][self.pipeline].update(producer='sauthor', peer='speer', stage='peer')
         self.engine.session_dir('sauthor').mkdir(parents=True)
         self.engine.save()
+
+    def operator_questions(self):
+        """The two questions the operator placed on the frontier, for a test whose output names a question."""
+        self.questions('qops', [
+            {'id': 'op-scale', 'statement': 'Why do the sums complete squares?', 'grounds': 'Unexplained so far.'},
+            {'id': 'speer-taken', 'statement': 'What makes each step a square?', 'grounds': 'Unexplained so far.'}])
+        self.engine = runtime.Runner(self.instance, self.skill)  # the runner as it stands after their publication
 
     def install(self, sid, role, task, folder=None):
         """A session of the pipeline whose output is the given folder."""
@@ -1302,6 +1312,7 @@ class TransportCheckTests(PublicationCase):
         self.assertIn(message, errors[0])
 
     def test_a_peer_candidate_is_carried_when_it_is_prepared_and_well_formed(self):
+        self.operator_questions()
         proposal = {'id': 'speer-why', 'statement': 'Why is each step a square?', 'grounds': 'The proof does not say.'}
         self.assertEqual(self.peer_errors(
             approaches={'Small/root/induction.md': APPROACH},
@@ -1352,8 +1363,8 @@ class TransportCheckTests(PublicationCase):
     # -- the proof of a settled statement -----------------------------------------------------------------
 
     def settled_canon(self):
-        """Publish, through the real path, statements in each relation to settlement that the replacement
-        of a settled statement's proof turns on:
+        """Statements in each relation to settlement that the replacement of a settled statement's proof
+        turns on, published through the real path once for the test process (InstanceCase.scenario):
 
         low, pair  settled, each through its accepted written proof alone, which names nothing
         base       settled through its accepted proof that is complete in Lean alone, so formal as well
@@ -1361,20 +1372,24 @@ class TransportCheckTests(PublicationCase):
                    another proof of the same statement
         heldS      not settled: its written proof is correct and held back
         open3      not settled: it has no proof"""
-        written = {'low': 'One is the first odd number.', 'pair': 'One plus three is four.',
-                   'heldS': 'Add the five terms one at a time.', 'twin': 'Add seven to nine.'}
-        body = '\n\n'.join(settled_text(name, proof='rfl' if name == 'base' else 'sorry') for name in SETTLED)
-        folder = self.candidate(
-            modules={'Small/Settled.lean': module_text(body),
-                     'Small/Twin.lean': module_text(theorem('twinAlt', SETTLED['twin'][0], doc=TWIN_ALT),
-                                                    imports=('Small.Settled',))},
-            records={**{f'Small/{name}.md': record_text(description, weight='unit', proof=written.get(name))
-                        for name, (_, description) in SETTLED.items()},
-                     'Small/twinAlt.md': record_text(TWIN_ALT, weight='unit', proof='Add the four terms in pairs.',
-                                                     proves='Small.twin')})
-        self.publish(folder, self.verdicts(folder, **{
-            'Small.heldS': {'accepted': False, 'reason': 'Correct; the five terms can be added at once.'}}),
-            engine=self.engine)
+        def build():
+            written = {'low': 'One is the first odd number.', 'pair': 'One plus three is four.',
+                       'heldS': 'Add the five terms one at a time.', 'twin': 'Add seven to nine.'}
+            body = '\n\n'.join(settled_text(name, proof='rfl' if name == 'base' else 'sorry') for name in SETTLED)
+            folder = self.candidate(
+                modules={'Small/Settled.lean': module_text(body),
+                         'Small/Twin.lean': module_text(theorem('twinAlt', SETTLED['twin'][0], doc=TWIN_ALT),
+                                                        imports=('Small.Settled',))},
+                records={**{f'Small/{name}.md': record_text(description, weight='unit', proof=written.get(name))
+                            for name, (_, description) in SETTLED.items()},
+                         'Small/twinAlt.md': record_text(TWIN_ALT, weight='unit', proof='Add the four terms in pairs.',
+                                                         proves='Small.twin')})
+            self.publish(folder, self.verdicts(folder, **{
+                'Small.heldS': {'accepted': False, 'reason': 'Correct; the five terms can be added at once.'}}))
+
+        self.scenario('settled statements', build)
+        # The scenario stands in place of the instance that setUp prepared, so the pipeline starts again on it.
+        self.start_pipeline()
         elements = replay(self.instance)['elements']
         self.assertEqual({name: (elements['Small.' + name]['standing'], elements['Small.' + name]['statement_settled'],
                                  elements['Small.' + name]['statement_formal']) for name in SETTLED},
@@ -1639,6 +1654,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
     def test_review_s_concerns_and_findings_name_what_exists(self):
         # The verdicts on question proposals and resolutions are checked with the questions
         # (test_questions.QuestionCheckTests).
+        self.operator_questions()
         folder, session = self.reviewed()
         good = self.verdicts(folder, **{'Small.oddSum_succ': {'correct': 'undetermined', 'accepted': False}})
         concern = {'id': 'gap', 'targets': ['Small.root', 'Small.lead'], 'reason': 'The step is asserted.',
@@ -1725,6 +1741,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
     # -- a comprehensive review ---------------------------------------------------------------------------
 
     def test_a_comprehensive_review_gives_findings_about_elements_and_questions_that_exist(self):
+        self.operator_questions()
         task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': [], 'purpose': 'Trace the questioned proofs.'}
         session = self.install('sexamine', 'review', task)
         (session / 'output/feedback.md').write_text('Traced the root to its definitions.', encoding='utf-8')
@@ -1765,6 +1782,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         return check_session(session)
 
     def test_an_organizer_answers_for_its_exact_batch(self):
+        self.operator_questions()
         # The rules for question merges are checked with the questions (test_questions.QuestionKnowledgeTests).
         merge = {'from': 'op-scale', 'into': 'speer-taken', 'reason': 'Both ask why the sums are squares.'}
         good = {'batch': ['c1', 'c2'], 'merge_questions': [merge]}
@@ -1780,6 +1798,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
                 self.assert_refused(self.organizer_errors(organization), message)
 
     def test_an_organizer_change_is_prepared_and_holds_lean_and_records_only(self):
+        self.operator_questions()
         organization = {'batch': ['c1', 'c2'], 'merge_questions': []}
         change = {'title': 'Agreements', 'description': 'Elements stating that two definitions agree.'}
         self.assertEqual(self.organizer_errors(organization, change), [])

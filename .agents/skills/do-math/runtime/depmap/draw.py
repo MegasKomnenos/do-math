@@ -24,38 +24,11 @@ grows where many arrive. A line is written as a few pieces with narrow boxes, so
 draws only those in its window. The words on a line name its folded steps where they cover no
 card, and count them where the names would.
 
-What was taken from the dependency-map generator of the previous research (the folder
-dependency_map/scripts/지도 of that research) and what was left there:
-
-    taken     the click viewer (`빌드/뷰어.py`, here viewer.html) with the attributes the drawing
-              writes for it: a view that changes only the SVG viewBox, the three clicks on a unit
-              and Esc, `#node=<Lean name>`, and opacity without a transition; here its wording is
-              English, a unit is identified by its Lean name, and a panel shows the selected unit;
-              the visual grammar of `지도_설정.json` and `빌드/그리기.py`: the
-              line of each kind of edge (solid, dashed "through intermediate results", dotted
-              reference, heavy "each complete"), the white
-              casing under a line that separates crossings, rounded corners of orthogonal lines,
-              the arrowheads, the palette that gives all edges leaving one card one colour, the
-              lighter drawing of the lines that would otherwise fill the sheet (there the lines of
-              hubs, at 62 % opacity; here the lines that leave a definition, see LIGHT), the
-              group boxes, and the colours of cards, of the goal and of a completing proof; the
-              dot where a net branches, read from the finished routes (`빌드/배치.py`,
-              분기점_재계산); and from its rails (`빌드/열배치.py`) the lane of a net with far
-              targets and the one branch before each column, which the layout here gives to every
-              line that goes further than the next layer, under each group.
-    left      its layout, which ran ELK Layered through Node (`빌드/배치.cjs`) with the option
-              profile of `지도_설정.json` (배치.프로필들.기본), since the layout is written here;
-              everything bound to a manuscript: chapter parsing, numbering and label resolution,
-              translation, the stored graph and its overlay, candidate and review rounds; the
-              compartments of a card with ports and endpoint lists; column placement of chapters,
-              bundles, and the nudging and untwisting that repair the routes of two routers laid
-              over one another (here one router puts every line on a track or a lane, so nothing
-              is left to push apart); the colouring by neighbours (colours given in the order the
-              cards stand in already differ between neighbours); the label placer; the endpoint
-              and geometry audits, whose checks of the lines are tests here; font measurement with
-              fontTools and embedded fonts, and inline TeX; PDF and
-              PNG export through a headless browser. Text widths are estimated here from character
-              classes, which is why cards keep a margin, and formulas are not typeset.
+No font is read or embedded: text widths are estimated from character classes, which is why cards
+keep a margin, and the drawing typesets no formula. The colours are given in the order the cards
+stand in, which already makes neighbours differ. One router puts every line on a track or a lane, so
+nothing is left to push apart. The checks of the lines on the finished geometry are tests, in
+tests/test_depmap.py.
 """
 from bisect import bisect_right, insort
 import html

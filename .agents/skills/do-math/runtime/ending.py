@@ -4,7 +4,6 @@ The host stays alive across turns, preserving the logical session's capacity and
 coordination identity. The runner collects only after this host has finished.
 """
 from pathlib import Path
-import shutil
 import subprocess
 import time
 import uuid
@@ -12,7 +11,7 @@ import uuid
 from availability import no_research_outcome
 from launch import worker_command, worker_environment
 from retention import conversation_identity, events, output_limit, refusal
-from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json,
+from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
@@ -196,7 +195,7 @@ def supervise(session, launch):
         # it would be frozen into a peer's candidate and checked again after a later request.
         submitted = folder / 'submitted-end-decision.json'
         if (session / 'output/end-decision.json').exists():
-            shutil.move(session / 'output/end-decision.json', submitted)
+            replace_file(session / 'output/end-decision.json', submitted)
         cancelled = (session / 'CANCEL').exists()
         # Only the output-token cap is resumable: the conversation and files survive it.
         limit = (output_limit(folder, policy['provider'])

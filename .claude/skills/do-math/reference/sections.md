@@ -1,6 +1,6 @@
 # Sections: choosing and registering what you take on
 
-The common introduction explains, under "Seeing work that is still underway: the board", what a section is, why a section stays occupied until its work is published, how the element's lease lets one session at a time choose there, and how a division of a statement should follow the mathematics. Attempts and peers are the roles that register sections. This guide gives what they need in order to do it: how a section is stated, how broad it should be and when it is registered, what holding the lease means for the choice, and the commands.
+The common introduction explains sections, their occupancy, the element's lease and the division of a statement under "Seeing work that is still underway: the board". Attempts and peers are the roles that register sections, and this guide gives what they need in order to do it.
 
 ## Stating a section
 
@@ -10,11 +10,11 @@ A statement that is not implied by the statement of the element is not a part of
 
 ## Breadth, and the moment of registration
 
-The breadth of a section follows the work you actually intend to do. An idea that could settle the whole statement calls for the whole statement; an approach to one regime calls for that regime. There is no merit in taking a small part for its own sake. A pattern that appears only across the whole problem may resolve many parts at once, and an attempt pursuing it needs the whole statement. Take a narrow section when your mathematics is narrow, and a broad one when it is broad.
+The breadth of a section follows the work you actually intend to do. An idea that could settle the whole statement calls for the whole statement; an approach to one regime calls for that regime. There is no merit in taking a small part for its own sake. A pattern that appears only across the whole problem may resolve many parts at once, and an attempt pursuing it needs the whole statement.
 
 An attempt registers its section once it has decided what to pursue, and then does its research inside that section, because work that is not registered is invisible to other sessions, which may repeat it without knowing. Registering early has a cost as well. A boundary chosen before the shape of the difficulty is understood tends to follow what looks manageable rather than what the mathematics suggests, and it then fixes what counts as settled. When the shape is not yet clear, a breadth set by the approach you intend serves the research better than one set by the range you expect to cover. Understanding gained later can still be acted on, because you can register a further section when the mathematics calls for it.
 
-Taking responsibility for a section does not limit the knowledge you can use to work on it. Results about other sections or other statements may provide a definition, an argument or a useful comparison. You can read those results and use them without taking on the problems they concern. Your section identifies what you are trying to settle; your reading can reach beyond it.
+Taking responsibility for a section does not limit the knowledge you can use to work on it. Results about other sections or other statements may provide a definition, an argument or a useful comparison. You can read those results and use them without taking on the problems they concern.
 
 Your work may also develop beyond the section you first chose. You can register a further available section and pursue it alongside the sections you already hold, which remain yours. You therefore do not need to reserve additional parts in advance merely because you may need them later or want to consult results about them. An attempt's role guide develops the tradeoff between using its accumulated understanding and leaving useful work for another researcher.
 
@@ -54,4 +54,4 @@ A section request takes one of three forms:
 
 The first takes the whole of the statement. The second takes an exact part of it. The third registers a statement you have formulated yourself, on the element it is aimed at. `reasons` is needed only when other sessions hold sections on the element.
 
-A registered section cannot be withdrawn, so register it once you have decided to pursue it. To take on a further section, take the lease again; your own earlier sections need no reasons. The transport check accepts a candidate that replaces the proof of an element only when its pipeline holds a section on that statement.
+A registered section cannot be withdrawn, so register it once you have decided to pursue it. The transport check accepts a candidate that replaces the proof of an element only when its pipeline holds a section on that statement.

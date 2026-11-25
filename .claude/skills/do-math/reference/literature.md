@@ -1,6 +1,6 @@
 # Searching and using literature
 
-You should actively look for earlier work you can use, and cite it, instead of building everything again yourself. The common introduction gives this guidance and its reasons under "Building on what already exists". This reference explains how to carry it out for the mathematical literature: what a search is for, where to look first, how to search, what to keep from a search, and how a result you take from a source enters the canon.
+You should actively look for earlier work you can use, and cite it, instead of building everything again yourself. The common introduction gives this guidance and its reasons under "Building on what already exists". This reference explains how to carry it out for the mathematical literature.
 
 ## Decide what the search is for
 

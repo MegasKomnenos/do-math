@@ -118,10 +118,8 @@ if __name__ == '__main__' and sys.argv[1:2] == ['version']:
     print('Lean (version 4.99.0, stand-in)')
     raise SystemExit(0)
 
-import atexit
 import functools
 import hashlib
-import tempfile
 import threading
 import unittest
 from unittest.mock import patch
@@ -137,7 +135,7 @@ import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay
 from runtime_support import read_json, remove_tree, write_json
-from support import DEFS, ROOT, InstanceCase, module_text, record_text, stop_broker, template, theorem
+from support import DEFS, ROOT, InstanceCase, kept_copy, module_text, record_text, stop_broker, template, theorem
 
 INSTALLED = THIS.parents[2]
 ROOT_STATEMENT = '(n : Nat) : oddSum n = n * n'
@@ -311,11 +309,7 @@ class FinalizeCase(InstanceCase):
             self.prepare(folder)
             self.publish(folder)
             self.configure(lean={'version_command': [sys.executable, '-B', str(THIS), 'version']})
-            stop_broker(self.instance)
-            base = Path(tempfile.mkdtemp(prefix='do-math-finalize-'))
-            atexit.register(remove_tree, base)
-            shutil.copytree(self.instance, base / 'instance')
-            _SETTLED = base / 'instance'
+            _SETTLED = kept_copy(self.instance, 'do-math-finalize-')
         self.repository = self.root / 'repository'
         self.repository.mkdir()
         (self.repository / 'README.md').write_text('# The repository\n\n## Solved problems\n\n- An earlier one.\n\n## Other\n',
@@ -1096,6 +1090,22 @@ class BuildTests(FinalizeCase):
             self.assertEqual(lean_broker.started_brokers(paths), [])
 
 
+class EndTests(FinalizeCase):
+    def test_a_package_that_cannot_be_moved_stays_whole_in_the_work_folder(self):
+        # The package goes into solved/ by one rename, which moves all of it or nothing. Here a folder stands where
+        # the package is to go: the end fails, the package is not put inside that folder, and both stay as they were.
+        with patch('finalize.REPOSITORY', self.repository):
+            run = finalize.Run(self.instance, 'odd', finalize.default_config())
+        for relative in ('freeze.json', 'facts.json', 'lib/0-selected/decision.json'):
+            package.write_json(run.work / relative, {})
+        package.write_text(run.package / 'README.md', '# The package\n')
+        package.write_text(run.solved / 'kept.md', 'It stood here before the run came to its end.\n')
+        with self.assertRaises(FileExistsError):
+            run.finish()
+        self.assertEqual(set(package.files_under(run.package)), {'README.md'})
+        self.assertEqual(set(package.files_under(run.solved)), {'kept.md'})
+
+
 class PromptTests(FinalizeCase):
     def prepared(self):
         run = finalize.Run(self.instance, 'odd', finalize.default_config())
@@ -1106,13 +1116,16 @@ class PromptTests(FinalizeCase):
     def test_every_instruction_file_of_the_skill_is_filled_with_the_names_the_command_gives(self):
         run = self.prepared()
         common = package.read_text(INSTALLED / 'finalize' / 'common.md')
+        # What only the sections on Lean of the common text hold; a session that is given no Lean file has none of it.
+        lean = ('## Reading the imported library\n', '## Compiling\n', '## What every Lean file of the library keeps\n',
+                Path(sys.executable).as_posix(), INSTALLED.as_posix() + '/runtime/lean_broker.py', '--expect-mb 64')
         for name in INSTRUCTIONS:
             text = run.prompt(name, {'part': 'core'} if name in ('simplify', 'foldback') else None)
             self.assertEqual(finalize.PLACEHOLDER.findall(text), [], name)
             self.assertTrue(text.startswith(common.split('{{')[0]), name)
-            self.assertIn(Path(sys.executable).as_posix(), text)
-            self.assertIn(INSTALLED.as_posix() + '/runtime/lean_broker.py', text)
-            self.assertIn('--expect-mb 64', text)
+            self.assertIn('\n## One proof, presented by itself\n', text, name)
+            given = name not in ('history-write', 'history-read', 'readme-write')
+            self.assertEqual([part in text for part in lean], [given] * len(lean), name)
         self.assertIn('There is none', run.prompt('review'))
         run.settings = {'lean': {'cwd': 'C:/toolchains/mathlib'}}
         self.assertIn('C:/toolchains/mathlib', run.prompt('review'))

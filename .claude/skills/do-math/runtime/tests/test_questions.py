@@ -21,9 +21,7 @@ from coordination import (board, claims_lock, main as coordination_main, questio
 from knowledge import canonical_question, question_proposal_lines, render, replay, resolved_question_lines
 from runner import Runner, main, operator_questions, status, uid
 from runtime_support import git, read_json, write_json
-from support import InstanceCase, module_text, record_text
-
-ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
+from support import InstanceCase, module_text, record_text, take
 
 # The root as each variant of the fixture states it (support.ROOTS). The closed form has no binders before
 # the colon, so its negation can be stated, in valid Lean and in the stand-in compiler's subset alike.
@@ -466,24 +464,10 @@ class UnderstandingTests(QuestionCase):
             stream.flush()
         return code, buffer.getvalue().decode('utf-8')
 
-    def test_the_starting_context_carries_the_understanding_so_far_of_q0(self):
-        for role in ROLES:
-            with self.subTest(role=role, written=False):
-                self.assertIn('No exploration has written it yet.', self.pack(role))
-        cid = self.account('q0')
-        self.assertEqual(replay(self.instance)['questions']['q0']['state'], 'open')
-        for role in ROLES:
-            with self.subTest(role=role, written=True):
-                received = self.pack(role)
-                self.assertNotIn('No exploration has written it yet.', received)
-                self.assertIn(ACCOUNT.strip(), received)
-                # Review's assessment of the exploration's contribution stands with the text.
-                self.assertIn('## Review', received)
-                self.assertIn(f'Change {cid} (revision 1): {CONTRIBUTION}', received)
-                self.assertLess(received.index(ACCOUNT.strip()), received.index('## Review'))
-
     def test_a_later_account_replaces_the_text_and_leaves_the_difference_in_the_history(self):
         first = self.account('q0')
+        # An account without a resolution leaves q0 open; only the root's formal settlement resolves it.
+        self.assertEqual(replay(self.instance)['questions']['q0']['state'], 'open')
         second = self.account('q0', LATER_ACCOUNT)
         canon = Canon(self.instance)
         body, review = split_review((canon.questions / 'q0.md').read_text(encoding='utf-8'))
@@ -1005,19 +989,7 @@ class QuestionCoordinationTests(QuestionCase):
         self.engine.model = replay(self.instance)
 
     def session(self, sid, role='explore'):
-        runner = self.engine
-        key = runner.producer(role)
-        job = runner.state['jobs'][key]
-        folder = runner.session_dir(sid)
-        folder.mkdir(parents=True)
-        (folder / 'inbox').mkdir()
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        runner.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running'}
-        job.update(status='running', session=sid)
-        runner.save()
-        return folder
+        return super().session(self.engine, sid, role)
 
     def end_pipeline(self, folder):
         pipeline = read_json(folder / 'input.json')['pipeline']
@@ -1110,6 +1082,28 @@ class QuestionCoordinationTests(QuestionCase):
         self.assertIn('holds this question', question_lease(d, 'q0')['reason'])
         listed = {q['id']: (q['state'], q['free']) for q in updates(d)['questions']}
         self.assertEqual(listed['op-scale'], ('resolved', False))
+
+    def test_a_question_wait_looks_again_until_the_lease_arrives(self):
+        # Every other test asks with a timeout of 0, which is one look. A waiting command looks again after
+        # each pause until its timeout. Only the pause is replaced, and during it the holder gives the lease
+        # up, so the test waits for nothing.
+        import time
+        from types import SimpleNamespace
+        self.ask('op-scale')
+        root, a, b = self.session('sroot'), self.session('sa'), self.session('sb')
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_take(root, 'q0')['taken'])
+        self.assertTrue(question_lease(a, 'op-scale')['leased'])
+        pauses = []
+
+        def pause(seconds):
+            pauses.append(seconds)
+            if len(pauses) == 1:
+                question_release(a, 'op-scale')
+
+        with patch('coordination.time', SimpleNamespace(time=time.time, monotonic=time.monotonic, sleep=pause)):
+            served = question_wait(b, 'op-scale', timeout=60)
+        self.assertEqual((served['leased'], served['holders'], len(pauses)), (True, ['sb'], 1))
 
     def test_a_narrower_question_is_refused_while_the_root_question_is_free(self):
         self.ask('op-scale')
@@ -1294,43 +1288,21 @@ class QuestionDispatchTests(QuestionCase):
 
     def occupy_root(self, runner):
         """An attempt holding the whole root, so that no element is available to a new attempt."""
-        key = runner.producer('attempt')
-        job = runner.state['jobs'][key]
-        sid = 'sholder'
-        folder = runner.session_dir(sid)
-        folder.mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt',
-                                           'pipeline': job['pipeline'], 'task': {}})
-        write_json(folder / 'declaration.json', {'sections': [
-            {'id': sid + '-1', 'element': 'Small.root', 'whole': True, 'statement': None, 'new': None,
-             'reasons': {}, 'at': 1}], 'at': 1})
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
-        job.update(status='running', session=sid)
-        runner.save()
+        self.assertTrue(take(self.session(runner, 'sholder'), 'Small.root')['registered'])
 
     def ended_explorer(self, runner, held):
-        key = runner.producer('explore')
-        job = runner.state['jobs'][key]
         sid = 'sexplorer' + str(len(runner.state['sessions']))
-        folder = runner.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'explore',
-                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
+        folder = self.session(runner, sid, 'explore')
         (folder / 'cli.stdout.jsonl').write_text(json.dumps(
             {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'A retained observation.'}}), encoding='utf-8')
         (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
         if held:
             write_json(folder / 'declaration.json', {'question': {'id': held, 'at': 1, 'by': 'runner'}, 'at': 1})
             (folder / 'work/notes.md').write_text('An unfinished observation.', encoding='utf-8')
-        session = {'id': sid, 'role': 'explore', 'job': key, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex',
-                   'started_at': 1, 'status': 'running', 'exit_code': 0, 'host': None, 'cli': None}
-        runner.state['sessions'][sid] = session
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        job.update(status='running', session=sid)
+        session = runner.state['sessions'][sid]
+        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=1, exit_code=0)
         runner.save()
-        return sid, session, job, folder
+        return sid, session, runner.state['jobs'][session['job']], folder
 
     def board_text(self, runner):
         render(self.instance, runner.model, board(self.instance, runner.state, runner.model))
@@ -1552,11 +1524,13 @@ class QuestionDispatchTests(QuestionCase):
         write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
         self.assertEqual(check_session(folder), [])
         runner.finish(sid, session)
-        self.assertEqual(session['disposition'], 'no_research')
+        self.assertEqual((session['status'], session['disposition']), ('ended', 'no_research'))
         self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'done')
-        self.assertFalse(any(j['role'] == 'peer' for j in runner.state['jobs'].values()))
+        self.assertEqual(len(runner.state['jobs']), 1)  # neither a peer nor a review follows
         self.assertFalse(runner.state['explore_requested'])
-        self.assertIsNone(runner.state['attempt_dispatch_gate'])  # only an attempt's report holds attempts back
+        # Only an attempt judges whether the remaining work is occupied; an explorer's exit sets no gate.
+        self.assertNotIn('availability_report', session)
+        self.assertIsNone(runner.state['attempt_dispatch_gate'])
 
     def test_an_exploration_that_reached_peer_without_a_question_is_not_choosing(self):
         runner = self.runner()

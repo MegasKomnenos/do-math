@@ -19,8 +19,8 @@ import tarfile
 import time
 
 import canon
-from canon import (CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file, name_path,
-                   parse_record, path_name, sha256_text, tree_hash)
+from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file,
+                   name_path, parse_record, path_name, sha256_text, tree_hash)
 from runtime_support import popen_options, read_json
 
 MAX_LINES = 10_000       # physical lines of a Lean file, the registry's rule and the canon's
@@ -46,17 +46,13 @@ DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
 DRIVE_PATH_IN_MARKUP = re.compile(r'(?<![A-Za-z])[A-Za-z]:/(?!/)')
 LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)|(?:href|src)\s*=\s*"([^"]*)"')
 AXIOM_LINE = re.compile(r"'([^']+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S)
-BIB_ENTRY = re.compile(r'@\w+\s*\{\s*([^,\s]+)\s*,')
 
 
 def write_text(path, content):
     """Write a complete UTF-8 file, with its folder, by writing beside it and replacing it.
 
     Every line of the file ends with a line feed alone: a text that came with Windows line endings,
-    from a file or from a value of a session's JSON, is written without their carriage returns.
-
-    The stages of a run write from several threads at once, and the runtime's own writer shares one
-    buffer among all its callers, so the files of a run are written with this function."""
+    from a file or from a value of a session's JSON, is written without their carriage returns."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f'{path.name}.{os.getpid()}-{time.monotonic_ns()}.tmp')
@@ -90,13 +86,6 @@ def product_hash(path):
 
 def read_text(path):
     return Path(path).read_text(encoding='utf-8-sig').replace('\r\n', '\n')
-
-
-def copy_tree(source, target):
-    target = Path(target)
-    if target.exists():
-        shutil.rmtree(target)
-    shutil.copytree(source, target)
 
 
 def files_under(root):
@@ -159,14 +148,11 @@ def git_members(repository, commit, paths):
 def export_commit(repository, commit, paths, target, strip=''):
     """Write the files of a commit under the given paths into a folder; `strip` is a path prefix to leave out."""
     target = Path(target)
-    count = 0
     for name, data in git_members(repository, commit, paths):
         relative = name[len(strip):] if strip and name.startswith(strip) else name
         path = target / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
-        count += 1
-    return count
 
 
 def reduced_settings(settings):
@@ -374,12 +360,18 @@ def restored_files(spans, before, returned):
 
 # ----------------------------------------------------------------------------- the checks of a library
 
-def lean_form_problems(lean_root):
-    """Every `.lean` file begins with `module` after its comments and has at most 10,000 physical lines."""
+def lean_form_problems(lean_root, lean_only=True):
+    """Every `.lean` file begins with `module` after its comments and has at most 10,000 physical lines.
+
+    A module root holds .lean files only, so any other file there is a problem. Without `lean_only` the
+    folder is a Lake project, which holds other files too: they and Lake's own folder are passed over."""
     problems = []
     for relative, path in files_under(lean_root).items():
         if not relative.endswith('.lean'):
-            problems.append(f'{relative} is no Lean file; a module root holds .lean files only')
+            if lean_only:
+                problems.append(f'{relative} is no Lean file; a module root holds .lean files only')
+            continue
+        if not lean_only and relative.startswith('.lake/'):
             continue
         lines = read_text(path).split('\n')
         if not header_scan(lines)[1]:
@@ -1027,7 +1019,7 @@ def registry_problems(lean_folder, licence):
             problems.append(f'lean/{name} is missing')
     if (lean_folder / 'lakefile.lean').exists():
         problems.append('lean/ holds lakefile.lean beside lakefile.toml; the registry wants exactly one')
-    problems += lean_form_problems_of(lean_folder)
+    problems += lean_form_problems(lean_folder, lean_only=False)
     if (lean_folder / 'comparator.json').is_file():
         data = read_json(lean_folder / 'comparator.json')
         unknown = sorted(set(data) - set(COMPARATOR_REQUIRED) - set(COMPARATOR_OPTIONAL))
@@ -1073,19 +1065,6 @@ def registry_problems(lean_folder, licence):
             problems.append('formalization.yaml: automation.methods is a nonempty list, each with a method')
         if not text(data.get('review', {}).get('status')):
             problems.append('formalization.yaml: review.status is a nonempty text')
-    return problems
-
-
-def lean_form_problems_of(folder):
-    """`lean_form_problems` for the Lean files of a folder that also holds other files."""
-    problems = []
-    for relative, path in files_under(folder).items():
-        if relative.endswith('.lean') and not relative.startswith('.lake/'):
-            lines = read_text(path).split('\n')
-            if not header_scan(lines)[1]:
-                problems.append(f'{relative} does not begin with `module`')
-            if len(lines) - (1 if lines[-1] == '' else 0) > MAX_LINES:
-                problems.append(f'{relative} has more than {MAX_LINES} lines')
     return problems
 
 
@@ -1517,21 +1496,20 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
     return '\n'.join(lines) + '\n'
 
 
+def said(text, length=700):
+    """A text on one line, cut at a word where it is longer than `length`."""
+    text = ' '.join(str(text).split())
+    return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
+
+
 def finding_lines(findings):
     """What the reader of the package found, one line for each: the file, the passage, and the problem."""
-    def said(text, length):
-        text = ' '.join(str(text).split())
-        return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
-
     return [f"- {finding['file']}" + (f", at \"{said(finding['quote'], 200)}\"" if finding['quote'].strip() else '')
             + f": {said(finding['problem'], 1200)}" for finding in findings]
 
 
 def closed_lines(closed):
     """What the paper command closed without a person, one line for each, as `decisions.md` has it."""
-    def said(text, length=700):
-        text = ' '.join(str(text).split())
-        return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
 
     lines = []
     for entry in closed:

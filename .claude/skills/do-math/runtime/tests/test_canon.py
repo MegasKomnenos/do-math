@@ -20,6 +20,7 @@ import sys
 import tempfile
 import unittest
 import uuid
+from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
@@ -742,10 +743,9 @@ NEW_SECOND = 'theorem second : oddSum 0 = 0 := rfl'
 NEW_THIRD = 'theorem third : oddSum 1 = 1 := by\n  rfl'
 
 
-def source_index(text, declarations, relative='Small/Lib.lean'):
-    """A structural index, written by hand, of the named declarations of one source file."""
-    module = relative[:-len('.lean')].replace('/', '.')
-    entries = {name: {'name': name, 'kind': 'theorem', 'module': module, 'file': relative,
+def source_index(text, declarations):
+    """A structural index, written by hand, of the named declarations of the source file Small/Lib.lean."""
+    entries = {name: {'name': name, 'kind': 'theorem', 'module': 'Small.Lib', 'file': 'Small/Lib.lean',
                       'span': span_of(text, snippet), 'source_sha': sha256_text(snippet)}
                for name, snippet in declarations.items()}
     return {'revision': 1, 'modules': {}, 'entries': entries, 'aux': {}, 'pairs': {}}
@@ -937,14 +937,14 @@ class TreeTests(TempCase):
 # --------------------------------------------------------------------------------------- the structural index
 
 def row(name, kind='theorem', module='Small.A', span=None, user=None, private=False, internal=False,
-        type_uses=(), value_uses=(), library=(), sorry=False, collected=(), prop=None):
+        type_uses=(), value_uses=(), library=(), sorry=False, collected=()):
     """One row of an extraction, in the shape the stand-in compiler and canon.extraction_source print.
 
     `sorry` says whether the constant's own term contains `sorry`; `collected` is what Lean collects as
     the axioms of the constant, through everything it uses."""
     user = user or name
     return {'name': name, 'kind': kind, 'module': module, 'private': private, 'internal': internal, 'user': user,
-            'span': span, 'sig': user + ' : statement', 'prop': kind in ('theorem', 'axiom') if prop is None else prop,
+            'span': span, 'sig': user + ' : statement', 'prop': kind in ('theorem', 'axiom'),
             'statement': 'hash-of-' + user, 'type_uses': list(type_uses), 'value_uses': list(value_uses),
             'library': list(library), 'sorry': sorry, 'collected': list(collected)}
 
@@ -1420,18 +1420,17 @@ class UpdateIndexTests(TempCase):
         self.assertEqual(drop_modules(self.both, []), self.both)
 
 
-def entry(name, kind='theorem', uses=(), statement_uses=(), axioms=(), proof='complete', statement=None, source=None,
-          prop=None):
+def entry(name, kind='theorem', uses=(), statement_uses=(), axioms=(), proof='complete', source=None, prop=None):
     """An entry of the structural index, written by hand."""
     return {'name': name, 'kind': kind, 'module': 'Small.M', 'file': 'Small/M.lean', 'span': [1, 0, 2, 0],
             'source_sha': source or 'source-of-' + name, 'statement': name + ' : statement',
-            'statement_hash': statement or 'statement-of-' + name, 'prop': kind == 'theorem' if prop is None else prop,
+            'statement_hash': 'statement-of-' + name, 'prop': kind == 'theorem' if prop is None else prop,
             'statement_uses': list(statement_uses), 'uses': list(uses), 'library': [], 'axioms': list(axioms),
             'lean_proof': proof if kind in ('theorem', 'def', 'opaque') else None}
 
 
-def index_of(*entries, pairs=None):
-    return {'revision': 1, 'modules': {}, 'entries': {e['name']: e for e in entries}, 'aux': {}, 'pairs': pairs or {}}
+def index_of(*entries):
+    return {'revision': 1, 'modules': {}, 'entries': {e['name']: e for e in entries}, 'aux': {}, 'pairs': {}}
 
 
 def earlier(*entries, hidden=None, judged=None):
@@ -2242,6 +2241,20 @@ class WrittenPartTests(TempCase):
         write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
         self.assertFalse(retire_approaches(self.canon, 'Small.other', 15))
         self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_retire_approaches_waits_for_a_reader_that_holds_an_entry(self):
+        # A session that reads an approach entry holds its file open without delete sharing, as Python's
+        # `open` does, and Windows moves no file held so. The move waits for the reader, as the runtime's
+        # writes do, and the entry is moved once.
+        path = write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
+        reader = path.open(encoding='utf-8')
+        self.addCleanup(reader.close)
+        with patch('runtime_support.time.sleep', side_effect=lambda seconds: reader.close()) as sleep:
+            self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
+        self.assertGreaterEqual(sleep.call_count, 1)
+        self.assertEqual(self.files(self.canon.history), ['Small/root/000015-approaches/induction.md'])
+        self.assertEqual(self.files(self.canon.approaches), [])
 
     def test_read_record(self):
         write(record_file(self.canon, 'Small.root'), ROOT_RECORD)

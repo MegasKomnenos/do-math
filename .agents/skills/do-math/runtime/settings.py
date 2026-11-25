@@ -59,16 +59,12 @@ def validate(raw):
             raise ValueError(section + ' must be an object')
     raw = {key: ({k: v for k, v in value.items() if key + '.' + k not in RETIRED} if key in sections else value)
            for key, value in raw.items()}
-    value = defaults()
-    value.update(raw)
-    for section in sections:
-        value[section] = {**defaults()[section], **raw.get(section, {})}
     known = defaults()
+    value = {**known, **raw}
     unknown = [key for key in raw if key not in known]
     for section in sections:
-        nested = raw.get(section, {})
-        if isinstance(nested, dict):
-            unknown += [section + '.' + key for key in nested if key not in known[section]]
+        value[section] = {**known[section], **raw.get(section, {})}
+        unknown += [section + '.' + key for key in raw.get(section, {}) if key not in known[section]]
     if isinstance(raw.get('roles'), dict):
         # Role lists are keyed by role name, so a misspelled role is an unknown setting as well.
         unknown += ['roles.' + key for key in raw['roles'] if key not in ROLES]

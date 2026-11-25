@@ -18,7 +18,7 @@ Nothing you submit goes through review. For the merging of questions the researc
 
 ## The change
 
-A change is optional. Submit one when you have found two definitions of one object, or two statements with the same content, and can prove in Lean that they agree; or when a proof that had to enter as a separate declaration can now stand under its statement's own name. Without a change, `organization.json` is the whole of your output.
+A change is optional. Without one, `organization.json` is the whole of your output.
 
 ```text
 output/

@@ -80,18 +80,6 @@ class AvailabilityTests(ScenarioCase):
         self.assertEqual(len(restarted.state['jobs']), 1)
         self.assertIsNone(restarted.state['attempt_dispatch_gate'])
 
-    def test_an_explorer_without_a_free_question_closes_the_same_way(self):
-        sid, session, job = self.attempt('explore')
-        write_json(self.runner.session_dir(sid) / 'output/outcome.json', {'disposition': 'no_research'})
-        self.assertEqual(check_session(self.runner.session_dir(sid)), [])
-        self.runner.finish(sid, session)
-        self.assertEqual((session['status'], session['disposition']), ('ended', 'no_research'))
-        self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'done')
-        self.assertEqual(len(self.runner.state['jobs']), 1)
-        # Only an attempt judges whether the remaining work is occupied; an explorer's exit sets no gate.
-        self.assertNotIn('availability_report', session)
-        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
-
     def test_the_report_names_the_elements_that_remain_and_the_sections_on_each(self):
         _, left, right = self.occupied()
         sid, session, _ = self.report()

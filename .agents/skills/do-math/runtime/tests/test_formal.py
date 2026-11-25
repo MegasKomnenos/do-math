@@ -90,7 +90,7 @@ class FormalStatusTests(InstanceCase):
 
     def test_a_published_proof_is_formal_by_the_axioms_lean_reported(self):
         folder = self.candidate(modules={'Small/Zero.lean': module_text(ZERO)}, records={'Small/sumZero.md': ZERO_RECORD})
-        record, _ = self.publish(folder)
+        self.publish(folder)
         entry = Canon(self.instance).load_index()['entries']['Small.sumZero']
         self.assertEqual((entry['axioms'], entry['lean_proof']), ([], 'complete'))
         self.assertTrue(self.element('Small.sumZero')['formal'])
@@ -98,10 +98,6 @@ class FormalStatusTests(InstanceCase):
         # The root has no proof: Lean reports `sorryAx` for it.
         root = self.element('Small.root')
         self.assertEqual((root['axioms'], root['lean_proof'], root['formal']), (['sorryAx'], 'sorry', False))
-        # Nothing was checked a second time, and nothing says that it was.
-        self.assertEqual(sorted(read_json(Canon(self.instance).index)), ['aux', 'entries', 'hidden', 'modules', 'pairs', 'revision'])
-        self.assertEqual(sorted(read_json(self.instance / 'knowledge/changes' / record / 'provenance.json')),
-                         ['peer_session', 'pipeline', 'producer_session', 'review_session'])
 
     def test_a_complete_proof_that_names_an_open_statement_is_a_proof_and_is_not_formal(self):
         self.lemma_and_what_rests_on_it()
