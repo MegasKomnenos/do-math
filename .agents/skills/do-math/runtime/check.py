@@ -362,12 +362,9 @@ def organization_check(data, root, model, batch):
         need(not change['questions'] and not change['resolutions'] and not change['approaches']
              and not change['understanding'],
              'an organizer change holds Lean modules, replacements and records only')
-        for item in array(change['retire'], 'retire'):
-            need(isinstance(item, dict) and set(item) == {'alternative', 'into', 'reason'},
-                 'a retirement has "alternative", "into" and "reason"')
+        for item in change['retire']:  # load_change has confirmed the form of each entry
             need(model['elements'].get(item['alternative'], {}).get('statement_of') == item['into'],
                  f"{item['alternative']} is not another proof of {item['into']}")
-            text(item['reason'], 'retire reason')
             # The proof under the statement's own name leaves the source, so the one that takes its
             # place may not stand lower than it: no review has compared the two.
             moving, leaving = model['elements'][item['alternative']], model['elements'][item['into']]

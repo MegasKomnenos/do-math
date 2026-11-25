@@ -56,7 +56,8 @@ HISTORY = 20  # samples kept per import closure
 KEEP_FINISHED = 200  # finished job records kept in the broker state; result.json files stay
 READY_SECONDS = 20.0
 IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)")
-# The emitted files a `module` file reads of a module it imports; the others hold proofs and editor data.
+# The emitted files a `module` file reads of a module it imports. Of the others, `.olean.private` holds proofs
+# and `.olean.server` editor data; the `.ir.sig` that Lean 4.36 adds is written by `lean` without content of its own.
 PUBLIC_SUFFIXES = (".olean", ".ir")
 JOB_ID = re.compile(r"^[jc][0-9a-f]{32}$")  # a job folder name; anything else never touches the file system
 BUILD_ID = re.compile(r"^b[0-9a-f]{32}$")
@@ -2003,8 +2004,10 @@ def cancel(paths, job_id):
 def broker_status(paths):
     """What `status` shows of the broker: its state as it is now, when a live broker writes it on request (saved_state).
 
-    `state_written_at` is the time at which the state that was read was written. It is the present
-    moment when the broker answered, and it says how old the report is when none did."""
+    `state_written_at` is the time at which the state that was read was written. A broker that answers
+    writes only if its state has changed since its last write (Broker.save). So the time is the present
+    moment when the broker wrote for this request, and the time of that last write when it answered
+    with nothing to write. When no broker answered, it says how old the report is."""
     info = broker_alive(paths)
     state = saved_state(paths, current=True)
     jobs = state.get("jobs", {})

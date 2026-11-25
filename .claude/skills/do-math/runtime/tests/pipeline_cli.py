@@ -144,33 +144,32 @@ elif role == 'peer':
     write_json(output / 'change.json', change)
     write_json(output / 'prepared.json', prepared(output, 'prepare'))
 elif role == 'review':
+    # The scripted reviews raise no concern and the scripted research contests nothing, so the runner assigns
+    # no comprehensive review: every review here is the review of a candidate.
     write(output / 'feedback.md', 'The precise argument was assessed.')
-    if task['kind'] == 'comprehensive':
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
-    else:
-        candidate = Path(task['candidate'])
-        change = read_json(candidate / 'change.json')
-        receipt = read_json(candidate / 'prepared.json')
-        assessment = {'publish': True, 'reason': 'Useful retained mathematics.',
-                      'contribution': 'Closed the step it took on within its exact scope.', 'feedback': 'feedback.md',
-                      'elements': [], 'concerns': [], 'findings': [],
-                      'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'A question later explorers can take up.'}
-                                    for q in change['questions']],
-                      'resolutions': []}
-        formal = False
-        for name in receipt['added'] + receipt['replaced']:
-            entry = receipt['entries'][name]
-            proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
-            formal = formal or (proved and entry['lean_proof'] == 'complete')
-            verdict = {'element': name, 'correct': 'confirmed' if proved else 'not_applicable',
-                       'accepted': proved, 'reason': 'The argument was followed step by step.'}
-            if name in receipt['replaced']:
-                verdict['replaces'] = True
-            assessment['elements'].append(verdict)
-        if formal:
-            result = prepared(candidate, 'verify')
-            write_json(session / 'work/verify/outcome.json', result)
-            assessment['formal_check'] = {'build': result['build']}
-        write_json(output / 'assessment.json', assessment)
+    candidate = Path(task['candidate'])
+    change = read_json(candidate / 'change.json')
+    receipt = read_json(candidate / 'prepared.json')
+    assessment = {'publish': True, 'reason': 'Useful retained mathematics.',
+                  'contribution': 'Closed the step it took on within its exact scope.', 'feedback': 'feedback.md',
+                  'elements': [], 'concerns': [], 'findings': [],
+                  'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'A question later explorers can take up.'}
+                                for q in change['questions']],
+                  'resolutions': []}
+    formal = False
+    for name in receipt['added'] + receipt['replaced']:
+        entry = receipt['entries'][name]
+        proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
+        formal = formal or (proved and entry['lean_proof'] == 'complete')
+        verdict = {'element': name, 'correct': 'confirmed' if proved else 'not_applicable',
+                   'accepted': proved, 'reason': 'The argument was followed step by step.'}
+        if name in receipt['replaced']:
+            verdict['replaces'] = True
+        assessment['elements'].append(verdict)
+    if formal:
+        result = prepared(candidate, 'verify')
+        write_json(session / 'work/verify/outcome.json', result)
+        assessment['formal_check'] = {'build': result['build']}
+    write_json(output / 'assessment.json', assessment)
 elif role == 'organizer':
     write_json(output / 'organization.json', {'batch': task['batch'], 'merge_questions': []})

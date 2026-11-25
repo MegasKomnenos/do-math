@@ -590,7 +590,7 @@ def message(session, target, message_file):
     state = read_json(instance / 'runner/state.json')
     if target not in state['sessions']:
         raise ValueError('unknown recipient session')
-    text = Path(message_file).read_text(encoding='utf-8')
+    text = Path(message_file).read_text(encoding='utf-8-sig')
     if not text.strip():
         raise ValueError('empty coordination message')
     directory = instance / 'sessions' / target / 'inbox'

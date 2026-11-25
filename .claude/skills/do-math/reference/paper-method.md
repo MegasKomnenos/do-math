@@ -24,7 +24,7 @@ The script takes from the canon the materials of the paper: every element that t
 
 The canon was not made to be read from beginning to end. It grows by addition, it is cut into the small declarations that a proof assistant needs, and its proofs were written by many sessions, each for one element by itself. A coherent exposition does not exist inside it. The paper is where that exposition is made. The paper is therefore not the canon carried over declaration by declaration. It is a new exposition of the same mathematics for a reader who will never see the canon, and most of this document is about the differences between the two.
 
-When drawing on the account of the root question, read the review attached to it. The review covers the change that supplied the account, and its stamp gives the revision at which the reviewer made that judgment. Use the qualifications that bear on the passage you draw from. The status beside each theorem comes from the revision used to prepare the paper materials.
+When drawing on the account of the problem as a whole, read the review that the materials give beneath it. The review covers the change that supplied the account, and it opens by naming that change and the revision at which the reviewer made that judgment. Use the qualifications that bear on the passage you draw from. The status beside each theorem comes from the revision used to prepare the paper materials.
 
 ## What each session works from
 

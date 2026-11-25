@@ -95,13 +95,8 @@ class BrokerSavesItsState(BrokerFixture):
         with patch.object(lean_broker, "broker_alive", return_value={}):
             status = lean_broker.broker_status(self.paths)
         self.assertIn(job_id, [job["id"] for job in status["finished"]])
-
-    def test_a_new_broker_reads_the_state_its_predecessor_saved(self):
-        self.start_broker()
-        job_id = self.submit(self.session_file("s1", marker="KEPT"), expect_mb=40)
-        self.until(lambda: self.finished(job_id))
-        self.broker.save(now=True)
-        saved = runtime_support.read_json(self.paths.state)
+        # The next broker is a reader as well: it starts from the state its predecessor saved.
+        saved = self.on_disk()
         self.start_broker()
         self.assertEqual(self.broker.state["jobs"][job_id]["status"], "finished")
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], saved["jobs"][job_id]["exit_code"])

@@ -323,7 +323,12 @@ def terminate_process(identity):
                 raise RuntimeError("PID now belongs to a different process; not terminated")
             if WIN.WaitForSingleObject(handle, 0) != 0:
                 if not WIN.TerminateProcess(handle, 1):
-                    raise ctypes.WinError(ctypes.get_last_error())
+                    error = ctypes.get_last_error()
+                    # The handle was opened with the right to terminate, so access denied (5) is the system's
+                    # answer for a process that is already ending: another caller terminated it first.
+                    # kill-session and the session host both end a cancelled CLI (runner.main, ending.run_turn).
+                    if error != 5:
+                        raise ctypes.WinError(error)
         finally:
             WIN.CloseHandle(handle)
     else:
@@ -444,11 +449,8 @@ def session_host(session):
             return 1
         time.sleep(0.1)
     write_json(session / "process-job.json", {**contain_session_processes(), "at": time.time()})
-    from ending import run_turn, supervise
-    if job.get('end_check') is not None:
-        result = supervise(session, job)
-    else:
-        result = run_turn(session, session, job["command"])
+    from ending import supervise
+    result = supervise(session, job)
     write_json(session / "exit.json", result)
     return 0
 

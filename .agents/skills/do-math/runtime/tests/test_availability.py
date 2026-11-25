@@ -28,23 +28,13 @@ class AvailabilityTests(ScenarioCase):
         """A producing session that has ended cleanly after some activity."""
         self.serial += 1
         runner = self.runner
-        key = runner.producer(role)
-        job = runner.state['jobs'][key]
         sid = 'stest' + str(self.serial)
-        folder = runner.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid,
-                   'role': role, 'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
-        session = {'id': sid, 'role': role, 'job': key, 'status': 'running',
-                   'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': time.time(),
-                   'exit_code': 0, 'host': None, 'cli': None, 'retained': True,
-                   'retention': {'cli_activity': True}}
-        runner.state['sessions'][sid] = session
-        job.update(status='running', session=sid)
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
+        self.session(runner, sid, role)  # as dispatch leaves it; the rest is what the CLI that ended left
+        session = runner.state['sessions'][sid]
+        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=time.time(), exit_code=0,
+                       retained=True, retention={'cli_activity': True})
         runner.save()
-        return sid, session, job
+        return sid, session, runner.state['jobs'][session['job']]
 
     def occupied(self):
         """Two attempts hold two parts of the root, the only element that remains."""
@@ -209,10 +199,18 @@ class AvailabilityTests(ScenarioCase):
         self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
         self.assertFalse(any(j['role'] == 'peer' for j in self.runner.state['jobs'].values()))
 
-    def test_bad_snapshot_does_not_reopen_or_send_terminal_attempt_to_peer(self):
+    def test_a_bad_report_does_not_reopen_or_send_terminal_attempt_to_peer(self):
         sid, session, job = self.report()
         folder = self.runner.session_dir(sid)
         value = read_json(folder / 'output/outcome.json')
+        # The report as updates gave it passes. Each refusal changes one thing of it, and the check names that thing.
+        self.assertEqual(check_session(folder), [])
+        for message, changed in (('unknown availability status', {'status': 'some_work_is_free'}),
+                                 ('availability needs exactly the fields status and snapshot, and no others',
+                                  {'note': 'Nothing else was looked at.'})):
+            with self.subTest(message=message):
+                write_json(folder / 'output/outcome.json', {**value, 'availability': {**value['availability'], **changed}})
+                self.assertEqual(check_session(folder), [message])
         value['availability']['snapshot'] = '../not-a-token'
         write_json(folder / 'output/outcome.json', value)
         self.assertEqual(check_session(folder), ['availability.snapshot must be a token returned by updates'])

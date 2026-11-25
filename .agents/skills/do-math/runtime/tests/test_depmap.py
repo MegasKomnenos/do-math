@@ -711,6 +711,13 @@ class Drawing(MapCase):
         self.assertIn('--all needs the instance', errors.getvalue())
         self.assertIn('is not a dependency map written by this command', errors.getvalue())
         self.assertIn('is neither an instance folder nor a dependency_map.json', errors.getvalue())
+        # An error that the operating system reports ends the command with the same code: here the output folder is a file.
+        blocked = Path(temp.name) / 'blocked'
+        blocked.write_bytes(b'')
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(blocked)]), 2)
+        self.assertRegex(errors.getvalue(), r'^depmap: .*blocked')
+        self.assertTrue(blocked.is_file())
 
 
 def playwright():
@@ -728,8 +735,11 @@ class Page(MapCase):
 
     def test_the_page_finds_selects_follows_and_restores(self):
         data = self.map(wide_canon())
-        # The records write formulas in TeX. One description gets two: one in the TeX the page knows, one that it does not.
-        self.unit(data, 'Lib.count')['description'] = r'The sum $\sum_{i=1}^{n} a_i \le \frac12\binom{n}{2}$, and $\notacommand x$.'
+        # The records write formulas in TeX. One description gets three: two in the TeX the page knows, one of them an
+        # array with its column specification, and one that the page does not know.
+        self.unit(data, 'Lib.count')['description'] = (
+            r'The sum $\sum_{i=1}^{n} a_i \le \frac12\binom{n}{2}$, the array $\begin{array}{ll} p & q \end{array}$, '
+            r'and $\notacommand x$.')
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         depmap.write(data, temp.name)
@@ -765,12 +775,15 @@ class Page(MapCase):
                     page.mouse.wheel(0, 100)
                 self.assertEqual(page.evaluate(words), given)
                 page.keyboard.press('0')
-                # A formula is typeset by the browser; one with a command the page does not know is shown as written.
+                # A formula is typeset by the browser, and the cells of an array hold what stands between its column
+                # specification and its end; one with a command the page does not know is shown as written.
                 page.goto(address + '#node=Lib.count')
                 page.reload()
                 self.assertEqual(page.evaluate('''() => [document.querySelectorAll('#content math').length,
                     document.querySelectorAll('#content math mfrac').length,
-                    [...document.querySelectorAll('#content span.tex')].map(s => s.textContent)]'''), [1, 2, [r'\notacommand x']])
+                    [...document.querySelectorAll('#content math mtd')].map(cell => cell.textContent),
+                    [...document.querySelectorAll('#content span.tex')].map(s => s.textContent)]'''),
+                                 [2, 2, ['p', 'q'], [r'\notacommand x']])
                 page.goto(address)
                 page.reload()
                 # A name typed in the search is found, among the units and among the folded steps.

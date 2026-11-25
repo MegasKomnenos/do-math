@@ -750,14 +750,48 @@ class EndingConfigurationTests(unittest.TestCase):
             self.assertEqual(parsed.call_count, 2)
 
 
+class CancellationTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'the refusal is what Windows answers to a second TerminateProcess')
+    def test_a_cli_that_another_caller_is_already_ending_is_not_recorded_as_a_failed_launch(self):
+        # kill-session writes CANCEL and terminates the CLI, and the host terminates it too when it sees
+        # CANCEL (runner.main, ending.run_turn). Whichever call comes second can find the process already
+        # ended by the first, and Windows then refuses it with access denied. Which call comes second is a
+        # matter of timing, so only that is stood in for: the real call ends the real CLI, and the host is
+        # given the answer the second caller gets. The turn is then a cancelled turn with its exit code,
+        # and no launch error is recorded for it.
+        import ctypes
+        import tempfile
+        import runtime_support
+        real = runtime_support.WIN.TerminateProcess
+
+        def already_ending(handle, code):
+            real(handle, code)
+            ctypes.set_last_error(5)  # ERROR_ACCESS_DENIED
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / 'prompt.txt').write_bytes(b'')
+            (folder / 'CANCEL').write_bytes(b'')
+            command = {'argv': [sys.executable, '-c', 'import time; time.sleep(120)'], 'cwd': str(folder)}
+            with patch.object(runtime_support.WIN, 'TerminateProcess', side_effect=already_ending) as asked:
+                result = run_turn(folder, folder, command)
+        self.assertTrue(asked.called)
+        self.assertNotIn('launch_error', result)
+        self.assertEqual(result['exit_code'], 1)
+
+
 class SessionGateTests(unittest.TestCase):
     # The runner records a host's identity in its state and only then writes GO, so a host that never
     # sees GO starts no CLI the runner could not follow (runtime_support.session_host). The broker's
     # job host keeps the same gate; test_lean_broker tests that one.
     def launch(self, folder, runner):
-        # The stand-in CLI only marks that it was started.
+        # The stand-in CLI only marks that it was started. The policy is the one dispatch writes for every
+        # session, with no resumption allowed, so a host that passes the gate runs this one turn and ends.
         write_json(folder / 'launch.json', {'runner': runner, 'command': {
-            'argv': [sys.executable, '-c', "open('started', 'w').close()"], 'cwd': str(folder)}})
+            'argv': [sys.executable, '-c', "open('started', 'w').close()"], 'cwd': str(folder)},
+            'end_check': {'maximum': 0, 'role': 'attempt', 'provider': 'codex', 'model': 'stand-in',
+                          'retry_seconds': 60}})
         (folder / 'prompt.txt').write_bytes(b'')
 
     def test_host_without_go_exits_on_cancel_or_dead_runner_without_starting_a_cli(self):

@@ -7,6 +7,7 @@ Tests that change the canon go through the real candidate, build and publication
 helpers below; nothing here writes the index or the model by hand.
 """
 import atexit
+import functools
 from pathlib import Path
 import shutil
 import subprocess
@@ -173,11 +174,19 @@ class InstanceCase(unittest.TestCase):
         self.instance = self.root / 'instance'
         shutil.copytree(self.starting_instance(), self.instance)
         self.addCleanup(stop_broker, self.instance)
-        self.skill = self.root / 'skill'
+
+    @functools.cached_property
+    def skill(self):
+        """The test's own copy of the installed guides, made when the test first asks for it.
+
+        A runner is given this folder, and a session's pack and its resume texts are read from it. A test
+        that starts no runner reads none of it, so no copy is made for that test."""
+        folder = self.root / 'skill'
         installed = Path(__file__).resolve().parents[2]
         for name in ('reference', 'roles', 'resume'):
-            shutil.copytree(installed / name, self.skill / name)
-        shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
+            shutil.copytree(installed / name, folder / name)
+        shutil.copyfile(installed / 'SKILL.md', folder / 'SKILL.md')
+        return folder
 
     def starting_instance(self):
         """The instance a test receives a copy of: the one `init` created.

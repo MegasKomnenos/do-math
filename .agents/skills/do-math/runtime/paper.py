@@ -1844,11 +1844,6 @@ def machine_findings(materials, plan, parts):
     return found_problems
 
 
-def machine_checks(materials, plan, parts):
-    """What a machine can check in the manuscript, as sentences for a repair session; empty when all hold."""
-    return [finding['problem'] for finding in machine_findings(materials, plan, parts)]
-
-
 # ----------------------------------------------------------------------------- typesetting
 
 def tex_recipe(command):
@@ -2097,8 +2092,9 @@ or mention it, is named in "elements" of an entry of "notation". That last check
 materials; for every other object the notation rests on your reading.'''
 PLAN_CLOSING = ''' A plan that fails goes to a new planning session with the list of failures.
 
-Write also `output/study.md`: your account of how the chosen papers are written, as that section describes it, in \
-free text. Every session that writes or repairs receives it, and it is all that such a session has of the papers you do \
+Write also `output/study.md`: your account of how the chosen papers are written, as the method's section "The papers \
+this paper is written like" describes it, in free text. Every session that writes or repairs receives it, and it is \
+all that such a session has of the papers you do \
 not name for its section. So where the papers differ by the kind of section, say what each kind does: how introductions \
 are built, how a section of preliminaries, a section that carries a long computation, and a section that proves the main \
 theorem open, proceed and close.
@@ -5460,6 +5456,7 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
     latest = next(event for event in reversed(run.log) if event['event'] == 'end' and event.get('status') != 'failed')
     run.open = [item for item in latest.get('open', []) if item['check'] not in (MACHINE, TYPESETTING)]
     run.kept = list(latest.get('kept', []))
+    run.closed = list(latest.get('closed', []))
     run.materials = read_json(out / 'materials.json')
     run.take_plan(read_json(out / 'plan.json'), read_file(out / 'study.md') if (out / 'study.md').is_file() else '')
     run.sketched = run.recorded_draft()  # the briefs of a repair carry the drafted statements, as before

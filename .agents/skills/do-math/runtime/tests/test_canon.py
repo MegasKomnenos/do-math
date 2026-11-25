@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -30,7 +31,7 @@ from canon import (Canon, CanonError, Conflict, add_imports, apply_lean, apply_r
                    read_record, record_file, replace_span, required_pairs, retire_approaches, sha256_text,
                    split_review, statement_differences, sync_tree, tree_hash, update_index, with_importers,
                    with_review)
-from check import Invalid, prepared_candidate
+from check import Invalid, check_session, prepared_candidate
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
 from support import InstanceCase, module_text, record_text
@@ -585,6 +586,7 @@ class LoadChangeTests(TempCase):
 
     def test_manifest_refusals(self):
         replacement = {'declaration': 'Small.root', 'file': 'replace/root.lean'}
+        retirement = {'alternative': 'Small.root_alt', 'into': 'Small.root', 'reason': 'The proof stands under the root.'}
         cases = {
             'unknown key': ({'reviewer': 's1'}, 'unknown key in change.json: reviewer'),
             'missing title': ({'title': ...}, 'nonempty "title"'),
@@ -622,11 +624,19 @@ class LoadChangeTests(TempCase):
             'questions that are no array': ({'questions': {}}, '"questions" is an array'),
             'resolutions that are no array': ({'resolutions': 'q1'}, '"resolutions" is an array'),
             'retire that is no array': ({'retire': {'alternative': 'Small.a'}}, '"retire" is an array'),
+            'retirement that is no object': ({'retire': ['Small.root_alt']}, 'a retirement has "alternative", "into" and "reason"'),
+            'retirement without the statement it goes into': ({'retire': [{'alternative': 'Small.root_alt', 'reason': 'Moved.'}]},
+                                                              'a retirement has "alternative", "into" and "reason"'),
+            'retired declaration that is no text': ({'retire': [{**retirement, 'alternative': 7}]},
+                                                    'of a retirement are nonempty text'),
+            'retirement with a blank reason': ({'retire': [{**retirement, 'reason': ' '}]}, 'of a retirement are nonempty text'),
         }
         write(self.root / 'outside.lean', INFORMAL)  # so that leaving the folder is the only fault of that case
         for label, (change, message) in cases.items():
             with self.subTest(label):
                 self.refused(message, **change)
+        # The retirement of which the refusals above each change one thing is accepted as it stands.
+        self.assertEqual(load_change(self.candidate(retire=[retirement]))['retire'], [retirement])
 
     def test_a_manifest_that_is_no_object(self):
         folder = self.candidate()
@@ -2586,6 +2596,23 @@ class CandidateToolTests(InstanceCase):
             canon_tool.checkout(session, 'work/mine')
         self.assertEqual(own.read_text(encoding='utf-8'), 'theorem draft : True := trivial\n')
         self.assertEqual([p.name for p in (session / 'work/mine').iterdir()], ['Draft.lean'])
+
+    def test_a_link_in_the_output_of_a_session_is_refused_by_the_transport_check(self):
+        # A link leads out of the folder whose files are hashed and copied at publication, so the transport
+        # check refuses an output that holds one, whichever form of directory link the system allowed.
+        session = self.session('attempt').resolve()
+        self.assertEqual(check_session(session), [])
+        outside = self.root / 'outside'
+        outside.mkdir()
+        link = session / 'output' / 'linked'
+        try:
+            os.symlink(outside, link, target_is_directory=True)
+        except OSError:
+            if os.name != 'nt':
+                raise
+            # Without the symlink privilege, a junction is the directory link Windows allows.
+            subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(outside)], check=True, capture_output=True)
+        self.assertEqual(check_session(session), ['filesystem links cannot be published: ' + str(link)])
 
 
 if __name__ == '__main__':

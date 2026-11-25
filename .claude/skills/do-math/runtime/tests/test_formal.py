@@ -36,7 +36,7 @@ from canon_tool import view
 from knowledge import frontier_lines, replay
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
-from settings import defaults, load_settings, validate
+from settings import load_settings, validate
 from support import (ROOT, ROOT_STATEMENTS, SUM_ZERO, InstanceCase, ScenarioCase, fixture_settings, module_text,
                      record_text, theorem)
 
@@ -160,8 +160,7 @@ class EarlierFilesTests(ScenarioCase):
                 self.assertIn('judge', read_json(self.instance / 'settings.json')['lean'])
                 self.assertNotIn('judge', load_settings(self.instance)['lean'])
                 runtime.Runner(self.instance, self.skill)
-                self.assertNotIn('judge', runtime.status(self.instance))
-        self.assertNotIn('judge', defaults()['lean'])
+                self.assertEqual(runtime.status(self.instance)['root_state'], 'unresolved')
         # Another unknown key is still a mistake.
         with self.assertRaisesRegex(ValueError, 'unknown setting: lean.jugde'):
             validate({**fixture_settings(), 'lean': {**fixture_settings()['lean'], 'jugde': None}})

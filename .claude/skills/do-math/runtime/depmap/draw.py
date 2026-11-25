@@ -590,7 +590,7 @@ def layered(data, cards):
 
     # The words on a line stand at its end before the target, else on its last upright part, else on its lane, at the
     # first of these where they cover no card and no other words. The names of three steps are often wider than
-    # the room there, and words that found no free place used to lie across the cards beside them. So words that
+    # the room there, and words that find no free place would lie across the cards beside them. So words that
     # find no place name one step fewer and try again, down to the number of steps alone; the data keeps every
     # name, and the page lists them for the selected unit.
     taken = [(x - 4, y - 4, w + 8, h + 8) for x, y, w, h in boxes.values()]

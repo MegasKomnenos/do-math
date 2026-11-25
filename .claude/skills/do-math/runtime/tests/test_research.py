@@ -79,8 +79,9 @@ def comprehensive_jobs(runner):
     return [j for j in runner.state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
 
 
-def publish_comprehensive(runner, job, data, sid='scomprehensive'):
+def publish_comprehensive(runner, job, data):
     """Publish a comprehensive review's assessment as the runner does when its session ends."""
+    sid = 'scomprehensive'
     output = runner.session_dir(sid) / 'output'
     output.mkdir(parents=True)
     write_json(output / 'assessment.json', data)
@@ -1078,7 +1079,8 @@ class CoordinationTests(ScenarioCase):
         runner = self.runner()
         sender, recipient = (self.session(runner, sid) for sid in ('ssender', 'srecipient'))
         note = sender / 'note.md'
-        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8')
+        # A message file can begin with a byte order mark, as Windows PowerShell writes UTF-8; it is no part of the text.
+        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8-sig')
         delivered = Path(message(sender, 'srecipient', note)['delivered'])
         self.assertEqual(delivered.resolve().parent, (recipient / 'inbox').resolve())
         with self.assertRaisesRegex(ValueError, 'unknown recipient'):
@@ -1317,9 +1319,9 @@ class RunnerTests(ScenarioCase):
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertTrue(session['retention']['native_transcripts'])
 
-    def without_material(self, runner, role='attempt'):
-        """A producer that ended without any research material; its job waits to be launched again."""
-        sid, session, job = self.ended(runner, role)
+    def without_material(self, runner):
+        """An attempt that ended without any research material; its job waits to be launched again."""
+        sid, session, job = self.ended(runner, 'attempt')
         folder = runner.session_dir(sid)
         (folder / 'work/notes.md').unlink()
         (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')

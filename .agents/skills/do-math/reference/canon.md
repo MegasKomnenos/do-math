@@ -87,7 +87,7 @@ The output is text. An error is reported as a JSON object with the key `error` a
 | `view <element> --full` | The same, followed by every part of the record and by the approach entries in full. |
 | `view <element> --part <part>` | One part alone. `statement`, `explanation`, `proof` and `literature` are the parts of the record. `approaches` gives the approach entries in full, with review's assessment of each. `history` gives what replacements left behind: the Lean text of each proof that was replaced, the earlier texts of the record and of approach entries, each as its difference from the text that took its place, and the approach entries that were set aside when a proof of the statement was accepted. `source` gives the Lean text of the declaration. |
 | `list` | Every element of the canon. |
-| `list --module <module>` | The elements of a module, or of every module whose name begins with the given prefix. |
+| `list --module <module>` | The elements of the named module and of every module under it: `Tri.Bounds` returns the elements of `Tri.Bounds` and of `Tri.Bounds.Upper`. The name is matched by whole components, so `Tri.Bound` returns the elements of neither. |
 | `list --uses <element>` | The elements that the proof of the given statement names; for a definition, the elements its body uses. |
 | `list --used-by <element>` | The elements whose proofs name the given element. |
 | `list --about <element>` | Every element whose statement mentions the given element or whose proof uses it. For a definition, this is what the canon states about that object. |

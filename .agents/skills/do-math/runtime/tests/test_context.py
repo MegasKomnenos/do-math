@@ -564,6 +564,8 @@ class ContextTests(InstanceCase):
                 # The snapshot holds every reference, so a link from a guide to another one leads to a copy.
                 self.assertEqual(sorted(p.name for p in (folder / 'context/reference').iterdir()),
                                  sorted(p.name for p in (self.skill / 'reference').glob('*.md')))
+                # It holds the operator's entry point as well, which reference/operations.md links to.
+                self.assertEqual((folder / 'context/SKILL.md').read_bytes(), (self.skill / 'SKILL.md').read_bytes())
 
 
 if __name__ == '__main__':

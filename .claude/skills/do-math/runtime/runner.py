@@ -743,7 +743,11 @@ class Runner:
             if not organizer and tree_hashes(candidate) != job['task']['candidate_hashes']:
                 self.state['publication'] = None
                 session = self.state['sessions'][publication['session']]
-                session['record'] = None
+                # The review no longer waits for a publication. If the recovery below fails, the runner ends
+                # and saves this state (run); a session left as publishing would then belong to no publication
+                # and never be collected. As running it is collected again by the next runner, whose transport
+                # check finds the changed candidate as it does when a review ends (finish).
+                session.update(status='running', record=None)
                 self.recover_candidate(job, session, 'candidate changed after review assignment')
                 return False
             if stage.exists():

@@ -74,11 +74,11 @@ class QuestionCase(InstanceCase):
         folder = self.candidate(replace={'Small.root': text}, records={'Small/root.md': ROOT_RECORD})
         return self.publish(folder, role='formalizer' if formal else 'attempt', engine=engine)[0]
 
-    def refute_root(self, engine=None):
+    def refute_root(self):
         """Add a theorem with a complete Lean proof whose statement Lean confirms as the root's negation."""
         folder = self.candidate(modules={'Small/Refutation.lean': REFUTATION},
                                 records={'Small/root_false.md': REFUTATION_RECORD})
-        return self.publish(folder, role='formalizer', engine=engine)[0]
+        return self.publish(folder, role='formalizer')[0]
 
     def account(self, qid, text=ACCOUNT, resolution_id=None, resolved=True, engine=None):
         """Publish an exploration's change that writes a question's understanding, optionally as its resolution."""

@@ -4,7 +4,8 @@ An element is a declaration of that library together with its record. This modul
 every part of the runtime needs to know about the canon's files: where a record lives, how a
 record, an approach entry and a candidate change are written, how a candidate is applied to
 the library, and how the structural index is extracted from the compiled library by Lean.
-It judges no mathematics. See ../reference/canon.md for the formats as a session uses them.
+It judges no mathematics. For the formats as a session uses them, see ../reference/records.md for the written texts,
+../reference/change-format.md for a candidate change and ../reference/canon.md for the Lean files.
 
 Layout under <instance>/canon/:
     lean/                  the module root of the library; every module is a `module` file
@@ -406,6 +407,11 @@ def load_change(candidate):
     for key in ('questions', 'resolutions', 'retire'):
         if not isinstance(data.setdefault(key, []), list):
             raise CanonError(f'change.json "{key}" is an array')
+    for item in data['retire']:
+        if not isinstance(item, dict) or set(item) != {'alternative', 'into', 'reason'}:
+            raise CanonError('a retirement has "alternative", "into" and "reason"')
+        if not all(isinstance(value, str) and value.strip() for value in item.values()):
+            raise CanonError('"alternative", "into" and "reason" of a retirement are nonempty text')
     files = lambda folder, suffix: sorted(p.relative_to(candidate / folder).as_posix()
                                           for p in (candidate / folder).rglob('*' + suffix) if p.is_file())
     data['modules'] = files('lean', '.lean')

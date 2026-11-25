@@ -39,6 +39,7 @@ THIS = Path(__file__).resolve()
 def stand_in_session(scenario):
     folder = Path.cwd()
     task = json.loads((folder / 'session.json').read_text(encoding='utf-8'))
+    sys.stdin.reconfigure(encoding='utf-8')  # the command hands over the bytes of a UTF-8 file, whatever the locale
     prompt = sys.stdin.read()
     script = json.loads((scenario / 'script.json').read_text(encoding='utf-8'))
     record = scenario / 'calls.json'
@@ -718,8 +719,9 @@ class PlanTests(PaperCase):
 
 
 class ManuscriptTests(PaperCase):
-    def problems(self, **changed):
-        return ' | '.join(paper.machine_checks(self.materials(), PLAN, {**PARTS, **changed}))
+    def problems(self, plan=PLAN, **changed):
+        found = paper.machine_findings(self.materials(), plan, {**PARTS, **changed})
+        return ' | '.join(finding['problem'] for finding in found)
 
     def test_the_manuscript_of_the_plan_passes_and_is_assembled_in_its_order(self):
         self.assertEqual(self.problems(), '')
@@ -769,7 +771,7 @@ class ManuscriptTests(PaperCase):
         self.assertIn('tools: ' + said + 'Lean', self.problems(tools=TOOLS + '\\begin{equation}\\label{eq:Lean}a = a\\end{equation}\n'))
         self.assertIn('abstract: ' + said + 'Lean', self.problems(abstract=ABSTRACT + 'The proof is checked in Lean.\n'))
         plan = {**PLAN, 'title': 'The sum of the first odd numbers, in Lean'}
-        self.assertIn('the title: ' + said + 'Lean', ' | '.join(paper.machine_checks(self.materials(), plan, PARTS)))
+        self.assertIn('the title: ' + said + 'Lean', self.problems(plan))
         # Other words that contain the letters are ordinary words; only the two words with these capitals are looked for.
         ordinary = 'The lean case, the clean bound, Leaning on Lemma~\\ref{lem:square}, LEAN and mathlib are not names.\n'
         self.assertEqual(self.problems(proof=PROOF + ordinary), '')
@@ -814,7 +816,7 @@ class ManuscriptTests(PaperCase):
         source = '[{\\cite[Book II, Proposition 4]{euclid}}]'
         tools = ('\\begin{lemma}' + source + '\\label{lem:expand}\nFor natural numbers $a$ and $b$, we have '
                  '$(a+b)^2 = a^2 + 2ab + b^2$.\n\\end{lemma}\n\n' + TOOLS.replace(' \\cite[Book II, Proposition 4]{euclid}', ''))
-        check = lambda text: ' | '.join(paper.machine_checks(self.materials(), plan, {**PARTS, 'tools': text}))
+        check = lambda text: self.problems(plan, tools=text)
         self.assertEqual(check(tools), '')
         self.assertIn('its statement carries \\cite{euclid}', check(tools.replace(source, '')))
         self.assertIn('lem:expand is a result from the literature; it is cited and has no proof',
@@ -1434,6 +1436,9 @@ class RunTests(PaperCase):
         self.assertEqual(len(self.calls('read')), readings)
         with self.assertRaisesRegex(paper.Stop, 'whose reading and comparison did not run to their end'):
             self.run_paper(script, only=True)
+        # --open-findings does not take the run up either: what it left open is no finding of a comparison.
+        with self.assertRaisesRegex(paper.Stop, 'ended before its readings and its comparison were made'):
+            self.run_paper(script, open_findings='all')
 
     def test_a_statement_that_a_repair_changes_while_typesetting_later_is_reported_as_not_compared(self):
         script = good()
@@ -2148,6 +2153,9 @@ class SideBySideTests(PaperCase):
         script['write:tools'] = [{}]
         self.stop(script)
         launched = len(self.calls())
+        # The run was begun as a paper, so it is not continued as a draft.
+        with self.assertRaisesRegex(paper.Stop, 'was not begun with --draft; continue it with --resume alone'):
+            self.run_paper(good(), resume=True, draft=True)
         # The materials are taken from the canon again and compared with those the run began with.
         materials = read_json(self.out / 'materials.json')
         kept = copy.deepcopy(materials)
@@ -2476,11 +2484,13 @@ class SideBySideTests(PaperCase):
         self.assertFalse(self.out.exists())
         self.assertFalse((self.scenario / 'calls.json').exists())
         self.assertFalse((self.exemplars / 'runs.txt').exists())
-        # The options that do not go together are refused.
+        # The options that do not go together are refused, each for its own reason.
         with patch('builtins.print') as shown:
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--typeset-only', '--resume']), 1)
             self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--parallel', '0']), 1)
-        self.assertIn('--parallel is the number of sessions that run side by side, at least 1', shown.call_args.args[0])
+        first, second = (call.args[0] for call in shown.call_args_list)
+        self.assertIn('--typeset-only typesets a finished manuscript; it goes with neither --resume nor --dry-run', first)
+        self.assertIn('--parallel is the number of sessions that run side by side, at least 1', second)
 
 
 class OpenFindingsTests(PaperCase):
@@ -2701,6 +2711,15 @@ class OpenFindingsTests(PaperCase):
                 self.run_paper(good(), open_findings=wrong)
         self.assertEqual(len(self.calls()), launched)
         self.assertEqual(self.events('end')[-1]['open'], self.left)
+        # As --resume does, the option refuses a canon that is no longer what the run began with, and says in what.
+        materials = read_json(self.out / 'materials.json')
+        materials['elements'][5]['proof'] = 'Another proof.'
+        write_json(self.out / 'materials.json', materials)
+        with self.assertRaisesRegex(paper.Stop, 'its open findings cannot be repaired from the records as they are now; '
+                                    'start a new run in a new folder. They differ in elements whose record or standing '
+                                    'changed: Small.sq_step'):
+            self.run_paper(good(), open_findings='all')
+        self.assertEqual(len(self.calls()), launched)
 
 
 class SessionsTests(PaperCase):
@@ -2957,7 +2976,7 @@ class DraftTests(PaperCase):
         self.assertEqual([(c['kind'], c['section']) for c in self.calls()][launched:], [('compare', 'tools')])
         self.assertEqual([entry['text'] for entry in read_json(self.out / 'draft.json')['statements']], [MAIN_TEXT, STRICT, REAL])
         self.assertEqual([e['status'] for e in self.events('end')], ['failed', 'draft'])
-        # A run that was begun as a paper is not continued as a draft, and a draft is one of the two kinds of run.
+        # A run makes the draft of a paper or writes the paper from a draft, and not both.
         with self.assertRaisesRegex(paper.Stop, 'a run is one of the two'):
             paper.produce(self.instance, self.root / 'other', TEX, draft=True, from_draft=self.out)
 
@@ -3241,6 +3260,17 @@ class FromDraftTests(PaperCase):
         code, said = self.said(['--draft', '--typeset-only'])
         self.assertEqual(code, 1)
         self.assertIn('they go with neither --typeset-only nor --open-findings', said)
+        # A title page that cannot be used is refused in the same way when the command line names it, and the
+        # option does not go with --open-findings, which keeps the author line of the run it takes up.
+        page = self.root / 'title-page.json'
+        write_json(page, {'authors': 'Ada'})
+        code, said = self.said(['--title-page', str(page), '--tex', *TEX])
+        self.assertEqual(code, 1)
+        self.assertIn(f'the title page {page} holds {{"authors": [...]}}', said)
+        self.assertFalse(self.out.exists())
+        code, said = self.said(['--title-page', str(page), '--open-findings'])
+        self.assertEqual(code, 1)
+        self.assertIn('--open-findings keeps the author line that the folder holds', said)
 
 
 # ----------------------------------------------------------------------------- a main result that is not the root
@@ -3800,6 +3830,10 @@ class CoverageTests(PaperCase):
         # Nothing compares the text after a deletion, and every statement keeps the verdict it had.
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual({row['comparison']['verdict'] for row in rows}, {'same'})
+        # Typesetting the manuscript later keeps what was closed: its `end` event and the state carry the same list.
+        self.assertEqual(self.run_paper(good(), only=True), 0)
+        self.assertEqual(self.events('end')[-1]['closed'], end['closed'])
+        self.assertEqual(read_json(self.out / 'state.json')['closed'], end['closed'])
         # A run with nothing open has nothing to close.
         with self.assertRaisesRegex(paper.Stop, 'came to its end with no finding left open \\(complete\\); there is nothing to act on'):
             self.close(good())

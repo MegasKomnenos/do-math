@@ -84,8 +84,12 @@ class ContainmentTests(unittest.TestCase):
         outcome = folder / 'orphan.pid'
         argv = [sys.executable, '-c', CLI, str(folder), *shell(folder, outcome)]
         if hosted:
+            # The policy is the one dispatch writes for every session, with no resumption allowed, so the
+            # host runs this one turn and ends the session.
             write_json(folder / 'launch.json', {'runner': process_identity(os.getpid()),
-                                                'command': {'argv': argv, 'cwd': str(folder)}})
+                                                'command': {'argv': argv, 'cwd': str(folder)},
+                                                'end_check': {'maximum': 0, 'role': 'attempt', 'provider': 'codex',
+                                                              'model': 'stand-in', 'retry_seconds': 60}})
             (folder / 'prompt.txt').write_bytes(b'')
             (folder / 'GO').write_bytes(b'go\n')
             argv = [sys.executable, '-B', str(RUNTIME / 'runner.py'), '_session', str(folder)]

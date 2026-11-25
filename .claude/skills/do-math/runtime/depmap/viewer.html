@@ -17,8 +17,8 @@
     the zoom       changes the viewBox and nothing else: the page neither resizes nor hides
                    nor adds anything in the drawing with the scale, so a card, its words and every line
                    simply grow smaller and larger;
-    the search     finds a unit by its short name, its Lean name or its description, and a folded step,
-                   which has no card, with the lines it is folded into (`#step=<Lean name>`);
+    the search     finds a unit by its short name, its Lean name, its description or its module, and a folded
+                   step, which has no card, with the lines it is folded into (`#step=<Lean name>`);
     the selection  is the address of the page, so a link in the panel is a real link, Back returns to the
                    previous selection, and a selection made from the panel or from an address is brought
                    into view; the panel names the way out of it and the two extents of the highlight;
@@ -504,7 +504,9 @@ __SVG__
           expect('}');
           return node;
         case 'begin':
-          var kind = written(), rows = table(['\\end']);
+          var kind = written();
+          if (kind === 'array') written();          // the columns of an array; the table sets every column alike
+          var rows = table(['\\end']);
           expect('\\end');
           if (written() !== kind) fail(kind);
           node = M('mtable', rows, { 'class': kind === 'cases' || kind === 'aligned' || kind === 'align' ? 'left' : 'centre' });
@@ -862,7 +864,7 @@ __SVG__
     });
     found.sort(function (a, b) { return a.rank - b.rank; });
     if (found.length && found[0].rank < 3) found = found.filter(function (item) { return item.rank < 3; });
-    else if (found.length) results.appendChild(el('p', 'No name has these words. They occur in the description of:'));
+    else if (found.length) results.appendChild(el('p', 'No name has these words. They occur in the description or the module of:'));
     if (!found.length) {
       results.appendChild(el('p', 'Nothing on this map has “' + query.value.trim() + '” in its name, its Lean name or its description. ' +
         'The map holds ' + (data.scope === 'all' ? 'every unit of the library' : 'the units the root rests on') +

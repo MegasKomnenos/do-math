@@ -712,7 +712,7 @@ class ReviewedCandidateTests(PublicationCase):
         engine.state['sessions'][sid] = session_record(sid, role, job, **extra)
         return folder
 
-    def candidate_pipeline(self, folder=None):
+    def candidate_pipeline(self):
         """A pipeline at review: the producer holds the whole root, the peer's candidate is frozen, and the
         review has written an assessment that confirms and accepts the informal proof."""
         engine = runtime.Runner(self.instance, self.skill)
@@ -722,7 +722,7 @@ class ReviewedCandidateTests(PublicationCase):
         engine.state['jobs'][producer]['status'] = 'done'
         engine.session_dir('sauthor').mkdir(parents=True)
         write_json(engine.session_dir('sauthor') / 'declaration.json', WHOLE_ROOT)
-        folder = folder or self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
+        folder = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
         peer = engine.session_dir('speer')
         peer.mkdir(parents=True)
         candidate = peer / 'candidate'
@@ -824,6 +824,33 @@ class ReviewedCandidateTests(PublicationCase):
         self.assertEqual(job['status'], 'done')
         self.assertEqual(len(self.events()), 1)
         self.assertEqual(self.root_declaration(), SKETCH)
+
+    def test_a_failed_restoration_before_publication_leaves_the_review_to_be_collected_again(self):
+        # The candidate changed after its review ended, and the copy that would restore it from the peer's
+        # output fails. The runner ends on that failure and saves its state (Runner.run). In that state the
+        # review no longer waits for a publication, so the next runner collects its session again, meets the
+        # changed candidate in the transport check and restores it for a fresh review.
+        engine, job = self.candidate_pipeline()
+        engine.prepare_publication('sreview', job, 'change')
+        candidate = Path(job['task']['candidate'])
+        (candidate / 'replace/0.lean').write_text(PAIRING, encoding='utf-8')
+        with patch('runner.rename_directory', side_effect=PermissionError('injected persistent failure')), \
+                patch('runner.traceback.print_exc'), patch('builtins.print'), \
+                self.assertRaisesRegex(PermissionError, 'injected persistent failure'):
+            engine.run()
+        saved = read_json(self.instance / 'runner/state.json')
+        self.assertEqual(saved['last_error']['error'], 'injected persistent failure')
+        self.assertIsNone(saved['publication'])
+        self.assertEqual(saved['jobs'][job['id']]['status'], 'running')
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.collect()
+        self.assertEqual(recovered.state['sessions']['sreview']['status'], 'failed')
+        job = recovered.state['jobs'][job['id']]
+        self.assertEqual((job['status'], job['last_error']), ('pending', 'candidate changed after review assignment'))
+        restored = Path(job['task']['candidate'])
+        self.assertNotEqual(restored, candidate)
+        self.assertEqual(runtime.tree_hashes(restored), job['task']['candidate_hashes'])
+        self.assertEqual(self.events(), [])
 
     def test_restart_replaces_stale_stages_that_hold_a_read_only_file(self):
         # copytree keeps a read-only flag, which Git gives its object files, and Windows refuses to
