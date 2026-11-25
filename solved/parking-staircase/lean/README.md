@@ -73,7 +73,7 @@ These three are the axioms of Lean's standard library. Twenty-two statements of 
 
 For the compilation by the runtime, and before it for the replay, the sources were packaged in the form that the runtime works on: one library, holding the 80 modules and one more that poses the unimodality statement, with its proof left open, as the proposition to be proved. In that library the posed proposition has the name `Parking.unimodal_via_staircase`, and the theorem of `Staircase/Main.lean` is carried under the name `Parking.unimodal_via_staircase_proof`, with the identical Lean statement. The two names occur again in the records.
 
-No person has read the Lean statements against the conjecture or against the statement of the staircase in words.
+A person has read the two Lean statements, with the definitions they use, against the conjecture and against the statement of the staircase in words.
 
 ## Outline of the proof
 
