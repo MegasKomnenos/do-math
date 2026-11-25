@@ -487,7 +487,17 @@ The run has seven stages. Each ends with a check that the program makes, and the
 
 **Map and paper.** The dependency map is drawn from the frozen library, and the paper is written from the draft by the paper command. What its readings leave open is resolved inside the run, by a session that may change wording and structure within the frozen library, and every sentence of running text that asserts mathematics is compared with the declarations.
 
-**Documents.** A script writes the README, the licence file and the manifests, every figure in them read from the finished products. One session writes the README's two prose sections, one session that has only the package reads the documents against it, and what it finds in the prose is corrected.
+The paper stage ends without a person. The library is frozen, so the paper is brought to the library and never the other way. A sentence or a formula of the running text that no declaration covers goes to one repair, which cuts or rewords it; if the comparison after that repair still finds it, a session deletes the passage and mends the text around it, and the program checks that the passage is gone, that every numbered statement is as it was, and that every changed passage became shorter. Nothing compares the text after a deletion, because a deletion asserts nothing. A numbered statement that still differs from its declaration after the comparison's one repair is restated by a session as the declaration says it, the program checks that only that statement and its proof changed, and the statement is compared once more; the verdict is recorded and nothing follows it. Each passage that was removed and each statement that was restated is listed in `decisions.md` under "Stage 4: what the paper lost so that it says no more than the library", with the declaration that came nearest, so that the user can judge whether the library should have had it. A statement that still differs after its restatement, and a line that is still wider than the text block, do not stop the run; `report.md` names them under what was not verified.
+
+The paper stage therefore stops a run only when machinery fails:
+
+- a session leaves no output the program can use, in two attempts for most tasks and three for the session that deletes or restates;
+- the manuscript still fails the paper command's machine checks, or TeX still fails on it, after three repair sessions;
+- the TeX command cannot be started, or the command is interrupted.
+
+In the first case and the third the same command, started again, continues the paper where it stopped. In the second it writes the paper anew from the draft and deletes the manuscript that failed.
+
+**Documents.** A script writes the README, the licence file and the manifests, every figure in them read from the finished products. One session writes the README's two prose sections, one session that has only the package reads the documents against it, and what it finds in the prose is corrected. What that reader finds anywhere else stands in a sentence the program writes or an earlier stage fixed. It does not stop the run: `report.md` lists each such finding under "What the reader of the package found and the run did not correct", and `decisions.md` has them too. Report them to the user; a fault of the program is repaired in the program.
 
 **Final check.** Made once: every link resolves inside the package, no file holds the account name, no document the run wrote holds a path of the machine, every text file ends its lines with LF, and the hashes of the library and the records are those of the freeze. The archive's members are the research's own bytes and are not read for their line endings. Then the package is moved to `solved/<name>/`, an entry is added under "Solved problems" in the repository's `README.md`, and the temporary files are deleted.
 
@@ -504,6 +514,8 @@ The run keeps everything that is not the package in `<repository>/.skill-workspa
 | 2 | A stage could not meet its check. | Read `report.md`, which names the step, the check and what the check found. Remove the cause and give the same command again. |
 
 A run that stopped is continued by the same command with the same arguments. It confirms that the instance, the pinned commit, the name and the configuration are those of the run, and goes on at the first step that has not passed its check. A step that was begun and not ended is made again from its start, except for its sessions whose output had already been accepted.
+
+`report.md` of a run that stopped names the step, says what the check found, and says under "What to do" what the user does before starting the command again. Often that is nothing: where sessions left no usable output, a new start launches new sessions. Report that section to the user as it stands.
 
 Do not repair a product in the work folder by hand. Before a step reads a product, the program compares it with the hash recorded when it was made, and a difference stops the run and names the product; nothing is silently made again. The causes you can remove lie outside the products: a missing TeX command, a Lean package that does not stand at the revision of its manifest, an account that cannot launch sessions, a fault in the program itself. If a product was changed, put it back as it was. A run that cannot be continued is abandoned by removing its work folder, after which the command starts anew.
 

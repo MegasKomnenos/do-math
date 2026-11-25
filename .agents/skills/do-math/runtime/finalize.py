@@ -58,9 +58,9 @@ class Refusal(Exception):
 class Halt(Exception):
     """A step could not meet its exit condition; the run stops here and continues here when started again."""
 
-    def __init__(self, step, message):
+    def __init__(self, step, message, todo=None):
         super().__init__(message)
-        self.step, self.message = step, message
+        self.step, self.message, self.todo = step, message, todo
 
 
 class Changed(ValueError):
@@ -205,7 +205,7 @@ class Run:
             raise
         except (Stop, CanonError, OSError, ValueError, RuntimeError) as error:
             self.sessions.event('check', check='exit check of ' + sid, problems=[str(error)])
-            raise Halt(sid, str(error))
+            raise Halt(sid, str(error), getattr(error, 'todo', None))
         except Exception:
             raise Halt(sid, 'the program failed in this step:\n' + traceback.format_exc())
         with self.lock:
@@ -299,22 +299,37 @@ class Run:
         """The paper command in this process, on a view, with the run's bound on sessions; returns its exit code.
 
         A folder that holds a run of the paper command is continued as that command continues it. A run
-        that was stopped, or whose last end is a failure, is resumed. A run that came to its end with
-        findings left open is taken up by `paper.act_on_open`, since the paper command does not resume
-        a run that has ended. A run that came to its end without them is done, and nothing is launched
-        for it."""
+        that was stopped, or whose last end is a failure, is resumed. A run that came to its end without
+        open findings is done, and nothing is launched for it.
+
+        A run that comes to its end with findings left open, now or before this command was started
+        again, is not left to a person: `paper.close_open` restates the statements that still differ
+        from their elements and takes out the passages that no element covers, and the run ends anew.
+        The one run that nothing takes up is a run whose manuscript failed its machine checks or its
+        typesetting after their repairs. Its exit code 2 is returned. When the command is started
+        again it is deleted, and the paper is written anew."""
         out = Path(out)
-        log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
-        ended = log[-1] if log and log[-1].get('event') == 'end' and log[-1].get('status') != 'failed' else None
-        if ended is not None and ended['status'] == 'open_findings':
-            return paper.act_on_open(view, out, self.config['tex'], None, self.config['parallel'], gate=self.gate)
-        if ended is not None:
+
+        def last_end():
+            log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
+            return log[-1] if log and log[-1].get('event') == 'end' and log[-1].get('status') != 'failed' else None
+
+        ended = last_end()
+        if ended is not None and ended['status'] != 'open_findings':
             return 0 if ended['status'] in ('complete', 'draft') else 3
-        resume = (out / 'materials.json').is_file()
-        if out.exists() and not resume:
+        if ended is not None and paper.left_failing(ended):
             remove_tree(out)
-        return produce(view, out, tex=self.config['tex'], parallel=self.config['parallel'], resume=resume,
-                       gate=self.gate, **options)
+            ended = None
+        if ended is None:
+            resume = (out / 'materials.json').is_file()
+            if out.exists() and not resume:
+                remove_tree(out)
+            code = produce(view, out, tex=self.config['tex'], parallel=self.config['parallel'], resume=resume,
+                           gate=self.gate, **options)
+            ended = last_end()
+            if code != 2 or ended is None or ended['status'] != 'open_findings' or paper.left_failing(ended):
+                return code
+        return paper.close_open(view, out, self.config['tex'], None, self.config['parallel'], gate=self.gate)
 
     # -- compiling --------------------------------------------------------------------------------------
 
@@ -1418,7 +1433,9 @@ class Run:
                          self.config['licence'], models, self.library, compared, record,
                          {name: entries[name]['module'] for name in compared}, toolchain,
                          {name: ((records.get(name_path(name)) or {}).get('sections') or {}).get('Statement')
-                          for name in compared})) + '\n'}
+                          for name in compared},
+                         sorted({axiom for name in (self.root, main) for axiom in entries[name].get('axioms') or []})))
+                     + '\n'}
             for name, text in texts.items():
                 write_text(lean / name, text)
                 write_text(stage / name, text)
@@ -1604,19 +1621,47 @@ class Run:
         log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
         end = next((event for event in reversed(log) if event['event'] == 'end'), {})
         if code != 0:
-            raise Stop(f'the paper command ended with exit code {code}: '
-                       + as_json(end.get('open') or end.get('error') or 'no end event in its log')[:3000])
+            failing = [item for item in end.get('open') or [] if item['check'] in (paper.MACHINE, paper.TYPESETTING)]
+            if not failing:
+                raise Stop(f"the paper command ended with exit code {code}; the last `end` event of {out / 'log.json'} "
+                           f"has the status {end.get('status', 'of no run that ended')}")
+            raise Stop('the manuscript of the paper does not pass, after the repairs that the paper command makes:\n'
+                       + '\n'.join(f"- {item['check']}, after {item['after_repairs']} repairs: "
+                                   + paper.shortened(collapsed(str(problem)), 600)
+                                   for item in failing for problem in item['problems'])
+                       + f"\nThe last `end` event of {out / 'log.json'} has these problems in full.",
+                       todo='Read the problems. Where they name the TeX command, or something it lacks, put that right '
+                            'first. Otherwise nothing is to be repaired by hand. Started again, the command writes the '
+                            'paper anew from the draft, with new sessions, and deletes the manuscript that failed; copy '
+                            'the folder `paper` of the work folder first if you want to keep it.')
         target = self.package / 'paper'
         target.mkdir(parents=True, exist_ok=True)
         for name in ('paper.tex', 'paper.pdf', 'references.bib', 'correspondence.json'):
             if not (out / name).is_file():
                 raise Stop(f'the paper command left no {name}')
             shutil.copyfile(out / name, target / name)
+        closed = end.get('closed') or []
+        if closed:
+            self.decide('Stage 4: what the paper lost so that it says no more than the library', '\n'.join([
+                'The bounded repairs of the paper command left these open, and it closed them without asking. A passage '
+                'that was removed asserted mathematics that no declaration of the library states. Whether the library '
+                'should have had it is a question about the research; the paper cannot say more than the library.', '',
+                *package.closed_lines(closed)]))
         kept = end.get('kept') or []
+
+        def told(finding):
+            """A finding of a reading in a sentence: where it is, the passage, and what the reader found."""
+            if not isinstance(finding, dict):
+                return collapsed(str(finding))
+            said = [collapsed(str(finding.get('where') or '')) + ':' if finding.get('where') else '']
+            said += ['"' + paper.shortened(collapsed(str(finding['quote'])), 300) + '"' if finding.get('quote') else '']
+            said += [paper.shortened(collapsed(str(finding[key])), 700) for key in ('problem', 'difference')
+                     if finding.get(key)]
+            return ' '.join(part for part in said if part) or collapsed(str(finding))
+
         if kept:
             self.decide('Stage 4: findings of the readings that the paper keeps', '\n'.join(
-                f"- {collapsed(str(item.get('finding')))[:500]} Kept because: {collapsed(str(item.get('reason')))}"
-                for item in kept))
+                f"- {told(item.get('finding'))} Kept because: {collapsed(str(item.get('reason')))}" for item in kept))
 
     # -- stage 5: documents -----------------------------------------------------------------------------
 
@@ -1663,9 +1708,17 @@ class Run:
                 raise Unusable(problems)
             return texts
 
+        # The result in words: the selection's sentence, and the proposition as the record of the root states it.
+        # root.md is not printed. It is a document of the research: it poses a task, and it names the research's files.
+        posed = ((package.read_records(self.package / 'records').get(name_path(self.root)) or {}).get('sections')
+                 or {}).get('Statement') or ''
+        result = decision['sentence'].strip() + (
+            f'\n\nThe proposition that was posed, as the record of `{self.root}` states it:\n\n{posed.strip()}'
+            if posed.strip() else '')
+
         def compose(texts):
             write_text(self.package / 'README.md', package.readme_text(
-                facts, package.read_text(self.work / 'source' / 'root.md'), entries[self.root]['statement'],
+                facts, result, entries[self.root]['statement'],
                 entries[main]['statement'], texts['outline.md'], texts['obtained.md'], freeze['check_output'],
                 self.config, self.config['licence'], fails, cited,
                 package.provenance(decision['registry'], self.package / 'lean' / 'formalization.yaml')))
@@ -1683,20 +1736,26 @@ class Run:
             return findings
 
         findings = self.task('package-read', 'package-read', copy, read_findings, self.sessions.assessor)
+        # A finding in one of the two prose sections is corrected by a session. Any other finding is in a sentence
+        # that the program writes or that an earlier stage fixed, which no session of this stage may rewrite: it is
+        # reported to the user with the package, and the run goes on.
+        whole = collapsed(' '.join(texts.values()))
+        findings = [{**f, 'in_prose': f['file'].endswith('README.md') and collapsed(f['quote']) in whole} for f in findings]
         write_json(self.work / 'findings.json', findings)
-        if findings:
-            whole = collapsed(' '.join(texts.values()))
-            ours = [f for f in findings if not (f['file'].endswith('README.md') and collapsed(f['quote']) in whole)]
-            if ours:
-                raise Stop('the reader of the package found faults outside the two prose sections of the README, which '
-                           'are faults of the script or of an earlier stage: ' + as_json(ours)[:3000])
-            again = {**given, 'findings.json': as_json(findings),
+        inside = [{key: f[key] for key in ('file', 'quote', 'problem')} for f in findings if f['in_prose']]
+        outside = [f for f in findings if not f['in_prose']]
+        if inside:
+            again = {**given, 'findings.json': as_json(inside),
                      **{'previous/' + name: (self.work / self.state['accepted']['readme-write']['folder'] / 'output' / name).read_bytes()
                         for name in ('outline.md', 'obtained.md')}}
             texts = self.task('readme-write', 'readme-write', again, prose, self.sessions.writer, label='correction')
             compose(texts)
-            self.decide('Stage 5: the documents', f'The reader of the package found {len(findings)} faults in the two '
+            self.decide('Stage 5: the documents', f'The reader of the package found {len(inside)} faults in the two '
                         'prose sections of the README; a session corrected them.')
+        if outside:
+            self.decide('Stage 5: what the reader of the package found and the run did not correct', '\n'.join([
+                'These passages stand in the package as they are. The program writes them, or an earlier stage fixed '
+                'them, and no session of this stage may rewrite them.', '', *package.finding_lines(outside)]))
         if '{{facts.' in package.read_text(self.package / 'README.md'):
             raise Stop('README.md holds a placeholder that was not filled')
         write_text(self.package / 'MANIFEST.sha256', package.manifest_text(self.package))
@@ -1717,7 +1776,8 @@ class Run:
             shutil.move(str(self.package), str(self.solved))
         package.add_solved_entry(REPOSITORY / 'README.md', self.name,
                                  f"- [{facts['title']}](solved/{self.name}/README.md): {collapsed(decision['sentence'])} "
-                                 f"Lean {freeze['toolchain']}" + (f", {freeze['requires']}" if freeze['requires'] else '')
+                                 + package.release_of(freeze['toolchain'])
+                                 + (f", {freeze['requires']}" if freeze['requires'] else '')
                                  + f"; root `{self.root}`.")
         fails = self.state['measured']['fails'] if freeze['compared'] == [self.root] else freeze['fails']
         fill = []
@@ -1731,12 +1791,18 @@ class Run:
                         '`independently-proves`.')
         fill += [f'{rule}. The registry will not accept the package as it is.' for rule in fails]
         registry = decision['registry']
-        fill.append('What the result is in the literature. Under "Where the result comes from" the README says what the '
-                    "research's records hold: whose question the result settles, where that was posed, and on what "
-                    "grounds the result is recorded as original or as known. The registry's review rejects a result "
-                    'for which it cannot identify a research area and a reader, and it marks down a claim of novelty '
-                    'that has no search of the literature behind it. The run adds no such claim of its own. Read that '
-                    'part, and add what you know and the records do not, each with its source.')
+        fill.append('What the result is in the literature. '
+                    + ('Under "Where the result comes from" the README says what the research\'s records hold: whose '
+                       'question the result settles, where that was posed, and on what grounds the result is recorded '
+                       'as original or as known. ' if registry.get('settles') else
+                       'The README of this package does not say whose question the result settles or on what grounds '
+                       'the result is recorded as original or as known: the selection of this run was made before '
+                       'that was asked of it. ')
+                    + "The registry's review rejects a result for which it cannot identify a research area and a "
+                    'reader, and it marks down a claim of novelty that has no search of the literature behind it. The '
+                    'run adds no such claim of its own. '
+                    + ('Read that part, and add what you know and the records do not, each with its source.'
+                       if registry.get('settles') else 'Add it to the README, each statement with its source.'))
         if registry.get('origin') == 'original':
             fill.append('`sources` in `lean/formalization.yaml`: an earlier public account of the result that the '
                         "research's records do not name belongs there, your own included, such as a preprint, a note "
@@ -1758,6 +1824,14 @@ class Run:
                     'accepts, which it changes.')
         fill.append('A submission is the package published as a repository of its own, with `lean` as the project '
                     'directory; the pipeline prepares and does not submit.')
+        log = self.work / 'paper' / 'log.json'
+        closed = next((event.get('closed') or [] for event in reversed(read_json(log) if log.is_file() else [])
+                       if event.get('event') == 'end'), [])
+        count = lambda kind: sum(entry['kind'] == kind for entry in closed)
+        differing = [entry for entry in closed if entry['kind'] == 'differs'
+                     or (entry['kind'] == 'restated' and entry['verdict'] != 'same')]
+        found = self.work / 'findings.json'
+        uncorrected = [f for f in (read_json(found) if found.is_file() else []) if not f.get('in_prose')]
         self.stop_broker()
         write_text(self.work / 'report.md', '\n'.join([
             f'# Report of the run: {self.name}', '',
@@ -1780,7 +1854,14 @@ class Run:
             'every cited source is in the bibliography and was verified by the sources session.',
             '- The draft: every drafted statement and formula has a declaration that states it.',
             '- The paper command ended with exit code 0: typeset, every numbered statement compared with its element, '
-            'the running text covered by declarations.',
+            'the running text covered by declarations.'
+            + (' To end so, it '
+               + ' and '.join(text for text in (
+                   f"took {count('removed')} passages that no declaration covers out of the paper" if count('removed')
+                   else '', f"restated {count('restated')} statements as their declarations say them"
+                   if count('restated') else '') if text)
+               + '; `decisions.md` has each, with the declaration that came nearest.'
+               if count('removed') or count('restated') else ''),
             '- The history: every entry points to a member of the archive and was read by a session that had only the '
             'entries and those records; the archive has the SHA-256 its manifest states.',
             '- The final check: every relative link resolves inside the package; no file and no member of the archive '
@@ -1791,7 +1872,19 @@ class Run:
             "- The classification codes were checked for their form, not against the registry's lists.",
             "- The registry's verifier and Lean's comparator were not run on the package.",
             '- No second complete check of the frozen library was made beyond the Lake build and the axioms Lean reports.',
-            '- No person read the Lean statement against the proposition, unless the configuration says so.', '',
+            '- No person read the Lean statement against the proposition, unless the configuration says so.',
+            *[f"- In the paper, {entry['number']} still differs from the declaration `{entry['element']}` that it states: "
+              + collapsed(entry.get('difference_after') or entry['difference']) for entry in differing],
+            *([f"- {count('wide')} lines of the typeset paper are wider than the text block; `decisions.md` names them."]
+              if count('wide') else []), '',
+            *(['## What the reader of the package found and the run did not correct', '',
+               'One session read the package as a visitor who has nothing else. What it found in the two prose sections '
+               'of the README was corrected. What it found elsewhere is listed here and stands in the package as it '
+               'is: the program writes those sentences, or an earlier stage fixed them. Judge each. A fault of the '
+               "program is repaired in the program, for the next run. A file of this package that you correct by hand "
+               'needs its line in `MANIFEST.sha256` written again, and under `lean/` and `records/` a change is a '
+               'change to what was built and compared.', '', *package.finding_lines(uncorrected), '']
+              if uncorrected else []),
             '## What you fill in before a submission to the registry', '', *['- ' + item for item in fill], '',
             '## The choices', '', 'Every choice the run made, with its reason, is in `decisions.md` beside this file.', '']))
         for path in self.work.iterdir():
@@ -1799,14 +1892,17 @@ class Run:
                 remove_tree(path) if path.is_dir() else path.unlink()
 
     def stopped(self, halt):
-        """report.md of a run that stops: the step, the check, and what it found."""
+        """report.md of a run that stops: the step, what the check found, and what the user does."""
+        todo = halt.todo or ('What the check found says what is in the way. Where it names something outside the run, '
+                             'such as a tool, a file that was changed, or the memory of the machine, put that right '
+                             'first. Where it names only what sessions wrote, nothing is to be repaired by hand.')
         write_text(self.work / 'report.md', '\n'.join([
             f'# Report of the run: {self.name}', '',
             f'The run stopped at the step `{halt.step}`, which could not meet its exit condition.', '',
             '## What the check found', '', halt.message.strip(), '',
-            '## Continuing', '',
-            'The work folder is whole. Once the cause is repaired, the same command with the same arguments continues '
-            f'at the step `{halt.step}`; the steps that passed are not made again.', '',
+            '## What to do', '', todo, '',
+            'The work folder is whole. The same command with the same arguments continues at the step '
+            f'`{halt.step}`; the steps that passed are not made again.', '',
             'The steps that passed: ' + ', '.join(f'`{sid}`' for sid in self.state['steps']) + '.', '']))
 
     # -- the order --------------------------------------------------------------------------------------

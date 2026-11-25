@@ -263,6 +263,10 @@ DIFFERS_LATE = ('the statement was changed after the comparisons of the statemen
 COVERED_AGAIN = ('reported when the running text of the section was compared with the elements again, after the repair '
                  'of what the first comparison had reported; no repair follows that comparison')
 # The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
+CLOSING_ATTEMPTS = 3   # sessions that restate statements or take passages out, before the run gives up (Paper.close)
+NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
+             'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
+             'and the sessions could not do.')
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
           ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'))
 
@@ -336,7 +340,14 @@ SELF_SCHEDULING = ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Mo
 
 
 class Stop(Exception):
-    """The command cannot go on; the message says why."""
+    """The command cannot go on; the message says why.
+
+    `todo` says what the person who reads the message does next, where that is something else than
+    putting right what the message names and starting the command again."""
+
+    def __init__(self, message='', todo=None):
+        super().__init__(message)
+        self.todo = todo
 
 
 class Unusable(Exception):
@@ -2897,6 +2908,71 @@ asserts, in a sentence>", "nearest": "<the name of the element whose statement c
 folder.
 '''
 
+REMOVE_PROMPT = CONTEXT + '''
+
+This session takes passages out of the manuscript. The running text of the paper was compared with the elements, and \
+the passages listed in `removals.json` assert mathematics that no element states. One repair has already tried to cut \
+or reword them, and they were still found afterwards. The paper is written from the research as it stands, and nothing \
+is added to the library for the sake of a sentence, so these passages now leave the paper. Nothing compares the text \
+after this session. That is safe only because a deletion asserts nothing, and it is why this session deletes and does \
+not reword.
+
+In this folder:
+- `removals.json` lists the passages. Each has its "number", the "part" it stands in, "where" it stands, "quote", the \
+passage copied exactly from the manuscript, "asserts", what it asserts, and "nearest", the element that came nearest \
+to stating it.
+- `parts/` holds the parts of the manuscript, one file each. `paper.tex` is the manuscript assembled from them, for \
+reading a passage where it stands. {spans}
+
+For each entry, delete the quoted passage from its part. Then mend what stood around it so that the text reads on: \
+close the sentence the passage was a clause of, remove a connective that now leads nowhere, such as "equivalently" or \
+"in particular", and delete a later sentence that only refers back to what is gone. Where the quote is a displayed \
+formula inside a proof, the fault is that text outside that proof refers to the formula as to a result: delete those \
+references with the sentences that rest on them, and leave the formula in its proof.
+
+Put nothing in the place of what you delete. Do not say the same thing in weaker or more careful words, and do not add \
+a sentence that says what was removed or why. Leave every numbered statement exactly as it is, and change no passage \
+that the list does not concern.
+
+Write the complete new text of each part you change as `output/<name>.tex`, with the file name it has in `parts/`. The \
+script accepts the output when no quoted passage stands in the running text any more, no formula of the list is \
+referred to from outside its proof, every numbered statement is as it was, and every passage you changed is shorter \
+than it was.
+'''
+
+RESTATE_PROMPT = CONTEXT + '''
+
+This session restates numbered statements of the manuscript. Every numbered statement of the paper states one element \
+of the research, and each was compared with the statement of its element. The statements listed in `statements.json` \
+were found to differ from their elements, and they still differed after a repair. A statement of the paper may say \
+nothing else than the library proves, so each of them is now restated as its element says it. One comparison follows \
+this session and nothing after that: what you write is what the paper will state.
+
+In this folder:
+- `paper-method.md` is the method the manuscript was written by. It says what a numbered statement of the paper is and \
+how it stands to its element.
+- `statements.json` lists the statements. Each has its "label" and "number", the name of its "element", \
+"record_statement", the statement of the element in words, "lean_statement", the same in Lean, "paper_statement", the \
+statement as the manuscript has it, and "difference", what the comparison found.
+- `records.md` holds the records of these elements in full. `elements/` holds the record of every element, one file \
+each, and `elements.md` lists them.
+- `parts/` holds the parts of the manuscript, one file each. `paper.tex` is the manuscript assembled from them. {spans}
+
+For each entry, rewrite the statement so that it says exactly what its element states: the same objects, the same \
+hypotheses, the same range of every variable, the same conclusion. Take the content from "record_statement", and where \
+the words and the Lean statement differ, from "lean_statement", which is what was proved. Write it in the notation and \
+the conventions of the manuscript, and keep the environment and its label. Say no more than the element and no less. \
+Where the statement of the manuscript was stronger, more general or smoother than the element, the paper loses that, \
+and "difference" names it.
+
+Then bring the proof of that statement into agreement with it, so that it proves the statement as it now stands. \
+Change nothing else: no other numbered statement, and no text outside the numbered statements and the proofs.
+
+Write the complete new text of each part you change as `output/<name>.tex`, with the file name it has in `parts/`. The \
+script accepts the output when each listed statement has another text than before, every other numbered statement has \
+the text it had, and the text outside the statements and the proofs is unchanged.
+'''
+
 AGAIN = '''
 
 A session before this one had the same task, and the script could not use what it left, for these reasons:
@@ -3239,7 +3315,8 @@ class Sessions:
             previous = {'previous-output/' + path.relative_to(folder / 'output').as_posix():
                         path.read_text(encoding='utf-8', errors='replace')
                         for path in sorted((folder / 'output').rglob('*')) if path.is_file()}
-        raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts: ' + '; '.join(problems))
+        raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts: ' + '; '.join(problems),
+                   todo=NO_OUTPUT)
 
     def side_by_side(self, tasks):
         """Run tasks that do not depend on each other, up to `parallel` at a time; their results, in the order of the tasks.
@@ -3311,6 +3388,9 @@ class Paper(Sessions):
         # What the readings found and the stage `resolve` or the last narrow repair answered with a reason: each
         # with its check, the finding and the reason. It is listed at the end of the run and is not open.
         self.kept = []
+        # What a run left open and `close` then closed without a person: each passage that was taken out, each
+        # statement that was restated, and what is recorded and left as it is. The `end` event carries it.
+        self.closed = []
         # The stage `resolve` while it is under way: its step, the findings it took up and the answers of its
         # session (resolve). None when it is not under way.
         self.resolving = None
@@ -3335,7 +3415,7 @@ class Paper(Sessions):
                 write_json(self.out / 'state.json', {'done': self.done, 'open': self.open, 'readings': self.readings,
                                                      'rewritten': self.rewritten, 'compared': self.compared,
                                                      'narrow': self.narrow, 'kept': self.kept,
-                                                     'resolve': self.resolving})
+                                                     'closed': self.closed, 'resolve': self.resolving})
 
     # -- what a session is given ------------------------------------------------------------------------
 
@@ -4354,6 +4434,12 @@ class Paper(Sessions):
                 raise Unusable(['output/coverage.json is an array, empty when an element covers every assertion; each '
                                 'object has "entry", the number of an entry of text.json, "quote" and "difference" as '
                                 'texts that are not empty, and "nearest", the name of an element as elements.md gives it'])
+            loose = [item['entry'] for item in found
+                     if collapsed(item['quote']) not in collapsed(numbers[item['entry']]['text'])]
+            if loose:
+                raise Unusable(['output/coverage.json: "quote" is copied exactly from the text of its entry, without a word '
+                                'left out or changed, because the passage is later found in the manuscript by it; it is '
+                                'not in the entries ' + ', '.join(str(entry) for entry in loose)])
             return found
 
         files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
@@ -4424,8 +4510,14 @@ class Paper(Sessions):
             self.open.append({'check': UNCOMPARED, 'after_repairs': 0, 'problems': uncompared})
         self.save()
         status = 'open_findings' if self.open else 'complete' if self.recipe else 'no_tex'
-        self.event('end', status=status, open=list(self.open), kept=list(self.kept))
+        self.event('end', status=status, open=list(self.open), kept=list(self.kept),
+                   **({'closed': list(self.closed)} if self.closed else {}))
         print(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
+        if self.closed:
+            count = lambda kind: sum(entry['kind'] == kind for entry in self.closed)
+            print(f"What the bounded repairs had left open was closed without a person: {count('removed')} passages that "
+                  f"no element covers were taken out, and {count('restated')} statements were restated as their elements "
+                  'say them; the last `end` event of log.json lists them under "closed".')
         if self.kept:
             print(f'{len(self.kept)} findings of the readings were answered with a reason, and the text stays as it is '
                   'there; the last `end` event of log.json lists them under "kept", each with the reason.')
@@ -4783,6 +4875,194 @@ class Paper(Sessions):
         narrow['findings'] = [entry for entry in narrow['findings'] if entry['check'] != COMPARISON]
         self.narrow_end(self.cover_again() if passed else None)
 
+    # -- what the bounded repairs left open, closed without a person -------------------------------------
+
+    def close(self):
+        """Close what a run that came to its end left open, by means that are certain to end; False as narrow_run.
+
+        A run leaves open what its bounded repairs did not settle, and a person can act on that with
+        --open-findings. A caller that has nobody to ask calls this instead. Nothing in it is repeated:
+
+          statements  every numbered statement whose present text has no verdict is compared, once. A
+                      statement that differs from its element, now or by the comparisons of the run, is
+                      restated as its element says it (restate) and compared once more. The verdict of
+                      that comparison is recorded, and nothing follows it.
+          text        every passage of running text that no element covers is taken out of the
+                      manuscript (remove). Nothing compares the text after that, because a deletion
+                      asserts nothing.
+          last        a numbered statement that a repair of the LaTeX changed after this is compared,
+                      once, and a line that is still wider than the text block is recorded.
+
+        What was done is in `closed`, which the last `end` event of the log carries: for each passage
+        that was removed its text and the element that came nearest, for each statement that was
+        restated its text before and after, the difference, and the verdict after. A statement is
+        restated once in a run. The open list is then empty, unless the manuscript is left failing its
+        machine checks or its typesetting, or holds findings of the readings, which only a run made
+        before the stage `resolve` existed leaves open."""
+        tex, spans, rows = self.assemble()
+        fresh = [row for row in rows if row['comparison']['verdict'] == 'not compared']
+        if fresh:
+            self.compare_rows(fresh, tex, spans)
+            _, _, rows = self.assemble()
+        before = {entry['label'] for entry in self.closed if entry['kind'] == 'restated'}
+        differing = [row for row in rows if row['comparison']['verdict'] == 'differs' and row['label'] not in before]
+        restated = self.restate(differing) if differing else []
+        if restated is None:
+            return False
+        with self.lock:
+            self.closed += restated
+            self.open = [item for item in self.open if item['check'] not in (COMPARISON, UNCOMPARED)]
+            self.save()
+        item = next((item for item in self.open if item['check'] == COVERAGE), None)
+        if item:
+            removed = self.remove(item['problems'])
+            if removed is None:
+                return False
+            with self.lock:
+                self.closed += removed
+                self.open = [other for other in self.open if other['check'] != COVERAGE]
+                self.save()
+        tex, spans, rows = self.assemble()
+        late = {row['label']: row for row in rows if row['comparison']['verdict'] == 'not compared'}
+        if late:
+            self.closed += [{'kind': 'differs', 'label': verdict['label'], 'number': late[verdict['label']]['number'],
+                             'element': late[verdict['label']]['element'], 'difference': verdict['difference']}
+                            for verdict in self.compare_rows(list(late.values()), tex, spans)
+                            if verdict['verdict'] == 'differs']
+        wide = next((item for item in self.open if item['check'] == WIDE), None)
+        if wide:
+            self.closed += [{'kind': 'wide', 'problem': problem} for problem in wide['problems']]
+            self.open = [item for item in self.open if item['check'] != WIDE]
+        self.save()
+        self.assemble()
+        return True
+
+    def restate(self, rows):
+        """One session restates numbered statements as their elements say them; what was done, or None.
+
+        The session has, for each statement, the statement of its element in words and in Lean and the
+        difference that the comparison found. It changes these statements and their proofs and nothing
+        else, which the script checks: each of them has another text, every other numbered statement
+        has the text it had, and the running text is as it was, so that what was compared with the
+        elements stands. The manuscript is then checked by machine and typeset, and the restated
+        statements are compared with their elements once. None when that leaves the manuscript
+        failing."""
+        tex, spans, _ = self.assemble()
+        labels = [row['label'] for row in rows]
+        stated = lambda parts: {found['label']: found['text'] for found in found_statements(self.plan, parts)
+                                if found['label']}
+        running = lambda parts: [entry['text'] for entries in running_text(self.plan, parts, spans).values()
+                                 for entry in entries if entry['kind'] == 'running text']
+        old, text = stated(self.parts), running(self.parts)
+
+        def read(output):
+            parts = {name: read_file(output / (name + '.tex')) for name in self.parts
+                     if (output / (name + '.tex')).is_file() and read_file(output / (name + '.tex')).strip()}
+            new = {**self.parts, **parts}
+            now = stated(new)
+            problems = [f'the statement with \\label{{{label}}} has the text it had; restate it as its element says it'
+                        for label in labels if now.get(label) == old.get(label)]
+            problems += [f'the statement with \\label{{{label}}} is gone, or is no numbered statement any more'
+                         for label in old if label not in now]
+            problems += [f'the statement with \\label{{{label}}} was changed, and statements.json does not list it'
+                         for label in old if label not in labels and label in now and now[label] != old[label]]
+            if running(new) != text:
+                problems.append('text outside the numbered statements and the proofs was changed; change the listed '
+                                'statements and their proofs, and nothing else')
+            if problems:
+                raise Unusable(problems)
+            return {name: content for name, content in parts.items() if content != self.parts[name]}
+
+        entries = [{**{key: row[key] for key in ('label', 'number', 'element', 'record_statement', 'lean_statement',
+                                                 'paper_statement')}, 'difference': row['comparison']['difference']}
+                   for row in rows]
+        files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
+                 'statements.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
+                 'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
+                 **{name: content for name, content in self.records().items() if name.startswith('elements')},
+                 **{f'parts/{name}.tex': content for name, content in self.parts.items()}}
+        lines = '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans)
+        changed = self.session('restate', RESTATE_PROMPT.format(spans='Its ' + lines + '.'), files, read, self.writer,
+                               attempts=CLOSING_ATTEMPTS)
+        self.keep(changed)
+        self.event('restated', statements=labels, changed=sorted(changed))
+        if not self.settle():
+            return None
+        tex, spans, after = self.assemble()
+        again = [row for row in after if row['label'] in labels and row['comparison']['verdict'] == 'not compared']
+        if again:
+            self.compare_rows(again, tex, spans)
+            _, _, after = self.assemble()
+        now = {row['label']: row for row in after}
+        gone = {'paper_statement': '', 'comparison': {'verdict': 'not compared'}}
+        return [{'kind': 'restated', 'label': row['label'], 'number': row['number'], 'element': row['element'],
+                 'before': row['paper_statement'], 'difference': row['comparison']['difference'],
+                 'after': now.get(row['label'], gone)['paper_statement'],
+                 'verdict': now.get(row['label'], gone)['comparison']['verdict'],
+                 'difference_after': now.get(row['label'], gone)['comparison'].get('difference', '')} for row in rows]
+
+    def remove(self, problems):
+        """One session takes the passages that no element covers out of the manuscript; what was done, or None.
+
+        `problems` are findings of the comparison of the running text, each with the passage it quotes.
+        The session deletes the passages and mends the text around them. The script checks what it
+        returns on the text that the comparison is made on (running_text): no quoted passage stands in
+        it any more, which for a formula of a proof means that nothing outside the proof refers to it;
+        every numbered statement is as it was, so that its verdict stands; and every changed passage is
+        shorter than it was, so that nothing was put in the place of what went. A passage that does not
+        stand in the text, as after a pass that was stopped once the parts were kept, needs no session.
+        The manuscript is then checked by machine and typeset. None when that leaves it failing."""
+        tex, spans, _ = self.assemble()
+        compared = lambda parts: collapsed(' '.join(entry['text'] for entries in
+                                                    running_text(self.plan, parts, spans).values() for entry in entries))
+        stated = lambda parts: [(found['label'], found['text']) for found in found_statements(self.plan, parts)]
+        standing, old = compared(self.parts), stated(self.parts)
+        present = [problem for problem in problems if collapsed(problem['quote']) in standing]
+        changed = {}
+        if present:
+            def read(output):
+                parts = {name: read_file(output / (name + '.tex')) for name in self.parts
+                         if (output / (name + '.tex')).is_file() and read_file(output / (name + '.tex')).strip()}
+                parts = {name: content for name, content in parts.items() if content != self.parts[name]}
+                new = {**self.parts, **parts}
+                found = compared(new)
+                faults = [f'the passage {number} of removals.json still stands in the text, or its formula is still '
+                          'referred to from outside its proof' for number, problem in enumerate(present, 1)
+                          if collapsed(problem['quote']) in found]
+                if stated(new) != old:
+                    faults.append('a numbered statement was changed, moved or removed; leave every numbered statement '
+                                  'exactly as it is')
+                for name in parts:
+                    was, has = part_lines(self.parts[name]), part_lines(new[name])
+                    for i1, i2, j1, j2 in changed_passages(self.parts[name], new[name]):
+                        earlier, later = collapsed(' '.join(was[i1:i2])), collapsed(' '.join(has[j1:j2]))
+                        if later != earlier and len(later) >= len(earlier):
+                            faults.append(f'a passage of parts/{name}.tex is not shorter than it was, so something stands '
+                                          'in the place of what was deleted, or text was changed that the list does not '
+                                          'concern: ' + shortened(later, 200))
+                if not parts:
+                    faults.append('no part was changed: write the complete new text of each part you change as '
+                                  'output/<name>.tex, with the file name it has in parts/')
+                if faults:
+                    raise Unusable(faults)
+                return parts
+
+            removals = [{'number': number, 'part': named_part(self.plan, problem.get('section')),
+                         **{key: problem.get(key, '') for key in ('where', 'quote', 'asserts', 'nearest')}}
+                        for number, problem in enumerate(present, 1)]
+            files = {'paper.tex': tex, 'removals.json': json.dumps(removals, ensure_ascii=False, indent=2) + '\n',
+                     **{f'parts/{name}.tex': content for name, content in self.parts.items()}}
+            lines = '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans)
+            changed = self.session('remove', REMOVE_PROMPT.format(spans='Its ' + lines + '.'), files, read, self.writer,
+                                   attempts=CLOSING_ATTEMPTS)
+            self.keep(changed)
+        self.event('removed', passages=[problem['quote'] for problem in problems], changed=sorted(changed))
+        if changed and not self.settle():
+            return None
+        return [{'kind': 'removed', **{key: problem.get(key, '') for key in ('where', 'section', 'quote', 'asserts',
+                                                                           'nearest', 'difference')}}
+                for problem in problems]
+
     # -- a run that is continued, and a run that is only looked at ----------------------------------------
 
     def recorded_draft(self):
@@ -4836,6 +5116,7 @@ class Paper(Sessions):
             if all(self.written(section) for section in sections):
                 self.done, self.open, self.rewritten, self.compared = (state[key] for key in ('done', 'open', 'rewritten', 'compared'))
                 self.narrow, self.kept, self.resolving = state.get('narrow'), state.get('kept', []), state.get('resolve')
+                self.closed = state.get('closed', [])
 
     def preview(self, lines):
         """What the run would do next and what its sessions would be given, without launching one or writing a file."""
@@ -5032,15 +5313,12 @@ def chosen_said(materials):
             f"{materials['settles']}."] if 'settles' in materials else []
 
 
-def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False, gate=None):
-    """Take up a run that came to its end with findings left open, and act on them; returns the exit code.
+def ended_run(instance, out, tex, choice, parallel, dry, gate):
+    """A run that came to its end with findings left open, loaded to be acted on: the run and its `end` event.
 
-    The open findings are those of the last event of the log, which is the `end` of the run. With `dry`
-    they are listed with their numbers and nothing else is done. Otherwise those whose numbers
-    `numbers` names, or all of them, are acted on as Paper.act describes, and the run ends anew; the
-    findings that were not chosen stay open as they were. The run is continued with --resume when it
-    is stopped. As for --resume, the canon has to be what the run began with, since the repair
-    sessions work from the records."""
+    The run has the open list of that event, its plan and its parts, and the materials it was made
+    from. Stop when the folder holds no such run, when it ended with its manuscript failing, and
+    when the canon is no longer what the run began with."""
     out = Path(out)
     if not all((out / name).is_file() for name in ('materials.json', 'plan.json', 'state.json', 'log.json')):
         raise Stop(f'{out} holds no run of this command that came to its end (materials.json, plan.json, state.json, log.json)')
@@ -5080,6 +5358,19 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     if run.plan is None or not all(run.written(section) for section in run.plan['sections']):
         raise Stop(f'{out} does not hold the plan and every part of the manuscript whose findings its log lists')
     run.open = left
+    return run, ended
+
+
+def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False, gate=None):
+    """Take up a run that came to its end with findings left open, and act on them; returns the exit code.
+
+    The open findings are those of the last event of the log, which is the `end` of the run. With `dry`
+    they are listed with their numbers and nothing else is done. Otherwise those whose numbers
+    `numbers` names, or all of them, are acted on as Paper.act describes, and the run ends anew; the
+    findings that were not chosen stay open as they were. The run is continued with --resume when it
+    is stopped. As for --resume, the canon has to be what the run began with, since the repair
+    sessions work from the records."""
+    run, ended = ended_run(instance, out, tex, choice, parallel, dry, gate)
     listed = run.listed()
     if dry:
         print('\n'.join(run.listing([
@@ -5099,6 +5390,34 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
                                        if number in chosen and check == UNCOMPARED]})
     try:
         run.act()
+    except Stop as exc:
+        run.event('end', status='failed', error=str(exc))
+        raise
+    return run.finish()
+
+
+def left_failing(ended):
+    """Whether a run ended with its manuscript failing the machine checks or the typesetting after their repairs.
+
+    Such a run ended before its readings and its comparisons were complete, and nothing takes it up."""
+    return any(item['check'] in (MACHINE, TYPESETTING) for item in ended.get('open') or [])
+
+
+def close_open(instance, out, tex=None, choice=None, parallel=PARALLEL, gate=None):
+    """Take up a run that came to its end with findings left open, and close them without a person; the exit code.
+
+    What the comparisons left open is closed as Paper.close describes: a numbered statement that
+    differs from its element is restated as the element says it, and a passage of running text that
+    no element covers is taken out of the manuscript. The run then ends anew, and its `end` event
+    carries what was done under `closed`. The exit code is 2 only when the manuscript is left
+    failing its machine checks or its typesetting. A caller that conducts a run with nobody to ask
+    uses this where a person would use --open-findings. A pass that was stopped is taken up by
+    --resume, which ends the run with what is still open, and then by this function again."""
+    run, _ = ended_run(instance, out, tex, choice, parallel, False, gate)
+    run.event('closing', open=[{'check': item['check'], 'problems': len(item['problems'])} for item in run.open],
+              parallel=run.parallel)
+    try:
+        run.close()
     except Stop as exc:
         run.event('end', status='failed', error=str(exc))
         raise

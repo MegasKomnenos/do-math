@@ -739,6 +739,12 @@ def toolchain_of(version):
     return 'leanprover/lean4:v' + found[1]
 
 
+def release_of(toolchain):
+    """`Lean 4.36.0` for the toolchain `leanprover/lean4:v4.36.0`: the release as a sentence names it."""
+    version = toolchain.rpartition(':')[2]
+    return 'Lean ' + (version[1:] if version[:1] == 'v' and version[1:2].isdigit() else version)
+
+
 def build_files(library, name, project, version, top_module):
     """`lean-toolchain`, `lakefile.toml` and `lake-manifest.json` of the published layout.
 
@@ -910,8 +916,11 @@ def source_entry(bibliography, key, relationship, note):
 
 
 def formalization(title, decision, bibliography, config, licence, models, library, compared, root_record, modules,
-                  toolchain, stated=None):
+                  toolchain, stated=None, axioms=()):
     """`formalization.yaml` in the mathlib-initiative format v0.4, as far as the run can fill it.
+
+    `axioms` are the axioms that Lean reports for the compared theorems. The format lists under
+    `status.axioms` every axiom used, the standard ones among them.
 
     The classification, the description, the sources with their notes, the earlier formalisations and
     the account of fidelity (where the Lean statement departs from the proposition in words) are the
@@ -937,13 +946,21 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     key = ((root_record or {}).get('meta') or {}).get('source')
     if registry.get('origin') != 'original' and key and key not in [s['key'] for s in registry.get('sources', [])]:
         sources.append(source_entry(bibliography, key, 'independently-proves',
-                                    "The library's record of the result names this work as its source in the "
-                                    'literature.'))
+                                    'The record of ' + (f'`{compared[0]}`, `records/{name_path(compared[0])}.md`,'
+                                                        if compared else 'the proposition')
+                                    + ' names this work as the place where that statement is found in '
+                                    'the literature. The relationship says that the library proves the statement by a '
+                                    'proof of its own, which does not come from this work. It does not say that this '
+                                    'work proves it.'))
     review = config['human_review']
     if review['status'] == 'none':
         status = {'status': 'agent-reviewed', 'reviewers': [],
-                  'notes': "do-math's review sessions judged every proof. No person reviewed the proof or read the "
-                           'Lean statement against the proposition.'}
+                  'notes': 'The review sessions of do-math judged every proof that the research published. AI sessions '
+                           'then made the library of this package from the library of the research: they removed what '
+                           'the presented proof does not use, and they may have simplified proofs, derived the '
+                           'proposition from the main theorem, or added declarations that the paper states. Lean '
+                           'compiled every such change, and the review sessions of the research did not judge them. No '
+                           'person reviewed the proof or read the Lean statement against the proposition.'}
     else:
         status = {'status': review['status'], 'reviewers': list(review['reviewers']), 'notes': review['notes']}
     sections = (root_record or {}).get('sections', {})
@@ -954,9 +971,10 @@ def formalization(title, decision, bibliography, config, licence, models, librar
         'classification': {'arxiv': list(registry['arxiv']), 'msc2020': list(registry['msc2020'])},
         'sources': sources,
         'related_formalizations': [dict(item) for item in registry.get('related_formalizations', [])],
-        'status': {'scope': sections.get('Statement', ''), 'sorry_count': 0, 'sorry_in_definitions': 0, 'axioms': []},
+        'status': {'scope': sections.get('Statement', ''), 'sorry_count': 0, 'sorry_in_definitions': 0,
+                   'axioms': list(axioms)},
         'automation': {'methods': [{'method': 'autonomous', 'models': list(models), 'framework': 'do-math',
-                                    'tool_setup': f'Lean {toolchain}'}]},
+                                    'tool_setup': release_of(toolchain)}]},
         'fidelity': {'divergences': registry.get('divergences', '')},
         'review': status,
         'alignment': {'namespace': library,
@@ -1087,9 +1105,12 @@ def knowledge_archive(repository, commit, folder, name, account):
         f'- Commit: `{commit}`', f'- Date of the commit: {date}', f'- Files: {count}',
         f'- Size unpacked: {size} bytes', f'- Size of the archive: {archive.stat().st_size} bytes',
         f'- SHA-256 of the archive: `{digest}`', '',
-        f'One change was made to the files. The account name of the machine on which the research ran is replaced by '
-        f'`{ACCOUNT}` wherever it stood, which also covers the path of the home folder. {touched} files were touched '
-        'by this. Other paths of that machine in the research\'s own records stand as they were written.', '',
+        (f'One change was made to the files. The account name of the machine on which the research ran is replaced by '
+         f'`{ACCOUNT}` wherever it stood, which also covers the path of the home folder. {touched} files were touched '
+         'by this. Other paths of that machine in the research\'s own records stand as they were written.' if touched
+         else 'No file of the archive holds the account name of the machine on which the research ran, so the files are '
+              'in the archive as the commit has them. Where a record in the archive mentions a file path of that '
+              'machine, the path is kept as it was written; it is not a path of this package.'), '',
         '## Verifying and unpacking', '',
         '```text', f'sha256sum {archive.name}', f'tar -xJf {archive.name}', '```', '',
         'The first command prints the SHA-256 above. The second writes `canon/` and `knowledge/` into the current folder.',
@@ -1239,8 +1260,12 @@ def timeline(entries, title):
     A publication's heading carries its number in the order of the research, its date and its kind. Under
     the heading stand the entry, the list of its elements where it has one, and the record it condenses."""
     lines = [f'# The history of the research on `{title}`', '',
-             'Each entry says what happened at one point of the research and ends with the record it condenses, by '
-             'its path inside the knowledge archive of this package (`knowledge/`). A publication carries its number '
+             'Each entry says what happened at one point of the research and ends with the record it condenses. The '
+             'path given for a record is its path inside the knowledge archive, the `.tar.xz` file in the folder '
+             '`knowledge/` of this package. The archive unpacks into two folders, `canon/` and `knowledge/`, and every '
+             'such path begins with one of them; none is a path of this package. The research proved more than the '
+             'library of this package keeps: `lean/` holds the proof that the package presents, and a declaration '
+             'that is named here and that `lean/` does not have is in the archive. A publication carries its number '
              'in the order of the research and its date. The entries make no claim of their own and give no proofs; '
              'the records do.', '']
     parts = ((tuple(PUBLICATION), 'Publications'), (('approach',), 'What was tried on each statement'),
@@ -1318,6 +1343,7 @@ def package_facts(package, name, library, root, main, index, freeze, archive, ti
             'archive': archive['archive'], 'archive_files': archive['files'], 'archive_bytes': archive['archive_bytes'],
             'archive_sha256': archive['sha256'],
             'statements': len(statements), 'cited_proved': len(cited),
+            'statements_differing': sum((row.get('comparison') or {}).get('verdict') == 'differs' for row in statements),
             'models': ', '.join(models), 'sessions': sessions}
 
 
@@ -1391,27 +1417,45 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
     lines += ['## Outline of the proof', '', outline.strip(), '',
               '## How the result was obtained', '', obtained.strip(), '',
               '## What was checked, and what was not', '',
-              f"- The library compiles with `lake build` on {facts['toolchain']}"
+              f"- Lean compiled the library with `lake build` on {release_of(facts['toolchain'])}"
               + (f" with {facts['requires']}" if facts['requires'] else '') + ': '
               f"{facts['modules']} modules, {facts['lines']} lines, {facts['declarations']} public declarations.",
               f"- Lean reports for `{facts['root']}` the axioms: {facts['axioms_root']}."
               + ('' if same else f" For `{facts['main']}`: {facts['axioms_main']}."),
-              '- The definitions and the statement of the proposition are, byte for byte and by the term Lean elaborates, '
-              'those fixed before the research began.',
-              f"- Every public declaration has a record under `records/` ({facts['records']} records), written from the "
-              'Lean text and compared with it by a session that did not write it.',
-              f"- The paper states {facts['statements']} numbered statements; each was compared with the declaration it "
-              'states.',
+              '- A script compared the definitions and the statement of the proposition with their first form, which '
+              'was fixed before the research began: the definition files byte for byte, the statement by the term that '
+              'Lean elaborates. They are the same.',
+              f"- Every public declaration has a record under `records/` ({facts['records']} records). An AI session "
+              'wrote each record from the Lean text, and an AI session that did not write it compared it with that text.',
+              f"- The paper states {facts['statements']} numbered statements. An AI session compared each with the "
+              'declaration it states, and `paper/correspondence.json` has its verdict for each.'
+              + (f" {facts['statements_differing']} of them still differ from their declarations."
+                 if facts.get('statements_differing') else ''),
+              "- The library is not the library of the research as the research's own reviews judged it. AI sessions cut "
+              'that library down to the proof presented here and, where it served the presentation, simplified proofs, '
+              'derived the proposition from the main theorem, or added declarations that the paper states. Lean compiled '
+              'the result. The reviews of the research did not judge these changes.',
               '- The research, the library, the records, the paper and this document were produced by AI sessions run '
-              f"by do-math ({facts['models']}). {human}",
-              "- Not checked: the classification codes against the registry's lists, and whether the registry's "
-              'verifier accepts the files under `lean/`.', '',
+              f"by do-math ({facts['models']}). do-math is a program that conducts mathematical research in Lean: its "
+              'sessions state and prove in Lean, other sessions review each publication, and what the reviews accept '
+              f"becomes the library with its records. {human}",
+              '- Not checked: the files under `lean/` that are prepared for a formal-proof registry, which the last '
+              "section of this document describes. That registry's verifier was not run on them, and the "
+              'classification codes in `lean/formalization.yaml` were checked for their form and not against its '
+              'lists.', '',
               '## Building', '',
-              f"The library is built with Lean {facts['toolchain']}"
-              + (f" and {facts['requires']}" if facts['requires'] else '') + '. In the folder `lean/`:', '',
+              f"The library is built with {release_of(facts['toolchain'])}"
+              + (f" and {facts['requires']}" if facts['requires'] else '') + '. Lean is installed through elan, its '
+              "toolchain manager, as Lean's own installation instructions describe. elan reads "
+              '`lean/lean-toolchain`, fetches that release and provides the command `lake`. In the folder `lean/`:', '',
               '```text', 'lake build', 'lake env lean Check.lean', '```', '',
-              'The second command prints the statements and the axioms they depend on. When the library was frozen it '
-              'printed:', '', '```text', check_output.strip(), '```', '',
+              'The first command compiles the library, and with it `Challenge.lean` and `Solution.lean`. '
+              '`Challenge.lean` states the compared theorems without their proofs, for the comparison that a '
+              'formal-proof registry makes, so Lean warns there, once for each of them, that a declaration uses '
+              '`sorry`. The warnings concern that one file; no declaration of the library uses `sorry`. The second '
+              'command prints the statements '
+              'and the axioms they depend on. For the files of this folder it prints:', '',
+              '```text', check_output.strip(), '```', '',
               '## What is in this folder', '',
               f"- `lean/`: the library `{facts['library']}`, its build files, and the files a formal-proof registry "
               'compares (`Challenge.lean`, `Solution.lean`, `comparator.json`, `formalization.yaml`).',
@@ -1425,7 +1469,8 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '- `MANIFEST.sha256`: the SHA-256 of every other file of this folder.', '',
               '## The paper', '',
               'The paper proves the result for a mathematical reader and mentions no formal proof.'
-              + (' What the paper cites from the literature without proving it, and the library proves formally: '
+              + (' It attributes these statements to the literature, each to the source that '
+                 '`paper/correspondence.json` names for it, and the library proves each of them formally: '
                  + ', '.join(f'`{name}`' for name in cited_rows) + '.' if cited_rows else ''), '',
               '## The licence', '',
               f'Everything in this folder is under {licence}; the text is in [LICENSE](LICENSE).', '',
@@ -1434,9 +1479,47 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               f"compares: {facts['compared']}. A submission is this folder published as a repository of its own, with "
               '`lean` named as the project directory.']
     if not config['authors']:
-        lines += ['`formalization.yaml` names no author and no responsible maintainer; the registry requires both.']
+        lines += ['`lean/formalization.yaml` names no author and no responsible maintainer; the registry requires both.']
     lines += [rule + '.' for rule in fails]
     return '\n'.join(lines) + '\n'
+
+
+def finding_lines(findings):
+    """What the reader of the package found, one line for each: the file, the passage, and the problem."""
+    def said(text, length):
+        text = ' '.join(str(text).split())
+        return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
+
+    return [f"- {finding['file']}, at \"{said(finding['quote'], 200)}\": {said(finding['problem'], 1200)}"
+            for finding in findings]
+
+
+def closed_lines(closed):
+    """What the paper command closed without a person, one line for each, as `decisions.md` has it."""
+    def said(text, length=700):
+        text = ' '.join(str(text).split())
+        return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
+
+    lines = []
+    for entry in closed:
+        if entry['kind'] == 'removed':
+            lines.append(f"- Removed from {entry.get('where') or 'the manuscript'}: \"{said(entry['quote'])}\" It asserted: "
+                         f"{said(entry.get('asserts') or 'not said')} The declaration that came nearest is "
+                         f"`{entry.get('nearest')}`. {said(entry.get('difference', ''))}")
+        elif entry['kind'] == 'restated':
+            after = 'found the two the same.' if entry['verdict'] == 'same' else \
+                'still found a difference: ' + said(entry.get('difference_after', '')) if entry['verdict'] == 'differs' \
+                else 'was not made.'
+            lines.append(f"- {entry['number']} (`{entry['label']}`) was restated as its declaration `{entry['element']}` "
+                         f"says it. Before: \"{said(entry['before'])}\" The comparison had found: "
+                         f"{said(entry['difference'])} After: \"{said(entry['after'])}\" The comparison after the "
+                         f'restatement {after}')
+        elif entry['kind'] == 'differs':
+            lines.append(f"- {entry['number']} (`{entry['label']}`) differs from its declaration `{entry['element']}` after "
+                         f"a repair of the typesetting changed its text, and stays as it is: {said(entry['difference'])}")
+        else:
+            lines.append(f"- A line of the typeset paper is wider than the text block: {said(entry.get('problem', ''))}")
+    return lines
 
 
 def manifest_text(package):

@@ -8,7 +8,7 @@ This instruction and the common text before it have told you things about the ru
 
 The user's requirement for the package is that it stand alone, so that the folder can be archived and uploaded as it is. Nothing in it may point outside itself or say that something exists on one machine only, and its build instructions have to work from the unpacked archive. Whether that holds cannot be seen by the sessions and scripts that made the package, since they all knew where everything came from. It can be seen by a reader who has only the result.
 
-What you find is acted on at once. A finding in one of the two prose sections of the README, the outline of the proof and the account of how the result was obtained, goes to a session that corrects that passage. A finding in any other sentence is a fault in the program that wrote the sentence, and it stops the run until a person has repaired the program. So a finding has to be true. A point that you raised and that the package, on checking, bears out after all is dropped.
+What you find is acted on at once. A finding in one of the two prose sections of the README, the outline of the proof and the account of how the result was obtained, goes to a session that corrects that passage. A finding in any other sentence cannot be corrected by the run, because the program wrote that sentence or an earlier stage fixed it. It is reported to the user as you wrote it, together with the package, and the user decides what to repair. So a finding has to be true, and it has to say what the package shows in its place. A point that you raised and that the package, on checking, bears out after all is dropped.
 
 ## What you are given
 

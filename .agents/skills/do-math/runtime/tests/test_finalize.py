@@ -160,6 +160,14 @@ INSTRUCTIONS = ('selection', 'selection-read', 'restore', 'review', 'simplify', 
                 'records-compare', 'sources', 'foldback', 'draft-compare', 'history-write', 'history-read',
                 'readme-write', 'package-read')
 _SETTLED = None
+# What the paper command closed without a person, as the `end` event of its log carries it.
+CLOSED = [{'kind': 'removed', 'where': 'the abstract', 'section': 'abstract',
+           'quote': 'equivalently, the block sums to a difference of squares',
+           'asserts': 'The block sum is a difference of squares.', 'nearest': 'Small.sq_step',
+           'difference': 'It states the sum additively.'},
+          {'kind': 'restated', 'label': 'lem:step', 'number': 'Lemma 1.1', 'element': 'Small.sq_step',
+           'before': 'For $n \\ge 1$ the step holds.', 'difference': 'The element has every n.',
+           'after': 'For every $n$ the step holds.', 'verdict': 'differs', 'difference_after': 'The range of n.'}]
 
 
 def decision(main='Small.sq_step', options=None, choice='a', runner_up=None, **more):
@@ -282,6 +290,8 @@ class FinalizeCase(InstanceCase):
             'memory {{expect_mb}}.\n', encoding='utf-8')
         shutil.copytree(INSTALLED / 'finalize' / 'licences', self.skill / 'finalize' / 'licences')
         self.produced, self.paper_code, self.draft = [], 0, DRAFT
+        self.closed = []  # what the stand-in for the paper command says it closed without a person
+        self.failing = False  # whether the stand-in leaves a manuscript that fails its typesetting
         self.addCleanup(stop_broker, self.work)
 
     def command(self, cli, model, effort, cwd, servers=None, **options):
@@ -306,6 +316,10 @@ class FinalizeCase(InstanceCase):
             write_json(out / 'draft.json', self.draft)
             write_json(out / 'log.json', [session])
             return self.paper_code
+        if self.failing:
+            write_json(out / 'log.json', [session, {'event': 'end', 'status': 'open_findings', 'kept': [], 'open': [
+                {'check': paper.TYPESETTING, 'after_repairs': 3, 'problems': ['TeX stopped at line 12.']}]}])
+            return 2
         (out / 'parts').mkdir(exist_ok=True)
         (out / 'parts' / 'intro.tex').write_text('We prove that the odd numbers sum to squares.\n', encoding='utf-8')
         # As the paper command writes them: with LF line endings on every platform.
@@ -317,7 +331,8 @@ class FinalizeCase(InstanceCase):
             {'label': 'lem:step', 'element': 'Small.sq_step', 'cited': 'gauss1801'}]})
         write_json(out / 'log.json', [session, {'event': 'end', 'status': 'complete', 'open': [],
                                                 'kept': [{'check': 'reading', 'finding': 'The title is long.',
-                                                          'reason': 'It names the result.'}]}])
+                                                          'reason': 'It names the result.'}],
+                                                **({'closed': self.closed} if self.closed else {})}])
         return self.paper_code
 
     def run_command(self, plan=None, config=None, name='odd', lake=None, operating=True):
@@ -621,6 +636,14 @@ class RegistryTests(FinalizeCase):
         self.assertEqual(package.formalization('T', known, BIBLIOGRAPHY, config, *arguments, None, {}, 't')['sources'], [])
         first = package.formalization('T', json.loads(decision()), BIBLIOGRAPHY, config, *arguments, named, {}, 't')
         self.assertEqual([s.get('id') for s in first['sources']], [None, 'gauss1801'])
+        # The axioms that Lean reports are listed, the standard ones among them, as the format asks.
+        self.assertEqual((data['status']['axioms'], package.formalization(
+            'T', known, BIBLIOGRAPHY, config, *arguments, named, {}, 't', None, ['Quot.sound', 'propext'])['status']['axioms']),
+            ([], ['Quot.sound', 'propext']))
+        self.assertIn('It does not say that this work proves it.', data['sources'][0]['note'])
+        rooted = package.formalization('T', known, BIBLIOGRAPHY, config, 'CC-BY-4.0', [], 'Small', ['Small.root'], named,
+                                       {'Small.root': 'Small.Root'}, 't')
+        self.assertIn('The record of `Small.root`, `records/Small/root.md`, names this work', rooted['sources'][0]['note'])
         # A compared theorem is aligned with the statement of its own record.
         both = package.formalization('T', known, BIBLIOGRAPHY, config, 'CC-BY-4.0', [], 'Small', ['Small.root', 'Small.a'],
                                      named, {'Small.root': 'Small.Root', 'Small.a': 'Small.A'}, 't', {'Small.a': 'The step.'})
@@ -923,7 +946,7 @@ class PaperRunTests(FinalizeCase):
                 write_json(out / 'log.json', log)
                 if materials:
                     write_json(out / 'materials.json', {})
-            with patch('finalize.produce', return_value=7) as made, patch('paper.act_on_open', return_value=9) as acted:
+            with patch('finalize.produce', return_value=7) as made, patch('paper.close_open', return_value=9) as acted:
                 code = run.paper_run(self.root / 'view', out, from_draft=self.root / 'draft')
             return code, made.call_args, acted.call_args
 
@@ -935,10 +958,27 @@ class PaperRunTests(FinalizeCase):
         for log in ([session], [session, {'event': 'end', 'status': 'failed', 'error': 'x'}]):
             code, made, acted = called(log)
             self.assertEqual((code, acted, made.kwargs['resume']), (7, None, True))
-        # Ended with findings left open: the paper command takes them up, and stage 4 is judged by that exit code.
+        # Ended with findings left open: the paper command closes them without a person, and stage 4 is judged by
+        # that exit code.
         code, made, acted = called([session, {'event': 'end', 'status': 'open_findings', 'open': [{'check': 'c'}]}])
         self.assertEqual((code, made), (9, None))
         self.assertEqual(acted.args, (self.root / 'view', out, ['tex'], None, 3))
+        # Ended with its manuscript failing the typesetting: nothing takes that run up, and the paper is written anew.
+        code, made, acted = called([session, {'event': 'end', 'status': 'open_findings',
+                                              'open': [{'check': paper.TYPESETTING, 'problems': ['x']}]}])
+        self.assertEqual((code, acted, made.kwargs['resume'], out.exists()), (7, None, False, False))
+        # A run that comes to its end with open findings while this command runs is closed in the same way.
+        ending = [session, {'event': 'end', 'status': 'open_findings', 'open': [{'check': 'c'}]}]
+
+        def produced(view, folder, **options):
+            folder.mkdir()
+            write_json(folder / 'log.json', ending)
+            return 2
+
+        shutil.rmtree(out, ignore_errors=True)
+        with patch('finalize.produce', side_effect=produced), patch('paper.close_open', return_value=0) as acted:
+            self.assertEqual(run.paper_run(self.root / 'view', out), 0)
+        self.assertEqual(acted.call_args.args, (self.root / 'view', out, ['tex'], None, 3))
         # Ended without them: done, and nothing is launched.
         for status in ('complete', 'draft'):
             self.assertEqual(called([session, {'event': 'end', 'status': status, 'open': []}]), (0, None, None))
@@ -1155,7 +1195,13 @@ class RunTests(FinalizeCase):
         self.assertIn('The proof is by induction, in 4 modules.', readme)
         self.assertIn('The research made 1 publication.', readme)
         self.assertIn("'Small.root' depends on axioms: [propext, Quot.sound]", readme)
-        self.assertIn('For every natural number n, the sum of the first n odd numbers is n * n.', readme)
+        # The result is the selection's sentence and the statement of the root's record. root.md is not printed.
+        self.assertIn('## The result\n\nThe first n odd numbers sum to n squared.\n\nThe proposition that was posed, as the '
+                      'record of `Small.root` states it:\n\n', readme)
+        self.assertNotIn('For every natural number n, the sum of the first n odd numbers is n * n.', readme)
+        self.assertIn('Lean is installed through elan', readme)
+        self.assertIn('The warnings concern that one file; no declaration of the library uses `sorry`.', readme)
+        self.assertIn('do-math is a program that conducts mathematical research in Lean', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
         self.assertIn('### Where the result comes from\n\nThe identity is classical; the records name nobody who posed it.\n\n'
                       'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
@@ -1165,7 +1211,7 @@ class RunTests(FinalizeCase):
                       'the result. It has the step in its first section.\n', readme)
         self.assertIn('The records of the research name no earlier formal proof of this result.\n\n## Outline of the proof',
                       readme)
-        self.assertIn('and the library proves formally: `Small.sq_step`.', readme)
+        self.assertIn('and the library proves each of them formally: `Small.sq_step`.', readme)
         self.assertNotIn('names no author', readme)
         timeline = (self.solved / 'history' / 'timeline.md').read_text(encoding='utf-8')
         self.assertIn('The account of the root question was written.\n\nRecord: `canon/questions/q0.md`', timeline)  # the reader's text
@@ -1177,7 +1223,7 @@ class RunTests(FinalizeCase):
         # What the run leaves: the entry in the repository's README, and three files in the work folder.
         listing = (self.repository / 'README.md').read_text(encoding='utf-8')
         self.assertIn('- An earlier one.\n- [Odd numbers sum to squares](solved/odd/README.md): The first n odd numbers sum '
-                      'to n squared. Lean leanprover/lean4:v4.99.0; root `Small.root`.\n\n## Other\n', listing)
+                      'to n squared. Lean 4.99.0; root `Small.root`.\n\n## Other\n', listing)
         self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md'])
         decisions = self.decisions()
         self.assertIn('The main theorem is `Small.sq_step` (option a)', decisions)
@@ -1210,6 +1256,9 @@ class RunTests(FinalizeCase):
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The run stopped at the step `2.2-review`', report)
         self.assertIn('modules in no part: Small.Helper, Small.Step', report)
+        # The report says what the user does. What sessions left is not the user's to repair.
+        self.assertIn('## What to do\n\nNothing is to be repaired by hand', report)
+        self.assertIn('The same command with the same arguments continues at the step `2.2-review`', report)
         state = read_json(self.work / 'state.json')
         self.assertEqual([step for step in state['steps'] if not step.startswith('3-')], ['0-start', '1-selection', '2.1-take'])
         self.assertLessEqual({'state.json', 'log.json', 'decisions.md', 'report.md', 'settings.json', 'source', 'first',
@@ -1242,6 +1291,7 @@ class RunTests(FinalizeCase):
         # Started again with the same arguments, the run continues at the review and comes to its end.
         again = script()
         again['selection'] = [{'output/decision.json': decision(main='Small.root')}]  # would be another choice, were it asked
+        self.closed = CLOSED  # the paper command of this start closes two findings without a person
         self.assertEqual(self.run_command(again, config=self.config()), 0, self.said)
         self.assertEqual(len(self.calls('selection')), 1)      # an accepted output is not made again
         self.assertEqual(len(self.calls('selection-read')), 1)
@@ -1264,6 +1314,20 @@ class RunTests(FinalizeCase):
         self.assertIn('names no author and no responsible maintainer', (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertIn('`project.authors` and `project.responsible_maintainers`', (self.work / 'report.md').read_text(encoding='utf-8'))
         self.assertEqual(self.produced[-1]['title_page'], {'authors': []})
+        # What the paper command closed without a person is in the decisions and in the report.
+        decisions, report = self.decisions(), (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('## Stage 4: what the paper lost so that it says no more than the library', decisions)
+        self.assertIn('- Removed from the abstract: "equivalently, the block sums to a difference of squares" It asserted: '
+                      'The block sum is a difference of squares. The declaration that came nearest is `Small.sq_step`. It '
+                      'states the sum additively.', decisions)
+        self.assertIn('- Lemma 1.1 (`lem:step`) was restated as its declaration `Small.sq_step` says it.', decisions)
+        self.assertIn('The comparison after the restatement still found a difference: The range of n.', decisions)
+        self.assertIn('it took 1 passages that no declaration covers out of the paper and restated 1 statements', report)
+        self.assertIn('- In the paper, Lemma 1.1 still differs from the declaration `Small.sq_step` that it states: The '
+                      'range of n.', report)
+        self.assertIn("The library is built with Lean 4.99.0. Lean is installed through elan, its toolchain manager, as "
+                      "Lean's own installation instructions describe.",
+                      (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md'])
 
     def test_an_output_that_fails_its_exit_check_is_sent_back_with_what_the_check_found(self):
@@ -1336,17 +1400,33 @@ class RunTests(FinalizeCase):
         self.assertIn('found 1 faults in the two prose sections of the README; a session corrected them', self.decisions())
         self.assertIn('added_six', (self.solved / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'))
 
-    def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_stops_the_run(self):
+    def test_a_manuscript_that_fails_its_typesetting_stops_the_run_and_the_next_start_writes_the_paper_anew(self):
+        self.failing = True
+        self.assertEqual(self.run_command(script(), config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `4-paper`', report)
+        self.assertIn('- typesetting, after 3 repairs: TeX stopped at line 12.\n', report)
+        # The report says what the user does, and prints no JSON.
+        self.assertIn('## What to do\n\nRead the problems.', report)
+        self.assertIn('Started again, the command writes the paper anew from the draft', report)
+        self.assertNotIn('{"', report)
+        # Nothing takes up a run whose manuscript failed: started again, the command deletes it and writes the paper anew.
+        self.failing = False
+        self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
+        self.assertEqual([call['resume'] for call in self.produced if call['out'] == 'paper'], [False, False])
+
+    def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         plan = script(package_read=[{'output/findings.json': json.dumps([
             {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'}])}])
-        self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
+        # No session may rewrite a sentence of the program: the finding is reported with the package, and the run ends.
         report = (self.work / 'report.md').read_text(encoding='utf-8')
-        self.assertIn('The run stopped at the step `5-documents`', report)
-        self.assertIn('The licence is not named.', report)
-        self.assertEqual(len(self.calls('readme-write')), 1)
-        self.assertTrue((self.work / 'package' / 'lean' / 'Challenge.lean').is_file())  # the work folder stays whole
-        self.assertFalse(self.solved.exists())
+        self.assertIn('## What the reader of the package found and the run did not correct', report)
+        self.assertIn('- README.md, at "Everything in this folder is under": The licence is not named.', report)
+        self.assertIn('## Stage 5: what the reader of the package found and the run did not correct', self.decisions())
+        self.assertEqual(len(self.calls('readme-write')), 1)  # nothing was found in the prose, so no session corrects
+        self.assertTrue((self.solved / 'README.md').is_file())
 
     def halted_after_the_freeze(self, plan, **options):
         """A run that is stopped at the map, so that the freeze can be looked at in the work folder."""

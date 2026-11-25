@@ -453,6 +453,12 @@ class PaperCase(InstanceCase):
                 return paper.act_on_open(self.instance, self.out, tex, parallel=parallel, numbers=open_findings)
             return paper.produce(self.instance, self.out, tex, parallel=parallel, resume=resume, **options)
 
+    def close(self, script):
+        """The pass that closes what a finished run left open, as a caller with nobody to ask makes it."""
+        write_json(self.scenario / 'script.json', script)
+        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+            return paper.close_open(self.instance, self.out, TEX, parallel=1)
+
     def said(self, arguments):
         """What the command prints last when it is run with these arguments after the instance, and its exit code."""
         with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
@@ -3723,6 +3729,65 @@ class CoverageTests(PaperCase):
         self.assertEqual(end['open'], [{'check': paper.COVERAGE, 'after_repairs': 2, 'problems': [
             {**REPORTED, 'quote': weaker, 'asserts': 'The sums are at least $n$.', 'open_because': paper.COVERED_AGAIN}]}])
         self.assertIn(weaker, self.part('tools'))
+
+    def test_what_one_repair_left_uncovered_is_taken_out_and_the_run_ends_without_a_person(self):
+        reason = 'The bound is the content of Lemma 2.1.'
+        self.assertEqual(self.run_paper(asserting(kept=reason)), 2)
+        launched = len(self.calls())
+        script = good()
+        # The first session says the same in other words, which is no deletion. The second deletes.
+        script['remove'] = [{'output/tools.tex': TOOLS_SHARP.replace('this bound is sharp', 'equality holds for some $n$')},
+                            {'output/tools.tex': TOOLS}]
+        self.assertEqual(self.close(script), 0)
+        self.assertEqual(self.kinds(launched), [('remove', None), ('remove', None)])
+        first, second = self.calls('remove')
+        self.assertEqual(read_json(self.folder(first) / 'removals.json'), [
+            {'number': 1, 'part': 'tools', **{key: REPORTED[key] for key in ('where', 'quote', 'asserts', 'nearest')}}])
+        self.assertIn('deletes and does not reword', first['prompt'])
+        self.assertIn('is not shorter than it was', second['prompt'])
+        self.assertEqual(self.part('tools'), TOOLS)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        self.assertEqual(end['closed'], [{'kind': 'removed', **REPORTED}])
+        self.assertEqual(read_json(self.out / 'state.json')['closed'], end['closed'])
+        # Nothing compares the text after a deletion, and every statement keeps the verdict it had.
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual({row['comparison']['verdict'] for row in rows}, {'same'})
+        # A run with nothing open has nothing to close.
+        with self.assertRaises(paper.Stop):
+            self.close(good())
+
+    def test_a_statement_that_still_differs_after_its_repair_is_restated_and_compared_once(self):
+        difference = 'The manuscript has k^2 + 2k = (k + 1)^2.'
+        off = TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')  # the section `tools` with a statement that differs
+        differs = [dict(row) for row in SAME]
+        differs[2].update(verdict='differs', difference=difference)
+        script = good()
+        script['write:tools'] = [{'output/tools.tex': off}]
+        script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
+        script['repair:comparison'] = [{'output/response.json': json.dumps(
+            [{'finding': 1, 'action': 'kept', 'note': 'The statement is that of the record.'}])}]
+        self.assertEqual(self.run_paper(script), 2)
+        self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.COMPARISON])
+        launched = len(self.calls())
+        script = good()
+        # The first session leaves the statement as it was. The second restates it.
+        script['restate'] = [{'output/tools.tex': off + '\n% a comment\n'}, {'output/tools.tex': TOOLS}]
+        script['compare:tools'] = [{'output/comparison.json': json.dumps([SAME[2]])}]
+        self.assertEqual(self.close(script), 0)
+        self.assertEqual(self.kinds(launched), [('restate', None), ('restate', None), ('compare', 'tools')])
+        first, second = self.calls('restate')
+        given = read_json(self.folder(first) / 'statements.json')
+        self.assertEqual([(entry['label'], entry['difference']) for entry in given], [('lem:square', difference)])
+        self.assertTrue({'records.md', 'elements.md', 'parts/tools.tex', 'paper-method.md'} <= set(first['given']))
+        self.assertIn('has the text it had; restate it as its element says it', second['prompt'])
+        self.assertEqual(self.part('tools'), TOOLS)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        self.assertEqual([(entry['kind'], entry['label'], entry['difference'], entry['verdict']) for entry in end['closed']],
+                         [('restated', 'lem:square', difference, 'same')])
+        self.assertIn('k^2 + 2k', end['closed'][0]['before'])
+        self.assertIn('k^2 + (2k + 1)', end['closed'][0]['after'])
 
     def test_a_run_stopped_in_the_repair_of_the_running_text_or_after_it_is_continued_there(self):
         script = asserting()

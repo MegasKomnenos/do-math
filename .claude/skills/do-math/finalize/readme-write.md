@@ -1,6 +1,6 @@
 # Writing the two prose sections of the package's README
 
-The package is nearly complete: the library is frozen, the paper is typeset, the history is written. Its `README.md` is the first file a visitor opens. Most of that file is written by the program from the finished products: the title, the result as it was posed and as Lean states it, what was checked and what was not, how to build, what each folder holds. Two sections need prose that no script can assemble, and this session writes them: an outline of the proof, and an account of how the result was obtained.
+The package is nearly complete: the library is frozen, the paper is typeset, the history is written. Its `README.md` is the first file a visitor opens. Most of that file is written by the program from the finished products: the title, the result in a sentence, as the record of the root states it and as Lean states it, what was checked and what was not, how to build, what each folder holds. Two sections need prose that no script can assemble, and this session writes them: an outline of the proof, and an account of how the result was obtained.
 
 ## Why the README is written last, and why you write no figure
 
@@ -36,7 +36,7 @@ The outline presents the chosen proof by itself, as the common text requires of 
 
 ## How the result was obtained
 
-`obtained.md` tells the visitor where the proof comes from: that it was found by a research run in which AI sessions worked on the proposition in succession, how that research went in its main stages, and how its work was reviewed along the way. `timeline.md` is the source. Condense it to the course a visitor needs: where the research began, the turns the timeline itself reports, and how the root came to be settled. This section and the history are the two texts of the package whose subject is the research, so it may speak of approaches that were tried and left.
+`obtained.md` tells the visitor where the proof comes from: that it was found by a research run in which AI sessions worked on the proposition in succession, how that research went in its main stages, and how its work was reviewed along the way. `timeline.md` is the source. Condense it to the course a visitor needs: where the research began, the turns the timeline itself reports, and how the root came to be settled. This section and the history are the two texts of the package whose subject is the research, so it may speak of approaches that were tried and left. The research usually proved more than the package keeps: the library under `lean/` holds the one proof the package presents. Where you name results or declarations of the research that are not part of that proof, say that they are in the knowledge archive and not in the library, so that a visitor does not look for them under `lean/`.
 
 Hold it to the standard of the timeline it is written from. Say nothing that the timeline does not say, give judgments as the judgments of the reviews that made them, and add no assessment of your own. The section is not the place for the mathematics, which the outline and the paper carry, nor for what was checked and by whom, which the program's own section states from its logs.
 
