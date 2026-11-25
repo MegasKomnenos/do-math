@@ -398,6 +398,16 @@ class ContextTests(InstanceCase):
             self.assertEqual(set(parent) & set(env), set())
             self.assertEqual(env['TASK_PROBE'], 'kept')
 
+    def test_a_worker_is_launched_without_the_tools_it_is_asked_to_withhold_and_with_all_of_them_otherwise(self):
+        folder = self.session('withheld')
+        plain = worker_command('claude', 'claude/opus', 'xhigh', folder, {})
+        without = worker_command('claude', 'claude/opus', 'xhigh', folder, {}, withheld=('ScheduleWakeup', 'Monitor'))
+        codex = worker_command('codex', 'codex/gpt-6.1-sol', 'xhigh', folder, {}, withheld=('ScheduleWakeup',))
+        self.assertNotIn('--disallowedTools', plain.argv)
+        self.assertEqual(without.argv[without.argv.index('--disallowedTools') + 1], 'ScheduleWakeup,Monitor')
+        self.assertEqual(without.argv[:-2], plain.argv)
+        self.assertNotIn('--disallowedTools', codex.argv)
+
     def test_runner_dispatch_launches_the_isolated_worker_command(self):
         # The session host executes launch.json, so the runner must record the isolated
         # worker command with the instance's explicit tools, not the bare base command.

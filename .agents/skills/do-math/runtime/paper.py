@@ -2,6 +2,7 @@
 
     python paper.py <instance> --out <folder> [--resume] [--parallel <n>] [--dry-run]
                     [--model <provider/model>] [--effort <effort>] [--typeset-only]
+                    [--draft | --from-draft <folder>] [--title-page <file>] [--main <declaration>]
                     [--open-findings [<numbers>]] [--tex <command...>]
 
 One command produces the paper to the end without stopping for the user. What the sessions it
@@ -38,6 +39,22 @@ launches do not decide is fixed in ../reference/paper-method.md, which they rece
                their elements, the sections side by side; when a repair of what they found changed
                the manuscript, the manuscript is read by itself again before the statements are
                compared once more
+  resolve      made when the readings left findings open. One session has the manuscript, the plan,
+               the records and every such finding, and may change wording and structure: rewrite a
+               part, move a numbered statement, change its kind, take away its number, join or
+               divide sections, change titles. It answers each finding by a change or by a reason.
+               A plan it returns is held to the check of the plan, the manuscript is settled, and
+               the manuscript is read by itself again as under "rereading". The findings of the
+               readings are closed by this stage: those answered by a reason are listed under
+               "kept" in the last event of the log and are not open
+  coverage     the numbered statements whose present text has no verdict are compared, once. Then,
+               for each section, a session compares the running text of the section, and the
+               displayed formulas of its proofs that are referred to from outside their proof,
+               with the records: it reports each sentence or formula that asserts mathematics
+               which no element states. What is reported goes to one narrow repair, which cuts the
+               sentence or rewords it so that it says no more than the element named with it; the
+               changes are read, the sections that changed are compared once more, and what is
+               then still reported is open
 
 Every loop is bounded by the constants below. A repair is made section by section: what a check or
 a reader found in one section goes to a session that has that section's brief and changes that
@@ -74,9 +91,50 @@ the repairs that may rewrite. The statements are compared after it, in the stage
 each numbered statement states; never inside the paper), materials.md and log.json (what was
 launched and what each check found). The work stays beside them: materials.json, study.md (the
 planning session's account of how the chosen papers are written), parts/ (the abstract and the
-sections as they stand), state.json, sessions/ and typeset/, and narrow/ while a narrow repair is
-under way (the parts as they were read, and the texts that are put back). --typeset-only does not
+sections as they stand), state.json, sessions/ and typeset/, narrow/ while a narrow repair is under
+way (the parts as they were read, and the texts that are put back), and resolve/ while the stage
+`resolve` is under way (the plan and the parts that its session returned). --typeset-only does not
 use the collection.
+
+--draft makes the draft of a paper and no paper. After `materials` and `plan` it has one session for
+each section sketch that section: the numbered statements as the paper will state them, the
+displayed formulas that a later proof will refer to, and the gaps, that is, what the section wants
+to state and no element states. Sessions then compare the sketched statements and formulas with
+their elements, section by section. A statement that differs is a gap the sketch declared, which
+stays in the draft, or a slip, which is replaced by the statement as the element says it. <out>
+receives plan.json, study.md and draft.json (statements, formulas, gaps, and the results the plan
+would cite if their records named a source), and the run ends with exit code 0. The sketches and
+the verdicts are kept in <out>/sketch as they are accepted, and --resume continues a draft that
+was stopped.
+
+--from-draft <folder> writes the paper from a draft: <folder> holds plan.json, study.md and
+draft.json. The materials are then what the proof of the root rests on together with the
+declarations that closed a gap of the draft and everything those rest on, also where the proof of
+the root does not use them; the run keeps a copy of the draft in <out>, and a continued run takes
+them from that copy. No planning session reads the collection again. The plan of the draft is brought to the
+materials of this instance by script (an element that is gone leaves the plan, a declaration that
+closed a gap enters where the gap stood, a statement whose element now has a source is cited), and
+the check of the plan decides. Only when it finds problems does a planning session repair the plan,
+from the plan, the problems and study.md. The brief of each section then carries the statements and
+formulas of the section as they were drafted, and everything after the writing runs as in any run.
+
+--main <declaration> names the theorem that the paper is built around, when that is not the
+declaration whose formal proof settles the root: as a rule a stronger theorem from which the root
+follows. It has to be a theorem of the instance that is settled by a formal proof; the command
+refuses another before it writes anything. The materials are then what that theorem rests on
+together with the settling declaration and what it rests on. The plan states the named theorem as
+the main theorem, first in the first section, and has the settling declaration as a numbered
+statement, so that the root stands in the paper with its exact statement, as a corollary of the main
+theorem or as a theorem beside it. The run records the main result in materials.json, and a draft
+in draft.json: --resume, --open-findings, --typeset-only and --from-draft take it from there, and
+--main given to a continued run or with --from-draft has to name the same element. Without --main,
+or when it names the settling declaration, everything is as it is without the option.
+
+--title-page <file> names a JSON file {"authors": [{"name", "address", "email"}]}, of which
+"address" and "email" may be absent. The script writes \\author, \\address and \\email for each
+author after the title; with an empty list, as without the option, the manuscript has no author
+line. A copy of the file is kept in <out> as title-page.json, so a continued run and --typeset-only
+use it; --typeset-only with --title-page sets the author line of a finished manuscript.
 
 Everything a later step needs is in <out> as soon as it exists, so a run that was stopped is
 continued with --resume and the same --out. The materials are taken from the canon again and have to
@@ -86,17 +144,22 @@ what the later ones need from them. A stage that was interrupted is made again f
 the parts as they stand. The one exception is a run that was stopped inside a narrow repair or the
 reading of its changes: state.json records the step it was in and the findings, and the run goes on
 at that step, without making the readings before it again; a repair that was stopped is made again
-from the parts as they were read. Without --resume, <out> is new or empty.
+from the parts as they were read. The stage `resolve` records the step it is in as well (the session,
+the parts and the plan put in place, the settling, the reading), and what its session returned is
+kept in <out>/resolve until the stage ends. Without --resume, <out> is new or empty.
 
 --open-findings takes up a run that came to its end with findings left open (exit code 2) and acts
 on them in one pass. With --dry-run it lists the open findings of the last `end` event of log.json,
 numbered, each with the check it comes from and the place it points to, and launches nothing.
 Without numbers it acts on all of them; followed by numbers of that list, as in
---open-findings 2,5-7, it acts on those, and the others stay open as they were. The findings of the
-readings and of the comparison go to a narrow repair with its settling and the reading of its
-changes, as above. Then the numbered statements whose text the pass changed, and the chosen ones
-that were never compared, are compared with their elements, once: a statement that differs then is
-reported as open and is not repaired in the same pass. A line wider than the text block is not
+--open-findings 2,5-7, it acts on those, and the others stay open as they were. The statements that
+differ and the sentences of running text that no element covers go to a narrow repair with its
+settling and the reading of its changes, as above; so do findings of the readings, which only a
+run made before the stage `resolve` existed leaves open. Then the numbered statements whose text
+the pass changed, and the chosen ones that were never compared, are compared with their elements,
+once: a statement that differs then is reported as open and is not repaired in the same pass. The
+running text of every section that the pass changed is compared with the records once more, and
+what is reported then is open. A line wider than the text block is not
 taken up finding by finding: the settling sends every such line to repair whenever the pass changed
 a part or such a line was chosen, because the typesetting cannot tell an old wide line from a new
 one. The pass ends with a new `end` event. It needs the canon to be what the run began with, as
@@ -114,8 +177,13 @@ manuscript with `paper.tex` appended and has to leave paper.pdf. Without --tex t
 three found on PATH is used. When there is none, everything except the typesetting is done and the
 command says so; --typeset-only later typesets the manuscript that <out> already holds.
 
-Exit codes: 0 the paper is complete; 1 refused or failed; 2 produced with findings left open
-(log.json names them); 3 the manuscript is complete and no TeX command was available.
+Exit codes: 0 the paper is complete, or with --draft the draft is; 1 refused or failed; 2 produced
+with findings left open (the last `end` event of log.json names them under "open"): a numbered
+statement that differs from its element or whose present text was not compared, a sentence of
+running text that no element covers, a line wider than the text block, a machine check or a
+typesetting that failed; 3 the manuscript is complete and no TeX command was available. What the
+readings found and the resolving session or the last narrow repair answered with a reason is under
+"kept" in that event and does not make the exit code 2.
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -168,12 +236,17 @@ UNCOMPARED = 'numbered statements whose present text was not compared with their
 READING = 'reading of the manuscript by itself'
 LIKENESS = 'reading of the manuscript beside real papers'
 COMPARISON = 'comparison of the numbered statements with their elements'
+COVERAGE = 'comparison of the running text with the elements'
 MACHINE = 'machine checks of the manuscript'
 TYPESETTING = 'typesetting'
 # The checks whose findings a repair session can take up one by one, each with the kind of repair that does. The last
-# repair that a reading receives, and every repair of findings that a finished run left open, is a narrow one: it
-# changes the passages its findings name, and a session then reads the passages it changed (Paper.narrow_run).
-NARROW_KINDS = {READING: 'reading', LIKENESS: 'likeness', COMPARISON: 'comparison'}
+# repair that a reading receives, the repair of what the comparison of the running text found, and every repair of
+# findings that a finished run left open, is a narrow one: it changes the passages its findings name, and a session
+# then reads the passages it changed (Paper.narrow_run).
+NARROW_KINDS = {READING: 'reading', LIKENESS: 'likeness', COMPARISON: 'comparison', COVERAGE: 'coverage'}
+# The checks whose findings the stage `resolve` closes: each is answered by a change or by a reason, and one that is
+# answered by a reason is listed under "kept" at the end of the run and is not open.
+READINGS = (READING, LIKENESS)
 # Why a finding is open after the last repair it received, as the open list says it under "open_because".
 KEPT = 'the repair session kept the text: '
 UNDONE = 'changed, and the change was undone, because the reading of the changed passages found it unsound: '
@@ -185,13 +258,20 @@ ONCE_CONFIRMED = ('repaired after the reading that reported it; the one reading 
                   'the readings ended at their bound before a second reading confirmed that')
 DIFFERS_NOW = ('the statement was changed by a repair of open findings, and the comparison that followed found this '
                'difference')
+DIFFERS_LATE = ('the statement was changed after the comparisons of the statements had ended, and the one comparison '
+                'of its present text found this difference; no repair follows that comparison')
+COVERED_AGAIN = ('reported when the running text of the section was compared with the elements again, after the repair '
+                 'of what the first comparison had reported; no repair follows that comparison')
 # The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
-          ('comparison', 'compare'))
+          ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'))
 
 ENGINES = ('tectonic', 'latexmk', 'pdflatex')
 NUMBERED = ('theorem', 'proposition', 'lemma', 'corollary', 'definition')
 ENVIRONMENT = re.compile(r'\\begin\{(' + '|'.join(NUMBERED) + r')\}(.*?)\\end\{\1\}', re.S)
+PROOF_ENVIRONMENT = re.compile(r'\\begin\{proof\}.*?\\end\{proof\}', re.S)
+# A displayed formula that can carry a label: the environments of amsmath that number their lines.
+DISPLAY = re.compile(r'\\begin\{(equation|align|multline|gather|alignat|flalign|eqnarray)\}.*?\\end\{\1\}', re.S)
 # The words by which a text names the proof assistant and its library, as whole words with these capitals; a
 # letter on either side makes another word ("Leaning"), and a digit does not ("Lean4").
 LEAN_WORDS = re.compile(r'(?<![A-Za-z])(?:Lean|Mathlib)(?![A-Za-z])')
@@ -244,6 +324,15 @@ def write_text(path, content):
 def write_json(path, value):
     with WRITING:
         runtime_support.write_json(path, value)
+
+
+# The tools by which a session of the Claude CLI can arrange to be called again later. A session of this
+# command is launched without them. The command reads a session's output when its process has ended, and
+# the CLI does not exit while such a call is pending: a reading session that had set itself a reminder
+# while its sub-agents worked wrote its output, ended its turn, and held the run idle for eleven minutes
+# until the reminder fired. A session needs none of them, because its own sub-agents and background
+# commands call it back when they end.
+SELF_SCHEDULING = ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')
 
 
 class Stop(Exception):
@@ -416,33 +505,109 @@ def settling_proof(model):
     return found[0]
 
 
-def extract(instance, model):
+def closing(draft, model):
+    """The declarations that closed a gap of a draft and that the instance has, in the order of the gaps."""
+    return list(dict.fromkeys(gap.get('closed_by') for gap in draft['gaps'] if gap.get('closed_by') in model['elements']))
+
+
+def chosen_main(model, main):
+    """The element that a run is told to take for the main result of the paper, when that changes anything.
+
+    None when no element is named, or the one named is the declaration that settles the root, which
+    is the main result of a paper anyway. Otherwise the element has to be a theorem of the instance
+    whose proof is settled and formal, as everything the paper states is; the command stops when it
+    is not."""
+    if main is None or main == settling_proof(model):
+        return None
+    element = model['elements'].get(main)
+    reason = ('the instance has no declaration of that name' if element is None
+              else 'it is a definition' if element['kind'] != 'theorem'
+              else None if element['settled'] and element['formal'] else 'its proof is not settled and formal')
+    if reason:
+        raise Stop(f'--main {main}: the main result of the paper is a theorem of the instance that is settled by a '
+                   f'formal proof, and {reason}')
+    return main
+
+
+def settling(materials):
+    """The declaration whose formal proof settles the root, as the materials name it.
+
+    It is the main result of the paper unless another theorem was chosen for that (extract, `main`)."""
+    return materials.get('settles', materials['main'])
+
+
+def rests_on(elements, name, used):
+    """Whether an element of the materials rests on another, through what the proofs name and the statements mention."""
+    found, pending = {name}, [name]
+    while pending:
+        element = elements[pending.pop()]
+        for below in element['uses'] + element['mentions']:
+            if below in elements and below not in found:
+                found.add(below)
+                pending.append(below)
+    return used != name and used in found
+
+
+def extract(instance, model, further=(), main=None):
     """Everything the paper is written from: what the formal proof of the root rests on, with the records.
 
     The elements are those reached from the settling proof through what each proof names and each
     statement mentions. A statement with several proofs is followed through the declaration that
     the proof above it names, so the other proofs and what only they rest on stay out. The order is
-    one of dependence: an element comes after everything it names or mentions."""
+    one of dependence: an element comes after everything it names or mentions.
+
+    `main` names the theorem that the paper is built around when that is not the declaration that
+    settles the root (chosen_main): a stronger theorem, as a rule, from which the root follows. The
+    materials are then what that theorem rests on together with the settling declaration and what
+    it rests on. "main" is the chosen theorem, "settles" names the settling declaration, and the
+    element of that declaration carries "settles". The theorem is reached first and the settling
+    declaration after it, since as a rule the second rests on the first. Without `main`, or when it
+    is the settling declaration, the materials are exactly what they are without this parameter.
+
+    `further` names declarations that the materials hold as well, with everything they rest on: in a
+    paper that is written from a draft, the declarations that were added to the library to close a
+    gap of the draft, which the proof of the root need not use. A statement among them is taken only
+    when its own proof is settled and formal, as everything else in the materials is. They are
+    reached before the settling proof, so the main result is still the last element, unless one of
+    them rests on the main result and has to come after it. An element that the proof of the root
+    does not rest on carries "outside", and the materials then name the further declarations under
+    "further". Without `further` the materials are exactly what they are without this parameter."""
     instance = Path(instance)
     canon = Canon(instance)
     index = canon.load_index()['entries']
     elements = model['elements']
-    main = settling_proof(model)
+    settles = settling_proof(model)
+    main = chosen_main(model, main) or settles
+    further = [name for name in dict.fromkeys(further) if name in elements and name not in (main, settles)
+               and (elements[name]['kind'] != 'theorem' or (elements[name]['settled'] and elements[name]['formal']))]
 
     def below(name):
         return sorted({u for u in elements[name]['uses'] + elements[name]['statement_uses'] if u in elements})
 
-    order, seen, stack = [], {main}, [(main, iter(below(main)))]
-    while stack:
-        name, rest = stack[-1]
-        for used in rest:
-            if used not in seen:
-                seen.add(used)
-                stack.append((used, iter(below(used))))
-                break
-        else:
-            order.append(name)
-            stack.pop()
+    order, seen = [], set()
+    for start in (*further, main, settles):
+        if start in seen:
+            continue
+        seen.add(start)
+        stack = [(start, iter(below(start)))]
+        while stack:
+            name, rest = stack[-1]
+            for used in rest:
+                if used not in seen:
+                    seen.add(used)
+                    stack.append((used, iter(below(used))))
+                    break
+            else:
+                order.append(name)
+                stack.pop()
+    # What the proof of the root and the main result rest on, to tell the elements that are here for a further
+    # declaration alone.
+    rested, pending = {main, settles}, [main, settles]
+    while pending:
+        for used in below(pending.pop()):
+            if used not in rested:
+                rested.add(used)
+                pending.append(used)
 
     def sections_of(name):
         record = read_record(canon, name)
@@ -469,6 +634,10 @@ def extract(instance, model):
         else:
             text = (canon.lean / index[name]['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
             item['definition_text'] = declaration_text(text, index[name]['span'])
+        if name not in rested:
+            item['outside'] = True
+        if name == settles != main:
+            item['settles'] = True
         return item
 
     understanding, review = read_question_account(canon, ROOT_QUESTION)
@@ -479,15 +648,50 @@ def extract(instance, model):
                 'name': root, 'state': model['root_state'], 'words': read_file(instance / 'root.md').strip(),
                 'lean': elements[root]['statement'], 'statement': root_sections.get('Statement'),
                 'explanation': root_sections.get('Explanation')},
-            'main': main, 'axioms': elements[main]['axioms'], 'allowed_axioms': model['allowed_axioms'],
+            'main': main, 'axioms': elements[settles]['axioms'], 'allowed_axioms': model['allowed_axioms'],
             'understanding': understanding.strip(), 'understanding_review': review,
             'elements': [entry(name) for name in order],
             'bibliography': bibliography, 'bibliography_keys': BIB_ENTRY.findall(bibliography),
-            'identifiers': sorted(set(elements) | {e['module'] for e in elements.values()})}
+            'identifiers': sorted(set(elements) | {e['module'] for e in elements.values()}),
+            **({'further': further} if further else {}), **({'settles': settles} if settles != main else {})}
 
 
 def backquoted(values):
     return ', '.join('`' + value + '`' for value in values) or '(nothing)'
+
+
+def main_lines(materials):
+    """What the head of the materials says of a main result that is not the declaration that settles the root; no
+    line when the settling declaration is the main result."""
+    if 'settles' not in materials:
+        return []
+    main, settles = materials['main'], materials['settles']
+    elements = {element['name']: element for element in materials['elements']}
+    follows = (f'The proof of `{settles}` rests on it, so the root follows from the main result.'
+               if rests_on(elements, settles, main) else
+               f'The proof of `{settles}` does not rest on it: the two stand beside each other.')
+    return ['## The main result of the paper', '',
+            f'The main result of this paper is `{main}`, and not the declaration that settles the root. This theorem '
+            'was chosen, before the paper was planned, as the one the paper is built around. ' + follows + ' The paper states '
+            f'`{main}` as its main theorem, first in the introduction, and it states `{settles}` as a numbered '
+            'statement as well, a corollary of the main theorem or a theorem beside it, so that the root stands in the '
+            f'paper with its exact statement. The statement of `{settles}` is the one that says what the root says in '
+            'words; the main theorem says what its own element says.', '']
+
+
+def main_note(materials):
+    """What a session that writes a plan is told beside the conditions under which the script accepts one, when
+    the main result is not the declaration that settles the root; nothing otherwise."""
+    if 'settles' not in materials:
+        return ''
+    main, settles = materials['main'], materials['settles']
+    return (f' In this paper the main result is `{main}`, and the declaration that settles the root is another '
+            f'element, `{settles}`; the head of the materials says so under "The main result of the paper". The main '
+            f'theorem that the plan states first is therefore `{main}`. The script also requires that `{settles}` is a '
+            'numbered statement, so that the paper states the root with its exact statement: a corollary where it '
+            'follows from the main theorem in a few lines, and otherwise a theorem beside it. That statement, and not '
+            'the main theorem, is the one that says what the root says in words (method, section "Every numbered '
+            'statement says what its element says").')
 
 
 def head_lines(materials):
@@ -498,14 +702,15 @@ def head_lines(materials):
              *('> ' + line for line in root['words'].splitlines()), '',
              'The root in Lean:', '', '```lean', 'theorem ' + root['lean'], '```', '',
              ('The root has been proved' if proved else 'The root has been refuted') + ' by a formal proof. '
-             + (f"The declaration whose formal proof settles it is `{materials['main']}`"
+             + (f"The declaration whose formal proof settles it is `{settling(materials)}`"
                 + ('.' if proved else ', whose statement is the negation of the root.')),
              'Axioms that formal proof depends on: ' + (', '.join(materials['axioms']) or 'none')
              + '. Axioms the instance allows: ' + ', '.join(materials['allowed_axioms']) + '.', '']
-    if materials['main'] != root['name']:
+    if settling(materials) != root['name']:
         for title, key in (("The statement in the root's record", 'statement'), ("The explanation in the root's record", 'explanation')):
             if root[key]:
                 lines += [f'**{title}.**', '', root[key], '']
+    lines += main_lines(materials)
     lines += ['## The understanding so far of the problem as a whole', '',
               materials['understanding'] or 'No account of the problem as a whole has been written.', '']
     if materials.get('understanding_review'):
@@ -515,6 +720,29 @@ def head_lines(materials):
 
 RECORD = (('Description', 'description'), ('Statement', 'statement'), ('Explanation', 'explanation'), ('Proof', 'proof'),
           ('Literature', 'literature'))
+# How a text marks an element that the proof of the root does not rest on (extract, `further`).
+OUTSIDE = ' · added for the draft of the paper'
+
+
+def role_mark(element):
+    """How a text marks the main result, and the declaration that settles the root when that is another element."""
+    return (' · the main result' if element['main'] else '') + (' · settles the root' if element.get('settles') else '')
+
+
+def order_note(materials):
+    """What a text that lists the elements says of their number and their order, as one paragraph."""
+    elements = materials['elements']
+    note = (f'{len(elements)} elements in dependence order: each comes after everything its statement mentions and its '
+            'proof names, ' + ('and the last is the main result.' if elements[-1]['main'] else
+                               f"and the main result is `{materials['main']}`, which is not the last of them."))
+    if 'settles' in materials:
+        note += f" The declaration that settles the root is `{materials['settles']}`."
+    if any(element.get('outside') for element in elements):
+        note += (' The proof of the root rests on all of them except those marked as added for the draft of the paper. '
+                 'These are declarations that the library received so that the paper can state what its draft asked '
+                 'for, and what only they rest on; they are proved as everything else here is, and the paper may state '
+                 'them.')
+    return note
 
 
 def element_lines(element, keys=None, users=True):
@@ -524,11 +752,14 @@ def element_lines(element, keys=None, users=True):
     elements that name this one are left out; a brief says in its own way where an element is used."""
     lines = [f"{element['kind']} · weight: {element['weight']}"
              + (f" · short name: {element['short']}" if element['short'] else '')
-             + (' · the main result' if element['main'] else ''), '']
+             + role_mark(element) + (OUTSIDE if element.get('outside') else ''), '']
     if element['kind'] == 'definition':
         lines += ['```lean', element['definition_text'], '```', '']
     else:
         lines += ['```lean', 'theorem ' + element['lean'], '```', '']
+    if element.get('outside'):
+        lines += ['The proof of the root does not rest on this element. The library received it, or what rests on it, '
+                  'so that the paper can state what its draft asked for.', '']
     if element['states']:
         lines += [f"This declaration is another proof of the statement `{element['states']}`; the proof above it "
                   'names this declaration, so this is the proof the paper gives.', '']
@@ -560,7 +791,7 @@ def summary_lines(element, users=True):
     explanations and proofs to the files of the elements. `users` adds the elements that name this one."""
     lines = [f"{element['kind']} · weight: {element['weight']}"
              + (f" · short name: {element['short']}" if element['short'] else '')
-             + (' · the main result' if element['main'] else '')
+             + role_mark(element) + (OUTSIDE if element.get('outside') else '')
              + (f" · another proof of the statement `{element['states']}`, and the one the paper gives" if element['states'] else '')
              + (f" · a result taken from the literature, bibliography key `{element['source']}`" if element['source'] else ''),
              '', '```lean', element['definition_text'] if element['kind'] == 'definition' else 'theorem ' + element['lean'],
@@ -597,8 +828,7 @@ def render_materials(materials):
     file of its own (record_files)."""
     lines = ['# Materials for the paper', '', lean_names_note(materials), '', *head_lines(materials),
              '## The elements the proof rests on', '',
-             f"{len(materials['elements'])} elements in dependence order: each comes after everything its statement "
-             'mentions and its proof names, and the last is the main result.', '']
+             order_note(materials), '']
     for number, element in enumerate(materials['elements'], 1):
         lines += [f"### {number}. `{element['name']}`", '', *element_lines(element)]
     return '\n'.join(lines + bibliography_lines(materials)) + '\n'
@@ -629,15 +859,15 @@ def record_files(materials):
     them with their files."""
     files, note = element_files(materials), lean_names_note(materials)
     listed = ['# The elements the proof rests on', '', note, '',
-              f"{len(files)} elements in dependence order: each comes after everything its statement mentions and its "
-              'proof names, and the last is the main result. Each line gives the name, the kind, the weight, the short '
+              order_note(materials) + ' Each line gives the name, the kind, the weight, the short '
               'name where the record has one, and the file that holds the full record.', '']
     found = {'root.md': '\n'.join(['# The root and the account of the problem', '', note, '',
                                     *head_lines(materials)]).rstrip('\n') + '\n'}
     for element in materials['elements']:
         listed.append(f"- `{element['name']}` · {element['kind']} · {element['weight']}"
                       + (f" · {element['short']}" if element['short'] else '')
-                      + (' · the main result' if element['main'] else '') + f" · `{files[element['name']]}`")
+                      + role_mark(element) + (OUTSIDE if element.get('outside') else '')
+                      + f" · `{files[element['name']]}`")
         found[files[element['name']]] = '\n'.join([f"# `{element['name']}`", '', *element_lines(element)]).rstrip('\n') + '\n'
     found['elements.md'] = '\n'.join(listed) + '\n'
     return found
@@ -650,29 +880,34 @@ def render_digest(materials):
     element says and what it rests on. The explanations and the proofs in words are most of the
     materials; they are left to the files of the elements, and their lengths are given here. Two
     records are given in full, because the account of the whole proof is in them: the root's, and that
-    of the declaration that settles the root."""
+    of the declaration that settles the root. When the main result of the paper is another element,
+    its record is given in full as well, before that of the settling declaration."""
     files = element_files(materials)
-    main = next(element for element in materials['elements'] if element['main'])
+    by_name = {element['name']: element for element in materials['elements']}
+    main, chosen = by_name[settling(materials)], 'settles' in materials
     lines = ['# Digest of the materials for the paper', '', lean_names_note(materials), '',
              'This digest gives every element that the proof of the root rests on by what it says: its name, its kind '
              'and its weight, its short name, its Lean form, what it names and what names it, its description and its '
              'statement in words. It leaves out the explanation and the proof in words of each element and gives their '
              'lengths in characters instead, and it leaves out the standing of each proof, which is the same for all: '
              'everything here is settled by a formal proof. The full record of every element is in a file of its own, which the digest '
-             'names at the element. The record of the declaration that settles the root is given in full, before the '
-             'list of the elements.', '',
+             'names at the element. '
+             + ('The records of the main result of the paper and of the declaration that settles the root are given '
+                if chosen else 'The record of the declaration that settles the root is given ')
+             + 'in full, before the list of the elements.', '',
              *head_lines(materials),
+             *(['## The main result of the paper, with its record in full', '', f"### `{materials['main']}`", '',
+                *element_lines(by_name[materials['main']])] if chosen else []),
              '## The declaration that settles the root, with its record in full', '',
              f"### `{main['name']}`", '', *element_lines(main),
              '## The elements the proof rests on', '',
-             f"{len(materials['elements'])} elements in dependence order: each comes after everything its statement "
-             'mentions and its proof names, and the last is the main result.', '']
+             order_note(materials), '']
     for number, element in enumerate(materials['elements'], 1):
-        lengths = [f'{title} in words: {len(element[key])} characters' if element[key] else f'no {title} in words'
+        lengths =[f'{title} in words: {len(element[key])} characters' if element[key] else f'no {title} in words'
                    for title, key in (('explanation', 'explanation'), ('proof', 'proof'))]
         lines += [f"### {number}. `{element['name']}`", '', *summary_lines(element),
                   f"Full record: `{files[element['name']]}` ({'; '.join(lengths)})."
-                  + (' It is given in full above.' if element['main'] else ''), '']
+                  + (' It is given in full above.' if element['main'] or element.get('settles') else ''), '']
     return '\n'.join(lines + bibliography_lines(materials)) + '\n'
 
 
@@ -758,6 +993,24 @@ def check_plan(materials, plan, keys):
                 bad(f'{name} is named in two entries of "notation"; one object has one notation')
             else:
                 symbols[name] = entry
+    # A draft names the results that the paper would cite if their records named a source. The plan of a paper
+    # that is not drafted has no such list.
+    wanted, listed = plan.get('citations', []), set()
+    if not isinstance(wanted, list) or not all(isinstance(entry, dict) for entry in wanted):
+        bad('"citations", when the plan has it, is an array of objects, each with an "element", a "result" and a "reason"')
+        wanted = []
+    for entry in wanted:
+        name = entry.get('element')
+        if name not in elements or elements[name]['kind'] != 'statement':
+            bad(f'citations: {name!r} is not a statement of the materials')
+        elif elements[name]['source']:
+            bad(f"citations: {name} has the source {elements[name]['source']} in its record, so the plan cites it already; "
+                '"citations" lists results whose record names no source')
+        elif name in listed:
+            bad(f'citations: {name} is listed twice')
+        elif not is_text(entry.get('result')) or not is_text(entry.get('reason')):
+            bad(f'citations: {name} needs a "result", the name under which the result is known, and a "reason"')
+        listed.add(name)
     order = {section.get('id'): number for number, section in enumerate(sections)}
     if len(order) != len(sections):
         bad('two sections have the same id')
@@ -869,6 +1122,11 @@ def check_plan(materials, plan, keys):
             or statements[numbered[main]].get('section') != sections[0]['id'] or leading != numbered[main]:
         bad(f'the main result {main} is a theorem stated in the first section, before every other theorem, '
             'proposition, lemma and corollary')
+    # When the paper is built around another theorem than the one that settles the root, the root still stands in
+    # the paper with its exact statement.
+    if 'settles' in materials and materials['settles'] not in numbered:
+        bad(f"the declaration that settles the root, {materials['settles']}, is a numbered statement: the paper states "
+            f'the root with its exact statement, as a corollary of the main theorem {main} or as a theorem beside it')
     if problems:
         return problems
     passes = lambda name: name not in numbered
@@ -1107,13 +1365,48 @@ class Layout:
         return lines
 
 
-def render_brief(materials, plan, section, layout=None):
+def drafted_lines(plan, section, draft):
+    """The statements and the formulas of one section as a draft has them, as lines of its brief; none without them.
+
+    The draft was compared with the library before the paper is written, so the brief gives each text
+    with the element that states it and says that it stands as drafted. A statement belongs to the
+    section that states it now, which the plan says; a formula to the section it was drafted for."""
+    stated = {item['label']: item for item in plan['statements'] if item['section'] == section['id']}
+    statements = [entry for entry in draft.get('statements', [])
+                  if entry.get('label') in stated and not entry.get('cut') and is_text(entry.get('text'))]
+    formulas = [entry for entry in draft.get('formulas', [])
+                if entry.get('section') == section['id'] and not entry.get('cut') and is_text(entry.get('text'))]
+    if not statements and not formulas:
+        return []
+    lines = ['## The statements and formulas of this section as they were drafted', '',
+             'Before this paper was written, a session drafted the numbered statements of this section and the '
+             'displayed formulas that its later proofs refer to. Each was then compared with the element named with it, '
+             'and where the two differed the library or the draft was changed until they said the same. The library '
+             'has not changed since, so each text below says exactly what its element says. It stands in the section '
+             'as it is drafted here: the same objects, hypotheses, quantifiers, ranges and conclusion, and the same '
+             'formula. The words around a formula are the writer\'s, and a statement may be worded otherwise where '
+             'the sentence requires it, as long as it says the same. A text that says more than the draft is not '
+             'covered by the library, and the library cannot be changed now.', '']
+    for entry in statements:
+        item = stated[entry['label']]
+        lines += [f"- {item['kind']} `{entry['label']}`, which states the element `{item['element']}`:", '',
+                  *('  ' + line for line in entry['text'].strip().splitlines()), '']
+    for entry in formulas:
+        where = (f"in the proof of `{entry['host']}`" if is_text(entry.get('host')) else 'in the running text')
+        states = (f", which says what the element `{entry['element']}` states" if is_text(entry.get('element')) else '')
+        lines += [f"- the displayed formula with the label `{entry.get('label')}`, {where}{states}:", '',
+                  *('  ' + line for line in entry['text'].strip().splitlines()), '']
+    return lines
+
+
+def render_brief(materials, plan, section, layout=None, draft=None):
     """brief.md: what the session that writes or repairs one section works from, made from the plan and the materials.
 
     It holds the section's part of the plan and what of the plan every section needs; the records in
     full of the section's own elements, in dependence order; and, by their statements, the elements of
     other sections that those name, each with the place where the paper has it and the notation under
-    which the paper knows it."""
+    which the paper knows it. With `draft`, the draft that the paper is written from, it also holds
+    the statements and the formulas of the section as they were drafted (drafted_lines)."""
     layout = layout or Layout(materials, plan)
     sid, elements = section['id'], layout.elements
     full, cited = layout.full[sid], layout.cited[sid]
@@ -1123,6 +1416,12 @@ def render_brief(materials, plan, section, layout=None):
              f"backquotes, such as `{materials['main']}`, is the name of a Lean declaration. It identifies an element here, "
              'in `plan.json` and in `elements/`, and it does not appear in the paper.', '',
              '## The paper', '', 'Title: ' + plan['title'].strip(), '',
+             *([f"The main theorem of the paper is {layout.called(materials['main'])}, which states "
+                f"`{materials['main']}`. The root of the research is settled by another element, "
+                f"`{materials['settles']}`, which the paper states as {layout.called(materials['settles'])}. That "
+                'statement is the one that says what the root says in words, in the conventions of the root as '
+                '`root.md` gives it; the main theorem says what its own element says.', '']
+               if 'settles' in materials else []),
              'How the proof goes and at which step its difficulty lies, in the words of the plan:', '',
              plan['outline'].strip(), '',
              'The sections in the order of the paper, each with its id and what the plan says it does. A section is '
@@ -1149,6 +1448,7 @@ def render_brief(materials, plan, section, layout=None):
                         if proof not in (None, item['section']) else '')
                      + f" · {element['short'] or shortened(element['description'] or '')} · `{item['element']}`")
     lines += ['', '## What the plan puts into this section', '', collapsed(section['content']), '', *layout.assignment(sid), '',
+              *(drafted_lines(plan, section, draft) if draft else []),
               '## The records in full', '',
               f'{len(full)} elements in dependence order: each comes after everything among them that it names. They are '
               'the elements that the plan puts into this section and, where the first line under a name says so, elements '
@@ -1199,6 +1499,83 @@ def render_records(materials, plan, names, layout=None):
     return '\n'.join(lines).rstrip('\n') + '\n'
 
 
+def render_section_records(materials, plan, section, layout=None):
+    """records.md for the comparison of the running text of one section: the records in full of the elements whose
+    record the writer of the section had in full, and every other element of the materials by what it says."""
+    layout = layout or Layout(materials, plan)
+    elements, full = layout.elements, layout.full[section['id']]
+    lines = [f"# The records for the section \"{section['title'].strip()}\"", '', lean_names_note(materials), '',
+             f'## The {len(full)} elements whose records the writer of this section had in full', '',
+             'The first line under a name says what the section does with the element.', '']
+    for name in full:
+        lines += [f'### `{name}`', '', ' '.join([layout.role(name, section['id'])] + layout.known_as(name)), '',
+                  *element_lines(elements[name], users=False)]
+    rest = [name for name in elements if name not in full]
+    lines += ['## Every other element that the proof of the root rests on, by what it says', '',
+              f'{len(rest)} elements. Each is given with the place where the paper has it and, where the plan fixes '
+              'one, the symbol or name under which the paper knows it. The full record of each is in the file named '
+              'with it.', '']
+    for name in rest:
+        lines += [f'### `{name}`', '',
+                  ' '.join([f'In the paper: {layout.placement(name)}.'] + layout.known_as(name)
+                           + [f'Full record: `{layout.files[name]}`.']), '', *summary_lines(elements[name], users=False)]
+    return '\n'.join(lines).rstrip('\n') + '\n'
+
+
+def running_text(plan, parts, spans):
+    """What of each part the comparison of the running text is made on, by the id of the section it belongs to.
+
+    The running text of a part is its text outside the numbered statements and outside the proof
+    environments. It is given paragraph by paragraph, each with the lines of paper.tex it occupies; a
+    paragraph that a statement or a proof interrupts is given in the pieces that stand outside them.
+    Beside it stand the displayed formulas inside a proof that carry a label to which text outside that
+    proof refers: such a formula is used as a result, so it is held to the elements as a statement is.
+    The abstract is running text throughout, and it goes with the first section, as in a repair."""
+    texts = {name: '\n'.join(part_lines(parts[name])) for name, _, _ in spans}
+    first = {name: start for name, start, _ in spans}
+    home = {'abstract': plan['sections'][0]['id'], **{section['id']: section['id'] for section in plan['sections']}}
+    found = {section['id']: [] for section in plan['sections']}
+
+    def span(a, b):
+        return str(a) if a == b else f'{a} to {b}'
+
+    for name, text in texts.items():
+        proofs = [match.span() for match in PROOF_ENVIRONMENT.finditer(text)]
+        # The characters of the statements and the proofs are blanked. A line on which nothing is left ends a
+        # passage, as an empty line does.
+        shown = list(text)
+        for start, end in proofs + [match.span() for match in ENVIRONMENT.finditer(text)]:
+            shown[start:end] = [char if char == '\n' else '\0' for char in text[start:end]]
+        passage = []
+        for index, line in enumerate(''.join(shown).split('\n') + ['']):
+            visible = line.replace('\0', '').rstrip()
+            if uncommented(visible).strip():
+                passage.append((first[name] + index, visible))
+            elif passage:
+                found[home[name]].append({'kind': 'running text', 'part': name,
+                                          'lines': span(passage[0][0], passage[-1][0]),
+                                          'text': '\n'.join(visible for _, visible in passage)})
+                passage = []
+        for start, end in proofs:
+            outside = ''.join(uncommented(other if other_name != name else other[:start] + other[end:])
+                              for other_name, other in texts.items())
+            referred = {target.strip() for match in REF.finditer(outside) for target in match[1].split(',')}
+            for display in DISPLAY.finditer(text, start, end):
+                labels = [label for label in LABEL.findall(display[0]) if label in referred]
+                if labels:
+                    found[home[name]].append({
+                        'kind': 'formula of a proof, referred to from outside that proof', 'part': name,
+                        'lines': span(first[name] + text.count('\n', 0, display.start()),
+                                      first[name] + text.count('\n', 0, display.end())),
+                        'labels': labels, 'text': display[0]})
+    for entries in found.values():
+        # The abstract first, then the section in the order of its lines.
+        entries.sort(key=lambda entry: (entry['part'] != 'abstract', int(entry['lines'].split()[0])))
+        for number, entry in enumerate(entries, 1):
+            entry['entry'] = number
+    return found
+
+
 def named_part(plan, value):
     """The part that a reader names as the section of a finding, or None when it names none.
 
@@ -1223,16 +1600,52 @@ def uncommented(text):
     return re.sub(r'(?<!\\)%.*', '', text)
 
 
-def assemble(plan, parts):
-    """paper.tex from the parts, in the order of the plan, and the lines each part occupies in it."""
+TEX_SPECIAL = {'\\': r'\textbackslash{}', '{': r'\{', '}': r'\}', '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#',
+               '_': r'\_', '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
+
+
+def tex_plain(text):
+    """A text that is no LaTeX, such as a name or an address of the title page, as LaTeX that prints it."""
+    return ''.join(TEX_SPECIAL.get(char, char) for char in collapsed(text))
+
+
+def read_title_page(path):
+    """The authors that a title page file names: {"authors": [{"name", "address", "email"}]}; stops on another form."""
+    try:
+        page = json.loads(read_file(path))
+    except (OSError, ValueError) as exc:
+        raise Stop(f'the title page {path} cannot be read as JSON: {exc}')
+    authors = page.get('authors') if isinstance(page, dict) else None
+    if not isinstance(authors, list) or not all(
+            isinstance(author, dict) and is_text(author.get('name'))
+            and all(key not in author or is_text(author[key]) for key in ('address', 'email')) for author in authors):
+        raise Stop(f'the title page {path} holds {{"authors": [...]}}, an array that may be empty; each author has a '
+                   '"name" that is not empty and may have an "address" and an "email", each a text that is not empty')
+    return [{key: author[key] for key in ('name', 'address', 'email') if key in author} for author in authors]
+
+
+def author_lines(authors):
+    r"""The lines of the manuscript that name its authors, for amsart: \author, and \address and \email where given."""
+    lines = []
+    for author in authors:
+        lines.append('\\author{' + tex_plain(author['name']) + '}')
+        lines += ['\\' + key + '{' + tex_plain(author[key]) + '}' for key in ('address', 'email') if key in author]
+    return lines
+
+
+def assemble(plan, parts, authors=()):
+    """paper.tex from the parts, in the order of the plan, and the lines each part occupies in it.
+
+    `authors` are the authors of the title page, each with a name and, where given, an address and
+    an email. Without them the manuscript has no author line."""
     cites = any(CITE.search(uncommented(text)) for text in parts.values())
     title = plan['title'].strip()
-    # The manuscript names no author. amsart then takes the title for the running head of the even pages and
-    # puts it in capitals a second time, the letters of its formulas included. The head is set here instead,
-    # from the short title when the plan gives one.
+    # Without an author, amsart takes the title for the running head of the even pages and puts it in capitals
+    # a second time, the letters of its formulas included. The head is set here instead, on every page and
+    # also when the title page names authors, from the short title when the plan gives one.
     lines = (PREAMBLE + '\\newcommand{\\RunningHead}{' + plan.get('short_title', title).strip()
              + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n\\title{' + title
-             + '}\n\\begin{abstract}').split('\n')
+             + '}\n' + ''.join(line + '\n' for line in author_lines(authors)) + '\\begin{abstract}').split('\n')
     spans = []
 
     def add(name):
@@ -1552,7 +1965,10 @@ manner of writing. Read it in full before anything else. Its decisions are made;
 PREFERENCES_FILE = '''- `user-writing-preferences.md` describes the writing that the person who will read the paper first \
 prefers, with the occasions on which the preferences came to light. The method says how it bears on a paper.'''
 
-PLAN_PROMPT = CONTEXT + '''
+# The prompt of the planning session is made of the pieces below. The session that repairs the plan of a draft and
+# the session that resolves what the readings left open are given the keys of a plan and the conditions under which
+# the script accepts one in the same words.
+PLAN_OPENING = CONTEXT + '''
 
 This session plans the paper. The sessions after it write the sections from the plan, side by side and without seeing \
 each other's text, and the script holds the manuscript to the plan.
@@ -1585,7 +2001,8 @@ reads whole the ''' + str(SECTION_PAPERS) + ''' of your papers that you name for
 Write `output/plan.json`: a JSON object with the keys below. A value that will be printed (the title, a section \
 title, a symbol) is LaTeX; inside a JSON string a backslash is written twice.
 
-- "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
+'''
+PLAN_KEYS = '''- "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
 `exemplars.md` gives them.
 - "title": the title of the paper.
 - "short_title": the title in a shorter form, for the running head. The head is one line of small capitals at the top \
@@ -1618,7 +2035,24 @@ name in words of an object that has no symbol. "meaning" says exactly what it de
 index starts, how a quantity is normalised. "elements" are the names of the definitions of the materials whose object \
 the entry denotes. It names several where the canon spreads one mathematical object over several declarations, it is \
 empty for an entry that denotes no element, and a definition is named in one entry only.
-
+'''
+# One more key, which only the plan of a draft is asked for (--draft): the results the paper would cite.
+PLAN_CITATIONS = '''- "citations": the results that this paper would cite and not prove if their records named a \
+source, each {"element", "result", "reason"}; an empty array when there is none. The method's section "Results from the \
+literature" says that a result which the literature already has is cited in the paper and not proved again, and the \
+script lets a plan cite only an element whose record names a source. Some elements state such a result all the same: a \
+classical identity, a standard inequality, a theorem that carries a name, which the research proved for itself and \
+recorded without a source. You recognise them where a mathematician of the field would say that the result is known \
+and where it is found. "element" is the name of such an element, a statement whose record names no source. "result" is \
+the name under which the result is known, with its author where it has one, as exactly as you can give it, because a \
+later session searches the literature for it under that name. "reason" says in a sentence why the paper should cite it \
+and not prove it. In this plan such an element is still treated like every other element without a source, that is, \
+numbered or absorbed with its proof, because the script accepts nothing else. After this run a session looks for a \
+source of each listed result and enters it into the record only where it finds a work that states the result in the \
+form the element has; the script then changes the plan to cite it. So list a result when you are confident that the \
+literature has it in that form, and do not list a result that this research found, however natural it looks.
+'''
+PLAN_NOTATION = '''
 The notation carries more than it would in a paper written by one hand. The sections are written side by side, so a \
 writer never sees how another section names an object, and the plan is the only place where two writers can agree. Give \
 an entry to every object that more than one section speaks of: the objects of the problem, and equally every auxiliary \
@@ -1630,7 +2064,8 @@ the paper knows that element; a writer who finds none there has to invent a name
 
 When the plan absorbs a definition into several places that lie in different sections, the first of them in the order \
 of the paper defines the object, and the later ones use it under its entry in the notation.
-
+'''
+PLAN_ACCEPTS = '''
 The script accepts the plan when every element of the materials appears in it exactly once; when kinds, labels, sections \
 and reasons have the form above; when the main result is a theorem stated in the first section before every other \
 theorem, proposition, lemma and corollary; when no statement mentions an object that is defined in a later numbered \
@@ -1641,8 +2076,8 @@ the definition it is stated to agree with; when "exemplars" names ''' + str(CHOS
 of `exemplars.md` and every section names ''' + str(SECTION_PAPERS) + ''' different ones of them; and when every \
 definition of the materials that the writers of two sections meet, because their elements state it, absorb it, name it \
 or mention it, is named in "elements" of an entry of "notation". That last check sees only the definitions of the \
-materials; for every other object the notation rests on your reading. A plan that fails goes to a new planning session \
-with the list of failures.
+materials; for every other object the notation rests on your reading.'''
+PLAN_CLOSING = ''' A plan that fails goes to a new planning session with the list of failures.
 
 Write also `output/study.md`: your account of how the chosen papers are written, as that section describes it, in \
 free text. Every session that writes or repairs receives it, and it is all that such a session has of the papers you do \
@@ -1652,8 +2087,10 @@ theorem open, proceed and close.
 
 Use no source other than the files in this folder. Write no part of the paper itself.
 '''
+PLAN_PROMPT = PLAN_OPENING + PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + PLAN_CLOSING
+DRAFT_PLAN_PROMPT = PLAN_OPENING + PLAN_KEYS + PLAN_CITATIONS + PLAN_NOTATION + PLAN_ACCEPTS + PLAN_CLOSING
 
-BRIEF_FILE = '''- `brief.md` is what this section {tense} written from. The script made it from the plan and from the records of \
+BRIEF_FILE ='''- `brief.md` is what this section {tense} written from. The script made it from the plan and from the records of \
 the research. It holds the outline of the proof and the sections of the paper; the notation; the numbered statements of the \
 whole paper with their labels; what the plan puts into this section; the records in full of this section's elements, in an \
 order in which each comes after what it depends on; and, for every element of another section that those name, what it \
@@ -1689,7 +2126,7 @@ labels, the section of each, what becomes of every other element, and the notati
 In this folder:
 ''' + METHOD_FILE + '''
 ''' + BRIEF_FILE.format(tense='is') + ''' Follow the plan as the brief gives it: the same numbered statements with the same \
-kinds and labels in the same order, the same treatment of every element, the same notation.
+kinds and labels in the same order, the same treatment of every element, the same notation.{drafted}
 ''' + RESEARCH_FILES + '''
 ''' + PREFERENCES_FILE + '''
 {parts}
@@ -1726,10 +2163,17 @@ supplies.{abstract} The method's section "The LaTeX of a part" says what the scr
 
 The script checks afterwards that the numbered statements of your part are those of the plan, that every \\ref and \\cite \
 resolves, that your part contains no Lean name of the canon and neither of the words Lean and Mathlib, its comments \
-and labels included, and that TeX typesets the whole. Before \
+and labels included, and that TeX typesets the whole. Later sessions compare each numbered statement with its element, \
+and the text outside the statements and the proofs with the records: a sentence there that asserts mathematics which no \
+element states is cut or reworded, as the method's section "What the running text asserts" describes. Before \
 you finish, read your part from its first line as the reader of the method would, and correct what that reader could not \
 follow. Use no source other than the files in this folder.
 '''
+# What the writer of a section is told when the paper is written from a draft (--from-draft).
+DRAFTED = (' Under "The statements and formulas of this section as they were drafted" the brief also gives the numbered '
+           'statements of this section, and the displayed formulas that its proofs refer to, in the form in which an '
+           'earlier session drafted them. Each was compared with the library, and the library was then frozen. They stand '
+           'in your section as they are drafted there, for the reason the brief gives at that place.')
 ORDER_FIRST = ('The introduction, which is this section, is written first and alone; the other sections are written after '
                'it, side by side, and their writers receive it.')
 ORDER_AGAIN = ('The introduction, which is this section, is written alone; the sections in `parts/` were written by an '
@@ -1789,8 +2233,25 @@ written otherwise than real papers are written. Each finding gives the place ("w
 such a place ("evidence"), and the difference ("difference").'''
 LIKE_KEPT = '''The mathematics stays as it is, and so do the plan and the decisions of the method; the passages show \
 manner, and no sentence of theirs is copied or paraphrased into the manuscript. Where following a finding would change \
-the mathematics, depart from the plan or undo a decision of the method, such as that the paper names no author or that \
-it does not mention Lean, keep the text and say why.'''
+the mathematics, depart from the plan or undo a decision of the method, such as that the author line is the script's to \
+write or that the paper does not mention Lean, keep the text and say why.'''
+# What the repair of a sentence that no element covers is told about its findings. The repair is always a narrow one.
+COVERED_FINDINGS = '''A session compared the running text of {where} with the elements of the research, that is, the text \
+outside the numbered statements and outside the proofs, together with the displayed formulas of a proof to which text \
+outside that proof refers. `findings.json` lists the passages that it found to assert mathematics which no element \
+states. Each finding gives the place ("where"), the exact words ("quote"), what the passage asserts ("asserts"), the \
+element whose statement comes nearest to it ("nearest", whose record is in `elements/`), and what the passage asserts \
+beyond that element ("difference").'''
+COVERED_DECIDE = '''The paper asserts only what the research proved (method, section "What the running text asserts"), \
+and it is written from the research as it stands: nothing is added to the library for the sake of a sentence. For each \
+finding, therefore, cut the passage, or reword it so that it says no more than the element named with it. Reword where \
+the reader needs what remains, as with a sentence that says what a lemma is for or that leads from one step to the \
+next; cut where nothing would remain but the claim itself. Do not put an argument for the claim in its place: an \
+argument written now has been checked by nobody, and this comparison exists to keep such text out of the paper. Where a \
+later passage rests on what you cut, adjust it as far as the cut requires. A formula of a proof may stay in its proof \
+as a step of the argument; what the finding asks for is that text outside the proof no longer uses it as a result that \
+no element states, which a reference to the numbered statement that the element states can replace. When you find that \
+an element does state what the passage asserts, keep the text and name that element in the note.'''
 
 SECTION_KINDS = {
     'machine': '''The script's checks of the assembled manuscript found in this section the problems listed in \
@@ -1845,8 +2306,11 @@ the manner and the flow that the passages show, and as the papers in `exemplars/
 # What a narrow repair is told in the place of the second half, the same for a section and for the whole. It is the
 # last repair that its findings receive: no reading of the whole manuscript follows it, only a reading of the passages
 # it changed, so it changes the passages that its findings name and nothing else.
-NARROW = '''After this repair no session reads the whole manuscript again. The session that reported the findings has read \
-every passage of the manuscript as it stands. After the repair another session reads the passages that the repair \
+NARROW_READ_BY = {None: 'The session that reported the findings has read every passage of the manuscript as it stands.',
+                  'coverage': 'Every passage of the manuscript as it stands has been read by a session that read the '
+                              'manuscript from beginning to end, or is a change that a session read where it stands.'}
+NARROW_TEXT = '''After this repair no session reads the whole manuscript again. {read_by} After the repair another \
+session reads the passages that the repair \
 changed, and those only. For each of them it has the text before and the text after. It reads the new text where it \
 stands in the manuscript and judges whether the change is sound: whether every step of an argument is still there, \
 whether every statement still says what it said, and whether the notation and the references still agree with the rest \
@@ -1866,6 +2330,7 @@ have to change.
 
 In the note of a finding that you revise, say which passages you changed for it. The session that reads the changes \
 has the notes, and tells from them which change belongs to which finding.'''
+NARROW, NARROW_COVERED = (NARROW_TEXT.format(read_by=NARROW_READ_BY[kind]) for kind in (None, 'coverage'))
 NARROW_AGAIN = '''
 
 A finding that carries "open_because" was taken up before and left open, and the text under that key says why: an \
@@ -1882,11 +2347,13 @@ the text and say so.'''
 NARROW_SECTION_KINDS = {
     'reading': READ_SECTION.format(compared='') + '\n\n' + READ_DECIDE + READ_ELSEWHERE + NARROW_READ + '\n\n' + NARROW,
     'comparison': COMPARED_SECTION + '\n\n' + NARROW,
-    'likeness': LIKE_SECTION + '\n\n' + NARROW_LIKE + LIKE_KEPT + '\n\n' + NARROW}
+    'likeness': LIKE_SECTION + '\n\n' + NARROW_LIKE + LIKE_KEPT + '\n\n' + NARROW,
+    'coverage': COVERED_FINDINGS.format(where='this section') + '\n\n' + COVERED_DECIDE + '\n\n' + NARROW_COVERED}
 NARROW_WHOLE_KINDS = {
     'reading': READ_WHOLE + '\n\n' + READ_DECIDE + NARROW_READ + NARROW_TITLE + '\n\n' + NARROW,
     'comparison': COMPARED_WHOLE + '\n\n' + NARROW,
-    'likeness': LIKE_WHOLE + '\n\n' + NARROW_LIKE + LIKE_KEPT + NARROW_TITLE + '\n\n' + NARROW}
+    'likeness': LIKE_WHOLE + '\n\n' + NARROW_LIKE + LIKE_KEPT + NARROW_TITLE + '\n\n' + NARROW,
+    'coverage': COVERED_FINDINGS.format(where='the manuscript') + '\n\n' + COVERED_DECIDE + '\n\n' + NARROW_COVERED}
 
 SECTION_REPAIR_PROMPT = CONTEXT + '''
 
@@ -2064,7 +2531,13 @@ the manuscript is written otherwise than research articles are, with passages fr
 there ("where", "quote", "evidence", "difference"). A finding of the comparison comes from a session that compared each numbered statement of the \
 manuscript with the result of the research which it states. It gives a statement, by its label, that was found to say \
 something else, and the difference ("label", "difference"); you do not have the research, and the difference as it is \
-reported is what such a finding asks to be corrected. The array is empty when the only changes are corrections of the \
+reported is what such a finding asks to be corrected. A finding of the comparison of the running text comes from a \
+session that compared the text outside the numbered statements and the proofs with the results of the research. It gives \
+a passage that asserts something which none of those results states, and what the passage asserts beyond the result \
+that comes nearest ("where", "quote", "asserts", "difference"; "nearest" is the research's own name for that result and \
+names nothing in the manuscript). Such a finding asks that the passage be cut, or reworded so that it no longer asserts \
+that difference; it is answered when the manuscript no longer asserts it at that place, and a cut is sound when nothing \
+that stays in the manuscript rests on what was cut. The array is empty when the only changes are corrections of the \
 LaTeX.
 - "changes": the changed passages in the order of the manuscript, each {{"change": <its number>, "part": <"abstract", or \
 the id of the section, which follows `sec:` in the label after its heading>, "lines": <the lines of `paper.tex` at which \
@@ -2119,6 +2592,309 @@ change it says in a sentence what you read to judge it.
 - "findings": an array with one object for each finding of `changes.json`, in their order: {{"finding": <its number>, \
 "answered": true or false, "reason": "..."}}. For a finding that is not answered, "reason" says what the manuscript \
 still has at that place; otherwise it may be empty.
+'''
+
+SKETCH_PROMPT = CONTEXT + '''
+
+This run of the script makes the draft of the paper, and not yet the paper. The library can still be changed now. After \
+this run it is brought into its final form and frozen, and from then on the paper may state only what the library \
+contains. The draft exists so that whatever the paper will want to state, and the library does not yet contain, is found \
+while it can still be added, and not when a writer reaches for it and nothing can be added any more. The method's \
+section "The draft that comes before the paper" describes this.
+
+This session sketches one section of the paper: "{title}", whose id in the plan is `{id}`.{also} Other sessions sketch \
+the other sections at the same time. A sketch contains no prose of the paper. It fixes what the section will state: its \
+numbered statements, the displayed formulas that are used as results, and whatever else the section will assert that no \
+element states. Sessions after this one compare each sketched statement with its element. When the library is frozen, a \
+writing session receives the same files as you, with the statements and formulas of your sketch, and writes the section.
+
+In this folder:
+''' + METHOD_FILE + '''
+''' + BRIEF_FILE.format(tense='will be') + '''
+''' + RESEARCH_FILES + '''
+''' + STUDY_FILE + '''
+- `exemplars/` holds {count} of those papers, {papers}, each as the LaTeX source that its authors wrote. The plan names \
+them for this section as the ones from which the most can be learned for a section of this kind.
+
+What the plan gives this section: {content}
+
+Work as the writer of the section would, up to the point of writing. Read the brief, `study.md` and the papers in \
+`exemplars/`, and decide how the section will go: in which form each statement is given, how each proof proceeds from \
+the proof in its record, what the text between the statements says, and what a section of this kind in those papers \
+would tell its reader. A gap that is not seen now is met by the writer, who can then only leave the sentence out. So \
+take the section far enough to know every statement, every formula and every claim that it will rely on.
+
+Write `output/sketch.json`, a JSON object with the three keys below. A text that will be printed is LaTeX in the \
+notation of the plan; inside a JSON string a backslash is written twice.
+
+- "statements": one object for each numbered statement that the plan has this section state, in the order of the plan: \
+{{"label": "...", "text": "...", "gap": null}}. "label" is the label the plan gives the statement. "text" is the statement \
+as the paper will have it, complete, as it stands between the `\\begin` and the `\\end` of its environment: with every \
+hypothesis, in the notation and the conventions of the paper, written from the record as the method's section "Every \
+numbered statement says what its element says" describes. "gap" is null when the text says exactly what its element \
+says. Sometimes a paper would state the result otherwise than the element does: a classical bound in the strict form in \
+which the literature has it where the element proves a weaker one, a lemma in its general form where the element has \
+one value of a parameter, a statement at the parameters that the later proofs of the paper use. Then write the text as \
+the paper should state it, and give under "gap" an object {{"wanted": "...", "has": "...", "reason": "..."}}: "wanted" is \
+the mathematical statement that the library would have to contain for the text to be covered, complete enough that a \
+session which has the library and not this sketch can formalise it; "has" is what the element states instead; \
+"reason" says why a paper would state it in the wanted form.
+- "formulas": the displayed formulas that the section will use as results, each {{"label": "...", "host": ..., "text": \
+"...", "element": ..., "gap": null}}. A formula belongs here when text outside the argument in which it stands will \
+refer to it: a formula that is displayed in one proof and to which a later proof or the running text refers, or one \
+that is displayed in the running text and that a proof uses. A formula that is a line of one computation and is \
+referred to only inside that proof is not listed. "label" is the label the formula will carry, beginning with \
+`eq:{id}-`. "host" is the label of the numbered statement in whose proof the formula stands, or null when it stands in \
+the running text. "text" is the formula as it will be displayed, without its environment. "element" is the name of the \
+element that states exactly this formula, which may be a step that the plan absorbs at that place, or null when no \
+element states it. In the first case "gap" is null. In the second, "gap" is {{"element": "...", "wanted": "...", "has": \
+"...", "reason": "..."}}, with "element" the name of the element whose statement comes nearest and the other three as \
+for a statement.
+- "assertions": whatever else the section will assert about the objects of the paper that no element states, each \
+{{"host": ..., "element": "...", "wanted": "...", "has": "...", "reason": "..."}}, with "host" as for a formula and \
+"element" the element that comes nearest. The method's section "What the running text asserts" says what the paper may \
+assert outside its numbered statements: a consequence drawn after a proof, a remark that a bound is sharp and the value \
+of a result in a special case each have to be stated by an element. What an element states, or a special case or a weaker \
+form of it, is no gap. Neither is a step of a proof that the record of the element gives, a fact that the reader \
+knows from the textbooks of the area, or a sentence that says what the section does. An empty array when there is \
+nothing of this kind.
+
+A gap is not a fault of the sketch, and a sketch without gaps is not a better one. Each gap goes to a session that \
+tries to add the wanted statement to the library; where that fails, the paper will state what the library has. What \
+harms the paper is a gap that is not declared: a text that silently says more than its element is found by the \
+comparison at best, and is then replaced by what the element says. And declare a gap only where a paper would in fact \
+state the result in that form; a statement is not strengthened because a stronger one looks attainable.
+
+Write no part of the paper itself. Use no source other than the files in this folder.
+'''
+
+DRAFT_COMPARE_PROMPT = CONTEXT + '''
+
+This run of the script makes the draft of the paper, and not yet the paper: for each section a session has sketched \
+the numbered statements as the paper will state them and the displayed formulas that the section will use as results. \
+The library can still be changed, and what the draft wants beyond it goes to sessions that try to add it. This session \
+compares the sketched statements and formulas of one section, "{title}", with the elements they are to state; other \
+sessions do the same for the other sections. The paper is of use only if each of its statements says exactly what was \
+proved, and a difference that is not found here is written into the paper.
+
+In this folder:
+- `paper-method.md` is the method the paper is written by. Its sections "What of the canon the paper leaves out" and \
+"Every numbered statement says what its element says" say what a statement has to say and which differences from the \
+record are permitted. Its section "The draft that comes before the paper" says what a gap is.
+- `statements.json` lists the sketched statements and formulas of this section: for each its label, whether it is a \
+numbered statement or a formula, the element it is to state, the statement of that element in words as its record gives \
+it, the element's Lean statement, the sketched text ("draft_statement"), and "declared_gap". "declared_gap" is null, or \
+it holds what the sketching session said of the entry: that its text on purpose says something other than the element, \
+with what the paper wants, what the element has, and why.
+- `records.md` holds the records in full of the elements that these entries state, and, by what they say, the elements \
+that their statements mention, each with the symbol or name under which the paper knows it where the plan fixes one.
+- `elements/` holds the full record of every element that the proof of the root rests on, one file each, and \
+`elements.md` lists the elements with their files. Open one when an entry speaks of an object whose definition you need \
+and `records.md` does not give it.
+- `plan.json` is the plan of the paper. Its "notation" is the notation in which the sketched texts are written; no \
+manuscript exists yet.
+
+For each entry decide whether the sketched text says exactly what the statement of the element says: the same objects, \
+the same hypotheses, the same quantifiers and ranges, the same conclusion, neither stronger nor weaker, read with the \
+notation of the plan. A difference the method permits is no difference as long as the mathematical content is the same. \
+Where a convention changed, for example an index that now starts at one, check that the statement was carried over \
+correctly, case by case at the boundary. Where the statement in words and the Lean statement of an element disagree \
+with each other, say so in "record_disagreement": the Lean statement is the one that was proved.
+
+An entry whose "declared_gap" is not null is expected to differ, and is judged like the others. When it differs, the \
+gap goes on to the sessions that extend the library, and nothing more is asked of you for it. When you find that it says \
+what its element says after all, give the verdict "same": the gap is then dropped. An entry without a declared gap \
+that differs is a slip of the sketch. For such an entry give under "text" the statement as the element says it: \
+complete, in the notation of the plan, written as the method describes, so that it can stand in the paper in the place \
+of the sketched text. The script puts it there, and nobody compares it again before the paper is written.
+
+Write `output/comparison.json`: an array with one object for each entry, in their order, {{"label": "...", "verdict": \
+"same" or "differs", "difference": "<what differs, exactly; empty when the verdict is same>", "text": "<for an entry \
+without a declared gap that differs: the statement as the element says it; otherwise empty>", "record_disagreement": \
+"<where the statement in words and the Lean statement of the element disagree, exactly; empty when they agree>"}}. Use \
+no source other than the files in this folder.
+'''
+
+PLAN_REPAIR_PROMPT = CONTEXT + '''
+
+This paper was drafted before the library had its final form. A session planned it, and for each section the numbered \
+statements were sketched and compared with the library. The library was then changed and frozen: declarations were \
+added so that it contains what the draft wanted, some were renamed or removed, and sources were entered into records. A \
+script has carried the plan of the draft over to the library as it is now: an element that is gone left the plan, a \
+declaration that closed a gap entered where the gap stood, and a statement whose element now has a source is cited. \
+The plan that came of this does not pass the check that every plan passes before sections are written from it. This \
+session repairs that plan. It does not plan the paper anew: the papers were chosen and read, the statements were \
+drafted under the labels of this plan, and the writers will receive those drafts.
+
+In this folder:
+''' + METHOD_FILE + '''
+- `plan.json` is the plan as the script carried it over, and `carried.md` says what the script changed in it.
+- `problems.md` lists what the check of the plan found. These are the reasons the script cannot write the paper from \
+`plan.json`.
+- `draft.json` holds the drafted statements, under "statements", and the drafted formulas, under "formulas", by their \
+labels, each with the element that states it now. An entry with "cut" is not used.
+- `materials-digest.md` is a digest of the materials as the frozen library has them: everything the proof of the root \
+rests on, and the declarations that closed a gap of the draft with what they rest on, which the digest marks as added \
+for the draft where the proof of the root does not use them. It gives the root, the account of the problem as a whole, \
+and every element in dependence order with its name, kind and weight, its Lean form, what it names and what names it, \
+its description and its statement in words. `elements/` holds the full record of every element, one file each; the \
+digest names the file at each element.
+- `study.md` is the account that the planning session wrote of how the papers it chose are written. The papers \
+themselves are not in this folder and are not read again. The plan keeps its "exemplars" as they are, and so does every \
+section; a section that you add names two of the plan's papers.
+
+Change in the plan what the problems require, and leave the rest as it is. The labels, the kinds, the sections and the \
+elements of the numbered statements in particular stay wherever no problem requires otherwise, because the drafted \
+texts belong to them by their labels. Where a problem leaves a choice, make it as the method does. An element that the \
+library gained and that the plan does not mention is placed by its weight and by what uses it, as the method's \
+section "Which elements receive a number" describes. An element that lost its place, because the statement it was \
+absorbed into no longer rests on it or because the section that held it is gone, is placed anew in the same way. An \
+element that another now stands for is recorded as not stated, with that element under "by".
+
+Write `output/plan.json`: the complete plan, a JSON object with the keys below, as the session that planned the paper \
+was told them. A plan may also have the key "citations", an array, which names results that an earlier step asked to \
+have cited; leave out of it every element whose record now names a source, and every element that is gone.
+
+{plan_keys}
+
+Use no source other than the files in this folder. Write no part of the paper itself.
+
+What the check found:
+
+{problems}
+'''
+
+RESOLVE_PROMPT = CONTEXT + '''
+
+This session resolves what the readings of the manuscript left open. The manuscript was written, read and repaired by \
+sessions before this one. It was read by sessions that had nothing but the manuscript, as its reader will read it, and \
+it was read beside research articles from refereed journals. What these readers found went to repair sessions a \
+bounded number of times. Each of those repairs kept the plan of the paper, and the last ones were narrow: they changed \
+the passages that their findings named and nothing else. `findings.json` holds the findings that are open after all of \
+that. Many of them are open because no repair of that kind could answer them: they ask for another arrangement of a \
+section, for a statement in another place or without a number of its own, for a passage written anew.
+
+This session can answer such a finding, because it is not bound to the plan. It is also the last that takes these \
+findings up: each of them is closed here, by a change of the manuscript or by your reason for leaving the text as it \
+is. The reasons are handed over with the paper, to the person who decides whether the paper is as it should be.
+
+In this folder:
+''' + METHOD_FILE + ''' Its section "What is checked after writing" says, where it describes this session, what it may \
+change and what stays.
+- `plan.json` is the plan of the paper as the manuscript now follows it.
+''' + RESEARCH_FILES + '''
+''' + PREFERENCES_FILE + '''
+- `parts/` holds the parts of the manuscript as they stand: `abstract.tex` and one file per section.
+- `paper.tex` is the manuscript the script assembled from them. {spans}
+- `findings.json` holds, under "findings", the open findings, each {{"finding": <its number>, "check": <the reading that \
+reported it>, "reported": <the finding as it was reported>}}. A finding of a reading of the manuscript by itself gives a \
+place where a reader could not follow, missed something or found an error ("where", "quote", "problem"). A finding of a \
+reading beside real papers gives a place where the manuscript is written otherwise than research articles are, with \
+passages from such articles that show what they do there ("where", "quote", "evidence", "difference"). Where a finding \
+carries "open_because", the text under that key says why it is still open: a repair kept the text and gave its reason; \
+or its change was found unsound and was undone; or its change stayed and was found not to answer the finding; or the \
+finding was repaired and too few readings followed to confirm the repair. Under "understanding" the file holds what the \
+last reader of the manuscript took the paper to prove and how, or null.{papers}
+
+What you may change. You may rewrite a passage, a proof or a whole part. You may also change the structure of the \
+paper: move a numbered statement to another place or another section; change its kind; take away its number and write \
+its content into the running text or into the proof that uses it; give a number to an element that the plan absorbed; \
+join two sections or divide one; change the title of the paper or of a section; change an entry of the notation. Which of these a finding calls for is \
+yours to judge, by the method and by what the papers in `exemplars/` do.
+
+What stays, and why. Every numbered statement states one element of the materials and says exactly what that element \
+says, because that correspondence is what the paper is worth; you may reword a statement, and you may not change what \
+it says or add a numbered statement that states no element. The paper asserts no mathematics that the elements do not \
+state (method, section "What the running text asserts"): nothing can be added to the library now, and after this \
+session the running text is compared with the records, where a sentence that no element covers is cut. The paper cites only works that are \
+in `references.bib`, and it does not mention Lean, a proof assistant or a formal proof. The other decisions of the \
+method stand as well, also where the papers do otherwise.
+
+Decide for each finding whether the manuscript has to change. A reader can misread, and a finding can ask for \
+something that the method excludes or that would change the mathematics; in that case keep the text and say why, in \
+words that the person who receives the paper can judge without this folder. In every other case change the manuscript \
+so that a reader no longer meets what the finding reports, at the place the finding names and wherever else the same \
+thing stands. No sentence of the papers is copied or paraphrased into the manuscript; they show manner.
+
+What you write:
+
+- For every part you change, its complete new text as `output/<name>.tex`, with the file name it has in `parts/`. The \
+part of a section that you create is `output/<id>.tex`, with the id you give that section in the plan. Leave unchanged \
+parts out.
+- `output/plan.json`, when you change the structure: when a numbered statement moves to another section, changes its \
+kind or its label, loses or gains its number or is now cited; when sections are joined, divided or reordered; when a \
+title or the notation changes. It is the complete plan in the form of `plan.json`, changed so that it says what the \
+manuscript now is, because the script holds the manuscript to the plan: every numbered statement of the plan in its \
+section, in the plan's order, with its kind and label, and no other. A statement that loses its number moves from \
+"statements" to "others", with the treatment "absorbed" and the place into which it is now written. A section that is \
+gone is left out, and its part with it. The plan keeps its "exemplars"; a section that you create names two of them. \
+When the structure stays as it is, write no plan.
+- `output/response.json`: an array with one object for each finding of `findings.json`, in their order, {{"finding": \
+<its number>, "action": "revised" or "kept", "note": "..."}}. For a finding that you revise, the note says what you \
+changed and where. For a finding that you keep, the note is your reason, complete in itself, since it is what the \
+person who receives the paper reads about that finding.
+
+The keys of a plan, as the session that planned the paper was told them:
+
+{plan_keys} A plan that the script cannot accept comes back to a new session with the reasons.
+
+After this session the script assembles the manuscript and repeats its machine checks and the typesetting. A session \
+that has nothing but the manuscript then reads it from beginning to end, the numbered statements whose text changed are \
+compared with their elements, and the running text is compared with the records. Nobody else reads what you rewrite \
+with the research beside it. So a proof that you rewrite is rewritten from the proof in the record of its element, step \
+by step, and not from the proof in the manuscript alone. Use no source other than the files in this folder.
+'''
+
+COVER_PROMPT = CONTEXT + '''
+
+This session compares the running text of one section of the manuscript, "{title}", with what the research proved; \
+other sessions do the same for the other sections. The numbered statements of the manuscript have each been compared \
+with the element they state. The text around them has not: the sentences that introduce a lemma, that draw a \
+consequence after a proof, that say what a bound gives in a special case or that a result cannot be improved. Such a \
+sentence can assert more than was proved, and nothing in the paper would show it. The paper is written from the \
+research as it stands, and nothing is added to the library for the sake of a sentence. What this session reports is \
+therefore cut from the paper, or reworded, by a repair session.
+
+In this folder:
+- `paper-method.md` is the method the manuscript was written by. Its section "What the running text asserts" says what \
+the paper may assert outside its numbered statements and when an element covers an assertion.
+- `text.json` lists what this session compares, each entry with its number ("entry"), its kind, the part it stands in \
+("part", the id of this section{abstract}), the lines of `paper.tex` it occupies and its text. An entry of the kind \
+"running text" is a passage of the section outside the numbered statements and outside the proofs. An entry of the \
+other kind is a displayed formula inside a proof to which text outside that proof refers, by one of the labels under \
+"labels": the manuscript uses such a formula as a result, so it is held to the elements as the running text is.
+- `records.md` holds the records in full of the elements whose records the writer of this section had in full, and \
+every other element that the proof of the root rests on by what it says, each with the place where the paper has it \
+and the symbol or name under which the paper knows it.
+- `elements/` holds the full record of every element, one file each, and `elements.md` lists the elements with their \
+files. Open one when the statement in `records.md` does not settle whether an element covers an assertion.
+- `paper.tex` is the manuscript, for the definitions and the notation in which its text is read, and for the place of \
+each entry. {spans}
+
+Read each entry where it stands in `paper.tex`. Find in it every assertion of mathematics about the objects of the \
+paper: every sentence or formula that says that something holds, follows, equals, is bounded, exists, fails or cannot \
+be improved. For each assertion look for an element that covers it, as that section of the method describes: an \
+element whose statement says the same or says more, so that the assertion is that statement, a special case of it, a \
+weaker form of it, or the same thing in words. Read both in the notation and the conventions of the manuscript. Where \
+the statement in words and the Lean statement of an element differ, the Lean statement is what was proved. Check a \
+special case at its boundary: an element that is stated for $n \\ge 1$ does not cover a sentence about $n = 0$.
+
+Report every assertion that no element covers. Report it also when it is true and its proof would be short: the \
+question is whether the library states it, and a claim that is easy to prove is as unproved there as a hard one. An \
+assertion that follows only from two elements together, and that no single element states, is not covered.
+
+That section of the method also says what in the running text is no assertion in this sense, and none of that is \
+reported: for example a sentence that says what the paper, a section or a proof does or will do; a definition, and the \
+introduction of a notation; a sentence that says where a hypothesis is used or why a definition is made as it is; a \
+fact that the reader of the method knows from the textbooks of the area and that the text uses with an ordinary \
+phrase. What the text says about the literature is not the subject of this comparison either: the method's section \
+"Results from the literature" governs it. And how a passage is worded is not in question.
+
+Write `output/coverage.json`: an array, empty when an element covers every assertion. Each object is {{"entry": <the \
+number of the entry>, "quote": "<the sentence or the formula, copied exactly from the entry>", "asserts": "<what it \
+asserts, in a sentence>", "nearest": "<the name of the element whose statement comes nearest to it>", "difference": \
+"<what the passage asserts that this element does not state, exactly>"}}. Use no source other than the files in this \
+folder.
 '''
 
 AGAIN = '''
@@ -2208,42 +2984,169 @@ def chosen_numbers(text, count):
 
 def size(files, wanted=lambda name: True):
     """The bytes of the files of a session whose names `wanted` accepts."""
-    return sum(len(text.encode('utf-8')) for name, text in files.items() if wanted(name))
+    return sum(len(text if isinstance(text, bytes) else text.encode('utf-8')) for name, text in files.items() if wanted(name))
 
 
-class Paper:
-    """One run of the command: its folder, what it was given, what the sessions made, and the log."""
+def read_draft(folder):
+    """The plan, the account of the papers and the draft that a folder holds for --from-draft; stops when it holds none."""
+    folder = Path(folder)
+    missing = [name for name in ('plan.json', 'study.md', 'draft.json') if not (folder / name).is_file()]
+    if missing:
+        raise Stop(f'{folder} holds no draft of this command to write the paper from: it has no ' + ', '.join(missing))
+    try:
+        plan, draft = (json.loads(read_file(folder / name)) for name in ('plan.json', 'draft.json'))
+    except ValueError as exc:
+        raise Stop(f'the draft in {folder} cannot be read: plan.json or draft.json is not JSON ({exc})')
+    study = read_file(folder / 'study.md')
+    lists = lambda holder, keys: isinstance(holder, dict) and all(
+        isinstance(holder.get(key), list) and all(isinstance(entry, dict) for entry in holder[key]) for key in keys)
+    if not lists(plan, ('sections', 'statements', 'others')) or not lists(draft, ('statements', 'formulas', 'gaps')) \
+            or not study.strip():
+        raise Stop(f'the draft in {folder} does not have the form of a draft of this command: plan.json with "sections", '
+                   '"statements" and "others", draft.json with "statements", "formulas" and "gaps", each an array of '
+                   'objects, and a study.md that is not empty')
+    return plan, study, draft
 
-    def __init__(self, instance, out, tex, choice, parallel=PARALLEL, dry=False):
+
+def carried_plan(materials, plan, draft):
+    """The plan of a draft carried over to the materials as they are now, and what was changed in it, as sentences.
+
+    Between the draft and the paper the library changed: declarations were added to close the gaps of
+    the draft, others were renamed or removed, and sources were entered into records. The draft says,
+    for each statement, which element states it now, and for each gap which declaration closed it.
+    The script does what follows from that without a decision. An element that is no longer among the
+    materials leaves the plan, and so does a statement that the draft marks as cut. A statement that
+    another declaration now states names that declaration, under its kind and label. The element it
+    named before is recorded as not stated, with the new one in its place, when its proof names the
+    new one; otherwise it is absorbed into the numbered statements that name it, since the paper no
+    longer states it and their proofs still use it. A declaration that closed a gap of a formula or of
+    an assertion is absorbed where the gap stood: into the numbered statement in whose proof the gap
+    stood when that statement's element rests on the declaration, and otherwise into the running text
+    of the gap's section. A statement whose element now has a source is cited, and one whose element
+    lost its source is proved again. The materials of such a paper hold the declarations that closed
+    a gap also where the proof of the root does not use them (extract). Whatever this leaves wrong,
+    such as an element that the library gained and the plan does not mention, the check of the plan
+    reports."""
+    elements = {element['name']: element for element in materials['elements']}
+    plan = json.loads(json.dumps(plan))
+    notes, statements, renamed = [], [], {}
+    drafted = {entry.get('label'): entry for entry in draft['statements']}
+    gaps = {gap.get('id'): gap for gap in draft['gaps']}
+    for item in plan['statements']:
+        label, before = item.get('label'), item.get('element')
+        entry = drafted.get(label, {})
+        if entry.get('cut'):
+            notes.append(f'the statement `{label}` was cut from the draft and is no numbered statement any more')
+            continue
+        name = gaps.get(entry.get('gap'), {}).get('closed_by') or entry.get('element') or before
+        if name not in elements:
+            notes.append(f'the statement `{label}` left the plan: its element `{name}` is not among the materials')
+            continue
+        if name != before:
+            renamed[before] = name
+            notes.append(f'the statement `{label}` states `{name}`, where the draft had `{before}`')
+            item['element'] = name
+        if elements[name]['kind'] == 'statement':
+            if elements[name]['source'] and item.get('proof') != 'cited':
+                item['proof'] = 'cited'
+                notes.append(f"the statement `{label}` is cited and not proved: the record of `{name}` names the source "
+                             f"`{elements[name]['source']}`")
+            elif not elements[name]['source'] and item.get('proof') == 'cited':
+                del item['proof']
+                notes.append(f'the statement `{label}` is proved where it is stated: the record of `{name}` names no '
+                             'source any more')
+        statements.append(item)
+    placed = {item['element'] for item in statements}
+    ids = [section.get('id') for section in plan['sections']]
+    others = []
+    for item in plan['others']:
+        name = item.get('element')
+        if name not in elements:
+            notes.append(f'`{name}` left the plan: it is not among the materials')
+            continue
+        if name in placed:
+            continue
+        if isinstance(item.get('into'), list):
+            into = [renamed.get(target, target) for target in item['into']]
+            item['into'] = list(dict.fromkeys(target for target in into if target in ids or target in placed))
+        if item.get('by') in renamed:
+            item['by'] = renamed[item['by']]
+        others.append(item)
+        placed.add(name)
+    for before, name in renamed.items():
+        if before not in elements or before in placed:
+            continue
+        if stands_in(elements[before], elements[name], elements):
+            others.append({'element': before, 'treatment': 'not_stated', 'by': name,
+                           'reason': 'The paper states this result in the form of the element under "by", which the '
+                                     'library gained after the draft; this element is the form it had before.'})
+            notes.append(f'`{before}` is not stated: `{name}` stands in its place')
+        else:
+            # The proof of the old form does not name the new one, so the new one cannot stand for it in the plan.
+            users = [item['element'] for item in statements
+                     if before in elements[item['element']]['uses'] + elements[item['element']]['mentions']]
+            if not users:
+                notes.append(f'`{before}` has no place in the plan: `{name}` is stated where it was, its own proof does '
+                             f'not name `{name}`, and no numbered statement names it')
+                continue
+            others.append({'element': before, 'treatment': 'absorbed', 'into': users,
+                           'reason': 'The paper states, under the label this element had, the form that the library '
+                                     'gained after the draft; this form is written where a proof uses it.'})
+            notes.append(f'`{before}` is absorbed into ' + ', '.join(f'`{user}`' for user in users)
+                         + f': `{name}` is stated where it was')
+        placed.add(before)
+    hosts = {item['label']: item['element'] for item in statements}
+    for gap in draft['gaps']:
+        name = gap.get('closed_by')
+        if gap.get('kind') == 'statement' or name not in elements or name in placed:
+            continue
+        # Into the statement in whose proof the gap stood, when its element rests on the declaration, so that
+        # the check of the plan accepts it; otherwise into the running text of the section of the gap.
+        host = hosts.get(gap.get('host'))
+        target = host if host and rests_on(elements, host, name) else gap.get('section') if gap.get('section') in ids else None
+        if target is None:
+            notes.append(f"`{name}`, which closed the gap {gap.get('id')}, has no place in the plan: the section of the "
+                         'gap is gone')
+            continue
+        others.append({'element': name, 'treatment': 'absorbed', 'into': [target],
+                       'reason': 'It states what the draft of the paper needed at this place and the library did not '
+                                 'yet contain.'})
+        placed.add(name)
+        notes.append(f"`{name}`, which closed the gap {gap.get('id')}, is absorbed into `{target}`")
+    plan['statements'], plan['others'] = statements, others
+    for entry in plan.get('notation') or []:
+        if isinstance(entry, dict) and isinstance(entry.get('elements'), list):
+            entry['elements'] = [renamed.get(name, name) for name in entry['elements'] if renamed.get(name, name) in elements]
+    if isinstance(plan.get('citations'), list):
+        plan['citations'] = [entry for entry in plan['citations'] if isinstance(entry, dict)
+                             and entry.get('element') in elements and not elements[entry['element']]['source']]
+    return plan, notes
+
+
+class Sessions:
+    """The sessions that a command launches, each in a folder of its own under <out>/sessions, and the log <out>/log.json.
+
+    `instance` is a folder with settings.json, from which the CLIs and the models are taken: `writer` is
+    the first entry of `models`, `assessor` the first entry of the role `review`, or of `models` when the
+    settings name none. `parallel` bounds the sessions that side_by_side runs at a time. `gate`, when it
+    is given, is a semaphore that bounds the CLI processes of every object that shares it: launch holds it
+    while the process of a session runs, and not while it waits for a usage limit to end. With `dry`
+    the log is kept in memory and not written."""
+
+    def __init__(self, instance, out, parallel=PARALLEL, dry=False, gate=None):
         self.instance, self.out = Path(instance).resolve(), Path(out).resolve()
         self.settings = load_settings(self.instance)
         first = self.settings['models'][0]
-        chosen = {'model': choice.get('model') or first['model'], 'effort': choice.get('effort') or first['effort']}
-        # The readings and the comparison come, where the settings name one, from the model that reviews.
-        self.writer = chosen
-        self.assessor = chosen if choice.get('model') else self.settings['roles'].get('review', self.settings['models'])[0]
-        self.recipe = tex_recipe(tex)
-        self.parallel, self.dry = max(1, int(parallel)), dry
-        # Sessions that run side by side share the log, the numbering of their folders, the parts and the state.
+        self.writer = {'model': first['model'], 'effort': first['effort']}
+        self.assessor = self.settings['roles'].get('review', self.settings['models'])[0]
+        self.parallel, self.dry, self.gate = max(1, int(parallel)), dry, gate
+        # Sessions that run side by side share the log and the numbering of their folders.
         self.lock = threading.RLock()
         self.stopping, self.running = threading.Event(), set()
         self.log = read_json(self.out / 'log.json') if (self.out / 'log.json').is_file() else []
         numbers = [int(match[0]) for path in (self.out / 'sessions').iterdir() if (match := re.match(r'\d+', path.name))] \
             if (self.out / 'sessions').is_dir() else []
         self.count = max(numbers, default=0)
-        self.materials = self.plan = self.layout = self.research = None
-        self.parts, self.compared, self.open = {}, {}, []
-        # A narrow repair that is under way, with the reading of what it changed: its step, the findings it takes
-        # up, and what its later steps need of the earlier ones (narrow_begin). None when none is under way.
-        self.narrow = None
-        # How often the manuscript was read by itself, and whether a repair that followed a reading beside real
-        # papers or a comparison has changed a part since it was last read in that way (read_again).
-        self.readings, self.rewritten = 0, False
-        # The stages after the writing that are complete, each with whether the run goes on after it.
-        self.done = {}
-        # The collection of real papers and the planning session's account of how the chosen ones are
-        # written; --typeset-only has neither.
-        self.collection, self.papers, self.study = None, {}, None
 
     def event(self, name, **fields):
         with self.lock:
@@ -2251,18 +3154,11 @@ class Paper:
             if not self.dry:
                 write_json(self.out / 'log.json', self.log)
 
-    def save(self):
-        """state.json: how far the stages after the writing have come, and what the later ones need of the earlier."""
-        with self.lock:
-            if not self.dry:
-                write_json(self.out / 'state.json', {'done': self.done, 'open': self.open, 'readings': self.readings,
-                                                     'rewritten': self.rewritten, 'compared': self.compared,
-                                                     'narrow': self.narrow})
+    def launch(self, kind, prompt, files, choice, section=None, servers=None):
+        """One session in its own folder: its prompt and its files are written, the CLI runs to its end.
 
-    # -- sessions ---------------------------------------------------------------------------------------
-
-    def launch(self, kind, prompt, files, choice, section=None):
-        """One session in its own folder: its prompt and its files are written, the CLI runs to its end."""
+        `files` maps a path under the folder to its content, a text or bytes. `servers` are the MCP
+        servers of the session; without them it has none. Returns the folder."""
         with self.lock:
             if self.stopping.is_set():
                 raise Stop('the command was interrupted')
@@ -2271,32 +3167,45 @@ class Paper:
             (folder / 'output').mkdir(parents=True)
         for name, content in files.items():
             (folder / name).parent.mkdir(parents=True, exist_ok=True)
-            write_text(folder / name, content)
+            if isinstance(content, bytes):
+                (folder / name).write_bytes(content)
+            else:
+                write_text(folder / name, content)
         write_text(folder / 'prompt.txt', prompt)
         write_json(folder / 'session.json', {'kind': kind, 'section': section, **choice})
         provider = provider_for_model(choice['model'])
         for _ in range(LIMIT_WAITS + 1):
-            with WRITING:  # it writes the settings of the session into the folder
-                command = worker_command(self.settings['cli'][provider], choice['model'], choice['effort'], folder, {})
-            started = time.time()
+            # The gate is held from here to the end of the process, so that the sessions of everything that shares
+            # it are bounded together. It is given back before a wait for a usage limit, which can last hours.
+            while self.gate is not None and not self.gate.acquire(timeout=0.5):
+                if self.stopping.is_set():
+                    raise Stop('the command was interrupted')
             try:
-                with (folder / 'prompt.txt').open('rb') as inp, (folder / 'cli.stdout.jsonl').open('wb') as out, \
-                        (folder / 'cli.stderr.log').open('wb') as err:
-                    process = subprocess.Popen(command.argv, cwd=command.cwd, env=worker_environment(), stdin=inp,
-                                               stdout=out, stderr=err, shell=False, **popen_options())
-                    with self.lock:
-                        self.running.add(process)
-                    try:
-                        code = process.wait()
-                    except BaseException:  # the command is interrupted while this thread waits: the session ends with it
-                        process.kill()
-                        process.wait()
-                        raise
-                    finally:
+                with WRITING:  # it writes the settings of the session into the folder
+                    command = worker_command(self.settings['cli'][provider], choice['model'], choice['effort'], folder,
+                                             servers or {}, withheld=SELF_SCHEDULING)
+                started = time.time()
+                try:
+                    with (folder / 'prompt.txt').open('rb') as inp, (folder / 'cli.stdout.jsonl').open('wb') as out, \
+                            (folder / 'cli.stderr.log').open('wb') as err:
+                        process = subprocess.Popen(command.argv, cwd=command.cwd, env=worker_environment(), stdin=inp,
+                                                   stdout=out, stderr=err, shell=False, **popen_options())
                         with self.lock:
-                            self.running.discard(process)
-            except OSError as exc:
-                raise Stop(f'the {kind} session could not be started: {exc}')
+                            self.running.add(process)
+                        try:
+                            code = process.wait()
+                        except BaseException:  # the command is interrupted while this thread waits: the session ends with it
+                            process.kill()
+                            process.wait()
+                            raise
+                        finally:
+                            with self.lock:
+                                self.running.discard(process)
+                except OSError as exc:
+                    raise Stop(f'the {kind} session could not be started: {exc}')
+            finally:
+                if self.gate is not None:
+                    self.gate.release()
             if self.stopping.is_set():
                 raise Stop('the command was interrupted')
             limit = detect_usage_limit(provider, folder / 'cli.stdout.jsonl', folder / 'cli.stderr.log', now=time.time(),
@@ -2311,12 +3220,15 @@ class Paper:
                 raise Stop('the command was interrupted')
         return folder
 
-    def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS):
-        """Launch sessions for one task until one leaves output that `read` accepts; returns what `read` returns."""
+    def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS, servers=None):
+        """Launch sessions for one task until one leaves output that `read` accepts; returns what `read` returns.
+
+        `read` is given the folder `output` of the session and returns what the caller wants, or raises
+        Unusable with the reasons, which the next session is told."""
         problems, previous = None, {}
         for _ in range(attempts):
             text = prompt if problems is None else prompt + AGAIN.format(problems='\n'.join('- ' + p for p in problems))
-            folder = self.launch(kind, text, {**files, **previous}, choice, section)
+            folder = self.launch(kind, text, {**files, **previous}, choice, section, servers)
             try:
                 return read(folder / 'output')
             except Unusable as exc:
@@ -2367,6 +3279,64 @@ class Paper:
                 raise future.exception()
         return [future.result() for future in futures]
 
+    @staticmethod
+    def load(path, kind=dict):
+        """The JSON that a session left at `path`, an object or with `kind=list` an array; Unusable when it is not there."""
+        if not path.is_file():
+            raise Unusable([f'output/{path.name} was not written'])
+        try:
+            data = json.loads(read_file(path))
+        except ValueError as exc:
+            raise Unusable([f'output/{path.name} is not JSON: {exc}'])
+        if not isinstance(data, kind):
+            raise Unusable([f"output/{path.name} holds a JSON {'object' if kind is dict else 'array'}"])
+        return data
+
+
+class Paper(Sessions):
+    """One run of the command: its folder, what it was given, what the sessions made, and the log."""
+
+    def __init__(self, instance, out, tex, choice, parallel=PARALLEL, dry=False, gate=None):
+        super().__init__(instance, out, parallel, dry, gate)
+        chosen = {'model': choice.get('model') or self.writer['model'], 'effort': choice.get('effort') or self.writer['effort']}
+        # The readings and the comparison come, where the settings name one, from the model that reviews.
+        self.writer = chosen
+        if choice.get('model'):
+            self.assessor = chosen
+        self.recipe = tex_recipe(tex)
+        # The authors of the title page; a run keeps the file it was given as <out>/title-page.json.
+        self.authors = read_title_page(self.out / 'title-page.json') if (self.out / 'title-page.json').is_file() else []
+        self.materials = self.plan = self.layout = self.research = None
+        self.parts, self.compared, self.open = {}, {}, []
+        # What the readings found and the stage `resolve` or the last narrow repair answered with a reason: each
+        # with its check, the finding and the reason. It is listed at the end of the run and is not open.
+        self.kept = []
+        # The stage `resolve` while it is under way: its step, the findings it took up and the answers of its
+        # session (resolve). None when it is not under way.
+        self.resolving = None
+        # The draft that the paper is written from (--from-draft): its statements, formulas and gaps. None otherwise.
+        self.sketched = None
+        # A narrow repair that is under way, with the reading of what it changed: its step, the findings it takes
+        # up, and what its later steps need of the earlier ones (narrow_begin). None when none is under way.
+        self.narrow = None
+        # How often the manuscript was read by itself, and whether a repair that followed a reading beside real
+        # papers or a comparison has changed a part since it was last read in that way (read_again).
+        self.readings, self.rewritten = 0, False
+        # The stages after the writing that are complete, each with whether the run goes on after it.
+        self.done = {}
+        # The collection of real papers and the planning session's account of how the chosen ones are
+        # written; --typeset-only has neither.
+        self.collection, self.papers, self.study = None, {}, None
+
+    def save(self):
+        """state.json: how far the stages after the writing have come, and what the later ones need of the earlier."""
+        with self.lock:
+            if not self.dry:
+                write_json(self.out / 'state.json', {'done': self.done, 'open': self.open, 'readings': self.readings,
+                                                     'rewritten': self.rewritten, 'compared': self.compared,
+                                                     'narrow': self.narrow, 'kept': self.kept,
+                                                     'resolve': self.resolving})
+
     # -- what a session is given ------------------------------------------------------------------------
 
     def records(self):
@@ -2394,7 +3364,7 @@ class Paper:
         """The files of a session that writes or repairs one section: its brief, the records, the account of the
         chosen papers and the papers the plan names for the section."""
         files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
-                 'brief.md': render_brief(self.materials, self.plan, section, self.layout),
+                 'brief.md': render_brief(self.materials, self.plan, section, self.layout, self.sketched),
                  'plan.json': self.plan_text(), **self.records()}
         if self.collection is not None:
             files['study.md'] = self.study
@@ -2407,30 +3377,24 @@ class Paper:
             return {'root': 'The paper uses the conventions of the root as it is stated in words.', 'elements': ELEMENTS_WHOLE}
         return {'root': ROOT_FIRST if section is self.plan['sections'][0] else ROOT_LATER, 'elements': ELEMENTS_SECTION}
 
-    @staticmethod
-    def load(path, kind=dict):
-        if not path.is_file():
-            raise Unusable([f'output/{path.name} was not written'])
-        try:
-            data = json.loads(read_file(path))
-        except ValueError as exc:
-            raise Unusable([f'output/{path.name} is not JSON: {exc}'])
-        if not isinstance(data, kind):
-            raise Unusable([f"output/{path.name} holds a JSON {'object' if kind is dict else 'array'}"])
-        return data
-
     # -- stages -----------------------------------------------------------------------------------------
 
     def take_plan(self, plan, study):
         self.plan, self.study = plan, study
         self.layout = Layout(self.materials, plan)
 
-    def make_plan(self):
-        keys = [entry['key'] for entry in self.collection]
+    def keys(self):
+        """The keys of the collection, from which a plan chooses its papers."""
+        return [entry['key'] for entry in self.collection]
 
+    def make_plan(self, draft=False):
+        """The planning session. For a draft it is also asked for the results the paper would cite (PLAN_CITATIONS)."""
         def read(output):
             plan = self.load(output / 'plan.json')
-            problems = check_plan(self.materials, plan, keys)
+            problems = check_plan(self.materials, plan, self.keys())
+            if draft and not isinstance(plan.get('citations'), list):
+                problems.append('"citations" is an array, empty when the paper would cite no result whose record names '
+                                'no source')
             # The account is passed on as it is; that it exists and is not empty is all the script checks.
             study = read_file(output / 'study.md') if (output / 'study.md').is_file() else ''
             if not study.strip():
@@ -2440,12 +3404,252 @@ class Paper:
                 raise Unusable(problems)
             return plan, study
 
-        self.take_plan(*self.session('plan', PLAN_PROMPT, self.planning_kit(), read, self.writer, attempts=PLAN_ATTEMPTS))
+        # The same text as PLAN_PROMPT or DRAFT_PLAN_PROMPT when the declaration that settles the root is the main result.
+        prompt = (PLAN_OPENING + PLAN_KEYS + (PLAN_CITATIONS if draft else '') + PLAN_NOTATION + PLAN_ACCEPTS
+                  + main_note(self.materials) + PLAN_CLOSING)
+        self.take_plan(*self.session('plan', prompt, self.planning_kit(), read,
+                                     self.writer, attempts=PLAN_ATTEMPTS))
+        self.keep_plan()
+
+    def keep_plan(self, **more):
+        """The plan and its account, into <out>, and the event that says what the plan holds."""
         write_text(self.out / 'study.md', self.study)  # the account first: a plan in the folder has its account beside it
         write_json(self.out / 'plan.json', self.plan)
         self.event('plan', statements=len(self.plan['statements']), sections=[s['id'] for s in self.plan['sections']],
                    exemplars=self.plan['exemplars'], papers={s['id']: s['exemplars'] for s in self.plan['sections']},
-                   notation=len(self.plan['notation']))
+                   notation=len(self.plan['notation']), **more)
+
+    def plan_from_draft(self, folder):
+        """The plan of a draft, brought to the materials of this instance; a session repairs it only when it fails.
+
+        The script carries the plan over (carried_plan) and the check of the plan decides. When the check
+        finds problems, a planning session receives the plan, what the script changed, the problems, the
+        account of the papers and the drafted statements, and returns a plan, within the bound of the
+        planning sessions. It is given no paper of the collection: the papers were read for the draft."""
+        plan, study, draft = read_draft(folder)
+        draft = self.sketched or draft  # the draft as the run recorded it when it began, from which its materials are
+        carried, notes = carried_plan(self.materials, plan, draft)
+        problems = check_plan(self.materials, carried, self.keys())
+        self.event('check', check='the plan of the draft, brought to the materials', changes=notes, problems=problems)
+        if problems:
+            def read(output):
+                repaired = self.load(output / 'plan.json')
+                found = check_plan(self.materials, repaired, self.keys())
+                if not found and (repaired.get('exemplars') != carried['exemplars']):
+                    found.append('"exemplars" stays as plan.json has it: the papers were chosen and read for the draft, '
+                                 'and study.md is the account of those papers')
+                if found:
+                    raise Unusable(found)
+                return repaired
+
+            files = {'paper-method.md': read_file(METHOD), 'materials-digest.md': render_digest(self.materials),
+                     **{name: text for name, text in self.records().items() if name.startswith('elements/')},
+                     'plan.json': json.dumps(carried, ensure_ascii=False, indent=2) + '\n', 'study.md': study,
+                     'carried.md': '\n'.join(['# What the script changed in the plan of the draft', '',
+                                              *(['- ' + note for note in notes] or ['Nothing.'])]) + '\n',
+                     'problems.md': '\n'.join(['# What the check of the plan found', '',
+                                               *('- ' + problem for problem in problems)]) + '\n',
+                     'draft.json': json.dumps(draft, ensure_ascii=False, indent=2) + '\n'}
+            prompt = PLAN_REPAIR_PROMPT.format(plan_keys=PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + main_note(self.materials),
+                                               problems='\n'.join('- ' + problem for problem in problems))
+            carried = self.session('plan', prompt, files, read, self.writer, 'from-draft', attempts=PLAN_ATTEMPTS)
+        self.take_plan(carried, study)
+        self.sketched = draft
+        write_json(self.out / 'draft.json', draft)
+        self.keep_plan(from_draft=True, carried=notes, repaired=bool(problems))
+
+    # -- the draft --------------------------------------------------------------------------------------
+
+    def sketch_section(self, section):
+        """The sketch of one section: the session that makes it, or the sketch that <out>/sketch already holds."""
+        kept = self.out / 'sketch' / (section['id'] + '.json')
+        if kept.is_file():
+            return read_json(kept)
+        sid, elements = section['id'], self.layout.elements
+        stated = [item for item in self.plan['statements'] if item['section'] == sid]
+        hosts = {item['label'] for item in self.plan['statements']
+                 if item['section'] == sid or self.layout.proof_of(item) == sid}
+
+        def gap_problems(where, gap, nearest):
+            if not isinstance(gap, dict) or not all(is_text(gap.get(key)) for key in ('wanted', 'has', 'reason')):
+                return [f'{where}: a gap is an object with "wanted", "has" and "reason", each a text that is not empty']
+            if nearest and gap.get('element') not in elements:
+                return [f'{where}: "element" of the gap is the name of the element of the materials that comes nearest']
+            return []
+
+        def read(output):
+            sketch = self.load(output / 'sketch.json')
+            problems = []
+            statements, formulas, assertions = (sketch.get(key) for key in ('statements', 'formulas', 'assertions'))
+            for key, value in (('statements', statements), ('formulas', formulas), ('assertions', assertions)):
+                if not isinstance(value, list) or not all(isinstance(entry, dict) for entry in value):
+                    raise Unusable([f'output/sketch.json: "{key}" is an array of objects, empty when there is none'])
+            if [entry.get('label') for entry in statements] != [item['label'] for item in stated]:
+                problems.append('"statements" has one object for each numbered statement that the plan has this section '
+                                'state, in the order of the plan: ' + (', '.join(item['label'] for item in stated) or 'none'))
+            for entry in statements:
+                where = f"statement {entry.get('label')}"
+                if not is_text(entry.get('text')):
+                    problems.append(f'{where}: "text" is the statement as the paper will have it')
+                if entry.get('gap') is not None:
+                    problems += gap_problems(where, entry['gap'], False)
+            labels = set()
+            for entry in formulas:
+                label = entry.get('label')
+                where = f'formula {label}'
+                if not (isinstance(label, str) and LABEL_FORM.fullmatch(label) and label.startswith(f'eq:{sid}-')
+                        and label not in labels):
+                    problems.append(f'{where}: "label" begins with eq:{sid}- and is used once')
+                labels.add(label)
+                if not is_text(entry.get('text')):
+                    problems.append(f'{where}: "text" is the formula as it will be displayed')
+                if entry.get('host') is not None and entry['host'] not in hosts:
+                    problems.append(f'{where}: "host" is null or the label of a numbered statement that this section '
+                                    'states or proves')
+                if (entry.get('element') is None) == (entry.get('gap') is None):
+                    problems.append(f'{where}: either "element" names the element that states the formula and "gap" is '
+                                    'null, or "element" is null and "gap" says what is wanted')
+                elif entry.get('element') is not None and entry['element'] not in elements:
+                    problems.append(f"{where}: {entry['element']!r} is not an element of the materials")
+                elif entry.get('gap') is not None:
+                    problems += gap_problems(where, entry['gap'], True)
+            for number, entry in enumerate(assertions, 1):
+                where = f'assertion {number}'
+                if entry.get('host') is not None and entry['host'] not in hosts:
+                    problems.append(f'{where}: "host" is null or the label of a numbered statement that this section '
+                                    'states or proves')
+                problems += gap_problems(where, entry, True)
+            if problems:
+                raise Unusable(['output/sketch.json: ' + problem for problem in problems])
+            return {'statements': [{'label': e['label'], 'text': e['text'].strip(), 'gap': e.get('gap')} for e in statements],
+                    'formulas': [{'label': e['label'], 'host': e.get('host'), 'text': e['text'].strip(),
+                                  'element': e.get('element'), 'gap': e.get('gap')} for e in formulas],
+                    'assertions': [{key: e.get(key) for key in ('host', 'element', 'wanted', 'has', 'reason')}
+                                   for e in assertions]}
+
+        papers = self.section_papers(section)
+        first = section is self.plan['sections'][0]
+        prompt = SKETCH_PROMPT.format(
+            id=sid, title=section['title'], content=section['content'], count=len(papers),
+            also=' As the first section it is the introduction; the abstract is not sketched.' if first else '',
+            papers=' and '.join(f'`exemplars/{key}.tex`' for key in papers), **self.research_note(section))
+        # A sketch has no prose, so the session is given what a writer is given except the writing preferences.
+        files = {name: text for name, text in self.kit(section).items() if name != 'user-writing-preferences.md'}
+        sketch = self.session('sketch', prompt, files, read, self.writer, sid)
+        write_json(kept, sketch)
+        return sketch
+
+    def compare_sketch(self, section, sketch):
+        """The verdicts on the sketched statements of one section, and on its formulas that name an element.
+
+        They come from one comparison session, or from <out>/sketch when the session was already made;
+        a section that has nothing to compare has no session."""
+        kept = self.out / 'sketch' / (section['id'] + '.compared.json')
+        if kept.is_file():
+            return read_json(kept)
+        elements = self.layout.elements
+        states = {item['label']: item['element'] for item in self.plan['statements']}
+        rows = [{'label': entry['label'], 'kind': 'numbered statement', 'element': states[entry['label']],
+                 'draft_statement': entry['text'], 'declared_gap': entry['gap']} for entry in sketch['statements']]
+        rows += [{'label': entry['label'], 'kind': 'displayed formula', 'element': entry['element'],
+                  'draft_statement': entry['text'], 'declared_gap': None} for entry in sketch['formulas'] if entry['element']]
+        for row in rows:
+            element = elements[row['element']]
+            row.update(record_statement=element['statement'], lean_statement=element['lean'])
+        verdicts = []
+        if rows:
+            labels = [row['label'] for row in rows]
+            slips = {row['label'] for row in rows if row['declared_gap'] is None}
+
+            def read(output):
+                found = self.load(output / 'comparison.json', list)
+                if [v.get('label') if isinstance(v, dict) else None for v in found] != labels \
+                        or not all(v.get('verdict') in ('same', 'differs') for v in found) \
+                        or not all(is_text(v.get('difference')) for v in found if v['verdict'] == 'differs') \
+                        or not all(is_text(v.get('text')) for v in found if v['verdict'] == 'differs' and v['label'] in slips):
+                    raise Unusable(['output/comparison.json has one object for each entry of statements.json, in their '
+                                    'order, with its "label", a "verdict" of "same" or "differs", for "differs" the '
+                                    '"difference", and for an entry without a declared gap that differs the "text": the '
+                                    'statement as the element says it'])
+                return [{'label': v['label'], 'verdict': v['verdict'], 'difference': v.get('difference') or '',
+                         'text': v['text'].strip() if is_text(v.get('text')) else '',
+                         'record_disagreement': v['record_disagreement'] if is_text(v.get('record_disagreement')) else ''}
+                        for v in found]
+
+            files = {'paper-method.md': read_file(METHOD), 'plan.json': self.plan_text(),
+                     'statements.json': json.dumps(rows, ensure_ascii=False, indent=2) + '\n',
+                     'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
+                     **{name: text for name, text in self.records().items() if name.startswith('elements')}}
+            verdicts = self.session('compare', DRAFT_COMPARE_PROMPT.format(title=section['title']), files, read,
+                                    self.assessor, section['id'])
+        write_json(kept, verdicts)
+        return verdicts
+
+    def draft(self):
+        """The draft of the paper, from the plan: draft.json in <out>, and the end of the run; returns the exit code.
+
+        For each section a session sketches the statements, the formulas that are used as results and
+        the gaps, the sections side by side. Sessions then compare what was sketched with the elements.
+        A statement or a formula that differs from its element is a gap the sketch declared, which
+        stays, or a slip, which is replaced by the text the comparison gives. A gap that the
+        comparison finds to be none is dropped. Every sketch and every list of verdicts is kept in
+        <out>/sketch when it is accepted, so a run that was stopped does not make it again."""
+        sections = self.plan['sections']
+        (self.out / 'sketch').mkdir(exist_ok=True)
+        sketches = self.side_by_side([lambda section=section: self.sketch_section(section) for section in sections])
+        compared = self.side_by_side([lambda section=section, sketch=sketch: self.compare_sketch(section, sketch)
+                                      for section, sketch in zip(sections, sketches)])
+        states = {item['label']: item['element'] for item in self.plan['statements']}
+        draft = {'statements': [], 'formulas': [], 'gaps': [],
+                 'citations': [{key: entry.get(key) for key in ('element', 'result', 'reason')}
+                               for entry in self.plan.get('citations', [])],
+                 # The draft records the main result it was made around when that is not the settling declaration,
+                 # so that the paper is written from it around the same theorem.
+                 **({'main': self.materials['main']} if 'settles' in self.materials else {})}
+        slips, dropped, disagreements = [], [], []
+
+        def gap(kind, section, label, host, element, said):
+            draft['gaps'].append({'id': f"g{len(draft['gaps']) + 1}", 'kind': kind, 'section': section, 'label': label,
+                                  'host': host, 'element': element, 'wanted': said['wanted'], 'has': said['has'],
+                                  'reason': said['reason'], 'closed_by': None})
+            return draft['gaps'][-1]['id']
+
+        for section, sketch, verdicts in zip(sections, sketches, compared):
+            sid, judged = section['id'], {verdict['label']: verdict for verdict in verdicts}
+            disagreements += [{'label': label, 'record_disagreement': verdict['record_disagreement']}
+                              for label, verdict in judged.items() if verdict['record_disagreement']]
+            for kind, entries in (('statement', sketch['statements']), ('formula', sketch['formulas'])):
+                for entry in entries:
+                    verdict, text, said = judged.get(entry['label']), entry['text'], entry['gap']
+                    if verdict and verdict['verdict'] == 'differs' and said is None:
+                        slips.append({'label': entry['label'], 'difference': verdict['difference']})
+                        text = verdict['text']
+                    elif verdict and verdict['verdict'] == 'same' and said is not None:
+                        dropped.append(entry['label'])
+                        said = None
+                    if kind == 'statement':
+                        element = states[entry['label']]
+                        draft['statements'].append({
+                            'label': entry['label'], 'section': sid, 'element': element, 'text': text,
+                            'gap': gap('statement', sid, entry['label'], None, element, said) if said else None})
+                    else:
+                        draft['formulas'].append({
+                            'label': entry['label'], 'section': sid, 'host': entry['host'], 'text': text,
+                            'element': entry['element'],
+                            'gap': gap('formula', sid, entry['label'], entry['host'], said['element'], said) if said else None})
+            for entry in sketch['assertions']:
+                gap('assertion', sid, None, entry['host'], entry['element'], entry)
+        write_json(self.out / 'draft.json', draft)
+        self.event('draft', statements=len(draft['statements']), formulas=len(draft['formulas']),
+                   gaps=[{key: entry[key] for key in ('id', 'kind', 'section', 'label', 'element')} for entry in draft['gaps']],
+                   citations=[entry['element'] for entry in draft['citations']], slips=slips, gaps_dropped=dropped,
+                   record_disagreements=disagreements)
+        self.event('end', status='draft', open=[], kept=[])
+        print(f'The draft is {self.out / "draft.json"}, beside the plan and the account of the papers (plan.json, '
+              f'study.md); the log is {self.out / "log.json"}.')
+        print(f"{len(draft['statements'])} statements and {len(draft['formulas'])} formulas were drafted; "
+              f"{len(draft['gaps'])} gaps and {len(draft['citations'])} results to cite are listed.")
+        return 0
 
     def written(self, section):
         """Whether a section is written; the introduction is written with the abstract."""
@@ -2488,6 +3692,7 @@ class Paper:
             id=section['id'], title=section['title'], content=section['content'],
             also=' As the first section it is the introduction, and this session also writes the abstract.' if first else '',
             order=(ORDER_AGAIN if finished else ORDER_FIRST) if first else ORDER_LATER, **self.research_note(section),
+            drafted=DRAFTED if self.sketched and drafted_lines(self.plan, section, self.sketched) else '',
             parts=PARTS.format(held=', '.join(held), others=PARTS_OTHERS if others else '') if finished else NO_PARTS,
             count=len(papers), papers=' and '.join(f'`exemplars/{key}.tex`' for key in papers),
             abstract=(' Write also `output/abstract.tex`: the text of the abstract, without the abstract '
@@ -2505,7 +3710,7 @@ class Paper:
 
     def assemble(self):
         """paper.tex, references.bib and the correspondence file from the parts as they stand."""
-        tex, spans = assemble(self.plan, self.parts)
+        tex, spans = assemble(self.plan, self.parts, self.authors)
         write_text(self.out / 'paper.tex', tex)
         write_text(self.out / 'references.bib', capitals_kept(self.materials['bibliography']))
         elements = {e['name']: e for e in self.materials['elements']}
@@ -2517,8 +3722,11 @@ class Paper:
             element = elements[by_label[found['label']]['element']]
             digest = sha256_text(found['text'])
             judged = self.compared.get(found['label'])
+            # A statement that the paper cites and does not prove is proved in the library all the same, as every
+            # element here is. The paper does not say so; this file does, by naming the source the paper cites.
+            cited = element['source'] if self.layout.proof_of(by_label[found['label']]) == 'cited' else None
             rows.append({'number': f"{found['kind'].capitalize()} {found['number']}", 'label': found['label'],
-                         'element': element['name'], 'states': element['states'] or element['name'],
+                         'element': element['name'], 'states': element['states'] or element['name'], 'cited': cited,
                          'record_statement': element['statement'], 'record_statement_from': element['statement_from'],
                          'lean_statement': element['lean'], 'paper_statement': found['text'],
                          'paper_statement_sha256': digest,
@@ -2527,6 +3735,7 @@ class Paper:
                                         if judged and judged['sha256'] == digest else {'verdict': 'not compared'})})
         write_json(self.out / 'correspondence.json', {
             'root': self.materials['root']['name'], 'main_result': self.materials['main'],
+            **({'settled_by': self.materials['settles']} if 'settles' in self.materials else {}),
             'revision': self.materials['revision'], 'statements': rows, 'others': self.plan['others']})
         return tex, spans, rows
 
@@ -2611,7 +3820,7 @@ class Paper:
             groups.append((None, rest))
         changed = sorted({name for names, _ in results for name in names})
         response = None
-        if kind in ('reading', 'comparison', 'likeness'):
+        if kind in NARROW_KINDS.values():
             # The answers of the sessions, in the order and with the numbers of the findings as they were reported.
             answers = {n: {**answer, 'finding': number(n)} for (_, places), (_, answered) in zip(groups, results)
                        for n, answer in zip(places, answered)}
@@ -2627,7 +3836,7 @@ class Paper:
         sections = self.plan['sections']
         first = section is sections[0]
         names = list(self.parts) if section is None else [section['id']] + (['abstract'] if first else [])
-        answers = kind in ('reading', 'comparison', 'likeness')
+        answers = kind in NARROW_KINDS.values()  # the kinds whose session answers each finding: revised, or kept and why
 
         def read(output):
             changed = {name: read_file(output / (name + '.tex')) for name in names
@@ -2819,7 +4028,10 @@ class Paper:
         """Every numbered statement against the statement of its element; a repair follows all but the last comparison.
 
         The statements are compared section by section, the sections side by side: each session has the
-        statements of one section and the records of their elements."""
+        statements of one section and the records of their elements. A difference that the last
+        comparison finds is open, and the stages after this one are made all the same: they do not
+        depend on that statement, and the pass that later acts on it does not make them. False only
+        when a repair leaves the manuscript failing."""
         # In a run that was not stopped, the manuscript has just been read. In one that is continued inside this
         # stage, a repair of what an earlier comparison found may have rewritten it since; it is read first.
         if not self.read_again():
@@ -2847,14 +4059,43 @@ class Paper:
             if not differing:
                 return True
             if round_number == COMPARISON_ROUNDS:
+                self.open = [item for item in self.open if item['check'] != COMPARISON]
                 self.open.append({'check': COMPARISON, 'after_repairs': COMPARISON_ROUNDS - 1, 'problems': differing})
                 self.save()
-                return False
+                return True
             # A repair that changed a part corrected statements and adjusted proofs, so the manuscript is read by
             # itself again before its statements are compared once more; the last thing done is then a comparison.
             self.repair('comparison', differing, [home[item['label']] for item in differing])
             if not self.settle() or not self.read_again():
                 return False
+
+    def compare_rows(self, rows, tex, spans):
+        """Compare once the numbered statements of these rows of the correspondence, whose present text has no verdict.
+
+        The sections are compared side by side, each by a session that is told that it has only the
+        statements that were not compared. The verdicts are kept with those of the other statements,
+        and returned."""
+        home = {item['label']: item['section'] for item in self.plan['statements']}
+        groups = [(section, [row for row in rows if home[row['label']] == section['id']]) for section in self.plan['sections']]
+        listed = ('those numbered statements of this section whose present text has not been compared with '
+                  'their elements, because a repair changed it or because the comparison did not reach it')
+        results = self.side_by_side([lambda section=section, stated=stated:
+                                     self.compare_section(section, stated, tex, spans, listed)
+                                     for section, stated in groups if stated])
+        verdicts = [verdict for result in results for verdict in result]
+        digests = {row['label']: row['paper_statement_sha256'] for row in rows}
+        self.compared.update({v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
+                                           'record_disagreement': v['record_disagreement']
+                                           if is_text(v.get('record_disagreement')) else '',
+                                           'sha256': digests[v['label']]} for v in verdicts})
+        self.save()
+        self.event('comparison', round=1 + sum(event['event'] == 'comparison' for event in self.log),
+                   statements=[row['label'] for row in rows],
+                   differing=[{'label': v['label'], 'difference': v['difference']}
+                              for v in verdicts if v['verdict'] == 'differs'],
+                   record_disagreements=[{'label': v['label'], 'record_disagreement': v['record_disagreement']}
+                                         for v in verdicts if is_text(v.get('record_disagreement'))])
+        return verdicts
 
     def compare_section(self, section, rows, tex, spans, listed='the numbered statements of this section'):
         """One session that compares the numbered statements of one section; its verdicts, in their order."""
@@ -2878,6 +4119,281 @@ class Paper:
         lines = next(f'Its lines {a} to {b} are this section.' for name, a, b in spans if name == section['id'])
         return self.session('compare', COMPARE_PROMPT.format(title=section['title'], spans=lines, listed=listed), files,
                             read, self.assessor, section['id'])
+
+    # -- what the readings left open ----------------------------------------------------------------------
+
+    def resolve(self):
+        """The stage `resolve`: one session closes the findings that the readings left open; False as the other stages.
+
+        The session may change wording and structure, so it can return a plan with other sections and
+        other numbered statements. What it returns is accepted when the plan passes the check of the
+        plan and every section of the plan has a part. The steps, each recorded in the state when it is
+        complete, so that a run that is stopped is continued at the step it was in:
+
+          session  the session is launched, and what it returned is kept in <out>/resolve: the plan and
+                   every part of the manuscript as it now is. In the same record of the state the
+                   verdicts of the comparison are reduced to those whose label still states the same
+                   element, and a difference of a statement that has no number any more is dropped. A
+                   verdict holds for the text it was given for, so a statement that was only moved
+                   keeps its verdict and one that was reworded is compared in the stage `coverage`.
+          place    the parts and the plan of <out>/resolve take the place of those in <out>: the parts
+                   of sections that are gone are removed, and the layout is made from the new plan. The
+                   correspondence file follows by itself, since it is made from the plan and the parts.
+          settle   the manuscript is assembled, checked by machine and typeset, with the repairs that
+                   this needs, as after any repair. The findings of the readings are then closed: one
+                   that the session answered with a reason goes to the list `kept`.
+          read     when a part changed, the manuscript is read by itself again (read_again), which
+                   ends in a narrow repair. What that repair leaves is answered with the reason it
+                   gives, and goes to `kept` as well.
+
+        The stage `coverage` follows. False only when the manuscript is left failing its machine checks
+        or its typesetting; the findings of the readings then stay open with that."""
+        state = self.resolving
+        if state is None:
+            taken = [(item['check'], problem) for item in self.open if item['check'] in READINGS
+                     for problem in item['problems']]
+            if not taken:
+                return True
+            findings = [{'finding': number, 'check': check, 'reported': problem}
+                        for number, (check, problem) in enumerate(taken, 1)]
+            plan, parts, response = self.resolve_session(findings)
+            folder = self.out / 'resolve'
+            shutil.rmtree(folder, ignore_errors=True)
+            (folder / 'parts').mkdir(parents=True)
+            write_json(folder / 'plan.json', plan)
+            for name, text in parts.items():
+                write_text(folder / 'parts' / (name + '.tex'), text)
+            old, new = ({item['label']: item['element'] for item in each['statements']} for each in (self.plan, plan))
+            state = {'step': 'place', 'findings': findings, 'response': response, 'plan': plan != self.plan,
+                     'changed': sorted(name for name in parts if self.parts.get(name) != parts[name]),
+                     'removed': sorted(name for name in self.parts if name not in parts)}
+            with self.lock:
+                self.compared = {label: judged for label, judged in self.compared.items() if new.get(label) == old.get(label)}
+                for item in self.open:
+                    if item['check'] == COMPARISON:
+                        item['problems'] = [problem for problem in item['problems'] if problem['label'] in new]
+                self.open = [item for item in self.open if item['problems']]
+                # Recorded before the parts are replaced, so that a run stopped just here still reads what was rewritten.
+                self.rewritten = self.rewritten or bool(state['changed'] or state['removed'])
+                self.resolving = state
+                self.save()
+        if state['step'] == 'place':
+            plan, names = self.place_resolution()
+            self.take_plan(plan, self.study)
+            self.parts = {name: read_file(self.out / 'parts' / (name + '.tex')) for name in names}
+            self.event('resolve', changed=state['changed'], removed=state['removed'], plan=state['plan'],
+                       response=state['response'])
+            state['step'] = 'settle'
+            self.save()
+        if state['step'] == 'settle':
+            # A session that kept every passage left the manuscript as it was settled before.
+            if (state['changed'] or state['removed'] or state['plan']) and not self.settle():
+                return False
+            answers = {answer['finding']: answer for answer in state['response']}
+            self.kept += [{'check': entry['check'], 'finding': entry['reported'], 'reason': answers[entry['finding']]['note']}
+                          for entry in state['findings'] if answers[entry['finding']]['action'] == 'kept']
+            self.open = [item for item in self.open if item['check'] not in READINGS]
+            state['step'] = 'read'
+            self.save()
+        if state['step'] == 'read':
+            if not self.read_again():
+                return False
+            self.kept += [{'check': item['check'], 'reason': problem.get('open_because', ''),
+                           'finding': {key: value for key, value in problem.items() if key != 'open_because'}}
+                          for item in self.open if item['check'] in READINGS for problem in item['problems']]
+            self.open = [item for item in self.open if item['check'] not in READINGS]
+            self.resolving = None
+            self.save()
+            shutil.rmtree(self.out / 'resolve', ignore_errors=True)
+        return True
+
+    def place_resolution(self):
+        """Put the parts and the plan that <out>/resolve holds in the place of those in <out>; the plan and its part names.
+
+        Every part of the new manuscript is written, the parts of sections that the plan no longer has
+        are removed, and the plan is written last. Doing it again changes nothing, so a run that was
+        stopped while it did this does it again (take_up)."""
+        folder = self.out / 'resolve'
+        plan = read_json(folder / 'plan.json')
+        names = ['abstract'] + [section['id'] for section in plan['sections']]
+        (self.out / 'parts').mkdir(exist_ok=True)
+        for name in names:
+            write_text(self.out / 'parts' / (name + '.tex'), read_file(folder / 'parts' / (name + '.tex')))
+        for path in sorted((self.out / 'parts').glob('*.tex')):
+            if path.stem not in names:
+                path.unlink()
+        write_json(self.out / 'plan.json', plan)
+        return plan, names
+
+    def resolve_session(self, findings):
+        """The session that resolves the open findings of the readings: the plan, every part as it now is, its answers."""
+        sections = self.plan['sections']
+        tex, spans, _ = self.assemble()
+        understanding = next((event['understanding'] for event in reversed(self.log) if event['event'] == 'reading'), None)
+
+        def read(output):
+            response = self.load(output / 'response.json', list)
+            if len(response) != len(findings) or not all(isinstance(r, dict) and r.get('action') in ('revised', 'kept')
+                                                         and is_text(r.get('note')) for r in response):
+                raise Unusable([f'output/response.json has one object for each of the {len(findings)} findings, in their '
+                                'order, with an "action" of "revised" or "kept" and a "note"'])
+            plan, problems = self.plan, []
+            if (output / 'plan.json').is_file():
+                plan = self.load(output / 'plan.json')
+                problems = check_plan(self.materials, plan, self.keys())
+                if not problems and plan.get('exemplars') != self.plan['exemplars']:
+                    problems = ['"exemplars" stays as plan.json has it: the papers were chosen and read when the paper '
+                                'was planned, and study.md is the account of those papers']
+                if problems:
+                    raise Unusable(['output/plan.json: ' + problem for problem in problems])
+            parts = {}
+            for name in ['abstract'] + [section['id'] for section in plan['sections']]:
+                path = output / (name + '.tex')
+                if path.is_file() and read_file(path).strip():
+                    parts[name] = read_file(path)
+                elif name in self.parts:
+                    parts[name] = self.parts[name]
+                else:
+                    problems.append(f'output/plan.json has the section `{name}`, and its part output/{name}.tex was not '
+                                    'written')
+            if problems:
+                raise Unusable(problems)
+            if plan == self.plan and parts == self.parts and any(r['action'] == 'revised' for r in response):
+                raise Unusable(['no part and no plan was changed, and output/response.json says that findings were '
+                                'revised: write the complete new text of each part you change as output/<name>.tex, with '
+                                'the file name it has in parts/'])
+            return plan, parts, [{'finding': number, 'action': r['action'], 'note': r['note'].strip()}
+                                 for number, r in enumerate(response, 1)]
+
+        papers = {section['id']: self.section_papers(section) for section in sections}
+        files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
+                 'plan.json': self.plan_text(), **self.records(), 'paper.tex': tex,
+                 'findings.json': json.dumps({'understanding': understanding, 'findings': findings},
+                                             ensure_ascii=False, indent=2) + '\n',
+                 **{f'parts/{name}.tex': text for name, text in self.parts.items()}}
+        if self.collection is not None:
+            files['study.md'] = self.study
+            files.update({f'exemplars/{key}.tex': self.papers[key] for keys in papers.values() for key in keys})
+        prompt = RESOLVE_PROMPT.format(
+            spans='Its ' + '; '.join(f'lines {a} to {b} are `parts/{name}.tex`' for name, a, b in spans) + '.',
+            papers=REPAIR_PAPERS.format(papers='; '.join(
+                f"section `{sid}`, " + ' and '.join(f'`exemplars/{key}.tex`' for key in keys)
+                for sid, keys in papers.items())) if self.collection is not None else '',
+            plan_keys=PLAN_KEYS + PLAN_ACCEPTS + main_note(self.materials), **self.research_note())
+        return self.session('resolve', prompt, files, read, self.writer)
+
+    # -- the running text -----------------------------------------------------------------------------------
+
+    def cover(self):
+        """The stage `coverage`: the running text of every section against the elements; False as narrow_run.
+
+        First the numbered statements whose present text has no verdict are compared, once: a repair
+        after the comparison of the statements, or the session of the stage `resolve`, may have changed
+        them. One that differs then is open, and is not repaired here. Then, for each section, a
+        session reports the sentences of the running text, and the formulas of a proof that are
+        referred to from outside it, that assert mathematics which no element states. What is
+        reported goes to one narrow repair, whose changes are read (narrow_run). The sections that
+        the repair changed are covered once more, and what is reported then, with what the repair
+        kept in the other sections, is open. No further round follows. A run that was stopped inside
+        the repair, the reading of its changes or the second covering is continued there."""
+        if not self.narrowing(COVERAGE):
+            tex, spans, rows = self.assemble()
+            rows = [row for row in rows if row['comparison']['verdict'] == 'not compared']
+            if rows:
+                verdicts = self.compare_rows(rows, tex, spans)
+                item = next((item for item in self.open if item['check'] == COMPARISON), None)
+                judged = {verdict['label'] for verdict in verdicts}
+                problems = [problem for problem in (item['problems'] if item else []) if problem['label'] not in judged] \
+                    + [{'label': verdict['label'], 'difference': verdict['difference'], 'open_because': DIFFERS_LATE}
+                       for verdict in verdicts if verdict['verdict'] == 'differs']
+                self.open = [other for other in self.open if other['check'] != COMPARISON]
+                if problems:
+                    self.open.append({'check': COMPARISON, 'after_repairs': item['after_repairs'] if item else 0,
+                                      'problems': problems})
+                tex, spans, _ = self.assemble()  # the correspondence file with these verdicts
+            found = self.cover_sections([section['id'] for section in self.plan['sections']], tex, spans)
+            self.open = [item for item in self.open if item['check'] != COVERAGE]
+            problems = [finding for findings in found.values() for finding in findings]
+            if not problems:
+                self.save()
+                return True
+            # What was found is open until the narrow repair, the reading of its changes and the second covering are done.
+            self.open.append({'check': COVERAGE, 'after_repairs': 0, 'problems': problems})
+            self.narrow_begin(COVERAGE)
+        passed = self.narrow_run()
+        self.narrow_end(self.cover_again() if passed else None)
+        return passed
+
+    def cover_sections(self, ids, tex, spans):
+        """Sessions that compare the running text of the sections `ids` with the elements, side by side.
+
+        Returns for each of these sections what its session reported, in the order of the paper; a
+        section without running text has no session and nothing reported."""
+        entries = running_text(self.plan, self.parts, spans)
+        sections = [section for section in self.plan['sections'] if section['id'] in ids]
+        covered = [section for section in sections if entries[section['id']]]
+        results = self.side_by_side([lambda section=section: self.cover_section(section, entries[section['id']], tex, spans)
+                                     for section in covered])
+        found = {section['id']: [] for section in sections}
+        found.update({section['id']: result for section, result in zip(covered, results)})
+        self.event('coverage', round=1 + sum(event['event'] == 'coverage' for event in self.log),
+                   sections=[section['id'] for section in covered],
+                   uncovered=[finding for findings in found.values() for finding in findings])
+        return found
+
+    def cover_section(self, section, entries, tex, spans):
+        """One session that compares the running text of one section with the elements; what it reports, as findings."""
+        elements, numbers = self.layout.elements, {entry['entry']: entry for entry in entries}
+        first = section is self.plan['sections'][0]
+
+        def read(output):
+            found = self.load(output / 'coverage.json', list)
+            if not all(isinstance(item, dict) and not isinstance(item.get('entry'), bool) and item.get('entry') in numbers
+                       and is_text(item.get('quote')) and is_text(item.get('difference'))
+                       and item.get('nearest') in elements for item in found):
+                raise Unusable(['output/coverage.json is an array, empty when an element covers every assertion; each '
+                                'object has "entry", the number of an entry of text.json, "quote" and "difference" as '
+                                'texts that are not empty, and "nearest", the name of an element as elements.md gives it'])
+            return found
+
+        files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
+                 'text.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
+                 'records.md': render_section_records(self.materials, self.plan, section, self.layout),
+                 **{name: text for name, text in self.records().items() if name.startswith('elements')}}
+        lines = ' '.join(f"Its lines {a} to {b} are {'the abstract' if name == 'abstract' else 'this section'}."
+                         for name, a, b in spans if name == section['id'] or (first and name == 'abstract'))
+        prompt = COVER_PROMPT.format(
+            title=section['title'], spans=lines,
+            abstract=', or "abstract" for the abstract, which is compared with this section' if first else '')
+        found = self.session('cover', prompt, files, read, self.assessor, section['id'])
+        title = collapsed(section['title'])
+
+        def where(entry):
+            if entry['part'] == 'abstract':
+                return 'the abstract'
+            return (f'the running text of the section "{title}"' if entry['kind'] == 'running text'
+                    else f"the formula {', '.join(entry['labels'])} in a proof of the section \"{title}\"")
+
+        return [{'where': where(numbers[item['entry']]),
+                 'section': 'abstract' if numbers[item['entry']]['part'] == 'abstract' else 'sec:' + section['id'],
+                 'quote': item['quote'].strip(), 'asserts': item['asserts'].strip() if is_text(item.get('asserts')) else '',
+                 'nearest': item['nearest'], 'difference': item['difference'].strip()} for item in found]
+
+    def cover_again(self):
+        """The running text of the sections that a narrow repair changed, compared with the elements once more.
+
+        The sections are those of which a part differs from the text before the repair, which
+        <out>/narrow/before holds; the abstract counts with the first section. Returns for each of
+        them what is reported now, an empty list where nothing is; narrow_end puts that in the place
+        of what was open in those sections."""
+        sections = self.plan['sections']
+        before = {name: read_file(self.out / 'narrow' / 'before' / (name + '.tex')) for name in self.parts}
+        home = {'abstract': sections[0]['id'], **{section['id']: section['id'] for section in sections}}
+        changed = {home[name] for name in self.parts if self.parts[name] != before[name]}
+        if not changed:
+            return {}
+        tex, spans, _ = self.assemble()
+        return self.cover_sections(changed, tex, spans)
 
     def after_writing(self):
         """The checks, the readings and the comparison of the manuscript, each stage once.
@@ -2908,8 +4424,11 @@ class Paper:
             self.open.append({'check': UNCOMPARED, 'after_repairs': 0, 'problems': uncompared})
         self.save()
         status = 'open_findings' if self.open else 'complete' if self.recipe else 'no_tex'
-        self.event('end', status=status, open=list(self.open))
+        self.event('end', status=status, open=list(self.open), kept=list(self.kept))
         print(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
+        if self.kept:
+            print(f'{len(self.kept)} findings of the readings were answered with a reason, and the text stays as it is '
+                  'there; the last `end` event of log.json lists them under "kept", each with the reason.')
         if self.open:
             print('Findings are left open after the bounded repairs:')
             for item in self.open:
@@ -3138,8 +4657,13 @@ class Paper:
                  'changes.json': json.dumps({'findings': findings, 'changes': changes}, ensure_ascii=False, indent=2) + '\n'}
         return self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read, self.assessor)
 
-    def narrow_end(self):
-        """Leave in the open list, of the findings that the repair took up, those that stay open, each with the reason."""
+    def narrow_end(self, covered=None):
+        """Leave in the open list, of the findings that the repair took up, those that stay open, each with the reason.
+
+        `covered` gives, for each section whose running text was compared with the elements once more
+        after the repair (cover_again), what that comparison reported. It takes the place of what was
+        open about the running text of those sections, since it speaks for their text as it stands
+        now; a passage that was reported before and is reported again keeps the reason it was left with."""
         narrow = self.narrow
         left = {entry['number']: entry['because'] for entry in narrow.get('left', [])}
         taken = {(entry['check'], entry['position']): entry['number'] for entry in narrow['findings']}
@@ -3154,6 +4678,19 @@ class Paper:
                     else {**problem, 'open_because': left[taken[item['check'], position]]}
                     for position, problem in enumerate(item['problems'])
                     if (item['check'], position) not in taken or taken[item['check'], position] in left]
+        if covered:
+            def home(problem):
+                part = named_part(self.plan, problem.get('section'))
+                return self.plan['sections'][0]['id'] if part == 'abstract' else part
+
+            reasons ={entry['finding'].get('quote'): left[entry['number']] for entry in narrow['findings']
+                       if entry['check'] == COVERAGE and entry['number'] in left}
+            item = next((item for item in self.open if item['check'] == COVERAGE), None)
+            problems = [problem for problem in (item['problems'] if item else []) if home(problem) not in covered] \
+                + [{**finding, 'open_because': reasons.get(finding['quote'], COVERED_AGAIN)}
+                   for findings in covered.values() for finding in findings]
+            self.open = [other for other in self.open if other['check'] != COVERAGE]
+            self.open.append({'check': COVERAGE, 'after_repairs': item['after_repairs'] if item else 0, 'problems': problems})
         self.open = [item for item in self.open if item['problems']]
         self.narrow = None
         self.save()
@@ -3174,7 +4711,10 @@ class Paper:
                 COMPARISON: 'a repair session corrects the statement, a session reads what was changed, and the statement '
                             'is compared with its element again',
                 UNCOMPARED: 'the statement is compared with its element',
-                WIDE: 'the manuscript is typeset again and every line that is too wide goes to repair; this is done '
+                COVERAGE: 'a repair session cuts the passage or rewords it so that it says no more than the element '
+                          'named with it, a session reads what was changed, and the running text of the section is '
+                          'compared with the elements again',
+                WIDE:'the manuscript is typeset again and every line that is too wide goes to repair; this is done '
                       'whenever a finding is acted on, since the typesetting cannot tell these lines from new ones'}
         listed = self.listed()
         for item in self.open:
@@ -3201,39 +4741,24 @@ class Paper:
     def act(self):
         """Act on the findings that a finished run left open and that the user chose; then the run ends anew.
 
-        The findings of the readings and of the comparison go to a narrow repair, with the settling and
-        the reading of its changes (narrow_run). Then the numbered statements whose text this changed,
-        and the chosen ones that were never compared, are compared with their elements, once: a
-        statement that differs then is reported as open and is not repaired in the same pass."""
+        The statements that differ, the sentences that no element covers and, in a run made before the
+        stage `resolve` existed, the findings of the readings go to a narrow repair, with the settling
+        and the reading of its changes (narrow_run). Then the numbered statements whose text this
+        changed, and the chosen ones that were never compared, are compared with their elements, once:
+        a statement that differs then is reported as open and is not repaired in the same pass. Last,
+        the running text of every section that the pass changed is compared with the elements once
+        more (cover_again), whatever the pass changed it for, so that a pass which ends with nothing
+        open leaves a manuscript whose running text was compared as it stands."""
         narrow = self.narrow
-        if self.narrow_run():
+        passed = self.narrow_run()
+        if passed:
             before = {name: read_file(self.out / 'narrow' / 'before' / (name + '.tex')) for name in self.parts}
             old = {found['label']: found['text'] for found in found_statements(self.plan, before)}
             tex, spans, rows = self.assemble()
             rows = [row for row in rows if row['comparison']['verdict'] == 'not compared'
                     and (row['label'] in narrow['uncompared'] or old.get(row['label']) != row['paper_statement'])]
             if rows:
-                home = {item['label']: item['section'] for item in self.plan['statements']}
-                groups = [(section, [row for row in rows if home[row['label']] == section['id']])
-                          for section in self.plan['sections']]
-                listed = ('those numbered statements of this section whose present text has not been compared with '
-                          'their elements, because a repair changed it or because the comparison did not reach it')
-                results = self.side_by_side([lambda section=section, stated=stated:
-                                             self.compare_section(section, stated, tex, spans, listed)
-                                             for section, stated in groups if stated])
-                verdicts = [verdict for result in results for verdict in result]
-                digests = {row['label']: row['paper_statement_sha256'] for row in rows}
-                self.compared.update({v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
-                                                   'record_disagreement': v['record_disagreement']
-                                                   if is_text(v.get('record_disagreement')) else '',
-                                                   'sha256': digests[v['label']]} for v in verdicts})
-                self.save()
-                self.event('comparison', round=1 + sum(event['event'] == 'comparison' for event in self.log),
-                           statements=[row['label'] for row in rows],
-                           differing=[{'label': v['label'], 'difference': v['difference']}
-                                      for v in verdicts if v['verdict'] == 'differs'],
-                           record_disagreements=[{'label': v['label'], 'record_disagreement': v['record_disagreement']}
-                                                 for v in verdicts if is_text(v.get('record_disagreement'))])
+                self.compare_rows(rows, tex, spans)
         # The statements that differ, for their present text. One that was not taken up, and whose text is as it
         # was, stands as it stood; the others say why they are open.
         _, _, rows = self.assemble()
@@ -3256,15 +4781,33 @@ class Paper:
         elif differing:
             self.open.append({'check': COMPARISON, 'after_repairs': 0, 'problems': differing})
         narrow['findings'] = [entry for entry in narrow['findings'] if entry['check'] != COMPARISON]
-        self.narrow_end()
+        self.narrow_end(self.cover_again() if passed else None)
 
     # -- a run that is continued, and a run that is only looked at ----------------------------------------
+
+    def recorded_draft(self):
+        """The draft that a run from a draft (--from-draft) recorded in <out> when it began; None for any other run.
+
+        The materials of such a run hold the declarations that closed a gap of this draft, so every
+        later reading of the materials takes them from here and not from the folder the draft came from."""
+        begun = next((event for event in self.log if event['event'] == 'materials'), {})
+        path = self.out / 'draft.json'
+        return read_json(path) if begun.get('from_draft') and path.is_file() else None
+
+    def further(self, model):
+        """The declarations that the materials of this run hold beside what the proof of the root rests on."""
+        return closing(self.sketched, model) if self.sketched else []
 
     def take_up(self):
         """What <out> holds of a run that was stopped: the plan with its account, the parts, the state of the stages."""
         out = self.out
+        state = read_json(out / 'state.json') if (out / 'state.json').is_file() else {}
+        if (state.get('resolve') or {}).get('step') == 'place' and not self.dry:
+            # The run was stopped while the parts and the plan of the stage `resolve` were put in place.
+            self.place_resolution()
         held = sorted(path.stem for path in (out / 'parts').glob('*.tex')) if (out / 'parts').is_dir() else []
         study = read_file(out / 'study.md') if (out / 'study.md').is_file() else ''
+        self.sketched = self.sketched or self.recorded_draft()
         if (out / 'plan.json').is_file() and study.strip():
             plan = read_json(out / 'plan.json')
             problems = check_plan(self.materials, plan, [entry['key'] for entry in self.collection])
@@ -3286,14 +4829,13 @@ class Paper:
         if not self.written(sections[0]):  # the introduction and the abstract are written by one session, or not at all
             for name in ('abstract', sections[0]['id']):
                 self.parts.pop(name, None)
-        if (out / 'state.json').is_file():
-            state = read_json(out / 'state.json')
+        if state:
             self.readings = state['readings']
             # The stages are complete for the parts that were all written. When a section is still to be written,
             # nothing that was read or compared holds for the manuscript that will come of it.
             if all(self.written(section) for section in sections):
                 self.done, self.open, self.rewritten, self.compared = (state[key] for key in ('done', 'open', 'rewritten', 'compared'))
-                self.narrow = state.get('narrow')
+                self.narrow, self.kept, self.resolving = state.get('narrow'), state.get('kept', []), state.get('resolve')
 
     def preview(self, lines):
         """What the run would do next and what its sessions would be given, without launching one or writing a file."""
@@ -3347,12 +4889,27 @@ class Paper:
         return lines
 
 
-def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=False, dry=False):
+def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=False, dry=False,
+            draft=False, from_draft=None, title_page=None, gate=None, main=None):
     """The whole command for a new paper, or with `resume` for one whose run was stopped; returns the exit code.
 
     With `dry` it makes every check that comes before the first session, launches nothing and writes
-    nothing, and prints what the run would do next."""
+    nothing, and prints what the run would do next. With `draft` it plans the paper, makes its draft
+    and ends (Paper.draft). `from_draft` is the folder of such a draft, from which the paper is then
+    written without a new planning of it (Paper.plan_from_draft). A run that is continued is the kind
+    of run it was begun as, whether or not these are given again. `title_page` is the file that names
+    the authors, and `gate` a semaphore that bounds the sessions of this run together with those of
+    whoever shares it (Sessions).
+
+    `main` names the theorem that the paper is built around when that is not the declaration that
+    settles the root (extract). A run records it in its materials and a draft in draft.json. A run that
+    is continued, and a paper that is written from a draft, take the main result from that record;
+    when `main` is given to them as well it has to name the same element, and the command refuses
+    another. Without `main`, and when it names the settling declaration, a new run is what it is
+    without this parameter."""
     out = Path(out)
+    if draft and from_draft:
+        raise Stop('--draft makes the draft of a paper and --from-draft writes the paper from one; a run is one of the two')
     if resume:
         if not (out / 'materials.json').is_file():
             raise Stop(f'{out} holds no run of this command to continue: it has no materials.json')
@@ -3361,6 +4918,9 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                    '--typeset-only to typeset the manuscript it holds')
     model = replay(instance)
     settling_proof(model)  # refuses before anything is written
+    chosen = chosen_main(model, main)  # and so does a main result that is no settled formal theorem
+    authors = read_title_page(title_page) if title_page else None  # a file that cannot be used stops the run here
+    given = read_draft(from_draft) if from_draft and not resume else None  # and so does a folder that holds no draft
     if dry:
         # A paper that is missing is fetched by a run, over the network; a dry run names it and fetches nothing.
         manifest, wrong = collection_state()
@@ -3369,9 +4929,24 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         fetched = None
     else:
         manifest, papers, fetched = load_collection()  # stops, before anything is written, when papers stay missing
-    run = Paper(instance, out, tex, choice or {}, parallel, dry)
+    run = Paper(instance, out, tex, choice or {}, parallel, dry, gate)
     run.collection, run.papers = manifest, papers
-    materials = extract(instance, model)
+    # A paper that is written from a draft has among its materials the declarations that closed a gap of the
+    # draft. A run that is continued takes them from the draft it recorded when it began, so that the materials
+    # are those of materials.json whatever has become of the folder the draft came from.
+    run.sketched = given[2] if given else run.recorded_draft() if resume else None
+    # The main result that a run is made around is recorded: by a run in its materials, by a draft in draft.json.
+    # A run that is continued and a paper that is written from a draft take it from that record. Given again,
+    # it has to be the same, because everything that exists so far was made around the recorded one.
+    if resume or run.sketched is not None:
+        stored = read_json(out / 'materials.json') if resume else {}
+        recorded = (stored['main'] if 'settles' in stored else None) if resume else run.sketched.get('main')
+        if main is not None and chosen != recorded:
+            raise Stop((f'the run in {out}' if resume else f'the draft in {from_draft}') + ' was made with '
+                       + (f'the main result {recorded}' if recorded else 'the declaration that settles the root as its '
+                          'main result') + f', and this run was given --main {main}; give the same main result, or none')
+        chosen = recorded
+    materials = extract(instance, model, run.further(model), chosen)
     said = ['Dry run: no session is launched and nothing is written.'] if dry else []
     if dry and wrong:
         said.append('Papers of the collection that are missing or differ from its manifest, which a run would fetch: '
@@ -3380,7 +4955,14 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         ended = next((event for event in reversed(run.log) if event['event'] == 'end'), None)
         if ended is not None and ended is run.log[-1] and ended['status'] != 'failed':
             raise Stop(f"the run in {out} came to its end ({ended['status']}); there is nothing to continue. "
-                       '--typeset-only typesets the manuscript it holds')
+                       + ('Its draft is draft.json, beside plan.json and study.md' if ended['status'] == 'draft'
+                          else '--typeset-only typesets the manuscript it holds'))
+        # The run is continued as what it was begun as, which its first event says.
+        begun = next((event for event in run.log if event['event'] == 'materials'), {})
+        if (draft and not begun.get('draft')) or (from_draft and not begun.get('from_draft')):
+            raise Stop(f'the run in {out} was not begun with ' + ('--draft' if draft else '--from-draft')
+                       + '; continue it with --resume alone')
+        draft, from_draft = bool(begun.get('draft')), from_draft or begun.get('from_draft')
         run.materials = read_json(out / 'materials.json')
         differing = changed_materials(run.materials, materials)
         if differing:
@@ -3389,21 +4971,40 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                        'They differ in ' + '; '.join(differing))
         run.take_up()
         said.append(f"The materials of the canon are those of materials.json: {len(run.materials['elements'])} elements.")
+        said += chosen_said(run.materials)
         run.event('resume', plan=run.plan is not None, parts=list(run.parts), done=dict(run.done), parallel=run.parallel)
     else:
         run.materials = materials
         said.append(f"The materials: {len(materials['elements'])} elements that the formal proof of the root rests on.")
+        said += chosen_said(materials)
         lost = sorted({e['source'] for e in materials['elements'] if e['source']} - set(materials['bibliography_keys']))
         if not dry:
             run.out.mkdir(parents=True, exist_ok=True)
             write_json(run.out / 'materials.json', run.materials)
             write_text(run.out / 'materials.md', render_materials(run.materials))
+            if run.sketched:
+                write_json(run.out / 'draft.json', run.sketched)  # beside the materials that were taken with it
         run.event('materials', root=run.materials['root']['name'], state=run.materials['root']['state'],
-                  settled_by=run.materials['main'], elements=[e['name'] for e in run.materials['elements']],
+                  settled_by=settling(run.materials), elements=[e['name'] for e in run.materials['elements']],
+                  **({'main': run.materials['main']} if 'settles' in run.materials else {}),
                   tex=run.recipe[0] if run.recipe else None, parallel=run.parallel,
-                  warnings=[f'the source {key} of an element is not in bibliography.bib' for key in lost])
+                  warnings=[f'the source {key} of an element is not in bibliography.bib' for key in lost],
+                  **({'draft': True} if draft else {}),
+                  **({'from_draft': str(Path(from_draft).resolve()), 'further': run.materials.get('further', [])}
+                     if from_draft else {}))
         run.event('collection', folder=str(EXEMPLARS), papers=[entry['key'] for entry in manifest], fetched=fetched)
+    if authors is not None:
+        run.authors = authors
+        if not dry:
+            write_json(run.out / 'title-page.json', {'authors': authors})
     if dry:
+        if draft:
+            said.append('This run makes the draft of the paper: after the plan, each section is sketched and the '
+                        'sketched statements are compared with their elements, and the run ends with draft.json.')
+        if from_draft and run.plan is None:
+            said.append(f'The paper is written from the draft in {from_draft}: its plan is brought to these materials '
+                        'by script, and a planning session is launched only when the check of the plan then finds '
+                        'problems. What follows describes a planning session of a run without a draft.')
         print('\n'.join(run.preview(said)))
         return 0
     try:
@@ -3411,7 +5012,12 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
             run.act()  # the run had come to its end and was stopped while it acted on findings it had left open
         else:
             if run.plan is None:
-                run.make_plan()
+                if from_draft:
+                    run.plan_from_draft(from_draft)
+                else:
+                    run.make_plan(draft)
+            if draft:
+                return run.draft()
             run.write_parts()
             run.after_writing()
     except Stop as exc:
@@ -3420,7 +5026,13 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
     return run.finish()
 
 
-def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False):
+def chosen_said(materials):
+    """What the command says of a main result that is not the declaration that settles the root; nothing otherwise."""
+    return [f"The main result of the paper is {materials['main']}; the declaration that settles the root is "
+            f"{materials['settles']}."] if 'settles' in materials else []
+
+
+def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers='all', dry=False, gate=None):
     """Take up a run that came to its end with findings left open, and act on them; returns the exit code.
 
     The open findings are those of the last event of the log, which is the `end` of the run. With `dry`
@@ -3432,7 +5044,7 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     out = Path(out)
     if not all((out / name).is_file() for name in ('materials.json', 'plan.json', 'state.json', 'log.json')):
         raise Stop(f'{out} holds no run of this command that came to its end (materials.json, plan.json, state.json, log.json)')
-    run = Paper(instance, out, tex, choice or {}, parallel, dry)
+    run = Paper(instance, out, tex, choice or {}, parallel, dry, gate)
     ended = run.log[-1] if run.log and run.log[-1]['event'] == 'end' and run.log[-1].get('status') != 'failed' else None
     if ended is None:
         raise Stop(f'the run in {out} has not come to its end, so it has no list of open findings to act on: the last '
@@ -3441,8 +5053,8 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     left = json.loads(json.dumps(ended['open']))
     if any(item['check'] in (MACHINE, TYPESETTING) for item in left):
         raise Stop(f'the run in {out} ended before its readings and its comparison were made, because the machine checks '
-                   'or the typesetting stayed open; --open-findings acts on what the readings and the comparison of a '
-                   'run left open')
+                   'or the typesetting stayed open; --open-findings acts on what the comparisons of a run that came to '
+                   'its end left open')
     if not left:
         raise Stop(f"the run in {out} came to its end with no finding left open ({ended['status']}); there is nothing "
                    'to act on')
@@ -3456,7 +5068,10 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     else:
         run.collection, run.papers, _ = load_collection()
     run.materials = read_json(out / 'materials.json')
-    differing = changed_materials(run.materials, extract(instance, model))
+    run.sketched = run.recorded_draft()
+    # The materials are taken as the run took them: with the declarations of its draft, around its main result.
+    differing = changed_materials(run.materials, extract(instance, model, run.further(model),
+                                                         run.materials['main'] if 'settles' in run.materials else None))
     if differing:
         raise Stop(f'what the proof of the root rests on is no longer what {out / "materials.json"} holds, so the canon '
                    'has changed since the run began, and its open findings cannot be repaired from the records as they '
@@ -3490,16 +5105,19 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     return run.finish()
 
 
-def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL):
+def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_page=None):
     """Typeset the manuscript a previous run left in `out`, with the same checks and repairs.
 
     The run that wrote the manuscript has to have carried its reading and its comparison to their end,
     since typesetting does not repeat them, and what that comparison left open stays open. A numbered
-    statement that a repair made here changes is not compared again, and `finish` reports it as open."""
+    statement that a repair made here changes is not compared again, and `finish` reports it as open.
+    `title_page` is a file that names the authors; the manuscript is then typeset with that author
+    line, and without it with the one the folder already holds."""
     out = Path(out)
     needed = [out / 'materials.json', out / 'plan.json', out / 'parts' / 'abstract.tex']
     if not all(path.is_file() for path in needed):
         raise Stop(f'{out} does not hold a manuscript of this command (materials.json, plan.json, parts/)')
+    authors = read_title_page(title_page) if title_page else None
     run = Paper(instance, out, tex, choice or {}, parallel)
     if run.recipe is None:
         raise Stop('no TeX command is available: none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given')
@@ -3516,8 +5134,13 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL):
     # run left. The machine checks and the typesetting are made again here, so what they left before is not kept.
     latest = next(event for event in reversed(run.log) if event['event'] == 'end' and event.get('status') != 'failed')
     run.open = [item for item in latest.get('open', []) if item['check'] not in (MACHINE, TYPESETTING)]
+    run.kept = list(latest.get('kept', []))
     run.materials = read_json(out / 'materials.json')
     run.take_plan(read_json(out / 'plan.json'), read_file(out / 'study.md') if (out / 'study.md').is_file() else '')
+    run.sketched = run.recorded_draft()  # the briefs of a repair carry the drafted statements, as before
+    if authors is not None:
+        run.authors = authors
+        write_json(out / 'title-page.json', {'authors': authors})
     run.parts = {name: read_file(out / 'parts' / (name + '.tex')) for name in ['abstract'] + [s['id'] for s in run.plan['sections']]}
     if (out / 'correspondence.json').is_file():
         run.compared = {row['label']: {**row['comparison'], 'sha256': row['paper_statement_sha256']}
@@ -3560,11 +5183,27 @@ def main(argv=None):
                         help='take up the run that --out holds, which came to its end with findings left open, and act '
                              'on them: on all, or on those whose numbers follow, as in 2,5-7. With --dry-run: list the '
                              'open findings with their numbers')
+    parser.add_argument('--draft', action='store_true',
+                        help='make the draft of the paper and no paper: the plan, and for each section the numbered '
+                             'statements as the paper will state them, the formulas used as results and the gaps, '
+                             'compared with the elements; --out receives plan.json, study.md and draft.json')
+    parser.add_argument('--from-draft', type=Path, metavar='FOLDER',
+                        help='write the paper from the draft that FOLDER holds (plan.json, study.md, draft.json): its '
+                             'plan is brought to this instance by script, and the sections are written with the '
+                             'drafted statements')
+    parser.add_argument('--title-page', type=Path, metavar='FILE',
+                        help='a JSON file {"authors": [{"name", "address", "email"}]} with the authors of the paper; '
+                             'without it, or with an empty list, the manuscript has no author line')
+    parser.add_argument('--main', metavar='DECLARATION',
+                        help='the theorem of the instance that the paper is built around, when that is not the '
+                             'declaration that settles the root: a settled formal theorem, as a rule one from which '
+                             'the root follows. The paper then states it as its main theorem and the root as a '
+                             'numbered statement beside it')
     parser.add_argument('--tex', nargs=argparse.REMAINDER, help='the TeX command; takes the rest of the command line')
     args = parser.parse_args(argv)
     try:
         options = {'--out', '--model', '--effort', '--typeset-only', '--resume', '--parallel', '--dry-run',
-                   '--open-findings'}
+                   '--open-findings', '--draft', '--from-draft', '--title-page', '--main'}
         if args.tex is not None and (not args.tex or options & set(args.tex)):
             raise Stop('--tex takes the rest of the command line: name a command after it, and put it last')
         if args.parallel < 1:
@@ -3574,12 +5213,19 @@ def main(argv=None):
         if args.open_findings is not None and (args.typeset_only or args.resume):
             raise Stop('--open-findings takes up a run that came to its end; it goes with neither --typeset-only nor '
                        '--resume. A pass over open findings that was stopped is continued with --resume alone')
+        if (args.draft or args.from_draft or args.main) and (args.typeset_only or args.open_findings is not None):
+            raise Stop('--draft, --from-draft and --main belong to a run that is begun or continued; they go with '
+                       'neither --typeset-only nor --open-findings, which keep the main result of the run they take up')
+        if args.title_page and args.open_findings is not None:
+            raise Stop('--title-page goes with a run and with --typeset-only; --open-findings keeps the author line that '
+                       'the folder holds')
         choice = {'model': args.model, 'effort': args.effort}
         if args.open_findings is not None:
             return act_on_open(args.instance, args.out, args.tex, choice, args.parallel, args.open_findings, args.dry_run)
         if args.typeset_only:
-            return typeset_only(args.instance, args.out, args.tex, choice, args.parallel)
-        return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run)
+            return typeset_only(args.instance, args.out, args.tex, choice, args.parallel, args.title_page)
+        return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run,
+                       args.draft, args.from_draft, args.title_page, main=args.main)
     except (Stop, OSError, ValueError) as exc:
         print('paper.py: ' + str(exc), file=sys.stderr)
         return 1

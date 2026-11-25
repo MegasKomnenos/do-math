@@ -1,0 +1,71 @@
+# The last changes to one part of the library before it is frozen
+
+The library in your folder is what the chosen proof rests on, with `{{root}}` as its root and `{{main}}` as its main theorem. It has been simplified, arranged by subject and given records, and it is about to be frozen: after the freeze no Lean file and no record changes, and the paper, the dependency map and the README are made from the frozen library. This step is the one occasion on which what later work needs from the library is put into it. It is done part by part, a part being a folder of the arranged library, by sessions that work at the same time. Your part is `{{part}}`.
+
+## What the step is for
+
+Two kinds of item are collected before the freeze, and both come from reading the library more closely than anyone had.
+
+The first kind comes from the sessions that wrote the records. To tell a proof in words they followed it step by step in the Lean, and they noticed what the library itself gets wrong: a hypothesis stronger than the proof needs, a conclusion nothing uses, a comment that uses a symbol it does not define. In earlier packagings such findings arrived after the library had been declared finished.
+
+The second kind comes from a draft of the paper. Before any prose is written, the paper's plan and every one of its numbered statements are drafted in the form a paper would give them, together with the displayed formulas that later proofs refer to, and each is compared with the declaration it states. Where the paper wants to say something that no declaration says, that is a gap. The first paper made from such a library met four of them after it was written: a classical bound that the paper stated in its usual strict form while the library had proved a weaker one, a numbered bound that was no declaration, inequalities stated at the paper's parameter values, and a lemma the paper gave in general form. The library was extended after the paper existed, and its records, the dependency map and the READMEs had to be made again.
+
+The user's decision that this step carries out reads: "the frozen library should already start with all that the paper would need inside as written, it should be worked on such that the paper will not face a situation where it has to write something within it outside of what frozen library contains". So what the draft wants and the library can prove is proved now, as a declaration that says exactly that. What cannot be proved now is reported as not closed, and the paper will then state what the library has; nobody opens the library again for it.
+
+## What you are given
+
+- `items.json`: the items of your part, in this form. Read it in full.
+
+```json
+[{"id": "g1", "from": "draft", "declaration": "Lib.tail_le", "kind": "statement", "detail": "...", "wanted": "..."}]
+```
+
+`from` is `records` or `draft`. `declaration` is the declaration the item concerns: the one a record writer's finding is about, or the one a gap is nearest to. For an item from the records, `kind` is `hypothesis`, `conclusion`, `comment` or `other`, and `detail` is what the writer saw. For an item from the draft, `kind` is `statement` (the paper states a numbered statement otherwise than its declaration does), `formula` (a displayed formula that a later proof refers to and that no declaration states) or `assertion` (something a section needs to assert that no declaration states); `wanted` is what the paper wants to say, and `detail` is what the draft recorded about the gap, as a rule what the library has in its place and why the paper wants the other form.
+
+- `part.json`: your part. `modules` are the modules you may change. `interface` lists the declarations of your part that modules of other parts use, each with its statement. The fields `inside` and `cross` belong to an earlier step and may be empty.
+
+```json
+{"id": "counting", "title": "...", "modules": ["Lib.Count.Basic"], "inside": "...",
+ "interface": [{"declaration": "Lib.count_le", "statement": "..."}], "cross": [{"id": "x1", "what": "..."}]}
+```
+
+- `lean/`: the whole library. Read the modules that your items concern in full, proofs included.
+- `records/`: the records, for what a declaration means and for the notation in which `wanted` is written. You do not change them. The record of every declaration you change or add is written after this step, from the Lean.
+
+## What closing an item means
+
+An item from the draft is closed when a declaration of the library says exactly what `wanted` says: the same objects, the same hypotheses, the same ranges and quantifiers, the same conclusion, strict where it is strict, at the parameter values it names. A session will afterwards compare the drafted text with the declaration you name, and the two have to say the same. A declaration that proves less than was wanted does not close the item. It may still be worth having, and then you add it, report the item as not closed, and say in the note what the declaration states and in what it falls short.
+
+Before you prove a wanted statement, see that it is true. A draft is written by a session that states things as a paper would, and it can ask for more than holds. If the wanted form is false or you cannot prove it, report that, with what you tried and where it stops. Never close an item with a proof that is left open.
+
+For an item from the records, read the finding against the Lean first. A hypothesis that the proof does not need is dropped or weakened. A conclusion that nothing uses is removed, unless an item of the draft wants it. A comment is brought to say what its declaration states, in terms it defines. Where the finding turns out to be mistaken, the item is not closed, and the note says why the library is right as it stands.
+
+## What is yours to change, and what stays
+
+The limits are those under which the library was simplified, for the same reason: the other parts are being changed at this moment by sessions that cannot see your work.
+
+- You change only the modules of your part. The program rejects a part when any other file differs.
+- The declarations of `interface` keep their names and their statements, with their implicit arguments, the order of their arguments and any attribute that affects other files. Where an item asks for another form of such a statement, the new form enters as a declaration of its own under a new name, and the old one stays and is derived from it.
+- A declaration of your part that no other part uses can be restated in place, and then every use of it inside your part is brought along.
+- An item was given to the part that holds the declaration it concerns, so whatever the item requires is added by you and by no other part. If closing it needs a fact that belongs to another part, prove what you need inside your own modules, as a `private` declaration where it is only a means, or report the item as not closed.
+
+The conventions of the common text hold for every file you return. A new public declaration needs a name that says what it states and a short doc comment that speaks of the mathematics only; it does not say that a paper wanted it.
+
+This step is not a second simplification. Change what your items ask for and what follows from those changes, and leave the rest of the part as it is.
+
+## Building, and by what your part is judged
+
+Before your first edit, copy the modules of your part to a folder of your own outside `lean/` and `output/`, so that at the end you find what you changed by comparing. Then edit the files in `lean/` in place and build there, as the section "Compiling" describes. The program accepts your part when no file outside it differs and the whole library builds with your modules in place. A part that fails is discarded whole, and all its items then count as not closed. So take the items one at a time, build after each, and undo a change you cannot get through the compiler, reporting that item as not closed. Before you end, build the whole library once, by naming every `.lean` file under `lean/` as a file to compile, in several commands if the list is too long for one, and end on a state that builds.
+
+## What you write
+
+- `output/lean/<file>`: each module of your part that you changed or added, at its path under `lean/`, as the complete file. A changed file that is missing from `output/` leaves the program with the old one.
+- `output/report.json`, in this form:
+
+```json
+{"deleted": [], "items": [{"id": "g1", "closed": true, "declarations": ["Lib.tail_lt"], "note": "..."}]}
+```
+
+`deleted` lists modules of your part that you removed, as paths under `lean/`; it is usually empty. `items` has one entry for each item of `items.json`. `closed` is `true` when the item is done as described above. `declarations` names the declarations that now carry it: for an item from the draft, the one that says what was wanted; for an item from the records, the ones you changed. `note` says what you did, or why the item is not closed. The notes of items that are not closed are kept for the user, and the session that brings the paper's draft to the library reads which declaration closed which gap.
+
+When you changed nothing, return no Lean file and a report in which every item is listed as not closed, with its reason.

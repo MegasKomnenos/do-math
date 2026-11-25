@@ -1,6 +1,6 @@
 # Running do-math
 
-This guide covers the requirements, what a run does on your machine, starting a run through the skill or by hand, the settings, the commands, reading the results, ending a run, and interruptions and completion. The repository [README](../../README.md) gives a quick start taken from it and defines the terms used here, such as root, canon, element, record, standing, settled, formal, frontier, candidate, root check, standing input and Lean broker. The [operating guide](../../.claude/skills/do-math/reference/operations.md) in the skill is the reference that the operator works from, and it holds the detail that this guide leaves out.
+This guide covers the requirements, what a run does on your machine, starting a run through the skill or by hand, the settings, the commands, reading the results, packaging a finished research, ending a run, and interruptions and completion. The repository [README](../../README.md) gives a quick start taken from it and defines the terms used here, such as root, canon, element, record, standing, settled, formal, frontier, candidate, root check, standing input and Lean broker. The [operating guide](../../.claude/skills/do-math/reference/operations.md) in the skill is the reference that the operator works from, and it holds the detail that this guide leaves out.
 
 ## Requirements
 
@@ -320,6 +320,34 @@ The root check compares the structural index in the instance's first commit with
 `status` gives the result under `root_check`, which is `null` until the root is formally settled and a runner has made the comparison. The entry names the proof that settles the root and the commit that the present index was compared with, and its `status` is `unchanged` or `changed`. With `changed`, the entry's `differences` hold one sentence for each element that differs or that is under the statement in only one of the two indexes. The runner has then written a request for a comprehensive review of the proof that settles the root, and it takes that request up itself. A result of `changed` means that something other than a publication changed the canon or its index, such as an edit by hand of a file under `canon/`. Read the differences together with the settlement, because they say that what was proved may not be what was posed.
 
 The root check has two limits. It compares elements, so it does not see a declaration that is not an element, such as a private helper that a definition uses. And it does not see a definition whose text is unchanged and which Lean now reads as a different term.
+
+## Packaging a finished research
+
+`python <skill>/runtime/finalize.py <instance> --name <name> [--config <file>]` turns an instance whose root is formally proved into a package, the folder `solved/<name>/` in the repository that holds the skill. The package holds the proof as a Lean library that Lake builds, a record for each public declaration, the dependency map, the paper, a history of the research, an archive of the research's own records, a README and a licence, and it can be archived and published as it stands. The command reads the research from Git, at the head of the instance's repository when it starts, and writes nothing into the instance. It asks nothing while it runs. It does not commit or push.
+
+A program holds the order of the stages and checks each product once, when it is made; a later stage relies on that product and does not change it. The stages are these.
+
+1. **Selection.** The run compares the routes to the root that the research holds and fixes the main theorem of the package. The main theorem can be a stronger statement from which the root follows; the root is then in the package as a corollary, with the statement the instance was created with. The choice, the runner-up and the reasons are written down.
+2. **Library.** The run takes what the main theorem rests on, simplifies and rearranges it, brings the records up to date and checks every source they cite. Before the library is frozen, the statements of the paper are drafted and compared with the declarations, and what the draft needs is added to the library. The freeze makes one Lake build and prints the axioms of the root and of the main theorem.
+3. **History and archive.** The history gives the research's publications in order, each in a few sentences with the path of the record it condenses. The archive is the research's `canon/` and `knowledge/` at the commit the run read.
+4. **Map and paper,** from the frozen library, with the two commands described above.
+5. **Documents and a final check.** The README, the licence and the manifest are written, with every figure read from the finished products, and the package is checked to stand alone.
+
+At the freeze the run also writes the files that a submission to the Palomar registry of Lean-verified results needs: `Challenge.lean`, `Solution.lean`, `comparator.json` and `formalization.yaml`. The command does not submit. The registry reads the licence at the root of the submitted repository, so a submission is the package published as a repository of its own.
+
+The configuration is a JSON file in which every field is optional.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `authors` | `[]` | A list of objects with `name` and optionally `address`, `email`, `orcid`, `github`. With an empty list the paper has no author line and no file of the package names an author. |
+| `licence` | `"CC-BY-4.0"` | An SPDX identifier whose text the skill has under `finalize/licences/`. |
+| `human_review` | `{"status": "none", "reviewers": [], "notes": ""}` | What a person reviewed. `none` says that no person reviewed the proof or read the Lean statement against the proposition. |
+| `parallel` | `8` | How many sessions run at once. |
+| `tex` | `null` | The TeX command as an array; `null` takes the first of `tectonic`, `latexmk` and `pdflatex` on PATH. |
+
+Exit code 0 means that the package is in place and the repository's README lists it. Exit code 1 means that the command refused before any work, for example because the root is not formally proved, because it is refuted, or because `solved/<name>` exists. Exit code 2 means that a stage could not meet its exit condition; `report.md` in the work folder `.skill-workspace/finalize-<name>/` of the repository says which stage and why, and the same command, started again, continues at that stage. After a run that ended with 0 the work folder holds the report, the file of the decisions the stages made, and the log.
+
+As of 25 November 2026 the command has been run with real sessions only on a small test research.
 
 ## Ending a run
 

@@ -34,7 +34,9 @@ def toml(value):
     return json.dumps(value, ensure_ascii=False)
 
 
-def worker_command(executable, model, effort, session, servers=None, *, resume_id=None):
+def worker_command(executable, model, effort, session, servers=None, *, resume_id=None, withheld=()):
+    """The command of one worker session. `withheld` names tools of the Claude CLI that the session is
+    launched without; the research roles are launched with none withheld."""
     base = build_command(executable, model, effort, session)
     argv = list(base.argv)
     servers = servers or {}
@@ -60,6 +62,8 @@ def worker_command(executable, model, effort, session, servers=None, *, resume_i
         write_json(mcp, {'mcpServers': servers})
         argv += ['--setting-sources', '', '--settings', str(config), '--disable-slash-commands',
                  '--strict-mcp-config', '--mcp-config', str(mcp), '--no-chrome']
+        if withheld:
+            argv += ['--disallowedTools', ','.join(withheld)]
     if resume_id is not None:
         from uuid import UUID
         resume_id = str(UUID(resume_id))
