@@ -16,7 +16,7 @@ from availability import no_research_outcome
 from canon import Canon, split_review
 from canon_tool import main as canon_main, question_view
 from check import Invalid, assessment_check, change_check, check_session, findings_check, organization_check
-from coordination import (board, main as coordination_main, question_availability, question_lease,
+from coordination import (board, claims_lock, main as coordination_main, question_availability, question_lease,
                           question_lease_table, question_release, question_take, question_wait, updates)
 from knowledge import canonical_question, render, replay
 from runner import Runner, main, operator_questions, status, uid
@@ -433,13 +433,6 @@ class UnderstandingTests(QuestionCase):
         text = (engine.session_dir(sid) / 'pack.md').read_text(encoding='utf-8')
         self.assertEqual(text.count(self.HEADING), 1)
         return text.split(self.HEADING, 1)[1].split('\n# Board at launch\n', 1)[0]
-
-    def reader(self):
-        folder = self.instance / 'sessions/sreader'
-        folder.mkdir(parents=True, exist_ok=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': 'sreader', 'role': 'attempt',
-                                           'pipeline': None, 'task': {}})
-        return folder
 
     def tool(self, *argv):
         """Run a canon_tool command and return its exit code with what it wrote to standard output."""
@@ -1535,8 +1528,10 @@ class QuestionDispatchTests(QuestionCase):
         # exploration) does not hide whether the explorer's launch consumed the request.
         runner.settings['max_sessions'] = 1
         runner.state['explore_requested'] = True
-        busy = RuntimeError('another coordination change is still in progress; run the command again')
-        with patch('runner.claims_lock', side_effect=busy), patch('runner.subprocess.Popen') as host:
+        # Another coordination command holds the lock, and only the length of the runner's wait for it is cut,
+        # to nothing; the refusal is the one claims_lock itself gives when that wait ends.
+        with claims_lock(self.instance), patch('coordination.CLAIM_LOCK_SECONDS', 0), \
+                patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.schedule()
         jobs = [j for j in runner.state['jobs'].values() if j['role'] == 'explore']

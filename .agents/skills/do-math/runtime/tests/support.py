@@ -19,6 +19,7 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from canon import beyond_allowed
 from canon_tool import build_candidate
 from check import check_session, tree_hashes
 from lean_broker import Paths, broker_alive, terminate_tree
@@ -108,6 +109,21 @@ def record_text(description, weight='step', proof=None, statement=None, **meta):
 def module_text(body, imports=('Small.Defs',)):
     header = ''.join(f'public import {name}\n' for name in imports)
     return f'module\n\n{header}\n@[expose] public section\n\nnamespace Small\n\n{body.strip()}\n\nend Small\n'
+
+
+def earlier_form(index):
+    """An index as the code wrote it before the extraction asked Lean for the axioms.
+
+    An entry carries `direct_axioms` where it now carries `axioms`, a hidden declaration carries `axioms`
+    where it now carries `sorry`, and `judged` names the theorems proved from the default allowed axioms."""
+    allowed = defaults()['lean']['allowed_axioms']
+    return {**index,
+            'entries': {name: {**{key: value for key, value in entry.items() if key != 'axioms'},
+                               'direct_axioms': entry['axioms']} for name, entry in index['entries'].items()},
+            'hidden': {name: {**{key: value for key, value in item.items() if key != 'sorry'},
+                              'axioms': ['sorryAx'] if item['sorry'] else []} for name, item in index['hidden'].items()},
+            'judged': {name: index['revision'] for name, entry in index['entries'].items()
+                       if entry['kind'] == 'theorem' and not beyond_allowed(entry, allowed)}}
 
 
 def fixture_settings():
@@ -392,12 +408,30 @@ class InstanceCase(unittest.TestCase):
         self.assertEqual(state['jobs'][key]['status'], 'done', state['jobs'][key].get('last_error'))
         return state['jobs'][key]['record'], engine
 
+    def reader(self, sid='sreader', role='attempt'):
+        """A session folder from which the reading commands of canon_tool can be run."""
+        folder = self.instance / 'sessions' / sid
+        folder.mkdir(parents=True, exist_ok=True)
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
+                                           'pipeline': None, 'task': {}, 'user_inputs': []})
+        return folder
+
 
 ROOT_STATEMENTS = {'default': '(n : Nat) : oddSum n = n * n', 'closed': ': ∀ n : Nat, oddSum n = n * n'}
 SUM_ZERO = ': oddSum 0 = 0'
 SUM_SUCC = '(n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1)'
 HELD_REASON = 'The two cases can be merged into one.'
 GAP_REASON = 'The induction step is not justified.'
+
+
+def finding(reason, status='confirmed', concerns=(), **changes):
+    """A finding of a comprehensive review, with the keys given in `changes` (such as `invalidates`) beside its own."""
+    return {'concerns': list(concerns), 'status': status, 'reason': reason, **changes}
+
+
+def comprehensive(findings=(), concerns=()):
+    """The assessment of a comprehensive review."""
+    return {'feedback': 'feedback.md', 'findings': list(findings), 'concerns': list(concerns)}
 
 
 def take(session, element, statement=None, reasons=None, leased=False, new=None):
@@ -438,7 +472,7 @@ class ScenarioCase(InstanceCase):
         """The root's declaration with a proof that is complete in Lean."""
         induction = ('induction n with\n  | zero => rfl\n  | succ k ih =>\n    rw [oddSum, ih]\n'
                      '    simp only [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]\n    omega')
-        return self.root_text(uses, induction if self.root_variant == 'default' else 'intro n\n  ' + induction)
+        return self.root_text(uses, induction if self.root_variant != 'closed' else 'intro n\n  ' + induction)
 
     def root_record(self, proof='By induction on $n$, from the empty sum and the passage from $n$ to $n + 1$.'):
         return record_text('The sum of the first n odd numbers equals n times n.', weight='unit', proof=proof,
@@ -472,14 +506,6 @@ class ScenarioCase(InstanceCase):
         engine.state['sessions'][sid] = {'id': sid, 'role': 'peer', 'status': 'running', 'job': 'peerjob',
                                          'host': None, 'cli': None}
         engine.save()
-        return folder
-
-    def reader(self, sid='sreader', role='attempt'):
-        """A session folder from which the reading commands of canon_tool can be run."""
-        folder = self.instance / 'sessions' / sid
-        folder.mkdir(parents=True, exist_ok=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': None, 'task': {}, 'user_inputs': []})
         return folder
 
     def replace_proof(self, name, text, proof, weight='unit', description='A statement of the test canon.',

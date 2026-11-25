@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import shutil
 import time
-from cli_adapter import detect_usage_limit
+from cli_adapter import codex_error_message, detect_usage_limit
 from runtime_support import write_json
 
 
@@ -208,8 +208,7 @@ def refusal(session, provider, model, started, retry_seconds):
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_refusal', 'source': 'backoff'}
         if provider == 'codex':
-            error = event.get('error')
-            message = event.get('message') if event.get('type') == 'error' else error.get('message') if event.get('type') == 'turn.failed' and isinstance(error, dict) else None
+            message = codex_error_message(event)
             if isinstance(message, str) and message.startswith('Selected model is at capacity'):
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_capacity', 'source': 'backoff'}

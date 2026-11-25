@@ -13,8 +13,8 @@ runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms 
 that Check.lean asks about; and every call fails when `lake.json` names under `needs_variable` a variable
 that its environment does not have. Run as `test_finalize.py version` it is Lean's version command.
 
-The paper command is not run: `finalize.produce` is replaced by a function that writes the files
-section 15.1 of the design names and records what it was called with. Its own tests are test_paper.py.
+The paper command is not run: `finalize.produce` is replaced by a function that writes the files the
+pipeline reads of a run of that command and records what it was called with. Its own tests are test_paper.py.
 """
 import json
 import os
@@ -108,6 +108,7 @@ if __name__ == '__main__' and sys.argv[1:2] == ['version']:
     raise SystemExit(0)
 
 import atexit
+import functools
 import hashlib
 import tempfile
 import threading
@@ -266,6 +267,26 @@ class FinalizeCase(InstanceCase):
         """The published instance once the first test has made it; before that, the one `init` created."""
         return _SETTLED or super().starting_instance()
 
+    @functools.cached_property
+    def skill(self):
+        """The copy of the guides that InstanceCase makes, with what the command reads from the `finalize` folder.
+
+        Every instruction file is one line of text with the names the program fills, and the licence texts are
+        the installed ones. The folder is made when it is first asked for: by the runner that publishes the
+        instance once per test process, by the command, or by a test that changes an instruction file. A test
+        of a script alone reads nothing of the skill, so nothing is copied or written for it."""
+        folder = super().skill
+        for name in INSTRUCTIONS:
+            path = folder / 'finalize' / (name + '.md')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f'Instruction {name} for {{{{root}}}}, main {{{{main}}}}.\n', encoding='utf-8')
+        (folder / 'finalize' / 'simplify.md').write_text('Simplify the part {{part}}.\n', encoding='utf-8')
+        (folder / 'finalize' / 'common.md').write_text(
+            'Common: work {{work}}, skill {{skill}}, python {{python}}, library {{library}}, source {{imported_source}}, '
+            'memory {{expect_mb}}.\n', encoding='utf-8')
+        shutil.copytree(INSTALLED / 'finalize' / 'licences', folder / 'finalize' / 'licences')
+        return folder
+
     def setUp(self):
         global _SETTLED
         super().setUp()
@@ -291,15 +312,6 @@ class FinalizeCase(InstanceCase):
         self.solved = self.repository / 'solved' / 'odd'
         self.scenario = self.root / 'scenario'
         self.scenario.mkdir()
-        for name in INSTRUCTIONS:
-            path = self.skill / 'finalize' / (name + '.md')
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(f'Instruction {name} for {{{{root}}}}, main {{{{main}}}}.\n', encoding='utf-8')
-        (self.skill / 'finalize' / 'simplify.md').write_text('Simplify the part {{part}}.\n', encoding='utf-8')
-        (self.skill / 'finalize' / 'common.md').write_text(
-            'Common: work {{work}}, skill {{skill}}, python {{python}}, library {{library}}, source {{imported_source}}, '
-            'memory {{expect_mb}}.\n', encoding='utf-8')
-        shutil.copytree(INSTALLED / 'finalize' / 'licences', self.skill / 'finalize' / 'licences')
         self.produced, self.paper_code, self.draft = [], 0, DRAFT
         self.closed = []  # what the stand-in for the paper command says it closed without a person
         self.failing = False  # whether the stand-in leaves a manuscript that fails its typesetting
@@ -311,7 +323,7 @@ class FinalizeCase(InstanceCase):
 
     def produce(self, instance, out, tex=None, choice=None, parallel=4, resume=False, dry=False, draft=False,
                 from_draft=None, title_page=None, gate=None, main=None):
-        """Stands in for paper.produce: writes the files that section 15.1 of the design names."""
+        """Stands in for paper.produce: writes the files that the pipeline reads of a run of the paper command."""
         out = Path(out)
         self.produced.append({'instance': Path(instance).name, 'out': out.name, 'resume': resume, 'draft': draft,
                               'from_draft': from_draft, 'gate': gate, 'parallel': parallel, 'main': main,
@@ -523,10 +535,14 @@ class RecordTests(FinalizeCase):
         del now['entries']['Small.unused_two'], now['entries']['Small.stray']
         now['entries']['Small.helper_zero']['source_sha'] = 'another'
         now['entries']['Small.fresh'] = {**now['entries']['Small.simp_one'], 'name': 'Small.fresh'}
+        # A record can name what is gone in its header alone, as the statement it proves, and nowhere between backticks.
+        (records / 'Small' / 'twice_zero.md').write_text(
+            record_text('Twice the empty sum is zero.', weight='unit', proves='Small.stray'), encoding='utf-8')
         todo = {item['declaration']: item for item in package.record_todo(now, base, records)}
         self.assertEqual({name: item['why'] for name, item in todo.items()},
                          {'Small.helper_zero': 'changed', 'Small.fresh': 'new',
-                          'Small.named_four': 'names a declaration that is gone'})
+                          'Small.named_four': 'names a declaration that is gone',
+                          'Small.twice_zero': 'names a declaration that is gone'})
         self.assertIsNone(todo['Small.fresh']['record'])
         self.assertEqual(todo['Small.named_four']['record'], 'records/Small/named_four.md')
         self.assertEqual(package.drop_orphans(records, now), ['Small.stray', 'Small.unused_two'])
@@ -1125,7 +1141,7 @@ class RunTests(FinalizeCase):
         self.assertEqual([call['kind'] for call in self.calls() if call['kind'].startswith('history')],
                          ['history-write', 'history-read'])
 
-        # What each session was given, by the table of the design.
+        # What each session was given, as the part "What you are given" of its instruction file lists it.
         given = {call['kind'] + ':' + str(call['section']): set(call['given']) for call in self.calls()}
         library = {'lean/Small/Defs.lean', 'lean/Small/Root.lean', 'lean/Small/Step.lean', 'lean/Small/Helper.lean'}
         self.assertLessEqual({'digest.md', 'root.md', 'index.json', 'canon/lean/Small/Extra.lean', 'canon/records/Small/root.md',
@@ -1426,6 +1442,26 @@ class RunTests(FinalizeCase):
         self.assertIn('found 1 faults in the two prose sections of the README; a session corrected them', self.decisions())
         self.assertIn('added_six', (self.solved / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'))
 
+    def test_a_part_that_builds_and_leaves_a_proof_open_is_discarded_at_the_merge(self):
+        # A part is accepted on its build, which a proof left open passes. The merge reads the index and finds it.
+        plan = script()
+        plan['simplify:aux'] = [{
+            'output/lean/Small/Step.lean': STEP.replace('\n\nend Small', '\n\n' + theorem('open_seven', ': oddSum 7 = 49')
+                                                        + '\n\nend Small'),
+            'output/report.json': json.dumps({'deleted': [], 'cross': [], 'notes': ''})}]
+        with patch('finalize.Run.arrange', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.4-arrange`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertEqual(read_json(self.work / 'lib' / '3-parts' / 'parts.json'), {'accepted': ['core', 'aux'], 'discarded': []})
+        # The library with both parts does not pass the check of the merge, so the parts are added one at a time under
+        # that check: the part that brought the open proof is discarded, and the run goes on with the other.
+        self.assertEqual(read_json(self.work / 'lib' / '4-merged' / 'merge.json'), {'merged': ['core'], 'discarded': ['aux']})
+        self.assertIn('The part aux was discarded: the library does not pass its check with it added. Small.open_seven is '
+                      'not proved from the allowed axioms: sorryAx', self.decisions())
+        merged = self.work / 'lib' / '4-merged' / 'lean' / 'Small'
+        self.assertEqual((merged / 'Step.lean').read_text(encoding='utf-8'), STEP)
+        self.assertIn('theorem added_six', (merged / 'Helper.lean').read_text(encoding='utf-8'))
+
     def test_a_manuscript_that_fails_its_typesetting_stops_the_run_and_the_next_start_writes_the_paper_anew(self):
         self.failing = True
         self.assertEqual(self.run_command(script(), config=self.config()), 2)
@@ -1443,9 +1479,11 @@ class RunTests(FinalizeCase):
 
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
-        plan = script(package_read=[{'output/findings.json': json.dumps([
-            {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'},
-            {'file': 'README.md', 'quote': '', 'problem': 'It was not read to its end: the last section is missing here.'}])}])
+        # The selection of this run chooses the root itself as the main theorem of the package.
+        plan = script(selection=[{'output/decision.json': decision(main='Small.root')}], package_read=[{
+            'output/findings.json': json.dumps([
+                {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'},
+                {'file': 'README.md', 'quote': '', 'problem': 'It was not read to its end: the last section is missing here.'}])}])
         self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
         # No session may rewrite a sentence of the program: the finding is reported with the package, and the run ends.
         report = (self.work / 'report.md').read_text(encoding='utf-8')
@@ -1456,6 +1494,14 @@ class RunTests(FinalizeCase):
         self.assertIn('## Stage 5: what the reader of the package found and the run did not correct', self.decisions())
         self.assertEqual(len(self.calls('readme-write')), 1)  # nothing was found in the prose, so no session corrects
         self.assertTrue((self.solved / 'README.md').is_file())
+        # With the root as the main theorem, Challenge.lean states the root once, as it was posed, and the root alone
+        # is compared. The paper command is given no other main result, and the README names no second theorem.
+        lean = self.solved / 'lean'
+        self.assertEqual((lean / 'Challenge.lean').read_text(encoding='utf-8').count('root (n : Nat) : oddSum n = n * n'), 1)
+        self.assertEqual(read_json(lean / 'comparator.json')['theorem_names'], ['Small.root'])
+        self.assertEqual((lean / 'Solution.lean').read_text(encoding='utf-8'), 'module\n\npublic import Small.Root\n')
+        self.assertEqual([call['main'] for call in self.produced], [None, None])
+        self.assertNotIn('The library proves it from its main theorem', (self.solved / 'README.md').read_text(encoding='utf-8'))
 
     def halted_after_the_freeze(self, plan, **options):
         """A run that is stopped at the map, so that the freeze can be looked at in the work folder."""

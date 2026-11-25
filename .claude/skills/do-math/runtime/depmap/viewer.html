@@ -205,7 +205,7 @@ __SVG__
     if (rect) groupBox[g.dataset.group] = box(rect);
   });
   svg.setAttribute('role', 'group');
-  svg.setAttribute('aria-label', data.title + ': ' + data.counts.units + ' units. Every card is a button; the panel lists what a selected unit rests on and what rests on it.');
+  svg.setAttribute('aria-label', data.title + ': ' + data.counts.units + (data.counts.units === 1 ? ' unit' : ' units') + '. Every card is a button; the panel lists what a selected unit rests on and what rests on it.');
   svg.querySelectorAll('#routes, #labels').forEach(function (g) { g.setAttribute('aria-hidden', 'true'); });
   Object.keys(nodeEl).forEach(function (n) {
     var g = nodeEl[n];
@@ -646,7 +646,8 @@ __SVG__
       mark(N, E, n);
       showUnit(n, count(upN, n), count(downN, n));
       if (move) reveal(n);
-      live.textContent = unit[n].label + ' selected; ' + count(N, n) + ' other units are kept on the map.';
+      var others = count(N, n);
+      live.textContent = unit[n].label + ' selected; ' + others + (others === 1 ? ' other unit is' : ' other units are') + ' kept on the map.';
     } else if (state.step) {
       var lines = data.edges.filter(function (e) {
         return [e.via, e.proof && e.proof.via, e.statement && e.statement.via].some(function (via) {
@@ -658,7 +659,7 @@ __SVG__
       mark(ends, kept, null);
       showStep(state.step, lines);
       if (move) fit();
-      live.textContent = data.folded[state.step].label + ', a step folded into ' + lines.length + ' lines.';
+      live.textContent = data.folded[state.step].label + ', a step folded into ' + lines.length + (lines.length === 1 ? ' line.' : ' lines.');
     } else {
       overview(state.unknown);
       live.textContent = '';
@@ -840,7 +841,7 @@ __SVG__
 
   // ---- the search: units by short name, Lean name, module and description, and the folded steps
   var entries = data.units.map(function (u) {
-    return { hash: hashOf({ node: u.id, mode: 'all' }), label: u.label, id: u.id, what: u.role === 'proof' ? 'proof' : u.role,
+    return { hash: hashOf({ node: u.id, mode: 'all' }), label: u.label, id: u.id, what: u.role,
              near: (u.label + ' ' + u.id).toLowerCase(), far: ((u.description || '') + ' ' + u.module).toLowerCase() };
   }).concat(Object.keys(data.folded).map(function (name) {
     var step = data.folded[name];

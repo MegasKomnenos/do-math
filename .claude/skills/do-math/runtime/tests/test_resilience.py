@@ -379,6 +379,32 @@ class LaunchFailureTests(InstanceCase):
         with patch('runner.time.time', return_value=block['until'] - 0.5):
             self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')
 
+    def test_a_session_saved_before_its_gate_was_opened_is_cancelled_when_it_is_collected(self):
+        # dispatch records the host in the runner's state and only then opens the session's gate by writing GO.
+        # A runner that ended between the two left a session whose host started no CLI. The runner that collects
+        # that session cancels it, on which a host that still waits ends (test_ending.SessionGateTests). The
+        # launch never took place, so its retry is that of a cancellation and blocks no model.
+        engine = runtime.Runner(self.instance, self.skill)
+        key = engine.producer('attempt')
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        folder = engine.session_dir(sid)
+        (folder / 'GO').unlink()  # the state that runner saved: the host recorded, the gate not yet opened
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.collect()
+        session = recovered.state['sessions'][sid]
+        # The recorded host is this test's own process, which is alive: the session is cancelled, not yet collected.
+        self.assertTrue((folder / 'CANCEL').exists())
+        self.assertEqual(session['status'], 'running')
+        session['host'] = None  # the waiting host has ended
+        recovered.collect()
+        job = recovered.state['jobs'][key]
+        self.assertEqual((session['status'], job['status'], job['last_error']),
+                         ('failed', 'pending', 'session ended without retained research material'))
+        self.assertEqual(recovered.state['blocks'], {})
+
 
 if __name__ == '__main__':
     unittest.main()

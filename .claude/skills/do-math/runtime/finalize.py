@@ -885,10 +885,13 @@ class Run:
         write_json(target / 'parts.json', summary)
 
     def merge_parts(self, what, label, base, parts, records, keep):
-        """Put accepted parts together and build with the extraction; when that fails, add them one at a time.
+        """Put accepted parts together and check the library with the extraction; when that fails, add them one at a time.
 
         `parts` are (id, files, deleted) in the order they are added. A part that touches a file an
-        earlier part touched, or whose addition does not build, is discarded and the fact recorded.
+        earlier part touched is discarded. So is a part with which the library does not pass the check
+        that the merged library has to pass. A part was accepted on its build alone, so a proof that it
+        left open, an axiom, or a name that differs from another only in case shows first in the index,
+        and each part is therefore added under that same check. Every discarded part is recorded.
         Returns (index, the ids merged, the ids discarded)."""
         merged, discarded, replace, delete = [], [], {}, []
         for pid, files, deleted in parts:
@@ -907,11 +910,11 @@ class Run:
             for pid in candidates:
                 files, deleted = by_id[pid]
                 found, _ = self.library_ok(f'{label}-{pid}', base=base, replace={**replace, **files},
-                                           delete=delete + deleted)
+                                           delete=delete + deleted, extract=True, records=records)
                 if found:
                     discarded.append(pid)
-                    self.decide(what, f'The part {pid} was discarded: the library does not build with it added. '
-                                + found[0][:600])
+                    self.decide(what, f'The part {pid} was discarded: the library does not pass its check with it '
+                                'added. ' + found[0][:600])
                 else:
                     merged.append(pid)
                     replace.update(files)
@@ -1546,7 +1549,9 @@ class Run:
         environment = self.settings['lean']['env']  # Lake runs in the Lean environment, as every compile of the run does
 
         def registry(compared):
-            both = main in compared
+            # The root stands in Challenge.lean as it was posed. The main theorem is stated after it only when it
+            # is another theorem: with the root as the main theorem, the root would be declared there twice.
+            both = main != self.root and main in compared
             texts = {'Challenge.lean': package.challenge_text(first, self.definitions, root_module,
                                                               entries[main]['statement'] if both else None),
                      'Solution.lean': package.solution_text([entries[self.root]['module']]

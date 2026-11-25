@@ -719,6 +719,19 @@ class Drawing(MapCase):
         self.assertRegex(errors.getvalue(), r'^depmap: .*blocked')
         self.assertTrue(blocked.is_file())
 
+    def test_an_instance_of_the_earlier_runtime_is_refused(self):
+        # Such an instance has an instance.json of another schema and no canon. The command names the reason and
+        # ends with the code of an input it cannot read, as the commands of the runner refuse such an instance.
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        instance, out = Path(temp.name) / 'instance', Path(temp.name) / 'out'
+        instance.mkdir()
+        write_json(instance / 'instance.json', {'schema': 1, 'root_sha256': '0' * 64})
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(depmap.main([str(instance), '--out', str(out)]), 2)
+        self.assertRegex(errors.getvalue(), r'^depmap: .*instance schema 2')
+        self.assertFalse(out.exists())
+
 
 def playwright():
     """Playwright, where it is installed. The page is opened in a browser only there; the skill does not need it."""
@@ -798,6 +811,9 @@ class Page(MapCase):
                                  ('#node=Lib.root', True, 'Lib.root', 'every row is unimodal'))
                 # Everything the root rests on is kept; its second proof enters through the heavy line.
                 self.assertEqual(root['kept'], sorted(unit['id'] for unit in data['units']))
+                # The page announces the selection with the number of the other units that are kept.
+                self.assertEqual(page.text_content('#live'),
+                                 f"every row is unimodal selected; {len(data['units']) - 1} other units are kept on the map.")
                 # The panel names the two extents of the highlight and the way out.
                 page.locator('#content .extent button').nth(1).click()
                 near = page.evaluate(seen)
@@ -846,6 +862,8 @@ class Page(MapCase):
                            if any('Lib.glue' in (side or {}).get('via', ()) for side in (edge, edge['proof'], edge['statement']))]
                 self.assertEqual((step['head'], step['lines'], step['pick']), ('glue', len(through), None))
                 self.assertEqual(step['kept'], sorted({end for edge in through for end in (edge['source'], edge['target'])}))
+                # The step is folded into one line, and the page announces it in the singular.
+                self.assertEqual((len(through), page.text_content('#live')), (1, 'glue, a step folded into 1 line.'))
                 # A name that is not on the map is said to be missing, and nothing is selected. That holds as well
                 # for a name that every object of the page's script answers to.
                 for missing in ('Lib.nothing', 'constructor'):
@@ -862,9 +880,18 @@ class Page(MapCase):
                 page.goto(refuted + '#node=Lib.notRoot')
                 page.reload()
                 self.assertIn('the root, which this statement refutes', page.inner_text('#part-below + ul'))
+                # One other unit is kept, and the drawing of two cards is named with the number of its units.
+                self.assertEqual(page.text_content('#live'), 'notRoot selected; 1 other unit is kept on the map.')
+                self.assertIn(': 2 units. ', page.get_attribute('#stage svg', 'aria-label'))
                 page.goto(refuted + '#node=Lib.root')
                 page.reload()
                 self.assertIn(draw.LEGEND['refutation'], page.inner_text('#part-above + ul'))
+                # The drawing of a map that has one card is named with one unit.
+                alone = tempfile.TemporaryDirectory()
+                self.addCleanup(alone.cleanup)
+                depmap.write(self.map([statement('Lib.root', 'unit', proof=None)]), alone.name)
+                page.goto((Path(alone.name) / 'dependency_map.html').resolve().as_uri())
+                self.assertIn(': 1 unit. ', page.get_attribute('#stage svg', 'aria-label'))
                 # A card is reached and selected from the keyboard.
                 page.goto(address)
                 page.reload()

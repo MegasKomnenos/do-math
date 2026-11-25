@@ -37,8 +37,8 @@ from knowledge import frontier_lines, replay
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
 from settings import load_settings, validate
-from support import (ROOT, ROOT_STATEMENTS, SUM_ZERO, InstanceCase, ScenarioCase, fixture_settings, module_text,
-                     record_text, theorem)
+from support import (ROOT, ROOT_STATEMENTS, SUM_ZERO, InstanceCase, ScenarioCase, earlier_form, fixture_settings,
+                     module_text, record_text, theorem)
 
 ALLOWED = ['propext', 'Classical.choice', 'Quot.sound']
 OPEN_ZERO = theorem('sumZero', SUM_ZERO)
@@ -48,17 +48,6 @@ PROVED_ZERO_RECORD = record_text('The empty sum is zero.', weight='unit', proof=
 ABOVE = theorem('fromZero', SUM_ZERO, uses=['sumZero'], proof='exact h1')
 ABOVE_RECORD = record_text('The same value, from the lemma.')
 DEFINITION_CHANGED = 'the text of the definition Small.oddSum is not the text the first commit has'
-
-
-def earlier_form(index):
-    """An index as the code wrote it before the extraction asked Lean for the axioms."""
-    return {**index,
-            'entries': {name: {**{key: value for key, value in entry.items() if key != 'axioms'},
-                               'direct_axioms': entry['axioms']} for name, entry in index['entries'].items()},
-            'hidden': {name: {**{key: value for key, value in item.items() if key != 'sorry'},
-                              'axioms': ['sorryAx'] if item['sorry'] else []} for name, item in index['hidden'].items()},
-            'judged': {name: index['revision'] for name, entry in index['entries'].items()
-                       if entry['kind'] == 'theorem' and not beyond_allowed(entry, ALLOWED)}}
 
 
 def reindex(case, expect_mb=64, timeout=120):
@@ -306,14 +295,6 @@ def lean_program():
 
 LEAN = lean_program()
 EXPECT_MB, PATIENCE = 2048, 1800
-INDUCTION = ('induction n with\n  | zero => rfl\n  | succ k ih =>\n    rw [oddSum, ih]\n'
-             '    simp only [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]\n    omega')
-ROOT_FORMAL = theorem('root', ROOT_STATEMENTS['default'], (), INDUCTION,
-                      doc='The sum of the first `n` odd numbers is the square of `n`.')
-ROOT_RECORD = record_text('The sum of the first n odd numbers equals n times n.', weight='unit',
-                          proof='By induction on $n$, comparing consecutive squares.',
-                          statement='For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.',
-                          short='odd numbers sum to a square')
 KINDS = '\n\n'.join([
     theorem('sumZero', SUM_ZERO),                                              # no proof
     # Proved by compiled evaluation. The statement names nothing of another module: in a `module` file the
@@ -345,7 +326,9 @@ class LeanItselfTests(ScenarioCase):
     expect_mb, patience = EXPECT_MB, PATIENCE
 
     def setUp(self):
+        # The instance of this compiler states the root as the default instance does, under a key of its own.
         support.ROOTS.setdefault('lean', ROOT)
+        support.ROOT_STATEMENTS.setdefault('lean', ROOT_STATEMENTS['default'])
         with patch.object(support, 'fixture_settings', lean_settings):
             super().setUp()
 
@@ -360,12 +343,6 @@ class LeanItselfTests(ScenarioCase):
                                     records=KIND_RECORDS)
             self.publish(folder)
         self.scenario('kinds', build)
-
-    def proved_root(self):
-        def build():
-            folder = self.candidate(replace={'Small.root': ROOT_FORMAL}, records={'Small/root.md': ROOT_RECORD})
-            self.publish(folder)
-        self.scenario('proved-root', build)
 
     def test_lean_reports_sorry_and_native_decide_and_what_rests_on_them(self):
         self.kinds()
@@ -427,7 +404,7 @@ class LeanItselfTests(ScenarioCase):
         self.assertFalse(self.element('Small.fromComputed')['formal'])
 
     def test_the_root_as_proved_is_the_root_as_posed(self):
-        self.proved_root()
+        self.formal()
         root = self.element('Small.root')
         self.assertTrue(root['formal'] and set(root['axioms']) <= set(ALLOWED), root['axioms'])
         engine = runtime.Runner(self.instance, self.skill)
@@ -438,7 +415,7 @@ class LeanItselfTests(ScenarioCase):
         self.assertEqual(list((self.instance / 'control/requests').glob('*.json')), [])
 
     def test_a_changed_definition_under_the_root_is_found(self):
-        self.proved_root()
+        self.formal()
         rewrite(self.instance / 'canon/lean/Small/Defs.lean', '| 0 => 0', '| 0 => 0 * 1')
         reindex(self, EXPECT_MB, PATIENCE)
         engine = runtime.Runner(self.instance, self.skill)

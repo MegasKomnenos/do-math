@@ -172,7 +172,8 @@ class ContextTests(InstanceCase):
 
     def test_input_command_preserves_standing_conditions_for_later_launches(self):
         condition = self.root / 'conditions.md'
-        condition.write_text('﻿Write every record in English.', encoding='utf-8')
+        # A condition file can begin with a byte order mark, as Windows PowerShell writes UTF-8; it is no part of the condition.
+        condition.write_text('Write every record in English.', encoding='utf-8-sig')
         blank = self.root / 'blank.md'
         blank.write_text(' \n', encoding='utf-8')
         with patch('builtins.print') as shown:

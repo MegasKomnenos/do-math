@@ -13,7 +13,8 @@ from canon import Canon
 from coordination import board, lease, lease_table, wait
 from runner import Runner, main
 from runtime_support import InstanceLock, read_json, write_json
-from support import GAP_REASON, HELD_REASON, SUM_ZERO, ScenarioCase, module_text, record_text, take, theorem
+from support import (GAP_REASON, HELD_REASON, SUM_ZERO, ScenarioCase, comprehensive, finding, module_text, record_text,
+                     take, theorem)
 
 FRONTIER = '''\
 - `Small.root` — odd numbers sum to a square — accepted
@@ -27,14 +28,6 @@ FRONTIER = '''\
     - `Small.diagD` — Diag — proof not confirmed: The induction step is not justified.
       - `Small.stepF` (step) — The first five odd numbers sum to twenty-five. — no proof
 '''
-
-
-def finding(reason, status='confirmed', concerns=(), **changes):
-    return {'concerns': list(concerns), 'status': status, 'reason': reason, **changes}
-
-
-def comprehensive(findings=(), concerns=()):
-    return {'feedback': 'feedback.md', 'findings': list(findings), 'concerns': list(concerns)}
 
 
 class ViewTests(ScenarioCase):
@@ -542,6 +535,37 @@ class CanonToolTests(ScenarioCase):
         self.assertIn('\nElements of this view that are work that remains: 1. Each has one of the standings "no proof", '
                       '"proof not confirmed", "correct, held back", or a proof that names a statement refuted since.'
                       '\n\n# Questions\n', text)
+
+    def test_a_step_that_names_a_refuted_statement_and_a_refuted_step_are_not_passed_through(self):
+        # The view passes through a step whose proof is accepted. Two such steps are shown all the same. The
+        # proof of `midS` names `leafR`, which is refuted, so `midS` needs another proof and is work that
+        # remains. `midT` is refuted itself: its line says by which element, and `leafQ` beneath it is not shown.
+        chain = [theorem('leafR', ': oddSum 1 = 1'), theorem('midS', ': oddSum 2 = 4', uses=['leafR']),
+                 theorem('leafQ', ': oddSum 3 = 9'), theorem('midT', ': oddSum 4 = 16', uses=['leafQ'])]
+        against = [theorem('notR', ': ¬ (oddSum 1 = 1)'), theorem('notT', ': ¬ (oddSum 4 = 16)')]
+        folder = self.candidate(
+            modules={'Small/Chain.lean': module_text('\n\n'.join(chain)),
+                     'Small/Against.lean': module_text('\n\n'.join(against))},
+            replace={'Small.root': self.root_text(uses=['midS', 'midT'])}, imports={'Small.root': ['Small.Chain']},
+            records={'Small/leafR.md': record_text('The first odd number is one.', weight='unit'),
+                     'Small/midS.md': record_text('The first two odd numbers sum to four.', proof='Add three to one.'),
+                     'Small/leafQ.md': record_text('The first three odd numbers sum to nine.', weight='unit'),
+                     'Small/midT.md': record_text('The first four odd numbers sum to sixteen.', proof='Add seven to nine.'),
+                     'Small/notR.md': record_text('The first odd number is not one.', weight='unit',
+                                                  proof='A miscount of the first odd number.', refutes='Small.leafR'),
+                     'Small/notT.md': record_text('The first four odd numbers do not sum to sixteen.', weight='unit',
+                                                  proof='A miscount of the four terms.', refutes='Small.midT'),
+                     'Small/root.md': self.root_record()})
+        self.publish(folder)
+        another = ', refuted since; the statement needs another proof'
+        self.assertEqual(self.tool('frontier').splitlines()[2:7], [
+            '- `Small.root` — odd numbers sum to a square — accepted · its proof names `Small.midT`' + another,
+            '  - `Small.midS` (step) — The first two odd numbers sum to four. — accepted · its proof names '
+            '`Small.leafR`' + another,
+            '    - `Small.leafR` — The first odd number is one. — refuted by `Small.notR`',
+            '  - `Small.midT` (step) — The first four odd numbers sum to sixteen. — refuted by `Small.notT`',
+            ''])
+        self.assertEqual(self.listed('--remaining'), ['midS', 'root'])
 
     def test_view_names_the_questions_whose_text_names_the_element(self):
         self.split()

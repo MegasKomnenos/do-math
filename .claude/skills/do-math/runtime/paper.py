@@ -199,7 +199,7 @@ import threading
 import time
 
 from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
-from cli_adapter import detect_usage_limit, provider_for_model
+from cli_adapter import build_command, detect_usage_limit, provider_for_model
 from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
 from launch import worker_command, worker_environment
 import runtime_support
@@ -756,11 +756,11 @@ def order_note(materials):
     return note
 
 
-def element_lines(element, keys=None, users=True):
+def element_lines(element, users=True):
     """One element as lines of a text, from the line that gives its kind: the Lean form, what it names, its record.
 
-    `keys` are the sections of the record that are given; without it, all of them. Without `users` the
-    elements that name this one are left out; a brief says in its own way where an element is used."""
+    Without `users` the elements that name this one are left out; a brief says in its own way where an
+    element is used."""
     lines = [f"{element['kind']} · weight: {element['weight']}"
              + (f" · short name: {element['short']}" if element['short'] else '')
              + role_mark(element) + (OUTSIDE if element.get('outside') else ''), '']
@@ -787,7 +787,7 @@ def element_lines(element, keys=None, users=True):
     lines += ([f"Among these elements it is named or mentioned by {backquoted(element['used_by'])}."]
               if element['used_by'] and users else []) + ['']
     for title, key in RECORD:
-        if element[key] and (keys is None or key in keys):
+        if element[key]:
             note = (f" (from the record of `{element['statement_from']}`)"
                     if key == 'statement' and element['statement_from'] != element['name'] else '')
             lines += [f'**{title}{note}.**', '', element[key], '']
@@ -1899,19 +1899,33 @@ def typeset(folder, recipe):
     return []
 
 
+# Where TeX opens the bibliography. Its log names the file as `(paper.bbl` or `(./paper.bbl`, and it breaks a line
+# after 79 characters, also inside a name, so a line end may stand anywhere in this one.
+BIBLIOGRAPHY_OPENED = re.compile(r'\((?:\.\n?/\n?)?' + r'\n?'.join(re.escape(char) for char in 'paper.bbl'))
+
+
 def wide_lines(log):
     """The lines that TeX set wider than the text block by more than WIDE_PT, as its log reports them.
 
     TeX reports such a line as a warning and typesets the paper all the same, with the line standing
-    out into the margin."""
+    out into the margin. It gives the line by its number in the file it is reading. That file is
+    paper.tex up to the bibliography, which is the last thing in the manuscript and which TeX reads
+    from paper.bbl. A number that the log gives from there on is therefore no line of paper.tex, and
+    such a line is reported without one: it stands in the bibliography, or in the addresses that the
+    class prints below it."""
     log = Path(log)
     if not log.is_file():
         return []
+    text = log.read_text(encoding='utf-8', errors='replace')
+    opened = BIBLIOGRAPHY_OPENED.search(text)
+    body, rest = (text[:opened.start()], text[opened.start():]) if opened else (text, '')
     found = []
-    for width, single, first, last in OVERFULL.findall(log.read_text(encoding='utf-8', errors='replace')):
+    for width, single, first, last in OVERFULL.findall(body):
         if float(width) > WIDE_PT:
             where = f'line {single}' if single else f'lines {first} to {last}'
             found.append(f'paper.tex, {where}: TeX set a line {float(width):.0f}pt wider than the text block')
+    found += [f'the bibliography, or the addresses below it: TeX set a line {float(width):.0f}pt wider than the text block'
+              for width, _, _, _ in OVERFULL.findall(rest) if float(width) > WIDE_PT]
     return list(dict.fromkeys(found))
 
 
@@ -2226,11 +2240,6 @@ the method permits, keep the statement and say why. The proof of a statement, or
 section, which this session does not change. The writer of that section worked from the statement of the element, as \
 your brief gives it, and not from the wording that you now correct; where the correction nevertheless requires a change \
 there, say in the note which section and what.'''
-COMPARED_WHOLE = '''A session compared every numbered statement of the manuscript with the statement of its element. \
-`findings.json` lists the statements it found to differ. A numbered statement says exactly what its element says \
-(method, section "Every numbered statement says what its element says"). Correct each statement that differs, and adjust \
-its proof and the places that use it where the correction requires it. When a reported difference is one the method \
-permits, keep the statement and say why.'''
 LIKE_SECTION = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
 else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
 describes. `findings.json` holds what it found in this section: places where the manuscript is written otherwise than \
@@ -2248,7 +2257,7 @@ manner, and no sentence of theirs is copied or paraphrased into the manuscript. 
 the mathematics, depart from the plan or undo a decision of the method, such as that the author line is the script's to \
 write or that the paper does not mention Lean, keep the text and say why.'''
 # What the repair of a sentence that no element covers is told about its findings. The repair is always a narrow one.
-COVERED_FINDINGS = '''A session compared the running text of {where} with the elements of the research, that is, the text \
+COVERED_FINDINGS = '''A session compared the running text of this section with the elements of the research, that is, the text \
 outside the numbered statements and outside the proofs, together with the displayed formulas of a proof to which text \
 outside that proof refers. `findings.json` lists the passages that it found to assert mathematics which no element \
 states. Each finding gives the place ("where"), the exact words ("quote"), what the passage asserts ("asserts"), the \
@@ -2293,14 +2302,6 @@ requirement of the method or of the plan. Correct every one.''',
     'typeset': '''TeX could not typeset the manuscript. `findings.json` holds the errors of the TeX run; line numbers in \
 them are lines of `paper.tex`. Correct the cause of each error in the part where it lies, which need not be the part in \
 which TeX noticed it.''',
-    'wide': '''TeX typeset the manuscript, and some lines came out wider than the text block, so that they stand out into \
-the margin of the printed page. Some displayed formulas may also have less room on their line than they need: TeX then \
-closes up the spaces inside the formula, or moves the number of the formula to a line of its own. `findings.json` lists \
-these lines and formulas, with the lines of `paper.tex` they come from and by how much each is too wide. Where the line \
-is a displayed formula, break the formula over two or more lines, with an environment such as `multline*` or `align*`; a \
-formula with a number keeps its number and its label, in `multline` or in `equation` with `split` inside. Where it is a \
-line of a paragraph, TeX found no place to break it: display the long formula, or reword the sentence. Change nothing in \
-what the text says.''',
     'reading': READ_WHOLE + '''
 
 First compare the understanding with the research: with `root.md`, with the outline of the plan, and with the records \
@@ -2309,7 +2310,6 @@ these say, the manuscript did not convey it, whether or not a finding points the
 the manuscript has to change. A reader can misread, and a finding can ask for something the method excludes; in that case \
 keep the text and say why. In every other case revise so that the next reader does not meet the same difficulty, which \
 may mean rewriting the passage from the records instead of adjusting its wording.''',
-    'comparison': COMPARED_WHOLE,
     'likeness': LIKE_WHOLE + '''
 
 Rewrite the parts so that at each of these places the manuscript does what the papers do: in the structure, the wording, \
@@ -2345,10 +2345,12 @@ has the notes, and tells from them which change belongs to which finding.'''
 NARROW, NARROW_COVERED = (NARROW_TEXT.format(read_by=NARROW_READ_BY[kind]) for kind in (None, 'coverage'))
 NARROW_AGAIN = '''
 
-A finding that carries "open_because" was taken up before and left open, and the text under that key says why: an \
-earlier repair kept the text; or its change was found unsound and undone, so that the text is again as it was; or its \
-change stayed in the text and was found not to answer the finding; or the finding was repaired and too few readings \
-followed to confirm the repair. Decide about such a finding anew, on the text as it stands, with that reason in view.'''
+A finding that carries "open_because" was left open before this repair, and the text under that key says why. In one \
+case an earlier repair took the finding up: it kept the text; or its change was found unsound and undone, so that the \
+text is again as it was; or its change stayed in the text and was found not to answer the finding; or the finding was \
+repaired and too few readings followed to confirm the repair. In the other case no repair has taken the finding up: a \
+comparison reported it, and no repair followed that comparison. Decide about such a finding anew, on the text as it \
+stands, with that reason in view.'''
 NARROW_READ = ''' In every other case revise the passage that the finding names, so that a reader of the paper does not \
 meet the same difficulty there.'''
 NARROW_LIKE = '''At each of these places change the passage that the finding quotes, or add what the finding misses at the \
@@ -2360,12 +2362,10 @@ NARROW_SECTION_KINDS = {
     'reading': READ_SECTION.format(compared='') + '\n\n' + READ_DECIDE + READ_ELSEWHERE + NARROW_READ + '\n\n' + NARROW,
     'comparison': COMPARED_SECTION + '\n\n' + NARROW,
     'likeness': LIKE_SECTION + '\n\n' + NARROW_LIKE + LIKE_KEPT + '\n\n' + NARROW,
-    'coverage': COVERED_FINDINGS.format(where='this section') + '\n\n' + COVERED_DECIDE + '\n\n' + NARROW_COVERED}
+    'coverage': COVERED_FINDINGS + '\n\n' + COVERED_DECIDE + '\n\n' + NARROW_COVERED}
 NARROW_WHOLE_KINDS = {
     'reading': READ_WHOLE + '\n\n' + READ_DECIDE + NARROW_READ + NARROW_TITLE + '\n\n' + NARROW,
-    'comparison': COMPARED_WHOLE + '\n\n' + NARROW,
-    'likeness': LIKE_WHOLE + '\n\n' + NARROW_LIKE + LIKE_KEPT + NARROW_TITLE + '\n\n' + NARROW,
-    'coverage': COVERED_FINDINGS.format(where='the manuscript') + '\n\n' + COVERED_DECIDE + '\n\n' + NARROW_COVERED}
+    'likeness': LIKE_WHOLE + '\n\n' + NARROW_LIKE + LIKE_KEPT + NARROW_TITLE + '\n\n' + NARROW}
 
 SECTION_REPAIR_PROMPT = CONTEXT + '''
 
@@ -3381,6 +3381,10 @@ class Paper(Sessions):
         self.writer = chosen
         if choice.get('model'):
             self.assessor = chosen
+        # A model that names no provider, or an effort that its CLI does not take, is refused here, before the run
+        # has written anything; a session would fail on it only when the folder of the run is already begun.
+        for each in (self.writer, self.assessor):
+            build_command(self.settings['cli'][provider_for_model(each['model'])], each['model'], each['effort'], self.out)
         self.recipe = tex_recipe(tex)
         # The authors of the title page; a run keeps the file it was given as <out>/title-page.json.
         self.authors = read_title_page(self.out / 'title-page.json') if (self.out / 'title-page.json').is_file() else []
@@ -3845,18 +3849,28 @@ class Paper(Sessions):
                 if not problems:
                     shutil.copyfile(folder / 'paper.pdf', self.out / 'paper.pdf')
                     kind, problems = 'wide', wide_lines(folder / 'paper.log') + tight_displays(folder, self.recipe)
-                    where = [part_at(spans, int(WIDE_LINE.match(problem)[1])) for problem in problems]
+                    where = [part_at(spans, int(line[1])) if (line := WIDE_LINE.match(problem)) else None
+                             for problem in problems]
                     self.event('check', check=WIDE, problems=problems)
             # What an earlier pass left open about wide lines is replaced by what this pass finds.
             self.open = [item for item in self.open if item['check'] != WIDE]
             if not problems:
                 self.save()
                 return True
-            if round_number < rounds:
+            if kind == 'wide':
+                # A wide line that lies in no part stands in what the script supplied: a title or a heading of the
+                # plan, the author lines, the bibliography. A repair changes the parts and keeps all of these, so
+                # such a line goes to no session and is reported with the lines that the repairs leave.
+                held = [(problem, part) for problem, part in zip(problems, where) if part is not None]
+                if not held:
+                    break
+                if round_number < rounds:
+                    self.repair(kind, [problem for problem, _ in held], [part for _, part in held], tex, spans)
+            elif round_number < rounds:
                 self.repair(kind, problems, where, tex, spans)
         if kind == 'wide':
             # The paper is typeset. A line that still stands out into the margin is reported and stops nothing.
-            self.open.append({'check': WIDE, 'after_repairs': rounds, 'problems': problems})
+            self.open.append({'check': WIDE, 'after_repairs': round_number, 'problems': problems})
             self.save()
             return True
         self.open.append({'check': TYPESETTING if kind == 'typeset' else MACHINE, 'after_repairs': rounds,
@@ -4808,8 +4822,10 @@ class Paper(Sessions):
                 COVERAGE: 'a repair session cuts the passage or rewords it so that it says no more than the element '
                           'named with it, a session reads what was changed, and the running text of the section is '
                           'compared with the elements again',
-                WIDE:'the manuscript is typeset again and every line that is too wide goes to repair; this is done '
-                      'whenever a finding is acted on, since the typesetting cannot tell these lines from new ones'}
+                WIDE:'the manuscript is typeset again and every line of a part that is too wide goes to repair, while '
+                      'one in the title, a heading, the author line or the bibliography is text that no repair '
+                      'changes and is reported again; this is done whenever a finding is acted on, since the '
+                      'typesetting cannot tell these lines from new ones'}
         listed = self.listed()
         for item in self.open:
             say('')

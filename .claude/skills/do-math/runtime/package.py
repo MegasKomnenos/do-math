@@ -478,8 +478,10 @@ def record_todo(index, base, records_root):
     """The elements whose record is to be written, in the form of `todo.json`.
 
     Those without a record; those whose declaration is not in the base index with the same source;
-    and those whose record names, between backticks, a declaration the base index had and the library
-    no longer has, by its full name or by its name without the library's first component."""
+    and those whose record names a declaration the base index had and the library no longer has:
+    between backticks, by its full name or by its name without the library's first component, or
+    after `proves:` or `refutes:`, as the declaration it claims to prove or to refute. The check of
+    the records refuses a claim about a declaration that is gone, so the record that makes it is due."""
     records_root = Path(records_root)
     gone = set(base['entries']) - set(index['entries'])
     short = lambda name: name.split('.', 1)[1] if '.' in name else name
@@ -494,7 +496,8 @@ def record_todo(index, base, records_root):
             why = 'new'
         elif old is None or old['source_sha'] != entry['source_sha']:
             why = 'changed'
-        elif set(BACKTICKED.findall(read_text(path))) & names:
+        elif (set(BACKTICKED.findall(text := read_text(path)))
+              | set(re.findall(r'^(?:proves|refutes):[ \t]*(\S+)[ \t]*$', text, re.M))) & names:
             why = 'names a declaration that is gone'
         else:
             continue

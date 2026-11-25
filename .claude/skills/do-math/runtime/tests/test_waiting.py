@@ -86,10 +86,10 @@ class AwaitRecord(unittest.TestCase):
         self.running(JOB)
         job, record, ended = lean_broker.await_record(self.paths, JOB, timeout=60)
         self.assertEqual((job, record["status"], ended), (JOB, "running", False))
-        # At the start, every WAIT_STATE seconds, and once at the timeout: 8 reads in a minute, where
-        # a read at each of four looks a second would have been 240.
+        # At the start, at the first look once WAIT_STATE seconds have passed since the last read, and once at
+        # the timeout: 7 reads in a minute, where a read at each of four looks a second would have been 240.
         self.assertLessEqual(self.reads, 2 + int(60 / lean_broker.WAIT_STATE))
-        self.assertGreaterEqual(self.reads, 2)
+        self.assertGreaterEqual(self.reads, int(60 / lean_broker.WAIT_STATE))
         self.assertEqual(self.clock.sleeps[0], lean_broker.WAIT_FIRST)
         self.assertLessEqual(max(self.clock.sleeps), lean_broker.WAIT_CAP)
         self.assertAlmostEqual(sum(self.clock.sleeps), 60, places=6)

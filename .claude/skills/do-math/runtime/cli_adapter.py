@@ -160,6 +160,20 @@ def _claude_reset(info: object, now: float) -> float | None:
     return None
 
 
+def codex_error_message(event: dict) -> object:
+    """The message of a failure that a Codex stream event reports, or None for any other event.
+
+    An `error` event carries the message itself, and a `turn.failed` event carries it under `error`.
+    The usage-limit detection below and retention.refusal both read this rule here, so a change of
+    the stream's form is one edit."""
+    if event.get("type") == "error":
+        return event.get("message")
+    error = event.get("error")
+    if event.get("type") == "turn.failed" and isinstance(error, dict):
+        return error.get("message")
+    return None
+
+
 def detect_usage_limit(
     provider: Provider,
     stdout_path: PathLike,
@@ -215,10 +229,7 @@ def detect_usage_limit(
                     continue
                 reset = None
                 if provider == "codex":
-                    message = event.get("message") if event.get("type") == "error" else None
-                    error = event.get("error")
-                    if event.get("type") == "turn.failed" and isinstance(error, dict):
-                        message = error.get("message")
+                    message = codex_error_message(event)
                     if not isinstance(message, str) or not _CODEX_LIMIT.match(
                         message.strip().replace("\u2019", "'")
                     ):

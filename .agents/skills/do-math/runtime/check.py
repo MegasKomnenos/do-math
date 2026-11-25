@@ -13,6 +13,10 @@ from runtime_support import read_json
 from settings import PRODUCERS
 
 VERDICTS = ('confirmed', 'not_confirmed', 'undetermined', 'not_applicable')
+# The one finding of check_session that no further turn of the session can remove: the files of the candidate
+# under review changed after the review was assigned. The host of that review resumes nothing for it
+# (ending.supervise), and the runner restores the candidate or has a new one made (Runner.recover_candidate).
+CANDIDATE_CHANGED = 'candidate changed after review assignment'
 
 
 class Invalid(ValueError):
@@ -147,24 +151,25 @@ def stays_settled(model, receipt, declaration):
          'longer be formal')
 
 
-def change_check(root, model, owner, held=None):
-    """A peer's candidate change: its manifest, its files, and what a machine can decide about them."""
+def change_check(root, model, owner, held=()):
+    """A peer's candidate change: its manifest, its files, and what a machine can decide about them.
+
+    held names the statements on which the peer's pipeline holds sections (pipeline_sections)."""
     try:
         change = load_change(root)
     except CanonError as exc:
         raise Invalid(str(exc)) from None
     receipt = prepared_candidate(root)
     known = set(model['elements']) | set(receipt['added'])
-    if held is not None:
-        for item in change['replace']:
-            statement = model['elements'].get(item['declaration'], {}).get('statement_of')
-            if statement and model['elements'][statement]['statement_settled']:
-                # A settled statement can no longer be taken, so no section is asked for it.
-                stays_settled(model, receipt, item['declaration'])
-            else:
-                need(statement in held,
-                     f"replacing the proof of {item['declaration']} requires holding a section on "
-                     f"{statement or 'it'}; register one through its lease")
+    for item in change['replace']:
+        statement = model['elements'].get(item['declaration'], {}).get('statement_of')
+        if statement and model['elements'][statement]['statement_settled']:
+            # A settled statement can no longer be taken, so no section is asked for it.
+            stays_settled(model, receipt, item['declaration'])
+        else:
+            need(statement in held,
+                 f"replacing the proof of {item['declaration']} requires holding a section on "
+                 f"{statement or 'it'}; register one through its lease")
     paths = {name_path(name): name for name in known}
     for relative in change['approaches']:
         folder, _, entry = relative.rpartition('/')
@@ -405,7 +410,7 @@ def check_session(session):
                          pipeline_sections(instance, state, inp.get('pipeline'), model, session.name))
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
-            need(tree_hashes(candidate) == task['candidate_hashes'], 'candidate changed after review assignment')
+            need(tree_hashes(candidate) == task['candidate_hashes'], CANDIDATE_CHANGED)
             assessment_check(read_json(output / 'assessment.json'), output, candidate, model,
                              instance, inp['session'])
         elif role == 'review':

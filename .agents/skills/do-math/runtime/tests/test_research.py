@@ -14,23 +14,15 @@ from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 from canon import Canon
-from coordination import (board, lease, lease_table, main as coordination_main, message, release, section,
-                          updates, wait)
+from coordination import (board, claims_lock, lease, lease_table, main as coordination_main, message, release,
+                          section, updates, wait)
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
 from runner import Runner, archive_finished, initialize, main, start
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, ScenarioCase,
-                     fixture_settings, module_text, record_text, stop_broker, take, theorem, write_canon)
-
-
-def finding(reason, status='confirmed', concerns=(), **changes):
-    return {'concerns': list(concerns), 'status': status, 'reason': reason, **changes}
-
-
-def comprehensive(findings=(), concerns=()):
-    """The assessment of a comprehensive review."""
-    return {'feedback': 'feedback.md', 'findings': list(findings), 'concerns': list(concerns)}
+                     comprehensive, finding, fixture_settings, module_text, record_text, stop_broker, take, theorem,
+                     write_canon)
 
 
 def concern(cid, *targets):
@@ -896,6 +888,12 @@ class CoordinationTests(ScenarioCase):
         self.assertEqual((code, answer['leased']), (1, False))
         code, answer = run('updates', str(b))
         self.assertEqual((code, answer['root_state']), (0, 'unresolved'))
+        # A command that still finds the coordination lock held when its wait for it ends answers in the same
+        # form. Another command holds the lock here, and only the length of the wait is cut, to nothing.
+        with claims_lock(self.instance), patch('coordination.CLAIM_LOCK_SECONDS', 0):
+            code, answer = run('lease', str(b), 'Small.root')
+        self.assertEqual((code, answer), (1, {'error': 'another coordination change is still in progress; '
+                                                       'run the command again'}))
 
     def test_a_session_stands_in_one_lease_relation(self):
         self.split()
@@ -1144,25 +1142,16 @@ class RunnerTests(ScenarioCase):
 
     def ended(self, runner, role, exit_code=42):
         """A producing session that has ended with retained research material."""
-        key = runner.producer(role)
-        job = runner.state['jobs'][key]
         sid = 's' + role
-        folder = runner.session_dir(sid)
-        for name in ('output', 'work', 'inbox'):
-            (folder / name).mkdir(parents=True)
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
+        folder = self.session(runner, sid, role)  # as dispatch leaves it; the rest is what the CLI that ended left
         (folder / 'cli.stdout.jsonl').write_text(json.dumps(
             {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'A retained observation.'}}), encoding='utf-8')
         (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
         (folder / 'work/notes.md').write_text('An unfinished mathematical argument.', encoding='utf-8')
-        session = {'id': sid, 'role': role, 'job': key, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex',
-                   'started_at': 1, 'status': 'running', 'exit_code': exit_code, 'host': None, 'cli': None}
-        runner.state['sessions'][sid] = session
-        runner.state['pipelines'][job['pipeline']]['producer'] = sid
-        job.update(status='running', session=sid)
+        session = runner.state['sessions'][sid]
+        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=1, exit_code=exit_code)
         runner.save()
-        return sid, session, job
+        return sid, session, runner.state['jobs'][session['job']]
 
     def launched(self, runner, role):
         return [sid for sid, s in runner.active() if s['role'] == role]

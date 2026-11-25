@@ -34,7 +34,7 @@ from canon import (Canon, CanonError, Conflict, add_imports, apply_lean, apply_r
 from check import Invalid, check_session, prepared_candidate
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
-from support import InstanceCase, module_text, record_text
+from support import InstanceCase, earlier_form, module_text, record_text
 
 
 def write(path, text):
@@ -1502,11 +1502,7 @@ class EarlierIndexTests(TempCase):
         write(lean / 'Small/A.lean', A_SOURCE)
         write(lean / 'Small/B.lean', B_SOURCE)
         first = update_index(empty_index(), rows_a(), {}, lean, 1)
-        old = {**first, 'entries': {name: {**{key: value for key, value in item.items() if key != 'axioms'},
-                                           'direct_axioms': item['axioms']} for name, item in first['entries'].items()},
-               'hidden': {name: {**{key: value for key, value in item.items() if key != 'sorry'},
-                                 'axioms': ['sorryAx'] if item['sorry'] else []} for name, item in first['hidden'].items()},
-               'judged': {}}
+        old = earlier_form(first)
         both = update_index(self.read(old), rows_b(), {}, lean, 2)
         self.assertEqual(both, update_index(first, rows_b(), {}, lean, 2))
 
@@ -2351,6 +2347,16 @@ class CandidateToolTests(InstanceCase):
         write(output / 'records/Small/oddSum_succ.md', STEP_RECORD + '\nA later remark.\n')
         with self.assertRaisesRegex(Invalid, 'changed after it was prepared'):
             prepared_candidate(output)
+        # The broker answers a build submitted again while the first still runs with a record that points to
+        # the first (lean_broker.Broker.ingest_build). Whether a repeat arrives in time is a matter of timing,
+        # so that record is written here by hand, in the broker's form. Its outcome is that of the first build.
+        repeat = 'b' + uuid.uuid4().hex
+        (Paths(self.instance).builds / repeat).mkdir()
+        write_json(Paths(self.instance).builds / repeat / 'result.json',
+                   {'id': repeat, 'status': 'duplicate', 'duplicate_of': receipt['build']})
+        outcome = build_outcome(self.instance, repeat)
+        self.assertEqual((outcome['ok'], outcome['build']), (True, receipt['build']))
+        self.assertEqual(outcome, build_outcome(self.instance, receipt['build']))
 
     def test_a_candidate_without_lean_needs_no_build(self):
         reworded = record_text('The first n odd numbers add up to the square of n.', weight='unit', short='odd sum',

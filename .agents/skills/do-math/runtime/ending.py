@@ -21,8 +21,6 @@ ROLES = ('attempt', 'formalizer', 'explore', 'peer')
 # resumes the same conversation with what the check found, instead of leaving the whole assignment to a
 # new session: the turn of a reviewer can end while the sub-reviewers it delegated to are still at work.
 OUTPUT_ROLES = ('review', 'organizer')
-# The one finding of the check that no further turn of the session can remove; the runner deals with it.
-CANDIDATE_CHANGED = 'candidate changed after review assignment'
 OUTPUT_LIMIT_NOTICE = (
     'Your previous turn ended because one response exceeded the output-token limit '
     '(CLI message: "{message}"). That response was discarded: its reasoning and anything it was '
@@ -98,9 +96,12 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
 
 
 def output_problems(session):
-    """What the transport check finds in a session's output, as the runner will find it when it collects the session."""
-    from check import check_session  # it reads the canon, which the host of a producing role never needs
-    return check_session(session)
+    """What the transport check finds in a session's output, as the runner will find it when it collects the
+    session, and whether that is the one finding no further turn of the session can remove."""
+    # check reads the canon, which the host of a producing role never needs, so it is loaded only here.
+    from check import CANDIDATE_CHANGED, check_session
+    problems = check_session(session)
+    return problems, problems == [CANDIDATE_CHANGED]
 
 
 def authorize(session, state, source, basis, explanation):
@@ -226,8 +227,8 @@ def supervise(session, launch):
         if output_role:
             # The session is done when its output passes the check the runner makes of it. What the check
             # finds is what the next turn is told; a candidate that changed is the runner's to restore.
-            problems = output_problems(session)
-            if not problems or problems == [CANDIDATE_CHANGED]:
+            problems, beyond_repair = output_problems(session)
+            if not problems or beyond_repair:
                 authorize(session, state, 'runner', 'output_checked',
                           'The transport check of the output passed.' if not problems else problems[0])
                 return result

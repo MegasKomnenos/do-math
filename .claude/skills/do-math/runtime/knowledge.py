@@ -31,9 +31,21 @@ def canonical_question(model, question):
     return question
 
 
+def instance_metadata(instance):
+    """instance.json of an instance of this runtime; an instance that the earlier runtime created is refused.
+
+    Such an instance has another schema and no canon. The commands of the runner come here directly, and
+    the commands that read the research, such as the canon commands, the map and the paper, come here
+    through replay, so each of them refuses it with the same sentence."""
+    meta = read_json(Path(instance) / 'instance.json')
+    if meta.get('schema') != 2:
+        raise ValueError('this runtime operates instances whose canon is a Lean library (instance schema 2)')
+    return meta
+
+
 def new_model(instance):
     canon = Canon(instance)
-    meta = read_json(Path(instance) / 'instance.json')
+    meta = instance_metadata(instance)
     index = canon.load_index()
     summary = read_json(canon.root / 'records.json') if (canon.root / 'records.json').exists() else {}
     elements = {}
@@ -518,8 +530,12 @@ def frontier(model):
             target = elements[statement]
             if target['statement_settled']:
                 continue
+            # A step is passed through only while nothing is to be done on it. One whose proof names a refuted
+            # statement needs another proof, and one that is refuted itself ends the descent like any refuted
+            # statement, so both are opened and shown on a line of their own.
             passable = (target['weight'] == 'step' and target['standing'] == 'accepted'
-                        and len(target['proofs']) == 1 and statement not in passed)
+                        and len(target['proofs']) == 1 and statement not in passed
+                        and not target['refuted_by'] and not target['names_refuted'])
             if passable:
                 descend(statement, depth, passed | {statement})
             else:
@@ -650,7 +666,8 @@ def render(instance, model, board, leases=None):
     elements = model['elements']
     lines = ['# Frontier', '', f"Revision: {model['sequence']} · Root: `{model['root']}` · State: {model['root_state']}", '',
              'Derived from the root downward along what each proof names. A statement that is settled is not opened. '
-             'The work that remains is every line whose proof is not accepted.', '']
+             'The work that remains is every line whose proof is not accepted, and every line whose proof names a '
+             'statement that has since been refuted. A refuted statement is not among them.', '']
     lines += frontier_lines(model, holders)
     lines += frontier_notes(model, investigation)
     lines += question_lines(model)

@@ -430,7 +430,7 @@ class PaperCase(InstanceCase):
         self.out = self.root / 'paper'
         self.scenario = self.root / 'scenario'
         self.scenario.mkdir()
-        self.servers = []
+        self.servers, self.options = [], []
         # A collection made for the test stands in for the skill's own.
         self.exemplars = self.root / 'exemplars'
         make_collection(self.exemplars)
@@ -440,6 +440,7 @@ class PaperCase(InstanceCase):
 
     def command(self, cli, model, effort, cwd, servers=None, **options):
         self.servers.append(servers)
+        self.options.append(options)
         return Command(provider_for_model(model), [sys.executable, '-B', str(THIS), 'session', str(self.scenario)], Path(cwd))
 
     def run_paper(self, script, tex=TEX, only=False, parallel=1, resume=False, open_findings=None, **options):
@@ -476,6 +477,10 @@ class PaperCase(InstanceCase):
         calls = read_json(self.scenario / 'calls.json')
         return [c for c in calls if kind in (None, c['kind'])]
 
+    def kinds(self, since=0):
+        """The kind and the section of each session that was launched, from the session at position `since` on."""
+        return [(c['kind'], c['section']) for c in self.calls()][since:]
+
     def events(self, kind):
         return [e for e in read_json(self.out / 'log.json') if e['event'] == kind]
 
@@ -497,8 +502,11 @@ class RefusalTests(InstanceCase):
                       shown.call_args.args[0])
         launch.assert_not_called()
         self.assertFalse(out.exists())
-        with self.assertRaises(paper.Stop):
+        # Called as another command calls it, the function refuses for the same reason and launches nothing.
+        with patch('paper.worker_command') as launch, self.assertRaisesRegex(paper.Stop, 'the root is unresolved'):
             paper.produce(self.instance, out)
+        launch.assert_not_called()
+        self.assertFalse(out.exists())
 
 
 class RefutedMaterialsTests(RefutedRootCase):
@@ -893,16 +901,24 @@ class TypesettingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / 'paper.log'
             self.assertEqual(paper.wide_lines(log), [])  # no log, nothing to report
-            log.write_text('Overfull \\hbox (69.23543pt too wide) detected at line 31\n[]\n'
-                           'Overfull \\hbox (12.4pt too wide) in paragraph at lines 40--44\n'
-                           'Overfull \\hbox (7.0pt too wide) in alignment at lines 50--53\n'
-                           'Overfull \\hbox (2.5pt too wide) in paragraph at lines 60--61\n'
-                           'Underfull \\vbox (badness 6575) has occurred while \\output is active\n'
-                           'Overfull \\hbox (69.23543pt too wide) detected at line 31\n', encoding='utf-8')
-            self.assertEqual(paper.wide_lines(log),
-                             ['paper.tex, line 31: TeX set a line 69pt wider than the text block',
-                              'paper.tex, lines 40 to 44: TeX set a line 12pt wider than the text block',
-                              'paper.tex, lines 50 to 53: TeX set a line 7pt wider than the text block'])
+            body = ('Overfull \\hbox (69.23543pt too wide) detected at line 31\n[]\n'
+                    'Overfull \\hbox (12.4pt too wide) in paragraph at lines 40--44\n'
+                    'Overfull \\hbox (7.0pt too wide) in alignment at lines 50--53\n'
+                    'Overfull \\hbox (2.5pt too wide) in paragraph at lines 60--61\n'
+                    'Underfull \\vbox (badness 6575) has occurred while \\output is active\n'
+                    'Overfull \\hbox (69.23543pt too wide) detected at line 31\n')
+            lines = ['paper.tex, line 31: TeX set a line 69pt wider than the text block',
+                     'paper.tex, lines 40 to 44: TeX set a line 12pt wider than the text block',
+                     'paper.tex, lines 50 to 53: TeX set a line 7pt wider than the text block']
+            log.write_text(body, encoding='utf-8')
+            self.assertEqual(paper.wide_lines(log), lines)
+            # From the place where TeX opens the bibliography, a number of the log is a line of paper.bbl. A wide line
+            # there is reported without a line of paper.tex, also where the log breaks its line inside the file name.
+            for opened in ('[7] (./paper.bbl\n', '[7] (paper.bbl\n', '[7] (./pap\ner.bbl\n'):
+                log.write_text(body + opened + 'Overfull \\hbox (20.6pt too wide) in paragraph at lines 40--44\n[]\n)\n',
+                               encoding='utf-8')
+                self.assertEqual(paper.wide_lines(log), lines + [
+                    'the bibliography, or the addresses below it: TeX set a line 21pt wider than the text block'])
 
 
 class CollectionTests(PaperCase):
@@ -1131,6 +1147,30 @@ class RunTests(PaperCase):
                                   ('read', ('claude/opus', 'high')), ('likeness', ('claude/opus', 'high')),
                                   ('compare', ('claude/opus', 'high')), ('cover', ('claude/opus', 'high'))})
 
+    def test_a_model_and_an_effort_given_on_the_command_line_are_those_of_the_sessions(self):
+        # The settings give the review role a model of its own, with which a run reads and compares by default.
+        self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
+        first = read_json(self.instance / 'settings.json')['models'][0]
+        # An effort alone is that of planning, writing and repair; the readings and the comparisons keep their own.
+        run = paper.Paper(self.instance, self.out, TEX, {'model': None, 'effort': 'low'})
+        self.assertEqual((run.writer, run.assessor),
+                         ({'model': first['model'], 'effort': 'low'}, {'model': 'claude/opus', 'effort': 'high'}))
+        # A model is that of every session, the readings and the comparisons included, with the effort given beside
+        # it, or without one with the effort of the first common model.
+        run = paper.Paper(self.instance, self.out, TEX, {'model': 'claude/sonnet', 'effort': 'low'})
+        self.assertEqual((run.writer, run.assessor), ({'model': 'claude/sonnet', 'effort': 'low'},) * 2)
+        run = paper.Paper(self.instance, self.out, TEX, {'model': 'claude/sonnet', 'effort': None})
+        self.assertEqual((run.writer, run.assessor), ({'model': 'claude/sonnet', 'effort': first['effort']},) * 2)
+        # The command line hands both options to the run: the planning sessions of a run that stops there carry them.
+        script = good()
+        script['plan'] = [{}]  # the planning session leaves nothing
+        write_json(self.scenario / 'script.json', script)
+        with patch('paper.worker_command', side_effect=self.command), patch('builtins.print'):
+            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--model', 'claude/sonnet',
+                                         '--effort', 'low', '--tex', *TEX]), 1)
+        self.assertEqual([tuple(read_json(self.folder(call) / 'session.json')[key] for key in ('kind', 'model', 'effort'))
+                          for call in self.calls()], [('plan', 'claude/sonnet', 'low')] * paper.PLAN_ATTEMPTS)
+
     def test_a_compile_error_goes_to_a_repair_session_and_the_manuscript_is_typeset_again(self):
         script = good()
         script['write:proof'] = [{'output/proof.tex': PROOF + '\\undefinedmacro\n'}]
@@ -1217,6 +1257,22 @@ class RunTests(PaperCase):
         self.assertIn('69pt wider than the text block', end['open'][0]['problems'][0])
         self.assertTrue((self.out / 'paper.pdf').is_file())
         self.assertIn('paper.pdf', ' '.join(str(call.args[0]) for call in shown.call_args_list if call.args))
+
+    def test_a_wide_line_outside_every_part_is_reported_and_goes_to_no_repair_session(self):
+        # The heading of a section is the plan's, and a repair keeps the plan: no session can make this line fit.
+        plan = copy.deepcopy(PLAN)
+        plan['sections'][1]['title'] = 'Preliminaries % wide'
+        script = good()
+        script['plan'] = [{'output/plan.json': json.dumps(plan), 'output/study.md': STUDY}]
+        self.assertEqual(self.run_paper(script), 2)
+        self.assertEqual(self.calls('repair'), [])
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], [(item['check'], item['after_repairs']) for item in end['open']]),
+                         ('open_findings', [(paper.WIDE, 0)]))
+        self.assertRegex(end['open'][0]['problems'][0], r'^paper\.tex, line \d+: TeX set a line 69pt wider than the text block$')
+        # The paper is typeset with the line, and the stages after the settling are made as for any other manuscript.
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        self.assertEqual((len(self.calls('read')), [(c['kind'], c['section']) for c in self.calls('compare')]), (1, COMPARED))
 
     def test_repairs_are_bounded_and_what_stays_open_is_reported(self):
         script = good()
@@ -1841,6 +1897,13 @@ class RunTests(PaperCase):
         self.assertIn('put it last', shown.call_args.args[0])
         self.assertFalse(self.out.exists())
 
+    def test_a_model_or_an_effort_that_the_cli_does_not_take_is_refused_before_anything_is_written(self):
+        for arguments, reason in ((['--model', 'opus'], "Expected codex/<model> or claude/<model>: 'opus'"),
+                                  (['--model', 'claude/opus', '--effort', 'utmost'], "Unsupported Claude effort: 'utmost'")):
+            self.assertEqual(self.said([*arguments, '--tex', *TEX]), (1, 'paper.py: ' + reason))
+            self.assertFalse(self.out.exists())
+        self.assertFalse((self.scenario / 'calls.json').exists())
+
 class BriefTests(PaperCase):
     """What the script makes for the sessions from the plan and the materials: the digest, the records, the briefs."""
 
@@ -2008,8 +2071,11 @@ class PassageTests(unittest.TestCase):
     def test_the_numbers_of_the_chosen_findings(self):
         self.assertEqual(paper.chosen_numbers('all', 3), [1, 2, 3])
         self.assertEqual(paper.chosen_numbers('5-7, 2,6', 9), [2, 5, 6, 7])
-        for wrong in ('', 'two', '0', '4-2', '10', '1,,2'):
-            with self.assertRaises(paper.Stop, msg=wrong):
+        # What is no list of numbers is refused as that, and a number outside the list as that.
+        form = 'takes the numbers of the findings as its dry run lists them'
+        outside = 'the run has 9 open findings, numbered from 1 to 9'
+        for wrong, reason in (('', form), ('two', form), ('1,,2', form), ('0', outside), ('4-2', outside), ('10', outside)):
+            with self.assertRaisesRegex(paper.Stop, reason, msg=wrong):
                 paper.chosen_numbers(wrong, 9)
 
 
@@ -2039,9 +2105,6 @@ class WritingTests(unittest.TestCase):
 
 class SideBySideTests(PaperCase):
     """Sections, repairs and comparisons that run at the same time, and a run that is stopped and continued."""
-
-    def kinds(self, since=0):
-        return [(c['kind'], c['section']) for c in self.calls()][since:]
 
     def together(self, *groups):
         write_json(self.scenario / 'together.json', [list(group) for group in groups])
@@ -2504,9 +2567,6 @@ class OpenFindingsTests(PaperCase):
     DIFFERENCE = 'The manuscript has k^2 + 2k = (k + 1)^2.'
     OFF = TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')  # the section `tools` with a statement that differs from its element
 
-    def kinds(self, since=0):
-        return [(c['kind'], c['section']) for c in self.calls()][since:]
-
     def leave_open(self, comparison=True):
         """A run that ends with two findings of its one reading kept by the repair, and, with `comparison`, with a
         statement that differs from its element after the bounded comparisons; the number of sessions it launched."""
@@ -2565,7 +2625,7 @@ class OpenFindingsTests(PaperCase):
         self.assertEqual(read_json(self.folder(repair) / 'findings.json'),
                          {'understanding': CLEAN['understanding'], 'findings': [{**EXPANSION, 'open_because': self.kept}]})
         self.assertIn('So this repair is narrow.', repair['prompt'])
-        self.assertIn('A finding that carries "open_because" was taken up before and left open', repair['prompt'])
+        self.assertIn('A finding that carries "open_because" was left open before this repair', repair['prompt'])
         self.assertIn(EXPANDED, self.part('tools'))
         # The findings that were not chosen are open as they were; the one that was acted on is closed.
         end = self.events('end')[-1]
@@ -2759,6 +2819,9 @@ class SessionsTests(PaperCase):
         self.assertIn('previous-output/found.json', calls[2]['given'])
         # Every session received the servers it was launched with, and the log is beside the sessions.
         self.assertEqual(self.servers, [servers] * 3)
+        # Each was launched without the tools by which a session of the Claude CLI arranges to be called again later,
+        # and with no other option.
+        self.assertEqual(self.options, [{'withheld': ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')}] * 3)
         self.assertEqual([e['event'] for e in read_json(out / 'log.json')], ['session', 'session', 'check', 'session'])
         # With a review role in the settings, the assessor is its first model; a paper takes its sessions from the same class.
         self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
@@ -2839,12 +2902,13 @@ class TitlePageTests(unittest.TestCase):
         self.assertEqual(paper.read_title_page(page), [{'name': 'Ada Lovelace', 'email': 'ada@example.org'}, {'name': 'C. Babbage'}])
         write_json(page, {'authors': []})
         self.assertEqual(paper.read_title_page(page), [])
+        # A file of another form is refused with the form that is wanted, and a file that is no JSON as that.
         for wrong in ({'authors': [{'name': ''}]}, {'authors': 'Ada'}, {'authors': [{'name': 'Ada', 'email': 3}]}, ['Ada']):
             write_json(page, wrong)
-            with self.assertRaises(paper.Stop):
+            with self.assertRaisesRegex(paper.Stop, 'an array that may be empty; each author has a "name" that is not empty'):
                 paper.read_title_page(page)
         page.write_text('{', encoding='utf-8')
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'cannot be read as JSON'):
             paper.read_title_page(page)
 
 
@@ -3329,9 +3393,6 @@ def around_the_step():
 class MainResultTests(PaperCase):
     """A paper whose main result is a theorem that was chosen for it, and not the declaration that settles the root."""
 
-    def kinds(self, since=0):
-        return [(c['kind'], c['section']) for c in self.calls()][since:]
-
     def test_the_materials_and_the_plan_check_follow_a_chosen_main_result_and_are_as_before_without_one(self):
         model = replay(self.instance)
         plain = paper.extract(self.instance, model)
@@ -3571,9 +3632,6 @@ def restructuring():
 class ResolveTests(PaperCase):
     """The session that closes what the readings left open, and may change the structure of the paper for it."""
 
-    def kinds(self, since=0):
-        return [(c['kind'], c['section']) for c in self.calls()][since:]
-
     def test_the_resolving_session_may_change_the_structure_and_the_run_follows_the_plan_it_returns(self):
         with patch('paper.READING_ROUNDS', 1):
             self.assertEqual(self.run_paper(restructuring()), 0)
@@ -3690,9 +3748,6 @@ def asserting(kept=None):
 class CoverageTests(PaperCase):
     """The running text of the manuscript compared with the elements, after everything else."""
 
-    def kinds(self, since=0):
-        return [(c['kind'], c['section']) for c in self.calls()][since:]
-
     def test_the_running_text_is_what_stands_outside_the_statements_and_the_proofs(self):
         tools = TOOLS.replace('The sum $S_{n+1}$ exceeds $S_n$ by $2n + 1$.', '\n'.join([
             'We have', '\\begin{equation}\\label{eq:tools-gain}', 'S_{n+1} - S_n = 2n + 1.', '\\end{equation}',
@@ -3801,7 +3856,7 @@ class CoverageTests(PaperCase):
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools')])
         repair = self.calls()[launched]
         self.assertEqual(read_json(self.folder(repair) / 'findings.json'), left[0]['problems'])
-        self.assertIn('A finding that carries "open_because" was taken up before and left open', repair['prompt'])
+        self.assertIn('A finding that carries "open_because" was left open before this repair', repair['prompt'])
         end = self.events('end')[-1]
         self.assertEqual(end['open'], [{'check': paper.COVERAGE, 'after_repairs': 2, 'problems': [
             {**REPORTED, 'quote': weaker, 'asserts': 'The sums are at least $n$.', 'open_because': paper.COVERED_AGAIN}]}])

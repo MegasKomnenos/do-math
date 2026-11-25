@@ -474,10 +474,10 @@ class JobHostTests(unittest.TestCase):
         self.job.mkdir()
         self.lean = source(Path(self.temp.name) / "A.lean", marker="MARK", stderr="WARN", exit=3)
 
-    def write_launch(self, broker):
+    def write_launch(self, broker, priority="normal"):  # `normal`: equal footing with the test machine's load
         runtime_support.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
-            "env": {"FAKE_ENV": "1"}, "priority": "normal", "broker": broker})  # equal footing with the test machine's load
+            "env": {"FAKE_ENV": "1"}, "priority": priority, "broker": broker})
 
     def launch(self, broker):
         self.write_launch(broker)
@@ -510,8 +510,9 @@ class JobHostTests(unittest.TestCase):
         self.assertIn("FAKE_ENV=1", output)  # lean.env overrides reach the Lean process
         if hasattr(os, "nice"):
             # `normal` leaves the niceness as inherited, so this shows only that the host did not change it.
-            # The lowered priorities are not exercised: a below-normal stand-in starves behind normal-priority
-            # research load on the test machine, which is why every fixture here runs at `normal`.
+            # No stand-in is run at a lowered priority: a below-normal one starves behind normal-priority research
+            # load on the test machine, which is why every fixture here runs at `normal`. What the host asks of the
+            # system for a lowered priority is read in test_the_host_starts_lean_at_the_priority_its_launch_file_names.
             self.assertIn(f"nice={os.nice(0)}", output)
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
@@ -536,6 +537,40 @@ class JobHostTests(unittest.TestCase):
             self.assertEqual(lean_broker.job_host(self.job), 0)
         self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 3)
         self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
+
+    def test_the_host_starts_lean_at_the_priority_its_launch_file_names(self):
+        # lean.priority is below_normal unless an instance sets another, and every fixture here runs at `normal`. A
+        # stand-in started at a lowered priority starves behind the test machine's load, so none is started here: this
+        # process answers the call that would start Lean, and what the host asked of the system is read from it.
+        lowered = {"below_normal": ("BELOW_NORMAL_PRIORITY_CLASS", 10), "idle": ("IDLE_PRIORITY_CLASS", 19)}
+        (self.job / "GO").touch()
+
+        class Started:
+            pid = os.getpid()
+
+            def wait(self):
+                return 0
+
+        for priority, (priority_class, niceness) in lowered.items():
+            with self.subTest(priority=priority):
+                self.write_launch(runtime_support.process_identity(os.getpid()), priority)
+                asked = {}
+
+                def start(argv, **options):
+                    asked.update(options)
+                    return Started()
+
+                with patch.object(lean_broker.subprocess, "Popen", side_effect=start):
+                    self.assertEqual(lean_broker.job_host(self.job), 0)
+                if os.name == "nt":
+                    every = (subprocess.NORMAL_PRIORITY_CLASS | subprocess.BELOW_NORMAL_PRIORITY_CLASS
+                             | subprocess.IDLE_PRIORITY_CLASS)
+                    self.assertEqual(asked["creationflags"] & every, getattr(subprocess, priority_class))
+                else:
+                    with patch.object(lean_broker.os, "nice") as nice:
+                        asked["preexec_fn"]()  # what the host has the new process run before it becomes Lean
+                    nice.assert_called_once_with(niceness)
+                self.assertEqual(runtime_support.read_json(self.job / "exit.json")["exit_code"], 0)
 
 
 class BrokerTests(BrokerFixture):
@@ -715,12 +750,15 @@ class BrokerTests(BrokerFixture):
         self.assertIn("request rejected", err.getvalue())
 
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
+        self.write_settings(calibration_expect_mb=300, threads=2)
         self.start_broker()
         path = self.session_file("s1", alloc_mb=200, marker="OUT-A", sleep=1)
         job_id = self.submit(path, expect_mb=260)
         self.until(lambda: self.jobs("running"))
         running = self.jobs("running")
         self.assertEqual([j["kind"] for j in running], ["calibration"])
+        # The calibration compile is reserved at calibration_expect_mb and with one thread, whatever lean.threads is.
+        self.assertEqual((running[0]["expect_mb"], running[0]["reserve"]["certain_mb"], running[0]["threads"]), (300, 300, 1))
         self.assertEqual(self.broker.state["jobs"][job_id]["waiting_for"], running[0]["id"])
         self.until(lambda: self.finished(job_id))
         job = self.broker.state["jobs"][job_id]
@@ -1142,6 +1180,21 @@ class BrokerTests(BrokerFixture):
         self.assertFalse(self.broker.fits(candidate, [job("running", current_mb=50)], 550))
         self.assertTrue(self.broker.fits(candidate, [job("running", current_mb=50)], 900))
 
+    def test_the_margin_for_the_pooled_spread_is_the_configured_confidence(self):
+        # reference/lean-broker.md: `confidence` multiplies the pooled spread in the memory rule. Two compiles of
+        # one closure, each with 100 MiB certain, 121.9 expected above it and a spread of 60.9, come to 555.8 MiB
+        # at a confidence of 1.3 and to 616.2 MiB at 2.
+        self.start_broker()
+        self.broker.config.update(memory_budget_mb=580, default_spread=0.5)
+        self.broker.calibration.record_baseline("closure", {"imports": []}, 100, 1)
+        def job(status):
+            return {"kind": "compile", "closure": "closure", "expect_mb": 300, "threads": 1, "status": status,
+                    "measured": {"current_mb": 100} if status == "running" else None}
+        self.broker.config["confidence"] = 1.3
+        self.assertTrue(self.broker.fits(job("queued"), [job("running")], 100000))
+        self.broker.config["confidence"] = 2
+        self.assertFalse(self.broker.fits(job("queued"), [job("running")], 100000))
+
     def test_queued_compile_starts_with_the_threads_in_force(self):
         # A change of lean.threads reaches a compile that is still queued, as a change of priority does.
         self.start_broker()
@@ -1155,6 +1208,24 @@ class BrokerTests(BrokerFixture):
             self.assertEqual(self.jobs("running"), [])
         self.until(lambda: self.finished(job_id))
         self.assertIn("--threads=3", runtime_support.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+
+    def test_a_compile_runs_in_lean_cwd_or_else_in_the_folder_of_its_session(self):
+        # What reference/lean.md tells a session of the working directory: lean.cwd from the settings, or the
+        # session's folder when that is null. With a library configured, lean.cwd is the project in which
+        # `lake env lean` has to run, and the broker's own calibration compile, which has no session, runs there too.
+        self.start_broker()
+        first = self.compiled(self.session_file("s1"))
+        launch = runtime_support.read_json(self.paths.job(first["id"]) / "launch.json")
+        self.assertEqual(launch["cwd"], str(self.paths.instance / "sessions" / "s1"))
+        project = self.root / "project"
+        project.mkdir()
+        time.sleep(0.02)
+        self.write_settings(cwd=str(project))
+        second = self.compiled(self.session_file("s1", "B.lean"))
+        configured = [j for j in self.broker.state["jobs"].values() if j["environment_key"] == second["environment_key"]]
+        self.assertEqual(sorted(j["kind"] for j in configured), ["calibration", "compile"])
+        for job in configured:
+            self.assertEqual(runtime_support.read_json(self.paths.job(job["id"]) / "launch.json")["cwd"], str(project))
 
     def test_submission_requires_estimate_session_and_existing_file(self):
         with patch.object(lean_broker, "ensure_broker", return_value={}):

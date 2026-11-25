@@ -16,15 +16,15 @@ from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, ap
                    empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_index,
                    read_record, record_file, required_pairs, retire_approaches, sha256_text, start_build,
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
-from check import IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
+from check import CANDIDATE_CHANGED, IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
-                       replay, root_settlement, root_solved)
+from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance_metadata, record_summary,
+                       refuting_proofs, render, replay, root_settlement, root_solved)
 from retention import capture, refusal
 from ending import authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
@@ -393,10 +393,9 @@ class Runner:
         session = self.session_dir(sid)
         ending = session / 'end-check.json'
         if not ending.exists() and (session / 'launch.json').exists():
-            policy = read_json(session / 'launch.json').get('end_check')
-            if policy is not None:
-                authorize(session, {'maximum': policy['maximum'], 'resumptions': 0, 'request': None},
-                          'runner', 'interrupted', 'Session host ended before starting end reconsideration.')
+            policy = read_json(session / 'launch.json')['end_check']
+            authorize(session, {'maximum': policy['maximum'], 'resumptions': 0, 'request': None},
+                      'runner', 'interrupted', 'Session host ended before starting end reconsideration.')
         if ending.exists():
             s['end_check'] = read_json(ending)
             if s['end_check']['authorization'] is None:
@@ -471,9 +470,10 @@ class Runner:
         # leaves this stage unfinished; a replacement receives the partial material.
         authorization = s.get('end_check', {}).get('authorization') or {}
         interrupted = authorization.get('basis') == 'interrupted'
-        # Any other end authorization by the host (a worker decision, the resumption limit or an
-        # unavailable resumption) ends a peer normally, even when its last turn stopped at the
-        # output-token cap with a nonzero exit; its output then goes to the structural check.
+        # Any other end authorization by the host ends the session normally, even when its last turn stopped
+        # at the output-token cap with a nonzero exit: a peer's own decision, the host's check of a review's
+        # or an organizer's output, and for all three the resumption limit or an unavailable resumption.
+        # The output then goes to the transport check.
         failed = s.get('exit_code') != 0 and not (authorization and not interrupted)
         if failed or s.get('refusal') or s.get('launch_error') or interrupted:
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
@@ -485,7 +485,7 @@ class Runner:
         errors = check_session(session)
         if errors:
             if (s['role'] == 'review' and job['task']['kind'] == 'candidate'
-                    and errors == ['candidate changed after review assignment']):
+                    and errors == [CANDIDATE_CHANGED]):
                 self.recover_candidate(job, s, errors[0])
                 return
             # Invalid output is a job failure; refusals and launch errors returned above.
@@ -748,7 +748,7 @@ class Runner:
                 # and never be collected. As running it is collected again by the next runner, whose transport
                 # check finds the changed candidate as it does when a review ends (finish).
                 session.update(status='running', record=None)
-                self.recover_candidate(job, session, 'candidate changed after review assignment')
+                self.recover_candidate(job, session, CANDIDATE_CHANGED)
                 return False
             if stage.exists():
                 remove_tree(stage)
@@ -1514,8 +1514,8 @@ def main(argv=None):
             return session_host(instance)
         if args.command == '_archive':
             return archive_finished(instance)
-        if args.command != 'init' and read_json(instance / 'instance.json').get('schema') != 2:
-            raise ValueError('this runtime operates instances whose canon is a Lean library (instance schema 2)')
+        if args.command != 'init':
+            instance_metadata(instance)  # refuses an instance that the earlier runtime created
         if args.command == 'init':
             initialize(instance, args.root, args.canon, args.root_declaration, args.settings)
         elif args.command == 'run':
