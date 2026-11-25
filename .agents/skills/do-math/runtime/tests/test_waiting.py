@@ -169,7 +169,7 @@ class AwaitRecord(unittest.TestCase):
             lean_broker.await_record(self.paths, JOB, timeout=600)
         self.assertLess(sum(self.clock.sleeps), 4)
 
-    def test_wait_reports_the_timeout_and_the_ended_job_as_before(self):
+    def test_wait_reports_the_timeout_and_then_the_ended_job(self):
         import contextlib
         import io
         self.running(JOB)
@@ -182,7 +182,7 @@ class AwaitRecord(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(lean_broker.wait(self.paths, JOB, timeout=1), 7)
 
-    def test_wait_build_keeps_its_answers(self):
+    def test_wait_build_refuses_an_unknown_build_times_out_and_returns_the_outcome(self):
         with self.assertRaisesRegex(canon.CanonError, "unknown build"):
             canon.wait_build(self.instance, BUILD, timeout=1)
         self.running(builds=(BUILD,))

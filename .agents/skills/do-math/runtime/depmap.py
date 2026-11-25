@@ -102,11 +102,11 @@ def folder_of(module):
     return module.rsplit('.', 1)[0] if '.' in module else module
 
 
-def derive(model, everything=False, statements=None):
+def derive(model, everything=False):
     """The semantic map of a replayed model: units, edges, groups and the folded elements edges pass through.
 
-    `statements` optionally maps an element name to its statement in natural language, taken from
-    its record. The result holds no coordinates and is the whole input of the drawing."""
+    The result holds no coordinates. With the statement in natural language that from_instance adds to
+    each unit from its record, it is the whole input of the drawing."""
     elements = model['elements']
 
     def theorem(name):
@@ -236,8 +236,6 @@ def derive(model, everything=False, statements=None):
                         formal=any(elements[p]['formal'] for p in proofs))
         if element.get('source'):
             unit['source'] = element['source']
-        if statements and statements.get(name):
-            unit['statement'] = statements[name]
         units.append(unit)
 
     for name in shown:
@@ -270,19 +268,19 @@ def derive(model, everything=False, statements=None):
 
 
 def from_instance(instance, everything=False):
-    """The map of an instance as it stands now. Reads the canon and the published events; writes nothing."""
+    """The map of an instance as it stands now. Reads the canon and the published events; writes nothing.
+
+    Every unit of the map carries the statement in natural language that its record gives, where it gives one."""
     from canon import Canon, read_record
     from knowledge import replay
-    model = replay(instance)
+    data = derive(replay(instance), everything)
     canon = Canon(instance)
-    statements = {}
-    for name, element in model['elements'].items():
-        if element['weight'] == 'unit' or name == model['root'] or element['proves']:
-            record = read_record(canon, name)
-            words = (record['sections'].get('Statement') or '').strip() if record else ''
-            if words:
-                statements[name] = words
-    return derive(model, everything, statements)
+    for unit in data['units']:
+        record = read_record(canon, unit['id'])
+        words = (record['sections'].get('Statement') or '').strip() if record else ''
+        if words:
+            unit['statement'] = words
+    return data
 
 
 def write(data, out):

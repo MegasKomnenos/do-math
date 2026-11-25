@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import sys
 
-from canon import (BESIDE_CANDIDATE, EXTRACTION, Canon, CanonError, Conflict, apply_lean, apply_rearrangement,
+from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, Conflict, apply_lean, apply_rearrangement,
                    build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
                    start_build, tree_hash, update_index, wait_build, with_importers)
@@ -17,14 +17,16 @@ from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines,
                        is_statement, question_lines, replay)
 from runtime_support import read_json, write_json
 
-PREPARED = 'prepared.json'
-
 
 def context(session):
-    session = Path(session).resolve()
+    given, session = session, Path(session).resolve()
     if (session / 'instance.json').is_file():
         # The operator reads the canon with the same commands and gives the instance folder itself.
         return session, {'instance': str(session), 'role': 'operator', 'session': 'operator'}, session
+    if not (session / 'input.json').is_file():
+        # Another argument stands where the session directory belongs: it was left out, or it does not come first.
+        raise CanonError(f'{given} is not a session directory: it holds no input.json. The session directory comes '
+                         'directly after the name of the command, and the arguments of the command follow it')
     inp = read_json(session / 'input.json')
     return session, inp, Path(inp['instance'])
 
@@ -171,7 +173,8 @@ def view(instance, model, name, part=None, full=False):
         if approaches:
             lines += ['', view(instance, model, name, 'approaches')]
     else:
-        parts = ', '.join(available + (['Approaches'] if approaches else [])) or 'none'
+        # The parts are named as --part takes them, so that a name read off this line can be given to the option.
+        parts = ', '.join([title.lower() for title in available] + (['approaches'] if approaches else [])) or 'none'
         lines += ['', f'record parts  {parts} (read one with --part, all with --full; --part source prints the Lean text)']
     return '\n'.join(lines)
 

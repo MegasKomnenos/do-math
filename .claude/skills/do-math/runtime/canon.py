@@ -156,7 +156,8 @@ def sha256_text(text):
 # `prepare` writes about the other files, and the session's end decision, which its host moves out of the
 # folder when the turn ends (ending.py). A receipt that counted the decision would stop matching the
 # candidate at that moment, and a finished candidate would be made again by another peer.
-BESIDE_CANDIDATE = ('prepared.json', 'end-decision.json')
+PREPARED = 'prepared.json'
+BESIDE_CANDIDATE = (PREPARED, 'end-decision.json')
 
 
 def tree_hash(root, skip=()):

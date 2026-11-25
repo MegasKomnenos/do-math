@@ -99,7 +99,7 @@ def write(path, text):
 
 def prepared(folder, name):
     result = build_candidate(instance, inp['session'], folder, session / 'work' / name, 64, None,
-                             'peer' if role != 'organizer' else 'organizer', fresh=role == 'review')
+                             'peer', fresh=role == 'review')
     if not result['ok']:
         raise RuntimeError('scripted candidate did not build: ' + json.dumps(result['errors']))
     return result

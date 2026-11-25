@@ -286,6 +286,32 @@ class MemoryReserveTests(InstanceCase):
         self.assertEqual(reload.call_count, 1)
         self.assertIsNone(support.read_json(engine.state_path)['last_error'])
 
+    def test_a_save_that_fails_for_lack_of_memory_is_made_again_once_the_reserve_is_released(self):
+        # Runner.save writes once more after it has released the reserve (runtime_support.EmergencyMemory), so
+        # the state of the failing pass still reaches the disk. With the reserve already released there is
+        # nothing left to free, and the failure goes up to the runner's loop.
+        engine = runtime.Runner(self.instance, self.skill)
+        engine.reserve = support.EmergencyMemory(1024)
+        engine.state['explore_requested'] = True
+        write_json, failures = support.write_json, [MemoryError()]
+
+        def short_of_memory(path, value):
+            if failures:
+                raise failures.pop()
+            return write_json(path, value)
+
+        with patch('runner.write_json', side_effect=short_of_memory) as written, \
+                patch('runtime_support.os.write') as notice:
+            engine.save()
+        self.assertEqual(written.call_count, 2)
+        self.assertIsNone(engine.reserve.buffer)
+        notice.assert_called_once_with(2, b'Runner memory reserve released; dispatch will wait for recovery.\n')
+        self.assertTrue(support.read_json(engine.state_path)['explore_requested'])
+        failures.append(MemoryError())
+        with patch('runner.write_json', side_effect=short_of_memory) as written, self.assertRaises(MemoryError):
+            engine.save()
+        self.assertEqual(written.call_count, 1)
+
 
 class LaunchFailureTests(InstanceCase):
     def test_a_cli_that_cannot_start_moves_the_retry_to_the_next_model(self):

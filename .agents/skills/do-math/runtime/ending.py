@@ -12,7 +12,7 @@ import uuid
 from availability import no_research_outcome
 from launch import worker_command, worker_environment
 from retention import conversation_identity, events, output_limit, refusal
-from runtime_support import (alive, popen_options, process_identity, read_json,
+from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
@@ -117,11 +117,18 @@ def wait_to_resume(session, policy, state):
     """STOP and scoped availability blocks hold the same host, not a new job."""
     session = Path(session)
     instance = Path(policy['instance'])
+    runner_state = instance / 'runner/state.json'
+    stamp = blocks = None
     while True:
         if (session / 'CANCEL').exists():
             return False
         stopped = (instance / 'control/STOP').exists()
-        blocks = read_json(instance / 'runner/state.json')['blocks']
+        # The runner's state grows to megabytes in a long run and changes far less often than this wait
+        # looks at it, so it is parsed again only when its file has changed, as the broker reads it
+        # (runner_sessions in lean_broker.py). A block ends by the clock, which needs no new read.
+        current = file_stamp(runner_state)
+        if current != stamp:
+            stamp, blocks = current, read_json(runner_state)['blocks']
         now = time.time()
         unavailable = any(blocks.get(key, {}).get('until', 0) > now
                           for key in ('provider:' + policy['provider'], 'model:' + policy['model']))

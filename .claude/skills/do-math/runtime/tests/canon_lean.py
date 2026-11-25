@@ -78,8 +78,8 @@ def parse(module, text):
                        'private': private, 'module': module, 'start': doc or number, 'line': number,
                        'namespaces': list(namespaces)}
             doc = None
-        elif line.startswith(('@[', 'instance', 'section', 'public section', 'open ', 'module', 'import ',
-                              'public import ')) and current is not None and not line.startswith('@['):
+        elif line.startswith(('instance', 'section', 'public section', 'open ', 'module', 'import ',
+                              'public import ')) and current is not None:
             close(number - 1)
     close(len(lines))
     return declarations

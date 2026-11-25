@@ -28,7 +28,10 @@ What was taken from the dependency-map generator of the previous research (the f
 dependency_map/scripts/지도 of that research) and what was left there:
 
     taken     the click viewer (`빌드/뷰어.py`, here viewer.html) with the attributes the drawing
-              writes for it; the visual grammar of `지도_설정.json` and `빌드/그리기.py`: the
+              writes for it: a view that changes only the SVG viewBox, the three clicks on a unit
+              and Esc, `#node=<Lean name>`, and opacity without a transition; here its wording is
+              English, a unit is identified by its Lean name, and a panel shows the selected unit;
+              the visual grammar of `지도_설정.json` and `빌드/그리기.py`: the
               line of each kind of edge (solid, dashed "through intermediate results", dotted
               reference, heavy "each complete"), the white
               casing under a line that separates crossings, rounded corners of orthogonal lines,

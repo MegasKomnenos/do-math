@@ -469,7 +469,7 @@ class SettingsTests(unittest.TestCase):
                     {"cpu_threads_budget": 0}, {"threads": 0}, {"threads": None}, {"priority": "realtime"},
                     {"max_passes": -1}, {"max_passes": 1.5}, {"calibration_expect_mb": 0},
                     {"default_spread": -0.1}, {"default_spread": "half"}):
-            with self.subTest(bad=bad), self.assertRaises(ValueError):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, next(iter(bad))):
                 self.load(**bad)
 
 
@@ -697,6 +697,29 @@ class BrokerTests(BrokerFixture):
         self.assertFalse(request.exists())
         self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "cancelled")
         self.assertNotIn(job_id, self.broker.state["jobs"])
+
+    def test_a_request_the_broker_cannot_take_is_answered_as_failed_and_leaves_the_queue(self):
+        # A request is a file that a client wrote into the queue. One that lacks what a request holds, or
+        # whose name is no job ID, must not end the broker: where it names a job it is answered with a
+        # failed result that says why, and it leaves the queue either way.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        request = self.paths.queue / (job_id + ".json")
+        content = runtime_support.read_json(request)
+        del content["expect_mb"]
+        runtime_support.write_json(request, content)
+        runtime_support.write_json(self.paths.queue / "not-a-job.json", content)
+        self.broker.ingest()
+        self.assertEqual(list(self.paths.queue.glob("*.json")), [])
+        self.assertNotIn(job_id, self.broker.state["jobs"])
+        record = lean_broker.job_record(self.paths, job_id)
+        self.assertEqual(record["status"], "failed")
+        self.assertIn("request rejected", record["reason"])
+        self.assertIn("expect_mb", record["reason"])
+        self.assertEqual([p.name for p in self.paths.jobs.iterdir()], [job_id])  # no folder for a name that is no job ID
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(lean_broker.wait(self.paths, job_id, timeout=0), 3)
+        self.assertIn("request rejected", err.getvalue())
 
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
         self.start_broker()

@@ -22,7 +22,7 @@ import depmap
 from knowledge import replay
 from runtime_support import read_json, write_json
 from settings import defaults
-from support import ScenarioCase
+from support import ScenarioCase, record_text
 
 draw = depmap.drawing()
 SVG = '{http://www.w3.org/2000/svg}'
@@ -183,6 +183,22 @@ class Derivation(MapCase):
         svg, page = draw.render(self.map(rows))
         self.assertIn('refutes the root', svg)
 
+    def test_a_card_carries_the_statement_in_words_that_its_record_gives(self):
+        # The refutation is a step by its record and has a card all the same, so its card carries the statement
+        # of its record as the card of a unit does. A unit whose record has no statement in words carries none.
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        folder = write_canon(temp.name, [statement('Lib.root', 'unit', proof=None),
+                                         statement('Lib.notRoot', 'step', refutes='Lib.root', module='Lib.Against')])
+        record = folder / 'canon/records/Lib/notRoot.md'
+        record.parent.mkdir(parents=True)
+        record.write_text(record_text('The root fails.', statement='Some sum of odd numbers is no square.',
+                                      refutes='Lib.root'), encoding='utf-8')
+        data = depmap.from_instance(folder)
+        self.assertEqual(self.ids(data), ['Lib.notRoot', 'Lib.root'])
+        self.assertEqual(self.unit(data, 'Lib.notRoot')['statement'], 'Some sum of odd numbers is no square.')
+        self.assertNotIn('statement', self.unit(data, 'Lib.root'))
+
     def test_another_proof_is_an_alternative_of_its_statement(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.a'], standing='held'),
                          statement('Lib.a', 'unit'), statement('Lib.b', 'unit'),
@@ -321,6 +337,8 @@ def lines_of(data, geometry):
 class Drawing(MapCase):
     def test_every_unit_and_edge_is_drawn_and_marked_for_the_page(self):
         data = self.map(wide_canon())
+        # A record may hold any text. The end tag of a script in a description does not end the data of the page.
+        self.unit(data, 'Lib.count')['description'] = 'What Lib.count is, written beside </script> in its record.'
         svg, page = draw.render(data)
         tree = ElementTree.fromstring(svg)  # well formed although a label carries <, " and &
         nodes = tree.findall(f".//{SVG}g[@class='node']")
@@ -633,7 +651,6 @@ class Drawing(MapCase):
         self.assertTrue(any(set(names) == mine for names in named))
         self.assertTrue(all(len(names) > 1 and (set(names) <= mine or not set(names) & mine) for names in named))
         # The drawing carries the dots in the group of their edge, so that the page dims them with it.
-        tree = ElementTree.fromstring(draw.render(data)[0])
         drawn = {edge.get('id'): edge.find(f"{SVG}path[@class='dot']") for edge in tree.findall(f".//{SVG}g[@class='edge']")}
         for index, points in enumerate(dots):
             self.assertEqual(drawn[f'e{index}'] is not None, bool(points))
@@ -652,6 +669,13 @@ class Drawing(MapCase):
             self.assertGreaterEqual(second - first, draw.PORT_MIN - 0.01)
         # A card at which few lines arrive keeps the height of its words.
         self.assertEqual(geometry['cards']['Lib.first'][3], cards['Lib.first']['height'])
+
+    def test_a_character_the_console_cannot_show_is_printed_as_an_escape(self):
+        # A Lean name or a path may hold a character outside the encoding of the console the command prints to.
+        shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
+        depmap.say('Lib.α → out', shown)
+        shown.flush()
+        self.assertEqual(shown.buffer.getvalue(), b'Lib.\\u03b1 \\u2192 out\n')
 
     def test_the_drawing_is_redone_from_the_data_without_the_instance(self):
         temp = tempfile.TemporaryDirectory()
@@ -673,6 +697,7 @@ class Drawing(MapCase):
             self.assertEqual(depmap.main([str(other), '--out', str(second)]), 2)
         self.assertIn('--all needs the instance', errors.getvalue())
         self.assertIn('is not a dependency map written by this command', errors.getvalue())
+        self.assertIn('is neither an instance folder nor a dependency_map.json', errors.getvalue())
 
 
 def playwright():

@@ -1671,8 +1671,6 @@ class Broker:
         # had reached the broker's folders before the client asked.
         asked = list(self.paths.queue.glob("*" + STATE_REQUEST))
         self.reload_settings()
-        if self.config is None:
-            return
         self.collect()
         self.ingest()
         self.cancel_orphans()

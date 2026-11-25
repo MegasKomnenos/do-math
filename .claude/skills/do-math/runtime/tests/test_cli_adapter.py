@@ -64,7 +64,7 @@ class AdapterTests(unittest.TestCase):
                 provider_for_model(model)
         custom = build_command("codex.exe", "codex/vendor/model", "high", workdir)
         self.assertEqual(custom.argv[custom.argv.index("--model") + 1], "vendor/model")
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "Unsupported Claude effort: 'ultra'"):
             build_command("claude.exe", "claude/sonnet", "ultra", workdir)
 
     def test_codex_explicit_date_and_stderr(self):

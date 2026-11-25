@@ -33,7 +33,7 @@ import support
 from canon import (Canon, beyond_allowed, copy_tree, empty_index, library_modules, start_build,
                    statement_differences, update_index, wait_build)
 from canon_tool import view
-from knowledge import replay
+from knowledge import frontier_lines, replay
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
 from settings import defaults, load_settings, validate
@@ -248,6 +248,9 @@ class RootCheckTests(ScenarioCase):
                          {'proof': 'Small.root', 'revision': engine.model['revision'], 'status': 'unchanged',
                           'differences': [], 'compared_with_commit': first})
         self.assertEqual(self.requests(), [])
+        # The frontier ends at such a root, and its line says that the proof which settles it is formal.
+        self.assertEqual(frontier_lines(engine.model),
+                         ['- `Small.root` — odd numbers sum to a square — settled by a formal proof'])
         # The same proof on the same library is not compared again.
         with patch.object(runtime, 'git', side_effect=AssertionError('compared again')):
             engine.check_root()

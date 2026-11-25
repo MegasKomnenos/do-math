@@ -6,17 +6,15 @@
 <title>__TITLE__</title>
 <!--
   The page of a dependency map: the drawing inline, with zoom, drag, a search, and a focus on one unit.
-  Adapted from the click viewer of the dependency-map generator of the previous research (its build
-  stage, `뷰어.py`). Kept: the view changes only the SVG viewBox; one click on a unit keeps everything
-  it rests on and everything that rests on it, a second click keeps its direct neighbours, a third
-  click, a click on empty space or Esc restores the map; `#node=<Lean name>` opens with that focus;
-  opacity changes without a transition. Changed: the wording is English, the unit is identified by
-  its Lean name, and a panel beside the drawing shows the selected unit from the map's data.
+  The view changes only the SVG viewBox; one click on a unit keeps everything it rests on and
+  everything that rests on it, a second click keeps its direct neighbours, a third click, a click on
+  empty space or Esc restores the map; `#node=<Lean name>` opens with that focus; opacity changes
+  without a transition. A unit is identified by its Lean name, and a panel beside the drawing shows
+  the selected unit from the map's data.
 
-  What the page adds for a reader who was not told how it works. Each was missing when the page was
-  first used on a map of 173 units, where the whole drawing fitted to a window shows cards of 20 by 7
-  pixels:
-    the zoom       changes the viewBox and nothing else, as before: the page neither resizes nor hides
+  What the page gives a reader who was not told how it works. A map of 173 units, fitted whole to a
+  window, shows cards of 20 by 7 pixels, so the page needs each of these:
+    the zoom       changes the viewBox and nothing else: the page neither resizes nor hides
                    nor adds anything in the drawing with the scale, so a card, its words and every line
                    simply grow smaller and larger;
     the search     finds a unit by its short name, its Lean name or its description, and a folded step,

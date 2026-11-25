@@ -118,13 +118,14 @@ def tearDownModule():
 
 
 class EndingTests(InstanceCase):
-    def prepare(self, maximum=3, role='attempt', config=None):
+    def prepare(self, maximum=3, role='attempt', config=None, task=None):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
         engine.settings['roles'] = {}  # the scripted CLI speaks the Codex stream for every role
         if role == 'review':
-            key = engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': [],
-                                            'purpose': 'Examine the questioned proof.'})
+            # A comprehensive review, unless the test gives the assignment of a candidate's review.
+            key = engine.enqueue('review', task or {'kind': 'comprehensive', 'concerns': [], 'conflicts': [],
+                                                    'purpose': 'Examine the questioned proof.'})
         else:
             key = engine.producer('attempt' if role == 'peer' else role,
                                   {'element': 'Small.root', 'previous_changes': []} if role == 'formalizer' else None)
@@ -134,7 +135,7 @@ class EndingTests(InstanceCase):
             engine.state['pipelines'][pipeline].update(role='attempt', stage='peer', producer='source')
             key = engine.enqueue('peer', {'source': str(self.instance / 'sessions/source'), 'source_role': 'attempt',
                                           'element': None, 'sections': [], 'question': None}, pipeline)
-        with patch('runner.subprocess.Popen') as host, patch('runner.build_command') as build:
+        with patch('runner.subprocess.Popen') as host, patch('runner.worker_command') as build:
             host.return_value.pid = engine.identity['pid']
             build.return_value = self.command(None, None, None, self.instance)
             self.assertTrue(engine.dispatch(key))
@@ -248,6 +249,24 @@ class EndingTests(InstanceCase):
         job = engine.state['jobs'][s['job']]
         self.assertEqual((s['status'], job['status']), ('failed', 'pending'))
         self.assertIn('assessment.json', job['last_error'])
+
+    def test_a_review_whose_candidate_changed_is_left_to_the_runner_without_a_further_turn(self):
+        # No turn of the review can put back a candidate that changed after the review was assigned, so the
+        # host resumes nothing for that one finding of the transport check and names it in the authorization.
+        # What the runner then does with the candidate is tested in test_publication.
+        candidate = self.root / 'candidate'
+        candidate.mkdir()
+        (candidate / 'report.md').write_text('The candidate as it stands now.', encoding='utf-8')
+        _, _, directory = self.prepare(role='review', config={'assess_at': 9}, task={
+            'kind': 'candidate', 'candidate': str(candidate),
+            'candidate_hashes': {'report.md': 'the hash fixed when the review was assigned'}})
+        with patch('ending.worker_command', side_effect=self.command) as resume:
+            self.assertEqual(session_host(directory), 0)
+        resume.assert_not_called()
+        authorization = read_json(directory / 'end-check.json')['authorization']
+        self.assertEqual((authorization['source'], authorization['basis'], authorization['explanation'],
+                          authorization['resumptions']),
+                         ('runner', 'output_checked', 'candidate changed after review assignment', 0))
 
     def test_guidance_edits_reach_next_turn_without_restarting_host(self):
         _, _, directory = self.prepare(maximum=2, role='explore')
@@ -619,14 +638,27 @@ class EndingConfigurationTests(unittest.TestCase):
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('current-request', prompt)
                 self.assertNotIn('{{', prompt)
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError) as refused:
                 request_prompt(request, 'operator', guidance)
+            self.assertEqual(str(refused.exception), 'no continuation guidance for role: operator')
             (guidance / 'peer.md').unlink()
             with self.assertRaises(FileNotFoundError):
                 request_prompt(request, 'peer', guidance)
+            # A frame that lacks one of its markers, or holds one twice, is refused, and the refusal names the marker.
+            for frame, role, markers in (('common.md', 'explore', ('{{role_guidance}}', '{{previous_error}}', '{{request_id}}')),
+                                         ('output.md', 'review', ('{{role_guidance}}', '{{previous_error}}'))):
+                installed = (guidance / frame).read_bytes()
+                for marker in markers:
+                    for changed in (installed.replace(marker.encode(), b''), installed + marker.encode()):
+                        (guidance / frame).write_bytes(changed)
+                        with self.assertRaises(ValueError) as refused:
+                            request_prompt(request, role, guidance)
+                        self.assertEqual(str(refused.exception), f'continuation {frame} needs exactly one {marker}')
+                (guidance / frame).write_bytes(installed)
             (guidance / 'common.md').write_text('Incomplete message.')
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError) as refused:
                 request_prompt(request, 'explore', guidance)
+            self.assertEqual(str(refused.exception), 'continuation common.md needs exactly one {{role_guidance}}')
 
     def test_limit_validation(self):
         self.assertEqual(defaults()['max_end_resumptions'], 3)
@@ -650,6 +682,39 @@ class EndingConfigurationTests(unittest.TestCase):
                     self.assertEqual(command.argv[-2:], ['--resume', identity])
                     self.assertIn('--strict-mcp-config', command.argv)
                     self.assertIn('opus[1m]', command.argv)
+
+    def test_a_waiting_host_parses_the_runner_state_again_only_when_its_file_has_changed(self):
+        # A host can wait behind a dispatch stop or an availability block for hours, and the runner's state,
+        # megabytes in a long run, changes far less often than the wait looks at it. Only the clock of the
+        # wait is replaced, so the test waits for nothing: each pause is one step of what happens around it.
+        import tempfile
+        from types import SimpleNamespace
+        from ending import wait_to_resume
+        with tempfile.TemporaryDirectory() as tmp:
+            instance = Path(tmp) / 'instance'
+            session = instance / 'sessions/s1'
+            for folder in (session, instance / 'control', instance / 'runner'):
+                folder.mkdir(parents=True)
+            write_json(instance / 'runner/state.json',
+                       {'blocks': {'provider:codex': {'until': time.time() + 3600, 'reason': 'usage_limit'}}})
+            (instance / 'control/STOP').touch()
+            policy = {'instance': str(instance), 'provider': 'codex', 'model': 'codex/gpt-6.1-sol'}
+            state = {'status': 'running'}
+            seen = []
+
+            def pause(seconds):
+                seen.append(state['status'])
+                if len(seen) == 3:
+                    (instance / 'control/STOP').unlink()  # the operator resumes dispatch; the block still holds
+                elif len(seen) == 6:
+                    write_json(instance / 'runner/state.json', {'blocks': {}})  # the runner clears the block
+
+            with patch('ending.time', SimpleNamespace(time=time.time, sleep=pause)), \
+                    patch('ending.read_json', wraps=read_json) as parsed:
+                self.assertTrue(wait_to_resume(session, policy, state))
+            self.assertEqual(seen, ['waiting_dispatch'] * 3 + ['waiting_provider'] * 3)
+            self.assertEqual(read_json(session / 'end-check.json')['status'], 'resuming')
+            self.assertEqual(parsed.call_count, 2)
 
 
 class SessionGateTests(unittest.TestCase):

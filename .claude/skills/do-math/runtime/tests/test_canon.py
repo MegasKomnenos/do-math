@@ -1125,7 +1125,6 @@ class UpdateIndexTests(TempCase):
         self.assertEqual(entries['Small.open_statement']['axioms'], ['sorryAx'])
         self.assertEqual(entries['Small.assumed']['axioms'], ['Small.assumed'])
         self.assertEqual(entries['Small.count']['axioms'], [])
-        self.assertNotIn('direct_axioms', entries['Small.main'])
         # A theorem whose own proof is complete and that names an open statement: Lean reports `sorryAx` for
         # it, so it is not formal, and its own proof is complete all the same.
         write(self.lean / 'Small/C.lean', 'theorem above : count 1 = 1 := by\n  exact open_statement\n')

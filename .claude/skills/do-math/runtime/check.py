@@ -6,14 +6,13 @@ from pathlib import Path
 import re
 
 from availability import no_research_outcome, reported_availability
-from canon import BESIDE_CANDIDATE, CanonError, load_change, name_path, tree_hash
+from canon import BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, tree_hash
 from coordination import section_entries
 from knowledge import ROOT_QUESTION, canonical_question, replay
 from runtime_support import read_json
 from settings import PRODUCERS
 
 VERDICTS = ('confirmed', 'not_confirmed', 'undetermined', 'not_applicable')
-PREPARED = 'prepared.json'
 
 
 class Invalid(ValueError):
@@ -141,7 +140,7 @@ def stays_settled(model, receipt, declaration):
                  f'{statement} is settled, and the new proof of {declaration} names {used}, which this candidate adds '
                  'and which is not settled yet. Publish the new statement first; the derivation of the old statement '
                  'from it replaces the old proof once the new statement is settled')
-    need('formal' not in carried or set(entry['axioms']) <= set(model['allowed_axioms']),
+    need('formal' not in carried or not beyond_allowed(entry, model['allowed_axioms']),
          f'{statement} has a formal proof, and the new proof of {declaration} is not formal; the statement would no '
          'longer be formal')
 

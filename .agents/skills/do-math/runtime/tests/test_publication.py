@@ -1394,6 +1394,20 @@ class TransportCheckTests(PublicationCase):
         for message, options in cases:
             with self.subTest(message=message):
                 self.assert_refused(self.peer_errors(**options), message)
+        with self.subTest('a statement that is formal through another declaration while its own Lean proof is open'):
+            # `low` gains a second proof that is complete in Lean: the statement is formal, and the proof under its
+            # own name still ends in sorry. A proof of `base` that names `low` then names a formal statement, and
+            # Lean reports the open proof beneath it for the new proof all the same, so that proof is not formal.
+            again = self.candidate(
+                modules={'Small/LowAgain.lean': module_text(theorem('lowAgain', SETTLED['low'][0], proof='rfl',
+                                                                    doc='The first odd number is one, by computation.'))},
+                records={'Small/lowAgain.md': record_text('The first odd number is one, by computation.', weight='unit',
+                                                          proves='Small.low')})
+            self.publish(again, engine=self.engine)
+            self.assertTrue(replay(self.instance)['elements']['Small.low']['statement_formal'])
+            self.assert_refused(self.peer_errors(replace={'Small.base': settled_text('base', ['low'])}),
+                                'Small.base has a formal proof, and the new proof of Small.base is not formal; '
+                                'the statement would no longer be formal')
         with self.subTest('a section held on the statement does not lift the condition'):
             self.section_on('Small.pair')
             self.assert_refused(self.peer_errors(**incomplete), 'that proof is replaced only by a proof that is complete')

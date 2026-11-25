@@ -2139,6 +2139,21 @@ class RunnerTests(ScenarioCase):
             self.assertEqual(main(['status', str(self.instance)]), 1)
         self.assertIn('instance schema 2', json.loads(shown.call_args.args[0])['error'])
 
+    def test_kill_session_refuses_an_unknown_session_and_one_that_has_ended(self):
+        # The command acts on a session whose host or CLI is alive. Any other session it refuses with the
+        # reason, and it writes no cancellation into the folder of a session that has ended.
+        runner = self.runner()
+        runner.state['sessions']['sended'] = {'id': 'sended', 'role': 'attempt', 'status': 'ended',
+                                              'host': None, 'cli': None}
+        runner.session_dir('sended').mkdir(parents=True)
+        runner.save()
+        with patch('builtins.print') as shown:
+            for sid, reason in (('snobody', 'unknown session'), ('sended', 'session is no longer running')):
+                with self.subTest(session=sid):
+                    self.assertEqual(main(['kill-session', str(self.instance), sid]), 1)
+                    self.assertEqual(json.loads(shown.call_args.args[0]), {'error': reason})
+        self.assertEqual(list(runner.session_dir('sended').iterdir()), [])
+
     def test_rejected_settings_edit_keeps_the_last_valid_settings(self):
         runner = self.runner()
         runner.reload_settings()

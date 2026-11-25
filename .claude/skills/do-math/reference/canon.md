@@ -125,7 +125,7 @@ verdict       for statement 7350…-9914…: confirmed, not accepted (c41d…)
 held by       s4e6ac5ea8ad04389a3d9d44ec7877dc5 (attempt, producing): the whole element
 approach      induction: Induction on the number of terms — stops: The inductive step needs ...
 
-record parts  Statement, Explanation, Proof, Approaches (read one with --part, all with --full; --part source prints the Lean text)
+record parts  statement, explanation, proof, approaches (read one with --part, all with --full; --part source prints the Lean text)
 ```
 
 | Line | What it says | Where it comes from |

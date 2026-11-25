@@ -9,9 +9,10 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
 import knowledge
+from canon import Canon
 from coordination import board, lease, lease_table, wait
 from runner import Runner, main
-from runtime_support import InstanceLock, read_json
+from runtime_support import InstanceLock, read_json, write_json
 from support import GAP_REASON, HELD_REASON, SUM_ZERO, ScenarioCase, module_text, record_text, take, theorem
 
 FRONTIER = '''\
@@ -260,6 +261,9 @@ class ViewTests(ScenarioCase):
         with patch('builtins.print'):
             self.assertEqual(main(['render', str(self.instance)]), 0)
         self.assertIn('State: informal_proved', self.view('frontier.md'))
+        # A settled root is the whole frontier, and its line says that no formal proof settles it yet.
+        self.assertIn('- `Small.root` — odd numbers sum to a square — settled; no formal proof yet',
+                      self.view('frontier.md').splitlines())
         self.assertIn('- `Small.root` · unit · accepted — The sum of the first n odd numbers equals n times n.', self.view('index.md'))
         self.assertIn('Research work and occupied sections', self.view('board.md'))
         self.assertEqual(read_json(views[3]), knowledge.replay(self.instance))
@@ -323,7 +327,7 @@ class CanonToolTests(ScenarioCase):
                      # Review's verdict is bound to the statement it saw, and carries its reason.
                      f"verdict       for statement {model['elements']['Small.colA']['statement_hash']}: confirmed, not accepted ({first})",
                      '              ' + HELD_REASON,
-                     'record parts  Statement, Proof (read one with --part, all with --full; --part source prints the Lean text)'):
+                     'record parts  statement, proof (read one with --part, all with --full; --part source prints the Lean text)'):
             self.assertIn(line, lines)
         source = next(line for line in lines if line.startswith('source'))
         self.assertRegex(source, r'^source        canon/lean/Small/Ways\.lean, lines \d+-\d+$')
@@ -438,6 +442,19 @@ class CanonToolTests(ScenarioCase):
         self.assertFalse([line for line in lines if line.startswith(('proof ', 'rests on', 'settled', 'verdict'))])
         self.assertIn('stated with   11 statements mention it (list --about Small.oddSum)', lines)
 
+    def test_view_lists_the_library_theorems_a_declaration_uses(self):
+        # The stand-in compiler reports no theorem of an imported library, so the index is given what Lean reports.
+        self.ways()
+        canon = Canon(self.instance)
+        index = canon.load_index()
+        names = [f'Nat.lemma_{number:02d}' for number in range(14)]
+        index['entries']['Small.unitG']['library'] = names[:2]
+        index['entries']['Small.colA']['library'] = names
+        write_json(canon.index, index)
+        self.assertIn('library       Nat.lemma_00, Nat.lemma_01', self.tool('view', 'Small.unitG').splitlines())
+        # The first twelve, and the number of the rest.
+        self.assertIn('library       ' + ', '.join(names[:12]) + ' and 2 more', self.tool('view', 'Small.colA').splitlines())
+
     def test_view_shows_concerns_later_reviews_approaches_and_history(self):
         self.ways()
         first = self.changes()[0]
@@ -454,7 +471,7 @@ class CanonToolTests(ScenarioCase):
         lines = self.tool('view', 'Small.monoB').splitlines()
         self.assertIn('approach      induction: Induction on the number of terms — stops: '
                       'The comparison needs the sum of two terms in a form not yet stated.', lines)
-        self.assertIn('record parts  Approaches (read one with --part, all with --full; --part source prints the Lean text)', lines)
+        self.assertIn('record parts  approaches (read one with --part, all with --full; --part source prints the Lean text)', lines)
         approaches = self.tool('view', 'Small.monoB', '--part', 'approaches')
         self.assertTrue(approaches.startswith('### Approach induction\n\n---\ntitle: Induction on the number of terms\nsessions: s-early\n'))
         self.assertIn('## Idea\n\nCompare the sum of three terms with the sum of two.\n', approaches)
@@ -533,6 +550,17 @@ class CanonToolTests(ScenarioCase):
         self.assertEqual(json.loads(self.tool('view', 'Small.absent', code=1)), {'error': 'no such element: Small.absent'})
         self.assertEqual(json.loads(self.tool('list', '--uses', 'Small.absent', code=1)), {'error': 'no such element: Small.absent'})
         self.assertEqual(json.loads(self.tool('question', 'absent', code=1)), {'error': 'no such question: absent'})
+
+    def test_an_argument_in_the_place_of_the_session_directory_is_named_in_the_error(self):
+        # The element given first and the session directory after it, as sessions have called the command.
+        stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
+        with patch('sys.stdout', stream):
+            returned = canon_tool.main(['view', 'Small.root', str(self.reader())])
+        stream.flush()
+        error = json.loads(stream.buffer.getvalue().decode('utf-8'))['error']
+        self.assertEqual(returned, 1, error)
+        self.assertEqual(error, 'Small.root is not a session directory: it holds no input.json. The session directory comes '
+                                'directly after the name of the command, and the arguments of the command follow it')
 
     def listed(self, *arguments):
         """The names a list command returned, after checking the count it printed."""

@@ -18,7 +18,7 @@ from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, ap
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
-from launch import worker_command as build_command
+from launch import worker_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
@@ -325,8 +325,8 @@ class Runner:
             self.state['explore_requested'] = False
         self.save()
         try:
-            command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
-                                    self.settings['mcp_servers'])
+            command = worker_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
+                                     self.settings['mcp_servers'])
             launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
             # Every role is supervised by its host across turns. A producing role and a peer are asked to
             # reconsider ending; a review and an organizer are resumed while their output does not pass the

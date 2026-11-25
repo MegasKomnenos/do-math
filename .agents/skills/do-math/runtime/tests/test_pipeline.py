@@ -42,7 +42,7 @@ class PipelineTests(InstanceCase):
         runner = Runner(self.instance, self.skill)
         self.addCleanup(self.cleanup_runner, runner)
         deadline = time.monotonic() + 300  # a guard against a hung runner; an idle machine finishes in a fraction
-        with patch('runner.build_command', side_effect=self.command):
+        with patch('runner.worker_command', side_effect=self.command):
             while time.monotonic() < deadline:
                 if runner.tick(): break
                 time.sleep(.1)
@@ -91,7 +91,7 @@ class PipelineTests(InstanceCase):
         history = git(self.instance, 'log', '--format=%H', '--', 'knowledge', 'canon')
         restarted = Runner(self.instance, self.skill)
         self.addCleanup(self.cleanup_runner, restarted)
-        with patch('runner.build_command', side_effect=self.command):
+        with patch('runner.worker_command', side_effect=self.command):
             self.assertTrue(restarted.tick())
         self.assertEqual(frozen, published_bytes())
         self.assertEqual(history, git(self.instance, 'log', '--format=%H', '--', 'knowledge', 'canon'))
