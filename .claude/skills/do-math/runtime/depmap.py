@@ -316,7 +316,7 @@ def main(argv=None):
         if source.is_file():
             from runtime_support import read_json
             data = read_json(source)
-            if data.get('schema') != SCHEMA or not isinstance(data.get('units'), list):
+            if not isinstance(data, dict) or data.get('schema') != SCHEMA or not isinstance(data.get('units'), list):
                 raise ValueError(f'{source} is not a dependency map written by this command')
             if args.all:
                 raise ValueError('--all needs the instance; a map drawn again keeps the scope it was derived with')

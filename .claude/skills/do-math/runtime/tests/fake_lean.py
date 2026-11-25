@@ -10,7 +10,8 @@ echoed, as are the FAKE_ENV environment variable and the process's niceness;
 nonexistent module would.
 
 Build tests use the artifact profile observed with Lean 4.32: .olean, .olean.private,
-.olean.server and .ir are emitted together and all are required for a local import. What
+.olean.server and .ir are emitted together and all are required for a local import. Lean
+4.36 adds a fifth file, .ir.sig, which this stand-in does not write. What
 each file holds follows the source the way a `module` file's output does. The .olean and
 .ir files are written from the source without its lines that begin with `-- proof:`, and
 the other two from all of it, so a change in such a line leaves the public files

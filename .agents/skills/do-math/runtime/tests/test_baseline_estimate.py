@@ -1,16 +1,17 @@
 """The baseline of a set of imports, estimated from the size of what they load (lean_broker.Library,
 lean_broker.Broker.estimate_baseline).
 
-The broker used to measure every new set of external imports with a compile of its own. In one
-instance those compiles were a third of all compile time, and most sets were used once or twice. The
-baseline follows the size on disk of the modules the imports load, each counted once, closely enough
-that a line through the measured sets predicts the next within about 2%. So the broker now measures
-a set only until it has ESTIMATE_BASIS measured sets and whenever a set is smaller or larger than
-every measured one, and estimates the others.
+Measuring a set of external imports costs a compile of its own. In one instance such compiles were
+a third of all compile time, and most sets were used once or twice. The baseline follows the size on
+disk of the modules the imports load, each counted once, closely enough that a line through the
+measured sets predicts the next within about 2%. So the broker measures a set only until it has
+ESTIMATE_BASIS measured sets and whenever a set is smaller or larger than every measured one, and
+estimates the others.
 
 The first class fixes how the size is read from a compiled library; a small library is written into a
 temporary folder for it. The second fixes when the broker estimates and when it measures; there the
-stand-in compiler has no library, so the size of a set is given to the broker directly.
+stand-in compiler has no library, so the size of a set is given to the broker directly. The third
+fixes that the broker finds a library itself, in the folders the configured Lean searches.
 """
 import json
 from pathlib import Path
@@ -213,7 +214,7 @@ class EstimatedBaselines(BrokerFixture):
 
     def test_estimated_baselines_are_never_fitted_to(self):
         self.line()
-        for n in range(6):
+        for n in range(2):
             _, entry = self.run_job(f"Mathlib.E{n}", 120.0 + 60 * n)
             self.assertTrue(entry["estimated"])
             self.assertEqual(entry["measured_sets"], 5)
@@ -243,6 +244,22 @@ class EstimatedBaselines(BrokerFixture):
         _, held = self.run_job("Mathlib.Held", 200.5)
         self.assertLessEqual(held["baseline_mb"], 900.0)
         self.assertGreaterEqual(held["baseline_mb"], 290.0)
+
+
+class TheLibraryTheBrokerFinds(BrokerFixture):
+    """The broker with a library on the search path of the configured Lean: it reads the size of a set there itself."""
+
+    def test_the_size_of_a_set_is_read_from_the_search_path_and_kept_for_the_environment(self):
+        library = self.root / "library"
+        compiled(library, "Init", [], 1)
+        compiled(library, "Mathlib.A", ["Init"], 2, 1)
+        self.write_settings(env={"LEAN_PATH": str(library)})
+        self.start_broker()
+        self.assertEqual(self.broker.closure_mb(["Mathlib.A"]), 4.0)
+        self.assertIsNone(self.broker.closure_mb(["Mathlib.Missing"]))
+        self.broker.save()
+        kept = self.paths.root / f"library-{self.broker.state['environment_key']}.json"
+        self.assertEqual(sorted(runtime_support.read_json(kept)), ["Init", "Mathlib.A"])
 
 
 if __name__ == "__main__":

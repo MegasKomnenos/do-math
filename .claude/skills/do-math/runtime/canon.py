@@ -22,7 +22,6 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 import shutil
-import time
 
 from runtime_support import read_json, write_text
 

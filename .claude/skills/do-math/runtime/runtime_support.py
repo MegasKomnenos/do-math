@@ -311,11 +311,11 @@ def alive(identity):
 
 
 def terminate_process(identity):
-    """Verify creation identity on the same handle used to terminate the CLI."""
+    """Verify creation identity on the same handle used to terminate the process."""
     if os.name == "nt":
         handle = WIN.OpenProcess(0x1000 | 0x100000 | 1, False, identity["pid"])
         if not handle:
-            raise RuntimeError("CLI no longer exists or cannot be opened")
+            raise RuntimeError("Process no longer exists or cannot be opened")
         try:
             if windows_birth(handle) != identity["birth"]:
                 raise RuntimeError("PID now belongs to a different process; not terminated")
@@ -329,7 +329,7 @@ def terminate_process(identity):
         fd = os.pidfd_open(identity["pid"])
         try:
             if not alive(identity):
-                raise RuntimeError("CLI creation identity changed; not terminated")
+                raise RuntimeError("Process creation identity changed; not terminated")
             signal.pidfd_send_signal(fd, signal.SIGKILL)
         finally:
             os.close(fd)

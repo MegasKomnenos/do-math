@@ -280,17 +280,6 @@ class AvailabilityTests(ScenarioCase):
         self.assertEqual(session['availability_report']['status'], 'stale')
         self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
 
-    def test_opening_is_new_remaining_work_or_an_ended_occupation(self):
-        observed = {'elements': {'Small.root': ['a', 'b'], 'Small.sumZero': ['c']}}
-        self.assertIsNone(opening_since(observed, observed))
-        # A further section, or an element that is no longer work that remains, opens nothing.
-        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b', 'd'], 'Small.sumZero': ['c']}}))
-        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b']}}))
-        self.assertEqual(opening_since(observed, {'elements': {'Small.root': ['a'], 'Small.sumZero': ['c']}}),
-                         'ended_occupancy')
-        self.assertEqual(opening_since(observed, {'elements': {**observed['elements'], 'Small.sumSucc': ['e']}}),
-                         'new_or_reopened_element')
-
     def test_operator_reconsideration_rejects_older_reports_and_preserves_stop(self):
         self.occupied()
         sid, session, _ = self.report()
@@ -387,6 +376,21 @@ class AvailabilityTests(ScenarioCase):
                 code, report = check()
                 self.assertEqual((code, report['ok']), (1, False))
                 self.assertIn('token returned by updates', report['errors'][0])
+
+
+class OpeningTests(unittest.TestCase):
+    """availability.opening_since on views written by hand; no instance is needed."""
+
+    def test_opening_is_new_remaining_work_or_an_ended_occupation(self):
+        observed = {'elements': {'Small.root': ['a', 'b'], 'Small.sumZero': ['c']}}
+        self.assertIsNone(opening_since(observed, observed))
+        # A further section, or an element that is no longer work that remains, opens nothing.
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b', 'd'], 'Small.sumZero': ['c']}}))
+        self.assertIsNone(opening_since(observed, {'elements': {'Small.root': ['a', 'b']}}))
+        self.assertEqual(opening_since(observed, {'elements': {'Small.root': ['a'], 'Small.sumZero': ['c']}}),
+                         'ended_occupancy')
+        self.assertEqual(opening_since(observed, {'elements': {**observed['elements'], 'Small.sumSucc': ['e']}}),
+                         'new_or_reopened_element')
 
 
 if __name__ == '__main__':

@@ -866,7 +866,7 @@ class Broker:
                 # again, replacing its outcome or redirecting the ID to itself.
                 if job_id in self.state["jobs"] or job_id in self.state["builds"] \
                         or (folder / "result.json").exists():
-                    path.unlink(missing_ok=True)
+                    remove_request(path)
                     continue
                 request = read_json(path)
                 expect = request["expect_mb"]
@@ -874,7 +874,7 @@ class Broker:
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
                                "finished_at": time.time()})
-                    path.unlink(missing_ok=True)
+                    remove_request(path)
                     self.log(event="cancelled", job=job_id, reason="cancelled before registration")
                     continue
                 if BUILD_ID.match(job_id):
@@ -890,7 +890,7 @@ class Broker:
                     folder.mkdir(exist_ok=True)
                     write_json(folder / "result.json",
                                {"id": job_id, "status": "failed", "reason": f"request rejected: {exc}"})
-                path.unlink(missing_ok=True)
+                remove_request(path)
                 continue
             job_dir = self.paths.job(job_id)
             job_dir.mkdir(exist_ok=True)
@@ -908,7 +908,7 @@ class Broker:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
                 if (job_dir / "CANCEL").exists():
                     cancel(self.paths, duplicate)
-                path.unlink(missing_ok=True)
+                remove_request(path)
                 continue
             try:
                 imports = read_imports(source)
@@ -926,7 +926,7 @@ class Broker:
     def registered(self, job_id, path, folder):
         """Let a registered request leave the queue: now if its result is written, else with the next write of the state."""
         if (folder / "result.json").exists():
-            path.unlink(missing_ok=True)
+            remove_request(path)
         else:
             self.unwritten[job_id] = path
 

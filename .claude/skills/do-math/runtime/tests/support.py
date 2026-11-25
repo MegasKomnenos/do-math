@@ -1,7 +1,8 @@
 """Shared fixture of the runtime tests: a small instance whose canon is compiled by the stand-in compiler.
 
-The instance is created once per test process through the real `initialize`, which builds the canon
-through a real broker with tests/canon_lean.py as its compiler, and is then copied for every test.
+The instance is created once per test process by the operator's `init` command (runner.main), whose
+`initialize` builds the canon through a real broker with tests/canon_lean.py as its compiler, and is
+then copied for every test.
 Tests that change the canon go through the real candidate, build and publication path with the
 helpers below; nothing here writes the index or the model by hand.
 """
@@ -18,9 +19,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from canon_tool import build_candidate
-from check import tree_hashes
+from check import check_session, tree_hashes
 from lean_broker import Paths, broker_alive, terminate_tree
-from runner import Runner, initialize, main, uid
+from runner import Runner, main, uid
 from runtime_support import alive, read_json, remove_tree, write_json
 from settings import defaults
 
@@ -145,12 +146,18 @@ def template(variant='default'):
     """One compiled instance per root variant for the whole test process; every test works on a copy of it."""
     if variant not in _TEMPLATES:
         base = Path(tempfile.mkdtemp(prefix='do-math-template-'))
-        atexit.register(shutil.rmtree, base, True)
+        atexit.register(remove_tree, base)
         (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
                                       encoding='utf-8')
         write_json(base / 'settings.json', test_settings())
         write_canon(base / 'canon', ROOTS[variant])
-        initialize(base / 'instance', base / 'goal.md', base / 'canon', 'Small.root', base / 'settings.json')
+        # By the command the operator runs, so that its arguments and its exit code are part of every test's start.
+        with patch('builtins.print') as shown:
+            refused = main(['init', str(base / 'instance'), '--root', str(base / 'goal.md'),
+                            '--canon', str(base / 'canon'), '--root-declaration', 'Small.root',
+                            '--settings', str(base / 'settings.json')])
+        if refused:
+            raise RuntimeError(f'init refused the canon of the fixture: {shown.call_args}')
         _TEMPLATES[variant] = base / 'instance'
     return _TEMPLATES[variant]
 
@@ -199,7 +206,7 @@ class InstanceCase(unittest.TestCase):
             build()
             stop_broker(self.instance)
             base = Path(tempfile.mkdtemp(prefix='do-math-scenario-'))
-            atexit.register(shutil.rmtree, base, True)
+            atexit.register(remove_tree, base)
             shutil.copytree(self.instance, base / 'instance')
             _SCENARIOS[key] = base / 'instance'
         else:
@@ -305,7 +312,8 @@ class InstanceCase(unittest.TestCase):
             with patch.object(subprocess, 'Popen', POPEN):
                 engine.publish()
             self.assertLess(time.monotonic(), deadline, 'publication did not finish')
-            time.sleep(0.05)
+            if engine.state['publication']:
+                time.sleep(0.05)  # its build is still running; a publication waits for nothing else
 
     def event(self, eid, kind, data):
         """A comprehensive review, written as the runner publishes one."""
@@ -337,17 +345,24 @@ class InstanceCase(unittest.TestCase):
         return self.publish(folder, role='explore', question='q0', engine=engine)
 
     def organize(self, batch=None, merge_questions=(), engine=None):
-        """Publish an organizer's output that carries no change of its own, as the runner publishes one."""
+        """Publish an organizer's output that carries no change of its own, as the runner publishes one.
+
+        The output passes the transport check first, which the runner makes before it queues a publication."""
         engine = engine or Runner(self.instance, self.skill)
         state = engine.state
         sid, key = uid('s'), uid('j')
-        output = engine.session_dir(sid) / 'output'
+        session = engine.session_dir(sid)
+        output = session / 'output'
         output.mkdir(parents=True)
         if batch is None:
             batch = [cid for cid in engine.model['changes'] if cid not in engine.model['organized']]
+        task = {'batch': batch, 'batch_frozen': True}
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'organizer',
+                                            'pipeline': None, 'task': task})
         write_json(output / 'organization.json', {'batch': batch, 'merge_questions': list(merge_questions)})
+        self.assertEqual(check_session(session), [])
         state['jobs'][key] = {'id': key, 'role': 'organizer', 'pipeline': None, 'status': 'running', 'session': sid,
-                              'retries': 0, 'not_before': 0, 'task': {'batch': batch, 'batch_frozen': True}}
+                              'retries': 0, 'not_before': 0, 'task': task}
         state['sessions'][sid] = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'publishing',
                                   'model': 'codex/test', 'effort': 'low', 'provider': 'codex',
                                   'started_at': time.time(), 'host': None, 'cli': None, 'record': None}

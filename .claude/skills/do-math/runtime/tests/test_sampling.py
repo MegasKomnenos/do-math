@@ -1,10 +1,10 @@
 """How the Lean broker reads the memory of a running compile (lean_broker.Broker.sample).
 
 Listing every process of the machine to find a compile's process tree costs far more than reading the
-memory of a few known processes, and the broker did both at every poll. It now lists the tree at most
-once every TREE_SECONDS and reads the memory of the processes last listed at each poll in between.
-These tests fix that the memory is still read at every poll, that the listing is renewed when it is
-due, and that nothing is kept for a job that has ended.
+memory of a few known processes. So the broker lists the tree at most once every TREE_SECONDS and
+reads the memory of the processes last listed at each poll in between. These tests fix that the
+memory is read at every poll, that the listing is renewed when it is due, and that nothing is kept
+for a job that has ended.
 """
 from pathlib import Path
 import sys

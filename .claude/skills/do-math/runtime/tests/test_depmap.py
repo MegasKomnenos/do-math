@@ -664,10 +664,15 @@ class Drawing(MapCase):
         self.assertIn('9 units, 15 edges, 3 groups', shown.getvalue())
         for name in ('dependency_map.json', 'dependency_map.svg', 'dependency_map.html'):
             self.assertEqual((first / name).read_bytes(), (second / name).read_bytes(), name)
+        # A JSON file that holds no map, such as a list, is refused in the same way as a path that is neither.
+        other = Path(temp.name) / 'other.json'
+        other.write_text('[]', encoding='utf-8')
         with contextlib.redirect_stderr(io.StringIO()) as errors:
             self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(second), '--all']), 2)
             self.assertEqual(depmap.main([str(Path(temp.name) / 'nothing'), '--out', str(second)]), 2)
+            self.assertEqual(depmap.main([str(other), '--out', str(second)]), 2)
         self.assertIn('--all needs the instance', errors.getvalue())
+        self.assertIn('is not a dependency map written by this command', errors.getvalue())
 
 
 def playwright():

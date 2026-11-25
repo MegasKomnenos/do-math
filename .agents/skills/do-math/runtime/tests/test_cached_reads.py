@@ -1,10 +1,10 @@
 """Files the runner reads on every pass (runtime_support.read_json_cached).
 
-The runner drew the board and checked every active session on each pass by opening and parsing each
-session's declaration, end check and process receipt, although most had not changed since the pass
-before. They are now read again only when the file has changed. These tests fix that a change is
-always seen, that an absent file reads as before, and that callers cannot disturb one another through
-what they are given.
+The runner draws the board and checks every active session on each pass, and for that it reads each
+session's declaration, end check and process receipt. Most of them have not changed since the pass
+before, so a file is opened and parsed again only when it has changed. These tests fix that a change
+is always seen, that a path which is no file reads as None, and that callers cannot disturb one
+another through what they are given.
 """
 import os
 from pathlib import Path
@@ -74,7 +74,7 @@ class CachedReads(unittest.TestCase):
         first["extra"] = True
         self.assertEqual(read_json_cached(self.path), {"sections": [{"element": "E"}]})
 
-    def test_a_file_that_does_not_parse_raises_as_before(self):
+    def test_a_file_that_does_not_parse_raises_as_read_json_does(self):
         self.path.write_text("{not json", encoding="utf-8")
         with self.assertRaises(ValueError):
             read_json_cached(self.path)

@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 import shutil
 import sys
-import time
 import unittest
 from unittest.mock import patch
 
@@ -91,27 +90,8 @@ class QuestionCase(InstanceCase):
         return self.publish(folder, review, role='explore', question=qid, engine=engine)[0]
 
     def organize(self, merges, engine=None):
-        """Publish an organizer's question merges as the runner does once the organizer's session has ended."""
-        engine = engine or Runner(self.instance, self.skill)
-        sid, key = uid('s'), uid('j')
-        session = engine.session_dir(sid)
-        (session / 'output').mkdir(parents=True)
-        batch = [cid for cid in engine.model['changes'] if cid not in engine.model['organized']]
-        write_json(session / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'organizer',
-                                            'pipeline': None, 'task': {'batch': batch}})
-        write_json(session / 'output/organization.json', {'batch': batch, 'merge_questions': merges})
-        self.assertEqual(check_session(session), [])
-        engine.state['jobs'][key] = {'id': key, 'role': 'organizer', 'task': {'batch': batch}, 'pipeline': None,
-                                     'status': 'running', 'session': sid, 'retries': 0, 'not_before': 0}
-        engine.state['sessions'][sid] = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'publishing',
-                                         'model': 'codex/test', 'effort': 'low', 'provider': 'codex',
-                                         'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
-        engine.state['publish_queue'].append({'session': sid, 'job': key, 'kind': 'organization'})
-        engine.save()
-        self.drain(engine)
-        job = engine.state['jobs'][key]
-        self.assertEqual(job['status'], 'done', job.get('last_error'))
-        return job['record']
+        """Publish an organizer's question merges through InstanceCase.organize; returns the publication's ID."""
+        return super().organize(merge_questions=merges, engine=engine)[0]
 
     def empty_output(self):
         """An output folder with nothing in it, as an organizer that only merges questions leaves."""

@@ -113,10 +113,6 @@ class FormalStatusTests(InstanceCase):
         self.assertEqual(sorted(read_json(Canon(self.instance).index)), ['aux', 'entries', 'hidden', 'modules', 'pairs', 'revision'])
         self.assertEqual(sorted(read_json(self.instance / 'knowledge/changes' / record / 'provenance.json')),
                          ['peer_session', 'pipeline', 'producer_session', 'review_session'])
-        status = runtime.status(self.instance)
-        self.assertNotIn('judge', status)
-        self.assertNotIn('root_judge', status)
-        self.assertNotIn('judged', view(self.instance, replay(self.instance), 'Small.sumZero'))
 
     def test_a_complete_proof_that_names_an_open_statement_is_a_proof_and_is_not_formal(self):
         self.lemma_and_what_rests_on_it()

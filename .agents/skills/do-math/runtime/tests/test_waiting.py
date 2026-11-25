@@ -1,9 +1,9 @@
 """How a client waits for a job or build of the Lean broker (lean_broker.await_record).
 
-A waiting client used to read the broker's whole state at every look, four times a second, and that
-file grows with the jobs of the instance. It now looks for the job's result file and reads the whole
-record only at the start, when that file has appeared, every WAIT_STATE seconds and once when the
-timeout has passed. These tests fix what callers rely on: what is returned, that a job which ends is
+The broker's state file grows with the jobs of the instance, so a waiting client does not read the
+whole of it at every look. It looks for the job's result file and reads the whole record only at the
+start, when that file has appeared, every WAIT_STATE seconds and once when the timeout has passed.
+These tests fix what callers rely on: what is returned, that a job which ends is
 seen, that the timeout is kept exactly, and how seldom the state is read. They run on a stand-in clock,
 so they take no real time and do not depend on the load of the machine; no broker is started.
 """

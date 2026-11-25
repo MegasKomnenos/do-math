@@ -606,7 +606,7 @@ class EndingConfigurationTests(unittest.TestCase):
             request = {'id': 'current-request', 'previous_error': 'Stale decision'}
             for role in ROLES:
                 prompt = request_prompt(request, role, guidance)
-                self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
+                self.assertIn((guidance / (role + '.md')).read_bytes().decode('utf-8-sig').strip(), prompt)
                 self.assertIn('current-request', prompt)
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('{{', prompt)
@@ -615,7 +615,7 @@ class EndingConfigurationTests(unittest.TestCase):
             self.assertEqual(set(OUTPUT_ROLES), {'review', 'organizer'})
             for role in OUTPUT_ROLES:
                 prompt = request_prompt(request, role, guidance)
-                self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
+                self.assertIn((guidance / (role + '.md')).read_bytes().decode('utf-8-sig').strip(), prompt)
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('current-request', prompt)
                 self.assertNotIn('{{', prompt)

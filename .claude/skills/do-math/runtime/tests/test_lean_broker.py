@@ -676,6 +676,28 @@ class BrokerTests(BrokerFixture):
         self.assertEqual(record, {"id": job_id, "status": "submitted"})
         self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "queued")
 
+    def test_a_request_whose_removal_is_refused_keeps_its_answer_and_leaves_at_the_next_poll(self):
+        # On Windows a file that another process has open can refuse removal for a moment. A request that
+        # was answered with a result then stays in the queue until the next poll. The refusal is no fault
+        # of the request, so the answer stands and the broker goes on.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        lean_broker.cancel(self.paths, job_id)  # before registration: the request is answered with a result
+        request = self.paths.queue / (job_id + ".json")
+        unlink = Path.unlink
+        def refused(path, *args, **kwargs):
+            if path == request:
+                raise PermissionError("the file is in use by another process")
+            return unlink(path, *args, **kwargs)
+        with patch.object(Path, "unlink", refused):
+            self.broker.ingest()
+        self.assertTrue(request.exists())
+        self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "cancelled")
+        self.broker.ingest()
+        self.assertFalse(request.exists())
+        self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "cancelled")
+        self.assertNotIn(job_id, self.broker.state["jobs"])
+
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
         self.start_broker()
         path = self.session_file("s1", alloc_mb=200, marker="OUT-A", sleep=1)
@@ -725,7 +747,7 @@ class BrokerTests(BrokerFixture):
         self.assertTrue(all(self.broker.state["jobs"][j]["exit_code"] == 0 for j in [first, *others]))
 
     def test_a_closure_reserves_with_its_measured_spread_once_two_excesses_differ(self):
-        # The memory rule takes the spread the broker has observed for a closure's excess (reference/lean.md);
+        # The memory rule takes the spread the broker has observed for a closure's excess (reference/lean-broker.md);
         # default_spread stands in until two excesses are recorded and while they do not differ.
         self.start_broker()
         calibration, default = self.broker.calibration, self.broker.config["default_spread"]
@@ -1894,6 +1916,15 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertIn("4.0.0-fake", status["version"])
         # The runner's `status` carries this same object as its `lean` entry.
         self.assertEqual(lean_broker.broker_status(self.paths)["version"], status["version"])
+        # `cancel` answers through the command line too. The job has ended, so it is reported as it ended;
+        # an ID that names no job is refused.
+        cancelled = self.cli("cancel", str(self.instance), summary["job"])
+        self.assertEqual(cancelled.returncode, 0, cancelled.stderr)
+        self.assertEqual(json.loads(cancelled.stdout),
+                         {"job": summary["job"], "status": "finished", "cancelled": "already completed"})
+        unknown = self.cli("cancel", str(self.instance), "j" + "0" * 32)
+        self.assertEqual(unknown.returncode, 1)
+        self.assertIn("unknown job", unknown.stderr)
 
     @unittest.skipUnless(os.name == "nt", "only Windows reports exit codes as unsigned 32-bit values")
     def test_run_relays_a_windows_crash_code_unchanged(self):
@@ -2067,6 +2098,12 @@ class ClientAndLifecycleTests(BrokerFixture):
             self.assertEqual(lean_broker.main(["result", str(self.instance), build_id]), 0)
         record = json.loads(out.getvalue())
         self.assertEqual((record["id"], record["status"]), (build_id, "finished"))
+        # `cancel` through the command line; work that has already completed keeps its outcome.
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(lean_broker.main(["cancel", str(self.instance), build_id]), 0)
+        self.assertEqual(json.loads(out.getvalue()),
+                         {"build": build_id, "status": "finished", "cancelled": "already completed"})
         # status lists builds finished within the last ten minutes; the first build is long recorded in the state.
         listed = {b["id"]: b["status"] for b in lean_broker.broker_status(self.paths)["builds"]}
         self.assertEqual(listed.get(summary["build"]), "finished")

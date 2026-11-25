@@ -169,7 +169,6 @@ INPUT_RE = re.compile(
     r"\\(?:input|include)\s*\{\s*([^{}]+?)\s*\}"      # \input{name}  \include{name}
     r"|\\input\s+([^\s{}\\%]+)"                        # \input name
 )
-BIB_RE = re.compile(r"\\bibliography\s*\{[^{}]*\}")
 JOIN_RE = re.compile(INPUT_RE.pattern + r"|(\\bibliography\s*\{[^{}]*\})")
 CLASS_RE = re.compile(r"\\document(?:class|style)\s*[\[{]")
 BEGIN_RE = re.compile(r"\\begin\s*\{document\}")

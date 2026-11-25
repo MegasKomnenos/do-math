@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from retention import capture, conversation, output_limit
+from retention import capture, conversation, output_limit, refusal
 from runtime_support import archive_work
 
 
@@ -267,6 +267,31 @@ class RetentionTests(unittest.TestCase):
             self.assertIsNone(output_limit(folder, 'claude'))
             stream.unlink()
             self.assertIsNone(output_limit(folder, 'claude'))
+
+    def test_a_turn_that_ended_because_the_model_refused_is_a_refusal_of_that_model(self):
+        # The Claude CLI's own stream when the model refuses a request and the CLI has no other model to give
+        # it to: a message of the CLI's own, and the result of the turn with the stop reason "refusal".
+        message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."
+        refused = [{'type': 'system', 'subtype': 'init', 'session_id': 's'},
+                   {'type': 'assistant', 'is_api_error_message': True, 'error': 'invalid_request',
+                    'message': {'model': '<synthetic>', 'role': 'assistant', 'stop_reason': 'refusal',
+                                'content': [{'type': 'text', 'text': message}]}},
+                   {'type': 'result', 'subtype': 'success', 'is_error': True, 'stop_reason': 'refusal',
+                    'terminal_reason': 'api_error', 'result': message}]
+        # A turn that ended well and only speaks of a refusal is none.
+        spoken = [{'type': 'result', 'subtype': 'success', 'is_error': False, 'stop_reason': 'end_turn',
+                   'result': 'The stop reason "refusal" is discussed here.'}]
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            stream = folder / 'cli.stdout.jsonl'
+            (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+            stream.write_text('\n'.join(map(json.dumps, refused)), encoding='utf-8')
+            found = refusal(folder, 'claude', 'claude/opus', None, 60)
+            self.assertEqual((found['key'], found['reason'], found['source']),
+                             ('model:claude/opus', 'model_refusal', 'backoff'))
+            self.assertIsNone(refusal(folder, 'codex', 'codex/gpt-6.1-sol', None, 60))
+            stream.write_text('\n'.join(map(json.dumps, spoken)), encoding='utf-8')
+            self.assertIsNone(refusal(folder, 'claude', 'claude/opus', None, 60))
 
     def test_claude_native_api_error_is_not_research_activity(self):
         # A refused Claude launch leaves only a synthetic error message in its native transcript.

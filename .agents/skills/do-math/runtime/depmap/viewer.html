@@ -159,9 +159,8 @@ __SVG__
 (function () {
   var svg = document.querySelector('#stage svg');
   if (!svg) return;
-  var NS = 'http://www.w3.org/2000/svg';
   var data = JSON.parse(document.getElementById('map-data').textContent);
-  var stage = document.getElementById('stage'), panel = document.getElementById('panel');
+  var panel = document.getElementById('panel');
   var content = document.getElementById('content'), guide = document.getElementById('guide');
   var query = document.getElementById('query'), results = document.getElementById('results');
   var live = document.getElementById('live');
@@ -195,11 +194,6 @@ __SVG__
     var node = document.createElement(tag);
     if (text !== undefined && text !== null) node.textContent = text;
     if (cls) node.className = cls;
-    return node;
-  }
-  function svgEl(tag, attributes) {
-    var node = document.createElementNS(NS, tag);
-    Object.keys(attributes).forEach(function (key) { node.setAttribute(key, attributes[key]); });
     return node;
   }
 
@@ -869,7 +863,8 @@ __SVG__
     else if (found.length) results.appendChild(el('p', 'No name has these words. They occur in the description of:'));
     if (!found.length) {
       results.appendChild(el('p', 'Nothing on this map has “' + query.value.trim() + '” in its name, its Lean name or its description. ' +
-        'The map holds the units the root rests on and the steps folded into their lines, not every declaration of the library.'));
+        'The map holds ' + (data.scope === 'all' ? 'every unit of the library' : 'the units the root rests on') +
+        ' and the steps folded into their lines, not every declaration of the library.'));
       return;
     }
     found.slice(0, LIMIT).forEach(function (item) {

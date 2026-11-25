@@ -201,6 +201,12 @@ def refusal(session, provider, model, started, retry_seconds):
             if event.get('api_error') == 'model_requires_usage_credits':
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_requires_usage_credits', 'source': 'backoff'}
+        if provider == 'claude' and event.get('type') == 'result' and event.get('is_error') is True:
+            # The model refused a request and the CLI had no other model to give it to, so the turn ended
+            # there: the result of the turn, the last event of the call, carries the stop reason "refusal".
+            if event.get('stop_reason') == 'refusal':
+                return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
+                        'reason': 'model_refusal', 'source': 'backoff'}
         if provider == 'codex':
             error = event.get('error')
             message = event.get('message') if event.get('type') == 'error' else error.get('message') if event.get('type') == 'turn.failed' and isinstance(error, dict) else None

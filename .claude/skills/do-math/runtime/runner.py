@@ -26,7 +26,7 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, record_summary, refuting_proofs, render,
                        replay, root_settlement, root_solved)
 from retention import capture, refusal
-from ending import OUTPUT_ROLES, ROLES as END_CHECK_ROLES, authorize, turn_directory
+from ending import authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
                              session_host,
@@ -331,14 +331,13 @@ class Runner:
             # Every role is supervised by its host across turns. A producing role and a peer are asked to
             # reconsider ending; a review and an organizer are resumed while their output does not pass the
             # transport check (ending.py). The role in the policy tells the host which of the two applies.
-            if job['role'] in END_CHECK_ROLES + OUTPUT_ROLES:
-                launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
-                                       'resume_guidance': str(self.skill / 'resume'),
-                                       'instance': str(self.instance), 'role': job['role'],
-                                       'provider': provider, 'model': selected['model'], 'effort': selected['effort'],
-                                       'executable': self.settings['cli'][provider],
-                                       'mcp_servers': self.settings['mcp_servers'],
-                                       'retry_seconds': self.settings['retry_seconds']}
+            launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
+                                   'resume_guidance': str(self.skill / 'resume'),
+                                   'instance': str(self.instance), 'role': job['role'],
+                                   'provider': provider, 'model': selected['model'], 'effort': selected['effort'],
+                                   'executable': self.settings['cli'][provider],
+                                   'mcp_servers': self.settings['mcp_servers'],
+                                   'retry_seconds': self.settings['retry_seconds']}
             write_json(session / 'launch.json', launch)
             with (session / 'host.log').open('wb') as log:
                 host = subprocess.Popen([sys.executable, '-B', str(SCRIPT), '_session', str(session)],
@@ -1176,9 +1175,9 @@ class Runner:
         pipeline names as producer until the relaunch replaces it. No live explorer holds that
         question, and the pipeline is not choosing yet. When a pending exploration is launched, every
         pending exploration's pipeline is therefore left out, and such a question is free to whichever
-        of them launches first. Leaving out only the launching job's own pipeline let two pending
-        explorations hold each other back for good: each counted the other as a chooser, or as the
-        holder of the question it would itself take, while that question stayed free."""
+        of them launches first. Leaving out only the launching job's own pipeline would let two pending
+        explorations hold each other back for good: each would count the other as a chooser, or as the
+        holder of the question it would itself take, while that question stays free."""
         rows = board(self.instance, self.state, self.model)
         if launching:
             pending = {j['pipeline'] for j in self.state['jobs'].values()

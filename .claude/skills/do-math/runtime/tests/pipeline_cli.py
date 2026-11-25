@@ -1,8 +1,8 @@
 """Scripted session outputs for testing the real orchestration and publication path.
 
 The scripted research is small and real: the sum of the first n odd numbers is n * n. The Lean it
-writes is valid Lean 4, so the same script runs against the stand-in compiler in the unit tests and
-against the real one when the pipeline is tried end to end."""
+writes is written as valid Lean 4, so the script can also be run against Lean itself in place of the
+stand-in compiler; test_pipeline, the only test that uses it, runs it against the stand-in."""
 import json
 from pathlib import Path
 import sys

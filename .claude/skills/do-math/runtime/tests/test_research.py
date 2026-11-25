@@ -1433,6 +1433,13 @@ class RunnerTests(ScenarioCase):
                                    'model:claude/opus', 'claude/sonnet', model='claude/opus',
                                    peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
+    def test_a_claude_turn_that_the_model_refused_blocks_that_model_and_retains_work(self):
+        # A Claude turn that ended because the model refused ends with a failed result whose stop reason is "refusal".
+        self.check_refusal_handoff({'type': 'result', 'subtype': 'success', 'is_error': True,
+                                    'stop_reason': 'refusal', 'terminal_reason': 'api_error'},
+                                   'model:claude/opus', 'claude/sonnet', model='claude/opus',
+                                   peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
+
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()
         self.assertEqual(runner.settings['max_sessions'], 8)

@@ -166,7 +166,7 @@ SWEEPS, RELAXATIONS = 24, 24
 
 # ----------------------------------------------------------------------------- text
 
-def text_width(text, size, bold=False, mono=False):
+def text_width(text, size, mono=False):
     """An estimate of the width of a line, on the wide side, from classes of characters. No font is read."""
     if mono:
         return 0.602 * size * len(text)
@@ -182,10 +182,10 @@ def text_width(text, size, bold=False, mono=False):
             total += 0.66
         else:
             total += 0.56
-    return total * size * (1.07 if bold else 1.0)
+    return total * size
 
 
-def wrap(text, size, width, bold=False, mono=False, after=' '):
+def wrap(text, size, width, mono=False, after=' '):
     """Lines no wider than `width`, broken after the characters in `after`; a piece that is too long stays whole."""
     pieces, current = [], ''
     for char in text:
@@ -197,7 +197,7 @@ def wrap(text, size, width, bold=False, mono=False, after=' '):
         pieces.append(current)
     lines, line = [], ''
     for piece in pieces:
-        if line and text_width((line + piece).rstrip(), size, bold, mono) > width:
+        if line and text_width((line + piece).rstrip(), size, mono) > width:
             lines.append(line.rstrip())
             line = piece
         else:
@@ -619,13 +619,6 @@ def layered(data, cards):
                        'net': shared[nets[n]]} for n in range(len(pairs))]}
 
 
-def curve_point(x1, y1, x2, y2, t):
-    """A point between two points, eased at both ends; on a level stretch it lies on the stretch."""
-    xm = (x1 + x2) / 2
-    a, b, c, d = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3
-    return a * x1 + (b + c) * xm + d * x2, (a + b) * y1 + (c + d) * y2
-
-
 def overlap(first, second):
     return (first[0] < second[0] + second[2] and second[0] < first[0] + first[2]
             and first[1] < second[1] + second[3] and second[1] < first[1] + first[3])
@@ -805,7 +798,7 @@ def fmt(value):
     return f'{value:.2f}'.rstrip('0').rstrip('.')
 
 
-def cornered_path(points, radius=CORNER):
+def cornered_path(points):
     """A polyline with rounded corners; the radius shrinks on a short stretch."""
     parts = [f'M {fmt(points[0][0])} {fmt(points[0][1])}']
     for a, b, c in zip(points, points[1:], points[2:]):
@@ -813,7 +806,7 @@ def cornered_path(points, radius=CORNER):
         du, dv = math.hypot(*u), math.hypot(*v)
         if not du or not dv:
             continue
-        r = min(radius, du / 2, dv / 2)
+        r = min(CORNER, du / 2, dv / 2)
         parts.append(f'L {fmt(b[0] + u[0] / du * r)} {fmt(b[1] + u[1] / du * r)}')
         parts.append(f'Q {fmt(b[0])} {fmt(b[1])} {fmt(b[0] + v[0] / dv * r)} {fmt(b[1] + v[1] / dv * r)}')
     parts.append(f'L {fmt(points[-1][0])} {fmt(points[-1][1])}')

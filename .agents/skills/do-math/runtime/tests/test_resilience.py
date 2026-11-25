@@ -313,3 +313,7 @@ class LaunchFailureTests(InstanceCase):
         self.assertEqual(support.read_json(engine.session_dir(sid) / 'termination.json')['cause'], 'launch_error')
         self.assertEqual(engine.state['blocks']['model:codex/gpt-6.1-sol']['source'], 'retry')
         self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')
+
+
+if __name__ == '__main__':
+    unittest.main()

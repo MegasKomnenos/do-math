@@ -121,7 +121,7 @@ class PublicationCase(InstanceCase):
 
     def leftovers(self):
         """Folders the runner uses while a publication is underway; none remains once it has ended."""
-        return sorted(p.name for pattern in ('stage-*', 'event-*', 'replaced-*')
+        return sorted(p.name for pattern in ('stage-*', 'event-*')
                       for p in (self.instance / 'runner').glob(pattern))
 
     def root_source(self):

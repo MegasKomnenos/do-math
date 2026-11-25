@@ -295,7 +295,8 @@ class RecordFormatTests(unittest.TestCase):
                 parse_record(RECORD.replace('weight: unit', 'weight: unit\n' + extra))
 
     def test_a_record_whose_header_was_left_open_is_refused(self):
-        with self.assertRaises(CanonError):
+        # Without the closing line, the first section heading is read as a line of the header.
+        with self.assertRaisesRegex(CanonError, "unknown header line '## Description'"):
             parse_record(RECORD.replace('weight: unit\n---\n', 'weight: unit\n'))
 
     def test_the_message_names_the_file(self):
@@ -2287,8 +2288,15 @@ class CandidateToolTests(InstanceCase):
         output = session / 'output'
         self.fill(output, **self.induction())
         before = Canon(self.instance).load_index()
+        # With no time to wait, the command returns while the build runs: exit code 124, and no receipt yet.
+        code, answer = self.tool('prepare', session, '--timeout', 0)
+        self.assertEqual((code, answer['waiting']), (124, True))
+        self.assertFalse((output / 'prepared.json').exists())
+        started = read_json(session / 'work/prepare/state.json')['build']
+        # The same command comes back for that build and starts no other.
         code, summary = self.tool('prepare', session, '--timeout', 120)
         self.assertEqual(code, 0, summary)
+        self.assertEqual(summary['build'], started)
         receipt = read_json(output / 'prepared.json')
         self.assertTrue(receipt['ok'])
         self.assertEqual(receipt['errors'], [])
@@ -2370,12 +2378,20 @@ class CandidateToolTests(InstanceCase):
         broken = module_text('-- fail: the elaborator gave up on this file\n' + STEP)
         folder = self.candidate(modules={'Small/Broken.lean': broken}, records={'Small/oddSum_succ.md': STEP_RECORD},
                                 prepare=False)
-        result = self.prepare(folder, expect_ok=False)
+        work = self.root / 'work'
+        result = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertIsNotNone(result, 'the candidate build did not finish')
         self.assertFalse(result['ok'])
         self.assertTrue(result['build'])
         self.assertIn('the elaborator gave up on this file', '\n'.join(result['errors']))
         self.assertIn('Small.Broken', '\n'.join(result['errors']))
         self.assertEqual((result['added'], result['replaced'], result['entries']), ([], [], {}))
+        # A build that ended without compiling is not kept: the same command on the same files builds again,
+        # because a compile can also end for a reason that is not in the files.
+        again = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertIsNotNone(again, 'the candidate build did not finish')
+        self.assertFalse(again['ok'])
+        self.assertNotEqual(again['build'], result['build'])
 
         unknown = INFORMAL.replace('have step := oddSum_succ', 'have step := unknown_name')
         folder = self.candidate(replace={'Small.root': unknown}, prepare=False)
@@ -2402,7 +2418,7 @@ class CandidateToolTests(InstanceCase):
         folder = self.candidate(replace={'Small.root': '-- The statement was withdrawn.'}, prepare=False)
         result = self.prepare(folder, expect_ok=False)
         self.assertFalse(result['ok'], result)
-        self.assertIn('Small.root', '\n'.join(result['errors']))
+        self.assertIn('declarations disappeared from the canon: Small.root', result['errors'])
 
     def test_a_replacement_under_another_name_is_refused(self):
         renamed = INFORMAL.replace('theorem root ', 'theorem root_two ').replace('have step := oddSum_succ\n  ', '')
@@ -2421,6 +2437,9 @@ class CandidateToolTests(InstanceCase):
                                 prepare=False)
         result = self.prepare(folder, expect_ok=False)
         self.assertFalse(result['ok'], result)
+        self.assertEqual(result['errors'], ['module Other/Thing.lean is outside the library; the modules of this canon '
+                                            'are Small.lean and the files under Small/'])
+        self.assertIsNone(result['build'])  # refused before anything is compiled
         self.assertNotIn('Other.thing', result['added'])
 
     def test_proves_added_to_the_record_of_a_published_declaration(self):
@@ -2525,13 +2544,6 @@ class CandidateToolTests(InstanceCase):
                 self.assertEqual(code, 1)
                 self.assertIn('verify is for the review of a candidate', answer['error'])
                 self.assertFalse((session / 'work/verify/outcome.json').exists())
-
-    def test_a_build_that_still_runs_is_reported_as_waiting(self):
-        stream = io.StringIO()
-        with redirect_stdout(stream):
-            code = canon_tool.report(None)
-        self.assertEqual(code, 124)
-        self.assertTrue(json.loads(stream.getvalue())['waiting'])
 
     def test_an_unknown_build(self):
         with self.assertRaisesRegex(CanonError, 'unknown build'):

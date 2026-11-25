@@ -68,9 +68,9 @@ def tree_hashes(root):
             for p in Path(root).rglob('*') if p.is_file()}
 
 
-def unique(rows, key='id'):
-    ids = [identifier(row.get(key)) for row in rows]
-    need(len(ids) == len(set(ids)), 'duplicate ' + key)
+def unique(rows):
+    ids = [identifier(row.get('id')) for row in rows]
+    need(len(ids) == len(set(ids)), 'duplicate id')
     return set(ids)
 
 

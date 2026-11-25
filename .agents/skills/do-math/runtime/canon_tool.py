@@ -10,9 +10,9 @@ from pathlib import Path
 import sys
 
 from canon import (BESIDE_CANDIDATE, EXTRACTION, Canon, CanonError, Conflict, apply_lean, apply_rearrangement,
-                   candidate_records, check_applied, copy_tree, declaration_text, drop_modules, load_change, name_path,
-                   read_approaches, read_question_account, read_record, required_pairs, start_build, tree_hash, update_index,
-                   wait_build, with_importers)
+                   build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
+                   load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
+                   start_build, tree_hash, update_index, wait_build, with_importers)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, replay)
 from runtime_support import read_json, write_json
@@ -261,7 +261,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
 
     Returns None while the build runs, so that the caller can come back for it; the build is kept
     with the candidate's file identity, and is started again only when the candidate changed, the canon
-    was published to, or the build was made with another extraction than this code's (canon.EXTRACTION)."""
+    was published to, the build was made with another extraction than this code's (canon.EXTRACTION), or
+    the build ended without compiling."""
     canon = Canon(instance)
     meta = read_json(Path(instance) / 'instance.json')
     settings = read_json(Path(instance) / 'settings.json')
@@ -286,8 +287,15 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
                         or organization.get('delete'))
     new_index = index
     if touches_lean:
-        if (state.get('tree') != tree or state.get('revision') != index['revision'] or state.get('fresh') != fresh
-                or state.get('extraction') != EXTRACTION):
+        kept = (state.get('tree') == tree and state.get('revision') == index['revision']
+                and state.get('fresh') == fresh and state.get('extraction') == EXTRACTION)
+        if kept:
+            # A build that ended without compiling is not kept. A compile can end for a reason that is not in
+            # the candidate's files: the system ended Lean, the broker refused or lost the compile, the build
+            # was cancelled. The same command, run again, then has to build again.
+            ended = build_outcome(instance, state['build'])
+            kept = ended is None or ended['ok']
+        if not kept:
             folder.mkdir(parents=True, exist_ok=True)
             copy_tree(canon.lean, lean_root)
             try:
