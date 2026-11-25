@@ -74,6 +74,8 @@ The note on what was read matters as much as the identifiers. It tells a later s
 
 The bibliography entry is a BibTeX entry in the candidate's `bibliography.bib`. Give the authors, the title, where the work appeared and the year, and the identifiers that fix which document it is: a DOI, an arXiv number together with its version, an MR or Zbl number.
 
+The entry holds what a reference list prints, and nothing addressed to the sessions of the research. When a paper is written from the canon, the bibliography goes into it as it stands, and the paper's list of references prints the fields of a cited entry that its style knows, `note` among them. A remark in such a field on which version the records cite, or on how the numbering of a source's theorems changed between versions, would be printed there too. Such a remark belongs in the `## Literature` part of the record, which already says what was read and where the statement stands in the source. A note that describes the work itself, such as the translator of an edition, is part of the entry.
+
 ```bibtex
 @article{AuthorAuthor2003,
   author  = {A. Author and B. Author},

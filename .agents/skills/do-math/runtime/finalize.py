@@ -93,14 +93,17 @@ def load_config(path):
     authors = config['authors']
     if not isinstance(authors, list) or not all(
             isinstance(a, dict) and text(a.get('name')) and not set(a) - {'name', 'address', 'email', 'orcid', 'github'}
-            and all(isinstance(value, str) for value in a.values()) for a in authors):
-        raise Refusal('"authors" is a list of objects with "name" and optionally "address", "email", "orcid", "github"')
+            and all(text(value) for value in a.values()) for a in authors):
+        raise Refusal('"authors" is a list of objects with "name" and optionally "address", "email", "orcid", "github", '
+                      'each a text that is not empty')
     if not text(config['licence']):
         raise Refusal('"licence" is an SPDX identifier')
     review = config['human_review']
+    # The README names the reviewers in one sentence (package.readme_text), so each of them is a name in words.
     if (not isinstance(review, dict) or set(review) - {'status', 'reviewers', 'notes'} or not text(review.get('status'))
-            or not isinstance(review.get('reviewers', []), list) or not isinstance(review.get('notes', ''), str)):
-        raise Refusal('"human_review" is an object with "status", "reviewers" and "notes"')
+            or not isinstance(review.get('reviewers', []), list) or not all(map(text, review.get('reviewers', [])))
+            or not isinstance(review.get('notes', ''), str)):
+        raise Refusal('"human_review" is an object with "status", "reviewers" (a list of names) and "notes"')
     config['human_review'] = {'status': review['status'], 'reviewers': list(review.get('reviewers', [])),
                               'notes': review.get('notes', '')}
     if type(config['parallel']) is not int or config['parallel'] < 1:
@@ -190,8 +193,9 @@ class Run:
                                'passed its exit check')
                 if not self.path(relative).exists() or package.product_hash(self.path(relative)) != known:
                     raise Stop(f'the product {relative} is not what the step that wrote it left: its hash differs from '
-                               'the one in state.json. A product is written once; restore it, or delete the entries of '
-                               'that step and of the steps after it from state.json so that they are made again')
+                               'the one in state.json. A product is written once: put it back as it was. A run whose '
+                               'product cannot be put back is abandoned by removing its work folder, after which the '
+                               'command starts anew')
             for relative in writes:
                 target = self.path(relative)
                 if relative in keep or not target.exists():
@@ -335,11 +339,12 @@ class Run:
     # -- compiling --------------------------------------------------------------------------------------
 
     def ensure_broker(self):
-        """Start the run's Lean broker when none is alive."""
+        """Start the run's Lean broker when none is alive, and none once the run is ending."""
         from lean_broker import Paths, broker_alive, launch_broker
         paths = Paths(self.work)
         with self.broker_lock:
-            if broker_alive(paths) or time.monotonic() - self.broker_attempt < BROKER_SECONDS:
+            if (self.ending.is_set() or broker_alive(paths)
+                    or time.monotonic() - self.broker_attempt < BROKER_SECONDS):
                 return
             self.broker_attempt = time.monotonic()
             launch_broker(paths)
@@ -353,14 +358,25 @@ class Run:
                 pass
 
     def stop_broker(self):
-        from lean_broker import Paths, broker_alive, terminate_tree
+        """End the run's broker: the one whose receipt is alive, and any that this command started.
+
+        A broker writes its receipt some seconds after it was started. A run that stops within those
+        seconds finds no receipt, so it ends what this command started for the work folder as well:
+        by the watcher, before a build, or by the client inside a build. With `ending` set and the
+        lock taken, a start by the watcher that was under way has returned and none follows."""
+        from lean_broker import Paths, broker_alive, started_brokers, terminate_tree
         self.ending.set()
-        info = broker_alive(Paths(self.work))
+        paths = Paths(self.work)
+        with self.broker_lock:
+            info, started = broker_alive(paths), started_brokers(paths)
         if info:
             terminate_tree(info['process']['pid'])
-            deadline = time.monotonic() + 30
-            while alive(info['process']) and time.monotonic() < deadline:
-                time.sleep(0.1)
+        for process in started:
+            terminate_tree(process.pid)
+        deadline = time.monotonic() + 30
+        while ((info and alive(info['process'])) or any(process.poll() is None for process in started)) \
+                and time.monotonic() < deadline:
+            time.sleep(0.1)
 
     def library_ok(self, label, base=None, files=None, replace=None, delete=(), extract=False, records=None,
                    keep=None, modules=None, onto=None, whole=True):
@@ -426,7 +442,9 @@ class Run:
             except RuntimeError as error:  # no broker became ready; it is started again and asked again
                 failures += 1
                 if failures > 5:
-                    return [f'the Lean broker of the run does not stay alive: {error}'], None
+                    # This is no fault of the library, so it is not returned as one: no session can repair it, and
+                    # no part is discarded for it. The step stops the run, and the same command continues there.
+                    raise RuntimeError(f'the Lean broker of the run does not stay alive: {error}')
                 time.sleep(BROKER_SECONDS)
             except ValueError as error:  # the library cannot be built as it stands: no module, a file outside the root
                 return [str(error)], None
@@ -853,7 +871,7 @@ class Run:
             owned = [c for c in review['cross'] if c['owner'] == part['id']]
             given = {**library, 'part.json': as_json({
                 'id': part['id'], 'title': part.get('title', ''), 'modules': part['modules'], 'inside': part.get('inside', ''),
-                'interface': package.interface(index, part['modules']),
+                'interface': package.interface(index, part['modules'], (self.root, self.state['main'])),
                 'cross': [{'id': c['id'], 'what': c['what']} for c in owned]})}
 
             def read(output):
@@ -1196,8 +1214,11 @@ class Run:
 
     def records(self):
         arranged = self.work / 'lib' / '4-arranged'
+        # The records that stand were written by the research, so the list is made against the research's index.
+        # The index of the selection already holds the root as a derivation proves it; against that index the
+        # root's record, which tells the proof the research gave, would count as written for the derivation.
         self.bring_records('5', arranged / 'lean', read_json(arranged / 'index.json'),
-                           read_json(self.work / 'lib' / '0-selected' / 'index.json'), arranged / 'records',
+                           canon.read_index(self.work / 'source' / 'canon' / 'index.json'), arranged / 'records',
                            arranged / 'bibliography.bib', [], self.work / 'lib' / '5-records')
 
     # -- stage 2, step 6: draft and fold-back -----------------------------------------------------------
@@ -1304,7 +1325,8 @@ class Run:
             inside = lambda module: package.folder_of(module) == part
             given = {**library, **records, 'items.json': as_json(given_items), 'part.json': as_json({
                 'id': part, 'title': part, 'modules': [m for m in modules if inside(m) and m not in self.definitions],
-                'inside': '', 'interface': package.interface(index, [m for m in modules if inside(m)]), 'cross': []})}
+                'inside': '', 'interface': package.interface(index, [m for m in modules if inside(m)],
+                                                             (self.root, self.state['main'])), 'cross': []})}
 
             def read(output):
                 report = Sessions.load(output / 'report.json')  # first: a report that does not parse goes back to a session
@@ -2072,7 +2094,7 @@ class Run:
                 self.step('2.4-merge', [lib + '1-taken', lib + '3-parts'], [lib + '4-merged'], self.merge)
                 self.step('2.4-arrange', [lib + '1-taken', lib + '2-review', lib + '3-parts', lib + '4-merged'],
                           [lib + '4-arranged'], self.arrange)
-                self.step('2.5-records', [lib + '0-selected', lib + '4-arranged'], [lib + '5-records'], self.records)
+                self.step('2.5-records', ['source', lib + '4-arranged'], [lib + '5-records'], self.records)
                 self.step('2.6-draft', ['source', lib + '0-selected', lib + '4-arranged', lib + '5-records'],
                           ['view/4', 'draft'], self.draft, keep=('draft',))
                 folded = lib + '6-folded/'

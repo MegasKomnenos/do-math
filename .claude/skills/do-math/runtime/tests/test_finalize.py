@@ -10,8 +10,9 @@ a file or folder of the session copied to another place in it. Every call is rec
 the session was given. Run as `test_finalize.py lake ...` it is Lake: `build` succeeds unless
 `lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
 runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms line for every name
-that Check.lean asks about; and every call fails when `lake.json` names under `needs_variable` a variable
-that its environment does not have. Run as `test_finalize.py version` it is Lean's version command.
+that Check.lean asks about, and fails at a name that no module Check.lean imports declares; and every
+call fails when `lake.json` names under `needs_variable` a variable that its environment does not have.
+Run as `test_finalize.py version` it is Lean's version command.
 
 The paper command is not run: `finalize.produce` is replaced by a function that writes the files the
 pipeline reads of a run of that command and records what it was called with. Its own tests are test_paper.py.
@@ -91,7 +92,17 @@ def stand_in_lake(scenario, arguments):
         import canon_lean
         return canon_lean.extract('.', 'DoMathExtract.lean')
     if arguments[:2] == ['env', 'lean'] and arguments[2] == 'Check.lean':
-        for name in re.findall(r'^#print axioms (\S+)$', Path('Check.lean').read_text(encoding='utf-8'), re.M):
+        sys.path.insert(0, str(THIS.parent))
+        import canon_lean
+        text = Path('Check.lean').read_text(encoding='utf-8')
+        # As in Lean, a name is known when a module that the file imports, directly or through others, declares it.
+        visible = canon_lean.imported('.', re.findall(r'^import (\S+)$', text, re.M))
+        declared = {declaration['user'] for declaration in canon_lean.library('.')
+                    if declaration['module'] in visible and not declaration['private']}
+        for name in re.findall(r'^#print axioms (\S+)$', text, re.M):
+            if name not in declared:
+                print(f'Check.lean: the stand-in finds no declaration {name} in the modules the file imports')
+                return 1
             axioms = settings.get('axioms', {}).get(name, ['propext', 'Quot.sound'])
             print(f"{name} : a statement\n'{name}' depends on axioms: [{', '.join(axioms)}]" if axioms
                   else f"'{name}' does not depend on any axioms")
@@ -120,6 +131,7 @@ import yaml
 sys.path[:0] = [str(THIS.parents[1]), str(THIS.parent)]
 import canon
 import finalize
+import lean_broker
 import package
 import paper
 from cli_adapter import Command, provider_for_model
@@ -547,6 +559,15 @@ class RecordTests(FinalizeCase):
         self.assertEqual(todo['Small.named_four']['record'], 'records/Small/named_four.md')
         self.assertEqual(package.drop_orphans(records, now), ['Small.stray', 'Small.unused_two'])
         self.assertFalse((records / 'Small' / 'stray.md').exists())
+        # A record that claims, under `proves`, what Lean did not confirm for this index is written again: the check
+        # of the records requires every such claim to be confirmed, and only a writer can leave the claim out.
+        (records / 'Small' / 'twice_zero.md').write_text(
+            record_text('Twice the empty sum is zero.', weight='unit', proves='Small.simp_one'),
+            encoding='utf-8', newline='\n')
+        listed = lambda: {item['declaration']: item['why'] for item in package.record_todo(now, base, records)}
+        self.assertEqual(listed().get('Small.twice_zero'), 'claims what Lean did not confirm')
+        now['pairs'] = {'same|Small.twice_zero|Small.simp_one': True}
+        self.assertNotIn('Small.twice_zero', listed())
 
     def test_records_follow_renamed_and_removed_declarations(self):
         records = self.root / 'records'
@@ -605,7 +626,9 @@ class RegistryTests(FinalizeCase):
         return lean
 
     def test_the_files_of_the_freeze_have_the_form_the_registry_reads(self):
-        lean = self.frozen(compared=('Small.root', 'Small.sq_step'), authors=[{'name': 'A. Author'}])
+        lean = self.frozen(compared=('Small.root', 'Small.sq_step'), authors=[
+            {'name': 'A. Author', 'address': 'A town', 'email': 'a@example.org'},
+            {'name': 'B. Author', 'email': 'b@example.org', 'github': 'b-author', 'orcid': '0000-0002-1825-0097'}])
         self.assertEqual(package.registry_problems(lean, 'CC-BY-4.0'), [])
         self.assertEqual((lean / 'lean-toolchain').read_text(encoding='utf-8'), 'leanprover/lean4:v4.99.0\n')
         lakefile = (lean / 'lakefile.toml').read_text(encoding='utf-8')
@@ -623,9 +646,14 @@ class RegistryTests(FinalizeCase):
         self.assertTrue(check.startswith('module\n\nimport Small.Root\n'))
         self.assertIn('#print axioms Small.root\n#check @Small.sq_step\n#print axioms Small.sq_step\n', check)
         data = yaml.safe_load((lean / 'formalization.yaml').read_text(encoding='utf-8'))
+        # An author with a GitHub login or an ORCID iD is a mapping of the name and those, as the registry reads an
+        # author; one without them is the name alone, and so is every responsible maintainer. The address and the
+        # e-mail of an author are for the paper and do not stand here.
         self.assertEqual(data['project'], {'name': 'A title', 'description': 'The first n odd numbers sum to n squared.',
-                                           'authors': ['A. Author'], 'license': 'CC-BY-4.0',
-                                           'responsible_maintainers': ['A. Author']})
+                                           'authors': ['A. Author', {'name': 'B. Author', 'github': 'b-author',
+                                                                     'orcid': '0000-0002-1825-0097'}],
+                                           'license': 'CC-BY-4.0',
+                                           'responsible_maintainers': ['A. Author', 'B. Author']})
         self.assertEqual(data['classification'], {'arxiv': ['math.CO'], 'msc2020': ['05A15']})
         # The entry that records the result as original carries the selection's grounds for it.
         self.assertEqual(data['sources'][0], {'title': 'The first n odd numbers sum to n squared.', 'type': 'original-proof',
@@ -1024,6 +1052,50 @@ class PaperRunTests(FinalizeCase):
         self.assertEqual((code, made.kwargs['resume'], out.exists()), (7, False, False))
 
 
+class BuildTests(FinalizeCase):
+    def test_a_broker_that_does_not_come_up_stops_the_step_and_is_no_fault_of_the_library(self):
+        # What `build` returns as faults goes to a session as the faults of its output, and a part is discarded for
+        # them. A broker that does not come up is raised instead, as the error with which a step stops the run.
+        run = finalize.Run(self.instance, 'odd', finalize.default_config())
+        run.library, run.expect_mb = 'Small', 64
+        absent = RuntimeError('No Lean broker became ready')
+        with patch('finalize.Run.ensure_broker'), patch('finalize.BROKER_SECONDS', 0), \
+                patch('canon.start_build', side_effect=absent) as asked, self.assertRaises(RuntimeError) as raised:
+            run.build(self.instance / 'canon' / 'lean', False, None, None, None)
+        self.assertEqual(str(raised.exception),
+                         'the Lean broker of the run does not stay alive: No Lean broker became ready')
+        self.assertEqual(asked.call_count, 6)  # asked once, and once more after each of five waits
+
+    def test_a_broker_that_was_started_and_has_not_written_its_receipt_ends_with_the_run(self):
+        # A broker writes its receipt some seconds after it was started. A run that stops within those seconds finds
+        # no receipt; a broker left behind then would go on holding broker.log in the work folder. The stand-in is a
+        # broker that never gets as far as its receipt, started as the watcher starts one and as the client inside a
+        # build does.
+        slow = self.root / 'slow_broker.py'
+        slow.write_text('import time\ntime.sleep(120)\n', encoding='utf-8')
+        with patch('finalize.REPOSITORY', self.repository):
+            run = finalize.Run(self.instance, 'odd', finalize.default_config())
+        paths = lean_broker.Paths(run.work)
+
+        def ended():
+            for process in lean_broker.started_brokers(paths):
+                process.kill()
+                process.wait()
+
+        self.addCleanup(ended)
+        with patch('lean_broker.SCRIPT', slow):
+            run.ensure_broker()
+            lean_broker.launch_broker(paths)
+            started = lean_broker.started_brokers(paths)
+            self.assertEqual(len(started), 2)
+            self.assertIsNone(lean_broker.broker_alive(paths))  # they run, and there is no receipt of either
+            run.stop_broker()
+            self.assertEqual([process.poll() is None for process in started], [False, False])
+            run.broker_attempt = float('-inf')
+            run.ensure_broker()  # the watcher's next look, were it to come after the stop
+            self.assertEqual(lean_broker.started_brokers(paths), [])
+
+
 class PromptTests(FinalizeCase):
     def prepared(self):
         run = finalize.Run(self.instance, 'odd', finalize.default_config())
@@ -1064,13 +1136,18 @@ class RefusalTests(FinalizeCase):
     def test_what_cannot_be_packaged_is_refused_before_any_work(self):
         self.refused('does not name a package', config=self.config(), name='Odd_Squares')
         self.refused('unknown configuration key: author', config=self.config(author='A'))
+        # A later stage cannot use an empty field of an author or a reviewer that is no name, and the configuration
+        # of a run that has begun cannot be changed, so both are refused here.
+        self.refused('each a text that is not empty', config=self.config(authors=[{'name': 'A. Author', 'email': ''}]))
+        self.refused('"reviewers" (a list of names)',
+                     config=self.config(human_review={'status': 'self-assessed', 'reviewers': [{'name': 'R. Reader'}]}))
         self.refused('"parallel" is the number of sessions', config={'parallel': 0})
         self.refused('no licence text for MIT', config=self.config(licence='MIT'))
         with patch.dict(sys.modules, {'yaml': None}):
             self.refused('has no PyYAML', config=self.config())
         self.refused('was not found', config={'tex': ['no-such-tex-command']})
         self.solved.mkdir(parents=True)
-        self.refused('exists', config=self.config())
+        self.refused(f'{self.solved} exists', config=self.config())
         self.solved.rmdir()
         write_json(self.instance / 'settings.json', {**read_json(self.instance / 'settings.json'), 'no_such_setting': 1})
         self.refused('the settings of the instance are not valid: unknown setting: no_such_setting', config=self.config())
@@ -1227,7 +1304,9 @@ class RunTests(FinalizeCase):
         self.assertEqual((self.solved / 'lean' / 'Solution.lean').read_text(encoding='utf-8'),
                          'module\n\npublic import Small.Root\npublic import Small.Step\n')
         meta = yaml.safe_load((self.solved / 'lean' / 'formalization.yaml').read_text(encoding='utf-8'))
-        self.assertEqual((meta['project']['name'], meta['project']['authors']), ('Odd numbers sum to squares', ['A. Author']))
+        # The ORCID iD of the author goes with the name into the registry's file; the maintainer is named alone.
+        self.assertEqual((meta['project']['name'], meta['project']['authors'], meta['project']['responsible_maintainers']),
+                         ('Odd numbers sum to squares', [{'name': 'A. Author', 'orcid': '0000'}], ['A. Author']))
         lake = (self.scenario / 'lake-calls.txt').read_text(encoding='utf-8').split('\n')
         self.assertEqual(lake[:4], ['build', 'env lean DoMathExtract.lean', 'env lean Check.lean', ''])  # one Lake build
         readme = (self.solved / 'README.md').read_text(encoding='utf-8')
@@ -1287,7 +1366,7 @@ class RunTests(FinalizeCase):
         self.assertIn('For the registry the result is recorded as original. The records name no proof of it', decisions)
         # Started again, the command refuses: the package exists.
         self.assertEqual(self.run_command(config=config), 1)
-        self.assertIn('exists', self.said)
+        self.assertIn(f'{self.solved} exists', self.said)
 
     def test_a_stopped_run_keeps_its_work_folder_and_continues_at_the_step_that_stopped(self):
         # The review leaves no partition, twice: the step stops the run.
@@ -1323,6 +1402,7 @@ class RunTests(FinalizeCase):
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The run stopped at the step `2.2-review`', report)
         self.assertIn('the product lib/1-taken is not what the step that wrote it left', report)
+        self.assertIn('put it back as it was', report)  # the remedy that the operator's guide gives
         self.assertEqual(len(self.calls('review')), 2)
         helper.write_bytes(original)
 
@@ -1522,6 +1602,11 @@ class RunTests(FinalizeCase):
         self.assertIn('the statement of the main theorem `Small.twice_zero` names declarations outside the definition '
                       'modules (`Small.twice`)', self.decisions())
         self.assertIn('#print axioms Small.twice_zero', (lean / 'Check.lean').read_text(encoding='utf-8'))
+        # The root and the main theorem keep their names and statements, and the part that holds them is told so,
+        # although no module of another part uses either.
+        core = next(call for call in self.calls('simplify') if call['section'] == 'core')
+        self.assertEqual([item['declaration'] for item in self.session_file(core, 'part.json')['interface']],
+                         ['Small.root', 'Small.twice_zero'])
         freeze = read_json(self.work / 'freeze.json')
         self.assertEqual(freeze['compared'], ['Small.root'])
         self.assertEqual(freeze['folders']['lean'], canon.tree_hash(lean))
@@ -1597,6 +1682,9 @@ class RunTests(FinalizeCase):
         self.assertEqual((item['from'], item['declaration'], item['wanted']),
                          ('source', 'Small.helper_zero', self.STRONGER['states']))
         self.assertIn('The work euler1748 states this form (Chapter 1, section 2)', item['detail'])
+        # The fold-back session of the part that holds the root and the main theorem is told that both stay as they are.
+        part = self.session_file(self.calls('foldback')[0], 'part.json')
+        self.assertEqual([entry['declaration'] for entry in part['interface']], ['Small.root', 'Small.sq_step'])
         # The source is entered for the declaration that has its form, by the session that opened it again.
         self.assertEqual([(r['declaration'], r['source'], r['result']) for r in self.session_file(check, 'requests.json')],
                          [('Small.block_sum', 'euler1748', 'the empty sum')])
@@ -1661,6 +1749,32 @@ class RunTests(FinalizeCase):
         self.assertEqual([row['id'] for row in rows], ['s:thm:main', 'g1'])
         self.assertIn('## Step 6: records whose statement said more than the Lean statement', self.decisions())
         self.assertIn('- `Small.root`: ' + said, self.decisions())
+
+    def test_the_record_of_a_root_that_a_derivation_proves_is_listed_as_changed(self):
+        derived = module_text(theorem('root', ROOT_STATEMENT, uses=['named_four'], proof='rfl',
+                                      doc='The sum of the first `n` odd numbers is the square of `n`.'),
+                              imports=('Small.Defs', 'Small.Helper'))
+        option = {'id': 'a', 'main': 'Small.named_four', 'route': 'derivation', 'proves': 'p', 'rests_on': 'r', 'size': 's',
+                  'for': 'f', 'against': 'a'}
+        plan = script(selection=[{'output/decision.json': decision(options=[option]), 'output/derivations/a.lean': derived}],
+                      review=[{'output/review.json': json.dumps({
+                          'parts': [{'id': 'core', 'modules': ['Small.Root', 'Small.Helper']}], 'cross': []})}])
+        plan['simplify:core'] = [{'output/report.json': json.dumps({'deleted': [], 'cross': [], 'notes': ''})}]
+        plan['records-write:5-01'] = [{
+            'output/records/Small/root.md': record_text('The sum of the first n odd numbers equals n times n.', weight='unit',
+                                                        proof='From `Small.named_four`.'),
+            'output/records/Small/named_four.md': record_text('The first four odd numbers sum to sixteen.'),
+            'output/findings.json': '[]'}]
+        plan['records-compare:5-01'] = [{'output/verdicts.json': json.dumps([
+            {'declaration': name, 'verdict': 'agrees', 'difference': ''} for name in ('Small.root', 'Small.named_four')])}]
+        with patch('finalize.Run.draft', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.6-draft`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        # The research wrote the root's record for the proof it gave. The root now has the proof of the derivation,
+        # so its record is listed as written for another Lean text, whatever the old record names.
+        todo = self.session_file(self.calls('records-write')[0], 'todo.json')
+        self.assertEqual({item['declaration']: item['why'] for item in todo},
+                         {'Small.named_four': 'names a declaration that is gone', 'Small.root': 'changed'})
 
     def test_axioms_beyond_the_three_at_the_freeze_stop_the_run(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}

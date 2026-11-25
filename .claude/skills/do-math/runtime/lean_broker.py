@@ -25,6 +25,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import uuid
 
@@ -1727,16 +1728,33 @@ def broker_alive(paths):
         return None
 
 
+STARTED = defaultdict(list)  # by instance folder: the brokers this process started and has not seen end
+STARTED_LOCK = threading.Lock()  # a command with several threads starts brokers from more than one of them
+
+
 def launch_broker(paths, breakaway=False):
     """Start a detached broker for the instance, its output going to broker.log, and return its Popen.
 
     The runner starts the broker this way, and so does a client outside a session (ensure_broker); the
-    lock settles a race between two starts."""
+    lock settles a race between two starts. The process is kept for `started_brokers`."""
     paths.ensure()
     with paths.log.open("ab") as log:
-        return subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
-                                cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                                **popen_options(detached=True, breakaway=breakaway))
+        process = subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
+                                   cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                   **popen_options(detached=True, breakaway=breakaway))
+    with STARTED_LOCK:
+        STARTED[paths.instance] = [one for one in STARTED[paths.instance] if one.poll() is None] + [process]
+    return process
+
+
+def started_brokers(paths):
+    """The brokers that this process started for the instance and that have not ended.
+
+    A broker writes its receipt some seconds after it was started, and `broker_alive` does not see it
+    until then. A command that ends the broker of its instance ends these as well, whichever of its
+    parts started them."""
+    with STARTED_LOCK:
+        return [one for one in STARTED[paths.instance] if one.poll() is None]
 
 
 def ensure_broker(paths):

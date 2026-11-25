@@ -10,7 +10,7 @@ In the first packaging of this kind only some groups of records were compared in
 
 ## What you are given
 
-- `todo.json`: the declarations whose records you compare, each with its `file` under `lean/` and the path of its `record`. The field `why` says why the record was written: the declaration was `new`, it had `changed`, its earlier record named a declaration that is gone, or a comparison of the paper's draft with the library found that its statement in words said something the Lean statement does not, which the entry then gives under `disagreement`.
+- `todo.json`: the declarations whose records you compare, each with its `file` under `lean/` and the path of its `record`. The field `why` says why the record was written: the declaration was `new`, it had `changed`, its earlier record named a declaration that is gone, its earlier record claimed under `proves` or `refutes` what Lean did not confirm for the library as it now stands, or a comparison of the paper's draft with the library found that its statement in words said something the Lean statement does not, which the entry then gives under `disagreement`.
 
 ```json
 [{"declaration": "Lib.count_le", "file": "Lib/Count/Basic.lean", "why": "changed", "record": "records/Lib/count_le.md"}]

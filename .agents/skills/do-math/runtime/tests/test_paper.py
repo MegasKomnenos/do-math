@@ -830,16 +830,6 @@ class ManuscriptTests(PaperCase):
         self.assertIn('lem:expand is a result from the literature; it is cited and has no proof',
                       check(tools.replace('\\end{lemma}\n\n', '\\end{lemma}\n\\begin{proof}\nExpand.\n\\end{proof}\n\n', 1)))
 
-    def test_the_running_head_is_the_title_with_its_formulas_left_as_they_are(self):
-        # amsart capitalizes the title for the head, and with no author it does so twice, formulas included.
-        tex = paper.assemble(PLAN, PARTS)[0]
-        title = PLAN['title'].strip()
-        self.assertIn('\\newcommand{\\RunningHead}{' + title + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n'
-                      '\\title{' + title + '}\n', tex)
-        # The head is printed when it has room beside the page number, and left out when it has not.
-        self.assertIn('\\maketitle\n\\sbox0{\\normalfont\\scriptsize\\RunningHead}\\ifdim\\wd0>.85\\textwidth\\markboth{}{}'
-                      '\\else\\markboth{\\RunningHead}{\\RunningHead}\\fi\n', tex)
-
     def test_the_running_head_is_the_short_title_when_the_plan_gives_one(self):
         title = PLAN['title'].strip()
         tex = paper.assemble({**PLAN, 'short_title': ' A short title of $x^2$ '}, PARTS)[0]
@@ -856,6 +846,16 @@ class ManuscriptTests(PaperCase):
 
 class TypesettingTests(unittest.TestCase):
     """What the script writes around the parts for TeX and reads from the log of TeX. No instance is needed."""
+
+    def test_the_running_head_is_the_title_with_its_formulas_left_as_they_are(self):
+        # amsart capitalizes the title for the head, and with no author it does so twice, formulas included.
+        tex = paper.assemble(PLAN, PARTS)[0]
+        title = PLAN['title'].strip()
+        self.assertIn('\\newcommand{\\RunningHead}{' + title + '}\n\\uppercasenonmath\\RunningHead\n\\begin{document}\n'
+                      '\\title{' + title + '}\n', tex)
+        # The head is printed when it has room beside the page number, and left out when it has not.
+        self.assertIn('\\maketitle\n\\sbox0{\\normalfont\\scriptsize\\RunningHead}\\ifdim\\wd0>.85\\textwidth\\markboth{}{}'
+                      '\\else\\markboth{\\RunningHead}{\\RunningHead}\\fi\n', tex)
 
     def test_the_subsection_headings_set_their_formulas_bold(self):
         self.assertIn('{-.5em}{\\normalfont\\bfseries\\boldmath}}', paper.assemble(PLAN, PARTS)[0])
@@ -1460,7 +1460,7 @@ class RunTests(PaperCase):
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
         self.assertEqual([e['status'] for e in self.events('end')], ['no_tex', 'complete'])
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'the TeX command no-such-tex-command was not found'):
             paper.tex_recipe(['no-such-tex-command'])
 
     def test_typesetting_later_keeps_what_stayed_open_and_needs_a_run_that_finished_its_checks(self):
@@ -1888,7 +1888,7 @@ class RunTests(PaperCase):
             self.assertEqual([Path(command[0]).stem for command in recipe], ['pdflatex', 'bibtex', 'pdflatex', 'pdflatex'])
             # Any other command is run once, with the manuscript as its last argument.
             self.assertEqual(paper.tex_recipe(['tectonic-0.15', '-X', 'compile']), [['tectonic-0.15', '-X', 'compile', 'paper.tex']])
-            with self.assertRaises(paper.Stop):
+            with self.assertRaisesRegex(paper.Stop, 'the TeX command tectonic was not found'):
                 paper.tex_recipe(['tectonic'])
         self.assertEqual(paper.tex_recipe(TEX), [[*TEX, 'paper.tex']])
         # --tex takes the rest of the command line, so an option of this command after it is a mistake.
@@ -2042,6 +2042,8 @@ class BriefTests(PaperCase):
                       'content is written at that place.', text)
         self.assertIn('Passing from n to n + 1 adds the odd number 2n + 1.', text)
 
+
+class NamedPartTests(unittest.TestCase):
     def test_the_section_that_a_reader_names_is_understood_in_the_forms_a_reader_gives_it(self):
         for value, part in (('sec:tools', 'tools'), ('tools', 'tools'), (' Sec:Proof ', 'proof'), ('Section 2', 'tools'),
                             (3, 'proof'), ('1', 'intro'), ('Preliminaries', 'tools'), ('proof of the main theorem', 'proof'),

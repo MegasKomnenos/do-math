@@ -22,7 +22,7 @@ Research under pressure leaves things of the following kinds. They are examples 
  "interface": [{"declaration": "Lib.count_le", "statement": "..."}], "cross": [{"id": "x1", "what": "..."}]}
 ```
 
-`modules` are the modules of your part. `inside` is what the reviewing session found worth simplifying in them; it read the whole library once and compiled nothing, so take its findings as the starting point of your reading and its proposals as proposals. `interface` lists the declarations of your part that modules of other parts use, each with its statement. `cross` lists the simplifications that reach beyond your part and that the review gave to you.
+`modules` are the modules of your part. `inside` is what the reviewing session found worth simplifying in them; it read the whole library once and compiled nothing, so take its findings as the starting point of your reading and its proposals as proposals. `interface` lists the declarations of your part that keep their names and their statements, each with its statement: those that modules of other parts use, and the root and the main theorem where they lie in your part. The steps after this one find the root and the main theorem by name, and the package states the main theorem as it was chosen. `cross` lists the simplifications that reach beyond your part and that the review gave to you.
 
 Read `part.json` in full, then the modules of your part in full, proofs included, before you change anything.
 

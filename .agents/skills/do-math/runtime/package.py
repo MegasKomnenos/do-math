@@ -481,8 +481,21 @@ def record_todo(index, base, records_root):
     and those whose record names a declaration the base index had and the library no longer has:
     between backticks, by its full name or by its name without the library's first component, or
     after `proves:` or `refutes:`, as the declaration it claims to prove or to refute. The check of
-    the records refuses a claim about a declaration that is gone, so the record that makes it is due."""
+    the records refuses a claim about a declaration that is gone, so the record that makes it is due.
+    So is a record whose claim under `proves` or `refutes` Lean did not confirm when `index` was
+    extracted, as after a rename of the declaration it names: the check requires every such claim to
+    be confirmed, and only a session changes a record."""
     records_root = Path(records_root)
+    confirmed = index.get('pairs', {})
+
+    def unconfirmed(name, text):
+        try:
+            meta = parse_record(text, name)['meta']
+        except CanonError:
+            return False  # the check of the records reports a record that does not parse
+        return any(meta.get(key) and not confirmed.get(f'{kind}|{name}|{meta[key]}')
+                   for key, kind in (('proves', 'same'), ('refutes', 'negation')))
+
     gone = set(base['entries']) - set(index['entries'])
     short = lambda name: name.split('.', 1)[1] if '.' in name else name
     standing = {short(name) for name in index['entries']}
@@ -499,6 +512,8 @@ def record_todo(index, base, records_root):
         elif (set(BACKTICKED.findall(text := read_text(path)))
               | set(re.findall(r'^(?:proves|refutes):[ \t]*(\S+)[ \t]*$', text, re.M))) & names:
             why = 'names a declaration that is gone'
+        elif unconfirmed(name, text):
+            why = 'claims what Lean did not confirm'
         else:
             continue
         todo.append({'declaration': name, 'file': entry['file'], 'why': why, 'record': relative if path.is_file() else None})
@@ -604,10 +619,13 @@ def bibliography_field(text, key, field):
 
 # ----------------------------------------------------------------------------- parts
 
-def interface(index, modules):
-    """The declarations of a set of modules that elements of other modules use, with their statements."""
+def interface(index, modules, fixed=()):
+    """The declarations of a set of modules that keep their names and statements, with their statements.
+
+    They are the declarations that elements of other modules use, and those of `fixed` that lie in these
+    modules: the root and the main theorem, which every later step of a run finds by name."""
     modules = set(modules)
-    used = set()
+    used = set(fixed)
     for entry in index['entries'].values():
         if entry['module'] not in modules:
             used.update(entry['uses'] + entry['statement_uses'])
@@ -936,6 +954,9 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     the account of fidelity (where the Lean statement departs from the proposition in words) are the
     selection's; the account of the compared theorem is the statement of the root's record, verbatim;
     authors and responsible maintainers are the configuration's and stay empty when it names none.
+    An author for whom the configuration gives a GitHub login or an ORCID iD is entered as a mapping
+    with the name and what is given of the two, the form in which the registry reads them; every other
+    author, and every responsible maintainer, is entered by name.
     The entry that records a result as original carries the selection's grounds for that as its note.
 
     One source can come from the library stage instead of the selection: when the result is recorded as
@@ -947,6 +968,8 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     theorem carries it, and the selection's sentence where a record has none."""
     registry = decision['registry']
     names = [author['name'] for author in config['authors']]
+    authors = [{'name': author['name'], **{key: author[key] for key in ('github', 'orcid') if author.get(key)}}
+               if author.get('github') or author.get('orcid') else author['name'] for author in config['authors']]
     sources = []
     if registry.get('origin') == 'original':
         sources.append({'title': decision['sentence'], 'type': 'original-proof', 'relationship': 'other',
@@ -976,7 +999,7 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     sections = (root_record or {}).get('sections', {})
     return {
         'version': 'v0.4',
-        'project': {'name': title, 'description': decision['sentence'], 'authors': names, 'license': licence,
+        'project': {'name': title, 'description': decision['sentence'], 'authors': authors, 'license': licence,
                     'responsible_maintainers': names},
         'classification': {'arxiv': list(registry['arxiv']), 'msc2020': list(registry['msc2020'])},
         'sources': sources,
