@@ -570,9 +570,11 @@ class Run:
                 elif type(claim.get('holds')) is not bool:
                     problems.append(f'claim {number} has no verdict: "holds" is true or false')
                 elif not claim['holds'] and (not is_text(claim.get('correction'))
-                                             or type(claim.get('changes_comparison')) is not bool):
+                                             or type(claim.get('changes_comparison')) is not bool
+                                             or type(claim.get('printed')) is not bool):
                     problems.append(f'claim {number} does not hold and gives no correction, or does not say whether the '
-                                    'correction changes a ground of the comparison')
+                                    'correction changes a ground of the comparison ("changes_comparison"), or whether '
+                                    'the claim stands in a text that the package prints ("printed")')
             if problems:
                 raise Unusable(problems)
             return data
@@ -581,7 +583,9 @@ class Run:
                  **{f'derivations/{oid}.lean': text for oid, text in chosen['derivations'].items()}}
         reading = self.task('selection-read', 'selection-read', given, read_reading, self.sessions.assessor)
         wrong = [claim for claim in reading['claims'] if not claim['holds']]
-        if any(claim['changes_comparison'] for claim in wrong):
+        # The sentence and the registry's texts go into the package as the decision has them, and no later step
+        # rewrites them: a corrected claim there is acted on by a decision made once more, as a changed ground is.
+        if any(claim['changes_comparison'] or claim.get('printed') for claim in wrong):
             again = {**files, 'reading.json': as_json(reading), 'previous/decision.json': as_json(chosen['decision']),
                      **{f'previous/derivations/{oid}.lean': text for oid, text in chosen['derivations'].items()}}
             chosen = self.task('selection', 'selection', again, check, self.sessions.writer, label='again')
@@ -610,7 +614,12 @@ class Run:
         lines += ['', 'The runner-up: ' + (decision.get('runner_up') or 'none, there was one option') + '.']
         lines += [f"- The independent reading corrected a claim about option {c['option']}: {c['correction'].strip()}"
                   + (' This changed a ground of the comparison, and the selection decided once more.'
-                     if c['changes_comparison'] else '') for c in wrong]
+                     if c['changes_comparison'] else
+                     ' The claim stood in a text that the package prints, and the selection decided once more.'
+                     if c.get('printed') else '') for c in wrong]
+        registry = decision['registry']
+        lines += ['', f"For the registry the result is recorded as {registry['origin']}. "
+                  + registry.get('novelty', '').strip()]
         self.decide('Stage 1: selection', '\n'.join(lines))
 
     def read_decision(self, output, index, model, bibliography):
@@ -636,8 +645,8 @@ class Run:
             problems.append('"runner_up" is null when there is one option')
         registry = data.get('registry')
         if not isinstance(registry, dict):
-            problems.append('"registry" is an object with "arxiv", "msc2020", "origin", "sources" and '
-                            '"divergences"')
+            problems.append('"registry" is an object with "arxiv", "msc2020", "origin", "sources", '
+                            '"related_formalizations", "divergences", "settles", "novelty" and "stated_in"')
         else:
             arxiv, msc = registry.get('arxiv'), registry.get('msc2020')
             if not (isinstance(arxiv, list) and 1 <= len(arxiv) <= 2
@@ -651,13 +660,28 @@ class Run:
             if not is_text(registry.get('divergences')):
                 problems.append('"registry.divergences" says where the Lean statement of the root departs from the '
                                 'proposition in words, or in a plain sentence that it does not')
+            problems += [f'"registry.{key}" says {what}' for key, what in (
+                ('settles', 'what the result is, whose conjecture or question it settles and where that was posed, as '
+                            'far as root.md and the records say'),
+                ('novelty', 'what the research recorded about whether the result was known before, and what it did '
+                            'not look into'),
+                ('stated_in', 'where each statement of "settles", of "novelty", of the notes and of the earlier '
+                              'formalisations stands')) if not is_text(registry.get(key))]
             keys = package.bibliography_keys(bibliography)
             sources = registry.get('sources')
             if not isinstance(sources, list) or not all(
                     isinstance(s, dict) and s.get('key') in keys and s.get('relationship') in package.RELATIONSHIPS
-                    for s in sources):
+                    and is_text(s.get('note')) for s in sources):
                 problems.append('"registry.sources" gives, for sources of the bibliography by their keys, a relationship '
-                                'of ' + ', '.join(package.RELATIONSHIPS))
+                                'of ' + ', '.join(package.RELATIONSHIPS) + ', and a note that says what the source '
+                                'has of the result and where')
+            related = registry.get('related_formalizations')
+            if not isinstance(related, list) or not all(
+                    isinstance(r, dict) and is_text(r.get('id')) and r.get('relationship') in package.RELATED
+                    and is_text(r.get('note')) for r in related):
+                problems.append('"registry.related_formalizations" is an array, empty when root.md and the records '
+                                'name no earlier formalisation; each entry has an "id", a "relationship" of '
+                                + ', '.join(package.RELATED) + ', and a "note"')
         if problems:
             raise Unusable(problems)
         elements, entries = model['elements'], index['entries']
@@ -1617,8 +1641,10 @@ class Run:
             cited, plan['title'], freeze['toolchain'], freeze['requires'], models, len(launched),
             self.state['run']['commit'])
         write_json(self.work / 'facts.json', facts)
-        with open(SKILL / 'finalize' / 'licences' / (self.config['licence'] + '.txt'), 'rb') as stream:
-            (self.package / 'LICENSE').write_bytes(stream.read())  # verbatim, byte for byte
+        # The text of the licence as the skill has it, with LF line endings: a checkout on Windows can give the
+        # skill's file Windows line endings, and no text file of the package has them.
+        write_text(self.package / 'LICENSE',
+                   package.read_text(SKILL / 'finalize' / 'licences' / (self.config['licence'] + '.txt')))
         fails = list(self.state['measured']['fails'] if freeze['compared'] == [self.root] else freeze['fails'])
         introduction = self.work / 'paper' / 'parts' / (plan['sections'][0]['id'] + '.tex')
         given = {'facts.json': as_json(facts), 'account.md': decision['account'],
@@ -1641,7 +1667,8 @@ class Run:
             write_text(self.package / 'README.md', package.readme_text(
                 facts, package.read_text(self.work / 'source' / 'root.md'), entries[self.root]['statement'],
                 entries[main]['statement'], texts['outline.md'], texts['obtained.md'], freeze['check_output'],
-                self.config, self.config['licence'], fails, cited))
+                self.config, self.config['licence'], fails, cited,
+                package.provenance(decision['registry'], self.package / 'lean' / 'formalization.yaml')))
 
         texts = self.task('readme-write', 'readme-write', given, prose, self.sessions.writer)
         compose(texts)
@@ -1703,8 +1730,32 @@ class Run:
                         'requires at least one source with the relationship `formalizes`, `adapts` or '
                         '`independently-proves`.')
         fill += [f'{rule}. The registry will not accept the package as it is.' for rule in fails]
-        fill.append(f"The library is on {freeze['toolchain']}. The registry accepts toolchains at or above a minimum "
-                    'that it changes; read it before submitting.')
+        registry = decision['registry']
+        fill.append('What the result is in the literature. Under "Where the result comes from" the README says what the '
+                    "research's records hold: whose question the result settles, where that was posed, and on what "
+                    "grounds the result is recorded as original or as known. The registry's review rejects a result "
+                    'for which it cannot identify a research area and a reader, and it marks down a claim of novelty '
+                    'that has no search of the literature behind it. The run adds no such claim of its own. Read that '
+                    'part, and add what you know and the records do not, each with its source.')
+        if registry.get('origin') == 'original':
+            fill.append('`sources` in `lean/formalization.yaml`: an earlier public account of the result that the '
+                        "research's records do not name belongs there, your own included, such as a preprint, a note "
+                        'or a deposited record of earlier work. With such an account the result may be source-based '
+                        'and no longer original.')
+        if not registry.get('related_formalizations'):
+            fill.append("`related_formalizations` in `lean/formalization.yaml` is empty: the research's records name no "
+                        'earlier formal proof of the result, and the run did not search for one. Add each one you '
+                        'know, with how this library relates to it.')
+        if facts.get('registry_sources', 0) > (registry.get('origin') == 'original'):
+            fill.append('`author_endorsement` of each source in `lean/formalization.yaml`: whether the authors of a '
+                        'source took part, were contacted or answered is known to you alone, so the field is not '
+                        'written. Its values are `participated`, `endorsed`, `no-response`, `not-contacted`, '
+                        '`declined`, `n/a` and `other`; the registry does not require it.')
+        fill.append(f"The Lean release. The library is on {freeze['toolchain']}. The registry takes the tools with which "
+                    'it renders and exports a submission from the Lean release of the submitted library, so a '
+                    'submission can fail there because of the release alone, with a library that passes every check. '
+                    "Before submitting, read the registry's open issues for this release, and the minimum release it "
+                    'accepts, which it changes.')
         fill.append('A submission is the package published as a repository of its own, with `lean` as the project '
                     'directory; the pipeline prepares and does not submit.')
         self.stop_broker()
@@ -1733,8 +1784,9 @@ class Run:
             '- The history: every entry points to a member of the archive and was read by a session that had only the '
             'entries and those records; the archive has the SHA-256 its manifest states.',
             '- The final check: every relative link resolves inside the package; no file and no member of the archive '
-            'holds the account name; no document the pipeline wrote holds a drive path; `lean/` and `records/` have '
-            'the hashes of the freeze; every line of `MANIFEST.sha256` holds.', '',
+            'holds the account name; no document the pipeline wrote holds a drive path; every text file ends its '
+            'lines with LF; `lean/` and `records/` have the hashes of the freeze; every line of `MANIFEST.sha256` '
+            'holds.', '',
             '## What was not verified', '',
             "- The classification codes were checked for their form, not against the registry's lists.",
             "- The registry's verifier and Lean's comparator were not run on the package.",

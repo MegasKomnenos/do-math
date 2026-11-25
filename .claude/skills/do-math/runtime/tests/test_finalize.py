@@ -168,8 +168,13 @@ def decision(main='Small.sq_step', options=None, choice='a', runner_up=None, **m
     return json.dumps({'options': options, 'choice': choice, 'runner_up': runner_up, 'reasons': 'It is the only route.',
                        'sentence': 'The first n odd numbers sum to n squared.', 'account': ACCOUNT,
                        'registry': {'arxiv': ['math.CO'], 'msc2020': ['05A15'], 'origin': 'original',
-                                    'sources': [{'key': 'gauss1801', 'relationship': 'background'}],
-                                    'divergences': 'The Lean sum starts at index 0; the empty sum is 0.'}, **more})
+                                    'sources': [{'key': 'gauss1801', 'relationship': 'background',
+                                                 'note': 'It has the step in its first section.'}],
+                                    'related_formalizations': [],
+                                    'divergences': 'The Lean sum starts at index 0; the empty sum is 0.',
+                                    'settles': 'The identity is classical; the records name nobody who posed it.',
+                                    'novelty': 'The records name no proof of it and report no search for one.',
+                                    'stated_in': 'root.md; the record of Small.sq_step.'}, **more})
 
 
 def script(**changes):
@@ -303,9 +308,10 @@ class FinalizeCase(InstanceCase):
             return self.paper_code
         (out / 'parts').mkdir(exist_ok=True)
         (out / 'parts' / 'intro.tex').write_text('We prove that the odd numbers sum to squares.\n', encoding='utf-8')
-        (out / 'paper.tex').write_text('\\documentclass{amsart}\n', encoding='utf-8')
+        # As the paper command writes them: with LF line endings on every platform.
+        (out / 'paper.tex').write_text('\\documentclass{amsart}\n', encoding='utf-8', newline='\n')
         (out / 'paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
-        (out / 'references.bib').write_text(BIBLIOGRAPHY, encoding='utf-8')
+        (out / 'references.bib').write_text(BIBLIOGRAPHY, encoding='utf-8', newline='\n')
         write_json(out / 'correspondence.json', {'root': 'Small.root', 'statements': [
             {'label': 'thm:main', 'element': 'Small.root', 'cited': None},
             {'label': 'lem:step', 'element': 'Small.sq_step', 'cited': 'gauss1801'}]})
@@ -577,10 +583,14 @@ class RegistryTests(FinalizeCase):
                                            'authors': ['A. Author'], 'license': 'CC-BY-4.0',
                                            'responsible_maintainers': ['A. Author']})
         self.assertEqual(data['classification'], {'arxiv': ['math.CO'], 'msc2020': ['05A15']})
+        # The entry that records the result as original carries the selection's grounds for it.
         self.assertEqual(data['sources'][0], {'title': 'The first n odd numbers sum to n squared.', 'type': 'original-proof',
-                                              'relationship': 'other'})
-        self.assertEqual(data['sources'][1]['title'], 'Disquisitiones Arithmeticae')
-        self.assertEqual(data['sources'][1]['relationship'], 'background')
+                                              'relationship': 'other',
+                                              'note': 'The records name no proof of it and report no search for one.'})
+        self.assertEqual(data['sources'][1], {'title': 'Disquisitiones Arithmeticae', 'authors': ['Gauss, Carl Friedrich'],
+                                              'id': 'gauss1801', 'relationship': 'background',
+                                              'note': 'It has the step in its first section.'})
+        self.assertEqual(data['related_formalizations'], [])
         self.assertEqual(package.registry_sources(lean / 'formalization.yaml'), len(data['sources']))
         self.assertEqual(data['review']['status'], 'agent-reviewed')
         # Fidelity is what the selection wrote of the Lean statement, and not the explanation of the root's record.
@@ -617,6 +627,38 @@ class RegistryTests(FinalizeCase):
         self.assertEqual([row['source'] for row in both['alignment']['statements']],
                          ['The first n odd numbers sum to n squared.', 'The step.'])
         self.assertEqual(first['sources'][1]['relationship'], 'background')
+
+    def test_a_source_carries_the_identifier_of_its_entry_and_the_note_of_the_selection(self):
+        bibliography = ('@article{a1,\n  title = {One},\n  doi = {10.1000/1},\n  eprint = {2501.00001}\n}\n'
+                        '@misc{a2,\n  title = {Two},\n  eprint = {2501.00002},\n  url = {https://example.org/two}\n}\n'
+                        '@misc{a3,\n  title = {Three},\n  url = {https://example.org/three}\n}\n')
+        earlier = [{'id': 'https://example.org/formal', 'relationship': 'independent', 'note': 'In another prover.'}]
+        chosen = json.loads(decision())
+        chosen['registry'].update(origin='source-based', related_formalizations=earlier, sources=[
+            {'key': 'a1', 'relationship': 'formalizes', 'note': 'Theorem 1.'},
+            {'key': 'a2', 'relationship': 'background', 'note': 'It poses the question.'},
+            {'key': 'a3', 'relationship': 'other', 'note': 'A table of values.'}])
+        data = package.formalization('T', chosen, bibliography, finalize.default_config(), 'CC-BY-4.0', [], 'Small', [],
+                                     None, {}, 't')
+        self.assertEqual([(s['id'], s['note']) for s in data['sources']],
+                         [('doi:10.1000/1', 'Theorem 1.'), ('arXiv:2501.00002', 'It poses the question.'),
+                          ('https://example.org/three', 'A table of values.')])
+        self.assertEqual(yaml.safe_load(package.yaml_text(data))['related_formalizations'], earlier)
+        # The README lists the works and the earlier formal proofs as the registry's file does, under the result.
+        path = self.root / 'formalization.yaml'
+        package.write_text(path, package.yaml_text(data) + '\n')
+        lines = package.provenance_lines(package.provenance(chosen['registry'], path))
+        self.assertEqual(lines[:5], ['### Where the result comes from', '',
+                                     'The identity is classical; the records name nobody who posed it.', '',
+                                     'In `lean/formalization.yaml`, the file that describes the package for a '
+                                     'formal-proof registry, the result is recorded as source-based, which there means a '
+                                     'result that was presented elsewhere before. The records name no proof of it and '
+                                     'report no search for one.'])
+        self.assertIn('- One (doi:10.1000/1). The library formalises the result of this work. Theorem 1.', lines)
+        self.assertIn('- Three (https://example.org/three). A table of values.', lines)
+        self.assertIn('- https://example.org/formal. In another prover.', lines)
+        # A decision that was made before these texts were asked for has no such part.
+        self.assertIsNone(package.provenance({'origin': 'original'}, path))
 
     def test_each_rule_of_the_registry_that_the_pipeline_controls_is_checked(self):
         lean = self.frozen()
@@ -828,14 +870,25 @@ class DocumentTests(FinalizeCase):
         faulty('records/Small/new.md', 'A record added after the freeze.\n', 'records/ is not what the freeze hashed')
         faulty('history/timeline.md', '# Another history\n', 'MANIFEST.sha256 does not hold for history/timeline.md', manifest=False)
         faulty('history/unlisted.md', 'x\n', 'MANIFEST.sha256 has no line for history/unlisted.md', manifest=False)
+        faulty('history/timeline.md', '# The history\r\n\r\nOne entry.\r\n', 'history/timeline.md has line endings other than LF')
+        # A file that is no text, as the typeset paper is, is not read for its line endings.
+        (folder / 'paper').mkdir(exist_ok=True)
+        (folder / 'paper' / 'paper.pdf').write_bytes(b'%PDF-1.5\r\n%\xd0\xd4\xc5\xd8\r\n')
+        (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
+        self.assertEqual(check(), [])
         # A member of the archive that holds the account name is found inside the archive.
         problems = check('oddSum')
         self.assertTrue(any('the member canon/lean/Small/Defs.lean holds the account name' in problem for problem in problems))
         # A drive path in a file the pipeline did not write, such as a record of the research, is not its concern.
-        (folder / 'records' / 'Small' / 'root.md').write_text('Computed in D:\\data.\n', encoding='utf-8')
+        (folder / 'records' / 'Small' / 'root.md').write_text('Computed in D:\\data.\n', encoding='utf-8', newline='\n')
         freeze = package.freeze_hashes(folder)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(package.standalone_problems(folder, work, 'no-such-account', freeze), [])
+
+    def test_a_file_the_pipeline_writes_ends_its_lines_with_a_line_feed(self):
+        path = self.root / 'written.md'
+        package.write_text(path, 'One line.\r\nAnother.\r\n')
+        self.assertEqual(path.read_bytes(), b'One line.\nAnother.\n')
 
     def test_placeholders_are_filled_from_the_facts_and_an_unknown_key_is_named(self):
         self.assertEqual(package.fill('In {{facts.modules}} modules and {{facts.lines}} lines.', {'modules': 4, 'lines': 90}),
@@ -1071,7 +1124,9 @@ class RunTests(FinalizeCase):
                               'history/timeline.md', 'knowledge/odd-knowledge.tar.xz', 'knowledge/MANIFEST.md'}, package_files)
         self.assertFalse(any('DoMathExtract' in name or name.startswith('lean/.lake') for name in package_files))
         self.assertNotIn('lean/Small/Extra.lean', package_files)
-        self.assertEqual((self.solved / 'LICENSE').read_bytes(), (INSTALLED / 'finalize' / 'licences' / 'CC-BY-4.0.txt').read_bytes())
+        # The licence's text as the skill has it, with LF line endings whatever a checkout gave the skill's file.
+        self.assertEqual((self.solved / 'LICENSE').read_bytes(),
+                         (INSTALLED / 'finalize' / 'licences' / 'CC-BY-4.0.txt').read_bytes().replace(b'\r\n', b'\n'))
         helper = (self.solved / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8')
         self.assertIn('theorem added_six', helper)       # the accepted simplification
         self.assertNotIn('unused_two', helper)           # removed by the take
@@ -1102,6 +1157,14 @@ class RunTests(FinalizeCase):
         self.assertIn("'Small.root' depends on axioms: [propext, Quot.sound]", readme)
         self.assertIn('For every natural number n, the sum of the first n odd numbers is n * n.', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
+        self.assertIn('### Where the result comes from\n\nThe identity is classical; the records name nobody who posed it.\n\n'
+                      'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
+                      'result is recorded as original, which there means a result that the formalisation presents first. '
+                      'The records name no proof of it and report no search for one.\n', readme)
+        self.assertIn('- Disquisitiones Arithmeticae, Gauss, Carl Friedrich (gauss1801). This work gives context and not '
+                      'the result. It has the step in its first section.\n', readme)
+        self.assertIn('The records of the research name no earlier formal proof of this result.\n\n## Outline of the proof',
+                      readme)
         self.assertIn('and the library proves formally: `Small.sq_step`.', readme)
         self.assertNotIn('names no author', readme)
         timeline = (self.solved / 'history' / 'timeline.md').read_text(encoding='utf-8')
@@ -1127,6 +1190,13 @@ class RunTests(FinalizeCase):
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The package is in place: `solved/odd/`', report)
         self.assertNotIn('`project.authors`', report)
+        # What only the user can add before a submission, and the release the registry's tools depend on.
+        self.assertIn("- The Lean release. The library is on leanprover/lean4:v4.99.0. The registry takes the tools", report)
+        self.assertIn("read the registry's open issues for this release", report)
+        self.assertIn('- What the result is in the literature.', report)
+        self.assertIn('`related_formalizations` in `lean/formalization.yaml` is empty', report)
+        self.assertIn('`author_endorsement` of each source', report)
+        self.assertIn('For the registry the result is recorded as original. The records name no proof of it', decisions)
         # Started again, the command refuses: the package exists.
         self.assertEqual(self.run_command(config=config), 1)
         self.assertIn('exists', self.said)
@@ -1335,7 +1405,7 @@ class SelectionTests(FinalizeCase):
                    {'id': 'b', 'main': 'Small.named_four', 'route': 'derivation', 'proves': 'p', 'rests_on': 'r', 'size': 's',
                     'for': 'f', 'against': 'a'}]
         reading = {'claims': [{'option': 'b', 'claim': 'It is shorter.', 'holds': False, 'correction': 'It is not shorter.',
-                               'changes_comparison': True}]}
+                               'changes_comparison': True, 'printed': False}]}
         plan = script(selection=[{'output/decision.json': decision(options=options, choice='b', runner_up='a'),
                                   'output/derivations/b.lean': derived}],
                       selection_read=[{'output/reading.json': json.dumps(reading)}])
@@ -1353,6 +1423,32 @@ class SelectionTests(FinalizeCase):
         self.assertIn('derivations/b.lean', calls[1]['given'])
         self.assertIn('The independent reading corrected a claim about option b: It is not shorter. This changed a ground',
                       self.decisions())
+
+    def test_a_corrected_claim_in_a_text_the_package_prints_sends_the_decision_back(self):
+        reading = {'claims': [{'option': 'a', 'claim': 'It settles a conjecture.', 'holds': False,
+                               'correction': 'root.md names no conjecture.', 'changes_comparison': False, 'printed': True}]}
+        self.assertEqual(self.stopped_at_the_take(script(selection_read=[{'output/reading.json': json.dumps(reading)}])), 2)
+        calls = [call for call in self.calls() if not call['kind'].startswith('history')]  # stage 3 runs beside
+        self.assertEqual([(call['kind'], call['section']) for call in calls],
+                         [('selection', None), ('selection-read', None), ('selection', 'again')])
+        self.assertIn('root.md names no conjecture. The claim stood in a text that the package prints, and the selection '
+                      'decided once more.', self.decisions())
+
+    def test_a_corrected_claim_that_is_not_printed_and_changes_no_ground_is_recorded_and_no_more(self):
+        reading = {'claims': [{'option': 'a', 'claim': 'It has four modules.', 'holds': False, 'correction': 'It has three.',
+                               'changes_comparison': False, 'printed': False}]}
+        self.assertEqual(self.stopped_at_the_take(script(selection_read=[{'output/reading.json': json.dumps(reading)}])), 2)
+        self.assertEqual(len(self.calls('selection')), 1)
+        self.assertIn('The independent reading corrected a claim about option a: It has three.\n', self.decisions())
+
+    def test_a_reading_that_does_not_say_whether_a_wrong_claim_is_printed_is_not_accepted(self):
+        unsaid = {'output/reading.json': json.dumps({'claims': [
+            {'option': 'a', 'claim': 'It has four modules.', 'holds': False, 'correction': 'It has three.',
+             'changes_comparison': False}]})}
+        self.assertEqual(self.run_command(script(selection_read=[unsaid]), config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `1-selection`', report)
+        self.assertIn('whether the claim stands in a text that the package prints ("printed")', report)
 
     def test_an_accepted_output_inside_a_step_that_stopped_is_not_made_again_and_may_not_change(self):
         unread = {'output/reading.json': json.dumps({'claims': 'none'})}
@@ -1418,8 +1514,9 @@ class SelectionTests(FinalizeCase):
         (output / 'decision.json').write_text(decision(**faults[2][0]), encoding='utf-8')
         with self.assertRaises(paper.Unusable) as raised:
             run.read_decision(output, canon.read_index(self.instance / 'canon' / 'index.json'), replay(self.instance), BIBLIOGRAPHY)
-        # Four faults of the values given, and the account of fidelity, which this registry block lacks.
-        self.assertEqual(len(raised.exception.problems), 5, raised.exception.problems)
+        # Four faults of the values given, and what this registry block lacks: the account of fidelity, the three
+        # texts on where the result comes from, and the list of earlier formalisations.
+        self.assertEqual(len(raised.exception.problems), 9, raised.exception.problems)
         self.assertTrue(any('"registry.divergences"' in problem for problem in raised.exception.problems))
 
 

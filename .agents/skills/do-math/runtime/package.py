@@ -31,6 +31,7 @@ COMPARATOR_REQUIRED = ('challenge_module', 'solution_module', 'theorem_names', '
 COMPARATOR_OPTIONAL = ('definition_names', 'enable_nanoda')
 PERMITTED_AXIOMS = ['propext', 'Quot.sound', 'Classical.choice']
 RELATIONSHIPS = ('formalizes', 'adapts', 'independently-proves', 'background', 'other')
+RELATED = ('builds-on', 'adapts', 'independent', 'supersedes', 'other')  # this library and an earlier formalisation
 ARXIV = re.compile(r'[a-z][a-z-]*(\.[A-Za-z][A-Za-z-]*)?')
 MSC = re.compile(r'\d\d[A-Z-]([0-9]{2}|[xX]{2})')
 ACCOUNT = '<account>'
@@ -48,13 +49,16 @@ BIB_ENTRY = re.compile(r'@\w+\s*\{\s*([^,\s]+)\s*,')
 def write_text(path, content):
     """Write a complete UTF-8 file, with its folder, by writing beside it and replacing it.
 
+    Every line of the file ends with a line feed alone: a text that came with Windows line endings,
+    from a file or from a value of a session's JSON, is written without their carriage returns.
+
     The stages of a run write from several threads at once, and the runtime's own writer shares one
     buffer among all its callers, so the files of a run are written with this function."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f'{path.name}.{os.getpid()}-{time.monotonic_ns()}.tmp')
     try:
-        temporary.write_bytes(content.encode('utf-8'))
+        temporary.write_bytes(content.replace('\r\n', '\n').encode('utf-8'))
         for attempt in range(50):  # a reader on Windows can hold the old file for a moment
             try:
                 os.replace(temporary, path)
@@ -887,14 +891,33 @@ def yaml_text(value, indent=0):
     return '\n'.join(lines)
 
 
+def source_entry(bibliography, key, relationship, note):
+    """One source of `formalization.yaml`, from its entry in the bibliography.
+
+    `id` is the most stable identifier the entry carries: its DOI, else its arXiv number, else its
+    URL. An entry that carries none is identified by its key in `records/bibliography.bib`."""
+    entry = {'title': bibliography_field(bibliography, key, 'title') or key}
+    authors = bibliography_field(bibliography, key, 'author')
+    if authors:
+        entry['authors'] = [name.strip() for name in authors.split(' and ')]
+    doi, eprint = (bibliography_field(bibliography, key, field) for field in ('doi', 'eprint'))
+    entry['id'] = ('doi:' + doi if doi else 'arXiv:' + eprint if eprint
+                   else bibliography_field(bibliography, key, 'url') or key)
+    entry['relationship'] = relationship
+    if note:
+        entry['note'] = note
+    return entry
+
+
 def formalization(title, decision, bibliography, config, licence, models, library, compared, root_record, modules,
                   toolchain, stated=None):
     """`formalization.yaml` in the mathlib-initiative format v0.4, as far as the run can fill it.
 
-    The classification, the description, the sources and the account of fidelity (where the Lean
-    statement departs from the proposition in words) are the selection's; the account of the compared
-    theorem is the statement of the root's record, verbatim; authors and responsible
-    maintainers are the configuration's and stay empty when it names none.
+    The classification, the description, the sources with their notes, the earlier formalisations and
+    the account of fidelity (where the Lean statement departs from the proposition in words) are the
+    selection's; the account of the compared theorem is the statement of the root's record, verbatim;
+    authors and responsible maintainers are the configuration's and stay empty when it names none.
+    The entry that records a result as original carries the selection's grounds for that as its note.
 
     One source can come from the library stage instead of the selection: when the result is recorded as
     known and the root's record names a source, which the sources session entered after it had found a
@@ -907,22 +930,15 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     names = [author['name'] for author in config['authors']]
     sources = []
     if registry.get('origin') == 'original':
-        sources.append({'title': decision['sentence'], 'type': 'original-proof', 'relationship': 'other'})
-    for source in registry.get('sources', []):
-        entry = {'title': bibliography_field(bibliography, source['key'], 'title') or source['key']}
-        authors = bibliography_field(bibliography, source['key'], 'author')
-        if authors:
-            entry['authors'] = [name.strip() for name in authors.split(' and ')]
-        entry.update(id=source['key'], relationship=source['relationship'])
-        sources.append(entry)
+        sources.append({'title': decision['sentence'], 'type': 'original-proof', 'relationship': 'other',
+                        **({'note': registry['novelty']} if registry.get('novelty') else {})})
+    sources += [source_entry(bibliography, source['key'], source['relationship'], source.get('note', ''))
+                for source in registry.get('sources', [])]
     key = ((root_record or {}).get('meta') or {}).get('source')
-    if registry.get('origin') != 'original' and key and key not in [s.get('id') for s in sources]:
-        entry = {'title': bibliography_field(bibliography, key, 'title') or key}
-        authors = bibliography_field(bibliography, key, 'author')
-        if authors:
-            entry['authors'] = [name.strip() for name in authors.split(' and ')]
-        entry.update(id=key, relationship='independently-proves')
-        sources.append(entry)
+    if registry.get('origin') != 'original' and key and key not in [s['key'] for s in registry.get('sources', [])]:
+        sources.append(source_entry(bibliography, key, 'independently-proves',
+                                    "The library's record of the result names this work as its source in the "
+                                    'literature.'))
     review = config['human_review']
     if review['status'] == 'none':
         status = {'status': 'agent-reviewed', 'reviewers': [],
@@ -937,6 +953,7 @@ def formalization(title, decision, bibliography, config, licence, models, librar
                     'responsible_maintainers': names},
         'classification': {'arxiv': list(registry['arxiv']), 'msc2020': list(registry['msc2020'])},
         'sources': sources,
+        'related_formalizations': [dict(item) for item in registry.get('related_formalizations', [])],
         'status': {'scope': sections.get('Statement', ''), 'sorry_count': 0, 'sorry_in_definitions': 0, 'axioms': []},
         'automation': {'methods': [{'method': 'autonomous', 'models': list(models), 'framework': 'do-math',
                                     'tool_setup': f'Lean {toolchain}'}]},
@@ -998,6 +1015,8 @@ def registry_problems(lean_folder, licence):
                    for s in sources):
             problems.append('formalization.yaml: each entry of sources has a title and a relationship of '
                             + ', '.join(RELATIONSHIPS))
+        if not all(isinstance(r, dict) and text(r.get('id')) for r in data.get('related_formalizations') or []):
+            problems.append('formalization.yaml: each entry of related_formalizations has an id')
         methods = data.get('automation', {}).get('methods') or []
         if not methods or not all(isinstance(m, dict) and text(m.get('method')) for m in methods):
             problems.append('formalization.yaml: automation.methods is a nonempty list, each with a method')
@@ -1302,9 +1321,56 @@ def package_facts(package, name, library, root, main, index, freeze, archive, ti
             'models': ', '.join(models), 'sessions': sessions}
 
 
+def provenance(registry, path):
+    """What the README says of where the result comes from, or None for a decision that does not say it.
+
+    The two texts are the selection's; the sources and the earlier formalisations are read from the
+    frozen `formalization.yaml`, so the README lists them as the registry's file does."""
+    import yaml
+    if not registry.get('settles'):
+        return None
+    data = yaml.safe_load(read_text(path)) or {}
+    return {'settles': registry['settles'], 'novelty': registry['novelty'], 'origin': registry['origin'],
+            'sources': data.get('sources') or [], 'related': data.get('related_formalizations') or []}
+
+
+def provenance_lines(given):
+    """The part of the README that says whose question the result settles, what was known, and from which works."""
+    recorded = {'original': 'original, which there means a result that the formalisation presents first',
+                'source-based': 'source-based, which there means a result that was presented elsewhere before'}
+    relation = {'formalizes': 'The library formalises the result of this work.',
+                'adapts': 'The library changes or extends the result of this work.',
+                'independently-proves': 'This work has the result, and the proof in the library does not come from it.',
+                'background': 'This work gives context and not the result.'}
+    lines = ['### Where the result comes from', '', given['settles'].strip(), '',
+             'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
+             f"result is recorded as {recorded[given['origin']]}. " + given['novelty'].strip(), '']
+    works = [source for source in given['sources'] if source.get('type') != 'original-proof']
+    if works:
+        lines += ['The works that `lean/formalization.yaml` lists as sources:', '']
+        for source in works:
+            head = source['title'] + (', ' + ', '.join(source['authors']) if source.get('authors') else '')
+            parts = [head + (f" ({source['id']})" if source.get('id') else '') + '.',
+                     relation.get(source.get('relationship'), ''), (source.get('note') or '').strip()]
+            lines.append('- ' + ' '.join(part for part in parts if part))
+        lines.append('')
+    else:
+        lines += ['`lean/formalization.yaml` lists no work as a source of the result.', '']
+    if given['related']:
+        lines += ['Earlier formal proofs that the records of the research name:', '']
+        lines += ['- ' + ' '.join(part for part in (item['id'] + '.', (item.get('note') or '').strip()) if part)
+                  for item in given['related']]
+        lines.append('')
+    else:
+        lines += ['The records of the research name no earlier formal proof of this result.', '']
+    return lines
+
+
 def readme_text(facts, root_words, root_statement, main_statement, outline, obtained, check_output, config, licence,
-                fails, cited_rows):
-    """`README.md` of a package. The two prose sections come from a session; every other sentence is written here."""
+                fails, cited_rows, origin=None):
+    """`README.md` of a package. The two prose sections come from a session; every other sentence is written here.
+
+    `origin` is what `provenance` returns; its texts are the selection's and stand under the result."""
     review = config['human_review']
     human = ('No person reviewed the proof, and no person read the Lean statement against the proposition in words.'
              if review['status'] == 'none' else
@@ -1320,6 +1386,8 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '```lean', root_statement, '```', '']
     if not same:
         lines += [f"The library proves it from its main theorem, `{facts['main']}`:", '', '```lean', main_statement, '```', '']
+    if origin:
+        lines += provenance_lines(origin)
     lines += ['## Outline of the proof', '', outline.strip(), '',
               '## How the result was obtained', '', obtained.strip(), '',
               '## What was checked, and what was not', '',
@@ -1390,8 +1458,11 @@ def standalone_problems(package, work, account, freeze):
 
     Every relative link of its Markdown and HTML resolves inside it; no file and no member of the
     archive holds the account name; no document the pipeline wrote holds a drive path or the work
-    folder's path; `lean/` and `records/` have the hashes of the freeze; every line of
-    `MANIFEST.sha256` holds and every other file has a line."""
+    folder's path; every text file ends its lines with LF; `lean/` and `records/` have the hashes of
+    the freeze; every line of `MANIFEST.sha256` holds and every other file has a line.
+
+    A text file is a file that is UTF-8 and holds no NUL byte. The archive and the typeset paper are
+    not, so the members of the archive, which are the research's own bytes, are not read for this."""
     package = Path(package).resolve()
     files = files_under(package)
     problems = []
@@ -1413,6 +1484,14 @@ def standalone_problems(package, work, account, freeze):
             if relative.endswith('-knowledge.tar.xz'):
                 held = [name for name, data in archive_members(path).items() if needle in data or account in name]
                 problems += [f'{relative}: the member {name} holds the account name' for name in held]
+    for relative, path in files.items():
+        data = path.read_bytes()
+        if b'\r' in data and b'\0' not in data:
+            try:
+                data.decode('utf-8')
+            except UnicodeDecodeError:
+                continue
+            problems.append(f'{relative} has line endings other than LF')
     places = [str(Path(work).resolve()), Path(work).resolve().as_posix()]
     for relative in WRITTEN:
         if relative not in files:
