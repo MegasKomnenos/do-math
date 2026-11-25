@@ -34,6 +34,7 @@ Only the standard library is used.
 import argparse
 import gzip
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -44,6 +45,7 @@ import tarfile
 import time
 import urllib.error
 import urllib.request
+import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 USER_AGENT = "exemplar-fetch/1.0"
@@ -81,7 +83,7 @@ def download(arxiv_id):
         for attempt in range(2):
             try:
                 data = _request(url)
-            except (urllib.error.URLError, OSError) as exc:
+            except (urllib.error.URLError, http.client.HTTPException, OSError) as exc:
                 errors.append("%s: %s" % (url, exc))
                 continue
             if len(data) > MAX_BYTES:
@@ -106,8 +108,11 @@ def unpack(data):
     if data[:4] == b"%PDF":
         raise BuildError("the e-print is a PDF, there is no LaTeX source")
     if data[:2] == b"\x1f\x8b":
-        with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
-            data = gz.read(MAX_BYTES + 1)
+        try:
+            with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
+                data = gz.read(MAX_BYTES + 1)
+        except (OSError, EOFError, zlib.error) as exc:  # a download that was cut short, or damaged on its way
+            raise BuildError("the e-print is not a complete gzip file: %s" % exc)
         if len(data) > MAX_BYTES:
             raise BuildError("unpacked source is larger than %d bytes" % MAX_BYTES)
     files = {}

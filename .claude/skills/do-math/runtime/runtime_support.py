@@ -290,7 +290,9 @@ def process_identity(pid):
             return None
         boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
         return {"pid": pid, "birth": boot + ":" + fields[19]}
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
+        # The process ended before its stat file was opened, or it was reaped between the open and the
+        # read, which Linux answers with ESRCH. Either way it is gone.
         return None
 
 
@@ -492,12 +494,13 @@ def _archive_entries(archive):
 
 
 def remove_tree(path):
-    """Remove a directory tree whose contents the runtime keeps elsewhere.
+    """Remove a directory tree that its caller has finished with.
 
     Windows refuses to remove a read-only file or directory. Git creates its object files read-only,
-    and shutil.copytree keeps the flag in its copy. Every caller removes a tree whose contents remain
-    elsewhere: a finished work/ in its verified archive, or a stale staging copy in the files it was
-    copied from. The flag protects nothing there, so it is cleared where Windows refuses."""
+    and shutil.copytree keeps the flag in its copy. No caller needs the tree it removes: a finished
+    work/ whose files are in its verified archive, a staging copy of files that remain where they were
+    copied from, a folder that the finalize command made and makes again or has finished with, the
+    fixture of a test. The flag protects nothing there, so it is cleared where Windows refuses."""
     def clear_read_only(function, name, error):
         if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
             raise error

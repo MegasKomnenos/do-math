@@ -185,6 +185,19 @@ class StateFileSharingTests(unittest.TestCase):
                 self.assertEqual(sleep.call_count, 1)
 
 
+class ProcessIdentityTests(unittest.TestCase):
+    @unittest.skipIf(os.name == 'nt', 'the process files of Linux')
+    def test_a_process_reaped_while_its_stat_file_is_read_is_gone(self):
+        # Linux answers a read of /proc/<pid>/stat with ESRCH when the process was reaped after the file
+        # was opened. That process is gone, which None says; an error raised here would reach the passes
+        # of the runner and of the broker, which ask about every process they follow.
+        own = support.process_identity(os.getpid())
+        self.assertEqual(own['pid'], os.getpid())
+        with patch.object(Path, 'read_text', side_effect=ProcessLookupError(3, 'No such process')):
+            self.assertIsNone(support.process_identity(os.getpid()))
+            self.assertFalse(support.alive(own))
+
+
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
         engine = runtime.Runner(self.instance, self.skill)
@@ -338,7 +351,33 @@ class LaunchFailureTests(InstanceCase):
         self.assertEqual(job['last_error'], session['launch_error'])
         self.assertEqual(support.read_json(engine.session_dir(sid) / 'termination.json')['cause'], 'launch_error')
         self.assertEqual(engine.state['blocks']['model:codex/gpt-6.1-sol']['source'], 'retry')
-        self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')
+        # The block lasts retry_seconds, one second in the fixture, so the choice is read at an instant within it.
+        block = engine.state['blocks']['model:codex/gpt-6.1-sol']
+        with patch('runner.time.time', return_value=block['until'] - 0.5):
+            self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')
+
+    def test_a_host_that_cannot_be_started_is_a_failed_launch_of_the_selected_model(self):
+        # One step earlier than above: the runner cannot start the session host itself. The session never
+        # receives its GO, and when the runner collects it, the failed launch counts against the model as a
+        # CLI that cannot start does, so the job's replacement takes the role's next model.
+        engine = runtime.Runner(self.instance, self.skill)
+        key = engine.enqueue('organizer', {})
+        with patch('runner.subprocess.Popen', side_effect=OSError('injected host start failure')):
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        session, folder = engine.state['sessions'][sid], engine.session_dir(sid)
+        self.assertEqual((session['status'], session['host'], session['launch_error']),
+                         ('starting', None, 'injected host start failure'))
+        self.assertEqual(((folder / 'GO').exists(), (folder / 'CANCEL').exists()), (False, True))
+        engine.collect()
+        job = engine.state['jobs'][key]
+        self.assertEqual((session['status'], job['status'], job['last_error']),
+                         ('failed', 'pending', 'injected host start failure'))
+        self.assertEqual(support.read_json(folder / 'termination.json')['cause'], 'launch_error')
+        block = engine.state['blocks']['model:codex/gpt-6.1-sol']
+        self.assertEqual(block['source'], 'retry')
+        with patch('runner.time.time', return_value=block['until'] - 0.5):
+            self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')
 
 
 if __name__ == '__main__':

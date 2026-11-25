@@ -22,7 +22,7 @@ Research under pressure leaves things of the following kinds. They are examples 
 
 - `lean/`: the whole library. Read it in full, proofs included. The finding that matters most to this step, the same fact proved in two places, is found only by a reader who has seen both places.
 - `records/`: the record of each element, as the research left it. Open a record where the Lean shows how a step is verified and not what the argument is for.
-- `rests-on.md`: for the elements of the library, what each rests on and what rests on it, from the research's index. Read it in full; it shows which declarations are used once, which are used only inside their own module, and what crosses from one group of modules to another.
+- `rests-on.md`: for each element of the library, the elements that its statement names and the elements that its proof names, from the research's index. Read it in full; by looking for a name in the lists of the other elements you see which declarations are used once, which are used only inside their own module, and what crosses from one group of modules to another.
 
 ## The parts
 

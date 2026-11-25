@@ -21,8 +21,7 @@ from runner import Runner, archive_finished, initialize, main, start
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, ScenarioCase,
-                     module_text, record_text, stop_broker, take, theorem, write_canon)
-from support import test_settings as fixture_settings  # renamed, so that no loader takes it for a test
+                     fixture_settings, module_text, record_text, stop_broker, take, theorem, write_canon)
 
 
 def finding(reason, status='confirmed', concerns=(), **changes):
@@ -43,16 +42,19 @@ def frontier_view(instance):
     return (Path(instance) / 'knowledge/frontier.md').read_text(encoding='utf-8').split('# Questions')[0]
 
 
+def publish_second_proof(case):
+    """Publish Small.rootAlt, another proof of the root's statement, with a written proof that review accepts."""
+    folder = case.candidate(
+        modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[case.root_variant]))},
+        records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
+                                                 proof='Count an n by n square in L-shaped layers.',
+                                                 proves='Small.root')})
+    case.publish(folder)
+
+
 def second_proof(case):
     """The root has no proof of its own; Small.rootAlt, another proof of its statement, is accepted."""
-    def build():
-        folder = case.candidate(
-            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[case.root_variant]))},
-            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
-                                                     proof='Count an n by n square in L-shaped layers.',
-                                                     proves='Small.root')})
-        case.publish(folder)
-    case.scenario('second', build)
+    case.scenario('second', lambda: publish_second_proof(case))
 
 
 def initialized(base, name, root=ROOT, modules=None, records=None):
@@ -753,12 +755,7 @@ class FormalizableTests(ScenarioCase):
 
     def test_one_proof_per_statement_is_formalized_the_statements_own_declaration_first(self):
         self.direct()
-        folder = self.candidate(
-            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[self.root_variant]))},
-            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
-                                                     proof='Count an n by n square in L-shaped layers.',
-                                                     proves='Small.root')})
-        self.publish(folder)
+        publish_second_proof(self)
         model = replay(self.instance)
         self.assertTrue(model['elements']['Small.root']['settled'] and model['elements']['Small.rootAlt']['settled'])
         self.assertEqual(formalizable(model), ['Small.root'])
@@ -1022,10 +1019,13 @@ class CoordinationTests(ScenarioCase):
         # The whole element cannot be taken beside them, and a new statement is not the whole element.
         self.assertIn('whole element cannot', take(c, 'Small.sumSucc')['reason'])
         request = c / 'malformed.json'
-        for wrong in ({'new': bridge, 'whole': True}, {'new': {'lean': bridge['lean']}}, {'new': {**bridge, 'statement': ' '}},
-                      {'new': 'theorem sumDouble'}, {'statement': ' '}, {'whole': 'yes'}):
+        new_form, part_form, whole_form = ('a new statement is registered as "new"', 'a section needs its exact "statement"',
+                                           'the request needs "whole" as Boolean')
+        for message, wrong in ((new_form, {'new': bridge, 'whole': True}), (new_form, {'new': {'lean': bridge['lean']}}),
+                               (new_form, {'new': {**bridge, 'statement': ' '}}), (new_form, {'new': 'theorem sumDouble'}),
+                               (part_form, {'statement': ' '}), (whole_form, {'whole': 'yes'})):
             write_json(request, wrong)
-            with self.subTest(wrong=wrong), self.assertRaises(ValueError):
+            with self.subTest(wrong=wrong), self.assertRaisesRegex(ValueError, message):
                 section(c, 'Small.sumSucc', request)
         # The peer's assignment and the availability report carry the section like any other.
         self.assertEqual(runner.producer_sections('sa'), [{'id': entry['id'], 'element': 'Small.sumSucc', 'whole': False,
@@ -1508,6 +1508,27 @@ class RunnerTests(ScenarioCase):
             self.assertIn(f'producer: {sid}', visible)
             self.assertIn(f'· {stage} · elements: Small.root', visible)
 
+    def test_the_board_view_is_drawn_again_when_a_lease_changes_hands_and_not_on_every_pass(self):
+        # The runner looks at the board on every pass (Runner.refresh) and renders the views only when the
+        # pipelines, the holders and waiters of the leases, the revision or the comprehensive reviews have changed.
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        view = self.instance / 'knowledge/board.md'
+        with patch('runner.render', wraps=render) as drawn:
+            runner.refresh()
+            runner.refresh()
+            self.assertEqual(drawn.call_count, 1)
+            self.assertTrue(lease(a, 'Small.root')['leased'])
+            runner.refresh()
+            runner.refresh()
+            self.assertEqual(drawn.call_count, 2)
+            self.assertIn('- Small.root · lease: sa · waiting: (none)', view.read_text(encoding='utf-8'))
+            self.assertFalse(wait(b, 'Small.root', timeout=0)['leased'])
+            runner.refresh()
+            runner.refresh()
+            self.assertEqual(drawn.call_count, 3)
+            self.assertIn('- Small.root · lease: sa · waiting: sb', view.read_text(encoding='utf-8'))
+
     def test_peer_task_carries_the_producers_sections(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -1952,12 +1973,7 @@ class RunnerTests(ScenarioCase):
         # The root's own proof and rootAlt both settle the root. A finding withdraws the own proof, so rootAlt is
         # the proof to formalize, and its formalizer holds the root whole.
         self.direct()
-        folder = self.candidate(
-            modules={'Small/Second.lean': module_text(theorem('rootAlt', ROOT_STATEMENTS[self.root_variant]))},
-            records={'Small/rootAlt.md': record_text('The root by another argument.', weight='unit',
-                                                     proof='Count an n by n square in L-shaped layers.',
-                                                     proves='Small.root')})
-        self.publish(folder)
+        publish_second_proof(self)
         self.event('v1', 'review', comprehensive([finding('The induction step fails.', invalidates=['Small.root'])]))
         runner = self.runner()
         runner.populate()
@@ -2094,10 +2110,13 @@ class RunnerTests(ScenarioCase):
 
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
-        with patch('builtins.print'):
-            self.assertEqual(main(['review', str(self.instance), '--element', 'Small.missing']), 1)
-            self.assertEqual(main(['review', str(self.instance), '--concern', 'v1/absent']), 1)
-            self.assertEqual(main(['review', str(self.instance), '--reason', 'Look again.']), 1)
+        with patch('builtins.print') as shown:
+            for arguments, reason in ((['--element', 'Small.missing'], 'unknown review target'),
+                                      (['--concern', 'v1/absent'], 'unknown review target'),
+                                      (['--reason', 'Look again.'], 'name the evidence to review with --element or --concern')):
+                with self.subTest(arguments=arguments):
+                    self.assertEqual(main(['review', str(self.instance), *arguments]), 1)
+                    self.assertEqual(json.loads(shown.call_args.args[0]), {'error': reason})
             self.assertEqual(list((self.instance / 'control/requests').glob('*.json')), [])
             self.assertEqual(main(['review', str(self.instance), '--element', 'Small.root', '--element', 'Small.oddSum',
                                    '--concern', 'v1/gap', '--reason', 'Check the base case.']), 0)
@@ -2235,6 +2254,35 @@ class InitializeTests(unittest.TestCase):
             initialized(self.root, 'unattached')
         self.assertFalse((self.root / 'unattached').exists())
 
+    def test_the_other_refusals_made_before_anything_is_created_leave_nothing_behind(self):
+        # Before it creates the instance directory, init also refuses an empty root file, a canon folder without
+        # lean/ or with more than one top-level module name, a settings file that is not valid, and a path that
+        # exists (reference/operations.md, Create and start). Each case differs in one thing from the input of
+        # the last case, which init accepts until it meets the existing path.
+        goal, blank, settings, invalid = (self.root / name for name in ('goal.md', 'blank.md', 'settings.json', 'invalid.json'))
+        goal.write_text('For every natural number n, the sum of the first n odd numbers is n * n.', encoding='utf-8')
+        blank.write_text(' \n', encoding='utf-8')
+        write_json(settings, fixture_settings())
+        write_json(invalid, {**fixture_settings(), 'max_sessions': 0})
+        whole, bare, two = (self.root / name for name in ('whole', 'bare', 'two'))
+        write_canon(whole)
+        (bare / 'records').mkdir(parents=True)
+        write_canon(two)
+        (two / 'lean/Other.lean').write_text('module\n', encoding='utf-8')
+        target = self.root / 'instance'
+        cases = (('the root statement must be nonempty UTF-8', blank, whole, settings),
+                 ('the canon folder needs lean/', goal, bare, settings),
+                 ('share one top-level name, the library; found: Other, Small', goal, two, settings),
+                 ('max_sessions must be a positive integer', goal, whole, invalid))
+        for message, root, canon, config in cases:
+            with self.subTest(message), self.assertRaisesRegex(ValueError, message):
+                initialize(target, root, canon, 'Small.root', config)
+            self.assertFalse(target.exists())
+        target.mkdir()
+        with self.assertRaises(FileExistsError):
+            initialize(target, goal, whole, 'Small.root', settings)
+        self.assertEqual(list(target.iterdir()), [])
+
 
 class SettingsTests(unittest.TestCase):
     def test_the_literature_server_is_attached_by_default_and_can_be_left_out(self):
@@ -2267,7 +2315,7 @@ class SettingsTests(unittest.TestCase):
     def test_sorry_axiom_cannot_be_enabled(self):
         config = defaults()
         config['lean']['allowed_axioms'].append('sorryAx')
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'sorryAx cannot be allowed'):
             validate(config)
 
     def test_legacy_or_misspelled_settings_are_rejected(self):
@@ -2300,16 +2348,30 @@ class SettingsTests(unittest.TestCase):
                 validate(config)
 
     def test_malformed_setting_structure_is_rejected_by_name(self):
+        def lean(**changed):
+            config = defaults()
+            config['lean'].update(changed)
+            return config
+
         cli_path = defaults()
         cli_path['cli']['codex'] = 5
-        lean_cwd = defaults()
-        lean_cwd['lean']['cwd'] = 5
-        cases = (('cli must be an object', {**defaults(), 'cli': 'C:/tools/codex.exe'}),
+        cases = (('schema 1 object', {**defaults(), 'schema': 2}),
+                 ('cli must be an object', {**defaults(), 'cli': 'C:/tools/codex.exe'}),
                  ('lean must be an object', {**defaults(), 'lean': []}),
+                 ('max_sessions must be a positive integer', {**defaults(), 'max_sessions': 0}),
+                 ('retry_max_seconds must be at least retry_seconds',
+                  {**defaults(), 'retry_seconds': 60, 'retry_max_seconds': 30}),
+                 ('roles must be an object', {**defaults(), 'roles': []}),
+                 ('mcp_servers must map', {**defaults(), 'mcp_servers': {'scholarly': 'server.py'}}),
+                 ('attempt needs an ordered nonempty model list', {**defaults(), 'models': []}),
                  ('model entries need exactly', {**defaults(), 'models': ['codex/gpt-6.1-sol']}),
                  ('fallback', {**defaults(), 'models': [{'model': 'claude/opus', 'effort': 'xhigh', 'fallback': True}]}),
                  ('cli.codex must be', cli_path),
-                 ('lean.cwd must be', lean_cwd))
+                 ('lean.cache_epoch must be nonempty text', lean(cache_epoch=' ')),
+                 ('lean.version_command must be a nonempty command array', lean(version_command=[])),
+                 ('lean.cwd must be', lean(cwd=5)),
+                 ('lean.env must map strings to strings', lean(env={'PATH': 5})),
+                 ('allowed_axioms must be a string list', lean(allowed_axioms='propext')))
         for pattern, config in cases:
             with self.subTest(pattern), self.assertRaisesRegex(ValueError, pattern):
                 validate(config)

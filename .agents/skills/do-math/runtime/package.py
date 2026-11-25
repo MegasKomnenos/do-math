@@ -41,6 +41,9 @@ MODIFIERS = ('private', 'protected', 'public', 'noncomputable', 'unsafe', 'parti
 ATTRIBUTE_COMMAND = re.compile(r'^\s*attribute\s*\[[^\]]*\]\s+([^\n]*)$', re.M)
 BACKTICKED = re.compile(r'`([^`\n]+)`')
 DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
+# In Markdown, TeX and BibTeX a backslash after a colon begins a command of a formula, as in $f:\mathbb{N}\to X$,
+# so a drive path is looked for there in its form with a slash, which is the form a session is given paths in.
+DRIVE_PATH_IN_MARKUP = re.compile(r'(?<![A-Za-z])[A-Za-z]:/(?!/)')
 LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)|(?:href|src)\s*=\s*"([^"]*)"')
 AXIOM_LINE = re.compile(r"'([^']+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S)
 BIB_ENTRY = re.compile(r'@\w+\s*\{\s*([^,\s]+)\s*,')
@@ -789,11 +792,15 @@ def packages_problems(manifest, packages_dir):
     return problems
 
 
-def lake_run(lake, folder, *arguments):
-    """Run Lake in a project folder; returns (exit code, standard output, standard error)."""
+def lake_run(lake, folder, *arguments, env=None):
+    """Run Lake in a project folder; returns (exit code, standard output, standard error).
+
+    `env` holds the variables of `lean.env`, with which the Lean environment is run. They are added to those of
+    this process, as the version command of the run and its broker add them."""
     try:
-        done = subprocess.run([*lake, *arguments], cwd=folder, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, **popen_options())
+        done = subprocess.run([*lake, *arguments], cwd=folder, env={**os.environ, **(env or {})},
+                              stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              **popen_options())
     except OSError as error:
         return None, '', str(error)
     decode = lambda data: data.decode('utf-8', errors='replace').replace('\r\n', '\n')
@@ -1490,8 +1497,8 @@ def finding_lines(findings):
         text = ' '.join(str(text).split())
         return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
 
-    return [f"- {finding['file']}, at \"{said(finding['quote'], 200)}\": {said(finding['problem'], 1200)}"
-            for finding in findings]
+    return [f"- {finding['file']}" + (f", at \"{said(finding['quote'], 200)}\"" if finding['quote'].strip() else '')
+            + f": {said(finding['problem'], 1200)}" for finding in findings]
 
 
 def closed_lines(closed):
@@ -1580,7 +1587,7 @@ def standalone_problems(package, work, account, freeze):
         if relative not in files:
             continue
         text = files[relative].read_text(encoding='utf-8', errors='replace')
-        found = DRIVE_PATH.search(text)
+        found = (DRIVE_PATH_IN_MARKUP if relative.endswith(('.md', '.tex', '.bib')) else DRIVE_PATH).search(text)
         if found:
             problems.append(f'{relative} holds a drive path: {text[found.start():found.start() + 40]!r}')
         if any(place in text for place in places):

@@ -52,7 +52,7 @@ Each entry has the element's name and four judgments.
 | Value | Meaning | Standing of the element after publication |
 |---|---|---|
 | `confirmed` | You examined the proof and found it correct. | accepted, or correct, held back, according to `accepted` |
-| `not_confirmed` | You found a gap or an error. | proof not confirmed |
+| `not_confirmed` | You found a gap or an error in the proof. A wrong sentence that stands beside a correct proof is judged as your role guide says under "What you judge of each element". | proof not confirmed |
 | `undetermined` | You could not complete the judgment. | proof not confirmed |
 | `not_applicable` | The element has no proof to judge: it is a definition, or a statement without a proof. | none for a definition; no proof for a statement |
 

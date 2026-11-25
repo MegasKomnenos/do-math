@@ -221,6 +221,13 @@ class ViewTests(ScenarioCase):
                       'theorem sumDouble (n : Nat) : oddSum (n + 2) = oddSum n + 4 * n + 4\n', view)
         self.assertIn(f"- {pipelines['sd']} · producer: sd · attempt · producing · elements: (choosing)\n", view)
         self.assertIn('\n## Element leases\n\n- Small.sumSucc · lease: sc · waiting: sd\n', view)
+        # The view of an element says of each section held on it which of the three kinds it is.
+        zero = canon_tool.view(self.instance, runner.model, 'Small.sumZero').splitlines()
+        self.assertIn('held by       sa (attempt, producing): the whole element', zero)
+        succ = canon_tool.view(self.instance, runner.model, 'Small.sumSucc').splitlines()
+        self.assertIn('held by       sb (attempt, producing): The passage from n to n + 1 for even n.', succ)
+        self.assertIn('held by       sc (attempt, producing): a new statement aimed at it: '
+                      'theorem sumDouble (n : Nat) : oddSum (n + 2) = oddSum n + 4 * n + 4', succ)
 
     def test_board_can_show_a_producer_waiting_for_its_first_model(self):
         runner = Runner(self.instance, self.skill)

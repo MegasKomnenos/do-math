@@ -179,9 +179,22 @@ class Derivation(MapCase):
         self.assertEqual((self.ids(data), self.unit(data, 'Lib.root')['refuted']), (['Lib.root'], False))
         data = self.map(open_rows, everything=True)
         self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
-        # The refutation line is drawn like every other line.
-        svg, page = draw.render(self.map(rows))
-        self.assertIn('refutes the root', svg)
+        # The drawing shows the refutation: its heavy line in the colour of its kind, the entry of the legend for
+        # that line, and under the title how the root stands and that the map shows what the refutation rests on.
+        tree = ElementTree.fromstring(draw.render(self.map(rows))[0])
+        heavy = [edge.get('stroke') for edge in tree.findall(f".//{SVG}g[@class='edge']") if edge.get('data-kind') == 'refutation']
+        self.assertEqual(heavy, [draw.REFUTATION_COLOUR])
+        texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
+        self.assertIn(draw.LEGEND['refutation'], texts)
+        self.assertTrue(any(draw.ROOT_STATES['informal_refuted'] in line and 'the units the refutation of the root rests on' in line
+                            for line in texts))
+        # The command says of this map that it shows what the refutation rests on.
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        write_json(Path(folder.name) / 'dependency_map.json', self.map(rows))
+        with contextlib.redirect_stdout(io.StringIO()) as shown:
+            self.assertEqual(depmap.main([str(Path(folder.name) / 'dependency_map.json'), '--out', folder.name]), 0)
+        self.assertIn('scope: what the refutation of the root rests on', shown.getvalue())
 
     def test_a_card_carries_the_statement_in_words_that_its_record_gives(self):
         # The refutation is a step by its record and has a card all the same, so its card carries the statement
@@ -820,11 +833,25 @@ class Page(MapCase):
                            if any('Lib.glue' in (side or {}).get('via', ()) for side in (edge, edge['proof'], edge['statement']))]
                 self.assertEqual((step['head'], step['lines'], step['pick']), ('glue', len(through), None))
                 self.assertEqual(step['kept'], sorted({end for edge in through for end in (edge['source'], edge['target'])}))
-                # A name that is not on the map is said to be missing, and nothing is selected.
-                page.goto(address + '#node=Lib.nothing')
+                # A name that is not on the map is said to be missing, and nothing is selected. That holds as well
+                # for a name that every object of the page's script answers to.
+                for missing in ('Lib.nothing', 'constructor'):
+                    page.goto(address + '#node=' + missing)
+                    page.reload()
+                    self.assertFalse(page.evaluate(seen)['focus'])
+                    self.assertIn('no unit and no folded step named ' + missing, page.inner_text('#content'))
+                # On the map of a refuted root each end of the refutation line says what the other end is to it.
+                against = self.map([statement('Lib.root', 'unit', proof=None), statement('Lib.notRoot', 'unit', refutes='Lib.root')])
+                other = tempfile.TemporaryDirectory()
+                self.addCleanup(other.cleanup)
+                depmap.write(against, other.name)
+                refuted = (Path(other.name) / 'dependency_map.html').resolve().as_uri()
+                page.goto(refuted + '#node=Lib.notRoot')
                 page.reload()
-                self.assertFalse(page.evaluate(seen)['focus'])
-                self.assertIn('no unit and no folded step named Lib.nothing', page.inner_text('#content'))
+                self.assertIn('the root, which this statement refutes', page.inner_text('#part-below + ul'))
+                page.goto(refuted + '#node=Lib.root')
+                page.reload()
+                self.assertIn(draw.LEGEND['refutation'], page.inner_text('#part-above + ul'))
                 # A card is reached and selected from the keyboard.
                 page.goto(address)
                 page.reload()

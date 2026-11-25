@@ -26,12 +26,12 @@
     the formulas   the records write TeX; the page turns it into MathML, which a browser draws itself,
                    and shows a formula as written when it holds a command the page does not know;
     the window     the panel stands below the map when the window is narrow, or upright and not wide.
-  The drawing marks what this script reads: g.node[data-node][data-status], g.group[data-group],
-  g.edge[id][data-source][data-target] with its stroke on the group, its line in path.wire pieces and the
-  dots of its branches in path.dot, g.shared[data-edges] with the stretches that the named edges share,
-  g.casing, [data-edge] on the parts of an edge that are drawn outside its group (its label), and the
-  translation of g#drawing. The guide (what the map shows, the legend and the meaning of the words on
-  the cards) is written by draw.py into #guide.
+  The drawing marks what this page reads: g.node[data-node][data-status] with its rect.card,
+  g.group[data-group] with its rect, g.edge[id][data-source][data-target] with its stroke on the group,
+  its arrowhead in path.arrow and the dots of its branches in path.dot, g.shared[data-edges] with the
+  stretches that the named edges share, g#legend and g#labels, which the page does not show, g#routes,
+  and the translation of g#drawing. The guide (what the map shows, the legend and the meaning of the
+  words on the cards) is written by draw.py into #guide.
 -->
 <style>
 :root { --serif: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', P052, 'TeX Gyre Pagella', Cambria, 'Noto Serif', Georgia, serif;
@@ -158,13 +158,17 @@ __SVG__
   var svg = document.querySelector('#stage svg');
   if (!svg) return;
   var data = JSON.parse(document.getElementById('map-data').textContent);
+  // A name is looked up as an address gives it or as a record writes it. The table of the units and the table
+  // of the folded steps hold the names of the map and nothing else, so that a word every object answers to,
+  // such as `constructor`, is neither a unit nor a step.
+  data.folded = Object.assign(Object.create(null), data.folded);
   var panel = document.getElementById('panel');
   var content = document.getElementById('content'), guide = document.getElementById('guide');
   var query = document.getElementById('query'), results = document.getElementById('results');
   var live = document.getElementById('live');
 
   // ---- the map's data and the parts of the drawing, by name
-  var unit = {}, into = {}, out = {};
+  var unit = Object.create(null), into = {}, out = {};
   data.units.forEach(function (u) { unit[u.id] = u; into[u.id] = []; out[u.id] = []; });
   data.edges.forEach(function (e, i) { e.el = 'e' + i; into[e.target].push(e); out[e.source].push(e); });
   var edgeEl = {}, byNode = {}, nodeEl = {};
@@ -665,7 +669,7 @@ __SVG__
   // ---- the panel
   function how(e, here) {       // what a line says about the unit at its other end, read from the unit `here`
     if (e.kind === 'alternative') return here === e.target ? 'a proof of this statement, drawn as its own card' : 'the statement that this card proves';
-    if (e.kind === 'refutation') return 'refutes the root: its statement is the negation of the root';
+    if (e.kind === 'refutation') return here === e.target ? 'refutes the root: its statement is the negation of the root' : 'the root, which this statement refutes';
     var body = unit[e.target].role === 'definition' ? 'definition' : 'proof';
     if (e.kind === 'direct') return 'named in the ' + body + (e.proof.via.length ? ', and reached through ' + foldedNames(e.proof.via) : '');
     if (e.kind === 'contracted') return 'the ' + body + ' reaches it through ' + foldedNames(e.via);

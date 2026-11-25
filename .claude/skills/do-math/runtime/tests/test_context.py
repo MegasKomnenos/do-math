@@ -187,7 +187,7 @@ class ContextTests(InstanceCase):
         self.assertEqual([item['text'] for item in self.pack(later)['user_inputs']],
                          ['Write every record in English.'])
 
-    def test_every_role_receives_the_root_the_frontier_the_understanding_and_the_board_but_no_glossary_or_index(self):
+    def test_every_role_receives_the_root_the_frontier_the_understanding_and_the_board_but_no_index(self):
         (self.instance / 'control/inputs/001.txt').write_text('Use convention K in new work.', encoding='utf-8')
         knowledge = self.instance / 'knowledge'
         frontier = (knowledge / 'frontier.md').read_text(encoding='utf-8')
@@ -203,8 +203,11 @@ class ContextTests(InstanceCase):
                 lead, views = self.lead(folder), self.views(folder)
                 opening, section = self.parts(lead, OPENING), self.parts(views, VIEWS)
                 self.assertIn((self.instance / 'root.md').read_text(encoding='utf-8'), opening[OPENING[0]])
-                # The root in Lean: where it stands, its declaration as written and as Lean prints it.
+                # The root in Lean: where it stands, its declaration as written and as Lean prints it. The file is
+                # named from the instance folder, which is the base the view gives for its relative references.
                 self.assertIn('the declaration `Small.root` of the library `Small`, in `canon/lean/Small/Root.lean`',
+                              opening[OPENING[1]])
+                self.assertIn(f'Relative references in this research view use {self.instance} as their base.',
                               opening[OPENING[1]])
                 self.assertIn('```lean\n/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
                               'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry\n```', opening[OPENING[1]])
@@ -213,13 +216,10 @@ class ContextTests(InstanceCase):
                 self.assertIn('No exploration has written it yet.', section[VIEWS[1]])
                 self.assertIn(board, section[VIEWS[2]])
                 self.assertIn('## 001.txt\n\nUse convention K in new work.', section[VIEWS[3]])
-                # Definitions are met through the statements that use them, and the index is a derived
-                # view a session asks for; neither is delivered at launch.
+                # The index is a derived view a session asks for; it is not delivered at launch.
                 for delivered in (lead, views):
-                    self.assertNotIn('glossary', delivered.lower())
                     self.assertNotIn('index.md', delivered)
                     self.assertNotIn('# Index of the canon', delivered)
-        self.assertFalse((knowledge / 'glossary.md').exists())
 
         # An exploration's change writes the understanding so far of q0. Later launches receive it with the
         # frontier as it then is; the packs of sessions already launched stay as they were.

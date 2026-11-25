@@ -34,7 +34,9 @@ IDENTIFIER = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
 
 
 def identifier(value):
-    need(isinstance(value, str) and IDENTIFIER.fullmatch(value), 'invalid identifier')
+    need(isinstance(value, str) and IDENTIFIER.fullmatch(value),
+         f'invalid identifier: {value!r}; an identifier consists of letters, digits, "_" and "-" and begins with '
+         'a letter or a digit')
     return value
 
 

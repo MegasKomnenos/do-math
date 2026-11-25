@@ -199,7 +199,7 @@ def parse_sectioned(text, keys, sections, what, review=False):
     if index >= len(lines):
         raise CanonError(f'{what}: the header is not closed by a line "---"')
     allowed = sections + ((REVIEW_SECTION,) if review else ())
-    parts, current, body = {}, None, []
+    parts, current = {}, None
     fenced = False
     for line in lines[index + 1:]:
         if line.lstrip().startswith('```'):
@@ -1045,7 +1045,8 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
         before, after = old['entries'].get(item['alternative']), new['entries'].get(item['into'])
         if item['alternative'] in new['entries'] or before is None or after is None:
             errors.append(f"retiring {item['alternative']} into {item['into']} needs the first removed and the second kept")
-        elif (sorted(set(after['uses']) - {item['alternative']}) != sorted(set(before['uses']) - {item['into']})
+        elif (sorted(set(after['uses']) - {item['alternative']})
+              != sorted({moved.get(u, u) for u in before['uses']} - {item['into']})
               or after['lean_proof'] != before['lean_proof']):
             errors.append(f"after retiring {item['alternative']}, the proof of {item['into']} does not name what "
                           'the retired proof named; a retirement moves a proof and does not change it')
@@ -1107,7 +1108,7 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
         after = new['entries'].get(item['into'])
         if after is not None and after['lean_proof'] != 'complete':
             record = records.get(item['into']) or existing_record(item['into'])
-            if not (isinstance(record, dict) and record['sections'].get('Proof')):
+            if not (record and record['sections'].get('Proof')):
                 errors.append(f"after retiring {item['alternative']}, the record of {item['into']} needs the written "
                               'proof that stood in the record of the retired declaration, as its "## Proof"')
     for name in added:
@@ -1142,7 +1143,7 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
         if entry['kind'] in STATEMENT_KINDS and entry['lean_proof'] == 'sorry' and not entry['prop']:
             errors.append(f'{name} is a theorem whose statement is not a proposition')
         current = existing_record(name) if name in old['entries'] and name not in replaced else None
-        if isinstance(current, dict) and name not in moved.values():
+        if current and name not in moved.values():
             # Whether an element has a written proof, and what it proves or refutes, decide its standing.
             # Review judges the elements a candidate adds and the proofs it replaces, so a record may
             # change these only for a declaration the candidate lists in "replace".

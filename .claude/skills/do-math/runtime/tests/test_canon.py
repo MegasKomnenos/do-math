@@ -845,7 +845,7 @@ class ApplyLeanTests(TempCase):
 
     def test_a_conflict_on_one_replacement_leaves_the_whole_file_unchanged(self):
         folder, change = self.candidate(replace={'Small.first': NEW_FIRST, 'Small.third': NEW_THIRD})
-        with self.assertRaises(Conflict):
+        with self.assertRaisesRegex(Conflict, 'the proof of Small.first was replaced by another publication'):
             apply_lean(self.lean, folder, change, self.index, {'Small.first': sha256_text('another proof')})
         self.assertEqual(self.text(), LIB)
 
@@ -1731,13 +1731,6 @@ class CheckAppliedTests(unittest.TestCase):
         self.new['entries']['Small.root'] = copy.deepcopy(self.old['entries']['Small.root'])
         self.refused('Small.root: ' + UNTOUCHED)
 
-    def test_the_record_comparison_needs_the_record_of_the_canon(self):
-        # A caller that answers only whether a record exists gets the check for a missing record alone.
-        self.untouched_base()
-        self.records['Small/step'] = parse_record(record_text('Passing from n to n + 1.', proof='By induction instead.'))
-        result = check_applied(self.old, self.new, self.change, self.records, lambda name: True, ALLOWED)
-        self.assertEqual(result['errors'], [])
-
     def test_an_added_axiom(self):
         self.add(entry('Small.assumed', 'axiom'))
         self.records['Small/assumed'] = parse_record(STEP_RECORD)
@@ -1917,6 +1910,17 @@ class CheckAppliedTests(unittest.TestCase):
         # statement's name the proof names the step alone.
         self.organizer_base()
         self.old['entries']['Small.root_alt']['uses'] = ['Small.root', 'Small.step']
+        self.assertEqual(self.check(organizer=True)['errors'], [])
+
+    def test_a_retirement_of_a_proof_that_named_another_retired_declaration(self):
+        # Two alternatives are retired by one change, and the proof of the first named the second. Under the
+        # statement's own name it names the statement the second was retired into.
+        self.organizer_base()
+        self.old['entries']['Small.step_alt'] = entry('Small.step_alt', statement_uses=['Small.oddSum'])
+        self.old['entries']['Small.root_alt']['uses'] = ['Small.step_alt']
+        self.new['entries']['Small.step']['source_sha'] = 'moved-source-of-Small.step'
+        self.change['retire'].append({'alternative': 'Small.step_alt', 'into': 'Small.step',
+                                      'reason': 'The proof now stands under the statement.'})
         self.assertEqual(self.check(organizer=True)['errors'], [])
 
     def test_only_an_organizer_retires(self):

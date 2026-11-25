@@ -4,7 +4,8 @@ The last argument is the source file. Its `import` lines cost 8 MiB each plus 8 
 (the "baseline"), held for the whole run and alone for its first 0.3 seconds, so that
 the broker's sampling sees an imports-only peak. A line `-- fake: key=value ...` adds:
 alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code),
-marker (text printed to stdout), stderr (text printed to stderr). `--threads=N` is
+marker (text printed to stdout), stderr (text printed to stderr), emit (`emit=0` makes a
+module compile write none of its output files although it exits with code 0). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
 `--version` prints a version line; and an import of a `Missing.*` module fails the way a
 nonexistent module would.
@@ -81,7 +82,7 @@ def main(argv):
         print(options["stderr"], file=sys.stderr)
     sys.stdout.flush()
     del held
-    if olean and code == 0:
+    if olean and code == 0 and options.get("emit") != "0":
         public = [line for line in lines if not line.startswith("-- proof:")]
         for suffix in SUFFIXES:
             with open(os.path.splitext(olean)[0] + suffix, "w", encoding="utf-8") as stream:

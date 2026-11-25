@@ -3,8 +3,8 @@
 It accepts what the broker passes (`-R root`, `-o file`, `--threads=N`, the source last) and
 `--version`. A module is "compiled" by parsing its declarations and writing four of the five files
 that Lean 4.36 emits for a `module` file; it does not write the fifth, `.ir.sig`. The public file
-depends on names and statements only, so a changed proof leaves it unchanged, as the real
-compiler does when the auxiliary declarations stay the same. The source
+depends on names, kinds, statements and the bodies of definitions, so a changed proof leaves it
+unchanged, as the real compiler does when the auxiliary declarations stay the same. The source
 `DoMathExtract.lean` is answered with the rows canon.extraction_source asks for, computed from the
 sources under the root instead of from a compiled environment. As in Lean, a pair is decided only
 between declarations of the modules that file imports, directly or through others.

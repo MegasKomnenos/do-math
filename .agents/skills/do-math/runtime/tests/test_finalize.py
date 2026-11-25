@@ -10,7 +10,8 @@ a file or folder of the session copied to another place in it. Every call is rec
 the session was given. Run as `test_finalize.py lake ...` it is Lake: `build` succeeds unless
 `lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
 runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms line for every name
-that Check.lean asks about. Run as `test_finalize.py version` it is Lean's version command.
+that Check.lean asks about; and every call fails when `lake.json` names under `needs_variable` a variable
+that its environment does not have. Run as `test_finalize.py version` it is Lean's version command.
 
 The paper command is not run: `finalize.produce` is replaced by a function that writes the files
 section 15.1 of the design names and records what it was called with. Its own tests are test_paper.py.
@@ -30,6 +31,7 @@ THIS = Path(__file__).resolve()
 def stand_in_session(scenario):
     folder = Path.cwd()
     task = json.loads((folder / 'session.json').read_text(encoding='utf-8'))
+    sys.stdin.reconfigure(encoding='utf-8')  # the program hands over the bytes of a UTF-8 file, whatever the locale
     prompt = sys.stdin.read()
     script = json.loads((scenario / 'script.json').read_text(encoding='utf-8'))
     own = f"{task['kind']}:{task['section']}"
@@ -72,6 +74,10 @@ def stand_in_lake(scenario, arguments):
     settings = json.loads((scenario / 'lake.json').read_text(encoding='utf-8')) if (scenario / 'lake.json').exists() else {}
     with (scenario / 'lake-calls.txt').open('a', encoding='utf-8') as stream:
         stream.write(' '.join(arguments) + '\n')
+    needed = settings.get('needs_variable')
+    if needed and not os.environ.get(needed):
+        print(f'error: the stand-in for Lake was started without {needed} in its environment')
+        return 1
     if arguments == ['build']:
         failing = settings.get('build_fails_when')
         if failing and failing in Path('Challenge.lean').read_text(encoding='utf-8'):
@@ -198,7 +204,9 @@ def script(**changes):
         'simplify:core': [{'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED,
                            'output/report.json': json.dumps({'deleted': [], 'cross': [{'id': 'x1', 'done': True, 'note': ''}],
                                                              'notes': ''})}],
-        'simplify:aux': [{'output/lean/Small/Step.lean': STEP + '-- fail: this simplification does not compile\n',
+        # The first session of this part leaves a report that does not parse, the second a module that does not compile.
+        'simplify:aux': [{'output/report.json': '{"deleted": [], '},
+                         {'output/lean/Small/Step.lean': STEP + '-- fail: this simplification does not compile\n',
                           'output/report.json': json.dumps({'deleted': [], 'cross': [], 'notes': ''})}],
         'arrange': [{'@copy': [['lean', 'output/lean']], 'output/renames.json': '{}', 'output/removed.json': '[]'}],
         'records-write:5-01': [{'output/records/Small/added_six.md': record_text('The first six odd numbers sum to thirty-six.'),
@@ -216,7 +224,8 @@ def script(**changes):
                 {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': ''},
                 {'id': 'r1', 'closed': False, 'declarations': [], 'note': 'The lemma is wanted by the cross-part item.'}]})}],
         'records-write:6-01': [{'output/records/Small/sq_step_strict.md': record_text('The sums increase strictly.'),
-                                'output/findings.json': '[]'}],
+                                'output/findings.json': json.dumps([{'declaration': 'Small.sq_step_strict', 'kind': 'other',
+                                                                     'detail': 'Its doc comment says less than it states.'}])}],
         'records-compare:6-01': [{'output/verdicts.json': json.dumps([{'declaration': 'Small.sq_step_strict',
                                                                        'verdict': 'corrected', 'difference': 'A word.'}]),
                                   'output/records/Small/sq_step_strict.md': record_text('The sums increase strictly with n.')}],
@@ -253,6 +262,10 @@ PLAN = {'title': 'Odd numbers sum to squares', 'sections': [{'id': 'intro', 'tit
 class FinalizeCase(InstanceCase):
     """An instance whose root is proved in Lean through a step, made once through the real publication path."""
 
+    def starting_instance(self):
+        """The published instance once the first test has made it; before that, the one `init` created."""
+        return _SETTLED or super().starting_instance()
+
     def setUp(self):
         global _SETTLED
         super().setUp()
@@ -267,11 +280,9 @@ class FinalizeCase(InstanceCase):
             self.configure(lean={'version_command': [sys.executable, '-B', str(THIS), 'version']})
             stop_broker(self.instance)
             base = Path(tempfile.mkdtemp(prefix='do-math-finalize-'))
-            atexit.register(shutil.rmtree, base, True)
+            atexit.register(remove_tree, base)
             shutil.copytree(self.instance, base / 'instance')
             _SETTLED = base / 'instance'
-        self.instance = self.root / 'settled'
-        shutil.copytree(_SETTLED, self.instance)
         self.repository = self.root / 'repository'
         self.repository.mkdir()
         (self.repository / 'README.md').write_text('# The repository\n\n## Solved problems\n\n- An earlier one.\n\n## Other\n',
@@ -416,7 +427,7 @@ class TakeTests(FinalizeCase):
 
     def test_an_index_that_is_not_of_these_sources_is_refused(self):
         self.index['entries']['Small.unused_two']['span'][0] += 1
-        with self.assertRaises(canon.CanonError):
+        with self.assertRaisesRegex(canon.CanonError, 'the source of Small.unused_two is not the text the index was extracted'):
             package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'])
 
     def test_an_attribute_given_by_a_separate_command_keeps_the_element(self):
@@ -887,7 +898,9 @@ class DocumentTests(FinalizeCase):
         faulty('README.md', '[out](../outside.md)\n', 'the link ../outside.md does not resolve inside the package')
         faulty('dependency-map/dependency_map.html', '<img src="missing.svg">\n', 'the link missing.svg')
         faulty('history/timeline.md', 'Run by pat on the machine.\n', 'history/timeline.md holds the account name', account='pat')
-        faulty('README.md', 'Built in C:\\Users\\someone\\lean.\n', 'README.md holds a drive path')
+        # In a document a colon before a backslash is a formula, so a drive path is found there by its form with a slash.
+        faulty('README.md', 'Built in C:/Users/someone/lean.\n', 'README.md holds a drive path')
+        faulty('lean/lakefile.toml', "path = 'C:\\Users\\someone\\lean'\n", 'lean/lakefile.toml holds a drive path')
         faulty('lean/lakefile.toml', f'path = "{work.as_posix()}/stage"\n', "holds the work folder's path")
         faulty('lean/Small/Defs.lean', DEFS + '-- changed after the freeze\n', 'lean/ is not what the freeze hashed: lean/Small/Defs.lean')
         faulty('records/Small/new.md', 'A record added after the freeze.\n', 'records/ is not what the freeze hashed')
@@ -897,6 +910,12 @@ class DocumentTests(FinalizeCase):
         # A file that is no text, as the typeset paper is, is not read for its line endings.
         (folder / 'paper').mkdir(exist_ok=True)
         (folder / 'paper' / 'paper.pdf').write_bytes(b'%PDF-1.5\r\n%\xd0\xd4\xc5\xd8\r\n')
+        (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
+        self.assertEqual(check(), [])
+        # A formula with a colon before a command is no drive path, in a document and in the source of the paper.
+        formula = 'A map $f:\\mathbb{N}\\to\\mathbb{N}$ and the set $X:\\ M$.\n'
+        (folder / 'README.md').write_text('# Title\n\n' + formula, encoding='utf-8', newline='\n')
+        (folder / 'paper' / 'paper.tex').write_text(formula, encoding='utf-8', newline='\n')
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(check(), [])
         # A member of the archive that holds the account name is found inside the archive.
@@ -1094,10 +1113,12 @@ class RunTests(FinalizeCase):
         self.assertEqual(kinds, ['selection', 'selection-read', 'review', 'arrange', 'records-write', 'records-compare',
                                  'sources', 'foldback', 'records-write', 'records-compare', 'draft-compare', 'readme-write',
                                  'package-read'])
-        # One part was accepted at once; the other was tried twice, the second time with the reasons, and discarded.
+        # One part was accepted at once. The other was tried twice and discarded: its first session left a report that
+        # does not parse, and the second, which was told so, left a module that does not compile.
         self.assertEqual(sorted(call['section'] for call in self.calls('simplify')), ['aux', 'aux', 'core'])
-        self.assertIn('this simplification does not compile', [call for call in self.calls('simplify')
-                                                             if call['section'] == 'aux'][1]['prompt'])
+        self.assertIn('output/report.json is not JSON', [call for call in self.calls('simplify')
+                                                       if call['section'] == 'aux'][1]['prompt'])
+        self.assertIn('this simplification does not compile', self.decisions())
         self.assertEqual([call['kind'] for call in self.calls() if call['kind'].startswith('history')],
                          ['history-write', 'history-read'])
 
@@ -1233,6 +1254,8 @@ class RunTests(FinalizeCase):
         self.assertIn('r1 (records, `Small.added_six`): not closed. The lemma is wanted by the cross-part item.', decisions)
         self.assertIn('Restated as the declaration says it: g1', decisions)
         self.assertIn('The title is long. Kept because: It names the result.', decisions)
+        # What the writers of the records found after the fold-back is kept in the decisions, since the work folder goes.
+        self.assertIn('- `Small.sq_step_strict` (other): Its doc comment says less than it states.', decisions)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The package is in place: `solved/odd/`', report)
         self.assertNotIn('`project.authors`', report)
@@ -1418,12 +1441,15 @@ class RunTests(FinalizeCase):
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         plan = script(package_read=[{'output/findings.json': json.dumps([
-            {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'}])}])
+            {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'},
+            {'file': 'README.md', 'quote': '', 'problem': 'It was not read to its end: the last section is missing here.'}])}])
         self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
         # No session may rewrite a sentence of the program: the finding is reported with the package, and the run ends.
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('## What the reader of the package found and the run did not correct', report)
         self.assertIn('- README.md, at "Everything in this folder is under": The licence is not named.', report)
+        # A document that the reader could not read is reported without a quote, and is no finding in the prose.
+        self.assertIn('- README.md: It was not read to its end: the last section is missing here.', report)
         self.assertIn('## Stage 5: what the reader of the package found and the run did not correct', self.decisions())
         self.assertEqual(len(self.calls('readme-write')), 1)  # nothing was found in the prose, so no session corrects
         self.assertTrue((self.solved / 'README.md').is_file())
@@ -1439,7 +1465,9 @@ class RunTests(FinalizeCase):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         plan = script(selection=[{'output/decision.json': decision(main='Small.twice_zero')}])
         plan['records-write:5-01'][0]['output/findings.json'] = '[]'  # the writers found nothing, and the draft has no gap
-        lean = self.halted_after_the_freeze(plan)
+        # Lake is run in the Lean environment of the settings: the stand-in fails without the variable `lean.env` gives.
+        self.configure(lean={'env': {'DO_MATH_TEST_LAKE': 'given'}})
+        lean = self.halted_after_the_freeze(plan, lake={'needs_variable': 'DO_MATH_TEST_LAKE'})
         self.assertEqual(read_json(lean / 'comparator.json')['theorem_names'], ['Small.root'])
         self.assertNotIn('twice_zero', (lean / 'Challenge.lean').read_text(encoding='utf-8'))
         self.assertIn('the statement of the main theorem `Small.twice_zero` names declarations outside the definition '

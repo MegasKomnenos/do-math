@@ -149,13 +149,6 @@ class BrokerFixture(unittest.TestCase):
         self.until(lambda: self.finished(job_id))
         return self.broker.state["jobs"][job_id]
 
-    def launched(self, job_id):
-        """The argv of a job's Lean, as its launch file records it; for a job run twice, that of the second run."""
-        return runtime_support.read_json(self.paths.job(job_id) / "launch.json")["argv"]
-
-    def output(self, job_id):
-        return (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8")
-
     def tree(self, session="s1", **overrides):
         """A imports the library, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
         root = self.instance / "sessions" / session / "work" / "lean"
@@ -1611,6 +1604,19 @@ class BuildTests(BrokerFixture):
         self.assertEqual([(m['module'], m['exit_code']) for m in summary['modules']],
                          [('Target', 1)])
         self.assertFalse(list(self.paths.cache.glob('*.olean')))
+
+    def test_a_module_that_exits_with_code_0_and_wrote_no_olean_fails_and_is_not_cached(self):
+        # An exit code of 0 counts as a compiled module only together with the .olean that the modules
+        # above it read. Kept in the cache without it, the module would be an entry with no files, and
+        # every later build with the same key would take nothing from it and report the module as cached.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        record = self.built(root, [source(root / "Target.lean", imports=(), emit=0)])
+        module = record["modules"]["Target"]
+        self.assertEqual((record["status"], module["status"], module["exit_code"]), ("failed", "failed", 0))
+        self.assertIn("wrote no .olean", module["reason"])
+        self.assertIn("module Target failed", record["reason"])
+        self.assertEqual(list(self.paths.cache.iterdir()), [])
 
     def test_build_rejects_bad_targets_cycles_and_shadowing(self):
         self.start_broker()

@@ -143,9 +143,8 @@ def collapsed(text):
 class Run:
     """One run of the command: its work folder, its state, its sessions and its compile service."""
 
-    def __init__(self, instance, name, config, config_path=None):
+    def __init__(self, instance, name, config):
         self.instance, self.name, self.config = Path(instance).resolve(), name, config
-        self.config_path = config_path
         self.work = REPOSITORY / '.skill-workspace' / ('finalize-' + name)
         self.solved = REPOSITORY / 'solved' / name
         self.package = self.work / 'package'
@@ -362,7 +361,7 @@ class Run:
                 time.sleep(0.1)
 
     def library_ok(self, label, base=None, files=None, replace=None, delete=(), extract=False, records=None,
-                   due=False, keep=None, modules=None, onto=None, whole=True):
+                   keep=None, modules=None, onto=None, whole=True):
         """The exit check of every step that writes Lean, on a library put together in stage/<label>/lean.
 
         The library is the folder `base`, or exactly `files` (path to text), with `replace` written
@@ -370,7 +369,7 @@ class Run:
         definition module has its first bytes; the build of all modules through the run's broker
         succeeds. With `extract` the build includes the extraction, and the index is checked: the root's
         statement, complete proofs from the allowed axioms, names that differ only in case, and
-        `canon.check_applied`, with the records when they are `due`. `records` are the records whose
+        `canon.check_applied` with an empty record for every element. `records` are the records whose
         claims of another proof the extraction asks Lean about. `modules` with `onto` extracts only
         those modules into the index `onto`, and without `whole` the checks of the index are left to
         the caller, who has a library in which not every theorem is proved. With `keep` the library is
@@ -392,8 +391,7 @@ class Run:
             if not problems:
                 problems, index = self.build(stage, extract, records, modules, onto)
             if not problems and extract and whole:
-                problems = package.index_problems(index, self.root, self.statement_hash, self.allowed,
-                                                  records if due else None)
+                problems = package.index_problems(index, self.root, self.statement_hash, self.allowed)
             if not problems and keep is not None:
                 (stage / (canon.EXTRACT_MODULE + '.lean')).unlink(missing_ok=True)
                 package.copy_tree(stage, keep)
@@ -857,8 +855,8 @@ class Run:
                 'cross': [{'id': c['id'], 'what': c['what']} for c in owned]})}
 
             def read(output):
+                report = Sessions.load(output / 'report.json')  # first: a report that does not parse goes back to a session
                 files, deleted, problems = package.part_output(output, taken, lambda m: m in part['modules'], self.definitions)
-                report = Sessions.load(output / 'report.json')
                 answered = {c.get('id'): c for c in report.get('cross', []) if isinstance(c, dict)}
                 problems += [f"report.json does not say whether the cross-part item {c['id']} is done" for c in owned
                              if type(answered.get(c['id'], {}).get('done')) is not bool]
@@ -1224,8 +1222,8 @@ class Run:
                 'inside': '', 'interface': package.interface(index, [m for m in modules if inside(m)]), 'cross': []})}
 
             def read(output):
+                report = Sessions.load(output / 'report.json')  # first: a report that does not parse goes back to a session
                 files, deleted, problems = package.part_output(output, arranged / 'lean', inside, self.definitions, inside)
-                report = Sessions.load(output / 'report.json')
                 answers = {a.get('id'): a for a in report.get('items', []) if isinstance(a, dict)}
                 for item in given_items:
                     answer = answers.get(item['id'], {})
@@ -1299,9 +1297,10 @@ class Run:
                                                'states it in the form the library has; the paper proves it')
                 + (f". {a['note'].strip()}" if is_text(a.get('note')) else '') for a in answers))
         if late:
-            self.decide('Step 6: the records', 'The writers of the records of what the fold-back changed reported '
-                        f'{len(late)} further findings. The fold-back is one pass, so they stand in '
-                        'lib/6-folded/findings.json and the library was not changed for them.')
+            self.decide('Step 6: the records', '\n'.join([
+                f'The writers of the records of what the fold-back changed reported {len(late)} further findings. The '
+                'fold-back is one pass, so the library was not changed for them:', '',
+                *[f"- `{finding['declaration']}` ({finding['kind']}): {collapsed(finding['detail'])}" for finding in late]]))
 
     def compare_draft(self):
         folded, target = self.work / 'lib' / '6-folded', self.work / 'lib' / '6-draft'
@@ -1419,6 +1418,7 @@ class Run:
         models = list(dict.fromkeys([self.sessions.writer['model'], self.sessions.assessor['model']]))
         stage = self.work / 'stage' / 'lake'
         lake = package.lake_command(self.settings)
+        environment = self.settings['lean']['env']  # Lake runs in the Lean environment, as every compile of the run does
 
         def registry(compared):
             both = main in compared
@@ -1443,12 +1443,12 @@ class Run:
 
         def built(compared):
             """Lake on the staged project: the build, then the statements of Challenge.lean; returns what failed."""
-            code, out, err = package.lake_run(lake, stage, 'build')
+            code, out, err = package.lake_run(lake, stage, 'build', env=environment)
             self.sessions.event('check', check='lake build', problems=[] if code == 0 else [(out + err)[-2000:]])
             if code != 0:
                 return f'lake build ended with exit code {code}: ' + (out + err)[-1500:]
             write_text(stage / (canon.EXTRACT_MODULE + '.lean'), canon.extraction_source('Challenge', ['Challenge'], []))
-            code, out, err = package.lake_run(lake, stage, 'env', 'lean', canon.EXTRACT_MODULE + '.lean')
+            code, out, err = package.lake_run(lake, stage, 'env', 'lean', canon.EXTRACT_MODULE + '.lean', env=environment)
             (stage / (canon.EXTRACT_MODULE + '.lean')).unlink()
             if code != 0:
                 return f'the statements of Challenge.lean could not be extracted: exit code {code}: ' + (out + err)[-1500:]
@@ -1490,7 +1490,7 @@ class Run:
             failed = built(compared)
             if failed is not None:
                 raise Stop(failed)
-        code, out, err = package.lake_run(lake, stage, 'env', 'lean', 'Check.lean')
+        code, out, err = package.lake_run(lake, stage, 'env', 'lean', 'Check.lean', env=environment)
         if code != 0:
             raise Stop(f'lake env lean Check.lean ended with exit code {code}: ' + (out + err)[-1500:])
         axioms = package.axioms_printed(out)
@@ -1730,9 +1730,11 @@ class Run:
 
         def read_findings(output):
             findings = Sessions.load(output / 'findings.json', list)
-            if not all(isinstance(f, dict) and is_text(f.get('file')) and is_text(f.get('quote')) and is_text(f.get('problem'))
-                       for f in findings):
-                raise Unusable(['every finding has "file", "quote" and "problem"'])
+            # The quote is empty in the one case the instruction names: a document that the reader could not read.
+            if not all(isinstance(f, dict) and is_text(f.get('file')) and isinstance(f.get('quote'), str)
+                       and is_text(f.get('problem')) for f in findings):
+                raise Unusable(['every finding has "file", "quote" and "problem"; "quote" is a text, and it is empty only '
+                                'for a document that could not be read'])
             return findings
 
         findings = self.task('package-read', 'package-read', copy, read_findings, self.sessions.assessor)
@@ -1740,7 +1742,8 @@ class Run:
         # that the program writes or that an earlier stage fixed, which no session of this stage may rewrite: it is
         # reported to the user with the package, and the run goes on.
         whole = collapsed(' '.join(texts.values()))
-        findings = [{**f, 'in_prose': f['file'].endswith('README.md') and collapsed(f['quote']) in whole} for f in findings]
+        findings = [{**f, 'in_prose': bool(f['quote'].strip()) and f['file'].endswith('README.md')
+                     and collapsed(f['quote']) in whole} for f in findings]
         write_json(self.work / 'findings.json', findings)
         inside = [{key: f[key] for key in ('file', 'quote', 'problem')} for f in findings if f['in_prose']]
         outside = [f for f in findings if not f['in_prose']]
@@ -1987,7 +1990,7 @@ def main(argv=None):
     parser.add_argument('--config', type=Path, help='a JSON file with authors, licence, human_review, parallel, tex')
     args = parser.parse_args(argv)
     try:
-        code = Run(args.instance, args.name, load_config(args.config), args.config).run()
+        code = Run(args.instance, args.name, load_config(args.config)).run()
     except Refusal as refusal:
         print('finalize.py: ' + str(refusal), file=sys.stderr)
         return 1

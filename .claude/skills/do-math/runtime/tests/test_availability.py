@@ -215,7 +215,7 @@ class AvailabilityTests(ScenarioCase):
         value = read_json(folder / 'output/outcome.json')
         value['availability']['snapshot'] = '../not-a-token'
         write_json(folder / 'output/outcome.json', value)
-        self.assertTrue(check_session(folder))
+        self.assertEqual(check_session(folder), ['availability.snapshot must be a token returned by updates'])
         self.runner.finish(sid, session)
         self.assertEqual(job['status'], 'done')
         self.assertEqual(session['availability_report']['status'], 'invalid')

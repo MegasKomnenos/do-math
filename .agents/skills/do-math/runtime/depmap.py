@@ -14,7 +14,7 @@ in the instance. The command writes three files into the output folder:
 
 The drawing is laid out by code that ships with the skill and needs nothing beyond Python.
 depmap/draw.py describes the layout and says what was taken from the generator of the previous
-research's map and what was left. Nothing is installed by this command.
+research's map and what was left.
 
 How the map is derived. The words are those of docs/do-math/lean-canon-design.md, sections 4.4, 5 and 13.1.
 

@@ -72,7 +72,13 @@ Keep prose out of the Lean source apart from a short doc comment. The broker tha
 
 ## Reading the canon: the commands
 
-The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with one of the commands below and append that command's arguments after the last element of the array. The output is text. An error is reported as a JSON object with the key `error` and exit code 1.
+The canon is read with one command, `commands.canon` in your `input.json`. It is an argument array whose third element is the placeholder `<command>` and whose last element is your session directory. Replace the placeholder with the name of one of the commands below, which is `frontier`, `view`, `list`, `question` or `log`, and append that command's arguments after the last element of the array. What the table writes after the name of a command are its arguments, so they follow the session directory and do not stand before it. With `python` for the interpreter and `<canon tool>` for the script, which are the first two elements of the array, the full view of an element is
+
+```text
+python <canon tool> view <session directory> Tri.two_mul_tri --full
+```
+
+The output is text. An error is reported as a JSON object with the key `error` and exit code 1.
 
 | Command and arguments | What it returns |
 |---|---|

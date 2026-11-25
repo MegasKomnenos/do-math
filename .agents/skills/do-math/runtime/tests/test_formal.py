@@ -37,8 +37,8 @@ from knowledge import frontier_lines, replay
 from lean_broker import Paths, job_record
 from runtime_support import read_json, write_json
 from settings import defaults, load_settings, validate
-from support import (ROOT, ROOT_STATEMENTS, SUM_ZERO, InstanceCase, ScenarioCase, module_text, record_text,
-                     test_settings, theorem)
+from support import (ROOT, ROOT_STATEMENTS, SUM_ZERO, InstanceCase, ScenarioCase, fixture_settings, module_text,
+                     record_text, theorem)
 
 ALLOWED = ['propext', 'Classical.choice', 'Quot.sound']
 OPEN_ZERO = theorem('sumZero', SUM_ZERO)
@@ -164,7 +164,7 @@ class EarlierFilesTests(ScenarioCase):
         self.assertNotIn('judge', defaults()['lean'])
         # Another unknown key is still a mistake.
         with self.assertRaisesRegex(ValueError, 'unknown setting: lean.jugde'):
-            validate({**test_settings(), 'lean': {**test_settings()['lean'], 'jugde': None}})
+            validate({**fixture_settings(), 'lean': {**fixture_settings()['lean'], 'jugde': None}})
 
     def test_an_index_of_the_earlier_code_is_read_as_it_stood_and_rewritten_by_the_next_publication(self):
         self.formal()
@@ -333,7 +333,7 @@ KIND_RECORDS = {'Small/sumZero.md': ZERO_RECORD,
 
 def lean_settings():
     """The settings of the test instances with Lean itself as the compiler, one compile at a time."""
-    config = test_settings()
+    config = fixture_settings()
     config['lean'].update(command=[str(LEAN)], version_command=[str(LEAN), '--version'],
                           memory_budget_mb=8192, calibration_expect_mb=EXPECT_MB, threads=2, cpu_threads_budget=2)
     return config
@@ -343,23 +343,12 @@ def lean_settings():
 class LeanItselfTests(ScenarioCase):
     """The same instance and the same paths as above, compiled by Lean 4.36.0."""
     root_variant = 'lean'  # the key of this compiler's instance among the instances kept for the test process
+    expect_mb, patience = EXPECT_MB, PATIENCE
 
     def setUp(self):
         support.ROOTS.setdefault('lean', ROOT)
-        with patch.object(support, 'test_settings', lean_settings):
+        with patch.object(support, 'fixture_settings', lean_settings):
             super().setUp()
-
-    def prepare(self, folder, role='peer', expect_ok=True):
-        result = canon_tool.build_candidate(self.instance, 'test', folder, self.root / ('prepare-' + uuid.uuid4().hex),
-                                            EXPECT_MB, PATIENCE, role)
-        self.assertIsNotNone(result, 'the candidate build did not finish')
-        write_json(folder / 'prepared.json', result)
-        if expect_ok:
-            self.assertTrue(result['ok'], result['errors'])
-        return result
-
-    def drain(self, engine, seconds=PATIENCE):
-        super().drain(engine, seconds)
 
     def element(self, name):
         return replay(self.instance)['elements'][name]

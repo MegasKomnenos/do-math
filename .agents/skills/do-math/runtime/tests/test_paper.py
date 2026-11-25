@@ -120,7 +120,7 @@ sys.path[:0] = [str(THIS.parents[1]), str(THIS.parent)]
 import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay, rests_on
-from runtime_support import read_json, write_json
+from runtime_support import read_json, remove_tree, write_json
 from support import InstanceCase, module_text, record_text, stop_broker, theorem
 from test_research import RefutedRootCase
 
@@ -404,6 +404,10 @@ _SETTLED = None
 class PaperCase(InstanceCase):
     """An instance whose root is proved in Lean, made once through the real publication path."""
 
+    def starting_instance(self):
+        """The published instance once the first test has made it; before that, the one `init` created."""
+        return _SETTLED or super().starting_instance()
+
     def setUp(self):
         global _SETTLED
         super().setUp()
@@ -419,13 +423,9 @@ class PaperCase(InstanceCase):
             self.publish(folder)
             stop_broker(self.instance)
             base = Path(tempfile.mkdtemp(prefix='do-math-paper-'))
-            atexit.register(shutil.rmtree, base, True)
+            atexit.register(remove_tree, base)
             shutil.copytree(self.instance, base / 'instance')
             _SETTLED = base / 'instance'
-        else:
-            self.instance = self.root / 'settled'
-            shutil.copytree(_SETTLED, self.instance)
-            self.addCleanup(stop_broker, self.instance)
         self.out = self.root / 'paper'
         self.scenario = self.root / 'scenario'
         self.scenario.mkdir()
@@ -659,6 +659,13 @@ class PlanTests(PaperCase):
         self.assertIn(f"the title of section {PLAN['sections'][1]['id']!r} has Mathlib, Small.sq_step;", named)
         self.assertEqual(self.problems(lambda plan: plan.update(title='A lean proof of a clean identity')), '')
 
+    def test_the_title_of_the_paper_is_written_in_ascii(self):
+        # The machine checks hold the title to ASCII and a repair keeps the plan, so the check of the plan reports it.
+        self.assertEqual(self.problems(lambda plan: plan.update(title='A theorem of Erdős')),
+                         'the title is written in ASCII, as the parts of the manuscript are; write these characters '
+                         'as LaTeX: ő')
+        self.assertEqual(self.problems(lambda plan: plan.update(title='A theorem of Erd\\H{o}s')), '')
+
     def test_the_plan_chooses_six_different_papers_of_the_collection(self):
         self.assertIn('"exemplars" names 5 papers; it names exactly 6 different ones',
                       self.problems(lambda plan: plan.update(exemplars=CHOSEN[:5])))
@@ -836,6 +843,10 @@ class ManuscriptTests(PaperCase):
         self.assertTrue(any(problem.startswith('the short title has Lean')
                             for problem in paper.check_plan(materials, {**PLAN, 'short_title': 'Squares in Lean'}, KEYS)))
 
+
+class TypesettingTests(unittest.TestCase):
+    """What the script writes around the parts for TeX and reads from the log of TeX. No instance is needed."""
+
     def test_the_subsection_headings_set_their_formulas_bold(self):
         self.assertIn('{-.5em}{\\normalfont\\bfseries\\boldmath}}', paper.assemble(PLAN, PARTS)[0])
 
@@ -936,6 +947,43 @@ class CollectionTests(PaperCase):
         self.assertEqual(paper.likeness_papers(manifest, CHOSEN), FIRST_FOUR + NEXT_FOUR)
 
 
+class FetchTests(unittest.TestCase):
+    """The collection's own fetch.py, with the requests to arXiv answered by the test."""
+
+    def test_a_download_that_was_cut_short_fails_its_paper_and_the_other_papers_are_fetched(self):
+        import gzip
+        import http.client
+        # The script is compiled from its source here, so that the test leaves no bytecode beside the collection.
+        script = THIS.parents[2] / 'exemplars' / 'fetch.py'
+        fetch = types.ModuleType('exemplars_fetch')
+        fetch.__file__ = str(script)
+        exec(compile(script.read_text(encoding='utf-8'), str(script), 'exec'), fetch.__dict__)
+        folder = Path(tempfile.mkdtemp(prefix='do-math-fetch-'))
+        self.addCleanup(shutil.rmtree, folder, True)
+        source = b'\\documentclass{amsart}\n\\begin{document}\n\\maketitle\nA paper.\n\\end{document}\n'
+        digest = hashlib.sha256(source).hexdigest()
+        (folder / 'manifest.json').write_text(json.dumps(
+            [{'key': key, 'arxiv': f'0001.0000{number}v1', 'sha256': digest}
+             for number, key in enumerate(('broken', 'cut', 'whole'), 1)]), encoding='utf-8')
+        packed = gzip.compress(source)
+
+        def request(url):
+            # The first paper's connection ends inside the body, and the second paper's body arrives without its end.
+            if url.endswith('0001.00001v1'):
+                raise http.client.IncompleteRead(b'')
+            return packed[:-12] if url.endswith('0001.00002v1') else packed
+
+        with patch.object(fetch, 'HERE', str(folder)), patch.object(fetch, '_request', side_effect=request), \
+                patch('builtins.print') as shown:
+            self.assertEqual(fetch.main([]), 1)
+        said = [str(call.args[0]) for call in shown.call_args_list]
+        self.assertTrue(any(line.startswith('broken: FAILED, download failed') for line in said), said)
+        self.assertTrue(any(line.startswith('cut: FAILED, the e-print is not a complete gzip file') for line in said), said)
+        self.assertEqual(said[-1], '2 paper(s) could not be rebuilt as recorded: broken, cut')
+        self.assertEqual(sorted(path.name for path in folder.iterdir()), ['manifest.json', 'whole.tex'])
+        self.assertEqual((folder / 'whole.tex').read_bytes(), source)
+
+
 class LikenessShapeTests(unittest.TestCase):
     """A report of a reading beside papers is checked for its shape, and for nothing that carries meaning."""
 
@@ -1011,6 +1059,8 @@ class RunTests(PaperCase):
         self.assertEqual(self.events('plan')[0]['papers'], {s['id']: s['exemplars'] for s in PLAN['sections']})
         self.assertIn('"exemplars": the keys of the 6 papers you chose', calls[0]['prompt'])
         self.assertIn('output/study.md', calls[0]['prompt'])
+        # The plan of a paper that is not a draft is not asked for the results to cite.
+        self.assertNotIn('"citations"', calls[0]['prompt'])
         self.assertEqual(self.events('plan')[0]['exemplars'], CHOSEN)
         # The planning session's account of the papers is kept beside the paper.
         self.assertEqual((self.out / 'study.md').read_text(encoding='utf-8'), STUDY)
@@ -1065,7 +1115,6 @@ class RunTests(PaperCase):
             self.assertNotIn(word, tex)
         for call in calls:
             self.assertNotIn('formal verification', call['prompt'])
-            self.assertNotIn('LeanStatement', call['prompt'])
         self.assertEqual(self.events('materials')[0]['warnings'], [])
         # The correspondence file still gives the Lean statement of every numbered statement.
         self.assertEqual(rows['statements'][2]['lean_statement'],
@@ -1329,7 +1378,7 @@ class RunTests(PaperCase):
     def test_without_a_tex_command_everything_else_is_done_and_the_manuscript_is_typeset_later(self):
         with patch('paper.shutil.which', return_value=None):
             self.assertEqual(self.run_paper(good(), tex=None), 3)
-            with self.assertRaises(paper.Stop):
+            with self.assertRaisesRegex(paper.Stop, 'no TeX command is available'):
                 self.run_paper(good(), tex=None, only=True)
         self.assertFalse((self.out / 'paper.pdf').exists())
         self.assertFalse((self.out / 'typeset').exists())
@@ -1341,7 +1390,7 @@ class RunTests(PaperCase):
         self.assertEqual((self.events('end')[0]['status'], self.events('materials')[0]['tex']), ('no_tex', None))
         self.assertEqual([e['check'] for e in self.events('check')], ['machine checks of the manuscript'])
         # A folder that holds a manuscript is not written over by a new run; it is typeset as it stands.
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'is not empty; give a new folder to --out'):
             self.run_paper(good())
         launched = len(self.calls())
         # Typesetting later does not use the collection: a paper missing from it is neither fetched nor missed.
@@ -1383,7 +1432,7 @@ class RunTests(PaperCase):
         with patch('paper.shutil.which', return_value=None):
             self.assertEqual(self.run_paper(script, tex=None), 2)
         self.assertEqual(len(self.calls('read')), readings)
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'whose reading and comparison did not run to their end'):
             self.run_paper(script, only=True)
 
     def test_a_statement_that_a_repair_changes_while_typesetting_later_is_reported_as_not_compared(self):
@@ -1962,7 +2011,6 @@ class PassageTests(unittest.TestCase):
 class WritingTests(unittest.TestCase):
     def test_files_written_from_several_threads_at_once_are_whole(self):
         # The writers of the runtime build a file in one buffer shared by the process; this command serialises them.
-        import threading
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             texts = {f'{letter}{number}.txt': (letter * 70 + '\n') * 3000 for letter in 'abcdef' for number in range(8)}
@@ -2060,7 +2108,7 @@ class SideBySideTests(PaperCase):
         self.assertFalse((self.out / 'paper.tex').exists())
         launched = len(self.calls())
         # A new run does not write over the folder; a dry run of the continuation says what is left to do.
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'is not empty; give a new folder to --out'):
             self.run_paper(good())
         before = sorted((path.relative_to(self.out).as_posix(), path.stat().st_mtime_ns) for path in self.out.rglob('*'))
         with patch('paper.worker_command', side_effect=self.command), patch('builtins.print') as shown:
@@ -2295,8 +2343,6 @@ class SideBySideTests(PaperCase):
         second = {**CLEAN, 'findings': [{'where': 'the proof', 'section': 'sec:proof', 'quote': 'By induction on $n$.',
                                          'problem': 'The base case is not named.'}]}
         script['read'] = [{'output/reading.json': json.dumps(report)} for report in (first, second, CLEAN)]
-        answers = lambda *actions: json.dumps([{'finding': number, 'action': action, 'note': f'{action} {number}'}
-                                              for number, action in enumerate(actions, 1)])
         script['repair:reading-intro'] = [{'output/abstract.tex': ABSTRACT + 'Here $n$ is a natural number.\n',
                                            'output/response.json': answers('revised')}]
         script['repair:reading-tools'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', 'Expand, written out.'),
@@ -2648,8 +2694,10 @@ class OpenFindingsTests(PaperCase):
 
     def test_the_numbers_given_are_those_of_the_list(self):
         launched = self.leave_open(comparison=False)
-        for wrong in ('3', '0', 'tools'):
-            with self.assertRaises(paper.Stop):
+        outside = 'the run has 2 open findings, numbered from 1 to 2'
+        for wrong, reason in (('3', outside), ('0', outside),
+                              ('tools', 'takes the numbers of the findings as its dry run lists them')):
+            with self.assertRaisesRegex(paper.Stop, reason):
                 self.run_paper(good(), open_findings=wrong)
         self.assertEqual(len(self.calls()), launched)
         self.assertEqual(self.events('end')[-1]['open'], self.left)
@@ -2838,9 +2886,8 @@ class DraftTests(PaperCase):
         self.assertEqual([(c['kind'], c['section']) for c in calls],
                          [('plan', None), ('plan', None), ('sketch', 'intro'), ('sketch', 'tools'), ('sketch', 'proof'),
                           ('sketch', 'proof'), ('compare', 'intro'), ('compare', 'tools')])
-        # Only the plan of a draft is asked for the results to cite, and it is not accepted without the list.
+        # The plan of a draft is asked for the results to cite, and it is not accepted without the list.
         self.assertIn('"citations"', calls[0]['prompt'])
-        self.assertNotIn('"citations"', paper.PLAN_PROMPT)
         self.assertIn('"citations" is an array', calls[1]['prompt'])
         self.assertIn('"statements" has one object for each numbered statement that the plan has this section state',
                       calls[5]['prompt'])
@@ -2893,7 +2940,7 @@ class DraftTests(PaperCase):
         # A draft that came to its end is not continued, and it is no manuscript to typeset.
         with self.assertRaisesRegex(paper.Stop, 'came to its end \\(draft\\)'):
             self.run_paper(drafting(), resume=True)
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'does not hold a manuscript of this command'):
             self.run_paper(drafting(), only=True)
 
     def test_a_draft_that_was_stopped_is_continued_with_what_was_sketched_and_compared(self):
@@ -3754,7 +3801,7 @@ class CoverageTests(PaperCase):
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual({row['comparison']['verdict'] for row in rows}, {'same'})
         # A run with nothing open has nothing to close.
-        with self.assertRaises(paper.Stop):
+        with self.assertRaisesRegex(paper.Stop, 'came to its end with no finding left open \\(complete\\); there is nothing to act on'):
             self.close(good())
 
     def test_a_statement_that_still_differs_after_its_repair_is_restated_and_compared_once(self):

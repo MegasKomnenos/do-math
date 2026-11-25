@@ -204,6 +204,22 @@ class BrokerClientTests(unittest.TestCase):
         self.assertIn('the runner starts', str(raised.exception))
         self.assertIn('wait on it again', str(raised.exception))
 
+    def test_a_client_whose_start_was_not_refused_is_sent_to_the_brokers_log_when_none_appears(self):
+        # Outside a session the start is not refused. When no broker is alive after it, the broker's own
+        # output is the only place that says what became of it, and the client names that file.
+        paths, requests = self.paths(), []
+
+        def start(argv, **options):
+            requests.append(options)
+
+        with patch.object(lean_broker.subprocess, 'Popen', side_effect=start), \
+                patch.object(lean_broker, 'READY_SECONDS', 0.3), \
+                self.assertRaises(RuntimeError) as raised:
+            lean_broker.ensure_broker(paths)
+        self.assertEqual(len(requests), 1)
+        self.assertIn('became ready', str(raised.exception))
+        self.assertIn(str(paths.log), str(raised.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

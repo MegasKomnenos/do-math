@@ -31,6 +31,7 @@ import time
 
 session = Path.cwd()
 config = json.loads((session / 'work/ending-test.json').read_text())
+sys.stdin.reconfigure(encoding='utf-8')  # the host hands over the bytes of a UTF-8 file, whatever the locale
 prompt = sys.stdin.read()
 history = session / 'work/turns.jsonl'
 number = len(history.read_text().splitlines()) if history.exists() else 0
@@ -46,7 +47,7 @@ elif not config.get('omit_identity'):
 print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message',
                   'text': f'Retained mathematical work from turn {number}.'}}), flush=True)
 (session / 'output/report.md').write_text(f'Research through turn {number}.', encoding='utf-8')
-inp = json.loads((session / 'input.json').read_text())
+inp = json.loads((session / 'input.json').read_text(encoding='utf-8'))
 if inp['role'] == 'peer':
     sys.path.insert(0, sys.argv[1])
     from canon_tool import build_candidate
@@ -84,7 +85,7 @@ if number in config.get('output_limit_at', []):
 if config.get('no_research'):
     (session / 'output/outcome.json').write_text('{"disposition":"no_research"}')
 if number:
-    request = json.loads((session / 'end-request.json').read_text())
+    request = json.loads((session / 'end-request.json').read_text(encoding='utf-8'))
     target = session / 'output/end-decision.json'
     if config.get('malformed_at') == number:
         target.write_text('{broken')
@@ -180,7 +181,8 @@ class EndingTests(InstanceCase):
                 self.assertEqual(state['resumptions'], 1)
                 self.assertEqual(pack, (directory / 'pack.md').read_bytes())
                 self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
-                self.assertIn('directives supplied for this session', (directory / 'turns/0001/prompt.txt').read_text())
+                self.assertIn('directives supplied for this session',
+                              (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8'))
                 self.assertTrue((directory / 'turns/0001/turn-termination.json').is_file())
                 # Runner restart sees the same logical session, then collects it once.
                 engine = Runner(self.instance, self.skill)
@@ -201,7 +203,7 @@ class EndingTests(InstanceCase):
                                           if j['role'] == 'review' and j['pipeline'] == pipeline]), 1)
                 self.assertEqual(len([j for j in engine.state['jobs'].values()
                                       if j['role'] == 'peer' and j['pipeline'] == pipeline]), 1)
-                body = (directory / 'conversation.md').read_text()
+                body = (directory / 'conversation.md').read_text(encoding='utf-8')
                 self.assertIn('work from turn 0', body)
                 self.assertIn('work from turn 1', body)
                 self.assertEqual(len(s['retention']['streams']), 4)
@@ -221,7 +223,7 @@ class EndingTests(InstanceCase):
         self.assertEqual((state['resumptions'], state['authorization']['source'], state['authorization']['basis']),
                          (1, 'runner', 'output_checked'))
         # The next turn was told what the transport check found, and was asked for no end decision.
-        prompt = (directory / 'turns/0001/prompt.txt').read_text()
+        prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
         self.assertIn('the transport check of your session does not yet accept your output', prompt)
         self.assertIn('assessment.json', prompt)
         self.assertIn('Resume the review you were assigned', prompt)
@@ -285,9 +287,9 @@ class EndingTests(InstanceCase):
         self.assertEqual(state['resumptions'], 2)
         first = directory / 'turns/0001'
         second = directory / 'turns/0002'
-        self.assertIn('Common update between turns.', (first / 'prompt.txt').read_text())
-        self.assertNotIn('Role update between turns.', (first / 'prompt.txt').read_text())
-        self.assertIn('Role update between turns.', (second / 'prompt.txt').read_text())
+        self.assertIn('Common update between turns.', (first / 'prompt.txt').read_text(encoding='utf-8'))
+        self.assertNotIn('Role update between turns.', (first / 'prompt.txt').read_text(encoding='utf-8'))
+        self.assertIn('Role update between turns.', (second / 'prompt.txt').read_text(encoding='utf-8'))
         self.assertEqual((first / 'guidance/explore.md').read_bytes(), original_role)
         self.assertIn(b'Role update between turns.', (second / 'guidance/explore.md').read_bytes())
 
@@ -655,6 +657,11 @@ class EndingConfigurationTests(unittest.TestCase):
                             request_prompt(request, role, guidance)
                         self.assertEqual(str(refused.exception), f'continuation {frame} needs exactly one {marker}')
                 (guidance / frame).write_bytes(installed)
+            # A role text that holds nothing is refused before the placeholders are looked at.
+            (guidance / 'attempt.md').write_bytes(b' \n')
+            with self.assertRaises(ValueError) as refused:
+                request_prompt(request, 'attempt', guidance)
+            self.assertEqual(str(refused.exception), 'continuation guidance must not be empty')
             (guidance / 'common.md').write_text('Incomplete message.')
             with self.assertRaises(ValueError) as refused:
                 request_prompt(request, 'explore', guidance)
@@ -682,6 +689,32 @@ class EndingConfigurationTests(unittest.TestCase):
                     self.assertEqual(command.argv[-2:], ['--resume', identity])
                     self.assertIn('--strict-mcp-config', command.argv)
                     self.assertIn('opus[1m]', command.argv)
+
+    def test_a_stream_that_names_two_conversations_or_no_valid_one_gives_the_host_none_to_resume(self):
+        # supervise records resume_unavailable for either refusal, so no other conversation is resumed in the
+        # session's name. The stream file is what the CLI wrote; conversation_id is called as supervise calls it.
+        import json
+        import tempfile
+        from ending import conversation_id
+        first, second = '01234567-89ab-cdef-0123-456789abcdef', 'fedcba98-7654-3210-fedc-ba9876543210'
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+
+            def announce(*identities):
+                (folder / 'cli.stdout.jsonl').write_text(
+                    '\n'.join(json.dumps({'type': 'thread.started', 'thread_id': identity}) for identity in identities),
+                    encoding='utf-8')
+
+            self.assertIsNone(conversation_id(folder, 'codex'))
+            # One conversation announced twice, in two spellings, is one identity.
+            announce(first.upper(), first)
+            self.assertEqual(conversation_id(folder, 'codex'), first)
+            for identities, message in (((first, second), 'CLI returned multiple conversation identities'),
+                                        (('not-an-identity',), 'CLI returned an invalid conversation identity')):
+                announce(*identities)
+                with self.assertRaises(ValueError) as refused:
+                    conversation_id(folder, 'codex')
+                self.assertEqual(str(refused.exception), message)
 
     def test_a_waiting_host_parses_the_runner_state_again_only_when_its_file_has_changed(self):
         # A host can wait behind a dispatch stop or an availability block for hours, and the runner's state,

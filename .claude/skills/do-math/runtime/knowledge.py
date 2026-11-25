@@ -267,7 +267,8 @@ def settle(model):
         element['verdict'] = model['verdicts'].get(name)
         element['standing'] = standing_of(element)
         # Formal: a statement whose proof, by Lean's own account of its axioms, depends on allowed axioms only.
-        # A `sorry` anywhere below it is the axiom `sorryAx`, which cannot be allowed (settings.validate).
+        # A `sorry` anywhere below it is the axiom `sorryAx`, which no settings that pass settings.validate
+        # allow. The list used here is the one settings.json held when this model was made (new_model).
         element['formal'] = is_statement(element) and not beyond_allowed(element, allowed)
         element['statement_of'] = statement_of(model, name) if is_statement(element) else None
         element['used_by'], element['mentioned_by'] = [], []

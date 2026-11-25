@@ -1434,7 +1434,7 @@ class TransportCheckTests(PublicationCase):
         # (test_questions.QuestionCheckTests); the other machine-decidable rules of the written part are here.
         cases = (
             ('its folder follows the name of no element', {'approaches': {'Small/ghost/induction.md': APPROACH}}),
-            ('invalid identifier', {'approaches': {'Small/root/two words.md': APPROACH}}),
+            ("invalid identifier: 'two words'", {'approaches': {'Small/root/two words.md': APPROACH}}),
             ('only the organizer retires an alternative proof',
              {'change': {'retire': [{'alternative': 'Small.root', 'into': 'Small.root', 'reason': 'No.'}]}}),
             ('unknown key in change.json: verdict', {'change': {'verdict': 'accepted'}}),

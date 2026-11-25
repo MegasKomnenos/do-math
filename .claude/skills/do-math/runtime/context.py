@@ -109,7 +109,9 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
              'context/reference/ in your session folder. After the guides come the research as it stood at your launch, '
              'the user conditions and the commands.', '']
     parts += view('Root statement', instance / 'root.md')
-    parts += view('The root in Lean', instance / 'canon/index.json', root_in_lean(instance))
+    # instance.json names the root and its library, and its folder, the instance, is the base of the path
+    # that root_in_lean gives for the root's file.
+    parts += view('The root in Lean', instance / 'instance.json', root_in_lean(instance))
     parts += ['# Your assignment', '',
               'This is `task` from input.json. Your role guide explains its fields. Where it names no work, your role '
               'chooses its own.', '',

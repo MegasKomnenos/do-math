@@ -262,11 +262,11 @@ DIFFERS_LATE = ('the statement was changed after the comparisons of the statemen
                 'of its present text found this difference; no repair follows that comparison')
 COVERED_AGAIN = ('reported when the running text of the section was compared with the elements again, after the repair '
                  'of what the first comparison had reported; no repair follows that comparison')
-# The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 CLOSING_ATTEMPTS = 3   # sessions that restate statements or take passages out, before the run gives up (Paper.close)
 NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
              'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
              'and the sessions could not do.')
+# The stages after the writing whose completion state.json records, in their order; each is a method of Paper.
 STAGES = (('reading', 'read_and_repair'), ('likeness', 'read_beside_papers'), ('rereading', 'read_again'),
           ('comparison', 'compare'), ('resolve', 'resolve'), ('coverage', 'cover'))
 
@@ -1026,7 +1026,9 @@ def check_plan(materials, plan, keys):
     if len(order) != len(sections):
         bad('two sections have the same id')
     # The titles stand in the manuscript as the plan has them, and a repair keeps the plan. A Lean name or the
-    # word Lean in a title is therefore reported here, where a planning session can still change it.
+    # word Lean in a title is therefore reported here, where a planning session can still change it. So is a
+    # character of the title of the paper that is not ASCII: the machine checks of the manuscript report it as
+    # they do in a part (machine_findings), and no repair session can change the title.
     pattern = identifier_pattern(materials['identifiers'])
     titles = [('the title', plan.get('title')), ('the short title', plan.get('short_title'))] \
         + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections]
@@ -1037,6 +1039,10 @@ def check_plan(materials, plan, keys):
             if found:
                 bad(f'{where} has ' + ', '.join(found) + '; the paper names no declaration of the canon and does not '
                     'mention Lean (method, section "The implementation does not show")')
+    strange = sorted({char for char in plan['title'] if ord(char) > 127}) if is_text(plan.get('title')) else []
+    if strange:
+        bad('the title is written in ASCII, as the parts of the manuscript are; write these characters as LaTeX: '
+            + ' '.join(strange))
     placed = {}
     for item in statements + others:
         name = item.get('element')
@@ -2015,7 +2021,8 @@ title, a symbol) is LaTeX; inside a JSON string a backslash is written twice.
 '''
 PLAN_KEYS = '''- "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
 `exemplars.md` gives them.
-- "title": the title of the paper.
+- "title": the title of the paper. Like the parts of the manuscript it is plain ASCII: a letter with an accent is \
+written with TeX's accent command.
 - "short_title": the title in a shorter form, for the running head. The head is one line of small capitals at the top \
 of every page, beside the page number, and it has room for about fifty-five letters and spaces. Leave the key out when \
 the title itself is no longer than that. A head that does not fit is not printed, and the pages then carry their \
@@ -2098,8 +2105,6 @@ theorem open, proceed and close.
 
 Use no source other than the files in this folder. Write no part of the paper itself.
 '''
-PLAN_PROMPT = PLAN_OPENING + PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + PLAN_CLOSING
-DRAFT_PLAN_PROMPT = PLAN_OPENING + PLAN_KEYS + PLAN_CITATIONS + PLAN_NOTATION + PLAN_ACCEPTS + PLAN_CLOSING
 
 BRIEF_FILE ='''- `brief.md` is what this section {tense} written from. The script made it from the plan and from the records of \
 the research. It holds the outline of the proof and the sections of the paper; the notation; the numbered statements of the \
@@ -3484,7 +3489,8 @@ class Paper(Sessions):
                 raise Unusable(problems)
             return plan, study
 
-        # The same text as PLAN_PROMPT or DRAFT_PLAN_PROMPT when the declaration that settles the root is the main result.
+        # Only the plan of a draft is asked for the results to cite, and the note on the main result is empty when the
+        # declaration that settles the root is the main result.
         prompt = (PLAN_OPENING + PLAN_KEYS + (PLAN_CITATIONS if draft else '') + PLAN_NOTATION + PLAN_ACCEPTS
                   + main_note(self.materials) + PLAN_CLOSING)
         self.take_plan(*self.session('plan', prompt, self.planning_kit(), read,

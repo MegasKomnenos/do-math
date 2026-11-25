@@ -109,7 +109,7 @@ def module_text(body, imports=('Small.Defs',)):
     return f'module\n\n{header}\n@[expose] public section\n\nnamespace Small\n\n{body.strip()}\n\nend Small\n'
 
 
-def test_settings():
+def fixture_settings():
     config = defaults()
     # No external tools: the tests do not depend on the literature server being installed.
     config.update(max_sessions=2, retry_seconds=1, retry_max_seconds=2, launch_interval=0, roles={},
@@ -149,7 +149,7 @@ def template(variant='default'):
         atexit.register(remove_tree, base)
         (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
                                       encoding='utf-8')
-        write_json(base / 'settings.json', test_settings())
+        write_json(base / 'settings.json', fixture_settings())
         write_canon(base / 'canon', ROOTS[variant])
         # By the command the operator runs, so that its arguments and its exit code are part of every test's start.
         with patch('builtins.print') as shown:
@@ -164,19 +164,27 @@ def template(variant='default'):
 
 class InstanceCase(unittest.TestCase):
     root_variant = 'default'  # 'closed' states the root without binders, so that its negation can be stated
+    expect_mb, patience = 64, 120  # of a build: the memory expected for one compile in MiB, the seconds it may take
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.instance = self.root / 'instance'
-        shutil.copytree(template(self.root_variant), self.instance)
+        shutil.copytree(self.starting_instance(), self.instance)
         self.addCleanup(stop_broker, self.instance)
         self.skill = self.root / 'skill'
         installed = Path(__file__).resolve().parents[2]
         for name in ('reference', 'roles', 'resume'):
             shutil.copytree(installed / name, self.skill / name)
         shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
+
+    def starting_instance(self):
+        """The instance a test receives a copy of: the one `init` created.
+
+        A subclass that keeps a published state for the whole test process returns that state once it
+        has made it, so that each of its tests receives one copy and not a second one in its place."""
+        return template(self.root_variant)
 
     def configure(self, **changes):
         """Change settings.json of the instance; keys given under `lean` are merged into the Lean settings."""
@@ -242,7 +250,7 @@ class InstanceCase(unittest.TestCase):
 
     def prepare(self, folder, role='peer', expect_ok=True):
         result = build_candidate(self.instance, 'test', folder, self.root / ('prepare-' + uuid.uuid4().hex),
-                                 64, 120, role)
+                                 self.expect_mb, self.patience, role)
         self.assertIsNotNone(result, 'the candidate build did not finish')
         write_json(folder / 'prepared.json', result)
         if expect_ok:
@@ -305,9 +313,9 @@ class InstanceCase(unittest.TestCase):
             self.assertEqual(state['pipelines'][pid]['stage'], 'done', state['jobs'][key].get('last_error'))
         return state['pipelines'][pid]['record'], engine
 
-    def drain(self, engine, seconds=120):
+    def drain(self, engine):
         """Carry queued publications to their end; a build goes through the instance's broker."""
-        deadline = time.monotonic() + seconds
+        deadline = time.monotonic() + self.patience
         while engine.state['publication'] or engine.state['publish_queue']:
             with patch.object(subprocess, 'Popen', POPEN):
                 engine.publish()
@@ -316,7 +324,10 @@ class InstanceCase(unittest.TestCase):
                 time.sleep(0.05)  # its build is still running; a publication waits for nothing else
 
     def event(self, eid, kind, data):
-        """A comprehensive review, written as the runner publishes one."""
+        """A comprehensive review as the replay reads one: its assessment and its event, written here by hand.
+
+        The runner takes no part in it: the transport check does not see the assessment, no view is rendered
+        and nothing is committed."""
         sequence = max([read_json(p)['sequence'] for p in (self.instance / 'knowledge/events').glob('*.json')], default=0) + 1
         folder = self.instance / 'knowledge/reviews' / eid
         folder.mkdir(parents=True)
