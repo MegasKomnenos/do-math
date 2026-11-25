@@ -14,7 +14,7 @@ from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, Co
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
                    start_build, tree_hash, update_index, wait_build, with_importers)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
-                       is_statement, question_lines, replay)
+                       is_statement, question_lines, question_proposal_lines, replay, resolved_question_lines)
 from runtime_support import read_json, write_json
 
 
@@ -400,7 +400,7 @@ def checkout(session, target):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('frontier', 'view', 'list', 'question', 'log', 'checkout', 'prepare', 'verify'):
+    for name in ('frontier', 'view', 'list', 'question', 'questions', 'log', 'checkout', 'prepare', 'verify'):
         p = sub.add_parser(name)
         p.add_argument('session', type=Path)
         if name == 'view':
@@ -420,6 +420,12 @@ def main(argv=None):
         if name == 'question':
             p.add_argument('question')
             p.add_argument('--history', action='store_true', help='also print the texts this understanding replaced')
+        if name == 'questions':
+            # What the list of questions that every session is given leaves out (knowledge.question_lines).
+            group = p.add_mutually_exclusive_group(required=True)
+            group.add_argument('--resolved', action='store_true', help='the resolved questions with their statements')
+            group.add_argument('--proposals', action='store_true',
+                               help='the proposals review did not admit, with its reasons')
         if name == 'log':
             p.add_argument('--last', type=int, default=20)
         if name == 'checkout':
@@ -457,6 +463,8 @@ def main(argv=None):
             text = listing(model, select(model, args), args.units)
         elif args.command == 'question':
             text = question_view(instance, model, args.question, args.history)
+        elif args.command == 'questions':
+            text = '\n'.join(resolved_question_lines(model) if args.resolved else question_proposal_lines(model))
         else:
             text = log(model, args.last)
         sys.stdout.buffer.write((text + '\n').encode('utf-8'))

@@ -596,42 +596,99 @@ def frontier_notes(model, investigation=None):
     return lines
 
 
+def question_aliases(model, qid):
+    return [q for q in model['question_aliases'] if canonical_question(model, q) == qid]
+
+
+def questions_in_state(model, state):
+    """The questions in a state, each under the identity it has now."""
+    return [qid for qid, question in model['questions'].items()
+            if question['canonical'] == qid and question['state'] == state]
+
+
+def question_entry(model, qid):
+    """One question with its statement: its state, where it came from, what resolved it and what was found later."""
+    question = model['questions'][qid]
+    lines = [f'## {qid}', '', question['statement'], '', f"State: {question['state']}"]
+    if question['origin'] == 'change':
+        lines.append(f"Source: change {question['source']}")
+    elif question['origin'] == 'root':
+        lines.append('Source: the root statement')
+    else:
+        lines.append(f"Source: {question['origin']} publication {question['source']}")
+    for key in question['resolutions']:
+        lines.append(f'- Resolved by {key}')
+    if question['root_settlement']:
+        lines.append("- Resolved by the root's formal settlement, not by an explanation: "
+                     + ', '.join('`' + p + '`' for p in question['root_settlement']['proofs']))
+    for number in question['annotations']:
+        finding = model['findings'][number]
+        lines.append(f"- Later review ({finding['status']}): {finding['reason']} — {finding['source']}")
+    aliases = question_aliases(model, qid)
+    if aliases:
+        lines.append('Aliases: ' + ', '.join(aliases))
+    lines.append('')
+    return lines
+
+
 def question_lines(model):
-    """The questions that follow the frontier: each with its grounds, its state and where it came from."""
-    lines = ['', '# Questions', '']
-    for qid, question in model['questions'].items():
-        if question['canonical'] != qid:
-            continue
-        lines += [f'## {qid}', '', question['statement'], '']
-        if question['grounds']:
-            lines += [f"Grounds: {question['grounds']}", '']
-        lines.append(f"State: {question['state']}")
-        if question['origin'] == 'change':
-            lines.append(f"Source: change {question['source']}")
-        elif question['origin'] == 'root':
-            lines.append('Source: the root statement')
-        else:
-            lines.append(f"Source: {question['origin']} publication {question['source']}")
-        for key in question['resolutions']:
-            lines.append(f'- Resolved by {key}')
-        if question['root_settlement']:
-            lines.append("- Resolved by the root's formal settlement, not by an explanation: "
-                         + ', '.join('`' + p + '`' for p in question['root_settlement']['proofs']))
-        for number in question['annotations']:
-            finding = model['findings'][number]
-            lines.append(f"- Later review ({finding['status']}): {finding['reason']} — {finding['source']}")
-        aliases = [q for q in model['question_aliases'] if canonical_question(model, q) == qid]
-        if aliases:
-            lines.append('Aliases: ' + ', '.join(aliases))
+    """The questions as every session is given them, after the frontier.
+
+    Every session reads this list at launch, so it holds what a session needs in order to know what the
+    research asks: the statement of each open question. A resolved question takes one line. The grounds
+    of a question, the statements of the resolved ones and the proposals review did not admit stay in the
+    model, and the canon commands `question` and `questions` print them when a session's work calls for
+    them. The list says so itself, so that a reader who has only the list knows where the rest is."""
+    lines = ['', '# Questions', '',
+             'An open question is listed with its statement. The canon command `question <question>` prints the '
+             'grounds on which a question was asked and its understanding so far. A resolved question takes one '
+             'line here, and `questions --resolved` prints the resolved questions with their statements.', '']
+    for qid in questions_in_state(model, 'open'):
+        lines += question_entry(model, qid)
+    resolved = questions_in_state(model, 'resolved')
+    if resolved:
+        lines += ['## Resolved questions', '']
+        for qid in resolved:
+            question = model['questions'][qid]
+            if question['root_settlement']:
+                by = ("the root's formal settlement, not by an explanation: "
+                      + ', '.join('`' + p + '`' for p in question['root_settlement']['proofs']))
+            else:
+                by = ', '.join(question['resolutions'])
+            aliases = question_aliases(model, qid)
+            lines.append(f'- {qid} — resolved by {by}' + (' · aliases: ' + ', '.join(aliases) if aliases else ''))
         lines.append('')
-    if model['question_proposals']:
+    proposals = model['question_proposals']
+    if proposals:
+        count = lambda verdict: sum(1 for item in proposals if item['verdict'] == verdict)
         lines += ['## Question proposals review did not admit', '',
-                  'A proposal marked revise lacked specificity or clarity; the review reason beside it says what would make it a question. '
-                  'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
-        for item in model['question_proposals']:
-            duplicate = f" (duplicate of {item['duplicate_of']})" if item['duplicate_of'] else ''
-            lines.append(f"- {item['verdict']}{duplicate}: {item['statement']} — review: {item['reason']} — change {item['change']}")
-        lines.append('')
+                  f"Review returned {count('revise')} for revision and declined {count('declined')}. "
+                  '`questions --proposals` prints each with the reason review gave.', '']
+    return lines
+
+
+def resolved_question_lines(model):
+    """The resolved questions with their statements, for a session that compares a question with them."""
+    resolved = questions_in_state(model, 'resolved')
+    lines = ['# Resolved questions', '']
+    for qid in resolved:
+        lines += question_entry(model, qid)
+    if not resolved:
+        lines += ['No question is resolved.', '']
+    return lines
+
+
+def question_proposal_lines(model):
+    """The proposals review did not admit, each with the reason review gave."""
+    lines = ['# Question proposals review did not admit', '']
+    if not model['question_proposals']:
+        return lines + ['Review has returned or declined no proposal.', '']
+    lines += ['A proposal marked revise lacked specificity or clarity; the review reason beside it says what would make it a question. '
+              'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
+    for item in model['question_proposals']:
+        duplicate = f" (duplicate of {item['duplicate_of']})" if item['duplicate_of'] else ''
+        lines.append(f"- {item['verdict']}{duplicate}: {item['statement']} — review: {item['reason']} — change {item['change']}")
+    lines.append('')
     return lines
 
 

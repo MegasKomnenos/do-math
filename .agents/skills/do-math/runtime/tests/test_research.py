@@ -483,10 +483,10 @@ class KnowledgeTests(ScenarioCase):
         self.assertEqual(model['questions']['scale']['canonical'], 'block')
         render(self.instance, model, [])
         view = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        # A resolved question takes one line of the list, with what resolved it and its aliases.
         self.assertNotIn('\n## scale\n', view)
-        self.assertIn('\n## block\n', view)
-        self.assertIn('Aliases: scale', view)
-        self.assertIn(f'- Resolved by {change}/answer', view)
+        self.assertNotIn('\n## block\n', view)
+        self.assertIn(f'\n## Resolved questions\n\n- block — resolved by {change}/answer · aliases: scale\n', view)
         # A finding reopens the question, and stays beside it as a later review.
         self.event('v1', 'review', comprehensive([finding('The overlap is not the cause.', reopens=['block'])]))
         model = replay(self.instance)

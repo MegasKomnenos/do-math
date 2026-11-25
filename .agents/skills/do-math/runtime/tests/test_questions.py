@@ -18,7 +18,7 @@ from canon_tool import main as canon_main, question_view
 from check import Invalid, assessment_check, change_check, check_session, findings_check, organization_check
 from coordination import (board, claims_lock, main as coordination_main, question_availability, question_lease,
                           question_lease_table, question_release, question_take, question_wait, updates)
-from knowledge import canonical_question, render, replay
+from knowledge import canonical_question, question_proposal_lines, render, replay, resolved_question_lines
 from runner import Runner, main, operator_questions, status, uid
 from runtime_support import git, read_json, write_json
 from support import InstanceCase, module_text, record_text
@@ -65,8 +65,16 @@ class QuestionCase(InstanceCase):
 
     @staticmethod
     def part(frontier, qid):
-        """What the frontier shows under one question's heading."""
+        """What the frontier shows under the heading of one open question."""
         return frontier.split('## ' + qid + '\n', 1)[1].split('\n## ', 1)[0]
+
+    @staticmethod
+    def resolved(frontier, qid):
+        """The one line the frontier gives a resolved question, which has no heading and no statement there."""
+        assert '## ' + qid + '\n' not in frontier, qid + ' is listed with a statement'
+        [line] = [line for line in frontier.split('## Resolved questions\n', 1)[1].splitlines()
+                  if line.startswith('- ' + qid + ' — ')]
+        return line
 
     def prove_root(self, formal=True, engine=None):
         """Replace the root's proof: a complete Lean proof, or one that ends in sorry beside a written proof."""
@@ -119,10 +127,12 @@ class QuestionCase(InstanceCase):
         other = model['questions']['op-scale']
         self.assertEqual((other['state'], other['root_settlement']), ('open', None))
         # The runner rendered the frontier and the model when it published the settlement.
-        section = self.part((self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'), 'q0')
-        self.assertIn('State: resolved', section)
-        self.assertIn("Resolved by the root's formal settlement, not by an explanation: "
-                      + ', '.join('`' + name + '`' for name in proofs), section)
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        self.assertEqual(self.resolved(frontier, 'q0'),
+                         "- q0 — resolved by the root's formal settlement, not by an explanation: "
+                         + ', '.join('`' + name + '`' for name in proofs))
+        # The other question is open and keeps its statement in the list.
+        self.assertIn('State: open', self.part(frontier, 'op-scale'))
         self.assertEqual(read_json(self.instance / 'knowledge/state.json')['questions']['q0'], q0)
         self.assertTrue(read_json(self.instance / 'runner/state.json')['complete'])
         # An explanation still cannot resolve it, and it is still never merged.
@@ -229,8 +239,18 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertIn('Source: change ' + cid, self.part(frontier, 'speer-sharp'))
         self.assertNotIn('## speer-dup\n', frontier)
         self.assertNotIn('## speer-vague\n', frontier)
-        self.assertIn('- revise: What speer-vague asks. — review: Name the regime', frontier)
-        self.assertIn('- declined (duplicate of op-existing): What speer-dup asks.', frontier)
+        # The list every session is given counts the proposals review did not admit and names the command
+        # that prints them. Their statements and review's reasons are not in it.
+        self.assertTrue(frontier.endswith('\n## Question proposals review did not admit\n\n'
+                                          'Review returned 1 for revision and declined 1. `questions --proposals` '
+                                          'prints each with the reason review gave.\n\n'))
+        self.assertNotIn('What speer-vague asks.', frontier)
+        self.assertNotIn('Name the regime', frontier)
+        shown = '\n'.join(question_proposal_lines(model))
+        self.assertIn('- revise: What speer-vague asks. — review: Name the regime and the quantity whose behaviour '
+                      f'is asked about. — change {cid}\n', shown)
+        self.assertIn('- declined (duplicate of op-existing): What speer-dup asks. — review: op-existing already asks '
+                      f'this. — change {cid}\n', shown)
         # An admitted question is one an explorer can take; a proposal review did not admit is not.
         self.assertEqual(sorted(question_availability(self.instance)['free']), ['op-existing', 'q0', 'speer-sharp'])
 
@@ -243,9 +263,13 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(model['changes'][cid]['question'], 'op-scale')
         self.assertEqual(read_json(self.instance / 'knowledge/events' / (cid + '.json'))['question'], 'op-scale')
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
-        section = self.part(frontier, 'op-scale')
-        self.assertIn('State: resolved', section)
-        self.assertIn(f'- Resolved by {cid}/res', section)
+        # A resolved question takes one line of the list. Its statement is printed with the resolved questions.
+        self.assertEqual(self.resolved(frontier, 'op-scale'), f'- op-scale — resolved by {cid}/res')
+        self.assertNotIn('What op-scale asks.', frontier)
+        shown = '\n'.join(resolved_question_lines(model))
+        self.assertIn('## op-scale\n\nWhat op-scale asks.\n\nState: resolved\nSource: operator publication qops\n'
+                      f'- Resolved by {cid}/res\n', shown)
+        self.assertNotIn('## q0\n', shown)
         # The text that settles the question is its understanding so far, with review's assessment under it.
         body, review = split_review((Canon(self.instance).questions / 'op-scale.md').read_text(encoding='utf-8'))
         self.assertEqual(body, ACCOUNT)
@@ -341,10 +365,10 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(model['changes'][cid]['question'], 'op-b')
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         self.assertNotIn('\n## op-a\n', frontier)
-        section = self.part(frontier, 'op-b')
-        self.assertIn('State: resolved', section)
-        self.assertIn(f'- Resolved by {cid}/res', section)
-        self.assertIn('Aliases: op-a', section)
+        self.assertNotIn('- op-a — ', frontier)
+        self.assertEqual(self.resolved(frontier, 'op-b'), f'- op-b — resolved by {cid}/res · aliases: op-a')
+        self.assertIn(f'State: resolved\nSource: operator publication qops\n- Resolved by {cid}/res\nAliases: op-a\n',
+                      '\n'.join(resolved_question_lines(model)))
 
     def test_a_question_resolved_before_its_merge_resolves_the_question_it_merges_into(self):
         self.questions('qops', [question('op-a'), question('op-b')])
@@ -354,9 +378,8 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(model['organized'], [cid])
         survivor = model['questions']['op-b']
         self.assertEqual((survivor['state'], survivor['resolutions']), ('resolved', [cid + '/res']))
-        section = self.part((self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'), 'op-b')
-        self.assertIn('State: resolved', section)
-        self.assertIn(f'- Resolved by {cid}/res', section)
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        self.assertEqual(self.resolved(frontier, 'op-b'), f'- op-b — resolved by {cid}/res · aliases: op-a')
 
     def test_an_account_written_under_a_merged_alias_is_the_surviving_questions_understanding(self):
         self.questions('qops', [question('op-a'), question('op-b')])
@@ -551,6 +574,39 @@ class UnderstandingTests(QuestionCase):
         self.assertEqual((code, json.loads(shown)), (1, {'error': 'no such question: nope'}))
 
 
+    def test_the_questions_command_prints_what_the_list_of_questions_leaves_out(self):
+        self.questions('qops', [question('op-scale'), question('op-open')])
+        reader = self.reader()
+        # Nothing is resolved and review has returned nothing: each selection says so.
+        self.assertEqual(self.tool('questions', str(reader), '--resolved'),
+                         (0, '# Resolved questions\n\nNo question is resolved.\n\n'))
+        self.assertEqual(self.tool('questions', str(reader), '--proposals'),
+                         (0, '# Question proposals review did not admit\n\nReview has returned or declined no proposal.\n\n'))
+        folder = self.candidate(understanding={'op-scale.md': ACCOUNT}, resolutions=[resolution('res', 'op-scale')],
+                                questions=[question('speer-vague')])
+        review = self.verdicts(folder)
+        review['questions'] = [{'proposal': 'speer-vague', 'verdict': 'revise', 'reason': 'Name the regime.'}]
+        cid, _ = self.publish(folder, review, role='explore', question='op-scale')
+        code, shown = self.tool('questions', str(reader), '--resolved')
+        self.assertEqual(code, 0)
+        self.assertEqual(shown, '# Resolved questions\n\n## op-scale\n\nWhat op-scale asks.\n\nState: resolved\n'
+                                f'Source: operator publication qops\n- Resolved by {cid}/res\n\n')
+        code, shown = self.tool('questions', str(reader), '--proposals')
+        self.assertEqual(code, 0)
+        self.assertTrue(shown.startswith('# Question proposals review did not admit\n\nA proposal marked revise'))
+        self.assertTrue(shown.endswith(f'\n\n- revise: What speer-vague asks. — review: Name the regime. — change {cid}\n\n'))
+        # The command takes exactly one of the two selections.
+        for argv in (('questions', str(reader)), ('questions', str(reader), '--resolved', '--proposals')):
+            with self.subTest(argv=argv[2:]), patch('sys.stderr', io.StringIO()), self.assertRaises(SystemExit) as refused:
+                canon_main(list(argv))
+            self.assertEqual(refused.exception.code, 2)
+        # The list itself carries neither the grounds nor the statement of the resolved question.
+        frontier = self.frontier()
+        self.assertNotIn(question('op-scale')['grounds'], frontier)
+        self.assertNotIn('What op-scale asks.', frontier)
+        self.assertIn('## op-open\n\nWhat op-open asks.\n\nState: open\n', frontier)
+
+
 class OperatorQuestionTests(QuestionCase):
     """The questions command: the operator's publication of questions, outside peer and review."""
 
@@ -674,9 +730,11 @@ class OperatorQuestionTests(QuestionCase):
         for item in items:
             section = self.part(frontier, item['id'])
             self.assertIn(item['statement'], section)
-            self.assertIn('Grounds: ' + item['grounds'], section)
             self.assertIn('State: open', section)
             self.assertIn('Source: operator publication ' + eid, section)
+        # The grounds stay in the model and are printed with the question itself; the list does not carry them.
+        self.assertNotIn(items[0]['grounds'], frontier)
+        self.assertIn('Grounds: ' + items[0]['grounds'], question_view(self.instance, model, 'op-scale'))
         # The request is collected once.
         runner.ingest_inputs()
         Runner(self.instance, self.skill).ingest_inputs()

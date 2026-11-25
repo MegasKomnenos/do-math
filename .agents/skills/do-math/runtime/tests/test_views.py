@@ -142,7 +142,7 @@ class ViewTests(ScenarioCase):
         knowledge.render(self.instance, runner.model, [])
         self.assertIn(f"(pending); comprehensive review {job['id']} (pending)\n", self.view('frontier.md'))
 
-    def test_the_frontier_view_keeps_question_proposals_review_did_not_admit(self):
+    def test_the_frontier_view_lists_open_questions_by_statement_and_counts_the_proposals_review_did_not_admit(self):
         folder = self.candidate(
             understanding={'q0.md': 'The sum grows by one odd number at a time.\n'},
             questions=[{'id': 'speer-vague', 'statement': 'What is going on with squares?', 'grounds': 'Squares appear.'},
@@ -154,17 +154,31 @@ class ViewTests(ScenarioCase):
         assessment['questions'][1].update(verdict='declined', reason='This is the root question.', duplicate_of='q0')
         change, _ = self.publish(folder, assessment, role='explore', question='q0')
         view = self.view('frontier.md')
+        # The list is read by every session at launch. It says what it shows and which commands print the rest.
+        self.assertIn('\n# Questions\n\nAn open question is listed with its statement. The canon command '
+                      '`question <question>` prints the grounds on which a question was asked and its understanding '
+                      'so far. A resolved question takes one line here, and `questions --resolved` prints the resolved '
+                      'questions with their statements.\n\n## q0\n\nThe root problem itself, taken as a whole.\n\n'
+                      'State: open\nSource: the root statement\n', view)
+        # An open question has its statement, its state and its source, and not the grounds on which it was asked.
         self.assertIn('## speer-layers\n\nWhy does each odd number complete a square?\n\n'
-                      'Grounds: The proof uses the identity without saying what it shows.\n\n'
                       f'State: open\nSource: change {change}\n', view)
-        self.assertIn('## q0\n\nThe root problem itself, taken as a whole.\n', view)
-        self.assertIn('State: open\nSource: the root statement\n', view)
-        proposals = view.split('## Question proposals review did not admit')[1]
+        self.assertNotIn('Grounds', view)
+        self.assertNotIn('The proof uses the identity without saying what it shows.', view)
+        # The proposals review did not admit are counted there. The command that prints them shows each with
+        # review's reason, in the words the view used to carry.
+        self.assertTrue(view.endswith('\n## Question proposals review did not admit\n\nReview returned 1 for revision '
+                                      'and declined 1. `questions --proposals` prints each with the reason review gave.\n\n'))
+        self.assertNotIn('## speer-vague', view)
+        self.assertNotIn('What is going on with squares?', view)
+        proposals = '\n'.join(knowledge.question_proposal_lines(knowledge.replay(self.instance)))
         self.assertIn(f'- revise: What is going on with squares? — review: Say which property of squares is meant. — change {change}',
                       proposals)
         self.assertIn('- declined (duplicate of q0): What is the root problem as a whole? — review: This is the root question. '
                       f'— change {change}', proposals)
-        self.assertNotIn('## speer-vague', view)
+        # The grounds are kept: the model holds them, and the view of the question prints them.
+        self.assertEqual(knowledge.replay(self.instance)['questions']['speer-layers']['grounds'],
+                         'The proof uses the identity without saying what it shows.')
 
     def test_the_index_lists_what_each_record_says_in_the_order_of_the_lean_structure(self):
         self.ways()
@@ -299,8 +313,12 @@ class CanonToolTests(ScenarioCase):
         count = ('Elements of this view that are work that remains: 7. Each has one of the standings "no proof", '
                  '"proof not confirmed", "correct, held back", or a proof that names a statement refuted since.')
         self.assertIn(count, lines)
-        # The questions follow, as in frontier.md: each with its grounds, its state and its source.
-        self.assertEqual(lines[lines.index(count) + 2:lines.index(count) + 5], ['# Questions', '', '## q0'])
+        # The questions follow, as in frontier.md: what the list shows, then each open question with its
+        # statement, its state and its source.
+        self.assertEqual(lines[lines.index(count) + 2:lines.index(count) + 4], ['# Questions', ''])
+        self.assertTrue(lines[lines.index(count) + 4].startswith('An open question is listed with its statement.'))
+        self.assertEqual(lines[lines.index(count) + 5:lines.index(count) + 8],
+                         ['', '## q0', ''])
         self.assertIn('State: open', lines)
         self.assertIn('Source: the root statement', lines)
         # What stands beside the lines is printed as in frontier.md: the concerns not yet cleared.
