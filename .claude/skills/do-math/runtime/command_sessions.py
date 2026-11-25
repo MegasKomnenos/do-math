@@ -1,0 +1,1 @@
+"""The session runner that the paper command and the finalize pipeline share: it launches one session in a folder, waits out a usage limit, reads what the session wrote, and runs sessions side by side."""
