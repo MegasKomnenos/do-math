@@ -68,8 +68,9 @@ def copy_to_disk(source, target):
 def operator_questions(data, model):
     """The reason and questions of an operator publication, checked against the current research.
 
-    The questions command checks its file with this, and the runner checks the request again when it
-    collects it, because a question with the same ID can be published in between."""
+    The questions command checks its file with this. The runner checks the request again when it collects
+    it, and once more when the request's turn to be published comes (Runner.prepare_questions), because
+    a question with the same ID can be published in between."""
     if not isinstance(data, dict):
         raise ValueError('a questions file is an object with "reason" and "questions"')
     extra = sorted(set(data) - {'reason', 'questions'})
@@ -643,7 +644,22 @@ class Runner:
     def prepare_questions(self, item):
         """An operator publication of questions, which has no session or job behind it.
 
-        Its content is saved with the publication's identity, so a restart writes the same files."""
+        Its content is saved with the publication's identity, so a restart writes the same files.
+
+        The request was checked when it was collected (ingest_inputs). It may have waited in the queue
+        since then, and a publication made meanwhile can have taken one of its IDs, as another request
+        collected just before it does when both name the same ID. So it is checked once more here, against
+        the research as it now stands. A request refused here is left in status for the operator, as one
+        refused at collection is, and the queue goes on with its next item."""
+        try:
+            operator_questions({'reason': item['reason'], 'questions': item['questions']}, self.model)
+        except ValueError as exc:
+            # A request that an earlier version of this code collected was queued without its file name.
+            name = item.get('request', 'without a recorded name')
+            self.state['publish_queue'] = [queued for queued in self.state['publish_queue'] if queued is not item]
+            self.state['last_error'] = {'at': time.time(), 'error': f'questions request {name} refused: {exc}'}
+            self.save()
+            return
         eid = uid('q')
         event = {'id': eid, 'kind': 'questions', 'sequence': self.model['sequence'] + 1,
                  'folder': 'questions/' + eid, 'at': item['at'], 'source': 'operator'}
@@ -1382,9 +1398,10 @@ class Runner:
                     continue
                 # Another publication can be underway, waiting for its build. The questions take their
                 # turn in the same queue, and the request counts as collected in the same save, so it is
-                # never published twice.
-                self.state['publish_queue'].append({'kind': 'questions', 'reason': reason, 'questions': questions,
-                                                    'at': time.time()})
+                # never published twice. It is checked again when that turn comes (prepare_questions), and
+                # a refusal made then names the request by the file name queued with it.
+                self.state['publish_queue'].append({'kind': 'questions', 'request': path.name, 'reason': reason,
+                                                    'questions': questions, 'at': time.time()})
                 self.state['seen_requests'].append(path.name)
                 self.save()
                 self.publish()

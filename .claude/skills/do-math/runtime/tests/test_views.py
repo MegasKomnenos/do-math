@@ -599,6 +599,26 @@ class CanonToolTests(ScenarioCase):
             ''])
         self.assertEqual(self.listed('--remaining'), ['midS', 'root'])
 
+    def test_a_statement_that_several_passed_steps_name_takes_one_line(self):
+        # The root names the accepted steps `midS` and `midT`, `midT` names `midS` and `leafR`, and `midS` names
+        # `leafR`, which has no proof. The view passes through each step once, by whichever chain of steps it is
+        # reached, and `leafR` takes one line beneath the root.
+        chain = [theorem('leafR', ': oddSum 1 = 1'), theorem('midS', ': oddSum 2 = 4', uses=['leafR']),
+                 theorem('midT', ': oddSum 4 = 16', uses=['midS', 'leafR'])]
+        folder = self.candidate(
+            modules={'Small/Chain.lean': module_text('\n\n'.join(chain))},
+            replace={'Small.root': self.root_text(uses=['midS', 'midT'])}, imports={'Small.root': ['Small.Chain']},
+            records={'Small/leafR.md': record_text('The first odd number is one.', weight='unit'),
+                     'Small/midS.md': record_text('The first two odd numbers sum to four.', proof='Add three to one.'),
+                     'Small/midT.md': record_text('The first four odd numbers sum to sixteen.',
+                                                  proof='Add five and seven to four.'),
+                     'Small/root.md': self.root_record()})
+        self.publish(folder)
+        self.assertEqual(self.tool('frontier').splitlines()[2:5], [
+            '- `Small.root` — odd numbers sum to a square — accepted',
+            '  - `Small.leafR` — The first odd number is one. — no proof',
+            ''])
+
     def test_view_names_the_questions_whose_text_names_the_element(self):
         self.split()
         self.assertFalse([line for line in self.tool('view', 'Small.sumZero').splitlines() if line.startswith('questions')])

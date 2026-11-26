@@ -426,7 +426,6 @@ def check_session(session):
         session = Path(session).resolve()
         inp = read_json(session / 'input.json')
         instance, role, task = Path(inp['instance']), inp['role'], inp['task']
-        model = replay(instance)
         output = session / 'output'
         if role in PRODUCERS:
             regular_tree(output)
@@ -434,6 +433,8 @@ def check_session(session):
             if outcome is not None:
                 reported_availability(session, outcome)
             return []  # research, including interrupted work, remains eligible for peer
+        # Made after the producing roles have returned: the check of their output reads the session's own folder alone.
+        model = replay(instance)
         if role == 'peer':
             state = read_json(instance / 'runner/state.json')
             change_check(output, model, session.name,

@@ -64,7 +64,7 @@ def with_standing(model, names):
     return ', '.join(f"{n} ({standing(model['elements'][n])})" if n in model['elements'] else n for n in names) or '(none)'
 
 
-def view(instance, model, name, part=None, full=False):
+def view(instance, model, name, part=None, full=False, canon_index=None):
     """One element as one view: the structure Lean gave, joined by name with what its record says."""
     canon = Canon(instance)
     element = model['elements'].get(name)
@@ -72,7 +72,9 @@ def view(instance, model, name, part=None, full=False):
         raise CanonError('no such element: ' + name)
     record = read_record(canon, name)
     sections = record['sections'] if record else {}
-    index = canon.load_index()['entries'][name]
+    if canon_index is None:  # the caller read the index for the model, or it is read here
+        canon_index = canon.load_index()
+    index = canon_index['entries'][name]
     if part == 'source':
         text = (canon.lean / index['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
         return declaration_text(text, index['span'])
@@ -171,7 +173,7 @@ def view(instance, model, name, part=None, full=False):
         for title in available:
             lines += ['', '## ' + title, '', sections[title]]
         if approaches:
-            lines += ['', view(instance, model, name, 'approaches')]
+            lines += ['', view(instance, model, name, 'approaches', canon_index=canon_index)]
     else:
         # The parts are named as --part takes them, so that a name read off this line can be given to the option.
         parts = ', '.join([title.lower() for title in available] + (['approaches'] if approaches else [])) or 'none'
@@ -305,6 +307,10 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
             kept = ended is None or ended['ok']
         if not kept:
             folder.mkdir(parents=True, exist_ok=True)
+            # The saved state says from which candidate and which canon the files under lean_root were made. It
+            # is removed before they are made again: a run that ends before it has saved a build of its own, as
+            # one does whose candidate cannot be applied, must leave no state that a later run would keep.
+            state_path.unlink(missing_ok=True)
             copy_tree(canon.lean, lean_root)
             try:
                 changed = apply_lean(lean_root, candidate, change, index, library=meta['library'])
@@ -452,7 +458,9 @@ def main(argv=None):
             print(json.dumps(checkout(args.session, args.target)))
             return 0
         _, inp, instance = context(args.session)
-        model = replay(instance)
+        # Read once: the model is made from the index, and `view` takes an element's place in the source from it.
+        index = Canon(instance).load_index()
+        model = replay(instance, index)
         if args.command == 'frontier':
             text = '\n'.join([f"Root: {model['root']} · state: {model['root_state']} · revision {model['sequence']}", '']
                              + frontier_lines(model, holders(instance, model)) + frontier_notes(model)
@@ -461,7 +469,7 @@ def main(argv=None):
                                     + ', or a proof that names a statement refuted since.']
                              + question_lines(model))
         elif args.command == 'view':
-            text = view(instance, model, args.element, args.part, args.full)
+            text = view(instance, model, args.element, args.part, args.full, index)
         elif args.command == 'list':
             for name in (args.uses, args.used_by, args.about):
                 if name and name not in model['elements']:

@@ -21,13 +21,9 @@ from coordination import (board, claims_lock, main as coordination_main, questio
 from knowledge import canonical_question, question_proposal_lines, render, replay, resolved_question_lines
 from runner import Runner, main, operator_questions, status, uid
 from runtime_support import git, read_json, write_json
-from support import InstanceCase, module_text, record_text, take
+from support import ROOT_STATEMENTS, InstanceCase, module_text, record_text, take, theorem
 
-# The root as each variant of the fixture states it (support.ROOTS). The closed form has no binders before
-# the colon, so its negation can be stated, in valid Lean and in the stand-in compiler's subset alike.
-ROOT_HEADS = {'default': 'theorem root (n : Nat) : oddSum n = n * n := by\n',
-              'closed': 'theorem root : ∀ n : Nat, oddSum n = n * n := by\n'}
-ROOT_DOC = '/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
+ROOT_DOC = 'The sum of the first `n` odd numbers is the square of `n`.'  # the root's docstring, as support.ROOT has it
 # The stand-in compiler reads a statement as the negation of the root's when the text after the name is
 # `: ¬ (<the root's statement text>)` (canon_lean.extract).
 REFUTATION = module_text('/-- The root statement fails. -/\n'
@@ -76,7 +72,7 @@ class QuestionCase(InstanceCase):
 
     def prove_root(self, formal=True, engine=None):
         """Replace the root's proof: a complete Lean proof, or one that ends in sorry beside a written proof."""
-        text = ROOT_DOC + ROOT_HEADS[self.root_variant] + ('  rfl' if formal else '  sorry')
+        text = theorem('root', ROOT_STATEMENTS[self.root_variant], proof='rfl' if formal else 'sorry', doc=ROOT_DOC)
         folder = self.candidate(replace={'Small.root': text}, records={'Small/root.md': ROOT_RECORD})
         return self.publish(folder, role='formalizer' if formal else 'attempt', engine=engine)[0]
 
@@ -181,7 +177,8 @@ class QuestionKnowledgeTests(QuestionCase):
         parts = module_text('/-- The empty sum. -/\ntheorem lemma0 : oddSum 0 = 0 := by\n  rfl\n\n'
                             '/-- The first odd number. -/\ntheorem stray : oddSum 1 = 1 := by\n  rfl')
         folder = self.candidate(modules={'Small/Parts.lean': parts},
-                                replace={'Small.root': ROOT_DOC + ROOT_HEADS[self.root_variant] + '  have h := lemma0\n  rfl'},
+                                replace={'Small.root': theorem('root', ROOT_STATEMENTS[self.root_variant],
+                                                               proof='have h := lemma0\n  rfl', doc=ROOT_DOC)},
                                 imports={'Small.root': ['Small.Parts']},
                                 records={'Small/root.md': ROOT_RECORD, 'Small/lemma0.md': record_text('The empty sum is zero.'),
                                          'Small/stray.md': record_text('The first odd number is one.')})
@@ -713,7 +710,7 @@ class OperatorQuestionTests(QuestionCase):
         Runner(self.instance, self.skill).ingest_inputs()
         self.assertEqual(self.events(), [name])
 
-    def test_questions_collected_while_a_change_waits_for_its_build_are_published_after_it(self):
+    def test_questions_collected_while_a_change_waits_take_their_turn_after_it_and_are_checked_then(self):
         step = module_text('/-- Adding the next odd number. -/\n'
                            'theorem oddSum_succ (n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1) := by\n  rfl')
         folder = self.candidate(modules={'Small/Step.lean': step},
@@ -737,6 +734,14 @@ class OperatorQuestionTests(QuestionCase):
                          [('questions', [question('op-scale')])])
         self.assertEqual(read_json(self.instance / 'runner/state.json')['seen_requests'].count(request), 1)
         self.assertEqual(self.events(), [])
+        # A second request names op-scale again. The command passes it, and so does the runner when it
+        # collects it, because the first request is not published yet. It waits in the queue behind the first.
+        code, again = self.command({'reason': 'R.', 'questions': [question('op-scale'), question('op-block')]})
+        self.assertEqual(code, 0)
+        refused = Path(again['request']).name
+        with patch('runner.build_outcome', return_value=None):
+            runner.ingest_inputs()
+        self.assertEqual([item['request'] for item in runner.state['publish_queue']], [request, refused])
         self.drain(runner)
         events = sorted((read_json(p) for p in (self.instance / 'knowledge/events').glob('*.json')),
                         key=lambda event: event['sequence'])
@@ -748,6 +753,15 @@ class OperatorQuestionTests(QuestionCase):
         self.assertIn('Small.oddSum_succ', model['elements'])
         self.assertEqual((model['questions']['op-scale']['origin'], model['questions']['op-scale']['source']),
                          ('operator', events[1]['id']))
+        # When the turn of the second request came, the first had taken op-scale. The whole request is refused,
+        # op-block with it; the refusal names the request and is saved together with the queue the request left.
+        self.assertNotIn('op-block', model['questions'])
+        error = runner.state['last_error']
+        self.assertIn('questions request ' + refused + ' refused', error['error'])
+        self.assertIn('already names a question', error['error'])
+        self.assertIn('op-scale', error['error'])
+        saved = read_json(self.instance / 'runner/state.json')
+        self.assertEqual((saved['last_error'], saved['publish_queue']), (error, []))
         # The request was collected once.
         runner.ingest_inputs()
         Runner(self.instance, self.skill).ingest_inputs()

@@ -278,6 +278,25 @@ class ProcessIdentityTests(unittest.TestCase):
         self.assertFalse(support.alive(present))
 
 
+class GitEnvironmentTests(unittest.TestCase):
+    def test_a_repository_named_in_the_callers_environment_does_not_receive_the_instances_commits(self):
+        # A command of the runtime can be started where GIT_DIR names another repository, as inside a Git hook,
+        # and the runner keeps the environment it was started with. Every publication commits through
+        # support.git (Runner.publish), so with that variable passed on, the commits would go into the other
+        # repository. Both repositories and every Git call are real; only the variable is set.
+        with tempfile.TemporaryDirectory() as temp:
+            instance, other = Path(temp) / 'instance', Path(temp) / 'other'
+            for folder in (instance, other):
+                folder.mkdir()
+                support.git(folder, 'init')
+            (instance / 'root.md').write_text('The root.\n', encoding='utf-8')
+            with patch.dict(os.environ, {'GIT_DIR': str(other / '.git')}):
+                support.git(instance, 'add', '--', 'root.md')
+                support.git(instance, 'commit', '-m', 'In the instance')
+            self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
+            self.assertEqual(support.git(other, 'count-objects'), '0 objects, 0 kilobytes')
+
+
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
         engine = runtime.Runner(self.instance, self.skill)

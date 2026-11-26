@@ -880,8 +880,10 @@ def scope_words(data):
     """Which units the map shows, in words."""
     if data.get('scope') == 'all':
         return 'every unit of the library'
-    refuted = str(data.get('root_state') or '').endswith('refuted')
-    return 'the units the refutation of the root rests on' if refuted else 'the units the proof of the root rests on'
+    state = str(data.get('root_state') or '')
+    if state == 'contested':  # the map starts from the root and from its settled refutation alike (depmap.derive)
+        return 'the units the proof of the root and its refutation rest on'
+    return 'the units the refutation of the root rests on' if state.endswith('refuted') else 'the units the proof of the root rests on'
 
 
 def state_words(data):

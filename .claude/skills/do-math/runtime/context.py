@@ -119,10 +119,17 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     # instance.json names the root and its library, and its folder, the instance, is the base of the path
     # that root_in_lean gives for the root's file.
     parts += view('The root in Lean', instance / 'instance.json', root_in_lean(instance))
+    # The task of a candidate's review holds a hash for every file of the candidate, which the transport check
+    # compares (check.check_session reads them from input.json). A session has no use for them, and a candidate
+    # can hold hundreds of files, so they are left out of what the session reads here.
+    shown = {key: value for key, value in task.items() if key != 'candidate_hashes'}
+    omitted = ('' if len(shown) == len(task) else
+               ', without `candidate_hashes`, the hash of each file of the candidate, which the check of your '
+               'output compares')
     parts += ['# Your assignment', '',
-              'This is `task` from input.json. Your role guide explains its fields. Where it names no work, your role '
-              'chooses its own.', '',
-              '```json', json.dumps({'task': task}, ensure_ascii=False, indent=2), '```', '']
+              f'This is `task` from input.json{omitted}. Your role guide explains its fields. Where it names no work, '
+              'your role chooses its own.', '',
+              '```json', json.dumps({'task': shown}, ensure_ascii=False, indent=2), '```', '']
     for name in documents:
         source = context / name
         body = source.read_text(encoding='utf-8-sig')

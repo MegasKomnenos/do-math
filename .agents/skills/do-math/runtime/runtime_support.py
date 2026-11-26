@@ -75,10 +75,13 @@ def read_json(path):
             time.sleep(.02)
 
 
-def file_stamp(path):
-    stat = Path(path).stat()
+def _stamp(info):
     # Atomic replacement can share an NTFS timestamp with the preceding version.
-    return stat.st_mtime_ns, stat.st_size, stat.st_ino
+    return info.st_mtime_ns, info.st_size, info.st_ino
+
+
+def file_stamp(path):
+    return _stamp(Path(path).stat())
 
 
 _JSON_SEEN = {}
@@ -100,7 +103,7 @@ def read_json_cached(path):
     if info is None or not stat.S_ISREG(info.st_mode):
         _JSON_SEEN.pop(key, None)
         return None
-    stamp = (info.st_mtime_ns, info.st_size, info.st_ino)
+    stamp = _stamp(info)
     seen = _JSON_SEEN.get(key)
     if seen is None or seen[0] != stamp:
         seen = _JSON_SEEN[key] = (stamp, read_json(path))
@@ -382,9 +385,12 @@ def popen_options(detached=False, breakaway=False):
 def git(instance, *args):
     # A caller's Git environment must not redirect this instance's repository.
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    # core.fsync=all: left to its default, Git does not send to the disk the loose objects, the index and the
+    # reference that a commit writes. The runner saves, through to the disk, that a publication is done once
+    # its commit is made, so after a loss of power the repository has to hold that commit whole.
     result = subprocess.run(
         ["git", "-C", str(instance), "-c", "user.name=do-math",
-         "-c", "user.email=do-math@localhost", "--literal-pathspecs", *args],
+         "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "--literal-pathspecs", *args],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         encoding="utf-8", errors="replace", **popen_options())
     if result.returncode:

@@ -311,6 +311,22 @@ class ContextTests(InstanceCase):
         lines, size = written.count(b'\n'), len(written)
         self.assertIn(f'The file has {lines} lines in {size} bytes', prompt)
 
+    def test_a_candidate_review_reads_its_assignment_without_the_hashes_of_the_candidate(self):
+        # The transport check compares the hashes and reads them from input.json. A session cannot act on
+        # them, and a candidate has one for each of its files.
+        folder = self.session('r1')
+        task = {'kind': 'candidate', 'candidate': str(folder / 'no-candidate'),
+                'candidate_hashes': {'change.json': 'a' * 64, 'records/Small/root.md': 'b' * 64}}
+        inp = self.pack(folder, 'review', task)
+        self.assertEqual(inp['task'], task)
+        self.assertEqual(read_json(folder / 'input.json')['task'], task)
+        lead = self.lead(folder)
+        self.assertNotIn('a' * 64, lead)
+        self.assertNotIn('b' * 64, lead)
+        shown = json.loads(lead.split('\n# Your assignment\n', 1)[1].split('```json\n', 1)[1].split('\n```', 1)[0])
+        self.assertEqual(shown, {'task': {'kind': 'candidate', 'candidate': task['candidate']}})
+        self.assertIn('without `candidate_hashes`', lead)
+
     def test_the_commands_of_input_json_run_once_their_placeholders_are_replaced(self):
         # A session has nothing but these argument arrays, so each kind is run as a session runs it.
         engine = Runner(self.instance, self.skill)

@@ -88,7 +88,10 @@ CLOSED = [{'kind': 'removed', 'where': 'the abstract', 'section': 'abstract',
            'difference': 'It states the sum additively.'},
           {'kind': 'restated', 'label': 'lem:step', 'number': 'Lemma 1.1', 'element': 'Small.sq_step',
            'before': 'For $n \\ge 1$ the step holds.', 'difference': 'The element has every n.',
-           'after': 'For every $n$ the step holds.', 'verdict': 'differs', 'difference_after': 'The range of n.'}]
+           'after': 'For every $n$ the step holds.', 'verdict': 'differs', 'difference_after': 'The range of n.'},
+          {'kind': 'uncovered', 'where': 'the running text of the section "The step"', 'section': 'sec:step',
+           'quote': 'Hence every block sum is positive.', 'asserts': 'The block sums are positive.',
+           'nearest': 'Small.sq_step', 'difference': 'No declaration bounds a block sum.'}]
 
 
 def decision(main='Small.sq_step', options=None, choice='a', runner_up=None, **more):
@@ -333,6 +336,26 @@ class FinalizeCase(InstanceCase):
         git(self.instance, 'commit', '-m', 'a note', '--', 'canon/questions/q0.md')
         return package.head_commit(self.instance)
 
+    def lake_project(self, release, lakefile=''):
+        """A Lake project as the Lean environment of a research that imports a library; returns it and its one package.
+
+        The project requires `mathlib` at `release`, and `lakefile` is what its lakefile holds after that. The
+        package stands in the packages folder as a Git repository at the revision that the manifest names."""
+        project = self.root / 'project'
+        mathlib = project / '.lake' / 'packages' / 'mathlib'
+        mathlib.mkdir(parents=True)
+        (project / 'lean-toolchain').write_text(f'leanprover/lean4:{release}\n', encoding='utf-8')
+        (project / 'lakefile.toml').write_text(
+            f'name = "env"\n\n[[require]]\nname = "mathlib"\nrev = "{release}"\n' + lakefile, encoding='utf-8')
+        git(mathlib, 'init')
+        (mathlib / 'file').write_text('x', encoding='utf-8')
+        git(mathlib, 'add', 'file')
+        git(mathlib, 'commit', '-m', 'one')
+        entry = {'name': 'mathlib', 'type': 'git', 'rev': git(mathlib, 'rev-parse', 'HEAD'), 'inputRev': release,
+                 'inherited': False}
+        write_json(project / 'lake-manifest.json', {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': [entry]})
+        return project, entry
+
     def from_the_records(self):
         """Begin this test at a run that has passed every step before the draft, with the plain script.
 
@@ -433,19 +456,37 @@ class TakeTests(FinalizeCase):
         self.assertIn('Small.simp_one', plan['removed'])
         self.assertIn('Small.root', plan['kept'])
 
-    def test_a_restore_puts_removed_elements_back_and_nothing_else(self):
+    def test_a_restore_puts_removed_elements_back_and_deletes_lines_and_does_nothing_else(self):
         before = {relative: (self.lean / relative).read_text(encoding='utf-8') for relative in self.plan['files']}
         whole = before['Small/Helper.lean']
-        back, files, problems = package.restored_files(self.plan['spans'], before, {'Small/Helper.lean': whole})
-        self.assertEqual((back, problems), (['Small.unused_two'], []))
+
+        def restored(plan, text, relative='Small/Helper.lean'):
+            return package.restored_files(plan['spans'], plan['held'], before, {relative: text})
+
+        back, files, deleted, problems = restored(self.plan, whole)
+        self.assertEqual((back, deleted, problems), (['Small.unused_two'], {}, []))
         self.assertEqual(files['Small/Helper.lean'], whole)
         for changed, word in ((whole.replace('oddSum 4 = 16', 'oddSum 4 = 17'), 'by more than removed elements'),
                               (whole + '\ntheorem new_one : oddSum 0 = 0 := by\n  rfl\n', 'by more than removed elements')):
-            back, files, problems = package.restored_files(self.plan['spans'], before, {'Small/Helper.lean': changed})
-            self.assertEqual((back, files), ([], {}))
+            back, files, deleted, problems = restored(self.plan, changed)
+            self.assertEqual((back, files, deleted), ([], {}, {}))
             self.assertIn(word, problems[0])
-        _, _, problems = package.restored_files(self.plan['spans'], before, {'Small/Extra.lean': EXTRA})
-        self.assertIn('no file of the taken library', problems[0])
+        self.assertIn('no file of the taken library', restored(self.plan, EXTRA, 'Small/Extra.lean')[3][0])
+        # A theorem that the research left without a proof is removed although a private declaration names it, and it
+        # may not come back. The session deletes the private declaration, and no line of an element that stays.
+        self.index['entries']['Small.named_four']['axioms'] = ['sorryAx']
+        plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
+        self.assertEqual([item['declaration'] for item in plan['spans'] if not item['proved']], ['Small.named_four'])
+        hidden = HELPER_PARTS[-1]
+        without = plan['files']['Small/Helper.lean'].replace('\n\n' + hidden, '')
+        back, files, deleted, problems = restored(plan, without)
+        self.assertEqual((back, files, problems), ([], {'Small/Helper.lean': without}, []))
+        self.assertEqual(deleted, {'Small/Helper.lean': hidden.split('\n')})
+        for changed, word in ((whole.replace(UNUSED + '\n\n', ''), 'puts back Small.named_four'),
+                              (without.replace('@[simp]\n', ''), 'Small.simp_one')):
+            back, files, deleted, problems = restored(plan, changed)
+            self.assertEqual((back, files, deleted), ([], {}, {}))
+            self.assertIn(word, problems[0])
 
     def test_the_texts_by_which_sessions_read_the_library_say_what_the_index_and_the_records_hold(self):
         # The digest of the selection: the declaration whose proof settles the root, the units under it with the
@@ -476,10 +517,12 @@ class LibraryCheckTests(FinalizeCase):
         (lean / 'Small' / 'Plain.lean').write_text('-- a comment\nimport Small.Defs\n', encoding='utf-8')
         (lean / 'Small' / 'Long.lean').write_text('module\n' + '-- line\n' * 10_000, encoding='utf-8')
         (lean / 'Small' / 'Fits.lean').write_text('/- a comment -/\nmodule\n' + '-- line\n' * 9_998, encoding='utf-8')
+        (lean / 'Small' / 'notes.txt').write_text('What a session left beside its modules.\n', encoding='utf-8')
         problems = package.lean_form_problems(lean)
-        self.assertEqual(len(problems), 2, problems)
+        self.assertEqual(len(problems), 3, problems)
         self.assertIn('Small/Plain.lean does not begin with `module`', problems)
         self.assertTrue(any('Small/Long.lean has 10001 lines' in problem for problem in problems))
+        self.assertTrue(any('Small/notes.txt is no Lean file' in problem for problem in problems))
         (lean / 'Small' / 'Defs.lean').write_text(DEFS + '\n-- a comment\n', encoding='utf-8')
         self.assertIn('Small.Defs is not the file of the first commit', package.definition_problems(lean, first, ['Small.Defs'])[0])
         (lean / 'Small' / 'Defs.lean').unlink()
@@ -845,21 +888,7 @@ class RegistryTests(FinalizeCase):
             self.assertIn(wanted, problems[0])
 
     def test_the_build_files_come_from_the_lake_project_of_the_lean_environment(self):
-        project = self.root / 'project'
-        packages = project / '.lake' / 'packages' / 'mathlib'
-        packages.mkdir(parents=True)
-        (project / 'lean-toolchain').write_text('leanprover/lean4:v4.36.0\n', encoding='utf-8')
-        (project / 'lakefile.toml').write_text('name = "env"\n\n[[require]]\nname = "mathlib"\nrev = "v4.36.0"\n\n'
-                                               '[[lean_lib]]\nname = "Env"\n', encoding='utf-8')
-        git = lambda *arguments: subprocess.run(['git', '-C', str(packages), '-c', 'user.name=t', '-c', 'user.email=t@t',
-                                                 *arguments], check=True, capture_output=True, text=True).stdout.strip()
-        git('init')
-        (packages / 'file').write_text('x', encoding='utf-8')
-        git('add', 'file')
-        git('commit', '-m', 'one')
-        head = git('rev-parse', 'HEAD')
-        entry = {'name': 'mathlib', 'type': 'git', 'rev': head, 'inputRev': 'v4.36.0', 'inherited': False}
-        write_json(project / 'lake-manifest.json', {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': [entry]})
+        project, entry = self.lake_project('v4.36.0', '\n[[lean_lib]]\nname = "Env"\n')
         self.assertEqual(package.lake_project({'lean': {'cwd': str(project)}}), project)
         self.assertIsNone(package.lake_project({'lean': {'cwd': None}}))
         files = package.build_files('Small', 'odd', project, None, True)
@@ -951,6 +980,15 @@ class ArchiveTests(FinalizeCase):
         self.assertEqual([(row['kind'], row['title'], row['elements'], row['record']) for row in tried],
                          [('approach', 'Induction on n', ['Small.root'],
                            'canon/history/Small/root/000001-approaches/by-induction.md')])
+        # A change says which questions it resolves, and review judges each resolution. One that review did not
+        # accept resolved nothing, so the line of the change does not name its question.
+        judged = package.ledger({name: json.dumps(value).encode('utf-8') for name, value in {
+            'knowledge/events/1.json': {'sequence': 1, 'kind': 'change', 'folder': 'changes/c1'},
+            'knowledge/changes/c1/change.json': {'resolutions': [{'id': 'r1', 'question': 'q1'},
+                                                                 {'id': 'r2', 'question': 'q2'}]},
+            'knowledge/changes/c1/assessment.json': {'resolutions': [{'proposal': 'r1', 'resolved': True},
+                                                                     {'proposal': 'r2', 'resolved': False}]}}.items()})
+        self.assertEqual(judged[0]['questions'], ['resolves q1'])
         listed = [{'group': 'Steps', 'items': ['`Small.sq_step`:  the step of the square']},
                   {'group': '', 'items': ['`Small.twice`: doubling']}]
         text = package.timeline([{**rows[0], 'text': 'A change   gave the root its proof.', 'list': listed},
@@ -983,7 +1021,11 @@ class DocumentTests(FinalizeCase):
         """A small package with every kind of file the final check reads."""
         folder = self.root / 'package'
         for relative, text in (('lean/Small/Defs.lean', DEFS), ('lean/lakefile.toml', 'name = "x"\n'),
-                               ('records/Small/root.md', 'A record.\n'), ('history/timeline.md', '# History\n'),
+                               # A record has formulas between dollar signs and names of elements between backticks.
+                               # A bracket before a parenthesis there is mathematics or code, and no link.
+                               ('records/Small/root.md', 'The coefficient $[X^n](fg)$, displayed\n$$[X^n](gf),$$\n'
+                                                         'and `coeff[n](fg)`.\n'),
+                               ('history/timeline.md', '# History\n'),
                                ('README.md', '# Title\n\n[the timeline](history/timeline.md) and [a site](https://example.org/a)\n'),
                                ('dependency-map/dependency_map.html', '<a href="dependency_map.svg">map</a>\n'),
                                ('dependency-map/dependency_map.svg', '<svg/>\n')):
@@ -1016,7 +1058,9 @@ class DocumentTests(FinalizeCase):
             self.assertEqual(check(), [])
             return problems
 
-        faulty('README.md', '[gone](history/absent.md)\n', 'README.md: the link history/absent.md does not resolve')
+        # A link that stands between two formulas is a link.
+        faulty('README.md', 'For $n$, see [the notes](history/absent.md) on $s(n)$.\n',
+               'README.md: the link history/absent.md does not resolve')
         faulty('README.md', '[out](../outside.md)\n', 'the link ../outside.md does not resolve inside the package')
         faulty('dependency-map/dependency_map.html', '<img src="missing.svg">\n', 'the link missing.svg')
         faulty('history/timeline.md', 'Computed in C:\\Users\\pat\\work.\n',
@@ -1109,6 +1153,8 @@ class DocumentTests(FinalizeCase):
 
 
 class PaperRunTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_a_folder_that_holds_a_run_of_the_paper_command_is_continued_as_that_command_continues_it(self):
         run = finalize.Run(self.instance, 'odd', {**finalize.default_config(), 'parallel': 3, 'tex': ['tex']})
         out = self.root / 'paper'
@@ -1164,6 +1210,8 @@ class PaperRunTests(FinalizeCase):
 
 
 class BuildTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_a_broker_that_does_not_come_up_stops_the_step_and_is_no_fault_of_the_library(self):
         # What `build` returns as faults goes to a session as the faults of its output, and a part is discarded for
         # them. A broker that does not come up is raised instead, as the error with which a step stops the run.
@@ -1206,8 +1254,20 @@ class BuildTests(FinalizeCase):
             run.ensure_broker()  # the watcher's next look, were it to come after the stop
             self.assertEqual(lean_broker.started_brokers(paths), [])
 
+    def test_the_command_holds_the_broker_module_from_its_start(self):
+        # A run lasts hours, and the files of the skill can change under it. A module that the command first loaded in
+        # the middle of a run would come from the files as they then are, beside the modules loaded at the start, and
+        # fails where it names something those do not have. So a fresh process that has imported finalize.py already
+        # holds the broker module, which a run first uses some seconds or minutes after it began.
+        probe = 'import sys; sys.path.insert(0, sys.argv[1]); import finalize; print("lean_broker" in sys.modules)'
+        result = subprocess.run([sys.executable, '-B', '-c', probe, str(THIS.parents[1])], capture_output=True, text=True,
+                                timeout=120)
+        self.assertEqual((result.returncode, result.stdout.strip()), (0, 'True'), result.stderr)
+
 
 class EndTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_a_package_that_cannot_be_moved_stays_whole_in_the_work_folder(self):
         # The package goes into solved/ by one rename, which moves all of it or nothing. Here a folder stands where
         # the package is to go: the end fails, the package is not put inside that folder, and both stay as they were.
@@ -1224,6 +1284,8 @@ class EndTests(FinalizeCase):
 
 
 class StepTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_a_step_that_is_entered_again_decides_anew_and_stage_3_leaves_the_decisions_as_they_are(self):
         # A step that stopped is made again from its start, and what its first start decided may no longer be so.
         # Here the part that the first start discarded is accepted by the second, and decisions.md says that alone.
@@ -1269,6 +1331,8 @@ class StepTests(FinalizeCase):
 
 
 class PromptTests(FinalizeCase):
+    reads_the_instance = True
+
     def prepared(self):
         run = finalize.Run(self.instance, 'odd', finalize.default_config())
         run.settings, run.library, run.root, run.expect_mb = {'lean': {'cwd': None}}, 'Small', 'Small.root', 64
@@ -1559,7 +1623,6 @@ class RunTests(FinalizeCase):
         self.assertIn('do-math is a program that conducts mathematical research in Lean', readme)
         # The models are those of the sessions that made the package; nothing is said of the models of the research.
         self.assertIn('The sessions that made this package from the research ran on ', readme)
-        self.assertNotIn('run by do-math (', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
         self.assertIn('### Where the result comes from\n\nThe identity is classical; the records name nobody who posed it.\n\n'
                       'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
@@ -1689,6 +1752,13 @@ class RunTests(FinalizeCase):
         self.assertIn('it took 1 passages that no declaration covers out of the paper and restated 1 statements', report)
         self.assertIn('- In the paper, Lemma 1.1 still differs from the declaration `Small.sq_step` that it states: The '
                       'range of n.', report)
+        # A passage that a repair wrote during the closing pass and that no declaration covers stays, and both say so.
+        self.assertIn('- Stays in the running text of the section "The step": "Hence every block sum is positive."', decisions)
+        self.assertIn('The passage asserts: The block sums are positive. The declaration that came nearest is '
+                      '`Small.sq_step`. No declaration bounds a block sum.', decisions)
+        self.assertIn('the running text compared with the declarations, which cover it except for the passages listed '
+                      'under what was not verified.', report)
+        self.assertIn('- In the paper, 1 passages of the running text assert what no declaration states', report)
         self.assertIn("The library is built with Lean 4.99.0. Lean is installed through elan, its toolchain manager, as "
                       "Lean's own installation instructions describe.",
                       (self.solved / 'README.md').read_text(encoding='utf-8'))
@@ -2031,21 +2101,7 @@ class RunTests(FinalizeCase):
         # its toolchain, its `[[require]]` blocks and its packages from that project, and the one Lake build of the
         # freeze is made on a copy whose manifest names the folder in which the environment already holds the
         # packages, so that Lake fetches nothing.
-        project = self.root / 'project'
-        mathlib = project / '.lake' / 'packages' / 'mathlib'
-        mathlib.mkdir(parents=True)
-        (project / 'lean-toolchain').write_text('leanprover/lean4:v4.99.0\n', encoding='utf-8')
-        (project / 'lakefile.toml').write_text('name = "env"\n\n[[require]]\nname = "mathlib"\nrev = "v4.99.0"\n',
-                                               encoding='utf-8')
-        git = lambda *arguments: subprocess.run(['git', '-C', str(mathlib), '-c', 'user.name=t', '-c', 'user.email=t@t',
-                                                 *arguments], check=True, capture_output=True, text=True).stdout.strip()
-        git('init')
-        (mathlib / 'file').write_text('x', encoding='utf-8')
-        git('add', 'file')
-        git('commit', '-m', 'one')
-        entry = {'name': 'mathlib', 'type': 'git', 'rev': git('rev-parse', 'HEAD'), 'inputRev': 'v4.99.0',
-                 'inherited': False}
-        write_json(project / 'lake-manifest.json', {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': [entry]})
+        project, entry = self.lake_project('v4.99.0')
         self.configure(lean={'cwd': str(project)})
         lean = self.halted_after_the_freeze(script())
         self.assertEqual((lean / 'lean-toolchain').read_text(encoding='utf-8'), 'leanprover/lean4:v4.99.0\n')
@@ -2152,6 +2208,24 @@ class RunTests(FinalizeCase):
         self.assertIn('The library could not be brought to that form, so it keeps its own, and the paper proves '
                       '`Small.helper_zero`. The general form needs a lemma on products that does not compile. A reader who '
                       'knows the source will ask why the paper does not cite it; this is the answer.', self.decisions())
+
+    def test_a_finding_of_the_records_that_is_closed_by_taking_its_declaration_out_is_recorded_as_closed(self):
+        # The writer of a record found a lemma that nothing uses. The fold-back takes the lemma out, so its report has
+        # no declaration to name for that item, and the item is closed all the same.
+        self.from_the_records()
+        plan = script()
+        added = theorem('added_six', ': oddSum 6 = 36', proof='rfl')
+        plan['foldback'][0]['output/lean/Small/Helper.lean'] = HELPER_SIMPLIFIED.replace('\n\n' + added, '')
+        plan['foldback'][0]['output/report.json'] = json.dumps({'deleted': [], 'items': [
+            {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': None},
+            {'id': 'r1', 'closed': True, 'declarations': [], 'note': 'Nothing used the lemma, so it is removed.'}]})
+        with patch('finalize.Run.records_again', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertEqual(len(self.calls('foldback')), 1)  # the report is accepted as the first session left it
+        self.assertNotIn('Small.added_six', read_json(self.work / 'lib' / '6-folded' / 'index.json')['entries'])
+        decisions = self.decisions()
+        self.assertIn('g1 (draft, `Small.sq_step`): closed by `Small.sq_step_strict`', decisions)
+        self.assertIn('r1 (records, `Small.added_six`): closed. Nothing used the lemma, so it is removed.', decisions)
 
     def test_a_report_of_a_stronger_form_names_a_verified_entry_and_what_the_source_states(self):
         self.from_the_records()
@@ -2607,14 +2681,48 @@ class TakeStepTests(FinalizeCase):
         self.assertIn("unknown identifier 'helper_zero'", (folder / 'errors.txt').read_text(encoding='utf-8'))
         self.assertNotIn('helper_zero', (folder / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'))
         self.assertIn('theorem helper_zero', (folder / 'before' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'))
-        self.assertEqual(read_json(folder / 'removed.json'), [{'declaration': 'Small.helper_zero', 'file': 'Small/Helper.lean'},
-                                                               {'declaration': 'Small.unused_two', 'file': 'Small/Helper.lean'}])
+        self.assertEqual(read_json(folder / 'removed.json'), [
+            {'declaration': 'Small.helper_zero', 'file': 'Small/Helper.lean', 'proved': True},
+            {'declaration': 'Small.unused_two', 'file': 'Small/Helper.lean', 'proved': True}])
         self.assertIn('by more than removed elements put back whole', second['prompt'])
         taken = read_json(self.work / 'lib' / '1-taken' / 'taken.json')
         self.assertEqual((taken['restored'], taken['removed']), (['Small.helper_zero', 'Small.unused_two'], ['Small.stray']))
         self.assertEqual((self.work / 'lib' / '1-taken' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'), helper)
         self.assertTrue((self.work / 'lib' / '1-taken' / 'records' / 'Small' / 'helper_zero.md').is_file())
         self.assertIn('these removed elements were put back: `Small.helper_zero`, `Small.unused_two`', self.decisions())
+
+    def test_a_theorem_without_a_proof_is_not_put_back_and_the_private_declaration_that_names_it_is_deleted(self):
+        # The research left `named_four` without a proof, which its index says, and a private declaration of a module
+        # that stays names it. The take removes the theorem, the module no longer builds, and the theorem may not come
+        # back: the first session puts it back and is refused, the second deletes the private declaration.
+        real = package.take
+
+        def unproved(index, *rest):
+            index = json.loads(json.dumps(index))
+            index['entries']['Small.named_four']['axioms'] = ['sorryAx']
+            return real(index, *rest)
+
+        helper = (self.instance / 'canon' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8')
+        with_theorem = helper.replace(UNUSED + '\n\n', '')
+        without = with_theorem.replace(HELPER_PARTS[5] + '\n\n' + HELPER_PARTS[6] + '\n\n', '')
+        plan = script(restore=[{'output/lean/Small/Helper.lean': with_theorem}, {'output/lean/Small/Helper.lean': without}])
+        with patch('finalize.Run.review', side_effect=paper.Stop('halted for the test')), \
+                patch('package.take', side_effect=unproved):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        self.assertIn('The run stopped at the step `2.2-review`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        first, second = self.calls('restore')
+        folder = self.work / 'sessions' / first['folder']
+        self.assertIn("unknown identifier 'named_four'", (folder / 'errors.txt').read_text(encoding='utf-8'))
+        self.assertIn({'declaration': 'Small.named_four', 'file': 'Small/Helper.lean', 'proved': False},
+                      read_json(folder / 'removed.json'))
+        self.assertIn('puts back Small.named_four', second['prompt'])
+        taken = read_json(self.work / 'lib' / '1-taken' / 'taken.json')
+        self.assertEqual((taken['restored'], taken['removed']), ([], ['Small.named_four', 'Small.stray', 'Small.unused_two']))
+        self.assertEqual((self.work / 'lib' / '1-taken' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'), without)
+        self.assertFalse((self.work / 'lib' / '1-taken' / 'records' / 'Small' / 'named_four.md').exists())
+        decisions = self.decisions()
+        self.assertIn('these removed elements were put back: none.', decisions)
+        self.assertIn('  have h1 := named_four', decisions)  # the deleted lines are kept for the user
 
 
 if __name__ == '__main__':

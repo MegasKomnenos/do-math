@@ -20,7 +20,7 @@ Your assignment, `task` in `input.json`, gives the producer's directory (`source
 
 Connect material found in different places before deciding what matters. A formula can depend on a restriction recorded earlier. A later calculation may correct an initial observation. An abandoned proof may contain an identity that remains useful. The producer's final answer and its labels of success or failure are assertions to examine against this material.
 
-Read what the producer worked on as the canon holds it now: the view of each element it took on, with review's verdict and reason, and the approaches tried there. Follow the elements the producer used far enough to understand their definitions, their exact statements and their current standing. If an earlier peer or review assessed this same source work, first develop your own understanding from the source, then compare the earlier account and investigate disagreements. A replacement peer may use its predecessor's unfinished work after checking it against the producing originals.
+Read what the producer worked on as the canon holds it now: the view of each element it took on, with review's verdict and reason, and the approaches tried there. Follow the elements the producer used far enough to understand their definitions, their exact statements and their current standing. If an earlier peer assessed this same source work, first develop your own understanding from the source, then compare the earlier account and investigate disagreements. A replacement peer may use its predecessor's unfinished work after checking it against the producing originals.
 
 ## Work the mathematics yourself
 

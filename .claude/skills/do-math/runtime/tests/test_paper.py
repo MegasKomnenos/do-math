@@ -498,9 +498,9 @@ class RefutedMaterialsTests(RefutedRootCase):
 
 class MaterialsTests(PaperCase):
     def test_the_materials_are_what_the_formal_proof_rests_on_in_dependence_order(self):
-        model = replay(self.instance)
+        model = replay(self.read_from)
         self.assertEqual(model['root_state'], 'formal_proved')
-        materials = paper.extract(self.instance, model)
+        materials = paper.extract(self.read_from, model)
         names = [e['name'] for e in materials['elements']]
         self.assertEqual(sorted(names), ['Small.expand', 'Small.oddSum', 'Small.oddSum_mono', 'Small.oddSum_mono_weak',
                                          'Small.oddSum_succ', 'Small.root', 'Small.sq_step'])
@@ -532,7 +532,7 @@ class MaterialsTests(PaperCase):
         self.assertEqual(root['words'], 'For every natural number n, the sum of the first n odd numbers is n * n.')
         # A correction appended by the reviewer reaches the writer under a separate heading.
         self.assertEqual(materials['understanding'], UNDERSTANDING.strip())
-        published = (self.instance / 'canon/questions/q0.md').read_text(encoding='utf-8')
+        published = (self.read_from / 'canon/questions/q0.md').read_text(encoding='utf-8')
         review = published.split('\n## Review\n', 1)[1].strip()
         self.assertTrue(review)
         self.assertEqual(materials['understanding_review'], review)
@@ -1018,7 +1018,7 @@ class CollectionTests(PaperCase):
         write_json(self.scenario / 'script.json', good())
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             with self.assertRaises(paper.Stop) as stopped:
-                paper.produce(self.instance, self.out, TEX)
+                paper.produce(self.read_from, self.out, TEX)
         self.assertEqual(self.runs(), ['run '])
         message = str(stopped.exception)
         self.assertIn('after fetch.py ran (exit code 0): gamma.', message)
@@ -1064,8 +1064,9 @@ class FetchTests(unittest.TestCase):
         self.folder = Path(tempfile.mkdtemp(prefix='do-math-fetch-'))
         self.addCleanup(shutil.rmtree, self.folder, True)
 
-    def fetched(self, papers, request):
-        """Run the script on a manifest of these papers, each (key, SHA-256), with `request` answering for arXiv.
+    def fetched(self, papers, request, arguments=()):
+        """Run the script with `arguments` on a manifest of these papers, each (key, SHA-256), with `request` answering
+        for arXiv.
 
         The papers have the arXiv identifiers 0001.00001v1, 0001.00002v1 and so on. Returns the exit code and
         the lines the script printed."""
@@ -1074,7 +1075,7 @@ class FetchTests(unittest.TestCase):
              for number, (key, digest) in enumerate(papers, 1)]), encoding='utf-8')
         with patch.object(self.fetch, 'HERE', str(self.folder)), patch.object(self.fetch, '_request', side_effect=request), \
                 patch('builtins.print') as shown:
-            code = self.fetch.main([])
+            code = self.fetch.main(list(arguments))
         return code, [str(call.args[0]) for call in shown.call_args_list]
 
     def test_a_download_that_was_cut_short_fails_its_paper_and_the_other_papers_are_fetched(self):
@@ -1137,6 +1138,15 @@ class FetchTests(unittest.TestCase):
                             for line in said), said)
         self.assertEqual(sorted(path.name for path in self.folder.iterdir()), ['joined.tex', 'manifest.json'])
         self.assertEqual((self.folder / 'joined.tex').read_bytes(), joined)
+        # With --only the script fetches the papers that are named and no other, and with --to it writes them into
+        # another folder. A key that the manifest does not have fails the run.
+        asked = []
+        code, said = self.fetched([('joined', digest), ('other', '0' * 64)], lambda url: asked.append(url) or archive.getvalue(),
+                                  ['--only', 'joined', '--only', 'absent', '--to', str(self.folder / 'elsewhere')])
+        self.assertEqual((code, asked), (1, [self.fetch.HOSTS[0] + '0001.00001v1']))
+        self.assertEqual((said[0], said[-1]), ('absent: no such key in manifest.json',
+                                               '1 paper(s) could not be rebuilt as recorded: absent'))
+        self.assertEqual((self.folder / 'elsewhere' / 'joined.tex').read_bytes(), joined)
 
 
 class LikenessShapeTests(unittest.TestCase):
@@ -1396,7 +1406,7 @@ class RunTests(PaperCase):
         script['repair:wide'] = [{'output/proof.tex': PROOF + f'\\[ a = b \\] % wide, attempt {n}\n'} for n in range(9)]
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
-            self.assertEqual(paper.produce(self.instance, self.out, TEX, parallel=1), 2)
+            self.assertEqual(paper.produce(self.read_from, self.out, TEX, parallel=1), 2)
         self.assertEqual(len(self.calls('repair')), paper.REPAIR_ROUNDS)
         # The paper is typeset, so the reading and the comparison are made as for any other manuscript.
         self.assertEqual((len(self.calls('read')), [(c['kind'], c['section']) for c in self.calls('compare')]), (1, COMPARED))
@@ -1440,6 +1450,26 @@ class RunTests(PaperCase):
         end = self.events('end')[0]
         self.assertEqual((end['status'], end['open'][0]['check']), ('open_findings', 'typesetting'))
         self.assertTrue((self.out / 'paper.tex').is_file())
+        self.assertFalse((self.out / 'paper.pdf').exists())
+
+    def test_a_manuscript_that_a_repair_after_a_reading_leaves_failing_ends_the_run_there_without_a_pdf(self):
+        script = good()
+        script['read'] = [{'output/reading.json': json.dumps(FOUND)}]
+        # The repair of what the reader found writes a macro that TeX does not know, and the repairs of the
+        # typesetting leave it there.
+        script['repair:reading'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.', 'Expand. \\undefinedmacro'),
+                                     'output/response.json': answered('The expansion is written out.')}]
+        script['repair:typeset'] = [{'output/tools.tex': TOOLS.replace('Expand the right-hand side.',
+                                                                       f'Expand. \\undefinedmacro % attempt {n}')}
+                                    for n in range(9)]
+        self.assertEqual(self.run_paper(script), 2)
+        # The run ends inside the stage of the reading: no reading beside real papers and no comparison is made.
+        self.assertEqual(self.kinds(4), [('read', None), ('repair', 'reading')] + [('repair', 'typeset')] * paper.REPAIR_ROUNDS)
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], [item['check'] for item in end['open']]),
+                         ('open_findings', [paper.TYPESETTING, paper.UNCOMPARED]))
+        self.assertEqual(read_json(self.out / 'state.json')['done'], {'reading': False})
+        # The manuscript was typeset before it was read. That PDF is gone: none stands beside a manuscript that fails.
         self.assertFalse((self.out / 'paper.pdf').exists())
 
     def test_a_repair_session_that_changes_nothing_is_followed_by_one_that_is_told_so(self):
@@ -2040,7 +2070,7 @@ class RunTests(PaperCase):
         self.assertEqual(paper.tex_recipe(TEX), [[*TEX, 'paper.tex']])
         # --tex takes the rest of the command line, so an option of this command after it is a mistake.
         with patch('builtins.print') as shown:
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--tex', 'tectonic', '--model', 'x/y']), 1)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--tex', 'tectonic', '--model', 'x/y']), 1)
         self.assertIn('put it last', shown.call_args.args[0])
         self.assertFalse(self.out.exists())
 
@@ -2329,7 +2359,7 @@ class SideBySideTests(PaperCase):
             self.run_paper(good())
         before = sorted((path.relative_to(self.out).as_posix(), path.stat().st_mtime_ns) for path in self.out.rglob('*'))
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--resume', '--dry-run', '--tex', *TEX]), 0)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--resume', '--dry-run', '--tex', *TEX]), 0)
         said = shown.call_args.args[0]
         self.assertIn('Dry run: no session is launched and nothing is written.', said)
         self.assertIn('The materials of the canon are those of materials.json: 7 elements.', said)
@@ -2428,7 +2458,7 @@ class SideBySideTests(PaperCase):
         self.assertEqual(len(self.calls()), launched)
         # A folder that holds no run is not continued either.
         with self.assertRaisesRegex(paper.Stop, 'holds no run of this command to continue'):
-            paper.produce(self.instance, self.root / 'elsewhere', TEX, resume=True)
+            paper.produce(self.read_from, self.root / 'elsewhere', TEX, resume=True)
 
     def continued(self, script, after, again=None):
         """Stop a run with `script`, continue it with the sessions that do their work, and compare what was launched then."""
@@ -2741,7 +2771,7 @@ class SideBySideTests(PaperCase):
         write_json(self.scenario / 'script.json', good())
         (self.exemplars / 'gamma.tex').unlink()
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--dry-run', '--tex', *TEX]), 0)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--dry-run', '--tex', *TEX]), 0)
         said = shown.call_args.args[0]
         for words in ('Dry run: no session is launched and nothing is written.',
                       'Papers of the collection that are missing or differ from its manifest, which a run would fetch: gamma.',
@@ -2755,8 +2785,8 @@ class SideBySideTests(PaperCase):
         self.assertFalse((self.exemplars / 'runs.txt').exists())
         # The options that do not go together are refused, each for its own reason.
         with patch('builtins.print') as shown:
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--typeset-only', '--resume']), 1)
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--parallel', '0']), 1)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--typeset-only', '--resume']), 1)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--parallel', '0']), 1)
         first, second = (call.args[0] for call in shown.call_args_list)
         self.assertIn('--typeset-only typesets a finished manuscript; it goes with neither --resume nor --dry-run', first)
         self.assertIn('--parallel is the number of sessions that run side by side, at least 1', second)
@@ -2931,7 +2961,7 @@ class OpenFindingsTests(PaperCase):
         script['changes'] = [{}]
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'), self.assertRaises(paper.Stop):
-            paper.act_on_open(self.instance, self.out, TEX, parallel=1, numbers='1-2')
+            paper.act_on_open(self.read_from, self.out, TEX, parallel=1, numbers='1-2')
         self.assertEqual(self.kinds(launched), [('repair', 'narrow-reading-tools'), ('repair', 'narrow-reading-proof'),
                                                 ('changes', None), ('changes', None)])
         self.assertEqual(self.events('end')[-1]['status'], 'failed')
@@ -2966,7 +2996,7 @@ class OpenFindingsTests(PaperCase):
         self.leave_open()
         shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
         with patch('sys.stdout', shown):
-            code = paper.main([str(self.instance), '--out', str(self.out), '--open-findings', '--dry-run', '--tex', *TEX])
+            code = paper.main([str(self.read_from), '--out', str(self.out), '--open-findings', '--dry-run', '--tex', *TEX])
         shown.flush()
         self.assertEqual(code, 0)
         self.assertIn(b'       problem: The base case is not named: the sum is 0\\xb2 there.', shown.buffer.getvalue())
@@ -2995,7 +3025,7 @@ class OpenFindingsTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'has not come to its end.*continued with --resume'):
             self.run_paper(good(), open_findings='all')
         with self.assertRaisesRegex(paper.Stop, 'holds no run of this command that came to its end'):
-            paper.act_on_open(self.instance, self.root / 'elsewhere', TEX)
+            paper.act_on_open(self.read_from, self.root / 'elsewhere', TEX)
 
     def test_the_numbers_given_are_those_of_the_list(self):
         launched = self.leave_open()
@@ -3065,7 +3095,7 @@ class SessionsTests(PaperCase):
 
     def test_a_cli_that_cannot_be_started_stops_the_command_and_gives_the_gate_back(self):
         gate = threading.BoundedSemaphore(1)
-        sessions = paper.Sessions(self.instance, self.root / 'work', gate=gate)
+        sessions = paper.Sessions(self.read_from, self.root / 'work', gate=gate)
         missing = Command(provider_for_model(sessions.writer['model']), [str(self.root / 'no-such-cli')], self.root)
         with patch('command_sessions.worker_command', return_value=missing), \
                 self.assertRaisesRegex(paper.Stop, 'the probe session could not be started'):
@@ -3105,7 +3135,7 @@ class SessionsTests(PaperCase):
 
         with patch('command_sessions.worker_command', side_effect=command), \
                 patch('command_sessions.refusal', side_effect=limit):
-            sessions = paper.Sessions(self.instance, self.root / 'work', gate=Gate())
+            sessions = paper.Sessions(self.read_from, self.root / 'work', gate=Gate())
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         # The gate was taken for each run of the CLI and given back before the wait for the limit.
         self.assertEqual(seen, [('process', 1), ('limit', 0), ('process', 1), ('limit', 0)])
@@ -3116,11 +3146,11 @@ class SessionsTests(PaperCase):
         # A semaphore is free again after a session, and a run of the paper command holds the gate it is given.
         gate = threading.BoundedSemaphore(1)
         with patch('command_sessions.worker_command', side_effect=self.command):
-            sessions = paper.Sessions(self.instance, self.root / 'work-2', gate=gate)
+            sessions = paper.Sessions(self.read_from, self.root / 'work-2', gate=gate)
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         self.assertTrue(gate.acquire(blocking=False))
         gate.release()
-        self.assertIs(paper.Paper(self.instance, self.out, TEX, {}, gate=gate).gate, gate)
+        self.assertIs(paper.Paper(self.read_from, self.out, TEX, {}, gate=gate).gate, gate)
 
     def test_a_session_that_its_provider_refuses_is_waited_for_and_started_again_with_the_same_model(self):
         # The provider has no capacity for the model when the session first runs, and has it at the second run.
@@ -3146,7 +3176,7 @@ class SessionsTests(PaperCase):
 
     def test_a_session_that_starts_while_the_command_is_being_stopped_is_ended_at_once(self):
         write_json(self.scenario / 'script.json', {'probe': [{'output/done.txt': 'done'}]})
-        sessions = paper.Sessions(self.instance, self.root / 'work')
+        sessions = paper.Sessions(self.read_from, self.root / 'work')
 
         def command(*arguments, **options):
             # An interrupt ends the sessions that run and sets this mark. Here it comes while the session is
@@ -3274,7 +3304,7 @@ class DraftTests(PaperCase):
         script['sketch:proof'].insert(0, {'output/sketch.json': json.dumps({**SKETCHES['proof'], 'statements': SKETCHES['intro']['statements']})})
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
-            self.assertEqual(paper.main([str(self.instance), '--out', str(self.out), '--parallel', '1', '--draft', '--tex', *TEX]), 0)
+            self.assertEqual(paper.main([str(self.read_from), '--out', str(self.out), '--parallel', '1', '--draft', '--tex', *TEX]), 0)
         calls = self.calls()
         self.assertEqual([(c['kind'], c['section']) for c in calls],
                          [('plan', None), ('plan', None), ('sketch', 'intro'), ('sketch', 'tools'), ('sketch', 'proof'),
@@ -3354,7 +3384,7 @@ class DraftTests(PaperCase):
         self.assertEqual([e['status'] for e in self.events('end')], ['failed', 'draft'])
         # A run makes the draft of a paper or writes the paper from a draft, and not both.
         with self.assertRaisesRegex(paper.Stop, 'a run is one of the two'):
-            paper.produce(self.instance, self.root / 'other', TEX, draft=True, from_draft=self.out)
+            paper.produce(self.read_from, self.root / 'other', TEX, draft=True, from_draft=self.out)
 
     def test_a_sketched_statement_that_gives_only_some_parts_of_its_element_stays_and_becomes_a_gap(self):
         script = drafting()
@@ -3684,11 +3714,11 @@ class FromDraftTests(PaperCase):
         self.assertIn('came to its end (open_findings) with 1 findings left open', said)
 
     def test_the_materials_hold_further_declarations_with_what_they_rest_on_and_are_as_before_without_them(self):
-        model = replay(self.instance)
-        plain = paper.extract(self.instance, model)
+        model = replay(self.read_from)
+        plain = paper.extract(self.read_from, model)
         # One declaration that the proof of the root does not rest on, named twice; one that the instance does not
         # have; and one that the proof of the root rests on already.
-        materials = paper.extract(self.instance, model, ['Small.unused', 'Small.unused', 'Small.nothing', 'Small.sq_step'])
+        materials = paper.extract(self.read_from, model, ['Small.unused', 'Small.unused', 'Small.nothing', 'Small.sq_step'])
         names = [element['name'] for element in materials['elements']]
         self.assertEqual(sorted(names), sorted([element['name'] for element in plain['elements']] + ['Small.unused']))
         self.assertEqual(materials['further'], ['Small.unused', 'Small.sq_step'])
@@ -3702,7 +3732,7 @@ class FromDraftTests(PaperCase):
         self.assertIn(paper.OUTSIDE, paper.render_digest(materials))
         self.assertIn('except those marked as added for the draft of the paper', paper.record_files(materials)['elements.md'])
         # Without further declarations the materials are what they were: no key and no mark is added.
-        self.assertEqual(paper.extract(self.instance, model, []), plain)
+        self.assertEqual(paper.extract(self.read_from, model, []), plain)
         self.assertNotIn('further', plain)
         self.assertFalse(any('outside' in element for element in plain['elements']))
         self.assertNotIn(paper.OUTSIDE, paper.render_digest(plain) + paper.render_materials(plain))
@@ -3789,9 +3819,9 @@ class MainResultTests(PaperCase):
     """A paper whose main result is a theorem that was chosen for it, and not the declaration that settles the root."""
 
     def test_the_materials_and_the_plan_check_follow_a_chosen_main_result_and_are_as_before_without_one(self):
-        model = replay(self.instance)
-        plain = paper.extract(self.instance, model)
-        materials = paper.extract(self.instance, model, main='Small.sq_step')
+        model = replay(self.read_from)
+        plain = paper.extract(self.read_from, model)
+        materials = paper.extract(self.read_from, model, main='Small.sq_step')
         # The materials name the chosen theorem as the main result and still say which declaration settles the root.
         # They hold what both rest on, in dependence order, each of the two marked.
         self.assertEqual((materials['main'], materials['settles'], materials['root']['name']),
@@ -3832,8 +3862,8 @@ class MainResultTests(PaperCase):
         self.assertIn('`Small.root`, which the paper states as corollary `cor:sum`.', brief)
         # Without a chosen main result, and when the one named is the settling declaration, nothing is different:
         # the materials, the plan check, and every text made of them.
-        self.assertEqual(paper.extract(self.instance, model, main='Small.root'), plain)
-        self.assertEqual(paper.extract(self.instance, model, main=None), plain)
+        self.assertEqual(paper.extract(self.read_from, model, main='Small.root'), plain)
+        self.assertEqual(paper.extract(self.read_from, model, main=None), plain)
         self.assertNotIn('settles', plain)
         self.assertFalse(any('settles' in element for element in plain['elements']))
         self.assertEqual((paper.main_lines(plain), paper.main_note(plain), paper.chosen_said(plain)), ([], '', []))
@@ -3844,7 +3874,7 @@ class MainResultTests(PaperCase):
         self.assertNotIn('settles the root', paper.render_digest(plain).replace('that settles the root', ''))
 
     def test_a_main_result_that_is_no_settled_formal_theorem_is_refused_before_anything_is_written(self):
-        model = replay(self.instance)
+        model = replay(self.read_from)
         self.assertEqual([paper.chosen_main(model, name) for name in (None, 'Small.root', 'Small.sq_step')],
                          [None, None, 'Small.sq_step'])
         informal = copy.deepcopy(model)
@@ -4282,6 +4312,28 @@ class CoverageTests(PaperCase):
             {**REPORTED, 'quote': weaker, 'asserts': 'The sums are at least $n$.', 'open_because': paper.COVERED_AGAIN}]}])
         self.assertIn(weaker, self.part('tools'))
 
+    def test_what_a_repair_writes_during_the_closing_pass_is_compared_once_and_recorded(self):
+        reason = 'The bound is the content of Lemma 2.1.'
+        self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
+        launched = len(self.calls())
+        # The session that takes the sentence out takes the citation of the plan with it. The repair that the
+        # machine checks then ask for puts the citation back and writes a sentence of its own.
+        added = 'Hence $S_n \\ge 0$ for every $n$.'
+        still = {**UNCOVERED, 'quote': added, 'asserts': 'The sums are not negative.'}
+        script = good()
+        script['remove'] = [{'output/tools.tex': TOOLS.replace(' \\cite[Book II, Proposition 4]{euclid}', '')}]
+        script['repair:machine'] = [{'output/tools.tex': TOOLS + '\n' + added + '\n'}]
+        script['cover:tools'] = [{'output/coverage.json': json.dumps([still])}]
+        self.assertEqual(self.close(script), 0)
+        # The section that the repair changed is compared with the elements once, and no repair follows.
+        self.assertEqual(self.kinds(launched), [('remove', None), ('repair', 'machine-tools'), ('cover', 'tools'), *PLACED])
+        self.assertEqual(self.part('tools'), TOOLS + '\n' + added + '\n')
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        self.assertEqual(end['closed'], [{'kind': 'removed', **REPORTED},
+                                         {'kind': 'uncovered', **REPORTED, 'quote': added,
+                                          'asserts': 'The sums are not negative.'}])
+
     def test_what_one_repair_left_uncovered_is_taken_out_and_the_run_ends_without_a_person(self):
         reason = 'The bound is the content of Lemma 2.1.'
         self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
@@ -4313,7 +4365,9 @@ class CoverageTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'came to its end with no finding left open \\(complete\\); there is nothing to act on'):
             self.close(good())
 
-    def test_a_statement_that_still_differs_after_its_repair_is_restated_and_compared_once(self):
+    def differing(self):
+        """A run that ends with the second lemma of the section `tools` differing from its element, after the one
+        repair of the comparison kept it; the difference that was reported, and the text of the section."""
         difference = 'The manuscript has k^2 + 2k = (k + 1)^2.'
         off = TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')  # the section `tools` with a statement that differs
         differs = [dict(row) for row in SAME]
@@ -4322,7 +4376,12 @@ class CoverageTests(PaperCase):
         script['write:tools'] = [{'output/tools.tex': off}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
         script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
-        self.assertEqual(self.run_paper(script), 2)
+        # Two tests start from this run: it is made once.
+        self.taken_up('a statement that differs', lambda: self.assertEqual(self.run_paper(script), 2))
+        return difference, off
+
+    def test_a_statement_that_still_differs_after_its_repair_is_restated_and_compared_once(self):
+        difference, off = self.differing()
         self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.COMPARISON])
         launched = len(self.calls())
         script = good()
@@ -4339,6 +4398,32 @@ class CoverageTests(PaperCase):
                          paper.method_before_checks())
         self.assertIn('has the text it had; restate it as its element says it', second['prompt'])
         self.assertEqual(self.part('tools'), TOOLS)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+        self.assertEqual([(entry['kind'], entry['label'], entry['difference'], entry['verdict']) for entry in end['closed']],
+                         [('restated', 'lem:square', difference, 'same')])
+        self.assertIn('k^2 + 2k', end['closed'][0]['before'])
+        self.assertIn('k^2 + (2k + 1)', end['closed'][0]['after'])
+
+    def test_a_restatement_is_recorded_when_the_pass_is_stopped_before_its_comparison(self):
+        difference, _ = self.differing()
+        script = good()
+        script['restate'] = [{'output/tools.tex': TOOLS}]
+        script['compare:tools'] = [{}]  # the session that compares the restated statement leaves nothing
+        with self.assertRaises(paper.Stop):
+            self.close(script)
+        # The statement stands restated in its part, and the state says so already, without a text after.
+        self.assertEqual(self.part('tools'), TOOLS)
+        self.assertEqual([(entry['kind'], entry['label'], entry['verdict'])
+                          for entry in read_json(self.out / 'state.json')['closed']],
+                         [('restated', 'lem:square', 'not compared')])
+        # The continued run ends with the statement not compared. The pass that follows compares it, restates
+        # nothing a second time, and records the restatement with its texts and the verdict.
+        again = good()
+        again['compare:tools'] = [{'output/comparison.json': json.dumps([SAME[2]])}]
+        self.assertEqual(self.run_paper(again, resume=True), 2)
+        self.assertEqual(self.close(again), 0)
+        self.assertEqual(len(self.calls('restate')), 1)
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('complete', []))
         self.assertEqual([(entry['kind'], entry['label'], entry['difference'], entry['verdict']) for entry in end['closed']],
@@ -4656,7 +4741,7 @@ class SafeguardTests(PaperCase):
         self.assertEqual(self.kinds(launched)[:2], [('write', 'tools'), ('write', 'proof')])
 
     def test_a_session_of_another_provider_that_leaves_nothing_is_told_so_as_before(self):
-        self.assertEqual(provider_for_model(read_json(self.instance / 'settings.json')['models'][0]['model']), 'codex')
+        self.assertEqual(provider_for_model(read_json(self.read_from / 'settings.json')['models'][0]['model']), 'codex')
         script = good()
         script['cover:intro'] = self.STOPPED
         with self.assertRaisesRegex(paper.Stop, 'no cover session left output the script can use, in 2 attempts'):

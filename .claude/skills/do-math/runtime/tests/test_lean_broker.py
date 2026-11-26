@@ -697,7 +697,8 @@ class BrokerTests(BrokerFixture):
         self.start_broker()
         warm = self.submit(self.session_file("s1", "warm.lean", sleep=0.2), expect_mb=25)
         self.until(lambda: self.finished(warm))
-        big = self.submit(self.session_file("s1", "big.lean", sleep=3), expect_mb=500)
+        # The big job outlasts every step below on any machine; the test ends it by a cancellation.
+        big = self.submit(self.session_file("s1", "big.lean", sleep=60), expect_mb=500)
         self.until(lambda: self.broker.state["jobs"][big]["status"] == "running")
         head = self.submit(self.session_file("s1", "head.lean", sleep=0.3), expect_mb=500)
         # Establish the head's queue position before later submissions. Windows
@@ -711,16 +712,13 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.broker.state["jobs"][head]["passed"] == passes)
         self.assertEqual(self.broker.state["jobs"][head]["status"], "queued")
         self.assertGreater(self.broker.state["jobs"][head]["reserve"]["total_mb"], self.budget)
-        for _ in range(4):
-            self.broker.tick()
-            time.sleep(0.1)
-        # Count the small jobs that started before the head did: under load the big job may already
-        # have ended by now, letting the head start and one more small job follow it legitimately.
-        # broker.log records each start as the broker makes it, so its order is the order of admission.
-        starts = [event["job"] for event in map(json.loads, self.paths.log.read_text(encoding="utf-8").splitlines())
-                  if event["event"] == "started"]
-        ahead = starts[:starts.index(head)] if head in starts else starts
-        self.assertEqual(len(set(small) & set(ahead)), passes)
+        # The small jobs that passed the head end, and the big job alone is running: the budgets have room for
+        # another small job, and none starts, because the head has closed the queue behind it.
+        self.until(lambda: sum(self.finished(j) for j in small) >= passes)
+        self.assertEqual(self.broker.state["jobs"][head]["status"], "queued")
+        self.assertEqual(sum(self.broker.state["jobs"][j]["started_at"] is not None for j in small), passes)
+        # The head starts once the big job has ended, here by a cancellation, and not before.
+        lean_broker.cancel(self.paths, big)
         self.until(lambda: self.finished(head))
         self.assertGreaterEqual(self.broker.state["jobs"][head]["started_at"],
                                 self.broker.state["jobs"][big]["finished_at"] - 0.5)

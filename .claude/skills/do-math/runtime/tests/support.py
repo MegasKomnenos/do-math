@@ -195,6 +195,13 @@ class InstanceCase(unittest.TestCase):
     changes_guides = False  # set by a class or a test that writes into the guides; it then works on a copy of them
 
     def setUp(self):
+        # A client that waits for a build looks for its result at pauses that grow to a second
+        # (lean_broker.await_record), which suits a compile of minutes. A build of the stand-in compiler ends within
+        # seconds, and at those pauses a test waits half a second longer on average than its build takes. The
+        # pauses themselves are tested on a stand-in clock in test_waiting.py.
+        pauses = patch.multiple('lean_broker', WAIT_FIRST=0.05, WAIT_CAP=0.05)
+        pauses.start()
+        self.addCleanup(pauses.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)

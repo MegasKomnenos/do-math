@@ -87,7 +87,7 @@ Submitting the same unchanged file again from the same session, while its earlie
 |---|---|
 | `build <root> <file.lean>...` | Compiles the files together with every local module they import; the next section explains it. |
 | `result <job>` | Prints the job's or build's record as it currently stands. |
-| `status` | Prints whether the broker is alive, the configuration it is using, the Lean version, the jobs that are queued, running and recently finished, each with its estimate, its reservation and its measurements, and the builds in progress. |
+| `status` | Prints whether the broker is alive, the configuration it is using, the Lean version, the jobs that are queued, running and recently finished, each with its estimate, its reservation and its measurements, and the builds in progress or ended within the last ten minutes. |
 | `cancel <job>` | Cancels one of your own jobs, or every compile of one of your own builds, that you no longer need. |
 | `version` | Prints the Lean version string, which the broker obtained by running the configured version command once. This is the string to give when a report names the Lean environment. |
 

@@ -2,7 +2,9 @@
 
 It sets FAKE_LAKE=1 and puts a marker folder in front of LEAN_PATH, so that a test can
 tell whether a compile ran through it or directly in the environment it reported once.
-With FAKE_LAKE_FAIL set it exits 7 instead, like a lake whose workspace will not load.
+With FAKE_LAKE_LIB set, the folder that variable names stands in the marker's place, as
+the folder of a workspace's compiled library does. With FAKE_LAKE_FAIL set it exits 7
+instead, like a lake whose workspace will not load.
 """
 
 import os
@@ -17,7 +19,8 @@ def main(argv):
     if os.environ.get("FAKE_LAKE_FAIL"):
         print("fake lake: the workspace failed to load", file=sys.stderr)
         return 7
-    lean_path = os.pathsep.join(p for p in ("fake-lake-lib", os.environ.get("LEAN_PATH", "")) if p)
+    added = os.environ.get("FAKE_LAKE_LIB", "fake-lake-lib")
+    lean_path = os.pathsep.join(p for p in (added, os.environ.get("LEAN_PATH", "")) if p)
     return subprocess.call(argv[1:], env=dict(os.environ, FAKE_LAKE="1", LEAN_PATH=lean_path))
 
 

@@ -34,6 +34,9 @@ from canon import CanonError, module_file, name_path, parse_record
 from command_sessions import Held, Sessions, Stop, Unmade, Unusable, alone, collapsed, is_text
 import depmap
 import knowledge
+# At the head like the others: a run holds for hours the modules it loaded at its start, and one first loaded
+# in the middle of a run would come from the skill's files as they have become.
+from lean_broker import Paths, broker_alive, launch_broker, started_brokers, terminate_tree
 import package
 import paper
 from paper import produce
@@ -412,7 +415,6 @@ class Run:
 
     def ensure_broker(self):
         """Start the run's Lean broker when none is alive, and none once the run is ending."""
-        from lean_broker import Paths, broker_alive, launch_broker
         paths = Paths(self.work)
         with self.broker_lock:
             if (self.ending.is_set() or broker_alive(paths)
@@ -436,7 +438,6 @@ class Run:
         seconds finds no receipt, so it ends what this command started for the work folder as well:
         by the watcher, before a build, or by the client inside a build. With `ending` set and the
         lock taken, a start by the watcher that was under way has returned and none follows."""
-        from lean_broker import Paths, broker_alive, started_brokers, terminate_tree
         self.ending.set()
         paths = Paths(self.work)
         with self.broker_lock:
@@ -848,7 +849,7 @@ class Run:
             before = {relative: package.read_text(selected / 'lean' / relative) for relative in files}
             given = {**{'lean/' + relative: text for relative, text in files.items()},
                      **{'before/' + relative: text for relative, text in before.items()},
-                     'removed.json': as_json([{'declaration': item['declaration'], 'file': item['file']}
+                     'removed.json': as_json([{key: item[key] for key in ('declaration', 'file', 'proved')}
                                               for item in plan['spans']]),
                      'errors.txt': '\n\n'.join(problems) + '\n'}
 
@@ -857,18 +858,27 @@ class Run:
                             for relative, path in package.files_under(output / 'lean').items()}
                 if not returned:
                     raise Unusable(['no file was written under output/lean'])
-                again, texts, bad = package.restored_files(plan['spans'], before, returned)
+                again, texts, deleted, bad = package.restored_files(plan['spans'], plan['held'], before, returned)
                 if bad:
                     raise Unusable(bad)
                 merged = {**files, **texts}
                 found, _ = self.library_ok('take-' + output.parent.name, files=merged)
                 if found:
-                    raise Unusable(['the library does not build with these elements put back:'] + found)
-                return again, merged
+                    raise Unusable(['the library does not build with what was put back and what was deleted:'] + found)
+                return again, merged, deleted
 
-            back, files = self.task('restore', 'restore', given, read, self.sessions.writer)
-            self.decide('Step 1: the take', 'The library did not build after the take, and these removed elements were '
-                        'put back: ' + ', '.join(f'`{name}`' for name in back) + '.')
+            back, files, deleted = self.task('restore', 'restore', given, read, self.sessions.writer)
+            # The work folder goes at the end, so the lines that the session deleted are kept in the decisions.
+            self.decide('Step 1: the take', '\n'.join([
+                'The library did not build after the take, and these removed elements were put back: '
+                + (', '.join(f'`{name}`' for name in back) or 'none') + '.',
+                *(['', 'A theorem that the research left without a proof is not put back. The session deleted these '
+                   'lines instead, as declarations that are no element and rest on such a theorem. The program checked '
+                   'that no line was added or altered, that every element which stays stands as it stood, and that the '
+                   'library builds. It cannot tell whether the lines are exactly such declarations.',
+                   *[line for relative in sorted(deleted)
+                     for line in ('', f'`{relative}`:', '', *('    ' + gone for gone in deleted[relative]))]]
+                  if deleted else [])]))
         for relative, text in files.items():
             write_text(target / 'lean' / relative, text)
         kept = sorted(set(plan['kept']) | set(back))
@@ -1481,7 +1491,8 @@ class Run:
                     answer = answers.get(item['id'], {})
                     if type(answer.get('closed')) is not bool:
                         problems.append(f"report.json does not say whether the item {item['id']} is closed")
-                    elif answer['closed'] and not (isinstance(answer.get('declarations'), list) and answer['declarations']):
+                    elif answer['closed'] and item['from'] != 'records' and not (
+                            isinstance(answer.get('declarations'), list) and answer['declarations']):
                         problems.append(f"the item {item['id']} is closed and report.json names no declaration that closes it")
                     elif not answer['closed'] and not is_text(answer.get('note')):
                         problems.append(f"the item {item['id']} is not closed and report.json gives no reason")
@@ -1524,14 +1535,16 @@ class Run:
                 # A report can give null where it has nothing to say: the declarations of an item it did not close, a note.
                 closes = [name for name in answer.get('declarations') or []
                           if isinstance(name, str) and name in new['entries']]
-                closed = bool(part in merged and answer.get('closed') and closes)
+                # An item of the records can be done by taking a declaration out, and then it has none to name.
+                closed = bool(part in merged and answer.get('closed') and (closes or item['from'] == 'records'))
                 outcome.append({**item, 'part': part, 'closed': closed, 'declarations': closes if closed else [],
                                 'note': str(answer.get('note') or '') if part in merged else
                                 'the part was discarded, so the library keeps the form it had'})
         write_json(folded / 'index.json', new)
         write_json(folded / 'foldback.json', {'items': outcome, 'merged': merged, 'discarded': discarded})
         lines = [f"- {item['id']} ({item['from']}, `{item['declaration']}`): "
-                 + ('closed by ' + ', '.join(f'`{name}`' for name in item['declarations']) if item['closed']
+                 + ('closed' + (' by ' + ', '.join(f'`{name}`' for name in item['declarations'])
+                                if item['declarations'] else '') if item['closed']
                     else 'not closed') + (f". {item['note'].strip()}" if item['note'].strip() else '') for item in outcome]
         self.decide('Step 6: the fold-back', '\n'.join(lines) or 'Nothing was to be folded back.')
 
@@ -1618,7 +1631,7 @@ class Run:
         entries = index['entries']
         draft = read_json(self.work / 'lib' / '6-sources' / 'draft.json')
         closed = {item['id']: item['declarations'][0] for item in read_json(folded / 'foldback.json')['items']
-                  if item['closed']}
+                  if item['closed'] and item['declarations']}
         gaps = {gap['id']: gap for gap in draft['gaps']}
         # A drafted text was made from the record of its element. Where that record said more than the Lean
         # statement and was written again, the text is compared with the declaration as a changed one is.
@@ -1985,7 +1998,10 @@ class Run:
                 'that was removed asserted mathematics that no declaration of the library states, or it said of a '
                 'cited work something that the words copied from that work do not show. Whether the library should '
                 'have had the mathematics is a question about the research; the paper cannot say more than the '
-                'library, nor more about a work than was read.', '',
+                'library, nor more about a work than was read.'
+                + (' A passage that stays is the one exception: the comparison that reported it came after a repair '
+                   'of the typesetting, and no repair follows that comparison.'
+                   if any(entry['kind'] == 'uncovered' for entry in closed) else ''), '',
                 *package.closed_lines(closed)]))
         kept = end.get('kept') or []
 
@@ -2225,7 +2241,8 @@ class Run:
             'every cited source is in the bibliography and was verified by the sources session.',
             '- The draft: every drafted statement and formula has a declaration that states it.',
             '- The paper command ended with exit code 0: typeset, every numbered statement compared with its element, '
-            'the running text covered by declarations.'
+            + ('the running text compared with the declarations, which cover it except for the passages listed under '
+               'what was not verified.' if count('uncovered') else 'the running text covered by declarations.')
             + (' To end so, it '
                + ' and '.join(text for text in (
                    f"took {count('removed')} passages that no declaration covers out of the paper" if count('removed')
@@ -2249,6 +2266,10 @@ class Run:
               if entry['kind'] == 'restated' and entry['verdict'] == 'not compared' else
               f"- In the paper, {entry['number']} still differs from the declaration `{entry['element']}` that it states: "
               + collapsed(entry.get('difference_after') or entry['difference']) for entry in differing],
+            *([f"- In the paper, {count('uncovered')} passages of the running text assert what no declaration states, or "
+               'say of a cited work what the words copied from it do not show. The comparison that reported them came '
+               'after a repair of the typesetting, and no repair follows it; `decisions.md` has each.']
+              if count('uncovered') else []),
             *([f"- {count('wide')} lines of the typeset paper are wider than the text block; `decisions.md` names them."]
               if count('wide') else []),
             *(['- Some of the checks that the list above describes were not made. A safeguard of the AI system stopped '

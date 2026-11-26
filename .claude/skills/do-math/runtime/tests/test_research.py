@@ -1603,6 +1603,30 @@ class RunnerTests(ScenarioCase):
         self.assertFalse(work.exists())
         self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
 
+    def test_a_session_whose_work_cannot_be_archived_does_not_keep_the_archiver_from_the_next(self):
+        # The archiver leaves in place a work/ that it cannot verify, writes the session and the error to its
+        # stderr, which the runner sends to runner/archive.log, and goes on to the sessions after it
+        # (reference/operations.md, Retention and archives). The work.tar.xz of the first session is no archive.
+        import contextlib
+        import io
+        runner = self.runner()
+        folders = {}
+        for role in ('attempt', 'explore'):
+            sid, session, job = self.ended(runner, role)
+            session['status'] = 'ended'
+            runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
+            folders[sid] = runner.session_dir(sid)
+        runner.save()
+        (folders['sattempt'] / 'work.tar.xz').write_bytes(b'no archive')
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            self.assertEqual(archive_finished(self.instance), 0)
+        self.assertEqual([json.loads(line)['session'] for line in stderr.getvalue().splitlines()], ['sattempt'])
+        self.assertTrue((folders['sattempt'] / 'work/notes.md').is_file())
+        self.assertEqual((folders['sattempt'] / 'work.tar.xz').read_bytes(), b'no archive')
+        self.assertFalse((folders['sexplore'] / 'work').exists())
+        self.assertTrue((folders['sexplore'] / 'work.tar.xz').is_file())
+
     def test_final_archive_request_is_dispatched_before_runner_exit(self):
         self.formal()
         runner = self.runner()

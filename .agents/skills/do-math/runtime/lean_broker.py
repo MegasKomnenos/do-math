@@ -141,8 +141,12 @@ def closure_key(environment, imports, direct=False):
 # ------------------------------------------------------------------- module trees
 
 def module_name(root, path):
-    """`<root>/Foo/Bar.lean` is the module `Foo.Bar`, exactly as `lean -R <root>` names it."""
-    relative = Path(path).resolve().relative_to(Path(root).resolve())
+    """`<root>/Foo/Bar.lean` is the module `Foo.Bar`, exactly as `lean -R <root>` names it.
+
+    `root` is the module root as `Path.resolve` gives it. Resolving a path asks the file system, and a build of
+    the canon names one root and a target for every module, so the caller resolves the root once and only the
+    target is resolved here."""
+    relative = Path(path).resolve().relative_to(root)
     parts = relative.with_suffix("").parts
     if relative.suffix != ".lean" or not all(MODULE_PART.match(p) for p in parts):
         raise ValueError(f"not a module path under the root: {path}")
@@ -921,7 +925,8 @@ class Broker:
                  "fresh_targets": bool(request.get("fresh_targets")), "sources": {},
                  "environment_key": self.state["environment_key"]}
         try:
-            build["targets"] = [module_name(root, t) for t in targets]
+            resolved = Path(root).resolve()  # once for the build: module_name takes the root resolved
+            build["targets"] = [module_name(resolved, t) for t in targets]
             modules = discover_modules(root, targets)
             build["sources"] = {name: module["source_sha256"] for name, module in modules}
             # The same work is the same sources asked for in the same way: the keys that would say so

@@ -303,6 +303,10 @@ class PublicationTests(PublicationCase):
             self.assertEqual(git(self.instance, 'log', '--format=%s').splitlines(),
                              ['Publish ' + cid, 'Initialize autonomous mathematical research'])
             self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
+            # The runner saves that the publication is done once this commit is made. Left to its default, Git does
+            # not send to the disk what a commit writes, so the runtime's Git commands ask for it
+            # (runtime_support.git). What Git is asked is seen in the configuration such a command runs with.
+            self.assertEqual(git(self.instance, 'config', 'core.fsync'), 'all')
             committed = git(self.instance, 'show', '--name-only', '--format=', 'HEAD').splitlines()
             for name in ('canon/lean/Small/Step.lean', 'canon/lean/Small/Root.lean', 'canon/index.json',
                          'canon/records.json', 'canon/records/Small/oddSum_succ.md',
@@ -1680,6 +1684,14 @@ class TransportCheckTests(PublicationCase):
         write_json(self.engine.session_dir('speer') / 'declaration.json',
                    {'sections': [{**WHOLE_ROOT['sections'][0], 'id': 'speer-1', 'whole': False,
                                   'statement': 'the case of even n'}], 'at': 1})
+        self.assertEqual(check_session(self.engine.session_dir('speer')), [])
+        # So does a section that an earlier peer of the pipeline registered, for the peer that takes its place.
+        earlier = self.engine.session_dir('sfirst')
+        earlier.mkdir()
+        (self.engine.session_dir('speer') / 'declaration.json').rename(earlier / 'declaration.json')
+        self.assert_refused(check_session(self.engine.session_dir('speer')), 'requires holding a section')
+        self.engine.state['pipelines'][self.pipeline]['previous_peers'].append('sfirst')
+        self.engine.save()
         self.assertEqual(check_session(self.engine.session_dir('speer')), [])
 
     # -- the proof of a settled statement -----------------------------------------------------------------

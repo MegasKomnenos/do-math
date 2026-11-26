@@ -23,7 +23,7 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import lean_broker
 import runtime_support
-from broker_fixture import BrokerFixture
+from broker_fixture import FAKE, BrokerFixture
 
 MIB = 1024 * 1024
 
@@ -265,6 +265,24 @@ class TheLibraryTheBrokerFinds(BrokerFixture):
         self.broker.save()
         kept = self.paths.root / f"library-{self.broker.state['environment_key']}.json"
         self.assertEqual(sorted(runtime_support.read_json(kept)), ["Init", "Mathlib.A"])
+
+    def test_with_lake_configured_the_size_is_read_from_the_search_path_lake_reported_or_not_at_all(self):
+        # An instance with a library is configured with `lake env lean`, and the broker then runs lean directly in
+        # the environment lake reported. The library stands on the search path lake set and on none the settings
+        # give, and its sizes are read there. When lake does not report its environment, the search path is not
+        # known, and no size is read from the path the settings give.
+        library = self.root / "library"
+        compiled(library, "Init", [], 1)
+        compiled(library, "Mathlib.A", ["Init"], 2, 1)
+        lake = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
+        self.write_settings(command=lake + [sys.executable, "-B", str(FAKE)], env={"FAKE_LAKE_LIB": str(library)})
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        self.assertEqual(self.broker.closure_mb(["Mathlib.A"]), 4.0)
+        self.write_settings(env={"FAKE_LAKE_FAIL": "1", "LEAN_PATH": str(library)})
+        self.start_broker()
+        self.assertFalse(self.broker.state["launcher"]["direct"])
+        self.assertIsNone(self.broker.closure_mb(["Mathlib.A"]))
 
 
 if __name__ == "__main__":

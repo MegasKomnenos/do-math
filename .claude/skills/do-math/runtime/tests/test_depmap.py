@@ -143,7 +143,8 @@ class Derivation(MapCase):
         # No edge is drawn between the two units below: neither proof names the other.
         self.assertIsNone(self.edge(data, 'Lib.a', 'Lib.b'))
         self.assertEqual(sorted(data['folded']), ['Lib.s1', 'Lib.s2'])
-        self.assertEqual(data['folded']['Lib.s1']['label'], 's1')
+        # The panel of a folded step prints its kind and its description beside its label.
+        self.assertEqual(data['folded']['Lib.s1'], {'label': 's1', 'kind': 'theorem', 'description': 'What Lib.s1 is.'})
 
     def test_a_direct_use_stays_direct_and_keeps_the_folded_paths(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.a', 'Lib.s']), statement('Lib.s', uses=['Lib.a']),
@@ -200,6 +201,19 @@ class Derivation(MapCase):
         with contextlib.redirect_stdout(io.StringIO()) as shown:
             self.assertEqual(depmap.main([str(Path(folder.name) / 'dependency_map.json'), '--out', folder.name]), 0)
         self.assertIn('scope: the units the refutation of the root rests on', shown.getvalue())
+
+    def test_a_contested_root_is_shown_with_what_its_proof_and_its_refutation_rest_on(self):
+        # The root and a statement that Lean confirmed as its negation both carry settled proofs, so neither stands.
+        # The map starts from both: what the refutation rests on is on it beside what the proof rests on, and the
+        # words that say which units the map shows name both.
+        data = self.map([statement('Lib.root', 'unit', uses=['Lib.lemma']), statement('Lib.lemma', 'unit'),
+                         statement('Lib.notRoot', 'step', uses=['Lib.other'], refutes='Lib.root', module='Lib.Against'),
+                         statement('Lib.other', 'unit')])
+        self.assertEqual(data['root_state'], 'contested')
+        self.assertEqual(self.ids(data), ['Lib.notRoot', 'Lib.lemma', 'Lib.other', 'Lib.root'])
+        self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
+        self.assertEqual(draw.scope_words(data), 'the units the proof of the root and its refutation rest on')
+        self.assertIn('data-scope="the units the proof of the root and its refutation rest on"', draw.guide_of(data))
 
     def test_a_card_carries_the_statement_in_words_that_its_record_gives(self):
         # The refutation is a step by its record and has a card all the same, so its card carries the statement
@@ -327,6 +341,9 @@ class Derivation(MapCase):
         root = self.unit(data, 'Lib.root')
         self.assertEqual((root['id'], root['label'], root['kind'], root['role']),
                          ('Lib.root', 'the main theorem', 'theorem', 'statement'))
+        # The panel of the page prints these three for a selected unit, and its search reads the last two.
+        self.assertEqual((root['lean'], root['description'], root['module']),
+                         ('Lib.root : stated in Lean', 'What Lib.root is.', 'Lib.Main'))
         self.assertEqual(self.unit(data, 'Lib.held')['label'], 'held')  # the last component of the Lean name
         self.assertEqual(self.unit(data, 'Lib.Shape')['kind'], 'inductive')
         found = {name.rsplit('.', 1)[1]: (unit.get('standing'), unit.get('settled'), unit.get('formal'))

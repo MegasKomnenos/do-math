@@ -47,7 +47,11 @@ DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
 # ends in "case A:" stands there as `A:\n`, and the backslash of a path stands there twice. So a drive path is
 # looked for in these files in its form with a slash, which is the form a session is given paths in.
 DRIVE_PATH_IN_MARKUP = re.compile(r'(?<![A-Za-z])[A-Za-z]:/(?!/)')
-LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)|(?:href|src)\s*=\s*"([^"]*)"')
+MARKDOWN_LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)')
+HTML_LINK = re.compile(r'(?:href|src)\s*=\s*"([^"]*)"')
+# A record has its formulas between dollar signs and its names of elements between backticks, and Markdown reads
+# no link there: the coefficient $[X^n](fg)$ of a product is a bracket before a parenthesis and no link.
+FORMULA_OR_CODE = re.compile(r'\$\$.*?\$\$|\$[^$\n]+\$|`[^`\n]+`', re.S)
 # Lean prints the name between apostrophes, and a name can hold one itself, as `step'` does: the apostrophe that
 # closes the name is the one that a space follows.
 AXIOM_LINE = re.compile(r"'((?:[^'\n]|'(?=[^ \n]))+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S)
@@ -252,11 +256,15 @@ def take(index, lean_root, library, root, definitions, allowed):
     or because a declaration that is no element names it: a theorem that is not proved from those
     axioms. A finished research holds such theorems beside the proof of its root, and the frozen
     library has to be proved throughout; what the root reaches is proved, since the root is. When a
-    file then no longer compiles, the build of step 1 says so. A module stays when it holds a kept element, is a definition
-    module or the root's module, or is imported by a module that stays; every other module is deleted.
+    file then no longer compiles, the build of step 1 says so, and the restore session deletes the
+    declaration that named the theorem (restored_files). A module stays when it holds a kept element,
+    is a definition module or the root's module, or is imported by a module that stays; every other
+    module is deleted.
 
-    Returns `kept` and `removed` (names), `spans` (for each removed element its file and span),
-    `modules` and `deleted` (module names), and `files`: the text of every file that stays."""
+    Returns `kept` and `removed` (names), `spans` (for each removed element of a file that stays its
+    file, its span and, under `proved`, whether it is proved from the allowed axioms), `held` (for each
+    kept element its file and span), `modules` and `deleted` (module names), and `files`: the text of
+    every file that stays."""
     lean_root = Path(lean_root)
     entries = index['entries']
     if root not in entries:
@@ -293,44 +301,74 @@ def take(index, lean_root, library, root, definitions, allowed):
             break
         seeds |= more
     removed = sorted(set(entries) - kept)
-    spans = [{'declaration': name, 'file': entries[name]['file'], 'span': entries[name]['span']}
-             for name in removed if entries[name]['module'] in staying]
+    place = lambda name: {'declaration': name, 'file': entries[name]['file'], 'span': entries[name]['span']}
+    spans = [{**place(name), 'proved': name not in open_} for name in removed if entries[name]['module'] in staying]
     files = {}
     for module in sorted(staying):
         relative = module_file(module)
         cut = [item['span'] for item in spans if item['file'] == relative]
         files[relative] = without_elements(texts[relative], cut) if cut else texts[relative]
-    return {'kept': sorted(kept), 'removed': removed, 'spans': spans, 'modules': sorted(staying),
-            'deleted': sorted(set(modules) - staying), 'files': files}
+    return {'kept': sorted(kept), 'removed': removed, 'spans': spans, 'held': [place(name) for name in sorted(kept)],
+            'modules': sorted(staying), 'deleted': sorted(set(modules) - staying), 'files': files}
 
 
-def restored_files(spans, before, returned):
-    """What a restore session put back, and the problems of its output.
+def restored_files(spans, held, before, returned):
+    """What a restore session put back and what it deleted, and the problems of its output.
 
-    `spans` are the removed elements of the files that stay, `before` the text of each file before the
-    take, `returned` the files the session wrote, by path under `lean/`. A removed element counts as
-    put back when its whole source stands in the returned file. The file the script then writes is
-    its own: the file before the take less the elements that stay removed. The returned file has to
-    be that file apart from blank lines and trailing spaces, since a restore session puts removed
-    elements back and does nothing else. Returns (names put back, files to write, problems)."""
+    `spans` are the removed elements of the files that stay, each with whether it is proved from the
+    allowed axioms, `held` the kept elements, `before` the text of each file before the take, and
+    `returned` the files the session wrote, by path under `lean/`. A removed element counts as put
+    back when its whole source stands in the returned file. A theorem that is not proved may not come
+    back, since the frozen library has to be proved throughout. A declaration that is no element and
+    names such a theorem cannot stay then, and the session deletes it, because the index does not
+    record where a declaration that is no element stands. So a returned file is the file before the
+    take less the elements that stay removed and less further lines: apart from blank lines and
+    trailing spaces, no line is added and none is altered. Where no further line went, the file the
+    script writes is its own. Where lines went, the source of every kept element has to stand whole in
+    the returned file, and that file is written. No program can tell whether the deleted lines are
+    exactly such declarations; they are returned so that the run records them.
+    Returns (names put back, files to write, the deleted lines of each file that lost some, problems)."""
     squeezed = lambda text: [line.rstrip() for line in text.replace('\r\n', '\n').split('\n') if line.strip()]
-    back, files, problems = [], {}, []
+    back, files, deleted, problems = [], {}, {}, []
     for relative, text in returned.items():
         if relative not in before:
             problems.append(f'lean/{relative} is no file of the taken library; a removed element is put back in the '
                             'file it stood in')
             continue
         text = text.replace('\r\n', '\n')
+        source = lambda item: declaration_text(before[relative], item['span']).strip()
         here = [item for item in spans if item['file'] == relative]
-        again = [item for item in here if declaration_text(before[relative], item['span']).strip() in text]
+        again = [item for item in here if source(item) in text]
+        unproved = [item['declaration'] for item in again if not item['proved']]
+        if unproved:
+            problems.append(f'lean/{relative} puts back ' + ', '.join(unproved) + ', which the research left without '
+                            'a proof from the allowed axioms. No theorem of the package is left open, so such a theorem '
+                            'stays removed: delete each declaration that is no element and names it')
+            continue
         expected = without_elements(before[relative], [item['span'] for item in here if item not in again])
-        if squeezed(expected) != squeezed(text):
+        got, at, gone = squeezed(text), 0, []
+        for line in squeezed(expected):
+            if at < len(got) and got[at] == line:
+                at += 1
+            else:
+                gone.append(line)
+        if at < len(got):
             problems.append(f'lean/{relative} differs from the file before the take by more than removed elements put '
-                            'back whole; put a removed element back exactly as it stood, and change nothing else')
+                            'back whole and lines deleted; put a removed element back exactly as it stood, delete a '
+                            'declaration that is no element by whole lines, and change nothing else')
+            continue
+        altered = [item['declaration'] for item in held if item['file'] == relative and source(item) not in text] \
+            if gone else []
+        if altered:
+            problems.append(f'lean/{relative} no longer holds these elements as they stood: ' + ', '.join(altered)
+                            + '. An element that stays keeps every line; what is deleted is a declaration that is no '
+                            'element and rests on a theorem without a proof')
             continue
         back += [item['declaration'] for item in again]
-        files[relative] = expected
-    return sorted(back), files, problems
+        files[relative] = text if gone else expected
+        if gone:
+            deleted[relative] = gone
+    return sorted(back), files, deleted, problems
 
 
 # ----------------------------------------------------------------------------- the checks of a library
@@ -383,9 +421,9 @@ def index_problems(index, root, statement_hash, allowed, records=None):
     """The checks of a library that read its index.
 
     The root is a theorem with the statement the instance fixed; every theorem has a complete proof
-    from the allowed axioms, and no declaration that is no element has an open proof; no two names
-    differ only in case; and `canon.check_applied` reports
-    nothing. With `records` (by name path) the records are due: every element has one, every record
+    from the allowed axioms, and no declaration that is no element has an open proof; and
+    `canon.check_applied` reports nothing, which includes that no two names differ only in case.
+    With `records` (by name path) the records are due: every element has one, every record
     has an element, and what a record claims to prove or refute Lean confirmed. Without, the same
     check runs with an empty record for every element, so that it reports what does not concern records."""
     entries = index['entries']
@@ -404,8 +442,6 @@ def index_problems(index, root, statement_hash, allowed, records=None):
     # element uses it, no element's list of axioms shows that its proof is open, so the index is asked for it.
     opened = {item.get('user') or name for name, item in index.get('hidden', {}).items() if item.get('sorry')}
     problems += [f'{name}, a declaration that is no element, has an open proof (`sorry`)' for name in sorted(opened)]
-    for group in canon.case_collisions(entries):
-        problems.append('the names ' + ', '.join(group) + ' differ only in the case of their letters')
     if records is None:
         given = {name_path(name): {'meta': {}, 'sections': {}} for name in entries}
     else:
@@ -1202,8 +1238,8 @@ def ledger(members):
     later: the research moves those to `canon/history/<statement>/<number>-approaches/`.
     First the published events by their sequence numbers, each with the change's own title and
     description, the elements it added or replaced, review's reason and its judgment of what the
-    change contributed, the questions it opened or resolved, and under `by` the kind of session whose
-    work it carries. Then what was tried on each statement
+    change contributed, the questions it proposed and the questions that review accepted as resolved by
+    it, and under `by` the kind of session whose work it carries. Then what was tried on each statement
     and what was understood of each question, numbered after the events."""
     load = lambda name: json.loads(members[name].decode('utf-8-sig')) if name in members else {}
     events = sorted((json.loads(data.decode('utf-8-sig')) for name, data in members.items()
@@ -1218,11 +1254,14 @@ def ledger(members):
                'questions': [], 'record': folder}
         if event['kind'] == 'change':
             change, applied, assessment = (load(f'{folder}/{name}.json') for name in ('change', 'applied', 'assessment'))
+            # A change is published with review's judgments, and a resolution that review did not accept resolved nothing.
+            resolved = {r.get('proposal') for r in assessment.get('resolutions', []) if r.get('resolved')}
             row.update(title=change.get('title', ''), description=change.get('description', ''),
                        elements=applied.get('added', []) + applied.get('replaced', []),
                        review=assessment.get('reason', ''), contribution=assessment.get('contribution', ''),
                        questions=[f"proposed {q['id']}: {q.get('statement', '')}" for q in change.get('questions', [])]
-                       + [f"resolves {r.get('question', '')}" for r in change.get('resolutions', [])],
+                       + [f"resolves {r.get('question', '')}" for r in change.get('resolutions', [])
+                          if r.get('id') in resolved],
                        record=folder + '/change.json')
         elif event['kind'] == 'review':
             assessment = load(folder + '/assessment.json')
@@ -1584,6 +1623,15 @@ def closed_lines(closed):
         elif entry['kind'] == 'differs':
             lines.append(f"- {entry['number']} (`{entry['label']}`) differs from its declaration `{entry['element']}` after "
                          f"a repair of the typesetting changed its text, and stays as it is: {said(entry['difference'])}")
+        elif entry['kind'] == 'uncovered':
+            lines.append(f"- Stays in {entry.get('where') or 'the manuscript'}: \"{said(entry['quote'])}\" The running "
+                         'text of the section was compared once more after a repair of the typesetting had changed '
+                         'the section, and no repair follows that comparison. '
+                         + (f"The passage says of the cited work `{entry['source']}` something that the words copied "
+                            'from that work do not show. ' if entry.get('source') else
+                            f"The passage asserts: {said(entry.get('asserts') or 'not said')} The declaration that came "
+                            f"nearest is `{entry.get('nearest')}`. ")
+                         + said(entry.get('difference', '')))
         else:
             lines.append(f"- A line of the typeset paper is wider than the text block: {said(entry.get('problem', ''))}")
     return lines
@@ -1604,10 +1652,12 @@ WRITTEN = ('README.md', 'MANIFEST.sha256', 'knowledge/MANIFEST.md', 'history/tim
 
 
 def unresolved_links(text, folder, package):
-    """The relative links of a Markdown or HTML text that do not resolve inside a package; `folder` is where the text stands."""
+    """The relative links of a Markdown or HTML text that do not resolve inside a package; `folder` is where the text stands.
+
+    A link in Markdown's form is looked for outside formulas and code (FORMULA_OR_CODE)."""
     package, broken = Path(package).resolve(), []
-    for found in LINK.findall(text):
-        target = (found[0] or found[1]).split('#')[0].split('?')[0]
+    for target in MARKDOWN_LINK.findall(FORMULA_OR_CODE.sub(' ', text)) + HTML_LINK.findall(text):
+        target = target.split('#')[0].split('?')[0]
         if not target or re.match(r'[A-Za-z][A-Za-z0-9+.-]*:', target) or target.startswith('//'):
             continue
         resolved = (Path(folder) / target).resolve()

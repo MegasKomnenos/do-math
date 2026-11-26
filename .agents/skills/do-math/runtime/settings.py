@@ -52,7 +52,7 @@ RETIRED = ('lean.judge',)
 
 def validate(raw):
     if not isinstance(raw, dict) or raw.get('schema', 1) != 1:
-        raise ValueError('settings must be a fresh-runtime schema 1 object')
+        raise ValueError('settings must be a schema 1 object')
     sections = ('cli', 'lean', 'acceptance')
     for section in sections:
         if not isinstance(raw.get(section, {}), dict):

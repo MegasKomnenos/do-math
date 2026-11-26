@@ -82,6 +82,34 @@ class ArchiveTests(unittest.TestCase):
             self.assertEqual((work / 'notes.md').read_bytes(), b'Work absent from the existing archive')
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
 
+    def test_work_that_changed_while_it_was_archived_is_kept_and_no_archive_is_left(self):
+        # Where a session was not contained, a computation it left behind can still write into work/ while
+        # the archiver reads it (reference/operations.md, Commands). The archive then holds other bytes than
+        # the scan of work/ recorded, so nothing is removed and no archive is left to stand for work/; the
+        # next pass archives work/ as it then is. Only the moment of that write is arranged, between the
+        # scan and the writing of the archive; the archive is written and read back as in operation.
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            notes = session / 'work/notes.md'
+            notes.parent.mkdir()
+            notes.write_bytes(b'Mathematics as the scan read it')
+            opened = tarfile.open
+
+            def written_meanwhile(name, mode='r', **options):
+                if mode.startswith('w'):
+                    notes.write_bytes(b'Mathematics written after the scan')
+                return opened(name, mode, **options)
+
+            with patch('runtime_support.tarfile.open', side_effect=written_meanwhile):
+                with self.assertRaisesRegex(RuntimeError, 'does not match'):
+                    archive_work(session)
+            self.assertEqual(notes.read_bytes(), b'Mathematics written after the scan')
+            self.assertFalse((session / 'work.tar.xz').exists())
+            self.assertFalse((session / 'work.tar.xz.part').exists())
+            self.assertTrue(archive_work(session))
+            with tarfile.open(session / 'work.tar.xz', 'r:xz') as archive:
+                self.assertEqual(archive.extractfile('work/notes.md').read(), b'Mathematics written after the scan')
+
     def test_read_only_work_files_are_removed_once_archived(self):
         # Git creates its object files read-only, and Windows refuses to delete a read-only file;
         # a session that used Git in work/ must still have that work replaced by its archive.
@@ -166,15 +194,18 @@ class RetentionTests(unittest.TestCase):
                 {'type': 'response_item', 'payload': {'type': 'custom_tool_call', 'name': 'exec', 'input': 'print(1 + 1)'}},
                 {'type': 'response_item', 'payload': {'type': 'custom_tool_call_output', 'output': middle}},
                 {'type': 'response_item', 'payload': {'type': 'reasoning', 'summary': [], 'encrypted_content': 'OPAQUE_TRANSPORT'}},
+                # The summary that took the place of the conversation at a compaction is an item of the record.
+                {'type': 'compacted', 'payload': {'message': 'Summary of the conversation so far: the bound holds for every n up to 7.'}},
             ]
             source = root / 'native.jsonl'
             source.write_text('\n'.join(json.dumps(r) for r in rows), encoding='utf-8')
             target = root / 'conversation.md'
-            self.assertEqual(conversation(source, target, True), 3)
+            self.assertEqual(conversation(source, target, True), 4)
             result = target.read_text(encoding='utf-8')
             self.assertIn(middle, result)
             self.assertIn('The mathematical account.', result)
             self.assertIn('print(1 + 1)', result)
+            self.assertIn('Summary of the conversation so far: the bound holds for every n up to 7.', result)
             self.assertNotIn('Duplicated transport event', result)
             self.assertNotIn('OPAQUE_TRANSPORT', result)
 

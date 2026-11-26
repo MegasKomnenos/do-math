@@ -698,20 +698,17 @@ class LoadChangeTests(TempCase):
             with self.subTest(text=text), self.assertRaisesRegex(CanonError, r'questions/q0\.md is empty'):
                 load_change(folder)
 
-    def test_an_understanding_text_with_the_review_section_is_refused(self):
-        folder = self.candidate()
-        write(folder / 'questions/q0.md', with_review('The sum grows by one odd number at a time.\n', 'It settles it.'))
-        with self.assertRaisesRegex(CanonError, r'questions/q0\.md: the "## Review" section is written at publication'):
-            load_change(folder)
-
-    def test_the_review_heading_is_found_wherever_it_stands_in_an_understanding_text(self):
-        cases = {'as the first line': '## Review\n\nThis settles the question.\n',
+    def test_an_understanding_text_with_the_review_section_is_refused_wherever_the_heading_stands(self):
+        cases = {'after the text, as publication writes it':
+                     with_review('The sum grows by one odd number at a time.\n', 'It settles it.'),
+                 'as the first line': '## Review\n\nThis settles the question.\n',
                  'as the last line, without a line end': 'The sum grows by one odd number.\n\n## Review',
                  'with spaces after it': 'The sum grows by one odd number.\n\n## Review  \n\nThis settles it.\n'}
         for label, text in cases.items():
             folder = self.candidate()
             write(folder / 'questions/q0.md', text)
-            with self.subTest(label), self.assertRaisesRegex(CanonError, 'written at publication'):
+            with self.subTest(label), self.assertRaisesRegex(
+                    CanonError, r'questions/q0\.md: the "## Review" section is written at publication'):
                 load_change(folder)
 
     def test_files_with_a_byte_order_mark_are_read(self):
@@ -2556,6 +2553,24 @@ class CandidateToolTests(InstanceCase):
         self.assertGreater(again['revision'], first['revision'])
         self.assertNotEqual(again['build'], first['build'])
 
+    def test_a_build_is_not_kept_once_a_later_run_has_made_its_files_again(self):
+        # The command keeps a build together with the files it applied the candidate to. A run on edited files
+        # makes those files again, and it can end without a build of its own, as it does when the edit cannot be
+        # applied. The earlier build then no longer belongs to the files that stand there, so the command builds
+        # again when the candidate is put back as it was.
+        folder = self.candidate(modules={'Small/Step.lean': module_text(STEP)},
+                                records={'Small/oddSum_succ.md': STEP_RECORD}, prepare=False)
+        work = self.root / 'work'
+        first = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertTrue(first and first['ok'], first)
+        clash = write(folder / 'lean/Small/Root.lean', module_text(STEP))  # the canon has a module of this name
+        refused = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertIn('already exists in the canon', '\n'.join(refused['errors']))
+        clash.unlink()
+        again = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertTrue(again and again['ok'], again)
+        self.assertEqual((again['tree'], again['added']), (first['tree'], first['added']))
+
     def test_a_build_that_fails_before_any_module_is_compiled_is_reported_with_its_reason(self):
         # A new module imports a module of the library that has no file. The broker fails such a build as a whole
         # before it compiles anything (lean_broker.discover_modules), so the build's record names no module that
@@ -2759,7 +2774,9 @@ class CandidateToolTests(InstanceCase):
         # A link leads out of the folder whose files are hashed and copied at publication, so the transport
         # check refuses an output that holds one, whichever form of directory link the system allowed.
         session = self.session('attempt').resolve()
-        self.assertEqual(check_session(session), [])
+        # The check of a producing session reads that session's folder alone: the research is not replayed for it.
+        with patch('check.replay', side_effect=AssertionError('the research was replayed')):
+            self.assertEqual(check_session(session), [])
         outside = self.root / 'outside'
         outside.mkdir()
         link = session / 'output' / 'linked'

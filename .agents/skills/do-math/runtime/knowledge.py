@@ -43,10 +43,11 @@ def instance_metadata(instance):
     return meta
 
 
-def new_model(instance):
+def new_model(instance, index=None):
     canon = Canon(instance)
     meta = instance_metadata(instance)
-    index = canon.load_index()
+    if index is None:
+        index = canon.load_index()
     summary = read_json(canon.root / 'records.json') if (canon.root / 'records.json').exists() else {}
     elements = {}
     for name, entry in index['entries'].items():
@@ -225,9 +226,11 @@ def in_canon(instance, model, event):
     return not (applied['added'] or applied['replaced'] or applied.get('retired'))
 
 
-def replay(instance):
+def replay(instance, index=None):
+    """The research state of an instance. `index` is the canon's index when the caller has read it already
+    (Canon.load_index): the file grows with the library, so a command that needs both reads it once."""
     instance = Path(instance)
-    model = new_model(instance)
+    model = new_model(instance, index)
     events = sorted((read_json(p) for p in (instance / 'knowledge/events').glob('*.json')), key=lambda e: e['sequence'])
     # Publications are made one at a time, so only the last event can be ahead of the index. It is left out
     # until the index has it: the model is then the research as it stood before that publication.
@@ -333,8 +336,8 @@ def settle(model):
 
     # Correct proofs cannot reach opposite outcomes for one statement. While a statement and its
     # negation both carry settled proofs, no proof may rest on either of the two, so both are taken
-    # out of what a proof can name and the computation is repeated: without them another pair can
-    # come to stand in the same condition, and a pair once excluded stays excluded.
+    # out of what a proof can name and what is settled is computed again without them. Fewer proofs
+    # are settled then, so no further pair appears and that second computation is the last.
     excluded, contested = set(), set()
     while True:
         settled = settled_without(excluded)
@@ -538,22 +541,27 @@ def frontier(model):
             if has_proof(elements[proof]):
                 descend(proof, depth + (1 if proof == statement else 2), set())
 
-    def descend(proof, depth, passed):
+    def descend(proof, depth, met):
+        # `met` holds the statements already reached beneath the proof at which this descent began, directly or
+        # through steps that were passed through. They all stand at one depth, so a statement that several of
+        # those steps name is passed through or shown once: a second line would say what the first says, and
+        # following every chain of steps to it would take a time that grows with the number of chains.
         for used in elements[proof]['uses']:
             if used not in elements or not is_statement(elements[used]):
                 continue
             statement = elements[used]['statement_of']
             target = elements[statement]
-            if target['statement_settled']:
+            if target['statement_settled'] or statement in met:
                 continue
+            met.add(statement)
             # A step is passed through only while nothing is to be done on it. One whose proof names a refuted
             # statement needs another proof, and one that is refuted itself ends the descent like any refuted
             # statement, so both are opened and shown on a line of their own.
             passable = (target['weight'] == 'step' and target['standing'] == 'accepted'
-                        and len(target['proofs']) == 1 and statement not in passed
+                        and len(target['proofs']) == 1
                         and not target['refuted_by'] and not target['names_refuted'])
             if passable:
-                descend(statement, depth, passed | {statement})
+                descend(statement, depth, met)
             else:
                 open_statement(statement, depth)
 
