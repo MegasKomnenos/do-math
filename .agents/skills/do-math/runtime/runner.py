@@ -27,9 +27,9 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance_metadata, record_summary,
                        refuting_proofs, render, replay, root_settlement, root_solved)
 from retention import capture, model_blocked, refusal, usage
-from ending import authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp,
-                             first_commit, git,
+from ending import CONTEXT_LIMIT, HANDED_OVER, authorize, turn_directory
+from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_raw, archive_work, available_memory,
+                             file_stamp, first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree,
                              remove_unfinished_writes, rename_directory, replace_file, session_host,
                              terminate_process, write_json, write_json_compact, write_text)
@@ -278,7 +278,11 @@ class Runner:
 
     def dispatch(self, key):
         job = self.state['jobs'][key]
-        if job['role'] == 'attempt' and not self.attempt_dispatch_ready():
+        # A job whose last session handed its task over continues work that is under way (hand_over): its
+        # sections or its question are held already. What holds back, assigns or counts a new attempt or
+        # exploration passes it by.
+        continuing = bool(job['task'].get('continues'))
+        if job['role'] == 'attempt' and not continuing and not self.attempt_dispatch_ready():
             return False
         selected = self.selection(job['role'])
         if selected is None:
@@ -288,7 +292,14 @@ class Runner:
         session.mkdir()
         for name in ('output', 'work', 'inbox'):
             (session / name).mkdir()
-        if job['role'] == 'explore':
+        if continuing and job['role'] in PRODUCERS:
+            # The board reads a producer's sections and question from the declaration of the session that its
+            # pipeline names as producer (coordination.board), and that is this session from here on. A
+            # peer's sections stay with the pipeline through previous_peers.
+            held = Path(job['task']['continues'][-1]) / 'declaration.json'
+            if held.exists():
+                shutil.copyfile(held, session / 'declaration.json')
+        if job['role'] == 'explore' and not continuing:
             # The root question is never left free while an explorer launches: the runner assigns
             # it, under the coordination lock, so no explorer choosing at the same moment takes it.
             try:
@@ -338,10 +349,10 @@ class Runner:
                          'new': None, 'reasons': {}, 'at': now}], 'at': now})
             else:
                 pipeline[job['role']] = sid
-        if job['role'] in ('attempt', 'explore'):
+        if job['role'] in ('attempt', 'explore') and not continuing:
             # One spacing for both roles: the next attempt or exploration waits for launch_interval.
             self.state['last_launch'] = time.time()
-        if job['role'] == 'attempt':
+        if job['role'] == 'attempt' and not continuing:
             # Every explore_every-th attempt launch requests an exploration.
             self.state['attempt_launches'] += 1
             if self.state['attempt_launches'] % self.settings['explore_every'] == 0:
@@ -349,7 +360,7 @@ class Runner:
             gate = self.state['attempt_dispatch_gate']
             if gate and gate['mode'] == 'reassess':
                 gate['probe_session'] = sid
-        elif job['role'] == 'explore':
+        elif job['role'] == 'explore' and not continuing:
             self.state['explore_requested'] = False
         self.save()
         try:
@@ -416,6 +427,27 @@ class Runner:
             self.state['pipelines'][job['pipeline']]['previous_peers'].append(session['id'])
         self.save()
 
+    def hand_over(self, job, session):
+        """The task of a session that handed it over, or whose conversation reached the limit of its context
+        window, goes on in a new session of the same role.
+
+        Nothing failed: the job counts no retry, waits for no delay and blocks no model. It keeps its
+        pipeline, so the sections and the question of the task stay held (coordination.board). Its next
+        session is given the folders of the sessions before it on this task, oldest first, as `continues`
+        in its assignment, and its pack says what they are (dispatch, context.assemble)."""
+        earlier = job['task'].setdefault('continues', [])
+        path = str(self.session_dir(session['id']))
+        if path not in earlier:
+            earlier.append(path)
+        if job['role'] == 'peer':
+            # As after a peer that failed (retry): its sections stay with its pipeline until review ends.
+            previous = self.state['pipelines'][job['pipeline']]['previous_peers']
+            if session['id'] not in previous:
+                previous.append(session['id'])
+        session['status'] = 'ended'
+        job.update(status='pending', session=None, not_before=0)
+        self.save()
+
     def finish(self, sid, s):
         job = self.state['jobs'][s['job']]
         if job['status'] == 'done':
@@ -469,6 +501,11 @@ class Runner:
                 del self.state['blocks'][key]
             if recovered:
                 self.save()
+        if (s.get('end_check', {}).get('authorization') or {}).get('basis') in (HANDED_OVER, CONTEXT_LIMIT):
+            # The session's conversation was nearly full, or full, and its task is not done (ending.py). The
+            # task goes on in a new session of the role, and nothing goes to a peer or to review yet.
+            self.hand_over(job, s)
+            return
         if s['role'] in PRODUCERS:
             if (s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error')
                     and s.get('end_check', {}).get('authorization', {}).get('basis') != 'interrupted'):
@@ -1060,7 +1097,14 @@ class Runner:
             # there the file it was writing beside its destination, and that file is no part of the research.
             for tree in ('knowledge', 'canon'):
                 remove_unfinished_writes(self.instance / tree)
-            git(self.instance, 'add', '-A', '--', 'knowledge', 'canon')
+            # Git writes the index under .git/index.lock and, while that file stands, refuses every command that
+            # writes the index. A Git command that was ended inside its work, as when the machine goes down, leaves
+            # the file behind. Only the runner writes the index of this repository, one runner at a time (run) and
+            # one Git command at a time, so a lock that stands here belongs to no command that still runs.
+            (self.instance / '.git/index.lock').unlink(missing_ok=True)
+            # With -f: Git leaves out of `add` what an ignore rule names, and such a rule can stand in a .gitignore
+            # that came with a candidate's evidence or in the Git configuration of whoever runs the instance.
+            git(self.instance, 'add', '-A', '-f', '--', 'knowledge', 'canon')
             git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge', 'canon')
         if sid:
             self.state['sessions'][sid]['status'] = 'integrated'
@@ -1186,7 +1230,11 @@ class Runner:
         model = self.model
         pending = [j for j in self.state['jobs'].values() if j['status'] in ('pending', 'running')]
         if not any(j['role'] == 'review' and j['task']['kind'] == 'comprehensive' for j in pending):
-            concerns = [key for key, value in model['concerns'].items() if value['status'] != 'cleared' and key not in self.state['processed_concerns']]
+            # A concern every proof of which has been replaced since questions no proof the canon has
+            # (knowledge.proof_changed), so there is nothing for a review to trace.
+            concerns = [key for key, value in model['concerns'].items()
+                        if value['status'] != 'cleared' and key not in self.state['processed_concerns']
+                        and set(value['targets']) - set(value['earlier'])]
             conflicts = [key for key in self.conflicts() if key not in self.state['processed_conflicts']]
             if concerns or conflicts:
                 self.enqueue('review', {'kind': 'comprehensive', 'concerns': concerns, 'conflicts': conflicts,
@@ -1305,11 +1353,15 @@ class Runner:
         pending exploration's pipeline is therefore left out, and such a question is free to whichever
         of them launches first. Leaving out only the launching job's own pipeline would let two pending
         explorations hold each other back for good: each would count the other as a chooser, or as the
-        holder of the question it would itself take, while that question stays free."""
+        holder of the question it would itself take, while that question stays free.
+
+        An exploration whose task was handed over (hand_over) waits to launch as well, and its question is
+        held: the session that takes the task on continues with it. Its pipeline stays among the rows."""
         rows = board(self.instance, self.state, self.model)
         if launching:
             pending = {j['pipeline'] for j in self.state['jobs'].values()
-                       if j['role'] == 'explore' and j['status'] == 'pending'}
+                       if j['role'] == 'explore' and j['status'] == 'pending'
+                       and not j['task'].get('continues')}
             rows = [row for row in rows if row['pipeline'] not in pending]
         return question_availability(self.instance, self.state, self.model, rows)
 
@@ -1330,21 +1382,24 @@ class Runner:
         for job in sorted(self.state['jobs'].values(), key=lambda j: PRIORITY[j['role']]):
             if job['status'] != 'pending' or len(self.active()) >= self.settings['max_sessions']:
                 continue
-            if self.state['complete'] and job['role'] in ('attempt', 'explore'):
+            # A job whose last session handed its task over continues work that is under way (hand_over).
+            # What cancels or holds back a new attempt or exploration does not apply to it.
+            fresh = not job['task'].get('continues')
+            if self.state['complete'] and fresh and job['role'] in ('attempt', 'explore'):
                 job['status'] = 'cancelled'
                 if job['pipeline']:
                     self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                 changed = True
                 continue
-            if job['role'] == 'explore' and (not self.launch_due()
-                                             or not self.question_slot(launching=True)):
+            if job['role'] == 'explore' and fresh and (not self.launch_due()
+                                                       or not self.question_slot(launching=True)):
                 continue
             if job['role'] == 'formalizer' and job['task']['element'] not in formalizable(self.model):
                 job['status'] = 'cancelled'
                 self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                 changed = True
                 continue
-            if job['role'] == 'attempt':
+            if job['role'] == 'attempt' and fresh:
                 if not self.attempt_dispatch_ready():
                     continue
                 if not self.available_elements():
@@ -1539,7 +1594,6 @@ class Runner:
                     traceback.print_exc(file=sys.stderr)
                     self.state['last_error'] = {'at': time.time(), 'error': str(exc)}
                     self.save()
-                    print(json.dumps({'error': str(exc)}), file=sys.stderr, flush=True)
                     raise
                 time.sleep(0.25)
 
@@ -1625,10 +1679,15 @@ def archive_finished(instance):
                 pipeline = state['pipelines'].get(job['pipeline'])
                 finished = pipeline['stage'] == 'done' if pipeline else job['status'] in ('done', 'cancelled')
                 if finished and session['status'] not in ACTIVE_STATUSES:
-                    try:
-                        archive_work(Path(instance) / 'sessions' / sid)
-                    except (OSError, ValueError, RuntimeError, tarfile.TarError, lzma.LZMAError, EOFError) as exc:
-                        print(json.dumps({'session': sid, 'error': str(exc)}), file=sys.stderr, flush=True)
+                    # The work folder and the raw conversation are packed apart, so that a failure of the one does
+                    # not keep the other in place. Nothing reads a stream after the runner has collected its
+                    # session: the readable conversation and the record of what the session used are written then
+                    # (Runner.finish, Runner.collect), and a session comes here only after that.
+                    for pack in (archive_work, archive_raw):
+                        try:
+                            pack(Path(instance) / 'sessions' / sid)
+                        except (OSError, ValueError, RuntimeError, tarfile.TarError, lzma.LZMAError, EOFError) as exc:
+                            print(json.dumps({'session': sid, 'error': str(exc)}), file=sys.stderr, flush=True)
     except RuntimeError:
         pass
     return 0

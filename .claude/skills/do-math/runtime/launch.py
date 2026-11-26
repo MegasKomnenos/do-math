@@ -12,9 +12,11 @@ from runtime_support import write_json
 
 
 CONTEXT_WINDOW = 1_000_000
+# The size at which the CLI compacts the conversation of a worker that still has a compaction: a Codex
+# worker, and a Claude session that is sent no message (worker_environment).
 AUTO_COMPACT_TOKENS = 950_000
-# The size of a session's context, in tokens, at which its host sends it the message that asks it to wrap
-# up before the CLI compacts the conversation (ending.run_turn).
+# The size of a session's context, in tokens, at which its host sends it the message that asks it to decide
+# its ending and, where its work is to go on, to hand its task over to a new session (ending.run_turn).
 CONTEXT_MESSAGE_TOKENS = 800_000
 # Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
 MAX_OUTPUT_TOKENS = 128_000
@@ -124,14 +126,23 @@ def worker_command(executable, model, effort, session, servers=None, *, resume_i
     return Command(base.provider, argv, base.cwd)
 
 
-def worker_environment():
+def worker_environment(session=None):
+    """The environment of a worker's CLI. `session` is the session folder of a worker of the runner; a
+    session of the paper command or of the finalize pipeline has none to give."""
     environment = dict(os.environ)
     for key in ('CODEX_THREAD_ID', 'CODEX_SESSION_ID', 'CLAUDE_CODE_SESSION_ID', 'CLAUDECODE'):
         environment.pop(key, None)
     # Worker context policy is explicit, independent of the operator's shell.
-    environment.pop('CLAUDE_CODE_DISABLE_1M_CONTEXT', None)
-    environment.pop('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', None)
-    environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
+    for key in ('CLAUDE_CODE_DISABLE_1M_CONTEXT', 'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE',
+                'CLAUDE_CODE_AUTO_COMPACT_WINDOW', 'DISABLE_AUTO_COMPACT', 'DISABLE_COMPACT'):
+        environment.pop(key, None)
+    if session is not None and receives_messages(session):
+        # Its host tells this session when its context is nearly full, and its task then goes on in a new
+        # session (ending.CONTEXT_MESSAGE). The CLI therefore does not replace its conversation with a summary.
+        environment['DISABLE_AUTO_COMPACT'] = '1'
+    else:
+        # A session that cannot be sent that message: a compaction is its only way past the limit.
+        environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
     environment['CLAUDE_CODE_MAX_OUTPUT_TOKENS'] = str(MAX_OUTPUT_TOKENS)
     environment['MCP_TIMEOUT'] = str(MCP_STARTUP_MS)
     environment['CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS'] = str(BACKGROUND_WAIT_MS)

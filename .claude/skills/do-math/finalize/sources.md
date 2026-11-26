@@ -64,7 +64,7 @@ For each entry of `requests.json`, read the Lean statement of the declaration an
 
 A source is entered into the record only when it states the result in the form the library has: the same hypotheses and the same conclusion, up to notation and to conventions that can be stated exactly, such as an index that starts at one. A source that proves a weaker form, a non-strict inequality where the library has a strict one, a special case, or a general theorem from which the library's statement would still have to be derived, does not state it in that form. The paper will put the citation in the place of a proof, and it can do that only for what the source actually says. You have to have seen the statement in the source, so a work you could not open far enough to read the statement is not entered.
 
-When you find such a source: add its entry to `bibliography.bib` under a new key in the manner of the existing keys, with its identifier; add the header key `source` to the record; and write the record's part `## Literature`: the precise place of the result in the source, how much of the source you read, where the statement stands in what you read (a main theorem with its proof, a remark, a result the source attributes to earlier work), and how the source's notation and conventions correspond to the library's. The new key is listed in `sources.json` like every other.
+When you find such a source: add its entry to `bibliography.bib` under a new key in the manner of the existing keys, with its identifier; add the header key `source` to the record; and write the record's part `## Literature`: the precise place of the result in the source, how much of the source you read, where the statement stands in what you read (a main theorem with its proof, a remark, a result the source attributes to earlier work), and how the source's notation and conventions correspond to the library's. The new key is listed in `sources.json` like every other. Where `bibliography.bib` already has an entry for the work, which `cited.json` need not list, add no second entry, since the paper's references would then print the work twice: cite the work under the key it has, and list that key in `sources.json` with the attribution of each sentence you wrote. The same holds wherever this instruction has you add the entry of a work.
 
 When you find none, the answer is that none was found. Say in the note what you searched and, where you found something close, what it is and in what it differs from the library's statement. The paper will then prove the result.
 
@@ -82,7 +82,7 @@ A request that carries `source` is the second half of such a report. Its declara
 
 ## What you write
 
-- `output/sources.json`, with one entry for each key of `cited.json` and for each key you added:
+- `output/sources.json`, with one entry for each key of `cited.json`, for each key you added, and for each key that the bibliography already had and that you cited in a record:
 
 ```json
 [{"key": "abel1826", "status": "verified", "identifier": "...", "opened": "full", "note": "...",

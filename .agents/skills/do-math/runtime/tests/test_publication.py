@@ -20,7 +20,7 @@ from canon_tool import build_candidate, verify
 from check import carried_by, change_check, check_session
 from knowledge import replay
 from runtime_support import git, read_json, write_json
-from support import InstanceCase, ROOT, SUM_ZERO, module_text, record_text, theorem
+from support import InstanceCase, ROOT, SUM_ZERO, module_text, record_text, session_record, theorem
 
 DOC = '/-- The sum of the first `n` odd numbers is the square of `n`. -/\n'
 STATEMENT = 'theorem root (n : Nat) : oddSum n = n * n := by\n'
@@ -102,11 +102,6 @@ def write(path, text):
     path.write_text(text, encoding='utf-8', newline='\n')
 
 
-def session_record(sid, role, job, **extra):
-    return {'id': sid, 'role': role, 'job': job, 'status': 'running', 'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh',
-            'provider': 'codex', 'started_at': 1, 'exit_code': 0, 'host': None, 'cli': None, 'record': None, **extra}
-
-
 class PublicationCase(InstanceCase):
     def canon(self):
         return Canon(self.instance)
@@ -180,7 +175,7 @@ class PublicationCase(InstanceCase):
                                            'pipeline': pipeline, 'task': task, 'user_inputs': []})
         (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
         (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
-        engine.state['sessions'][sid] = session_record(sid, role, job, **extra)
+        engine.state['sessions'][sid] = session_record(sid, role, job, **{'started_at': 1, 'exit_code': 0, **extra})
         return folder
 
     def held_sketch(self):
@@ -726,6 +721,18 @@ class PublicationTests(PublicationCase):
         self.assertEqual(replay(self.instance)['sequence'], 2)
         self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
 
+    def test_a_file_that_an_ignore_rule_names_is_committed_with_the_rest_of_the_canon(self):
+        # The commit of a publication takes in whatever stands under knowledge/ and canon/, and a package takes its
+        # knowledge archive from that commit (package.knowledge_archive). Git leaves out of `git add` what an
+        # ignore rule names. Such a rule can stand in a folder of evidence that a candidate brought, as here, or
+        # in the Git configuration of whoever runs the instance. The repository and every Git call are real.
+        folder = self.canon().evidence / 'Small/root'
+        write(folder / '.gitignore', '*.log\n')
+        write(folder / 'search.log', 'n = 1: 1\n')
+        self.questions('qlog', [{'id': 'op-a', 'statement': 'What does op-a ask?', 'grounds': 'Unexplained.'}])
+        self.assertEqual(git(self.instance, 'ls-files', '--', 'canon/evidence').splitlines(),
+                         ['canon/evidence/Small/root/.gitignore', 'canon/evidence/Small/root/search.log'])
+
 
 class InterruptedPublicationTests(PublicationCase):
     """A publication saves each stage it reaches. A runner that ended at any of them is followed by one
@@ -891,18 +898,38 @@ class InterruptedPublicationTests(PublicationCase):
         # follows finds the commit of this publication and makes no second one.
         self.interrupt('runner.Runner.notify', 'commit', installed=True, event_written=True, committed=True)
 
+    def test_a_lock_that_an_ended_git_command_left_on_the_index_does_not_stop_the_commit(self):
+        # Git writes the index under .git/index.lock and, while that file stands, refuses every command that
+        # writes the index. A Git command that was ended inside its work, as when the machine went down during a
+        # commit, left the file there. Only the runner writes the index of the instance's repository, so the
+        # publication that follows takes the file away before its own commit. The repository and every Git call
+        # are real.
+        lock = self.instance / '.git/index.lock'
+        lock.write_bytes(b'')
+        self.questions('qlock', [{'id': 'op-a', 'statement': 'What does op-a ask?', 'grounds': 'Unexplained.'}])
+        self.assertFalse(lock.exists())
+        self.assertIn('Publish qlock', git(self.instance, 'log', '--format=%s').splitlines())
+        self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
+
     def test_what_a_write_that_did_not_finish_left_is_not_published(self):
         # A file is written beside its name and then moved onto it (runtime_support._write_chunks). A runner that
         # ended between the two left the first file where it wrote it, here beside the index and beside a view.
         # The publication that follows takes such files away before its commit, which takes in whatever stands
-        # under knowledge/ and canon/.
+        # under knowledge/ and canon/. It takes away those files alone: a file of the research whose name only
+        # ends in .tmp, here a file of evidence, stays as it is.
         left = [self.canon().index.with_name('index.json.' + 'a' * 32 + '.tmp'),
                 self.instance / 'knowledge' / ('frontier.md.' + 'b' * 32 + '.tmp')]
         for path in left:
             path.write_bytes(b'{"revision"')
+        kept = self.canon().evidence / 'Small/root/table.tmp'
+        kept.parent.mkdir(parents=True)
+        kept.write_bytes(b'n,sum\n1,1\n')
         self.questions('qleft', [{'id': 'op-a', 'statement': 'What does op-a ask?', 'grounds': 'Unexplained.'}])
         self.assertEqual([path.exists() for path in left], [False, False])
-        self.assertNotIn('.tmp', git(self.instance, 'ls-files', '--', 'knowledge', 'canon'))
+        self.assertEqual(kept.read_bytes(), b'n,sum\n1,1\n')
+        names = {path.name for path in left}
+        self.assertEqual([name for name in git(self.instance, 'ls-files', '--', 'knowledge', 'canon').splitlines()
+                          if name.rpartition('/')[2] in names], [])
 
     def test_a_question_text_that_a_merge_moved_is_not_moved_again(self):
         # An organizer merges op-a, which has an understanding text, into op-b, which has none, so the text
@@ -1551,6 +1578,31 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
         self.assertEqual(replay(self.instance)['elements']['Small.root']['standing'], 'accepted')
         self.assertEqual(self.leftovers(), [])
 
+    def test_a_concern_goes_with_the_proof_it_was_raised_about_when_a_retirement_moves_that_proof(self):
+        # The root has a proof of its own, held back, beside the accepted alternative, and a concern is raised about
+        # each of the two proofs. The retirement puts the alternative's proof under the root's own name. The concern
+        # about that proof names the root from then on and stands on the frontier; the concern about the proof the
+        # root had was raised about an earlier proof, and leaves the frontier.
+        cid, engine = self.alternative_proof()
+        own = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
+        self.publish(own, self.verdicts(own, **HOLD), engine=engine)
+        pairing, sketch = 'The pairing may skip the first term.', 'The inductive step is only sketched.'
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [], 'concerns': [
+            {'id': 'pairing', 'targets': ['Small.root_alt'], 'reason': pairing, 'evidence': 'The case n = 1.'},
+            {'id': 'sketch', 'targets': ['Small.root'], 'reason': sketch, 'evidence': 'The record gives no derivation.'}]})
+        engine = runtime.Runner(self.instance, self.skill)  # the runner as it stands after that review
+        sid, output = self.retirement(engine, cid)
+        self.prepare(output, role='organizer')
+        job = self.finish(engine, sid)
+        self.assertEqual(job['status'], 'done', job.get('last_error'))
+        model = replay(self.instance)
+        self.assertEqual({key: (concern['targets'], concern['earlier']) for key, concern in model['concerns'].items()},
+                         {'v1/pairing': (['Small.root'], []), 'v1/sketch': (['Small.root'], ['Small.root'])})
+        self.assertEqual(model['elements']['Small.root']['concerns'], ['v1/pairing', 'v1/sketch'])
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        self.assertIn(f'\n## Concerns\n\n- v1/pairing on `Small.root`: {pairing} (pending); comprehensive review ', frontier)
+        self.assertNotIn('v1/sketch', frontier)
+
     def test_a_candidate_whose_declaration_a_rearrangement_moved_passes_the_review_s_own_compile(self):
         # A rearrangement moves declarations between modules. A candidate that was prepared before it and
         # replaces the proof of a moved declaration still applies, because a replacement finds its declaration
@@ -1909,7 +1961,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         task = {'kind': 'candidate', 'candidate': str(folder), 'candidate_hashes': runtime.tree_hashes(folder)}
         session = self.install('sreview', 'review', task)
         (session / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
-        self.engine.state['sessions']['sreview'] = session_record('sreview', 'review', None)
+        self.engine.state['sessions']['sreview'] = session_record('sreview', 'review', None, started_at=1, exit_code=0)
         self.engine.save()
         return folder, session
 
@@ -2020,7 +2072,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         task = {'kind': 'candidate', 'candidate': str(folder), 'candidate_hashes': runtime.tree_hashes(folder)}
         session = self.install('sreview', 'review', task)
         (session / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
-        self.engine.state['sessions']['sreview'] = session_record('sreview', 'review', None)
+        self.engine.state['sessions']['sreview'] = session_record('sreview', 'review', None, started_at=1, exit_code=0)
         self.engine.save()
         # Confirming the new proof of Small.pair, which is complete in Lean, needs the review's own compile.
         with patch('builtins.print'):

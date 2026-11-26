@@ -25,6 +25,7 @@ RUNTIME = Path(__file__).resolve().parents[1]
 # commands.prepare for exactly those files (a change without Lean is prepared without a build).
 CLI = r'''
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -61,6 +62,33 @@ if inp['role'] == 'review' and number >= config.get('assess_at', 0):
     (session / 'output/feedback.md').write_text('The questioned proof was examined.', encoding='utf-8')
     (session / 'output/assessment.json').write_text(json.dumps({'feedback': 'feedback.md', 'findings': [],
                                                                 'concerns': []}))
+if number in config.get('context_at', []):
+    # A Claude turn in which a request of the session itself has reached the size at which the host sends its
+    # message. The CLI's hook would hand the message over with the next batch of tool calls; here the session
+    # is taken to have it once it waits, and answers the request the host opened when the test says how.
+    (session / 'work/compaction-off').write_text(os.environ.get('DISABLE_AUTO_COMPACT', ''), encoding='utf-8')
+    print(json.dumps({'type': 'assistant', 'session_id': identity, 'parent_tool_use_id': None, 'message': {
+        'role': 'assistant', 'content': [], 'usage': {
+            'input_tokens': 5, 'cache_creation_input_tokens': 1000, 'cache_read_input_tokens': 811_340}}}),
+          flush=True)
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline and not list((session / 'messages').glob('*.json')):
+        time.sleep(.02)
+    if config.get('context_basis'):
+        asked = json.loads((session / 'end-request.json').read_text(encoding='utf-8'))
+        (session / 'output/end-decision.json').write_text(json.dumps({
+            'request_id': asked['id'], 'decision': 'end', 'basis': config['context_basis'],
+            'explanation': 'Answered in the turn in which the message came.'}))
+if number in config.get('context_limit_at', []):
+    # The Claude CLI's own stream when, with automatic compaction off, the next request no longer fits the window.
+    print(json.dumps({'type': 'assistant', 'session_id': identity, 'error': 'invalid_request',
+                      'is_api_error_message': True,
+                      'message': {'model': '<synthetic>', 'role': 'assistant',
+                                  'content': [{'type': 'text', 'text': 'Prompt is too long'}]}}), flush=True)
+    print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'session_id': identity,
+                      'stop_reason': 'stop_sequence', 'terminal_reason': 'blocking_limit',
+                      'result': 'Prompt is too long'}), flush=True)
+    raise SystemExit(1)
 if config.get('hold_at') == number:
     # A turn still running when the operator ends the session; only termination ends it early.
     (session / 'work/holding').write_text('', encoding='utf-8')
@@ -199,6 +227,10 @@ class EndingTests(InstanceCase):
                 self.assertIn('directives supplied for this session',
                               (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8'))
                 self.assertTrue((directory / 'turns/0001/turn-termination.json').is_file())
+                # The resumed turn put the receipt of its own CLI in the place of the first turn's: the runner
+                # and kill-session find the running CLI through the session's process.json.
+                self.assertEqual(read_json(directory / 'process.json'),
+                                 read_json(directory / 'turns/0001/process.json'))
                 # Runner restart sees the same logical session, then collects it once.
                 engine = Runner(self.instance, self.skill)
                 s = engine.state['sessions'][sid]
@@ -291,8 +323,8 @@ class EndingTests(InstanceCase):
         guidance = self.skill / 'resume'
         original_common = (guidance / 'common.md').read_bytes()
         original_role = (guidance / 'explore.md').read_bytes()
-        def update_after_turn(session, folder, command):
-            result = run_turn(session, folder, command)
+        def update_after_turn(session, folder, command, state):
+            result = run_turn(session, folder, command, state)
             if Path(folder) == directory:
                 (guidance / 'common.md').write_bytes(original_common + b'\nCommon update between turns.\n')
             else:
@@ -437,8 +469,8 @@ class EndingTests(InstanceCase):
     def test_output_limit_during_reconsideration_keeps_decision_error_and_counts_resumption(self):
         _, _, directory = self.prepare_claude(config={'output_limit_at': [1], 'end_after': 2})
 
-        def decided_before_the_limit(session, folder, command):
-            result = run_turn(session, folder, command)
+        def decided_before_the_limit(session, folder, command, state):
+            result = run_turn(session, folder, command, state)
             if Path(folder).name == '0001':
                 # What the session had written in the turn that then reached the limit: a decision nobody can read.
                 (directory / 'output/end-decision.json').write_text('{broken', encoding='utf-8')
@@ -523,6 +555,8 @@ class EndingTests(InstanceCase):
         # of the grounds; any other decision is rejected and the session continues to the limit.
         cases = (({'basis': 'task_completed'}, 'task_completed', None),
                  ({'basis': 'partial_result'}, 'resumption_limit', 'task_completed or no_way_forward'),
+                 # The basis that hands a task over answers only the request of the host's message.
+                 ({'basis': 'handed_over'}, 'resumption_limit', 'task_completed or no_way_forward.'),
                  ({'explanation': ' '}, 'resumption_limit', 'nonempty explanation'),
                  ({'extra_fields': {'confidence': 'high'}}, 'resumption_limit',
                   'request_id, decision, basis and explanation'))
@@ -712,6 +746,127 @@ class EndingTests(InstanceCase):
         self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
         self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
 
+    def told(self, role='attempt', config=None):
+        """A session on Claude that receives messages, as the runner launches one, with the scripted CLI."""
+        engine, sid, directory = self.prepare_claude(role=role, config=config)
+        open_messages(directory)
+        return engine, sid, directory
+
+    def collected(self, engine, sid, directory):
+        """The session and its job once the runner has collected the ended session."""
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        return s, engine.state['jobs'][s['job']]
+
+    def relaunch(self, engine, launch):
+        """Have the runner launch what waits, with the stand-ins of `prepare` for the host and the command."""
+        with patch('runner.subprocess.Popen') as host, patch('runner.worker_command') as build:
+            host.return_value.pid = engine.identity['pid']
+            build.return_value = self.command(None, None, None, self.instance)
+            return launch()
+
+    def test_a_session_that_hands_its_task_over_is_continued_by_a_new_session_of_its_role(self):
+        engine, sid, directory = self.told(config={'context_at': [0], 'context_basis': 'handed_over'})
+        with patch('ending.worker_command', side_effect=self.command) as resume:
+            self.assertEqual(session_host(directory), 0)
+        # The message opened a request, and the decision of the same turn answers it: no turn follows.
+        resume.assert_not_called()
+        state = read_json(directory / 'end-check.json')
+        self.assertEqual((state['authorization']['source'], state['authorization']['basis'], state['resumptions']),
+                         ('worker', 'handed_over', 0))
+        self.assertEqual(state['request']['context'], 812_345)
+        (message,) = (directory / 'messages').glob('*.json')
+        self.assertIn('Its request ID is ' + state['request']['id'], read_json(message)['text'])
+        # The CLI of a session that is told when its context is nearly full runs with compaction off.
+        self.assertEqual((directory / 'work/compaction-off').read_text(encoding='utf-8'), '1')
+        s, job = self.collected(engine, sid, directory)
+        pipeline = engine.state['pipelines'][job['pipeline']]
+        # Nothing failed and nothing goes to a peer: the same job waits for its next session, with the folder
+        # of this one, and the section stays held meanwhile.
+        self.assertEqual((s['status'], job['status'], job['retries'], job['not_before'], pipeline['stage']),
+                         ('ended', 'pending', 0, 0, 'producing'))
+        self.assertEqual(job['task']['continues'], [str(directory)])
+        self.assertEqual(engine.state['blocks'], {})
+        self.assertFalse(any(j['role'] == 'peer' for j in engine.state['jobs'].values()))
+        self.assertEqual(board(self.instance, engine.state)[0]['elements'], ['Small.root'])
+        # The next session is launched although the task itself holds the one remaining element whole, which
+        # keeps a new attempt from launching, and it is not counted as an attempt launch.
+        launches = engine.state['attempt_launches']
+        self.relaunch(engine, engine.dispatch_pending)
+        self.assertEqual((job['status'], engine.state['attempt_launches']), ('running', launches))
+        self.assertNotEqual(job['session'], sid)
+        successor = engine.session_dir(job['session'])
+        row = board(self.instance, engine.state)[0]
+        self.assertEqual((row['session'], row['elements']), (job['session'], ['Small.root']))
+        self.assertEqual(read_json(successor / 'input.json')['task']['continues'], [str(directory)])
+        # The pack tells the new session where the report of the session before it is.
+        self.assertIn(str(directory / 'output/report.md'), (successor / 'pack.md').read_text(encoding='utf-8'))
+
+    def test_a_handed_over_exploration_keeps_its_question_for_the_session_that_continues_it(self):
+        engine, sid, directory = self.told(role='explore', config={'context_at': [0],
+                                                                   'context_basis': 'handed_over'})
+        self.run_host(directory)
+        s, job = self.collected(engine, sid, directory)
+        self.assertEqual((job['status'], job['task']['continues']), ('pending', [str(directory)]))
+        # While the task waits for its next session, no other exploration is launched onto its question.
+        self.assertNotIn('q0', engine.question_view(launching=True)['free'])
+        self.assertTrue(self.relaunch(engine, lambda: engine.dispatch(job['id'])))
+        successor = engine.session_dir(job['session'])
+        self.assertEqual(job['task']['question'], 'q0')
+        self.assertEqual(read_json(successor / 'declaration.json'), read_json(directory / 'declaration.json'))
+        row = board(self.instance, engine.state)[0]
+        self.assertEqual((row['session'], row['question']), (job['session'], 'q0'))
+
+    def test_an_ending_decided_in_answer_to_the_message_needs_no_further_turn(self):
+        engine, sid, directory = self.told(config={'context_at': [0], 'context_basis': 'task_completed'})
+        with patch('ending.worker_command', side_effect=self.command) as resume:
+            self.assertEqual(session_host(directory), 0)
+        resume.assert_not_called()
+        authorization = read_json(directory / 'end-check.json')['authorization']
+        self.assertEqual((authorization['source'], authorization['basis'], authorization['resumptions']),
+                         ('worker', 'task_completed', 0))
+        # The work is done, so it goes to a peer as after any ending the session decided.
+        s, job = self.collected(engine, sid, directory)
+        self.assertEqual((s['status'], job['status']), ('ended', 'done'))
+        self.assertNotIn('continues', job['task'])
+        self.assertEqual(engine.state['pipelines'][job['pipeline']]['stage'], 'peer')
+
+    def test_a_session_that_ended_its_turn_without_answering_the_message_is_asked_the_same_request_again(self):
+        # The message is handed over with the results of tool calls, so a turn can end before the session has it.
+        _, _, directory = self.told(config={'context_at': [0], 'end_after': 1, 'basis': 'handed_over'})
+        state = self.run_host(directory)
+        self.assertEqual((state['authorization']['source'], state['authorization']['basis'], state['resumptions']),
+                         ('worker', 'handed_over', 1))
+        # Sent once: the resumed turn holds the same request, under the ID the waiting message names.
+        (message,) = (directory / 'messages').glob('*.json')
+        text = read_json(message)['text']
+        self.assertIn('Its request ID is ' + read_json(directory / 'turns/0001/request.json')['id'], text)
+        # The resumed turn is asked as every resumed turn is, and its prompt ends with the text of the message.
+        prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
+        self.assertIn('directives supplied for this session', prompt)
+        self.assertTrue(prompt.endswith(text + '\n'))
+
+    def test_a_turn_that_ends_at_the_limit_of_the_context_window_is_continued_from_the_files(self):
+        for role in ('attempt', 'review'):
+            with self.subTest(role=role):
+                engine, sid, directory = self.told(role=role, config={'context_limit_at': [0], 'assess_at': 9})
+                state = self.run_host(directory)
+                # No provider and no model refused anything, and no further turn of a full conversation is started.
+                self.assertEqual((state['authorization']['source'], state['authorization']['basis'],
+                                  state['resumptions']), ('runner', 'context_limit', 0))
+                self.assertIsNone(read_json(directory / 'turn-termination.json')['refusal'])
+                s, job = self.collected(engine, sid, directory)
+                self.assertEqual(s['exit_code'], 1)
+                self.assertEqual((s['status'], job['status'], job['retries']), ('ended', 'pending', 0))
+                self.assertEqual(job['task']['continues'], [str(directory)])
+                self.assertNotIn('previous_error', job['task'])
+                self.assertEqual(engine.state['blocks'], {})
+        # A session that is sent no message keeps its compaction, and such an end of its turn is a failed turn.
+        _, _, directory = self.prepare_claude(role='explore', config={'context_limit_at': [0]})
+        self.assertEqual(self.run_host(directory)['authorization']['basis'], 'interrupted')
+
 
 class EndingConfigurationTests(unittest.TestCase):
     def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
@@ -866,13 +1021,14 @@ while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
     time.sleep(.02)
 '''
 
-    def turn(self, session, folder, requests, seconds):
-        """Run one turn under the host; returns the messages that wait for the session when it has ended."""
+    def turn(self, session, folder, requests, seconds, state):
+        """Run one turn under the host, which keeps `state` as its record of the session; returns the
+        messages that wait for the session when the turn has ended."""
         import json
         (folder / 'prompt.txt').write_bytes(b'')
         command = {'argv': [sys.executable, '-c', self.CLI, json.dumps(requests), str(seconds)],
                    'cwd': str(session)}
-        self.assertEqual(run_turn(session, folder, command)['exit_code'], 0)
+        self.assertEqual(run_turn(session, folder, command, state)['exit_code'], 0)
         return sorted((session / 'messages').glob('*.json'))
 
     def test_the_host_sends_the_message_once_when_a_request_of_the_session_itself_reaches_the_size(self):
@@ -881,23 +1037,45 @@ while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
             session = Path(tmp) / 'session'
             (session / 'turns/0001').mkdir(parents=True)
             open_messages(session)
+            # The host's record of a session in its first turn, which no request started.
+            state = {'request': None, 'resumptions': 0}
             # A request of a sub-agent above the size and a request of the session just below it send
             # nothing. The message is sent for the session's own request and states the size of that one.
-            waiting = self.turn(session, session, [[900_000, 'toolu_1'], [799_999, None], [812_345, None]], 30)
+            waiting = self.turn(session, session, [[900_000, 'toolu_1'], [799_999, None], [812_345, None]], 30,
+                                state)
             self.assertEqual(len(waiting), 1)
             message = read_json(waiting[0])
             self.assertEqual(message['from'], 'runner')
             self.assertIn('about 812,345 tokens', message['text'])
-            self.assertIn('nears 950,000 tokens', message['text'])
+            self.assertIn('holds 1,000,000', message['text'])
+            # The message is a request to decide the ending. The host has opened one, the session finds its ID
+            # in the message and in end-request.json, and the request allows the basis that hands the task over.
+            request = read_json(session / 'end-request.json')
+            self.assertEqual(request, state['request'])
+            self.assertEqual(request['context'], 812_345)
+            self.assertEqual(read_json(session / 'end-check.json')['request'], request)
+            self.assertIn('Its request ID is ' + request['id'], message['text'])
+            self.assertIn('"request_id": "' + request['id'] + '", "decision": "end", "basis": "handed_over"',
+                          message['text'])
             # The message names a section of a guide, and the guide has a section of that title.
-            self.assertIn('"What a compaction of your context leaves" in context/reference/retained-work.md',
+            self.assertIn('"Handing a task over to a new session" in context/reference/retained-work.md',
                           message['text'])
             guide = Path(__file__).resolve().parents[2] / 'reference/retained-work.md'
-            self.assertIn('\n## What a compaction of your context leaves\n', guide.read_text(encoding='utf-8'))
+            self.assertIn('\n## Handing a task over to a new session\n', guide.read_text(encoding='utf-8'))
             # Once in the life of the session. The hook has handed the message over, and a later turn with
             # a larger context stays a second for a message that must not come.
             waiting[0].rename(session / 'messages/delivered' / waiting[0].name)
-            self.assertEqual(self.turn(session, session / 'turns/0001', [[850_000, None]], 1), [])
+            self.assertEqual(self.turn(session, session / 'turns/0001', [[850_000, None]], 1, state), [])
+            # A resumed turn was started with a request. The message opens no second one and carries its ID.
+            resumed = Path(tmp) / 'resumed'
+            resumed.mkdir()
+            open_messages(resumed)
+            state = {'request': {'id': 'asked-at-the-resumption', 'round': 1, 'previous_error': None},
+                     'resumptions': 1}
+            (waiting,) = self.turn(resumed, resumed, [[805_000, None]], 30, state)
+            self.assertIn('Its request ID is asked-at-the-resumption.', read_json(waiting)['text'])
+            self.assertEqual(state['request'], {'id': 'asked-at-the-resumption', 'round': 1,
+                                                'previous_error': None, 'context': 805_000})
 
 
 class CancellationTests(unittest.TestCase):
@@ -925,10 +1103,37 @@ class CancellationTests(unittest.TestCase):
             (folder / 'CANCEL').write_bytes(b'')
             command = {'argv': [sys.executable, '-c', 'import time; time.sleep(120)'], 'cwd': str(folder)}
             with patch.object(runtime_support.WIN, 'TerminateProcess', side_effect=already_ending) as asked:
-                result = run_turn(folder, folder, command)
+                result = run_turn(folder, folder, command, {'request': None, 'resumptions': 0})
         self.assertTrue(asked.called)
         self.assertNotIn('launch_error', result)
         self.assertEqual(result['exit_code'], 1)
+
+    def test_an_error_of_the_host_after_the_cli_has_started_is_not_recorded_as_a_failed_launch(self):
+        # A CLI that cannot be started is a failed launch, which the runner counts against the model
+        # (Runner.finish). Once the CLI runs, an error of the host's own says nothing about the model: the CLI
+        # is ended and the error leaves run_turn, so that the host ends with it and the runner collects a lost
+        # host. Only the operating system's answer about the started process is stood in for.
+        import subprocess
+        import tempfile
+        state = {'request': None, 'resumptions': 0}
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / 'prompt.txt').write_bytes(b'')
+            missing = {'argv': [str(folder / 'no-such-cli')], 'cwd': str(folder)}
+            self.assertIn('launch_error', run_turn(folder, folder, missing, state))
+            started = []
+            real = subprocess.Popen
+
+            def start(*args, **kwargs):
+                started.append(real(*args, **kwargs))
+                return started[-1]
+
+            command = {'argv': [sys.executable, '-c', 'import time; time.sleep(120)'], 'cwd': str(folder)}
+            with patch('ending.subprocess.Popen', side_effect=start), \
+                    patch('ending.process_identity', side_effect=OSError('the process could not be read')), \
+                    self.assertRaises(OSError):
+                run_turn(folder, folder, command, state)
+            self.assertIsNotNone(started[0].poll())
 
 
 class SessionGateTests(unittest.TestCase):

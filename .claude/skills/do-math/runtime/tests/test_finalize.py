@@ -86,6 +86,9 @@ CLOSED = [{'kind': 'removed', 'where': 'the abstract', 'section': 'abstract',
            'quote': 'equivalently, the block sums to a difference of squares',
            'asserts': 'The block sum is a difference of squares.', 'nearest': 'Small.sq_step',
            'difference': 'It states the sum additively.'},
+          {'kind': 'removed', 'where': 'the proof of Lemma 1.1', 'section': 'sec:step',
+           'quote': 'as Gauss shows for every block', 'asserts': '', 'nearest': '',
+           'difference': 'The words kept of the work speak of the single step.', 'source': 'gauss1801'},
           {'kind': 'restated', 'label': 'lem:step', 'number': 'Lemma 1.1', 'element': 'Small.sq_step',
            'before': 'For $n \\ge 1$ the step holds.', 'difference': 'The element has every n.',
            'after': 'For every $n$ the step holds.', 'verdict': 'differs', 'difference_after': 'The range of n.'},
@@ -458,6 +461,19 @@ class TakeTests(FinalizeCase):
         plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
         self.assertIn('Small.simp_one', plan['removed'])
         self.assertIn('Small.root', plan['kept'])
+
+    def test_a_definition_that_uses_a_theorem_without_a_proof_is_not_kept_for_its_attribute(self):
+        # A definition can name a theorem that the research left without a proof: its own text is complete, and Lean
+        # reports `sorryAx` for it through that theorem. Kept for its attribute, it would keep the theorem in the
+        # library, and no check of the library passes a theorem without a proof. The index is made to say of
+        # `simp_one`, which carries an attribute, what it says of such a definition.
+        entries = self.index['entries']
+        entries['Small.unused_two']['axioms'] = ['sorryAx']
+        entries['Small.simp_one'].update(kind='def', uses=['Small.unused_two'], axioms=['sorryAx'])
+        plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
+        self.assertLessEqual({'Small.simp_one', 'Small.unused_two'}, set(plan['removed']))
+        self.assertEqual([item['declaration'] for item in plan['spans'] if not item['proved']],
+                         ['Small.simp_one', 'Small.unused_two'])
 
     def test_a_restore_puts_removed_elements_back_and_deletes_lines_and_does_nothing_else(self):
         before = {relative: (self.lean / relative).read_text(encoding='utf-8') for relative in self.plan['files']}
@@ -1809,9 +1825,14 @@ class RunTests(FinalizeCase):
         self.assertIn('- Removed from the abstract: "equivalently, the block sums to a difference of squares" It asserted: '
                       'The block sum is a difference of squares. The declaration that came nearest is `Small.sq_step`. It '
                       'states the sum additively.', decisions)
+        # A passage that went for what it said of a cited work is recorded with that work, and the report counts it.
+        self.assertIn('- Removed from the proof of Lemma 1.1: "as Gauss shows for every block" It said of the cited work '
+                      '`gauss1801` something that the words copied from that work do not show. The words kept of the '
+                      'work speak of the single step.', decisions)
         self.assertIn('- Lemma 1.1 (`lem:step`) was restated as its declaration `Small.sq_step` says it.', decisions)
         self.assertIn('The comparison after the restatement still found a difference: The range of n.', decisions)
-        self.assertIn('it took 1 passages that no declaration covers out of the paper and restated 1 statements', report)
+        self.assertIn('it took 2 passages out of the paper (each asserted what no declaration states, or said of a '
+                      'cited work what the words copied from it do not show) and restated 1 statements', report)
         self.assertIn('- In the paper, Lemma 1.1 still differs from the declaration `Small.sq_step` that it states: The '
                       'range of n.', report)
         # A passage that a repair wrote during the closing pass and that no declaration covers stays, and both say so.
@@ -2794,6 +2815,36 @@ class TakeStepTests(FinalizeCase):
         decisions = self.decisions()
         self.assertIn('these removed elements were put back: none.', decisions)
         self.assertIn('  have h1 := named_four', decisions)  # the deleted lines are kept for the user
+
+    def test_a_private_declaration_whose_own_proof_is_open_is_deleted_at_the_take(self):
+        # The research left the proof of a private declaration open. What is no element stays through the take, and the
+        # module builds with the open proof, so only the index shows it. The session of the take is told of it: the
+        # first returns the module as the take left it and is refused, the second deletes the declaration.
+        private = HELPER_PARTS[6]
+        left_open = private[:-len('rfl')] + 'sorry'
+        lean = self.instance / 'canon' / 'lean' / 'Small' / 'Helper.lean'
+        lean.write_text(lean.read_text(encoding='utf-8').replace(private, left_open), encoding='utf-8', newline='\n')
+        index = read_json(self.instance / 'canon' / 'index.json')
+        for item in index['hidden'].values():
+            item['sorry'] = item.get('user') == 'Small.hidden_three'
+        write_json(self.instance / 'canon' / 'index.json', index)
+        git(self.instance, 'commit', '-m', 'an open private proof', '--', 'canon/lean/Small/Helper.lean', 'canon/index.json')
+        taken = lean.read_text(encoding='utf-8').replace(UNUSED + '\n\n', '')
+        without = taken.replace(left_open + '\n\n', '')
+        plan = script(restore=[{'output/lean/Small/Helper.lean': taken}, {'output/lean/Small/Helper.lean': without}])
+        with patch('finalize.Run.review', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.2-review`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        first, second = self.calls('restore')
+        told = 'Small.hidden_three, a declaration of the module Small.Helper that is no element, has an open proof'
+        errors = (self.work / 'sessions' / first['folder'] / 'errors.txt').read_text(encoding='utf-8')
+        self.assertEqual(errors.count(told), 1)
+        self.assertIn(told, second['prompt'])
+        self.assertEqual((self.work / 'lib' / '1-taken' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'), without)
+        decisions = self.decisions()
+        self.assertIn('The library built after the take and held declarations that are no element with an open proof',
+                      decisions)
+        self.assertIn('    private theorem hidden_three : oddSum 3 = 9 := by', decisions)
 
 
 if __name__ == '__main__':

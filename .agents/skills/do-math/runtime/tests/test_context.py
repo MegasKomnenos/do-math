@@ -16,16 +16,16 @@ from knowledge import render, replay
 from launch import open_messages, send_message, worker_command, worker_environment
 from runner import Runner, main
 from runtime_support import process_identity, read_json, write_json
-from support import InstanceCase, module_text, record_text, take
+from support import InstanceCase, module_text, record_text, session_record, take
 
 INSTALLED = Path(__file__).resolve().parents[2]
 ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
 # A pack opens with the root and the assignment, so that the guides are read with both in mind. The other
-# research views, the user conditions and the commands follow the guides, in this order.
+# research views, the user conditions, the settings and the commands follow the guides, in this order.
 OPENING = ['# Root statement', '# The root in Lean', '# Your assignment']
 VIEWS = ['# Frontier at launch',
          '# Understanding so far of the root problem as a whole (question q0)', '# Board at launch',
-         '# User conditions supplied at launch', '# Executable commands']
+         '# User conditions supplied at launch', '# Settings at launch', '# Executable commands']
 ROOT_RECORD = record_text('The sum of the first n odd numbers equals n times n.', weight='unit',
                           short='odd numbers sum to a square',
                           statement='For every natural number $n$, $1 + 3 + \\dots + (2n - 1) = n^2$.',
@@ -68,7 +68,7 @@ class ContextTests(InstanceCase):
         assemble(self.skill, self.instance, folder, role, {}, job['pipeline'], engine.model['sequence'],
                  engine.settings)
         engine.state['pipelines'][job['pipeline']]['producer'] = sid
-        engine.state['sessions'][sid] = {'id': sid, 'role': role, 'status': 'running', 'job': key}
+        engine.state['sessions'][sid] = session_record(sid, role, key)
         job.update(status='running', session=sid)
         engine.save()
         return folder
@@ -86,7 +86,7 @@ class ContextTests(InstanceCase):
 
     @staticmethod
     def views(folder):
-        """The part of a pack after its guides: the research views, the user conditions and the commands."""
+        """The part of a pack after its guides: the research views, the user conditions, the settings and the commands."""
         text = (folder / 'pack.md').read_text(encoding='utf-8')
         return text[text.rindex('<!-- end '):]
 
@@ -292,14 +292,15 @@ class ContextTests(InstanceCase):
         for name, argv in inp['commands'].items():
             with self.subTest(command=name):
                 self.assertTrue(Path(argv[1]).is_file())
-        # The pack shows the same task, before the guides, and the same commands, after them, so a session
-        # can act from either.
+        # The pack shows the same task, before the guides, and the same settings and commands, after them, so a
+        # session can act from the pack alone.
         pack = (folder / 'pack.md').read_text(encoding='utf-8')
 
         def shown(heading):
             return json.loads(pack.split('\n' + heading + '\n', 1)[1].split('```json\n', 1)[1].split('\n```', 1)[0])
 
         self.assertEqual(shown('# Your assignment'), {'task': task})
+        self.assertEqual(shown('# Settings at launch'), {'settings': inp['settings']})
         self.assertEqual(shown('# Executable commands'), {'commands': inp['commands']})
         self.assertLess(pack.index('\n# Your assignment\n'), pack.index('<!-- begin '))
         self.assertLess(pack.rindex('<!-- end '), pack.index('\n# Executable commands\n'))
@@ -586,12 +587,27 @@ class ContextTests(InstanceCase):
                 self.assertIn('--strict-mcp-config', command.argv)
         with patch.dict(os.environ, {'CLAUDE_CODE_DISABLE_1M_CONTEXT': '1',
                                      'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE': '20',
-                                     'CLAUDE_CODE_AUTO_COMPACT_WINDOW': '200000'}):
-            environment = worker_environment()
-            self.assertNotIn('CLAUDE_CODE_DISABLE_1M_CONTEXT', environment)
-            self.assertNotIn('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', environment)
-            self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '950000')
+                                     'CLAUDE_CODE_AUTO_COMPACT_WINDOW': '200000',
+                                     'DISABLE_AUTO_COMPACT': '1', 'DISABLE_COMPACT': '1'}):
+            # A session that is sent no message keeps its compaction, whatever the operator's shell holds: a
+            # session of the two commands, which gives no folder, and a session without the folder for
+            # messages, as a Codex worker is.
+            for environment in (worker_environment(), worker_environment(folder)):
+                self.assertNotIn('CLAUDE_CODE_DISABLE_1M_CONTEXT', environment)
+                self.assertNotIn('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', environment)
+                self.assertNotIn('DISABLE_AUTO_COMPACT', environment)
+                self.assertNotIn('DISABLE_COMPACT', environment)
+                self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '950000')
             self.assertEqual(os.environ['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '200000')
+            # A session that receives messages is told by its host when its context is nearly full and hands
+            # its task over, so the CLI does not compact its conversation.
+            told = self.root / 'told'
+            told.mkdir()
+            open_messages(told)
+            environment = worker_environment(told)
+            self.assertEqual(environment['DISABLE_AUTO_COMPACT'], '1')
+            self.assertNotIn('CLAUDE_CODE_AUTO_COMPACT_WINDOW', environment)
+            self.assertNotIn('DISABLE_COMPACT', environment)
         with patch.dict(os.environ, {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '32000'}):
             # The worker's output cap is explicit, not the operator's or the CLI default.
             self.assertEqual(worker_environment()['CLAUDE_CODE_MAX_OUTPUT_TOKENS'], '128000')

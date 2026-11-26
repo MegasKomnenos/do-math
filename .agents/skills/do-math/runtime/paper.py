@@ -4596,10 +4596,11 @@ class Paper(Sessions):
         each sentence about a cited work that none of those words supports (cover_section). What is
         reported goes to one narrow repair, which cuts a passage, rewords it, or moves a derivation
         into the proof that uses it (repair_session, move_faults), and whose changes are read
-        (narrow_run). The sections that the repair changed are covered once more, and what is
-        reported then, with what the repair kept in the other sections, is open. No further round
-        follows. A run that was stopped inside the repair, the reading of its changes or the second
-        covering is continued there."""
+        (narrow_run). The sections that the repair changed are covered once more. What is reported
+        then is open, and so is what the repair left open in a section that was not covered again:
+        one that it did not change, or one whose second covering was not made (session). No further
+        round follows. A run that was stopped inside the repair, the reading of its changes or the
+        second covering is continued there."""
         if not self.narrowing(COVERAGE):
             tex, spans, rows = self.assemble()
             rows = [row for row in rows if row['comparison']['verdict'] == 'not compared']
@@ -4635,7 +4636,9 @@ class Paper(Sessions):
         """Sessions that compare the running text of the sections `ids` with the elements, side by side.
 
         Returns for each of these sections what its session reported, in the order of the paper; a
-        section without running text has no session and nothing reported."""
+        section without running text has no session and nothing reported. A section whose comparison
+        was not made (session) is left out: nothing speaks for its text as it stands, so a caller
+        that puts the result in the place of what was open or recorded leaves that section as it was."""
         entries = running_text(self.plan, self.parts, spans)
         sections = [section for section in self.plan['sections'] if section['id'] in ids]
         covered = [section for section in sections if entries[section['id']]]
@@ -4643,13 +4646,15 @@ class Paper(Sessions):
                                      for section in covered])
         found = {section['id']: [] for section in sections}
         found.update({section['id']: result for section, result in zip(covered, results)})
+        found = {sid: findings for sid, findings in found.items() if findings is not None}
         self.event('coverage', round=1 + sum(event['event'] == 'coverage' for event in self.log),
                    sections=[section['id'] for section in covered],
                    uncovered=[finding for findings in found.values() for finding in findings])
         return found
 
     def cover_section(self, section, entries, tex, spans):
-        """One session that compares the running text of one section with the elements; what it reports, as findings."""
+        """One session that compares the running text of one section with the elements; what it reports, as findings,
+        or None when the comparison was not made (session)."""
         elements, numbers = self.layout.elements, {entry['entry']: entry for entry in entries}
         first = section is self.plan['sections'][0]
         # What the cited works say at the places where the records cite them, when the draft carries it: the
@@ -4700,7 +4705,7 @@ class Paper(Sessions):
         found = self.session('cover', prompt, files, read, self.assessor, section['id'],
                              check={None: f'the comparison of the running text of the section "{title}" with the elements'})
         if found is None:
-            return []  # not made (session): nothing is reported for this section, and the record says so
+            return None  # not made (session): the record says so, and cover_sections leaves the section out
 
         def where(entry):
             if entry['part'] == 'abstract':
@@ -4721,7 +4726,8 @@ class Paper(Sessions):
         The sections are those of which a part differs from the text before the repair, which
         <out>/narrow/before holds; the abstract counts with the first section. Returns for each of
         them what is reported now, an empty list where nothing is; narrow_end puts that in the place
-        of what was open in those sections."""
+        of what was open in those sections. A section whose comparison was not made (session) is not
+        among them, so what the repair left open in it stays open."""
         sections = self.plan['sections']
         before = {name: read_file(self.out / 'narrow' / 'before' / (name + '.tex')) for name in self.parts}
         home = {'abstract': sections[0]['id'], **{section['id']: section['id'] for section in sections}}
@@ -4758,9 +4764,10 @@ class Paper(Sessions):
         tex, spans, _ = self.assemble()
         found = self.cover_sections(due, tex, spans)
         with self.lock:
-            # What an earlier comparison of this kind recorded for these sections gives way to what is reported now.
+            # What an earlier comparison of this kind recorded for the sections that were compared now gives way to
+            # what is reported now. For a section whose comparison was not made (session) it stands.
             self.closed = [entry for entry in self.closed if entry['kind'] != 'uncovered'
-                           or home.get(named_part(self.plan, entry.get('section'))) not in due] \
+                           or home.get(named_part(self.plan, entry.get('section'))) not in found] \
                 + [{'kind': 'uncovered', **finding} for findings in found.values() for finding in findings]
             self.save()
 
@@ -4893,12 +4900,14 @@ class Paper(Sessions):
             differing = sum(entry['kind'] == 'differs' or (entry['kind'] == 'restated' and entry['verdict'] != 'same')
                             for entry in self.closed)
             print(f"What the bounded repairs had left open was closed without a person: {count('removed')} passages that "
-                  f"no element covers were taken out, and {count('restated')} statements were restated as their elements "
+                  'no element covers, or that say of a cited work what the words copied from it do not show, were taken '
+                  f"out, and {count('restated')} statements were restated as their elements "
                   'say them; the last `end` event of log.json lists them under "closed".'
                   + (f' The comparison that followed did not find {differing} statements to say what their elements '
                      'say; the same list has each with its verdict.' if differing else '')
                   + (f" In the sections that a repair of the LaTeX changed during that pass, {count('uncovered')} "
-                     'passages of the running text were then found that no element covers; they stay in the paper, '
+                     'passages of the running text were then found that no element covers, or that say of a cited '
+                     'work what the words copied from it do not show; they stay in the paper, '
                      'and the same list has each.' if count('uncovered') else ''))
         if self.kept:
             print(f'{len(self.kept)} findings of the readings were answered with a reason, and the text stays as it is '

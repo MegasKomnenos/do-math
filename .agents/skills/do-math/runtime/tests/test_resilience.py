@@ -15,7 +15,7 @@ import lean_broker
 import runner as runtime
 import runtime_support as support
 from broker_fixture import BrokerFixture
-from support import InstanceCase
+from support import InstanceCase, session_record
 
 
 APPROACH = '''---
@@ -124,6 +124,24 @@ class DirectoryRenameTests(unittest.TestCase):
             finally:
                 if not closed:
                     kernel.CloseHandle(handle)
+
+
+class TreeRemovalTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_a_file_that_a_reader_holds_open_is_removed_once_the_reader_closes_it(self):
+        # The runner removes the stage of a publication with remove_tree, and the finalize command the folders of
+        # a run. Windows refuses to remove a file that another process holds open without delete sharing, as
+        # Python's open does. The removal then waits for the handle, as the removal of one file does (remove_file).
+        with tempfile.TemporaryDirectory() as temp:
+            tree = Path(temp) / 'stage'
+            (tree / 'lean').mkdir(parents=True)
+            (tree / 'lean/Root.lean').write_text('module\n', encoding='utf-8')
+            held = (tree / 'lean/Root.lean').open('rb')
+            self.addCleanup(held.close)
+            with patch('runtime_support.time.sleep', side_effect=lambda seconds: held.close()) as waited:
+                support.remove_tree(tree)
+            self.assertTrue(waited.called)
+            self.assertFalse(tree.exists())
 
 
 class StateFileSharingTests(unittest.TestCase):
@@ -337,11 +355,9 @@ class PeerRecoveryTests(InstanceCase):
         support.write_json(folder / 'input.json', {
             'instance': str(self.instance), 'session': 'speer', 'role': 'peer', 'pipeline': pipeline, 'task': {},
         })
-        engine.state['sessions']['speer'] = {
-            'id': 'speer', 'role': 'peer', 'job': key, 'status': 'running',
-            'provider': 'codex', 'model': 'codex/gpt-6.1-sol', 'started_at': 1,
-            'exit_code': 0, 'retained': True, 'retention': {'cli_activity': True, 'native_activity': False},
-        }
+        engine.state['sessions']['speer'] = session_record(
+            'speer', 'peer', key, started_at=1, exit_code=0, retained=True,
+            retention={'cli_activity': True, 'native_activity': False})
         engine.state['jobs'][key].update(status='running', session='speer')
         engine.save()
         return engine, key, pipeline
@@ -404,6 +420,17 @@ class RecordedFailureTests(InstanceCase):
         self.assertIn('Traceback (most recent call last)', stderr.getvalue())
         self.assertEqual(support.read_json(engine.state_path)['last_error']['error'],
                          'injected failure of another kind')
+
+    def test_the_run_command_that_ends_on_a_failure_exits_with_1_and_gives_the_error_once(self):
+        # start launches the runner through the run command. When a pass fails, the runner writes the call
+        # stack and ends, and the command answers as every command does: exit code 1, and the reason as one
+        # line of JSON on standard error (reference/operations.md, Commands). Only the failing pass is injected.
+        stderr = io.StringIO()
+        with patch.object(runtime.Runner, 'tick', side_effect=RuntimeError('injected failure of a pass')), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
+            self.assertEqual(runtime.main(['run', str(self.instance)]), 1)
+        self.assertIn('Traceback (most recent call last)', stderr.getvalue())
+        self.assertEqual(stderr.getvalue().count('{"error": "injected failure of a pass"}'), 1)
 
 
 class MemoryReserveTests(InstanceCase):

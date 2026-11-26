@@ -253,13 +253,15 @@ def take(index, lean_root, library, root, definitions, allowed):
     removed as a whole: its span, and the lines above it that end with `in` (without_elements).
 
     `allowed` are the axioms the instance allows. One kind of element is never kept for its attribute
-    or because a declaration that is no element names it: a theorem that is not proved from those
-    axioms. A finished research holds such theorems beside the proof of its root, and the frozen
-    library has to be proved throughout; what the root reaches is proved, since the root is. When a
-    file then no longer compiles, the build of step 1 says so, and the restore session deletes the
-    declaration that named the theorem (restored_files). A module stays when it holds a kept element,
-    is a definition module or the root's module, or is imported by a module that stays; every other
-    module is deleted.
+    or because a declaration that is no element names it: an element outside the definition modules
+    for which Lean reports an axiom beyond those. That is a theorem that is not proved from them, and
+    a definition that uses such a theorem or such an axiom. A finished research holds such theorems
+    beside the proof of its root, and the frozen library has to be proved throughout, which it would
+    not be with a definition that kept its theorem in; what the root reaches is proved, since the
+    root is. When a file then no longer compiles, the build of step 1 says so, and the restore session
+    deletes the declaration that named the element (restored_files). A module stays when it holds a
+    kept element, is a definition module or the root's module, or is imported by a module that stays;
+    every other module is deleted.
 
     Returns `kept` and `removed` (names), `spans` (for each removed element of a file that stays its
     file, its span and, under `proved`, whether it is proved from the allowed axioms), `held` (for each
@@ -273,8 +275,8 @@ def take(index, lean_root, library, root, definitions, allowed):
     texts = {module_file(name): read_text(path) for name, path in modules.items()}
     named = attribute_named(texts.values())
     seeds = {root}
-    open_ = {name for name, entry in entries.items() if entry['kind'] == 'theorem'
-             and entry['module'] not in definitions and canon.beyond_allowed(entry, allowed)}
+    open_ = {name for name, entry in entries.items()
+             if entry['module'] not in definitions and canon.beyond_allowed(entry, allowed)}
     for name, entry in entries.items():
         if entry['file'] not in texts:
             raise CanonError(f"the index names {entry['file']} for {name}, and the library has no such file")
@@ -341,9 +343,10 @@ def restored_files(spans, held, before, returned):
         again = [item for item in here if source(item) in text]
         unproved = [item['declaration'] for item in again if not item['proved']]
         if unproved:
-            problems.append(f'lean/{relative} puts back ' + ', '.join(unproved) + ', which the research left without '
-                            'a proof from the allowed axioms. No theorem of the package is left open, so such a theorem '
-                            'stays removed: delete each declaration that is no element and names it')
+            problems.append(f'lean/{relative} puts back ' + ', '.join(unproved) + ', for which removed.json has '
+                            '"proved" as false: a theorem that the research left without a proof from the allowed '
+                            'axioms, or a definition that uses one. No theorem of the package is left open, so such an '
+                            'element stays removed: delete each declaration that is no element and names it')
             continue
         expected = without_elements(before[relative], [item['span'] for item in here if item not in again])
         got, at, gone = squeezed(text), 0, []
@@ -362,7 +365,7 @@ def restored_files(spans, held, before, returned):
         if altered:
             problems.append(f'lean/{relative} no longer holds these elements as they stood: ' + ', '.join(altered)
                             + '. An element that stays keeps every line; what is deleted is a declaration that is no '
-                            'element and rests on a theorem without a proof')
+                            'element and rests on a theorem without a proof or has an open proof of its own')
             continue
         back += [item['declaration'] for item in again]
         files[relative] = text if gone else expected
@@ -997,8 +1000,9 @@ def formalization(title, decision, bibliography, config, licence, models, librar
                   toolchain, stated=None, axioms=()):
     """`formalization.yaml` in the mathlib-initiative format v0.4, as far as the run can fill it.
 
-    `axioms` are the axioms that Lean reports for the compared theorems. The format lists under
-    `status.axioms` every axiom used, the standard ones among them.
+    `axioms` are the axioms that Lean reports for the root and for the main theorem, whether or not
+    the main theorem is compared. The format lists under `status.axioms` every axiom used, the
+    standard ones among them.
 
     The classification, the description, the sources with their notes, the earlier formalisations and
     the account of fidelity (where the Lean statement departs from the proposition in words) are the

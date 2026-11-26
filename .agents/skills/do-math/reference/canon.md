@@ -156,7 +156,7 @@ record parts  statement, explanation, proof, approaches (read one with --part, a
 | `refuted by` | Shown when a settled proof establishes the negation of this statement: the elements that carry that proof. No work on a refuted statement remains. | Computed. |
 | `names refuted` | Shown when the proof of this element names a statement that has since been refuted. The proof cannot become settled as it stands, and the statement needs another one. | Computed. |
 | `questions` | The questions whose statement, grounds or understanding so far name this element between backticks. | The questions. |
-| `concern`, `later review` | Each concern about the element with its status, and each finding of a later review. | Review. |
+| `concern`, `later review` | Each concern about the element with its status, and each finding of a later review. A concern raised before the element's present proof came in has `raised about an earlier proof` beside its status. | Review. |
 | `held by` | One line for each section a session holds on the statement: the session, its role and stage, and whether the section is the whole element, an exact part, or a new statement aimed at it. | The board. |
 | `approach` | One line for each approach tried: its identifier, its title, and the beginning of where it stops. | The approach entries. |
 | `record parts` | Which parts the record has, and how to read them. | The record. |

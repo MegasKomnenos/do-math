@@ -4,8 +4,8 @@ The derivation tests work on small hand-made canons. Each is written as the file
 structural index, the summary of the records, one published change with review's verdicts), and the
 model comes from the real replay, so the tests hold the map to the model the runtime computes. The
 class Page opens the page of a map in a browser and does what a reader does there; it runs only where
-Playwright and a browser it can start are installed. The last class draws the map of an instance
-published through the real path.
+Playwright and a browser it can start are installed. The map of an instance published through the real
+path is drawn in tests/test_views.py, whose tests publish that instance for themselves.
 """
 import contextlib
 import io
@@ -22,7 +22,7 @@ import depmap
 from knowledge import replay
 from runtime_support import read_json, write_json
 from settings import defaults
-from support import ScenarioCase, record_text
+from support import record_text
 
 draw = depmap.drawing()
 SVG = '{http://www.w3.org/2000/svg}'
@@ -786,10 +786,13 @@ class Drawing(MapCase):
         self.addCleanup(temp.cleanup)
         instance = write_canon(Path(temp.name) / 'instance', wide_canon())
         first, second = Path(temp.name) / 'first', Path(temp.name) / 'second'
+        held = lambda: {path.relative_to(instance).as_posix(): path.read_bytes() for path in instance.rglob('*') if path.is_file()}
+        before = held()
         with contextlib.redirect_stdout(io.StringIO()) as shown:
             self.assertEqual(depmap.main([str(instance), '--out', str(first)]), 0)
             self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(second)]), 0)
         self.assertIn('9 units, 15 edges, 3 groups', shown.getvalue())
+        self.assertEqual(held(), before)  # the command reads the instance and writes nothing into it
         for name in ('dependency_map.json', 'dependency_map.svg', 'dependency_map.html'):
             self.assertEqual((first / name).read_bytes(), (second / name).read_bytes(), name)
         # A JSON file that holds no map, such as a list, is refused in the same way as a path that is neither.
@@ -1038,63 +1041,6 @@ class Page(MapCase):
                 self.assertEqual(errors, [])
             finally:
                 browser.close()
-
-
-class PublishedInstance(ScenarioCase):
-    """The map of an instance whose canon was published through candidates, builds and review's verdicts."""
-
-    def run_map(self, *options):
-        out = self.root / ('map-' + '-'.join(option.strip('-') for option in options))
-        with contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(depmap.main([str(self.instance), '--out', str(out), *options]), 0)
-        for name in ('dependency_map.svg', 'dependency_map.html'):
-            self.assertTrue((out / name).is_file())
-        return read_json(out / 'dependency_map.json')
-
-    def test_two_ways_of_proving_the_root(self):
-        self.ways()
-        data = self.run_map()
-        units = {unit['id']: unit for unit in data['units']}
-        # The steps stepE and stepF are folded, and strayS is a unit nothing uses.
-        self.assertEqual(sorted(units), ['Small.colA', 'Small.diagD', 'Small.leafH', 'Small.monoB', 'Small.monoBAlt',
-                                         'Small.oddSum', 'Small.root', 'Small.rootAlt', 'Small.unitG'])
-        edges = {(edge['source'], edge['target']): edge for edge in data['edges']}
-        proof_edges = {pair: (edge['kind'], edge['via']) for pair, edge in edges.items() if edge['kind'] != 'mention'}
-        self.assertEqual(proof_edges, {
-            ('Small.colA', 'Small.root'): ('direct', []),
-            ('Small.monoB', 'Small.root'): ('contracted', ['Small.stepE']),
-            ('Small.unitG', 'Small.root'): ('direct', []),
-            ('Small.rootAlt', 'Small.root'): ('alternative', []),
-            ('Small.colA', 'Small.rootAlt'): ('direct', []),
-            ('Small.diagD', 'Small.rootAlt'): ('direct', []),
-            ('Small.leafH', 'Small.colA'): ('direct', []),
-            ('Small.monoBAlt', 'Small.monoB'): ('alternative', []),
-            ('Small.leafH', 'Small.monoBAlt'): ('direct', [])})
-        # The definition is joined to every statement that mentions it, and to no proof card.
-        self.assertEqual(sorted(target for (source, target), edge in edges.items() if edge['kind'] == 'mention'),
-                         ['Small.colA', 'Small.diagD', 'Small.leafH', 'Small.monoB', 'Small.root', 'Small.unitG'])
-        self.assertEqual(edges[('Small.oddSum', 'Small.diagD')]['proof'], {'direct': False, 'via': ['Small.stepF']})
-        self.assertEqual(sorted(data['folded']), ['Small.stepE', 'Small.stepF'])
-        shown = {name.split('.')[1]: (unit['label'], unit.get('standing'), unit.get('settled'), unit.get('formal'))
-                 for name, unit in units.items()}
-        self.assertEqual(shown, {
-            'oddSum': ('sum of odd numbers', None, None, None),
-            'root': ('odd numbers sum to a square', 'accepted', False, False),
-            'rootAlt': ('rootAlt', 'held', False, False),
-            'colA': ('Col', 'held', False, False),
-            'diagD': ('Diag', 'not_confirmed', False, False),
-            'leafH': ('leafH', 'no_proof', False, False),
-            'monoB': ('Mono', 'no_proof', False, False),
-            'monoBAlt': ('monoBAlt', 'not_confirmed', False, False),
-            'unitG': ('unitG', 'accepted', True, True)})
-        self.assertEqual(units['Small.rootAlt']['proves'], 'Small.root')
-        self.assertEqual(units['Small.colA']['statement'], 'The sum $1 + 3$ equals $4$.')
-        self.assertEqual([group['id'] for group in data['groups']], ['Small'])
-        self.assertEqual((data['root'], data['root_state'], data['scope']), ('Small.root', 'unresolved', 'root'))
-
-        everything = self.run_map('--all')
-        self.assertEqual(sorted(set(unit['id'] for unit in everything['units']) - set(units)), ['Small.strayS'])
-        self.assertEqual(everything['scope'], 'all')
 
 
 if __name__ == '__main__':

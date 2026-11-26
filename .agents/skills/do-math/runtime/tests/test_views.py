@@ -1,4 +1,7 @@
-"""The derived views of the research and the text views a session reads the canon through."""
+"""The derived views of the research, the text views a session reads the canon through, and the dependency map of a
+published instance."""
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +11,7 @@ from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
+import depmap
 import knowledge
 from canon import Canon
 from coordination import board, lease, lease_table, wait
@@ -511,6 +515,43 @@ class CanonToolTests(ScenarioCase):
         self.assertNotIn('record replaced', self.tool('view', 'Small.root', '--full'))
         self.assertEqual(self.tool('view', 'Small.leafH', '--part', 'history'), 'No history.\n')
 
+    def test_a_concern_stays_with_the_proof_it_was_raised_about_when_that_proof_is_replaced(self):
+        # One concern is raised about the proofs of `colA` and `diagD` and another about that of `colA` alone, and a
+        # comprehensive review confirms the first and withdraws the confirmation of `colA`. A later change gives
+        # `colA` another proof, which its review confirms and accepts. Neither concern was raised about that proof:
+        # the first stands on the frontier against `diagD` alone, the second has left the frontier and no
+        # comprehensive review is assigned to it, and the view of `colA` marks both.
+        self.ways()
+        gap, order = 'A boundary case needs checking.', 'The two terms are added in the wrong order.'
+        self.event('v1', 'review', comprehensive(concerns=[
+            {'id': 'gap', 'targets': ['Small.colA', 'Small.diagD'], 'reason': gap, 'evidence': 'The case n = 0.'},
+            {'id': 'order', 'targets': ['Small.colA'], 'reason': order, 'evidence': 'The second line of the proof.'}]))
+        self.event('v2', 'review', comprehensive([finding('The merged case fails at the boundary.', concerns=['v1/gap'],
+                                                          invalidates=['Small.colA'])]))
+        self.assertIn(f'\n## Concerns\n\n- v1/gap on `Small.colA`, `Small.diagD`: {gap} (confirmed)\n'
+                      f'- v1/order on `Small.colA`: {order} (pending)\n', self.tool('frontier'))
+        self.assertIn('concern       v1/gap (confirmed): ' + gap, self.tool('view', 'Small.colA').splitlines())
+        self.replace_proof('Small.colA', theorem('colA', ': oddSum 2 = 4', uses=['leafH']), 'Add three to one.',
+                           description='The first two odd numbers sum to four.')
+        lines = self.tool('view', 'Small.colA').splitlines()
+        self.assertEqual(lines[0], 'Small.colA · theorem · unit · accepted — The first two odd numbers sum to four.')
+        self.assertIn('concern       v1/gap (confirmed, raised about an earlier proof): ' + gap, lines)
+        self.assertIn('concern       v1/order (pending, raised about an earlier proof): ' + order, lines)
+        self.assertIn('concern       v1/gap (confirmed): ' + gap, self.tool('view', 'Small.diagD').splitlines())
+        text = self.tool('frontier')
+        self.assertIn(f'\n## Concerns\n\n- v1/gap on `Small.diagD`: {gap} (confirmed)\n\nElements of this view', text)
+        self.assertNotIn('v1/order', text)
+        # `commands.updates` gives a session the concerns of the same model: the elements each was raised about, and
+        # under `earlier` those of them whose present proof came in after it.
+        self.assertEqual({cid: (concern['targets'], concern['earlier'])
+                          for cid, concern in knowledge.replay(self.instance)['concerns'].items()},
+                         {'v1/gap': (['Small.colA', 'Small.diagD'], ['Small.colA']),
+                          'v1/order': (['Small.colA'], ['Small.colA'])})
+        runner = Runner(self.instance, self.skill)
+        runner.populate()
+        [job] = [j for j in runner.state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
+        self.assertEqual(job['task']['concerns'], ['v1/gap'])
+
     def test_the_history_of_an_element_leaves_out_the_elements_whose_names_extend_the_name(self):
         # `Small.root.even` is an element of its own, and its history folder lies inside that of `Small.root`.
         # Its history gives what its replaced proof left and the approach entry that was set aside when its
@@ -731,6 +772,63 @@ class CanonToolTests(ScenarioCase):
         # A number below 1 names no recent changes; read as a slice it would print every change.
         self.assertEqual(json.loads(self.tool('log', '--last', '0', code=1)),
                          {'error': '--last takes the number of recent changes to print, 1 or more'})
+
+
+class DependencyMapTests(ScenarioCase):
+    """The map of an instance whose canon was published through candidates, builds and review's verdicts."""
+
+    def run_map(self, *options):
+        out = self.root / ('map-' + '-'.join(option.strip('-') for option in options))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(depmap.main([str(self.instance), '--out', str(out), *options]), 0)
+        for name in ('dependency_map.svg', 'dependency_map.html'):
+            self.assertTrue((out / name).is_file())
+        return read_json(out / 'dependency_map.json')
+
+    def test_two_ways_of_proving_the_root(self):
+        self.ways()
+        data = self.run_map()
+        units = {unit['id']: unit for unit in data['units']}
+        # The steps stepE and stepF are folded, and strayS is a unit nothing uses.
+        self.assertEqual(sorted(units), ['Small.colA', 'Small.diagD', 'Small.leafH', 'Small.monoB', 'Small.monoBAlt',
+                                         'Small.oddSum', 'Small.root', 'Small.rootAlt', 'Small.unitG'])
+        edges = {(edge['source'], edge['target']): edge for edge in data['edges']}
+        proof_edges = {pair: (edge['kind'], edge['via']) for pair, edge in edges.items() if edge['kind'] != 'mention'}
+        self.assertEqual(proof_edges, {
+            ('Small.colA', 'Small.root'): ('direct', []),
+            ('Small.monoB', 'Small.root'): ('contracted', ['Small.stepE']),
+            ('Small.unitG', 'Small.root'): ('direct', []),
+            ('Small.rootAlt', 'Small.root'): ('alternative', []),
+            ('Small.colA', 'Small.rootAlt'): ('direct', []),
+            ('Small.diagD', 'Small.rootAlt'): ('direct', []),
+            ('Small.leafH', 'Small.colA'): ('direct', []),
+            ('Small.monoBAlt', 'Small.monoB'): ('alternative', []),
+            ('Small.leafH', 'Small.monoBAlt'): ('direct', [])})
+        # The definition is joined to every statement that mentions it, and to no proof card.
+        self.assertEqual(sorted(target for (source, target), edge in edges.items() if edge['kind'] == 'mention'),
+                         ['Small.colA', 'Small.diagD', 'Small.leafH', 'Small.monoB', 'Small.root', 'Small.unitG'])
+        self.assertEqual(edges[('Small.oddSum', 'Small.diagD')]['proof'], {'direct': False, 'via': ['Small.stepF']})
+        self.assertEqual(sorted(data['folded']), ['Small.stepE', 'Small.stepF'])
+        shown = {name.split('.')[1]: (unit['label'], unit.get('standing'), unit.get('settled'), unit.get('formal'))
+                 for name, unit in units.items()}
+        self.assertEqual(shown, {
+            'oddSum': ('sum of odd numbers', None, None, None),
+            'root': ('odd numbers sum to a square', 'accepted', False, False),
+            'rootAlt': ('rootAlt', 'held', False, False),
+            'colA': ('Col', 'held', False, False),
+            'diagD': ('Diag', 'not_confirmed', False, False),
+            'leafH': ('leafH', 'no_proof', False, False),
+            'monoB': ('Mono', 'no_proof', False, False),
+            'monoBAlt': ('monoBAlt', 'not_confirmed', False, False),
+            'unitG': ('unitG', 'accepted', True, True)})
+        self.assertEqual(units['Small.rootAlt']['proves'], 'Small.root')
+        self.assertEqual(units['Small.colA']['statement'], 'The sum $1 + 3$ equals $4$.')
+        self.assertEqual([group['id'] for group in data['groups']], ['Small'])
+        self.assertEqual((data['root'], data['root_state'], data['scope']), ('Small.root', 'unresolved', 'root'))
+
+        everything = self.run_map('--all')
+        self.assertEqual(sorted(set(unit['id'] for unit in everything['units']) - set(units)), ['Small.strayS'])
+        self.assertEqual(everything['scope'], 'all')
 
 
 if __name__ == '__main__':

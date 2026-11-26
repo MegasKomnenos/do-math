@@ -9,6 +9,7 @@ from urllib.parse import quote, unquote
 
 from canon import Canon, declaration_text
 from runtime_support import read_json, write_json, write_text
+from settings import PRODUCERS
 
 
 RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
@@ -114,7 +115,7 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
              'Read this complete context before working. It begins with the proposition this instance exists to settle '
              'and with your assignment. The guides that explain your role follow; copies of their references are under '
              'context/reference/ in your session folder. After the guides come the research as it stood at your launch, '
-             'the user conditions and the commands.', '']
+             'the user conditions, the settings and the commands.', '']
     parts += view('Root statement', instance / 'root.md')
     # instance.json names the root and its library, and its folder, the instance, is the base of the path
     # that root_in_lean gives for the root's file.
@@ -130,6 +131,16 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
               f'This is `task` from input.json{omitted}. Your role guide explains its fields. Where it names no work, '
               'your role chooses its own.', '',
               '```json', json.dumps({'task': shown}, ensure_ascii=False, indent=2), '```', '']
+    if task.get('continues'):
+        # The job's last session handed the task over, or its conversation reached the limit of its window
+        # (Runner.hand_over). The session reads here what `continues` is and where the work stands.
+        report = Path(task['continues'][-1]) / ('output/report.md' if role in PRODUCERS else 'work/report.md')
+        parts += ['You continue a task on which earlier sessions of your role worked. Each of them ended because '
+                  'its conversation was nearly full while its work was not done. `continues` in the assignment '
+                  'above lists their session folders, oldest first. The state in which the last of them left the '
+                  f'work is in its report, {report}, as far as that session came to write it; start there. '
+                  '"Handing a task over to a new session" in context/reference/retained-work.md describes what '
+                  'you are given and what your own report is to hold.', '']
     for name in documents:
         source = context / name
         body = source.read_text(encoding='utf-8-sig')
@@ -145,9 +156,15 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
               'Mathematical suggestions remain suggestions; they do not certify claims.']
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
-    parts += ['', '# Executable commands', '',
-              'These are `commands` from input.json; that file also holds your session identity, settings and '
-              'user-condition snapshot.', '',
+    # The settings stand in the pack with the assignment, the user conditions and the commands, so that the pack
+    # shows every value the guides name in input.json and a session has no cause to read that file as well.
+    parts += ['', '# Settings at launch', '',
+              'These are `settings` from input.json, the settings of the instance in force at your launch.', '',
+              '```json', json.dumps({'settings': settings}, ensure_ascii=False, indent=2), '```',
+              '', '# Executable commands', '',
+              'These are `commands` from input.json. That file also holds your session identity; its `task`, '
+              '`user_inputs` and `settings` are the assignment, the user-condition snapshot and the settings that '
+              'this pack shows.', '',
               '```json', json.dumps({'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     pack = '\n'.join(parts)
     write_text(session / 'pack.md', pack)
@@ -159,5 +176,6 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
                f'Read {session / "pack.md"} in full, then carry out the role it describes. The file has {lines} '
                f'lines in {size} bytes, more than a reading tool returns in one call, so read it in consecutive '
                'ranges of lines until its last line.\n'
-               f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n')
+               'The pack shows your assignment, the user conditions, the settings and the commands. '
+               f'{session / "input.json"} holds these four as data for the programs you call.\n')
     return inp

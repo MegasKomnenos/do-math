@@ -166,6 +166,14 @@ def kept_copy(instance, prefix):
     return base / 'instance'
 
 
+def session_record(sid, role, job, status='running', **fields):
+    """A session's entry in the runner's state, with every key that dispatch writes (Runner.dispatch).
+
+    `fields` replace a value given here or add a key that a later step of the runner writes, such as `exit_code`."""
+    return {'id': sid, 'role': role, 'job': job, 'status': status, 'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh',
+            'provider': 'codex', 'started_at': time.time(), 'host': None, 'cli': None, 'record': None, **fields}
+
+
 _TEMPLATES = {}
 _SCENARIOS = {}
 
@@ -374,9 +382,7 @@ class InstanceCase(unittest.TestCase):
         state['jobs'][key] = {'id': key, 'role': 'review', 'pipeline': pid, 'status': 'running', 'session': review,
                               'retries': 0, 'not_before': 0, 'task': task}
         for sid, session_role, job in ((producer, role, pid + ':producer'), (peer, 'peer', key), (review, 'review', key)):
-            state['sessions'][sid] = {'id': sid, 'role': session_role, 'job': job, 'status': 'ended', 'model': 'codex/test',
-                                      'effort': 'low', 'provider': 'codex', 'started_at': time.time(), 'host': None,
-                                      'cli': None, 'record': None}
+            state['sessions'][sid] = session_record(sid, session_role, job, 'ended', model='codex/test', effort='low')
         state['sessions'][review]['status'] = 'publishing'
         state['publish_queue'].append({'session': review, 'job': key, 'kind': 'change'})
         engine.save()
@@ -452,9 +458,7 @@ class InstanceCase(unittest.TestCase):
         self.assertEqual(check_session(session), [])
         state['jobs'][key] = {'id': key, 'role': 'organizer', 'pipeline': None, 'status': 'running', 'session': sid,
                               'retries': 0, 'not_before': 0, 'task': task}
-        state['sessions'][sid] = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'publishing',
-                                  'model': 'codex/test', 'effort': 'low', 'provider': 'codex',
-                                  'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
+        state['sessions'][sid] = session_record(sid, 'organizer', key, 'publishing', model='codex/test', effort='low')
         state['publish_queue'].append({'session': sid, 'job': key, 'kind': 'organization'})
         engine.save()
         self.drain(engine)
@@ -487,9 +491,7 @@ class InstanceCase(unittest.TestCase):
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
                                            'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
         engine.state['pipelines'][job['pipeline']]['producer'] = sid
-        engine.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running',
-                                         'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh', 'provider': 'codex',
-                                         'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
+        engine.state['sessions'][sid] = session_record(sid, role, key)
         job.update(status='running', session=sid)
         engine.save()
         return folder
@@ -565,8 +567,7 @@ class ScenarioCase(InstanceCase):
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'peer',
                                            'pipeline': pipeline, 'task': {}, 'user_inputs': []})
         engine.state['pipelines'][pipeline].update(peer=sid, stage='peer')
-        engine.state['sessions'][sid] = {'id': sid, 'role': 'peer', 'status': 'running', 'job': 'peerjob',
-                                         'host': None, 'cli': None}
+        engine.state['sessions'][sid] = session_record(sid, 'peer', 'peerjob')
         engine.save()
         return folder
 

@@ -846,6 +846,11 @@ class ManuscriptTests(PaperCase):
         self.assertIn('\\ref{lem:missing} points to a label', self.problems(proof=PROOF + 'See Lemma~\\ref{lem:missing}.\n'))
         self.assertIn('\\cite{gauss} is not a key of the bibliography', self.problems(proof=PROOF + 'See \\cite[p.~1]{gauss}.\n'))
         self.assertIn('\\label{lem:square} is defined more than once', self.problems(proof=PROOF + '\\label{lem:square}\n'))
+        # A label of the plan stays with the section that the plan gives it to, also where an earlier part defines it
+        # as well: the finding goes to that other part, whose session can take another label.
+        twice = paper.machine_findings(self.found, PLAN, {**PARTS, 'intro': INTRO + '\\label{lem:square}\n'})
+        self.assertEqual([finding['part'] for finding in twice], ['intro'])
+        self.assertIn('\\label{lem:square} is defined more than once, here and in tools', twice[0]['problem'])
         # Every numbered statement is one of the plan, and every one of the plan is there.
         extra = '\\begin{proposition}\\label{prop:own}\nA claim of the writer.\n\\end{proposition}\n'
         self.assertIn('the proposition numbered 3.1 with \\label{prop:own} is not a numbered statement of the plan',
@@ -4791,6 +4796,28 @@ class SafeguardTests(PaperCase):
         self.assertEqual((end['status'], [(item['check'], item['problems']) for item in end['open']], 'not_done' in end),
                          ('open_findings', [(paper.COMPARISON, [{'label': found['label'], 'difference': found['difference']}])],
                           False))
+
+    def test_a_sentence_that_the_repair_kept_stays_open_when_the_next_comparison_of_its_section_is_not_made(self):
+        even = 'Moreover $S_n$ is even whenever $n$ is even.'
+        second = {**UNCOVERED, 'entry': 3, 'quote': even, 'asserts': 'The sums of an even number of terms are even.',
+                  'difference': 'No element speaks of parity.'}
+        script = asserting()
+        # The section ends with two sentences that no element covers. The repair cuts the first and keeps the second,
+        # and the comparison of the section that follows the repair is stopped in each of its attempts.
+        script['write:tools'] = [{'output/tools.tex': TOOLS_SHARP + '\n' + even + '\n'}]
+        script['cover:tools'] = [{'output/coverage.json': json.dumps([UNCOVERED, second])}] + self.STOPPED
+        script['repair:narrow'] = [{'output/tools.tex': TOOLS + '\n' + even + '\n',
+                                    'output/response.json': answers('revised', 'kept')}]
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 2)
+        self.assertEqual(len([call for call in self.calls('cover') if call['section'] == 'tools']), 3)
+        self.assertEqual(self.part('tools'), TOOLS + '\n' + even + '\n')
+        # No comparison spoke for the section as it now stands, so the sentence that the repair kept is open with
+        # the reason of the repair, and the comparison is listed as not made.
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('open_findings', [{'check': paper.COVERAGE, 'after_repairs': 1, 'problems': [
+            {**REPORTED, 'quote': even, 'asserts': second['asserts'], 'difference': second['difference'],
+             'open_because': paper.KEPT + 'kept 2'}]}]))
+        self.assertEqual([(entry['kind'], entry['section']) for entry in end['not_done']], [('cover', 'tools')])
 
     def test_a_reading_that_is_not_made_ends_the_readings_and_unread_changes_stay(self):
         script = asserting()  # the repair of the running text cuts a sentence, and a session reads the change

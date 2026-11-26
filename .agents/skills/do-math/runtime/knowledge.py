@@ -78,7 +78,29 @@ def new_model(instance, index=None):
 def add_concerns(model, values, source):
     for item in values:
         cid = source + '/' + item['id']
-        model['concerns'][cid] = {**deepcopy(item), 'id': cid, 'source': source, 'status': 'pending'}
+        model['concerns'][cid] = {**deepcopy(item), 'id': cid, 'source': source, 'status': 'pending', 'earlier': []}
+
+
+def proof_changed(model, name, moved_from=None):
+    """Note on the concerns raised so far that an element holds another proof than the one it had.
+
+    A concern is about the proof it was raised about. It keeps under `targets` the elements it named and
+    names under `earlier` those of them whose present proof came in after it: the frontier view lists it
+    against the others only, and the view of an element marks it (frontier_notes, canon_tool.view). Replay
+    applies the publications in their order, so the concerns in the model at this point are those that
+    earlier publications carried; the concerns of the publication that brings the proof are added after it.
+
+    With `moved_from`, the proof `name` holds now is the one that stood under that declaration until an
+    organizer retired it. A concern about that proof names `name` in its place and stays a concern about
+    the present proof, and a concern about the proof `name` had until then is about an earlier one."""
+    for concern in model['concerns'].values():
+        targets = concern['targets']
+        if name not in targets and moved_from not in targets:
+            continue
+        follows = moved_from in targets and moved_from not in concern['earlier']
+        concern['targets'] = list(dict.fromkeys(name if target == moved_from else target for target in targets))
+        concern['earlier'] = ([target for target in concern['earlier'] if target not in (name, moved_from)]
+                              + ([] if follows else [name]))
 
 
 def apply_findings(model, findings, source, followup=True):
@@ -140,6 +162,9 @@ def change_event(model, event, folder):
     change = read_json(folder / 'change.json')
     cid = event['id']
     judged = {v['element']: v for v in assessment['elements']}
+    # The concerns raised so far were raised about the proofs these declarations had until now.
+    for name in applied['replaced']:
+        proof_changed(model, name)
     for name in applied['added'] + applied['replaced']:
         verdict = judged.get(name)
         if verdict is not None:
@@ -203,6 +228,9 @@ def organization_event(model, event, folder):
             model['verdicts'][item['into']] = {**verdict, 'element': item['into']}
         else:
             model['verdicts'].pop(item['into'], None)
+        # The concerns about that proof go with it; those about the proof the statement's own declaration had
+        # were raised about an earlier proof.
+        proof_changed(model, item['into'], item['alternative'])
     model['organized'] = sorted(set(model['organized']) | set(data['batch']))
 
 
@@ -611,18 +639,23 @@ def frontier_lines(model, holders=None):
 
 
 def frontier_notes(model, investigation=None):
-    """What stands beside the lines of the frontier: contested statements and the concerns not yet cleared."""
+    """What stands beside the lines of the frontier: contested statements and the concerns not yet cleared.
+
+    A concern is listed against the elements whose present proof it was raised about, and it is not listed
+    once every proof it was raised about has been replaced (proof_changed)."""
     lines = []
     if model['contested']:
         lines += ['', 'Contested: a statement and its negation both carry settled proofs, and nothing rests on either '
                   'until a comprehensive review locates the failure: '
                   + ', '.join('`' + s + '`' for s in model['contested']) + '.']
-    pending = [c for c in model['concerns'].values() if c['status'] != 'cleared']
+    pending = [(concern, [name for name in concern['targets'] if name not in concern['earlier']])
+               for concern in model['concerns'].values() if concern['status'] != 'cleared']
+    pending = [(concern, targets) for concern, targets in pending if targets]
     if pending:
         lines += ['', '## Concerns', '']
-        for concern in pending:
+        for concern, targets in pending:
             tail = f"; comprehensive review {investigation(concern['id'])}" if investigation else ''
-            lines.append(f"- {concern['id']} on {', '.join('`' + t + '`' for t in concern['targets'])}: "
+            lines.append(f"- {concern['id']} on {', '.join('`' + t + '`' for t in targets)}: "
                          f"{concern['reason']} ({concern['status']}){tail}")
     return lines
 

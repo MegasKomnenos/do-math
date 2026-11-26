@@ -23,8 +23,8 @@ from runner import Runner, archive_finished, initialize, main, start, status
 from runtime_support import InstanceLock, alive, read_json, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
-                     ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, stop_broker, take,
-                     theorem, write_canon)
+                     ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, session_record,
+                     stop_broker, take, theorem, write_canon)
 
 
 def concern(cid, *targets):
@@ -81,7 +81,7 @@ def publish_comprehensive(runner, job, data):
     output.mkdir(parents=True)
     write_json(output / 'assessment.json', data)
     (output / 'feedback.md').write_text('What the tracing found.', encoding='utf-8')
-    runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
+    runner.state['sessions'][sid] = session_record(sid, 'review', job['id'])
     job.update(status='running', session=sid)
     runner.prepare_publication(sid, job, 'review')
     runner.publish()
@@ -1251,8 +1251,7 @@ class RunnerTests(ScenarioCase):
         (folder / 'cli.stdout.jsonl').write_text(json.dumps(
             {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Organization attempted.'}}), encoding='utf-8')
         (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
-        session = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'running',
-                   'provider': 'codex', 'model': 'codex/gpt-6.1-sol', 'started_at': 900, 'exit_code': 0}
+        session = session_record(sid, 'organizer', key, started_at=900, exit_code=0)
         runner.state['sessions'][sid] = session
         job = runner.state['jobs'][key]
         job.update(status='running', session=sid)
@@ -1669,15 +1668,23 @@ class RunnerTests(ScenarioCase):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
         runner.finish(sid, session)
-        work = runner.session_dir(sid) / 'work'
-        # The producer has ended, but its peer still has to read the retained work.
+        folder = runner.session_dir(sid)
+        work, stream = folder / 'work', folder / 'cli.stdout.jsonl'
+        # The producer has ended, but its peer still has to read the retained work and can open the raw conversation.
         archive_finished(self.instance)
         self.assertTrue((work / 'notes.md').is_file())
+        self.assertTrue(stream.is_file())
         runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
         runner.save()
         archive_finished(self.instance)
         self.assertFalse(work.exists())
-        self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
+        self.assertTrue((folder / 'work.tar.xz').is_file())
+        # The raw conversation is packed in the same pass. The readable conversation stays, and so does the
+        # receipt, which names the stream by the path it has inside raw.tar.xz.
+        self.assertFalse(stream.exists())
+        self.assertTrue((folder / 'raw.tar.xz').is_file())
+        self.assertIn('A retained observation.', (folder / 'conversation.md').read_text(encoding='utf-8'))
+        self.assertEqual(read_json(folder / 'retention.json')['streams'], ['cli.stdout.jsonl', 'cli.stderr.log'])
 
     def test_a_session_whose_work_cannot_be_archived_does_not_keep_the_archiver_from_the_next(self):
         # The archiver leaves in place a work/ that it cannot verify, writes the session and the error to its
@@ -1702,6 +1709,9 @@ class RunnerTests(ScenarioCase):
         self.assertEqual((folders['sattempt'] / 'work.tar.xz').read_bytes(), b'no archive')
         self.assertFalse((folders['sexplore'] / 'work').exists())
         self.assertTrue((folders['sexplore'] / 'work.tar.xz').is_file())
+        # What kept the work of the first session from being packed does not keep its raw conversation in place.
+        self.assertFalse((folders['sattempt'] / 'cli.stdout.jsonl').exists())
+        self.assertTrue((folders['sattempt'] / 'raw.tar.xz').is_file())
 
     def test_final_archive_request_is_dispatched_before_runner_exit(self):
         self.formal()
@@ -2435,6 +2445,12 @@ class RunnerTests(ScenarioCase):
         runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
         reported = status(self.instance)
         self.assertEqual((reported['runner_alive'], reported['stopped']), (False, False))  # no runner was started yet
+        # `lean` is the broker's own account of this instance (lean_broker.broker_status), where
+        # reference/operations.md has the operator read the compiles that wait, under `lean.queued`.
+        broker = Paths(self.instance)
+        self.assertEqual((reported['lean']['instance'], reported['lean']['calibration']),
+                         (str(broker.instance), str(broker.calibration)))
+        self.assertIn('queued', reported['lean'])
         with patch('runner.subprocess.Popen'), patch('builtins.print') as shown:
             self.assertEqual(main(['stop', str(self.instance)]), 0)
             runner.run('token-1')

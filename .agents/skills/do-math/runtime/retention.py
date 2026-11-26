@@ -32,7 +32,9 @@ def conversation(source, destination, native, *, append=False, label=None, note=
     # written as that escape (backslashreplace), so that one such character does not keep the rest from being retained.
     with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', errors='backslashreplace', newline='\n') as out:
         if not append:
-            out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport remains in the named source files.\n\n')
+            out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport is in the '
+                      'named source files. They stand in this folder until the work of the session has finished '
+                      'processing, and from then on inside raw.tar.xz in this folder, under the same paths.\n\n')
             if note:
                 out.write(note + '\n\n')
         for number, line in enumerate(inp, 1):
@@ -251,6 +253,19 @@ def output_limit(session, provider):
         elif message is None:
             message = 'max_output_tokens'
     return message
+
+
+def context_limit(session, provider):
+    """Whether a Claude turn ended because its conversation had reached the limit of the context window.
+
+    With automatic compaction off (launch.worker_environment) the CLI shortens nothing: it refuses the
+    request that no longer fits, and the result of the turn names that ground. The conversation and the
+    files are as they were. No provider and no model refused anything, and `refusal` below gives no signal
+    for such a turn."""
+    if provider != 'claude':
+        return False
+    return any(event.get('type') == 'result' and event.get('terminal_reason') == 'blocking_limit'
+               for event in events(Path(session) / 'cli.stdout.jsonl'))
 
 
 def refusal(session, provider, model, started, retry_seconds):

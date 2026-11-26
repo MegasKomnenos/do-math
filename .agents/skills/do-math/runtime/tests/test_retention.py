@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from retention import capture, conversation, output_limit, refusal
-from runtime_support import archive_work
+from runtime_support import archive_raw, archive_work
 
 
 class ArchiveTests(unittest.TestCase):
@@ -155,6 +155,46 @@ class ArchiveTests(unittest.TestCase):
                     self.assertFalse((session / 'work.tar.xz.part').exists())
             self.assertEqual((inner / 'work/notes.md').read_bytes(), b'Original mathematics')
             self.assertEqual((outside / 'shared.md').read_bytes(), b'Mathematics outside the session')
+
+    def test_the_raw_conversation_is_replaced_by_its_archive_and_everything_else_stays(self):
+        # The raw conversation is the CLI stream of each turn and the copied transcript file. What a reader
+        # opens first stays in the folder: the readable conversation, the receipt that names the raw files,
+        # the folder the readable conversation points into, and whatever else a turn left.
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        raw = {'cli.stdout.jsonl': b'{"type": "assistant"}\n' * 400,
+               'turns/0001/cli.stdout.jsonl': 'A resumed turn about ℕ.\n'.encode('utf-8'),
+               'transcript-' + identity + '.jsonl': bytes(range(256)) * 300}
+        kept = {'cli.stderr.log': b'', 'turns/0001/prompt.txt': b'Resume.',
+                'conversation.md': b'# Retained conversation\n', 'retention.json': b'{}',
+                'transcript-' + identity + '/subagents/agent-a1.jsonl': b'{"type": "assistant"}\n',
+                'output/report.md': b'Retained report'}
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            for name, content in {**raw, **kept}.items():
+                (session / name).parent.mkdir(parents=True, exist_ok=True)
+                (session / name).write_bytes(content)
+            self.assertTrue(archive_raw(session))
+            for name in raw:
+                self.assertFalse((session / name).exists(), name)
+            for name, content in kept.items():
+                self.assertEqual((session / name).read_bytes(), content, name)
+            with tarfile.open(session / 'raw.tar.xz', 'r:xz') as archive:
+                self.assertEqual(sorted(archive.getnames()), sorted(raw))
+                for name, content in raw.items():
+                    self.assertEqual(archive.extractfile(name).read(), content, name)
+            self.assertFalse((session / 'raw.tar.xz.part').exists())
+            saved = (session / 'raw.tar.xz').read_bytes()
+            self.assertFalse(archive_raw(session))
+            # A removal interrupted partway leaves a raw file that the archive already holds.
+            (session / 'cli.stdout.jsonl').write_bytes(raw['cli.stdout.jsonl'])
+            self.assertTrue(archive_raw(session))
+            self.assertFalse((session / 'cli.stdout.jsonl').exists())
+            # A raw file that the archive does not hold as it stands is kept, and so is the archive.
+            (session / 'cli.stdout.jsonl').write_bytes(b'A stream that the archive does not hold')
+            with self.assertRaisesRegex(RuntimeError, 'does not match'):
+                archive_raw(session)
+            self.assertEqual((session / 'cli.stdout.jsonl').read_bytes(), b'A stream that the archive does not hold')
+            self.assertEqual((session / 'raw.tar.xz').read_bytes(), saved)
 
 
 class RetentionTests(unittest.TestCase):

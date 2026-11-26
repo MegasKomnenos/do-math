@@ -818,7 +818,7 @@ class BrokerTests(BrokerFixture):
 
     def test_unrunnable_calibration_releases_its_waiting_job(self):
         # A Lean that cannot start gives no calibration verdict; the waiting compile must still reach its own outcome.
-        self.write_settings(command=[str(self.root / "no-such-lean")])
+        self.write_settings(command=[str(self.root / "no-such-lean")], priority="idle")
         self.start_broker()
         job_id = self.submit(self.session_file("s1"), expect_mb=40)
         self.until(lambda: self.finished(job_id))
@@ -828,6 +828,10 @@ class BrokerTests(BrokerFixture):
         self.assertIsNone(self.broker.calibration.entry(job["closure"]))  # nothing recorded: a later compile calibrates again
         self.assertEqual((job["status"], job["exit_code"]), ("failed", None))
         self.assertTrue(job["launch_error"])
+        # lean.priority reaches a compile through the launch file that the broker writes for its host; what the host
+        # then asks of the system is read in JobHostTests. No Lean starts here, so nothing runs at the lowered priority.
+        launches = [runtime_support.read_json(self.paths.job(j["id"]) / "launch.json") for j in calibrations + [job]]
+        self.assertEqual([launch["priority"] for launch in launches], ["idle", "idle"])
 
     def test_crashed_calibration_is_not_a_verdict_on_its_imports(self):
         # Lean rejecting the imports is recorded for the closure. A calibration ended by a signal or by a
@@ -2008,8 +2012,6 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(status["config"]["memory_budget_mb"], self.budget)
         self.assertIn("4.0.0-fake", json.loads(self.cli("version", str(self.instance)).stdout)["version"])
         self.assertIn("4.0.0-fake", status["version"])
-        # The runner's `status` carries this same object as its `lean` entry.
-        self.assertEqual(lean_broker.broker_status(self.paths)["version"], status["version"])
         # `cancel` answers through the command line too. The job has ended, so it is reported as it ended;
         # an ID that names no job is refused.
         cancelled = self.cli("cancel", str(self.instance), summary["job"])

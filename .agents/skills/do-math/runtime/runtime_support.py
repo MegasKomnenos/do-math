@@ -568,14 +568,43 @@ def remove_tree(path):
     and shutil.copytree keeps the flag in its copy. No caller needs the tree it removes: a finished
     work/ whose files are in its verified archive, a staging copy of files that remain where they were
     copied from, a folder that the finalize command made and makes again or has finished with, the
-    fixture of a test. The flag protects nothing there, so it is cleared where Windows refuses."""
+    fixture of a test. The flag protects nothing there, so it is cleared where Windows refuses. Windows refuses
+    in the same way a file or directory that another process holds for a moment, and the removal then waits
+    for it as the removal of one file does (_retried)."""
     def clear_read_only(function, name, error):
         if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
             raise error
         os.chmod(name, stat.S_IWRITE)
-        function(name)
+        _retried(function, name)
     shutil.rmtree(path, onexc=clear_read_only)
 
+
+
+def _packed(session, name, entries):
+    """Whether the archive `name` of a session holds every entry intact; where there is no archive, it is written first.
+
+    `entries` is what the caller read in the session folder: archive name -> SHA-256 of a file, None for a
+    directory. An existing archive is never overwritten. A new one is written beside its place, read back,
+    and moved into its place only if it holds exactly the entries, so that no archive stands for files it
+    does not hold. The caller removes the originals only when this returns True."""
+    archive = session / name
+    if archive.exists():
+        stored = _archive_entries(archive)
+    else:
+        part = session / (name + ".part")
+        try:
+            with tarfile.open(part, "w:xz", preset=ARCHIVE_PRESET) as tar:
+                for entry in entries:
+                    tar.add(session / entry, arcname=entry, recursive=False)
+            stored = _archive_entries(part)
+            if stored == entries:
+                # On disk before the originals are removed: the check above read the archive back from the system's cache.
+                with part.open("rb+") as stream:
+                    os.fsync(stream.fileno())
+                os.replace(part, archive)
+        finally:
+            part.unlink(missing_ok=True)
+    return all(stored.get(entry, "missing") == value for entry, value in entries.items())
 
 
 def archive_work(session):
@@ -585,29 +614,38 @@ def archive_work(session):
     An existing archive is never overwritten: work/ left by an interrupted removal
     must already be inside it, otherwise both are kept and the mismatch is raised.
     """
-    work, archive = session / "work", session / "work.tar.xz"
+    work = session / "work"
     if not work.is_dir():
         return False
     if work.is_symlink() or work.is_junction() or work.resolve().parent != session.resolve():
         raise ValueError('work archive must remain inside its session directory')
-    entries = _work_entries(session)
-    if archive.exists():
-        stored = _archive_entries(archive)
-    else:
-        part = session / "work.tar.xz.part"
-        try:
-            with tarfile.open(part, "w:xz", preset=ARCHIVE_PRESET) as tar:
-                for name in entries:
-                    tar.add(session / name, arcname=name, recursive=False)
-            stored = _archive_entries(part)
-            if stored == entries:
-                # On disk before work/ is removed: the check above read the archive back from the system's cache.
-                with part.open("rb+") as stream:
-                    os.fsync(stream.fileno())
-                os.replace(part, archive)
-        finally:
-            part.unlink(missing_ok=True)
-    if any(stored.get(name, "missing") != value for name, value in entries.items()):
-        raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
+    if not _packed(session, "work.tar.xz", _work_entries(session)):
+        raise RuntimeError(f"work/ does not match work.tar.xz; work/ kept: {session}")
     remove_tree(work)
+    return True
+
+
+def archive_raw(session):
+    """Replace a finished session's raw conversation with raw.tar.xz, verified as archive_work verifies work/.
+
+    The raw conversation is the CLI stream of each turn, cli.stdout.jsonl in the session folder and in
+    each folder under turns/, and each copy of the CLI's own transcript, transcript-<id>.jsonl
+    (retention.capture). The archive holds them under the paths they had in the session folder, which are
+    the paths retention.json gives. Everything else stays where it is: conversation.md, the readable text
+    drawn from them, retention.json, and the folder transcript-<id>/ that conversation.md points into.
+    A file is removed only after it is found intact in the archive. An existing archive is never
+    overwritten: a raw file left by an interrupted removal must already be inside it, otherwise both are
+    kept and the mismatch is raised."""
+    files = [path for pattern in ("cli.stdout.jsonl", "turns/*/cli.stdout.jsonl", "transcript-*.jsonl")
+             for path in sorted(session.glob(pattern)) if path.is_file()]
+    if not files:
+        return False
+    entries = {}
+    for path in files:
+        with path.open("rb") as stream:
+            entries[path.relative_to(session).as_posix()] = _digest(stream)
+    if not _packed(session, "raw.tar.xz", entries):
+        raise RuntimeError(f"raw conversation does not match raw.tar.xz; its files kept: {session}")
+    for path in files:
+        remove_file(path)
     return True

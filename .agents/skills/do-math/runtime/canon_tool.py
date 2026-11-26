@@ -152,7 +152,9 @@ def view(instance, model, name, part=None, full=False, canon_index=None):
         lines.append(f"questions     {', '.join(asking)} (their text names this element)")
     for cid in element['concerns']:
         concern = model['concerns'][cid]
-        lines.append(f"concern       {cid} ({concern['status']}): {concern['reason']}")
+        # The proof the element has now came in after the concern (knowledge.proof_changed).
+        earlier = ', raised about an earlier proof' if name in concern['earlier'] else ''
+        lines.append(f"concern       {cid} ({concern['status']}{earlier}): {concern['reason']}")
     for number in element['findings']:
         finding = model['findings'][number]
         lines.append(f"later review  {finding['source']} ({finding['status']}): {finding['reason']}")

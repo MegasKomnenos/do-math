@@ -863,14 +863,26 @@ class Run:
         plan = package.take(index, selected / 'lean', self.library, self.root, self.definitions,
                             self.settings['lean']['allowed_axioms'])
         files, back = plan['files'], []
+
+        def open_proofs(found):
+            """The declarations of an index that are no element and have an open proof, in modules the take may change."""
+            return sorted({f"{item.get('user') or name}, a declaration of the module {item['module']} that is no "
+                           'element, has an open proof (`sorry`)' for name, item in found.get('hidden', {}).items()
+                           if item.get('sorry') and item['module'] in plan['modules']
+                           and item['module'] not in self.definitions})
+
         problems, _ = self.library_ok('take', files=files)
-        if problems:
+        # A declaration that is no element stays through the take, and one whose proof is open builds, so the build
+        # does not report it. The check of the merged library would: after the sessions of the simplification, and
+        # again at every new start. The index says which declarations these are, and the session deletes them here.
+        opened = open_proofs(index)
+        if problems or opened:
             before = {relative: package.read_text(selected / 'lean' / relative) for relative in files}
             given = {**{'lean/' + relative: text for relative, text in files.items()},
                      **{'before/' + relative: text for relative, text in before.items()},
                      'removed.json': as_json([{key: item[key] for key in ('declaration', 'file', 'proved')}
                                               for item in plan['spans']]),
-                     'errors.txt': '\n\n'.join(problems) + '\n'}
+                     'errors.txt': '\n\n'.join(problems + opened) + '\n'}
 
             def read(output):
                 returned = {relative: package.read_text(path)
@@ -881,20 +893,29 @@ class Run:
                 if bad:
                     raise Unusable(bad)
                 merged = {**files, **texts}
-                found, _ = self.library_ok('take-' + output.parent.name, files=merged)
+                # With an open proof to delete, the build includes the extraction, whose index says whether one is left.
+                found, taken = self.library_ok('take-' + output.parent.name, files=merged, extract=bool(opened),
+                                               whole=False)
                 if found:
                     raise Unusable(['the library does not build with what was put back and what was deleted:'] + found)
+                if opened and open_proofs(taken):
+                    raise Unusable(open_proofs(taken))
                 return again, merged, deleted
 
             back, files, deleted = self.task('restore', 'restore', given, read, self.sessions.writer)
             # The work folder goes at the end, so the lines that the session deleted are kept in the decisions.
             self.decide('Step 1: the take', '\n'.join([
-                'The library did not build after the take, and these removed elements were put back: '
+                ('The library did not build after the take' if problems else
+                 'The library built after the take and held declarations that are no element with an open proof')
+                + ', and these removed elements were put back: '
                 + (', '.join(f'`{name}`' for name in back) or 'none') + '.',
-                *(['', 'A theorem that the research left without a proof is not put back. The session deleted these '
-                   'lines instead, as declarations that are no element and rest on such a theorem. The program checked '
-                   'that no line was added or altered, that every element which stays stands as it stood, and that the '
-                   'library builds. It cannot tell whether the lines are exactly such declarations.',
+                *(['', 'A theorem that the research left without a proof, or a definition that uses one, is not put '
+                   'back, and no declaration of the package keeps an open proof. The session deleted these lines '
+                   'instead, as declarations that are no element and that rest on such a theorem or have an open proof '
+                   'of their own. The program checked that no line was added or altered, that every element which '
+                   'stays stands as it stood, and that the library builds'
+                   + (', and it read from the index of that build that no such open proof is left' if opened else '')
+                   + '. It cannot tell whether the lines are exactly such declarations.',
                    *[line for relative in sorted(deleted)
                      for line in ('', f'`{relative}`:', '', *('    ' + gone for gone in deleted[relative]))]]
                   if deleted else [])]))
@@ -2264,10 +2285,11 @@ class Run:
                'what was not verified.' if count('uncovered') else 'the running text covered by declarations.')
             + (' To end so, it '
                + ' and '.join(text for text in (
-                   f"took {count('removed')} passages that no declaration covers out of the paper" if count('removed')
+                   f"took {count('removed')} passages out of the paper (each asserted what no declaration states, or "
+                   'said of a cited work what the words copied from it do not show)' if count('removed')
                    else '', f"restated {count('restated')} statements as their declarations say them"
                    if count('restated') else '') if text)
-               + '; `decisions.md` has each, with the declaration that came nearest.'
+               + '; `decisions.md` has each, with the declaration that came nearest where it names one.'
                if count('removed') or count('restated') else ''),
             '- The history: every entry points to a member of the archive and was read by a session that had only the '
             'entries and those records; the archive has the SHA-256 its manifest states.',
