@@ -25,7 +25,7 @@ from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance_metadata, record_summary,
                        refuting_proofs, render, replay, root_settlement, root_solved)
-from retention import capture, refusal
+from retention import capture, model_blocked, refusal
 from ending import authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp,
                              first_commit, git,
@@ -247,9 +247,7 @@ class Runner:
     def selection(self, role):
         now = time.time()
         for item in self.settings['roles'].get(role, self.settings['models']):
-            provider = provider_for_model(item['model'])
-            if all(self.state['blocks'].get(key, {}).get('until', 0) <= now
-                   for key in ('provider:' + provider, 'model:' + item['model'])):
+            if not model_blocked(self.state['blocks'], provider_for_model(item['model']), item['model'], now):
                 return item
         return None
 

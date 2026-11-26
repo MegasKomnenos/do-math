@@ -50,7 +50,7 @@ The parts are the following. Each may occur at most once, in any order, and thei
 | `## Statement` | The statement in natural language; for a definition, the definition in words. |
 | `## Explanation` | What belongs to this object: what the statement says about it, why it can be expected to hold, why a definition was chosen in this form, how the Lean form corresponds to the mathematical one. |
 | `## Proof` | The proof in natural language. |
-| `## Literature` | For a result taken from the literature: the source, how much of it was read, and where the statement stands in what was read. |
+| `## Literature` | For a result taken from the literature: the source, how much of it was read, and where the statement stands in what was read. For a statement that works of the literature pose or have earlier results on: those works, each cited by its key, with what it has of the statement and how much of it was read. |
 
 The self-description is the only part of the record that views of many elements show, so it has to be understandable without the rest. Say what the statement asserts or what the definition defines, completely enough that a session looking for that fact recognizes it. It is not the place for the element's history or for its role in some proof: a description such as "a lemma for the main estimate" tells a session that is choosing what to open nothing about the element.
 

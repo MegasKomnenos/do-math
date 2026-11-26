@@ -47,6 +47,10 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(codex.argv[codex.argv.index("--cd") + 1], str(workdir.resolve()))
         self.assertEqual(codex.argv[codex.argv.index("--sandbox") + 1], "danger-full-access")
         self.assertEqual(codex.argv[-1], "-")
+        # The runtime reads what the CLI prints as one JSON event on each line: the conversation to resume, whether
+        # the session did anything, a usage limit and a refusal. These arguments make the CLI run once and print that.
+        self.assertEqual(codex.argv[1], "exec")
+        self.assertIn("--json", codex.argv)
         configs = [codex.argv[i + 1] for i, arg in enumerate(codex.argv) if arg == "-c"]
         self.assertEqual(tomllib.loads("\n".join(configs)),
                          {"model_reasoning_effort": "high", "approval_policy": "never"})
@@ -55,6 +59,8 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(claude.provider, "claude")
         self.assertEqual(claude.cwd, workdir.resolve())
         self.assertEqual(claude.argv[claude.argv.index("--effort") + 1], "max")
+        self.assertIn("--print", claude.argv)
+        self.assertEqual(claude.argv[claude.argv.index("--output-format") + 1], "stream-json")
         self.assertIn("--verbose", claude.argv)
         self.assertIn("--dangerously-skip-permissions", claude.argv)
         self.assertNotIn("--bare", claude.argv)

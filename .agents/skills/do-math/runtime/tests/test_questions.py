@@ -15,7 +15,7 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 from availability import no_research_outcome
 from canon import Canon, split_review
 from canon_tool import main as canon_main, question_view
-from check import Invalid, assessment_check, change_check, check_session, findings_check, organization_check
+from check import Invalid, assessment_check, change_check, check_session, organization_check
 from coordination import (board, claims_lock, main as coordination_main, question_availability, question_lease,
                           question_lease_table, question_release, question_take, question_wait, updates)
 from knowledge import canonical_question, question_proposal_lines, render, replay, resolved_question_lines
@@ -164,8 +164,7 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(model['questions']['q0']['state'], 'resolved')
         findings = [{'concerns': [], 'status': 'confirmed', 'reason': 'The Lean proof does not establish the root proposition.',
                      'invalidates': ['Small.root']}]
-        findings_check(findings, model, set(model['elements']))
-        self.event('v1', 'review', {'findings': findings, 'concerns': []})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': findings, 'concerns': []})
         model = replay(self.instance)
         self.assertEqual(model['root_state'], 'unresolved')
         self.assertEqual(model['elements']['Small.root']['standing'], 'not_confirmed')
@@ -193,8 +192,7 @@ class QuestionKnowledgeTests(QuestionCase):
 
         def withdraw(eid, reason, name):
             findings = [{'concerns': [], 'status': 'confirmed', 'reason': reason, 'invalidates': [name]}]
-            findings_check(findings, replay(self.instance), set(replay(self.instance)['elements']))
-            self.event(eid, 'review', {'findings': findings, 'concerns': []})
+            self.event(eid, 'review', {'feedback': 'feedback.md', 'findings': findings, 'concerns': []})
             return replay(self.instance)
 
         # A withdrawal of what the settlement does not rest on leaves the root question as it was.
@@ -275,8 +273,7 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertIn('canon/questions/op-scale.md', git(self.instance, 'ls-files', '--', 'canon/questions'))
         findings = [{'concerns': [], 'status': 'confirmed', 'reason': 'The account assumes the conclusion.',
                      'reopens': ['op-scale']}]
-        findings_check(findings, model, set(model['elements']))
-        self.event('v1', 'review', {'findings': findings, 'concerns': []})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': findings, 'concerns': []})
         model = replay(self.instance)
         self.assertEqual(model['questions']['op-scale']['state'], 'open')
         self.assertEqual(model['questions']['op-scale']['resolutions'], [])
@@ -394,8 +391,7 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(model['questions']['op-b']['state'], 'resolved')
         findings = [{'concerns': [], 'status': 'confirmed', 'reason': 'The account covers one regime only.',
                      'reopens': ['op-a']}]
-        findings_check(findings, model, set(model['elements']))
-        self.event('v1', 'review', {'findings': findings, 'concerns': []})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': findings, 'concerns': []})
         model = replay(self.instance)
         self.assertEqual((model['questions']['op-b']['state'], model['questions']['op-b']['resolutions']), ('open', []))
         section = self.part(self.frontier(model), 'op-b')

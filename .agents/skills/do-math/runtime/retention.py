@@ -220,3 +220,14 @@ def refusal(session, provider, model, started, retry_seconds):
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_capacity', 'source': 'backoff'}
     return None
+
+
+def model_blocked(blocks, provider, model, now):
+    """Whether a block keeps sessions from a model at the time `now`.
+
+    `blocks` is the table of the runner's state. A block stands there under the key of the provider or
+    of the model, as the signal of refusal above names it, and lasts until its `until`. The runner
+    dispatches no session to a model while either block lasts (Runner.selection), and a session host
+    waits as long before it resumes one (ending.wait_to_resume). Both read this rule here, so the two
+    processes cannot come to differ."""
+    return any(blocks.get(key, {}).get('until', 0) > now for key in ('provider:' + provider, 'model:' + model))

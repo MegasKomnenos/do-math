@@ -388,14 +388,20 @@ class InstanceCase(unittest.TestCase):
                 time.sleep(0.05)  # its build is still running; a publication waits for nothing else
 
     def event(self, eid, kind, data):
-        """A comprehensive review as the replay reads one: its assessment and its event, written here by hand.
+        """A comprehensive review as the replay reads one: its output and its event, written here by hand.
 
-        The runner takes no part in it: the transport check does not see the assessment, no view is rendered
-        and nothing is committed."""
+        The output passes the transport check first, as the output of a review session does before the runner
+        publishes it. The runner takes no part after that: no view is rendered and nothing is committed."""
+        session = self.root / ('review-' + uuid.uuid4().hex)
+        output = session / 'output'
+        output.mkdir(parents=True)
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': session.name, 'role': 'review',
+                                            'pipeline': None, 'task': {'kind': 'comprehensive'}})
+        write_json(output / 'assessment.json', data)
+        (output / 'feedback.md').write_text('What the tracing found.', encoding='utf-8')
+        self.assertEqual(check_session(session), [])
         sequence = max([read_json(p)['sequence'] for p in (self.instance / 'knowledge/events').glob('*.json')], default=0) + 1
-        folder = self.instance / 'knowledge/reviews' / eid
-        folder.mkdir(parents=True)
-        write_json(folder / 'assessment.json', data)
+        shutil.copytree(output, self.instance / 'knowledge/reviews' / eid)
         write_json(self.instance / 'knowledge/events' / (eid + '.json'),
                    {'id': eid, 'sequence': sequence, 'kind': kind, 'folder': 'reviews/' + eid})
 

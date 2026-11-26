@@ -7,7 +7,9 @@ entry maps a path under the session's folder to its text; the key `@copy` lists 
 a file or folder of the session copied to another place in it. Every call is recorded with the files
 the session was given. Run as `finalize_cli.py lake ...` it is Lake: `build` succeeds unless
 `lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
-runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms line for every name
+runs the stand-in compiler's extraction, after one more hypothesis was put behind the text of Challenge.lean
+that `lake.json` names under `elaborates_otherwise`, as where Lean elaborates what that file prints to another
+statement than the library's; `env lean Check.lean` prints an axioms line for every name
 that Check.lean asks about, with the axioms that `lake.json` gives the name under `axioms` and no such
 line for a name it gives null, and fails at a name that no module Check.lean imports declares; and every
 call fails when `lake.json` names under `needs_variable` a variable that its environment does not have.
@@ -107,6 +109,13 @@ def stand_in_lake(scenario, arguments):
     if arguments[:2] == ['env', 'lean'] and arguments[2] == 'DoMathExtract.lean':
         sys.path.insert(0, str(THIS.parent))
         import canon_lean
+        other = settings.get('elaborates_otherwise')
+        if other:
+            # The stand-in compiler makes a statement's hash from its text, so a statement that is printed and read
+            # again always has the hash it had. Lean can elaborate it to another term; this stands for that.
+            challenge = Path('Challenge.lean')
+            challenge.write_text(challenge.read_text(encoding='utf-8').replace(other, other + ' (h : True)'),
+                                 encoding='utf-8', newline='\n')
         return canon_lean.extract('.', 'DoMathExtract.lean')
     if arguments[:2] == ['env', 'lean'] and arguments[2] == 'Check.lean':
         sys.path.insert(0, str(THIS.parent))

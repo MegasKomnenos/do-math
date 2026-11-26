@@ -537,7 +537,10 @@ class PublicationTests(PublicationCase):
         # Both candidates were written against the same canon and chose the same module path.
         first = self.candidate(modules={'Small/Step.lean': STEP}, records={'Small/oddSum_succ.md': STEP_RECORD})
         second = self.candidate(modules={'Small/Step.lean': ZERO}, records={'Small/oddSum_zero.md': ZERO_RECORD})
-        cid, engine = self.publish(first)
+        # The first candidate only has to hold the module path in the canon. Its proof is complete in Lean and is
+        # left undetermined, so that its review owes no compile: nothing below reads the standing of that proof.
+        undetermined = {'correct': 'undetermined', 'accepted': False}
+        cid, engine = self.publish(first, self.verdicts(first, **{'Small.oddSum_succ': undetermined}))
         before = self.canon_bytes()
         # The second candidate no longer applies to the canon, so its review cannot compile it and confirms nothing.
         unconfirmed = self.verdicts(second, **{'Small.oddSum_zero': {'correct': 'undetermined', 'accepted': False}})
@@ -605,9 +608,12 @@ class PublicationTests(PublicationCase):
         first = self.candidate(modules={'Small/Step.lean': STEP}, records={'Small/oddSum_succ.md': STEP_RECORD})
         second = self.candidate(modules={'Small/Zero.lean': ZERO}, records={'Small/oddSum_zero.md': ZERO_RECORD})
         engine = runtime.Runner(self.instance, self.skill)
+        # The order of the two publications is the subject. Each proof is complete in Lean, and its verdict is
+        # left undetermined, so that neither review owes a compile of its own (InstanceCase.publish).
+        unconfirmed = {'correct': 'undetermined', 'accepted': False}
         with patch.object(self, 'drain'):
-            self.publish(first, engine=engine, expect=False)
-            self.publish(second, engine=engine, expect=False)
+            self.publish(first, self.verdicts(first, **{'Small.oddSum_succ': unconfirmed}), engine=engine, expect=False)
+            self.publish(second, self.verdicts(second, **{'Small.oddSum_zero': unconfirmed}), engine=engine, expect=False)
         self.assertEqual([item['job'] for item in engine.state['publish_queue']],
                          [self.review_job(engine, first)['id'], self.review_job(engine, second)['id']])
         engine.publish()
@@ -686,11 +692,19 @@ class InterruptedPublicationTests(PublicationCase):
 
     def interrupt(self, target, stage, installed=False, builds=0, event_written=False, committed=False,
                   side_effect=None):
-        folder = self.induction(extras=True)
+        # The candidate is prepared once for the test process (InstanceCase.scenario) and stands in each test's
+        # instance as the output of a peer's session.
+        self.scenario('prepared induction', lambda: shutil.copytree(
+            self.induction(extras=True), self.instance / 'sessions/speer/output'))
+        folder = self.instance / 'sessions/speer/output'
         engine = runtime.Runner(self.instance, self.skill)
         failure = side_effect or RuntimeError('simulated end of the runner')
+        # The interruptions lie in the runner's publication, after the review, and none of these tests reads the
+        # standing of the step. Its proof is complete in Lean and is left undetermined, so that no compile of the
+        # review is due (InstanceCase.publish).
+        undetermined = {'Small.oddSum_succ': {'correct': 'undetermined', 'accepted': False}}
         with patch(target, side_effect=failure), self.assertRaisesRegex(RuntimeError, 'simulated'):
-            self.publish(folder, self.verdicts(folder, **HOLD), engine=engine, expect=False)
+            self.publish(folder, self.verdicts(folder, **HOLD, **undetermined), engine=engine, expect=False)
         saved = read_json(self.instance / 'runner/state.json')['publication']
         self.assertEqual((saved['stage'], bool(saved.get('installed'))), (stage, installed))
         self.assertEqual(self.events(), [saved['event']] if event_written else [])
@@ -874,7 +888,15 @@ class ReviewedCandidateTests(PublicationCase):
 
     def candidate_pipeline(self):
         """A pipeline at review: the producer holds the whole root, the peer's candidate is frozen, and the
-        review has written an assessment that confirms and accepts the informal proof."""
+        review has written an assessment that confirms and accepts the informal proof.
+
+        The peer's output is prepared once for the test process (InstanceCase.scenario) and stands in each
+        test's instance as the output folder of the session speer."""
+        def build():
+            folder = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
+            shutil.copytree(folder, self.instance / 'sessions/speer/output')
+
+        self.scenario('prepared sketch', build)
         engine = runtime.Runner(self.instance, self.skill)
         producer = engine.producer('attempt')
         pid = engine.state['jobs'][producer]['pipeline']
@@ -882,12 +904,9 @@ class ReviewedCandidateTests(PublicationCase):
         engine.state['jobs'][producer]['status'] = 'done'
         engine.session_dir('sauthor').mkdir(parents=True)
         write_json(engine.session_dir('sauthor') / 'declaration.json', WHOLE_ROOT)
-        folder = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
         peer = engine.session_dir('speer')
-        peer.mkdir(parents=True)
         candidate = peer / 'candidate'
-        shutil.copytree(folder, candidate)
-        shutil.copytree(folder, peer / 'output')
+        shutil.copytree(peer / 'output', candidate)
         task = {'kind': 'candidate', 'candidate': str(candidate), 'candidate_hashes': runtime.tree_hashes(candidate),
                 'peer': str(peer), 'source': str(engine.session_dir('sauthor'))}
         jid = engine.enqueue('review', task, pid, pid + ':review')
@@ -1349,15 +1368,22 @@ theorem oddSum_zero_square : oddSum 0 = square 0 := by
     GNOMON = 'Each odd number $2k + 1$ is the gnomon that turns $k^2$ into $(k + 1)^2$.'
 
     def alternative_proof(self):
-        """Publish a second proof of the root as a declaration of its own (design record, section 10.3)."""
-        alternative = module_text('''/-- Another proof of the root, by pairing terms. -/
+        """A second proof of the root as a declaration of its own (design record, section 10.3), in place of the
+        test's instance: published through the real path once for the test process (InstanceCase.scenario).
+        Returns the change and a runner on the instance."""
+        def build():
+            alternative = module_text('''/-- Another proof of the root, by pairing terms. -/
 theorem root_alt (n : Nat) : oddSum n = n * n := by
   -- pair the k-th odd number with the gnomon of the k-th square
   sorry''')
-        first = self.candidate(modules={'Small/Alt.lean': alternative},
-                               records={'Small/root_alt.md': record_text('The root, proved by pairing terms.',
-                                                                         proves='Small.root', proof=self.GNOMON)})
-        return self.publish(first)
+            first = self.candidate(modules={'Small/Alt.lean': alternative},
+                                   records={'Small/root_alt.md': record_text('The root, proved by pairing terms.',
+                                                                             proves='Small.root', proof=self.GNOMON)})
+            self.publish(first)
+
+        self.scenario('alternative proof', build)
+        [event] = self.events()
+        return event['id'], runtime.Runner(self.instance, self.skill)
 
     def retirement(self, engine, cid):
         """An organizer's output, not yet prepared, that moves that proof under the root's own name and

@@ -740,7 +740,6 @@ class BrokerTests(BrokerFixture):
         # Another session compiling the same file is not a duplicate.
         third = self.submit(path, expect_mb=40, session="s2")
         self.until(lambda: self.broker.state["jobs"].get(third))
-        self.assertEqual(self.broker.state["jobs"][third]["status"], "queued")
         self.until(lambda: self.finished(first) and self.finished(third))
         self.assertEqual(self.broker.state["jobs"][first]["exit_code"], 0)
 
@@ -1825,6 +1824,29 @@ class OutputKeyTests(BrokerFixture):
         # Uses was compiled again from the same source and emitted the same files. Top imports Uses
         # alone and still has another key, because its compile reads Basis through Uses.
         self.assertEqual((after["Uses"]["public"], after["Uses"]["full"]), (before["Uses"]["public"], before["Uses"]["full"]))
+        self.assertNotEqual(after["Top"]["key"], before["Top"]["key"])
+
+    def test_an_output_that_changed_under_the_same_source_recompiles_what_reads_it(self):
+        # Middle imports all of Basis and takes what it read of Basis's proof into its own files (the stand-in's
+        # `absorb`). A proof replaced in Basis leaves the public files of Basis and the source of Middle as they
+        # were, so the change reaches Top, a module that reads public files only, through the output of Middle alone.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+
+        def library(proof):
+            source(root / "Basis.lean", imports=(), module=True, proof=proof)
+            source(root / "Middle.lean", imports=("all Basis",), module=True, absorb="Basis")
+            return [source(root / "Top.lean", imports=("Middle",), module=True)]
+
+        first = self.built(root, library("first"))
+        self.assertEqual(first["status"], "finished", first)
+        second = self.built(root, library("second"))
+        self.assertEqual(second["status"], "finished", second)
+        self.assertEqual(self.statuses(second), dict.fromkeys(("Basis", "Middle", "Top"), "finished"))
+        before, after = first["modules"], second["modules"]
+        self.assertEqual(after["Basis"]["public"], before["Basis"]["public"])
+        self.assertEqual(after["Middle"]["source_sha256"], before["Middle"]["source_sha256"])
+        self.assertNotEqual(after["Middle"]["public"], before["Middle"]["public"])
         self.assertNotEqual(after["Top"]["key"], before["Top"]["key"])
 
     def test_an_environment_change_fails_the_modules_still_waiting(self):

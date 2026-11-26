@@ -5,7 +5,9 @@ The last argument is the source file. Its `import` lines cost 8 MiB each plus 8 
 the broker's sampling sees an imports-only peak. A line `-- fake: key=value ...` adds:
 alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code),
 marker (text printed to stdout), stderr (text printed to stderr), emit (`emit=0` makes a
-module compile write none of its output files although it exits with code 0). `--threads=N` is
+module compile write none of its output files although it exits with code 0), absorb
+(`absorb=Name` adds the `.olean.private` file of the imported local module `Name` to every
+file a module compile writes). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
 `--version` prints a version line; and an import of a `Missing.*` module fails the way a
 nonexistent module would.
@@ -16,9 +18,11 @@ Build tests use the artifact profile observed with Lean 4.32: .olean, .olean.pri
 each file holds follows the source the way a `module` file's output does. The .olean and
 .ir files are written from the source without its lines that begin with `-- proof:`, and
 the other two from all of it, so a change in such a line leaves the public files
-byte-identical, as a replaced proof does, and any other change shows in all four. No file
-names the source's path. This models file transport and which file changes with which
-part of the source; nothing is elaborated.
+byte-identical, as a replaced proof does, and any other change shows in all four. With
+`absorb` the files follow what the compile read as well: a proof replaced in the absorbed
+module changes all four although the source is the same. No file names the source's path.
+This models file transport and which file changes with which part of the source or of
+what was read; nothing is elaborated.
 """
 
 import os
@@ -87,9 +91,16 @@ def main(argv):
     del held
     if olean and code == 0 and options.get("emit") != "0":
         public = [line for line in lines if not line.startswith("-- proof:")]
+        absorbed = []
+        for entry in search if "absorb" in options else []:
+            private = os.path.join(entry, *options["absorb"].split(".")) + ".olean.private"
+            if os.path.isfile(private):
+                with open(private, encoding="utf-8") as stream:
+                    absorbed = stream.read().splitlines()
+                break
         for suffix in SUFFIXES:
             with open(os.path.splitext(olean)[0] + suffix, "w", encoding="utf-8") as stream:
-                stream.write("\n".join([f"fake {suffix}"] + (public if suffix in (".olean", ".ir") else lines)) + "\n")
+                stream.write("\n".join([f"fake {suffix}"] + (public if suffix in (".olean", ".ir") else lines) + absorbed) + "\n")
     return code
 
 

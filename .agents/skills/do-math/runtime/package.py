@@ -42,8 +42,10 @@ MODIFIERS = ('private', 'protected', 'public', 'noncomputable', 'unsafe', 'parti
 ATTRIBUTE_COMMAND = re.compile(r'^\s*attribute\s*\[[^\]]*\]\s+([^\n]*)$', re.M)
 BACKTICKED = re.compile(r'`([^`\n]+)`')
 DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
-# In Markdown, TeX and BibTeX a backslash after a colon begins a command of a formula, as in $f:\mathbb{N}\to X$,
-# so a drive path is looked for there in its form with a slash, which is the form a session is given paths in.
+# In Markdown, TeX and BibTeX a backslash after a colon begins a command of a formula, as in $f:\mathbb{N}\to X$.
+# In JSON, and in the YAML that yaml_text writes with JSON's strings, it begins an escape: a text with a line that
+# ends in "case A:" stands there as `A:\n`, and the backslash of a path stands there twice. So a drive path is
+# looked for in these files in its form with a slash, which is the form a session is given paths in.
 DRIVE_PATH_IN_MARKUP = re.compile(r'(?<![A-Za-z])[A-Za-z]:/(?!/)')
 LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)|(?:href|src)\s*=\s*"([^"]*)"')
 # Lean prints the name between apostrophes, and a name can hold one itself, as `step'` does: the apostrophe that
@@ -875,9 +877,14 @@ def comparator(theorems):
             'permitted_axioms': list(PERMITTED_AXIOMS)}
 
 
-def check_text(root_module, names):
-    """`Check.lean`: prints the statements of the named theorems and the axioms they depend on."""
-    lines = ['module', '', f'import {root_module}', '',
+def check_text(modules, names):
+    """`Check.lean`: prints the statements of the named theorems and the axioms they depend on.
+
+    `modules` are the modules that declare them, and the file imports each. Check.lean is a module, and Lean
+    loads for a module what an imported module itself imports only where that import is `public`. A theorem
+    that the root's module reaches through a plain `import` is unknown to a file that imports the root's module
+    alone."""
+    lines = ['module', '', *(f'import {module}' for module in dict.fromkeys(modules)), '',
              '/-! After `lake build`, `lake env lean Check.lean` prints the statements and the axioms they rest on. -/', '']
     for name in dict.fromkeys(names):
         lines += [f'#check @{name}', f'#print axioms {name}']
@@ -1577,6 +1584,19 @@ WRITTEN = ('README.md', 'MANIFEST.sha256', 'knowledge/MANIFEST.md', 'history/tim
            'paper/references.bib', 'paper/correspondence.json')
 
 
+def unresolved_links(text, folder, package):
+    """The relative links of a Markdown or HTML text that do not resolve inside a package; `folder` is where the text stands."""
+    package, broken = Path(package).resolve(), []
+    for found in LINK.findall(text):
+        target = (found[0] or found[1]).split('#')[0].split('?')[0]
+        if not target or re.match(r'[A-Za-z][A-Za-z0-9+.-]*:', target) or target.startswith('//'):
+            continue
+        resolved = (Path(folder) / target).resolve()
+        if not resolved.is_relative_to(package) or not resolved.exists():
+            broken.append(target)
+    return broken
+
+
 def standalone_problems(package, work, account, freeze):
     """The final check of a package, made once: it stands alone and is what the freeze hashed.
 
@@ -1592,15 +1612,10 @@ def standalone_problems(package, work, account, freeze):
     files = files_under(package)
     problems = []
     for relative, path in files.items():
-        if not relative.endswith(('.md', '.html', '.htm')):
-            continue
-        for found in LINK.findall(path.read_text(encoding='utf-8', errors='replace')):
-            target = (found[0] or found[1]).split('#')[0].split('?')[0]
-            if not target or re.match(r'[A-Za-z][A-Za-z0-9+.-]*:', target) or target.startswith('//'):
-                continue
-            resolved = (path.parent / target).resolve()
-            if not resolved.is_relative_to(package) or not resolved.exists():
-                problems.append(f'{relative}: the link {target} does not resolve inside the package')
+        if relative.endswith(('.md', '.html', '.htm')):
+            text = path.read_text(encoding='utf-8', errors='replace')
+            problems += [f'{relative}: the link {target} does not resolve inside the package'
+                         for target in unresolved_links(text, path.parent, package)]
     if account:
         named = account_pattern(account)
         for relative, path in files.items():
@@ -1623,7 +1638,8 @@ def standalone_problems(package, work, account, freeze):
         if relative not in files:
             continue
         text = files[relative].read_text(encoding='utf-8', errors='replace')
-        found = (DRIVE_PATH_IN_MARKUP if relative.endswith(('.md', '.tex', '.bib')) else DRIVE_PATH).search(text)
+        escaping = relative.endswith(('.md', '.tex', '.bib', '.json', '.yaml'))
+        found = (DRIVE_PATH_IN_MARKUP if escaping else DRIVE_PATH).search(text)
         if found:
             problems.append(f'{relative} holds a drive path: {text[found.start():found.start() + 40]!r}')
         if any(place in text for place in places):

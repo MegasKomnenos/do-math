@@ -15,7 +15,7 @@ import time
 import uuid
 from availability import availability_view, retain_snapshot
 from knowledge import ROOT_QUESTION, canonical_question, is_statement, replay
-from runtime_support import InstanceLock, alive, read_json, read_json_cached, write_json
+from runtime_support import InstanceLock, alive, file_stamp, read_json, read_json_cached, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
@@ -263,9 +263,18 @@ def wait(session, name, timeout=None, kind=ELEMENT_LEASES):
     inp, instance = kind.context(session)
     sid = inp['session']
     deadline = None if timeout is None else time.monotonic() + timeout
+    stamp = model = state = None
     while True:
         with claims_lock(instance):
-            model, state = replay(instance), read_json(instance / 'runner/state.json')
+            # The canon's index and the runner's state grow to megabytes in a long run, and this loop looks
+            # once a second while it holds the lock that every coordination command takes. The runner saves
+            # its state when a session starts or ends and at the end of every publication, so the research
+            # and that state are read again only when that file has changed, as a waiting host reads it
+            # (ending.wait_to_resume). The sections and the leases, which the commands of sessions change
+            # without the runner, are read at every look.
+            current = file_stamp(instance / 'runner/state.json')
+            if current != stamp:
+                stamp, model, state = current, replay(instance), read_json(instance / 'runner/state.json')
             name = kind.known(model, name)
             rows, table = board(instance, state, model), kind.table(instance, state, model)
             reason = kind.blocked(model, rows, table, name, inp.get('pipeline'), sid)

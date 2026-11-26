@@ -141,7 +141,9 @@ class FormalStatusTests(BothCompilers, InstanceCase):
 
     def test_a_published_proof_is_formal_by_the_axioms_lean_reported(self):
         folder = self.candidate(modules={'Small/Zero.lean': module_text(ZERO)}, records={'Small/sumZero.md': ZERO_RECORD})
-        self.publish(folder)
+        # Whether a proof is formal is Lean's report of its axioms and no judgment of review. Review leaves the
+        # proof undetermined here, so the publication asks no compile of the review's own.
+        self.publish(folder, self.verdicts(folder, **{'Small.sumZero': {'correct': 'undetermined', 'accepted': False}}))
         entry = Canon(self.instance).load_index()['entries']['Small.sumZero']
         self.assertEqual((entry['axioms'], entry['lean_proof']), ([], 'complete'))
         self.assertTrue(self.element('Small.sumZero')['formal'])
@@ -214,7 +216,9 @@ class EarlierFilesTests(ScenarioCase):
         # Reading wrote nothing. A publication that changes a Lean source leaves the file in the present form.
         self.assertIn('direct_axioms', read_json(canon.index)['entries']['Small.root'])
         folder = self.candidate(modules={'Small/Zero.lean': module_text(ZERO)}, records={'Small/sumZero.md': ZERO_RECORD})
-        self.publish(folder)
+        # What is read below is the form of the index, not the verdict on the new proof. That proof is complete
+        # in Lean and is left undetermined, so that no compile of the review is due.
+        self.publish(folder, self.verdicts(folder, **{'Small.sumZero': {'correct': 'undetermined', 'accepted': False}}))
         written = read_json(canon.index)
         self.assertEqual(sorted(written), ['aux', 'entries', 'hidden', 'modules', 'pairs', 'revision'])
         self.assertTrue(all('axioms' in entry and 'direct_axioms' not in entry for entry in written['entries'].values()))
@@ -223,8 +227,11 @@ class EarlierFilesTests(ScenarioCase):
     def test_a_publication_that_the_earlier_code_left_waiting_for_its_judge_is_staged_again_and_published(self):
         engine = runtime.Runner(self.instance, self.skill)
         folder = self.candidate(modules={'Small/Zero.lean': module_text(ZERO)}, records={'Small/sumZero.md': ZERO_RECORD})
+        # Review leaves the proof undetermined: its verdict is not what this test is about, and a confirmed proof
+        # would ask for a compile of the review's own before the publication is queued. Lean's report makes it formal all the same.
+        unconfirmed = self.verdicts(folder, **{'Small.sumZero': {'correct': 'undetermined', 'accepted': False}})
         with patch.object(InstanceCase, 'drain'):
-            self.publish(folder, engine=engine, expect=False)  # queued, and not carried further
+            self.publish(folder, unconfirmed, engine=engine, expect=False)  # queued, and not carried further
         with patch.object(support.subprocess, 'Popen', support.POPEN):
             engine.publish()
         publication = engine.state['publication']

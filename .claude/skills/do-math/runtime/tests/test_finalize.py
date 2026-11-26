@@ -600,7 +600,8 @@ class RegistryTests(FinalizeCase):
         (lean / 'formalization.yaml').write_text(package.yaml_text(data) + '\n', encoding='utf-8')
         (lean / 'Challenge.lean').write_text(package.challenge_text(self.first(), ['Small.Defs'], 'Small.Root'), encoding='utf-8')
         (lean / 'Solution.lean').write_text(package.solution_text(['Small.Root', 'Small.Step']), encoding='utf-8')
-        (lean / 'Check.lean').write_text(package.check_text('Small.Root', ['Small.root', 'Small.sq_step']), encoding='utf-8')
+        (lean / 'Check.lean').write_text(package.check_text(['Small.Root', 'Small.Step'], ['Small.root', 'Small.sq_step']),
+                                         encoding='utf-8')
         write_json(lean / 'comparator.json', package.comparator(compared))
         return lean
 
@@ -622,7 +623,7 @@ class RegistryTests(FinalizeCase):
         self.assertEqual((lean / 'Solution.lean').read_text(encoding='utf-8'),
                          'module\n\npublic import Small.Root\npublic import Small.Step\n')
         check = (lean / 'Check.lean').read_text(encoding='utf-8')
-        self.assertTrue(check.startswith('module\n\nimport Small.Root\n'))
+        self.assertTrue(check.startswith('module\n\nimport Small.Root\nimport Small.Step\n\n'))
         self.assertIn('#print axioms Small.root\n#check @Small.sq_step\n#print axioms Small.sq_step\n', check)
         data = yaml.safe_load((lean / 'formalization.yaml').read_text(encoding='utf-8'))
         # An author with a GitHub login or an ORCID iD is a mapping of the name and those, as the registry reads an
@@ -970,6 +971,18 @@ class DocumentTests(FinalizeCase):
         (folder / 'paper' / 'paper.tex').write_text(formula, encoding='utf-8', newline='\n')
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(check(), [])
+        # A JSON file writes the end of a line inside a text as a backslash and a letter, so a statement with a line
+        # that ends in "case A:" stands there as `A:\n`, which is no drive path. The same holds for the YAML that the
+        # program writes with JSON's strings. A path in its form with a slash is found in such a file as well.
+        (folder / 'paper' / 'correspondence.json').write_text(
+            json.dumps({'paper_statement': 'In case A:\nthe sum is even.'}), encoding='utf-8', newline='\n')
+        (folder / 'lean' / 'formalization.yaml').write_text(
+            'scope: ' + json.dumps('In case A:\nthe sum is even.') + '\n', encoding='utf-8', newline='\n')
+        freeze = package.freeze_hashes(folder)
+        (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
+        self.assertEqual(check(), [])
+        faulty('paper/correspondence.json', json.dumps({'paper_statement': 'Built in D:/lean-work.'}),
+               'paper/correspondence.json holds a drive path')
         # A member of the archive that holds the account name inside a path of a home folder is found inside the archive.
         self.assertEqual(check('pat'), ['knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md holds the account '
                                         'name inside a path of a home folder'])
@@ -1256,6 +1269,18 @@ class RefusalTests(FinalizeCase):
         self.configure(lean={'version_command': [sys.executable, '-c', 'raise SystemExit(3)']})
         self.refused('does not answer its version command', config=self.config())
 
+    def test_a_lean_environment_from_which_the_build_files_cannot_be_taken_is_refused(self):
+        # The freeze takes the toolchain and the `[[require]]` blocks of the package from the Lake project that the
+        # settings name as `lean.cwd`. A project without a lakefile.toml, as a checkout of Mathlib itself is, would
+        # stop the run at the freeze, after every session of the library, and no new start would get past it.
+        project = self.root / 'project'
+        project.mkdir()
+        write_json(project / 'lake-manifest.json', {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': []})
+        (project / 'lean-toolchain').write_text('leanprover/lean4:v4.99.0\n', encoding='utf-8')
+        (project / 'lakefile.lean').write_text('import Lake\n', encoding='utf-8')
+        self.configure(lean={'cwd': str(project)})
+        self.refused('declares its dependencies in lakefile.lean', config=self.config())
+
     def test_a_command_given_while_another_is_at_work_for_the_name_is_refused(self):
         # A command that is at work holds the lock beside its work folder. It is held here as that command holds it.
         lock = self.work.with_name('finalize-odd.lock')
@@ -1428,6 +1453,10 @@ class RunTests(FinalizeCase):
         self.assertTrue(challenge.endswith('theorem Small.sq_step (n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1) := by\n  sorry\n'))
         self.assertEqual((self.solved / 'lean' / 'Solution.lean').read_text(encoding='utf-8'),
                          'module\n\npublic import Small.Root\npublic import Small.Step\n')
+        # Check.lean imports the module of each theorem it asks about. Lean loads for it what the root's module
+        # imports only where that import is `public`, so the module of the main theorem is named there itself.
+        self.assertTrue((self.solved / 'lean' / 'Check.lean').read_text(encoding='utf-8').startswith(
+            'module\n\nimport Small.Root\nimport Small.Step\n\n'))
         meta = yaml.safe_load((self.solved / 'lean' / 'formalization.yaml').read_text(encoding='utf-8'))
         # The ORCID iD of the author goes with the name into the registry's file; the maintainer is named alone.
         self.assertEqual((meta['project']['name'], meta['project']['authors'], meta['project']['responsible_maintainers']),
@@ -1619,7 +1648,10 @@ class RunTests(FinalizeCase):
             'history-write': {'output/entries.json': json.dumps([{'event': 1, 'date': '', 'text': 'A change.'}])},
             'history-read': {'output/verdicts.json': json.dumps([{'event': 1, 'verdict': 'stands', 'text': ''},
                                                                  {'event': 2, 'verdict': 'corrected', 'text': ''}])},
-            'readme-write': {'output/outline.md': 'The paper has {{facts.pages}} pages.\n', 'output/obtained.md': 'x\n'},
+            # The first file uses a figure that facts.json does not have, and the second links to a file that the
+            # package does not have.
+            'readme-write': {'output/outline.md': 'The paper has {{facts.pages}} pages.\n',
+                             'output/obtained.md': 'See [the notes](notes/absent.md).\n'},
             'package-read': {'output/findings.json': json.dumps([{'file': 'README.md', 'quote': 'by induction'}])},
         }
         plan = {key: ([faulty[key]] if key in faulty else []) + entries for key, entries in good.items()}
@@ -1650,6 +1682,7 @@ class RunTests(FinalizeCase):
                 ('history-write:01', 'entries.json has no entry with a text for the event 2'),
                 ('history-read:01', 'the entry of the event 2 is corrected and no text is given'),
                 ('readme-write:None', 'outline.md uses {{facts.pages}}, and facts.json has no such key'),
+                ('readme-write:None', 'obtained.md links to notes/absent.md, which the package does not have'),
                 ('package-read:None', 'every finding has "file", "quote" and "problem"')):
             self.assertEqual(len(told[key]), 2, key)
             self.assertNotIn(wanted, told[key][0])
@@ -2152,8 +2185,10 @@ class RunTests(FinalizeCase):
                       'session again, with the same prompt and the same files.', report)
         first, second = self.calls('sources')
         self.assertEqual((first['prompt'], first['given']), (second['prompt'], second['given']))
-        # Started again, the command tries the same session again, and the run comes to its end.
-        self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
+        # Started again, the command tries the same session again, and the step that had stopped passes.
+        with patch('finalize.Run.draft', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(script(), config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.6-draft`', (self.work / 'report.md').read_text(encoding='utf-8'))
         self.assertEqual(len(self.calls('sources')), 3)
 
     def test_a_part_whose_session_the_provider_refuses_is_not_discarded_and_the_run_stops_until_it_is_taken(self):
@@ -2185,8 +2220,11 @@ class RunTests(FinalizeCase):
         self.assertIn('## What to do\n\nNothing that a session wrote is in question', report)
         self.assertNotIn('the simplification of the part core', self.decisions())
         # Started once more, the command launches the session and accepts the part.
-        self.assertEqual(self.run_command(config=self.config()), 0, self.said)
+        with patch('finalize.Run.merge', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.4-merge`', (self.work / 'report.md').read_text(encoding='utf-8'))
         self.assertEqual(len([call for call in self.calls('simplify') if call['section'] == 'core']), 5)
+        self.assertEqual(read_json(self.work / 'lib' / '3-parts' / 'parts.json'), {'accepted': ['core'], 'discarded': ['aux']})
         self.assertNotIn('the simplification of the part core', self.decisions())
 
     def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
@@ -2246,7 +2284,10 @@ class RunTests(FinalizeCase):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         # Lean reports for the root an axiom that the instance does not allow, what it prints for the main theorem has
         # no axioms line, and the title that the plan of the paper gives is longer than the registry takes for a name.
-        lake = {'axioms': {'Small.root': ['propext', 'sorryAx'], 'Small.sq_step': None}}
+        # Before that, Lean elaborates the statement that Challenge.lean prints for the main theorem to another term
+        # than the library's. That alone stops nothing: the root alone is compared, and the reason is recorded.
+        lake = {'axioms': {'Small.root': ['propext', 'sorryAx'], 'Small.sq_step': None},
+                'elaborates_otherwise': 'theorem Small.sq_step'}
         with patch.dict(PLAN, title='T' * 301):
             self.assertEqual(self.run_command(script(), config=self.config(), lake=lake), 2)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
@@ -2256,6 +2297,11 @@ class RunTests(FinalizeCase):
         self.assertIn('formalization.yaml: project.name is a nonempty text of at most 300 characters', report)
         self.assertNotIn('2.7-freeze', read_json(self.work / 'state.json')['steps'])
         self.assertFalse(self.solved.exists())
+        self.assertIn('The root alone is compared. With the main theorem `Small.sq_step` added to Challenge.lean: '
+                      'Challenge.lean does not state as the library does: Small.sq_step', self.decisions())
+        registry = self.work / 'package' / 'lean'
+        self.assertEqual(read_json(registry / 'comparator.json')['theorem_names'], ['Small.root'])
+        self.assertNotIn('Small.sq_step', (registry / 'Challenge.lean').read_text(encoding='utf-8'))
 
     def test_a_draft_that_the_paper_command_does_not_make_stops_the_run(self):
         self.from_the_records()
@@ -2279,17 +2325,19 @@ class RunTests(FinalizeCase):
 
     def test_a_package_that_fails_the_final_check_stops_the_run_and_is_not_moved(self):
         self.from_the_records()
-        # The session that writes the prose of the README links to a file that the package does not have.
-        plan = script(readme_write=[{'output/outline.md': 'The proof is by induction; see [the notes](notes/absent.md).\n',
+        # The session that writes the prose of the README gives a path of a machine, which its instruction forbids.
+        # The check of the prose does not read for that, so the final check is the first to find it.
+        plan = script(readme_write=[{'output/outline.md': 'The proof is by induction; it was checked in D:/lean-work.\n',
                                      'output/obtained.md': 'The research made {{facts.publications}} publication.\n'}])
         self.assertEqual(self.run_command(plan, config=self.config()), 2)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The run stopped at the step `6-check`', report)
-        self.assertIn('the package does not pass its final check: README.md: the link notes/absent.md does not resolve '
-                      'inside the package', report)
+        self.assertIn('the package does not pass its final check: README.md holds a drive path', report)
         self.assertNotIn('6-check', read_json(self.work / 'state.json')['steps'])
         self.assertTrue((self.work / 'package' / 'README.md').is_file())
         self.assertFalse(self.solved.exists())
+        # No step before the final check is made again, and the report says so where it says what the user does.
+        self.assertIn('## What to do\n\nThe final check reads the finished package.', report)
 
 
 class SelectionTests(FinalizeCase):

@@ -18,8 +18,6 @@ Nothing you submit goes through review. For the merging of questions the researc
 
 ## The change
 
-A change is optional. Without one, `organization.json` is the whole of your output.
-
 ```text
 output/
   organization.json
@@ -57,7 +55,7 @@ A rearrangement is valid when every other element has the name and the statement
 - no declaration disappears from the canon other than the alternatives you retire;
 - no statement, and no kind of declaration, changes in place;
 - each retired alternative is gone afterwards, and the statement's own declaration named in `into` is still there;
-- the proof now under the statement's own name names the elements that the alternative's proof named, and is complete in Lean exactly if the alternative's proof was. A retirement moves a proof and does not change it.
+- the proof now under the statement's own name names the elements that the alternative's proof named, and is complete in Lean exactly if the alternative's proof was.
 
 A file under `rewrite/lean/` replaces the whole module, so every declaration in it has to be the text the canon has, copied unchanged apart from references to a retired declaration, which count as references to the statement's own. A definition whose text you altered is refused, because every statement that mentions it would then mean something else while keeping its verdict. A proof that names other elements than before, or that became complete or incomplete, is refused, because no review judged that proof. Beyond this the checks do not read the text of a proof, so leave it as it is.
 

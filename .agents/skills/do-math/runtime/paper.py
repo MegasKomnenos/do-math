@@ -90,7 +90,7 @@ from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, rea
 from cli_adapter import build_command, provider_for_model
 from command_sessions import PARALLEL, Sessions, Stop, Unusable, alone, collapsed, is_text, read_file
 import depmap
-from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
+from knowledge import ROOT_QUESTION, STANDINGS, replay, root_settlement
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
 
 REFERENCE = Path(__file__).resolve().parents[1] / 'reference'
@@ -365,16 +365,15 @@ def check_likeness(report):
 # ----------------------------------------------------------------------------- materials
 
 def settling_proof(model):
-    """The declaration whose formal proof settles the root: a proof of the root, or of its negation."""
-    elements, root = model['elements'], model['root']
-    if model['root_state'] == 'formal_proved':
-        found = [p for p in elements[root]['proofs'] if elements[p]['settled'] and elements[p]['formal']]
-    elif model['root_state'] == 'formal_refuted':
-        found = refuting_proofs(model, elements[root]['statement_of'], formal=True)
-    else:
+    """The declaration whose formal proof settles the root: a proof of the root, or of its negation.
+
+    Which proofs settle the root is knowledge.root_settlement's to say. Of several, the root's own proof is
+    taken where it is one of them, and otherwise the first by name."""
+    settlement = root_settlement(model)
+    if settlement is None:
         raise Stop(f"the root is {model['root_state']}; the paper is written once the root is settled by a formal "
                    'proof (formal_proved or formal_refuted)')
-    return found[0]
+    return model['root'] if model['root'] in settlement['proofs'] else settlement['proofs'][0]
 
 
 def closing(draft, model):
@@ -4579,6 +4578,9 @@ class Paper(Sessions):
                 if problems:
                     self.open.append({'check': COMPARISON, 'after_repairs': item['after_repairs'] if item else 0,
                                       'problems': problems})
+                # Saved here, before the sessions that compare the running text: a run that one of them stops is
+                # continued with these verdicts already kept (compare_rows), so nothing would find the difference again.
+                self.save()
                 tex, spans, _ = self.assemble()  # the correspondence file with these verdicts
             found = self.cover_sections([section['id'] for section in self.plan['sections']], tex, spans)
             self.open = [item for item in self.open if item['check'] != COVERAGE]
@@ -5251,9 +5253,11 @@ class Paper(Sessions):
                             for verdict in self.compare_rows(list(late.values()), tex, spans)
                             if verdict['verdict'] == 'differs']
         wide = next((item for item in self.open if item['check'] == WIDE), None)
-        if wide:
-            self.closed += [{'kind': 'wide', 'problem': problem} for problem in wide['problems']]
-            self.open = [item for item in self.open if item['check'] != WIDE]
+        # The lines that are too wide now take the place of those that the list already holds: a pass that was stopped
+        # after it had recorded them, in the check of the places, is made again on a manuscript that was settled anew.
+        self.closed = [entry for entry in self.closed if entry['kind'] != 'wide'] \
+            + [{'kind': 'wide', 'problem': problem} for problem in (wide['problems'] if wide else [])]
+        self.open = [item for item in self.open if item['check'] != WIDE]
         self.save()
         self.place()  # where the elements without a number stand, for the text as this pass left it
         self.assemble()
@@ -5560,8 +5564,8 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         said.append('Papers of the collection that are missing or differ from its manifest, which a run would fetch: '
                     + ', '.join(wrong) + '.')
     if resume:
-        ended = next((event for event in reversed(run.log) if event['event'] == 'end'), None)
-        if ended is not None and ended is run.log[-1] and ended['status'] != 'failed':
+        ended = last_end(run.log)
+        if ended is not None:
             raise Stop(f"the run in {out} came to its end ({ended['status']}); there is nothing to continue. "
                        + ('Its draft is draft.json, beside plan.json and study.md' if ended['status'] == 'draft'
                           else '--typeset-only typesets the manuscript it holds'))
@@ -5643,7 +5647,7 @@ def ended_run(instance, out, tex, choice, parallel, dry, gate):
     if not all((out / name).is_file() for name in ('materials.json', 'plan.json', 'state.json', 'log.json')):
         raise Stop(f'{out} holds no run of this command that came to its end (materials.json, plan.json, state.json, log.json)')
     run = Paper(instance, out, tex, choice or {}, parallel, dry, gate)
-    ended = run.log[-1] if run.log and run.log[-1]['event'] == 'end' and run.log[-1].get('status') != 'failed' else None
+    ended = last_end(run.log)
     if ended is None:
         raise Stop(f'the run in {out} has not come to its end, so it has no list of open findings to act on: the last '
                    'event of its log.json is not the end of a run. A run that is going comes to its end by itself; '
@@ -5704,6 +5708,16 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
     with stops_recorded(run):
         run.act()
     return run.finish()
+
+
+def last_end(log):
+    """The `end` event with which the run of a log came to its end, or None when the run did not.
+
+    A run came to its end when the last event of its log is an `end` whose status is not `failed`. The log
+    of a run that was stopped ends with another event, and that of a run that failed with an `end` of that
+    status. --resume, --open-findings and the finalize pipeline (finalize.Run.paper_run) decide by this
+    rule what to do with the run that a folder holds."""
+    return log[-1] if log and log[-1].get('event') == 'end' and log[-1].get('status') != 'failed' else None
 
 
 def left_failing(ended):

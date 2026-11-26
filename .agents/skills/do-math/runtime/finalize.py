@@ -389,8 +389,7 @@ class Run:
         out = Path(out)
 
         def last_end():
-            log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
-            return log[-1] if log and log[-1].get('event') == 'end' and log[-1].get('status') != 'failed' else None
+            return paper.last_end(read_json(out / 'log.json') if (out / 'log.json').is_file() else [])
 
         ended = last_end()
         if ended is not None and ended['status'] != 'open_findings':
@@ -608,6 +607,12 @@ class Run:
         except (OSError, subprocess.SubprocessError) as error:
             raise Refusal(f'the Lean environment does not answer its version command: {error}')
         meta = read_json(source / 'instance.json')
+        try:
+            # The freeze takes the build files of the package from the Lean environment. What keeps it from that is
+            # so already, and a run that met it at the freeze could not be continued past it.
+            package.build_files(meta['library'], self.name, package.lake_project(self.settings), version, False)
+        except (OSError, ValueError, KeyError) as error:
+            raise Refusal(f'the build files of the package cannot be taken from the Lean environment: {error}')
         package.export_commit(instance, first, ['canon/lean'], self.work / 'first', strip='canon/')
         root_module = canon.read_index(source / 'canon' / 'index.json')['entries'][meta['root']]['module']
         definitions = package.definition_modules(self.work / 'first' / 'lean', meta['library'], root_module)
@@ -1748,7 +1753,8 @@ class Run:
                      'Solution.lean': package.solution_text([entries[self.root]['module']]
                                                             + ([entries[main]['module']] if both else [])),
                      'comparator.json': as_json(package.comparator(compared)),
-                     'Check.lean': package.check_text(entries[self.root]['module'], [self.root, main]),
+                     'Check.lean': package.check_text([entries[self.root]['module'], entries[main]['module']],
+                                                      [self.root, main]),
                      'formalization.yaml': package.yaml_text(package.formalization(
                          title, decision, package.read_text(folded / 'bibliography.bib'), self.config,
                          self.config['licence'], models, self.library, compared, record,
@@ -2040,6 +2046,12 @@ class Run:
                     continue
                 texts[name], missing = package.fill(package.read_text(output / name), facts)
                 problems += [f'{name} uses {{{{facts.{key}}}}}, and facts.json has no such key' for key in missing]
+                # A link is read here, where the session can still be told of it. The final check reads every link
+                # as well, and no step before it is made again. README.md and MANIFEST.sha256 are written after the
+                # prose, so a link to one of them is left to that check.
+                problems += [f'{name} links to {target}, which the package does not have; a link is a path relative to '
+                             "the package's root" for target in package.unresolved_links(texts[name], self.package, self.package)
+                             if target not in ('README.md', 'MANIFEST.sha256')]
             if problems:
                 raise Unusable(problems)
             return texts
@@ -2110,7 +2122,14 @@ class Run:
     def final_check(self):
         problems = package.standalone_problems(self.package, self.work, self.account, read_json(self.work / 'freeze.json'))
         if problems:
-            raise Stop('the package does not pass its final check: ' + '; '.join(problems))
+            # No step before this one is made again, so a new start meets the same package and stops here again.
+            raise Stop('the package does not pass its final check: ' + '; '.join(problems), todo=(
+                'The final check reads the finished package. The steps that made the package have passed and are not '
+                'made again, so the same command stops here again while the package is as it is. A file that was '
+                'changed after its step is put back as it was. A fault that a session wrote into the package cannot be '
+                'repaired in the work folder: the run is abandoned by removing its work folder, and the command then '
+                'starts anew. A fault of the program is repaired in the program, after which the same command '
+                'continues here.'))
         # The files that hold the account name as a word by itself stop nothing. They are kept for the report.
         return {'account_words': package.account_words(self.package, self.account) if self.account else []}
 

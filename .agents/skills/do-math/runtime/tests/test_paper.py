@@ -320,6 +320,7 @@ PROOF_BASED = PROOF.replace('By induction on $n$.', 'By induction on $n$, from $
 
 _SETTLED = None
 _RUNS = {}  # for each run of the command that several tests start from, the folders that it left
+_FOUND = None  # the materials of the instance as it was published, kept for the tests that read them and change no instance
 
 
 class PaperCase(InstanceCase):
@@ -418,6 +419,17 @@ class PaperCase(InstanceCase):
 
     def materials(self):
         return paper.extract(self.instance, replay(self.instance))
+
+    def settled_materials(self):
+        """The materials of the instance as it was published, for a test that reads them and changes no instance.
+
+        The first test that asks makes them from its own copy of the instance, before it does anything else to
+        that copy, and they are kept for the test process. Each test receives a copy of them, so that no test
+        sees what another did to them, and a test that uses nothing else of the instance is given no copy of it."""
+        global _FOUND
+        if _FOUND is None:
+            _FOUND = self.materials()
+        return copy.deepcopy(_FOUND)
 
     def given(self, call):
         """The papers of the collection a session was given, by key."""
@@ -542,7 +554,7 @@ class MaterialsTests(PaperCase):
 class PlanTests(PaperCase):
     def setUp(self):
         super().setUp()
-        self.found = self.materials()  # once for the test: no test of this class changes the instance
+        self.found = self.settled_materials()  # no test of this class changes the instance
 
     def problems(self, change):
         plan = copy.deepcopy(PLAN)
@@ -716,7 +728,7 @@ class PlanTests(PaperCase):
 class ManuscriptTests(PaperCase):
     def setUp(self):
         super().setUp()
-        self.found = self.materials()  # once for the test: no test of this class changes the instance
+        self.found = self.settled_materials()  # no test of this class changes the instance
 
     def problems(self, plan=PLAN, **changed):
         found = paper.machine_findings(self.found, plan, {**PARTS, **changed})
@@ -946,6 +958,22 @@ class TypesettingTests(unittest.TestCase):
                 # No part of the manuscript names the class, so this is not returned as an error for a repair session.
                 with self.assertRaisesRegex(paper.Stop, "File `amsart.cls' not found"):
                     paper.typeset(folder, recipe)
+
+    def test_a_tex_command_that_ends_without_an_error_and_without_a_pdf_is_reported_and_an_earlier_pdf_is_gone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
+                                              encoding='utf-8', newline='\n')
+            self.assertEqual(paper.typeset(folder, paper.tex_recipe(TEX)), [])
+            self.assertTrue((folder / 'paper.pdf').is_file())
+            # A command that ends with exit code 0 and writes nothing, as a wrapper around an engine can. The PDF of
+            # the typesetting before is taken away first, so it does not stand for the output of this one, and the
+            # one error says that no PDF was made.
+            silent = paper.tex_recipe([sys.executable, '-c', 'pass'])
+            errors = paper.typeset(folder, silent)
+            self.assertEqual(len(errors), 1)
+            self.assertIn('left no paper.pdf', errors[0])
+            self.assertFalse((folder / 'paper.pdf').exists())
 
     def test_the_lines_wider_than_the_text_block_are_read_from_the_log_of_tex(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1346,6 +1374,14 @@ class RunTests(PaperCase):
         # The paper is typeset with the line, and the stages after the settling are made as for any other manuscript.
         self.assertTrue((self.out / 'paper.pdf').is_file())
         self.assertEqual((len(self.calls('read')), [(c['kind'], c['section']) for c in self.calls('compare')]), (1, COMPARED))
+        # A caller with nobody to ask closes what the run left open. No session can make this line fit, so the pass
+        # launches none: the line is listed among what was closed, and the run ends with nothing open.
+        launched = len(self.calls())
+        self.assertEqual(self.close(good()), 0)
+        closing = self.events('end')[-1]
+        self.assertEqual((closing['status'], closing['open'], closing['closed']),
+                         ('complete', [], [{'kind': 'wide', 'problem': end['open'][0]['problems'][0]}]))
+        self.assertEqual(len(self.calls()), launched)
 
     def test_repairs_are_bounded_and_what_stays_open_is_reported(self):
         script = good()
@@ -1574,6 +1610,18 @@ class RunTests(PaperCase):
         end = self.events('end')[-1]
         self.assertEqual([(item['check'], [problem['label'] for problem in item['problems']]) for item in end['open']],
                          [(paper.UNCOMPARED, ['lem:square'])])
+        # A caller with nobody to ask closes what is open: the statement is compared with its element, once, and
+        # nothing is left open. The repair had changed a part, so the elements without a number are looked for.
+        launched = len(self.calls())
+        closing = good()
+        closing['compare:tools'] = [{'output/comparison.json': json.dumps(SAME[2:])}]
+        self.assertEqual(self.close(closing), 0)
+        self.assertEqual(self.kinds(launched), [('compare', 'tools'), *PLACED])
+        self.assertEqual([s['label'] for s in read_json(self.folder(self.calls('compare')[-1]) / 'statements.json')], ['lem:square'])
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
 
     def test_a_plan_without_its_account_and_a_report_of_the_wrong_shape_go_back_with_the_reasons(self):
         script = good()
@@ -1961,7 +2009,7 @@ class BriefTests(PaperCase):
 
     def setUp(self):
         super().setUp()
-        self.found = self.materials()
+        self.found = self.settled_materials()  # no test of this class changes the instance
         self.layout = paper.Layout(self.found, PLAN)
 
     def brief(self, sid):
@@ -2686,12 +2734,15 @@ class OpenFindingsTests(PaperCase):
 
     DIFFERENCE = 'The manuscript has k^2 + 2k = (k + 1)^2.'
     OFF = TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')  # the section `tools` with a statement that differs from its element
+    # What the reader of the run finds in the section `proof`. A session writes what it likes, and this finding
+    # holds a character that ASCII lacks.
+    UNNAMED = {**BASE, 'problem': 'The base case is not named: the sum is 0² there.'}
 
     def leave_open(self):
         """A run that ends with two findings of its one reading kept by the repair and with a statement that differs
         from its element after the bounded comparisons; the number of sessions it launched."""
         script = good()
-        script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION, BASE]})}]
+        script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION, self.UNNAMED]})}]
         script['repair:narrow'] = [{'output/response.json': answered('The reader is expected to expand a square.', 'kept')}]
         differs = [dict(row) for row in SAME]
         differs[2].update(verdict='differs', difference=self.DIFFERENCE)
@@ -2702,14 +2753,11 @@ class OpenFindingsTests(PaperCase):
             with patch('paper.READING_ROUNDS', 1), patch('paper.STAGES', paper.STAGES[:4]):
                 self.assertEqual(self.run_paper(script), 2)
 
-        # Four tests start from the run with the statement that differs as the class words it: it is made once.
-        if self.DIFFERENCE == type(self).DIFFERENCE:
-            self.taken_up('findings left open', run)
-        else:
-            run()
+        # Five tests start from this run: it is made once.
+        self.taken_up('findings left open', run)
         self.kept = paper.KEPT + 'The reader is expected to expand a square.'
         self.left = [{'check': paper.READING, 'after_repairs': 1,
-                      'problems': [{**EXPANSION, 'open_because': self.kept}, {**BASE, 'open_because': self.kept}]},
+                      'problems': [{**EXPANSION, 'open_because': self.kept}, {**self.UNNAMED, 'open_because': self.kept}]},
                      {'check': paper.COMPARISON, 'after_repairs': paper.COMPARISON_ROUNDS - 1,
                       'problems': [{'label': 'lem:square', 'difference': self.DIFFERENCE}]}]
         self.assertEqual(self.events('end')[-1]['open'], self.left)
@@ -2753,7 +2801,7 @@ class OpenFindingsTests(PaperCase):
         # The findings that were not chosen are open as they were; the one that was acted on is closed.
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('open_findings', [
-            {'check': paper.READING, 'after_repairs': 2, 'problems': [{**BASE, 'open_because': self.kept}]}, self.left[1]]))
+            {'check': paper.READING, 'after_repairs': 2, 'problems': [{**self.UNNAMED, 'open_because': self.kept}]}, self.left[1]]))
         self.assertEqual(self.events('open findings')[0], {**self.events('open findings')[0], 'chosen': [1], 'listed': 3})
         # No statement changed, so none was compared; the one that differs still does.
         self.assertEqual(len(self.events('comparison')), paper.COMPARISON_ROUNDS)
@@ -2853,23 +2901,23 @@ class OpenFindingsTests(PaperCase):
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('open_findings', [
             {'check': paper.READING, 'after_repairs': 2,
-             'problems': [{**BASE, 'open_because': paper.KEPT + 'An induction on $n$ starts at $0$.'}]}, self.left[1]]))
+             'problems': [{**self.UNNAMED, 'open_because': paper.KEPT + 'An induction on $n$ starts at $0$.'}]}, self.left[1]]))
         self.assertIn(EXPANDED, self.part('tools'))
         self.assertEqual(read_json(self.out / 'state.json')['narrow'], None)
         self.assertFalse((self.out / 'narrow').exists())
 
     def test_the_listing_is_printed_where_the_output_cannot_encode_a_character_of_a_finding(self):
         # Output that is redirected is encoded as the system's locale has it, and a finding quotes what a session
-        # wrote. A character that the encoding lacks is printed as an escape, and the command ends as it does otherwise.
+        # wrote: the reader of this run wrote a character that ASCII lacks. A character that the encoding lacks is
+        # printed as an escape, and the command ends as it does otherwise.
         import io
-        self.DIFFERENCE = 'The manuscript has k² + 2k = (k + 1)².'
         self.leave_open()
         shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
         with patch('sys.stdout', shown):
             code = paper.main([str(self.instance), '--out', str(self.out), '--open-findings', '--dry-run', '--tex', *TEX])
         shown.flush()
         self.assertEqual(code, 0)
-        self.assertIn(b'       difference: The manuscript has k\\xb2 + 2k = (k + 1)\\xb2.', shown.buffer.getvalue())
+        self.assertIn(b'       problem: The base case is not named: the sum is 0\\xb2 there.', shown.buffer.getvalue())
 
     def test_a_run_without_open_findings_and_a_run_that_has_not_ended_are_refused(self):
         self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))
@@ -3282,7 +3330,7 @@ class DraftTests(PaperCase):
         self.assertIn('or only those parts of a result that the paper uses', self.calls('sketch')[0]['prompt'])
 
     def test_the_results_to_cite_are_statements_whose_record_names_no_source(self):
-        materials = self.materials()
+        materials = self.settled_materials()
         check = lambda citations: paper.check_plan(materials, {**PLAN, 'citations': citations}, KEYS)
         self.assertEqual(check(CITATIONS), [])
         self.assertEqual(check([]), [])
@@ -4019,6 +4067,24 @@ class ResolveTests(PaperCase):
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open'], end['kept']), ('complete', [], []))
         self.assertFalse((self.out / 'resolve').exists())
+
+    def test_a_difference_that_the_comparison_before_the_running_text_finds_is_open_when_the_run_is_stopped_after_it(self):
+        late = 'The manuscript states the identity without its range.'
+        script = restructuring()
+        # The lemma that the resolving session reworded is found to differ, and the session that then compares the
+        # running text of the first section leaves nothing.
+        script['compare:proof'] = [{'output/comparison.json': json.dumps([{**SAME[2], 'verdict': 'differs', 'difference': late}])}]
+        script['cover:intro'] = [{}]
+        with patch('paper.READING_ROUNDS', 1):
+            with self.assertRaises(paper.Stop):
+                self.run_paper(script)
+            launched = len(self.calls())
+            self.assertEqual(self.run_paper(restructuring(), resume=True), 2)
+        # The lemma has its verdict and is not compared again; what the comparison found is open at the end of the run.
+        self.assertEqual(self.kinds(launched), [('cover', 'intro'), ('cover', 'proof'), *PLACED])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('open_findings', [{'check': paper.COMPARISON, 'after_repairs': 0, 'problems': [
+            {'label': 'lem:square', 'difference': late, 'open_because': paper.DIFFERS_LATE}]}]))
 
 
 # ----------------------------------------------------------------------------- the running text

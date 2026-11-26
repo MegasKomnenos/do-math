@@ -44,7 +44,7 @@ A line of the first sort is a publication: something that entered the research's
 | `organization` | A rearrangement of the library by a session that joins what says the same. |
 | `questions` | Questions that the operator put to the research. |
 
-`title` and `description` are the publication's own words about itself, except the `title` of a line that is no `change`, which the program supplied. `elements` names the elements it added or replaced; for a `review`, it names the elements whose proofs that review found valid or invalid. `questions` says which questions the publication proposed, resolved, reopened or merged. `by` is the kind of session whose work the publication carries, in the research's own word, and it is empty where the record does not say.
+`title` and `description` are the publication's own words about itself, except the `title` of a line that is no `change`, which the program supplied. `elements` names the elements it added or replaced. For an `organization` it names the elements that were added, and not a declaration whose proof was changed only to name another declaration in the place of one that the organization removed; for a `review`, it names the elements whose proofs that review found valid or invalid. `questions` says which questions the publication proposed, resolved, reopened or merged. `by` is the kind of session whose work the publication carries, in the research's own word, and it is empty where the record does not say.
 
 | `by` | Whose work that is |
 |---|---|

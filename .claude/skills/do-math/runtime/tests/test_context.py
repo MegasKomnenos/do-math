@@ -486,8 +486,9 @@ class ContextTests(InstanceCase):
     def test_withdrawn_proof_keeps_its_explanation_visible(self):
         self.prove_root(INFORMAL)
         self.assertEqual(replay(self.instance)['root_state'], 'informal_proved')
-        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed',
-            'reason': 'The quantified domain was narrower than the statement.', 'invalidates': ['Small.root']}]})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [{
+            'concerns': [], 'status': 'confirmed', 'reason': 'The quantified domain was narrower than the statement.',
+            'invalidates': ['Small.root']}]})
         model = replay(self.instance)
         render(self.instance, model, [])
         self.assertEqual(model['root_state'], 'unresolved')
@@ -527,8 +528,8 @@ class ContextTests(InstanceCase):
             self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'done')
         self.assertEqual(engine.state['sessions']['running']['status'], 'running')
         self.assertEqual(engine.state['jobs'][engine.state['sessions']['running']['job']]['status'], 'running')
-        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Support withdrawn.',
-            'invalidates': ['Small.root']}]})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [{
+            'concerns': [], 'status': 'confirmed', 'reason': 'Support withdrawn.', 'invalidates': ['Small.root']}]})
         engine.model = replay(self.instance)
         with patch.object(engine, 'collect'), patch.object(engine, 'ensure_broker'), patch.object(engine, 'archive'), \
              patch.object(engine, 'schedule') as schedule:

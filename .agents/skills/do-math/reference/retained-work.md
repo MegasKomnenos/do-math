@@ -89,7 +89,7 @@ Use this outcome only for a session that never began mathematical investigation.
 
 ## Reporting that all the work that remains is occupied
 
-Your session outcome says what you did; an availability report says whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition, and not in the ordinary outcome of a session that undertook research. You can add this report when you have determined that the sections other pipelines hold cover all the work that remains for the root:
+Your session outcome says what you did; an availability report says whether another attempt could find work to take on among the work the frontier shows, and it says nothing of statements outside the frontier. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition, and not in the ordinary outcome of a session that undertook research. You can add this report when you have determined that the sections other pipelines hold cover all the work that remains for the root:
 
 ```json
 {

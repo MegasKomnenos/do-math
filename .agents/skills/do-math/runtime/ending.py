@@ -11,7 +11,7 @@ import uuid
 from availability import no_research_outcome
 from check import CANDIDATE_CHANGED, check_session
 from launch import worker_command, worker_environment
-from retention import conversation_identity, events, output_limit, refusal
+from retention import conversation_identity, events, model_blocked, output_limit, refusal
 from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
                              terminate_process, write_json, write_text)
 
@@ -118,9 +118,7 @@ def wait_to_resume(session, policy, state):
         current = file_stamp(runner_state)
         if current != stamp:
             stamp, blocks = current, read_json(runner_state)['blocks']
-        now = time.time()
-        unavailable = any(blocks.get(key, {}).get('until', 0) > now
-                          for key in ('provider:' + policy['provider'], 'model:' + policy['model']))
+        unavailable = model_blocked(blocks, policy['provider'], policy['model'], time.time())
         status = 'waiting_dispatch' if stopped else 'waiting_provider' if unavailable else 'resuming'
         if state['status'] != status:
             state['status'] = status

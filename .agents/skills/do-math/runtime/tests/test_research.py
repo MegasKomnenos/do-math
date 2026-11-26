@@ -172,7 +172,10 @@ class KnowledgeTests(ScenarioCase):
         # only for the elements an instance began with: a proof that a reviewed change brought without a verdict
         # has had no reading of its statement against what was meant, so it settles nothing.
         folder = self.candidate(replace={'Small.root': self.root_formal()})
-        unjudged(self.publish(folder)[0])
+        # The verdict is taken out below, so the review gives none that confirms the proof: confirming a proof
+        # that is complete in Lean would have it compile the candidate first (InstanceCase.publish).
+        undetermined = {'Small.root': {'correct': 'undetermined', 'accepted': False}}
+        unjudged(self.publish(folder, self.verdicts(folder, **undetermined))[0])
         model = replay(self.instance)
         root = model['elements']['Small.root']
         self.assertEqual((root['lean_proof'], root['verdict']['correct'], root['standing'], root['settled'],
@@ -861,6 +864,33 @@ class CoordinationTests(ScenarioCase):
         self.assertFalse(refused['leased'])
         self.assertIn('holds this whole element', refused['reason'])
         self.assertEqual(lease_table(self.instance), {})
+
+    def test_a_waiting_command_reads_the_research_again_only_when_the_runner_has_saved_its_state(self):
+        # A waiting command looks once a second, and in a long run the canon's index and the runner's state
+        # are megabytes. What the commands of sessions change without the runner, the leases and the
+        # sections, is read at every look; the research and the runner's state are read again once the
+        # runner has saved its state. Only the pause is replaced, so the test waits for nothing.
+        from types import SimpleNamespace
+        runner = self.runner()
+        a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'Small.root')['leased'])
+        pauses = []
+
+        def pause(seconds):
+            pauses.append(seconds)
+            self.assertLess(len(pauses), 4, 'the waiting command did not read what the runner saved')
+            if len(pauses) == 3:
+                # The holder's session ends. No command of a session says so; the runner's state does.
+                runner.state['sessions']['sa']['status'] = 'ended'
+                runner.save()
+
+        with patch('coordination.time', SimpleNamespace(time=time.time, monotonic=time.monotonic, sleep=pause)), \
+                patch('coordination.replay', wraps=replay) as read:
+            served = wait(b, 'Small.root', timeout=60)
+        self.assertEqual((served['leased'], served['holders'], len(pauses)), (True, ['sb'], 3))
+        # Four looks: the first reads the research, the next two find the runner's state as it was, and the
+        # fourth reads again what the runner saved.
+        self.assertEqual(read.call_count, 2)
 
     def test_element_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
         # Attempts and peers reach these commands only through the argv in input.json.
