@@ -849,6 +849,17 @@ class ApplyLeanTests(TempCase):
         apply_lean(self.lean, folder, change, self.index)
         self.assertEqual(self.file.read_bytes().decode('utf-8'), LIB.replace(FIRST, NEW_FIRST))
 
+    def test_a_replacement_with_the_text_the_file_has_leaves_the_bytes_of_the_file_as_they_are(self):
+        # The canon can hold a source with Windows line ends: `init` copies the files it is given as they are. A
+        # replacement that brings the declaration's own text, as a candidate with a new written proof does, changes
+        # nothing in the file, so the file keeps its bytes, which the lock on the definition modules compares
+        # (canon.check_definition_modules). The module is still named among those the candidate replaces in.
+        self.file.write_bytes(LIB.replace('\n', '\r\n').encode('utf-8'))
+        before = self.file.read_bytes()
+        folder, change = self.candidate(replace={'Small.second': SECOND})
+        self.assertEqual(apply_lean(self.lean, folder, change, self.index), ['Small.Lib'])
+        self.assertEqual(self.file.read_bytes(), before)
+
     def test_a_stale_index_is_a_conflict(self):
         # The file was changed without the index: the text at the recorded span is not the recorded one.
         changed = LIB.replace(SECOND, 'theorem second : oddSum 0 = 0 := by\n  rfl  ')

@@ -1567,6 +1567,25 @@ class RefusalTests(FinalizeCase):
         self.assertFalse(unfinished & seeded)
         self.assertTrue((self.work / 'runner' / 'lean' / 'broker.log').is_file())
 
+    def test_the_definition_modules_are_those_of_the_module_the_root_was_posed_in(self):
+        # The root's own module is not locked, and an organizer moves declarations between modules until a proof
+        # stands under its statement (roles/organizer.md), so the root can stand in another module than the one it
+        # was posed in. The definition modules and the challenge go by the module that held the root in the first
+        # commit, as the runner's lock on those modules does (canon.definition_modules). The head commit is made by
+        # hand here, as in the test of a changed definition module above: its index names for the root a module
+        # that the first commit does not have. The run is stopped at its first two steps.
+        index = self.instance / 'canon' / 'index.json'
+        moved = read_json(index)
+        moved['entries']['Small.root']['module'] = 'Small.Step'
+        write_json(index, moved)
+        git(self.instance, 'commit', '-m', 'the root in another module', '--', 'canon/index.json')
+        halted = paper.Stop('halted for the test')
+        with patch('finalize.Run.selection', side_effect=halted), patch('finalize.Run.archive', side_effect=halted):
+            self.assertEqual(self.run_command(script(), config=self.config()), 2, self.said)
+        state = read_json(self.work / 'state.json')
+        self.assertEqual((state['definitions'], state['posed_module'], state['root_module']),
+                         (['Small.Defs'], 'Small.Root', 'Small.Step'))
+
     def test_the_script_refuses_a_command_line_it_cannot_read(self):
         # Run as the file the operator runs, so that what the script does before it reads its arguments runs too.
         # Without --name the command line cannot be read, and the run does not begin.

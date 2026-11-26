@@ -533,7 +533,8 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
         by_file.setdefault(entry['file'], []).append((entry, item))
     for relative, items in by_file.items():
         path = lean_root / relative
-        text = path.read_text(encoding='utf-8').replace('\r\n', '\n')
+        held = path.read_text(encoding='utf-8').replace('\r\n', '\n')
+        text = held
         # From the bottom up, so that earlier spans keep their line numbers.
         for entry, item in sorted(items, key=lambda pair: pair[0]['span'], reverse=True):
             current = declaration_text(text, entry['span'])
@@ -546,7 +547,11 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
         imports = [name for _, item in items for name in item['imports']]
         if imports:
             text = add_imports(text, imports)
-        write_text(path, text)
+        # A file whose text stays as it was is not written again. Written again it would lose the line endings the
+        # canon holds it with, and the lock on the definition modules compares the bytes of a file
+        # (check_definition_modules).
+        if text != held:
+            write_text(path, text)
         changed.append('.'.join(PurePosixPath(relative).with_suffix('').parts))
     return sorted(set(changed))
 

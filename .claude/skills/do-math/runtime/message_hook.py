@@ -16,12 +16,17 @@ import sys
 
 WAITING = 'messages'
 DELIVERED = 'delivered'  # a folder inside WAITING
+# The CLI passes on what a hook returns whole only up to this many characters. A longer text it writes to a
+# file, and the session receives the path with the first 2,000 characters and is not asked to read the file.
+WHOLE = 10_000
 
 
 def deliver(session):
     """Move the messages that wait for a session to DELIVERED, oldest first, and return their texts as one
     text, each under a line that names its sender; None when none was moved. A message that cannot be read
-    or moved now stays where it waits."""
+    or moved now stays where it waits. So does a message that would carry the text past WHOLE, with those
+    after it: they are handed over after a later batch, so that no message is cut because another waited
+    with it. A message that is longer than WHOLE by itself is handed over alone."""
     waiting = os.path.join(session, WAITING)
     texts = []
     for name in sorted(os.listdir(waiting)):
@@ -32,6 +37,8 @@ def deliver(session):
             with open(path, encoding='utf-8') as stream:
                 message = json.load(stream)
             text = 'Message from the %s of this research:\n%s' % (message['from'], message['text'])
+            if texts and len('\n\n'.join(texts + [text])) > WHOLE:
+                break
             os.replace(path, os.path.join(waiting, DELIVERED, name))
         except (OSError, ValueError, KeyError, TypeError):
             continue

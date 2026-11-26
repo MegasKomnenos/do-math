@@ -3056,6 +3056,28 @@ class OpenFindingsTests(PaperCase):
         self.assertEqual(self.run_paper(good(), only=True), 2)
         self.assertEqual(self.events('end')[-1]['open'], end['open'])
 
+    def test_a_statement_without_a_verdict_is_compared_and_one_that_differs_then_says_that_no_repair_followed(self):
+        # A run without TeX, and a typesetting later whose repair of the LaTeX changes a lemma: the run then leaves
+        # open that the present text of the lemma was not compared.
+        script = good()
+        script['write:tools'] = [{'output/tools.tex': TOOLS.replace('For every natural number $k$, we have',
+                                                                    'For every natural number $k$, \\undefinedmacro we have')}]
+        script['repair:typeset'] = [{'output/tools.tex': TOOLS}]
+        with patch('paper.shutil.which', return_value=None):
+            self.assertEqual(self.run_paper(script, tex=None), 3)
+        self.assertEqual(self.run_paper(script, only=True), 2)
+        self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.UNCOMPARED])
+        launched = len(self.calls())
+        # Acting on it compares the statement, once. It differs, and it is open as a statement that was changed after
+        # the comparisons had ended: no repair of this pass changed it, and none follows the comparison.
+        late = 'The manuscript has the identity for positive $k$ only.'
+        script['compare:tools'] = [{'output/comparison.json': json.dumps([{**SAME[2], 'verdict': 'differs', 'difference': late}])}]
+        self.assertEqual(self.run_paper(script, open_findings='1'), 2)
+        self.assertEqual(self.kinds(launched), [('compare', 'tools'), *PLACED])
+        self.assertEqual(self.events('end')[-1]['open'], [{
+            'check': paper.COMPARISON, 'after_repairs': 0,
+            'problems': [{'label': 'lem:square', 'difference': late, 'open_because': paper.DIFFERS_LATE}]}])
+
     def test_a_pass_over_open_findings_that_was_stopped_is_continued(self):
         launched = self.leave_open()
         script = good()
@@ -3493,6 +3515,17 @@ class DraftTests(PaperCase):
         # A run makes the draft of a paper or writes the paper from a draft, and not both.
         with self.assertRaisesRegex(paper.Stop, 'a run is one of the two'):
             paper.produce(self.read_from, self.root / 'other', TEX, draft=True, from_draft=self.out)
+
+    def test_a_run_that_was_cut_before_its_kind_was_on_record_is_no_run_to_continue(self):
+        # The process ends while the new run writes the event that says what kind of run it is.
+        with patch.object(paper.Paper, 'event', side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+            self.run_paper(drafting(), draft=True)
+        # --resume knows a run by its materials.json, and so does a caller that continues a run by itself
+        # (finalize.Run.paper_run). A new run writes that file last, so this folder holds no run: it is not continued
+        # as a run of another kind, and such a caller begins anew in it.
+        self.assertFalse((self.out / 'materials.json').exists())
+        with self.assertRaisesRegex(paper.Stop, 'holds no run of this command to continue'):
+            self.run_paper(drafting(), resume=True, draft=True)
 
     def test_a_sketched_statement_that_gives_only_some_parts_of_its_element_stays_and_becomes_a_gap(self):
         script = drafting()
@@ -4494,7 +4527,7 @@ class CoverageTests(PaperCase):
         script['write:tools'] = [{'output/tools.tex': off}]
         script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
         script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
-        # Two tests start from this run: it is made once.
+        # Three tests start from this run: it is made once.
         self.taken_up('a statement that differs', lambda: self.assertEqual(self.run_paper(script), 2))
         return difference, off
 

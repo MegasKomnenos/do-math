@@ -409,9 +409,15 @@ def git(instance, *args):
     # that nobody attends, and the person who runs the instance has no key for that name. Where that person's
     # Git configuration signs every commit, Git would start the signing program for these commits as well,
     # which finds no key for that name and refuses the commit, or waits for a passphrase that nobody gives.
+    # core.hooksPath: Git looks for its hooks in the folder named here, and nothing makes this one, so Git runs
+    # no hook. The Git configuration of the person who runs the instance can name a folder of hooks for every
+    # repository, or a template from which `git init` copies hooks into each new one. Such a hook checks that
+    # person's own commits, their message or their files. One that refused a commit made here would end init,
+    # or the runner at that publication and at every start after it.
     result = subprocess.run(
         ["git", "-C", str(instance), "-c", "user.name=do-math",
          "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "-c", "commit.gpgsign=false",
+         "-c", "core.hooksPath=" + (Path(instance) / ".git" / "hooks-not-used").as_posix(),
          "--literal-pathspecs", *args],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         encoding="utf-8", errors="replace", **popen_options())

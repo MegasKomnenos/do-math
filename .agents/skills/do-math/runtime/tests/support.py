@@ -225,9 +225,10 @@ class InstanceCase(unittest.TestCase):
         pauses = patch.multiple('lean_broker', WAIT_FIRST=0.05, WAIT_CAP=0.05)
         pauses.start()
         self.addCleanup(pauses.stop)
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # The folder is removed by remove_tree, as the folders this fixture keeps are. The host of a compile holds
+        # its log for a moment after it has recorded the exit, and that removal waits for the file.
+        self.root = Path(tempfile.mkdtemp())
+        self.addCleanup(remove_tree, self.root)
         self.starts_from = self.starting_instance()
 
     @functools.cached_property

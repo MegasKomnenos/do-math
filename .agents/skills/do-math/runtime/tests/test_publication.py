@@ -194,24 +194,40 @@ class PublicationTests(PublicationCase):
     def test_a_publication_adds_modules_replaces_a_proof_in_place_and_regenerates_what_is_derived(self):
         before = self.canon().load_index()['entries']['Small.root']
         folder = self.induction(extras=True)
-        flushed, renamed = set(), []
-        fsync, rename = os.fsync, runtime.rename_directory
+        flushed, renamed, staged = set(), [], []
+        fsync, rename, build = os.fsync, runtime.rename_directory, runtime.start_build
 
         def flush(descriptor):
             flushed.add(os.fstat(descriptor).st_ino)
             return fsync(descriptor)
 
+        def sent(folder):
+            """Each file under a folder by its name, with whether its content was sent to the disk."""
+            found = []
+            for path in sorted(Path(folder).rglob('*')):
+                if path.is_file():
+                    with path.open('rb') as stream:
+                        found.append((path.name, os.fstat(stream.fileno()).st_ino in flushed))
+            return found
+
         def rename_noting_the_files(source, destination):
             if Path(destination).parent.name == 'changes':
-                for path in sorted(Path(source).rglob('*')):
-                    if path.is_file():
-                        with path.open('rb') as stream:
-                            renamed.append((path.name, os.fstat(stream.fileno()).st_ino in flushed))
+                renamed.extend(sent(source))
             return rename(source, destination)
 
+        def build_noting_the_stage(instance, lean_root, *arguments, **options):
+            staged.extend(sent(lean_root))
+            return build(instance, lean_root, *arguments, **options)
+
         with patch.object(os, 'fsync', side_effect=flush), \
-                patch('runner.rename_directory', side_effect=rename_noting_the_files):
+                patch('runner.rename_directory', side_effect=rename_noting_the_files), \
+                patch('runner.start_build', side_effect=build_noting_the_stage):
             cid, engine = self.publish(folder, self.verdicts(folder, **HOLD))
+        with self.subTest('the staged modules are on the disk before their build is started'):
+            # The runner saves the build with the stage, and a runner that starts after a loss of power takes the
+            # index from the staged files and puts them into the canon. The copy of a module that the change
+            # leaves as it is counts as much as the modules the change wrote.
+            self.assertEqual(staged, [('Defs.lean', True), ('Root.lean', True), ('Step.lean', True)])
         with self.subTest('the files of the event are on the disk before their folder takes its name'):
             # A runner that finds the folder does not make it again, and every command replays its files. A file that
             # the system still held in memory when the machine lost power would stand there without its content.

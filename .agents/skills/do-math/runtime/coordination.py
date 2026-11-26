@@ -101,8 +101,9 @@ def question_availability(instance, state=None, model=None, rows=None):
     whose pipelines have no question yet are choosing; an exploration that reached peer without one
     chooses nothing more. The runner launches another explorer only while free questions outnumber
     the choosing ones, so that each explorer launched can find a question. When it launches a
-    pending exploration, it passes board rows without every pending exploration's pipeline: what a
-    failed earlier launch of any of them held or was assigned is held by no live explorer and is
+    pending exploration, it passes board rows without every pending exploration's pipeline, except
+    one whose task was handed over and waits for the session that continues it: what a failed
+    earlier launch of any of the others held or was assigned is held by no live explorer and is
     free to whichever of them launches first (Runner.question_view).
 
     occupied maps each held question to the sessions of the explorations holding it. That is one
@@ -512,7 +513,10 @@ def updates(session):
         snapshot = (retain_snapshot(session, availability_view(
             model, rows, state['attempt_availability_epoch']))
             if inp['role'] == 'attempt' else None)
-    received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
+    # In the order of arrival. The name of a file is the random ID of a message or the ID of a publication, so
+    # in the order of the names a correction can stand before the message it corrects.
+    received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'),
+                                             key=lambda p: (p.stat().st_mtime_ns, p.name))]
     availability = question_availability(instance, state, model, rows)
     # Who holds each question, and whether it is free. What a question asks is not sent again with every call:
     # the frontier lists the open questions with their statements, and the canon commands print any question.

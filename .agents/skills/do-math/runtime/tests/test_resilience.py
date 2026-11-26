@@ -338,6 +338,35 @@ class GitEnvironmentTests(unittest.TestCase):
                 support.git(instance, 'commit', '-m', 'In the instance')
             self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
 
+    def test_a_callers_hooks_do_not_run_at_the_instances_commits(self):
+        # A user's Git configuration can name a folder of hooks that Git runs in every repository
+        # (core.hooksPath), to check that user's own commits. Git would run them at the commits of an instance
+        # as well, and a hook that refuses one ends init, or the runner at a publication. Git reads that
+        # configuration from the home folder, which is given here with such a folder and a hook that refuses
+        # every commit. The repository, the hook and every Git call are real.
+        with tempfile.TemporaryDirectory() as temp:
+            home, instance = Path(temp) / 'home', Path(temp) / 'instance'
+            hooks = home / 'hooks'
+            for folder in (hooks, instance):
+                folder.mkdir(parents=True)
+            (hooks / 'pre-commit').write_text('#!/bin/sh\necho "refused by a hook of the caller" >&2\nexit 1\n',
+                                              encoding='utf-8', newline='\n')
+            os.chmod(hooks / 'pre-commit', 0o755)
+            (home / '.gitconfig').write_text('[core]\n\thooksPath = ' + hooks.as_posix() + '\n', encoding='utf-8')
+            (instance / 'root.md').write_text('The root.\n', encoding='utf-8')
+            with patch.dict(os.environ, {'HOME': str(home), 'USERPROFILE': str(home),
+                                         'XDG_CONFIG_HOME': str(home / 'xdg')}):
+                support.git(instance, 'init')
+                support.git(instance, 'add', '--', 'root.md')
+                # The hook does refuse a commit made without the options of support.git; without that the
+                # commit below would show nothing.
+                outside = subprocess.run(['git', '-C', str(instance), '-c', 'user.name=t', '-c', 'user.email=t@t',
+                                          'commit', '-m', 'Outside the runtime'], capture_output=True)
+                self.assertNotEqual(outside.returncode, 0)
+                self.assertIn(b'refused by a hook of the caller', outside.stderr)
+                support.git(instance, 'commit', '-m', 'In the instance')
+            self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
+
 
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
@@ -402,6 +431,33 @@ class PeerRecoveryTests(InstanceCase):
 
     def test_rename_failure_is_fatal_and_restart_creates_one_review(self):
         self.check_fatal_then_recover('runner.rename_directory')
+
+    def test_the_files_of_a_frozen_candidate_are_on_the_disk_before_the_review_is_assigned(self):
+        # The save that assigns the review goes through to the disk and carries a hash for every file of the
+        # candidate. A file of the copy that the system still held in memory when the machine lost power would
+        # stand there without its content, and the review launched on it would be spent before its check found
+        # the candidate changed. What reaches the disk is seen at the system call that sends it there.
+        engine, key, pipeline = self.peer()
+        flushed, frozen = set(), []
+        fsync, rename = os.fsync, runtime.rename_directory
+
+        def flush(descriptor):
+            flushed.add(os.fstat(descriptor).st_ino)
+            return fsync(descriptor)
+
+        def rename_noting_the_files(source, destination):
+            for path in sorted(Path(source).rglob('*')):
+                if path.is_file():
+                    with path.open('rb') as stream:
+                        frozen.append((path.name, os.fstat(stream.fileno()).st_ino in flushed))
+            return rename(source, destination)
+
+        with patch.object(os, 'fsync', side_effect=flush), \
+                patch('runner.rename_directory', side_effect=rename_noting_the_files):
+            engine.finish('speer', engine.state['sessions']['speer'])
+        self.assertIn(('induction.md', True), frozen)
+        self.assertEqual([name for name, on_disk in frozen if not on_disk], [])
+        self.assertEqual(engine.state['jobs'][key]['status'], 'done')
 
 
 class RecordedFailureTests(InstanceCase):

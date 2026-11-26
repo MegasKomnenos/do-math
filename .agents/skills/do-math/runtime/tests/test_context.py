@@ -508,6 +508,16 @@ class ContextTests(InstanceCase):
         self.assertEqual(after_a_batch(own), (0, ''))
         self.assertEqual(sorted(path.name for path in (folder / 'messages/delivered').iterdir()),
                          [first.name, second.name])
+        # The CLI passes a hook's text on whole only up to 10,000 characters. A message that would carry the
+        # text past that waits for the next batch, so that neither it nor the one before it is cut.
+        long = send_message(folder, 'operator', 'x' * 9_000)
+        late = send_message(folder, 'runner', 'y' * 2_000)
+        handed = json.loads(after_a_batch(own)[1])['hookSpecificOutput']['additionalContext']
+        self.assertEqual(handed, 'Message from the operator of this research:\n' + 'x' * 9_000)
+        self.assertTrue(late.is_file() and not long.is_file())
+        handed = json.loads(after_a_batch(own)[1])['hookSpecificOutput']['additionalContext']
+        self.assertEqual(handed, 'Message from the runner of this research:\n' + 'y' * 2_000)
+        self.assertFalse(late.is_file())
 
     def test_dispatch_makes_the_messages_folder_for_a_claude_session_and_for_no_other(self):
         engine = Runner(self.instance, self.skill)

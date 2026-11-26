@@ -4,6 +4,7 @@ The canon of every test is built through the real candidate, build and publicati
 tests/support.py; a test that only needs a research state starts from one of its scenarios.
 """
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -20,7 +21,7 @@ from coordination import (board, claims_lock, lease, lease_table, main as coordi
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
 from lean_broker import Paths, broker_status, ensure_broker
 from runner import Runner, archive_finished, initialize, main, start, status
-from runtime_support import InstanceLock, alive, read_json, write_json
+from runtime_support import InstanceLock, alive, git, read_json, remove_tree, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
                      ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, session_record,
@@ -1170,11 +1171,20 @@ class CoordinationTests(ScenarioCase):
             message(sender, 'srecipient', sender / 'blank.md')
         # A publication leaves a notice in every running session's inbox; it names no sender.
         runner.notify({'id': 'c9', 'kind': 'change', 'sequence': 1})
+        runner.notify({'id': 'c1', 'kind': 'review', 'sequence': 2})
+        # updates returns an inbox in the order of arrival. The names of the files say nothing of it: a message
+        # has a random one, and here the later notice has the earlier name. The files are given times a second
+        # apart, as files that arrived a second apart have them, so the test waits for nothing.
+        start = time.time()
+        arrived = {delivered.name: start, 'c9.json': start + 1, 'c1.json': start + 2}
+        for folder in (recipient, sender):
+            for path in (folder / 'inbox').iterdir():
+                os.utime(path, (arrived[path.name], arrived[path.name]))
         received = updates(recipient)['messages']
-        self.assertEqual(sorted(m.get('from') or m.get('event') for m in received), ['c9', 'ssender'])
-        self.assertEqual([m['text'] for m in received if m.get('from') == 'ssender'],
-                         ['Our sections meet at n = 7; I leave that case to you.'])
-        self.assertEqual([(m['event'], m['kind'], m['revision']) for m in updates(sender)['messages']], [('c9', 'change', 1)])
+        self.assertEqual([m.get('from') or m.get('event') for m in received], ['ssender', 'c9', 'c1'])
+        self.assertEqual(received[0]['text'], 'Our sections meet at n = 7; I leave that case to you.')
+        self.assertEqual([(m['event'], m['kind'], m['revision']) for m in updates(sender)['messages']],
+                         [('c9', 'change', 1), ('c1', 'review', 2)])
 
     def test_updates_report_the_board_the_leases_and_the_work_that_remains(self):
         self.split()
@@ -2655,9 +2665,9 @@ class InitializeTests(unittest.TestCase):
     """runner.initialize: the root is fixed without a proof, since the research is what proves or refutes it."""
 
     def setUp(self):
-        temp = tempfile.TemporaryDirectory()
-        self.addCleanup(temp.cleanup)
-        self.root = Path(temp.name)
+        # Removed by remove_tree, which waits for a file that a job host of `initialize` still holds as it ends.
+        self.root = Path(tempfile.mkdtemp())
+        self.addCleanup(remove_tree, self.root)
 
     def test_a_canon_refused_after_the_directory_was_created_leaves_no_instance(self):
         # What runner.initialize itself refuses after it has created the directory (reference/operations.md,
@@ -2719,6 +2729,17 @@ class InitializeTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             initialize(target, goal, whole, 'Small.root', settings)
         self.assertEqual(list(target.iterdir()), [])
+
+    def test_a_file_that_an_ignore_rule_names_is_in_the_first_commit(self):
+        # The first commit holds the instance as it began: the lock on the definition modules and the check of a
+        # settled root read the index and the files of the modules from it (canon.definition_modules,
+        # Runner.check_root). Git leaves out of `git add` what an ignore rule names. Such a rule can stand in the
+        # canon folder that init was given, as here, or in the Git configuration of whoever runs init. The
+        # repository and every Git call are real.
+        instance = initialized(self.root, 'ignored', records={'.gitignore': 'oddSum.md\n'})
+        self.addCleanup(stop_broker, instance)
+        self.assertEqual(git(instance, 'ls-tree', '-r', '--name-only', 'HEAD', '--', 'canon/records').splitlines(),
+                         ['canon/records/.gitignore', 'canon/records/Small/oddSum.md', 'canon/records/Small/root.md'])
 
 
 class SettingsTests(unittest.TestCase):

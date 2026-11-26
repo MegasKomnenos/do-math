@@ -198,7 +198,11 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
                                             'root_statement_hash': entry['statement_hash']})
     render(instance, replay(instance), [])
     git(instance, 'init')
-    git(instance, 'add', '--', 'root.md', 'settings.json', 'instance.json', '.gitignore', 'knowledge', 'canon')
+    # With -f, as in the commit of a publication (Runner.publish): Git leaves out of `add` what an ignore rule
+    # names, and such a rule can stand in a .gitignore that came with the canon folder or in the Git configuration
+    # of whoever runs init. The first commit is what the lock on the definition modules and the check of a settled
+    # root read the index and the files of the modules from (canon.definition_modules, Runner.check_root).
+    git(instance, 'add', '-f', '--', 'root.md', 'settings.json', 'instance.json', '.gitignore', 'knowledge', 'canon')
     git(instance, 'commit', '-m', 'Initialize autonomous mathematical research')
 
 
@@ -589,7 +593,11 @@ class Runner:
                 staging = session / 'candidate.part'
                 if staging.exists():
                     remove_tree(staging)
-                shutil.copytree(session / 'output', staging)
+                # Through to the disk (copy_to_disk): the save below goes through to the disk and assigns a review
+                # to this folder, with a hash for each of its files. After a loss of power a file of the copy must
+                # not stand there without its content: the review launched on it would be spent before its check
+                # found the candidate changed.
+                shutil.copytree(session / 'output', staging, copy_function=copy_to_disk)
                 rename_directory(staging, candidate)
             # Finish all candidate reads before marking the peer complete. A
             # failed read must remain collectable after the fatal-error save.
@@ -662,7 +670,10 @@ class Runner:
                 staging = restored.with_name(restored.name + '.part')
                 if staging.exists():
                     remove_tree(staging)
-                shutil.copytree(original, staging)
+                # Through to the disk (copy_to_disk): the save of the retry below goes through to the disk and
+                # assigns the review this folder. After a loss of power its files must not stand there without
+                # their content.
+                shutil.copytree(original, staging, copy_function=copy_to_disk)
                 if tree_hashes(staging) != expected:
                     raise ValueError('peer output changed during candidate recovery')
                 rename_directory(staging, restored)
@@ -892,7 +903,9 @@ class Runner:
                 return False
             if stage.exists():
                 remove_tree(stage)
-            copy_tree(canon.lean, stage / 'lean')
+            # Copied without the read-only flag that a file of the canon can carry, so that the copy can be sent
+            # to the disk below.
+            shutil.copytree(canon.lean, stage / 'lean', copy_function=shutil.copyfile)
             try:
                 change, records = self.effective_change(publication)
                 receipt = read_json(candidate / PREPARED)
@@ -910,6 +923,16 @@ class Runner:
                 check_definition_modules(self.instance, stage / 'lean', [*changed, *removed])
             except (CanonError, OSError, ValueError) as exc:
                 return self.publication_failed(publication, str(exc))
+            if changed or removed:
+                # The stage is sent to the disk before the state names its build. From then on a runner that starts
+                # after a loss of power takes the index from these files (update_index) and puts them into the canon
+                # (install_canon), and a file that the system still held in memory would stand there without its
+                # content. A failure here is the runner's own and not the candidate's, so it stands outside the
+                # refusals above.
+                for path in (stage / 'lean').rglob('*'):
+                    if path.is_file():
+                        with path.open('rb+') as stream:
+                            os.fsync(stream.fileno())
             # A module that imports a changed one is compiled in a new environment, so its index is taken again
             # too: an unchanged statement can come out different when its module's imports bring more into scope.
             extracted = with_importers(stage / 'lean', self.model['library'], changed)
@@ -984,10 +1007,11 @@ class Runner:
         and staged none. The stage is left in place: publish removes it once the publication is saved as installed.
 
         A publication that changed no module and removed none puts no module in place. Its stage holds a copy
-        of the canon's module root and nothing else, and that copy is not sent to the disk when it is made
-        (copy_tree), while the stages the publication reaches are saved through to the disk in the same pass.
-        A runner that starts after a loss of power can therefore find the files of the copy without their
-        content, and installing from them would put those files over the canon's modules."""
+        of the canon's module root and nothing else. The copy of a publication that changes or removes a module
+        is sent to the disk before its build is saved (advance_build); this one is not, while the stages the
+        publication reaches are saved through to the disk in the same pass. A runner that starts after a loss
+        of power can therefore find the files of the copy without their content, and installing from them
+        would put those files over the canon's modules."""
         event = publication['event']
         canon = Canon(self.instance)
         stage = self.instance / 'runner' / ('stage-' + event['id'])
@@ -1415,7 +1439,8 @@ class Runner:
 
         Explorers whose pipelines hold no question yet are choosing among the free questions. With
         launching, a pending exploration is being launched, and every pending exploration's
-        pipeline is left out of the count (question_view): each waiting job is decided on its own
+        pipeline is left out of the count, except one whose task was handed over and waits for the
+        session that continues it (question_view): each waiting job is decided on its own
         pass, against the questions the launches before it leave free, and the one launched becomes
         a producing row that the next pass counts. Without a job to dispatch, waiting jobs count, so
         that schedule() does not create another exploration for a question a waiting one will take."""

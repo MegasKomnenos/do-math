@@ -5274,7 +5274,9 @@ class Paper(Sessions):
             if label in known and label not in taken and known[label]['difference'] == difference:
                 differing.append(known[label])
             else:
-                differing.append({'label': label, 'difference': difference, 'open_because': taken.get(label) or DIFFERS_NOW})
+                # A statement that was chosen because its present text had no verdict was changed before this pass.
+                reason = taken.get(label) or (DIFFERS_LATE if label in narrow['uncompared'] else DIFFERS_NOW)
+                differing.append({'label': label, 'difference': difference, 'open_because': reason})
         if item:
             item.update(after_repairs=item['after_repairs'] + bool(taken), problems=differing)
         elif differing:
@@ -5699,7 +5701,6 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         lost = sorted({e['source'] for e in materials['elements'] if e['source']} - set(materials['bibliography_keys']))
         if not dry:
             run.out.mkdir(parents=True, exist_ok=True)
-            write_json(run.out / 'materials.json', run.materials)
             write_text(run.out / 'materials.md', render_materials(run.materials))
             if run.sketched:
                 write_json(run.out / 'draft.json', run.sketched)  # beside the materials that were taken with it
@@ -5716,6 +5717,11 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         run.authors, run.codes = authors, codes
         if not dry:
             write_json(run.out / 'title-page.json', {'authors': authors, **({'msc2020': codes} if codes else {})})
+    if not resume and not dry:
+        # --resume, and a caller that continues a run by itself (finalize.Run.paper_run), know a run by this file, and
+        # read what kind of run it is and what it was given from the `materials` event and the files written above.
+        # So a new run writes this file after all of them: a run that was cut before this line is no run to continue.
+        write_json(run.out / 'materials.json', run.materials)
     if dry:
         if draft:
             said.append('This run makes the draft of the paper: after the plan, each section is sketched and the '

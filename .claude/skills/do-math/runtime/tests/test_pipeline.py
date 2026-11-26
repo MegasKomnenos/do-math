@@ -57,7 +57,7 @@ class PipelineTests(InstanceCase):
         roles = {s['role'] for s in runner.state['sessions'].values()}
         self.assertTrue({'attempt', 'peer', 'review', 'formalizer', 'explore', 'organizer'} <= roles)
         self.assertEqual(sum(s['role'] == 'attempt' for s in runner.state['sessions'].values()), 1)
-        # Each producer and peer handed over at the configured limit, not through a failed resumption.
+        # Each producer and peer ended at the configured limit of resumptions, not through a failed resumption.
         self.assertEqual({s['end_check']['authorization']['basis'] for s in runner.state['sessions'].values()
                           if s['role'] in ('attempt', 'explore', 'formalizer', 'peer')}, {'resumption_limit'})
         # The real dispatch assigns q0 to an explorer; its peer's account becomes the understanding so far of

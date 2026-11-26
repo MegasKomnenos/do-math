@@ -618,7 +618,11 @@ class Run:
             raise Refusal(f'the build files of the package cannot be taken from the Lean environment: {error}')
         package.export_commit(instance, first, ['canon/lean'], self.work / 'first', strip='canon/')
         root_module = canon.read_index(source / 'canon' / 'index.json')['entries'][meta['root']]['module']
-        definitions = package.definition_modules(self.work / 'first' / 'lean', meta['library'], root_module)
+        # The definition modules and the challenge go by the module the root was posed in, which the index of the
+        # first commit names, as the runner's lock on those modules does (canon.definition_modules). The root's own
+        # module is not locked, and a rearrangement can have moved the root to another module since then.
+        posed_module = json.loads(git(instance, 'show', first + ':canon/index.json'))['entries'][meta['root']]['module']
+        definitions = package.definition_modules(self.work / 'first' / 'lean', meta['library'], posed_module)
         # Every step that writes Lean requires each definition module to be the file of the first commit
         # (library_ok). A research that changed one would stop the run at the take, after the sessions of the
         # selection, and no new start would get past it.
@@ -635,10 +639,11 @@ class Run:
             # comes to it. An entry counts only with all its files in place, and those are the seed.
             shutil.copytree(cache, self.work / 'runner' / 'lean' / 'cache', dirs_exist_ok=True,
                             ignore=shutil.ignore_patterns('.*', '*.tmp'))
-        measured = package.challenge_measure(package.challenge_text(self.work / 'first' / 'lean', definitions, root_module))
+        measured = package.challenge_measure(package.challenge_text(self.work / 'first' / 'lean', definitions, posed_module))
         self.state = {'run': {'instance': str(instance), 'name': self.name, 'commit': commit, 'first': first,
                               'config': identity},
-                      'definitions': definitions, 'root_module': root_module, 'version': version,
+                      'definitions': definitions, 'root_module': root_module, 'posed_module': posed_module,
+                      'version': version,
                       'main': None, 'accepted': {},
                       'steps': {'0-start': {'products': {name: package.product_hash(self.work / name)
                                                          for name in ('source', 'first', 'settings.json')}, 'read': {}}}}
@@ -1792,7 +1797,9 @@ class Run:
         for name, text in build.items():
             write_text(lean / name, text)
         toolchain = build['lean-toolchain'].strip()
-        first, root_module = self.work / 'first' / 'lean', self.state['root_module']
+        # Challenge.lean holds the root as it was posed: in the module of the first commit that held it (start). A run
+        # that an earlier version of this code began kept no `posed_module` and goes by the root's module as before.
+        first, root_module = self.work / 'first' / 'lean', self.state.get('posed_module', self.state['root_module'])
         decision = read_json(self.work / 'lib' / '0-selected' / 'decision.json')
         title = read_json(self.work / 'lib' / '6-draft' / 'plan.json')['title']
         records = package.read_records(self.package / 'records')
