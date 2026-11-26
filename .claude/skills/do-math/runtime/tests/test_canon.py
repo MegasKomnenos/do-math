@@ -1937,7 +1937,6 @@ class CheckAppliedTests(unittest.TestCase):
         self.organizer_base()
         self.old['entries']['Small.root_alt'].update(lean_proof='sorry', axioms=['sorryAx'])
         self.new['entries']['Small.root'].update(lean_proof='sorry', axioms=['sorryAx'])
-        self.existing['Small.root'] = parse_record(OLD_ROOT_RECORD.split('## Proof')[0])
         self.refused('after retiring Small.root_alt, the record of Small.root needs the written proof that stood '
                      'in the record of the retired declaration', organizer=True)
         self.records['Small/root'] = parse_record(ROOT_RECORD)
@@ -2428,6 +2427,11 @@ class CandidateToolTests(InstanceCase):
         write(output / 'records/Small/oddSum_succ.md', STEP_RECORD + '\nA later remark.\n')
         with self.assertRaisesRegex(Invalid, 'changed after it was prepared'):
             prepared_candidate(output)
+        # The command builds the edited files afresh, and the receipt it then writes is the one for them.
+        code, edited = self.tool('prepare', session, '--timeout', 120)
+        self.assertEqual(code, 0, edited)
+        self.assertNotEqual(edited['build'], receipt['build'])
+        self.assertEqual(prepared_candidate(output)['build'], edited['build'])
         # The broker answers a build submitted again while the first still runs with a record that points to
         # the first (lean_broker.Broker.ingest_build). Whether a repeat arrives in time is a matter of timing,
         # so that record is written here by hand, in the broker's form. Its outcome is that of the first build.
@@ -2499,6 +2503,22 @@ class CandidateToolTests(InstanceCase):
         self.assertFalse(result['ok'])
         self.assertIn("unknown identifier 'unknown_name'", '\n'.join(result['errors']))
         self.assertIn('Small.Root', '\n'.join(result['errors']))
+
+    def test_a_kept_build_is_made_again_once_the_canon_was_published_to(self):
+        # A build is kept for the canon the candidate was applied to. After a publication that changed the
+        # library, the same command on the same files applies them to the canon as it now is and builds again.
+        folder = self.candidate(modules={'Small/Step.lean': module_text(STEP)},
+                                records={'Small/oddSum_succ.md': STEP_RECORD}, prepare=False)
+        work = self.root / 'work'
+        first = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertTrue(first and first['ok'], first)
+        text = 'theorem root_again (n : Nat) : oddSum n = n * n := by\n  sorry'
+        self.publish(self.candidate(modules={'Small/Again.lean': module_text(text)},
+                                    records={'Small/root_again.md': record_text('The root once more.')}))
+        again = canon_tool.build_candidate(self.instance, 'test', folder, work, 64, 120, 'peer')
+        self.assertTrue(again and again['ok'], again)
+        self.assertGreater(again['revision'], first['revision'])
+        self.assertNotEqual(again['build'], first['build'])
 
     def test_a_build_that_fails_before_any_module_is_compiled_is_reported_with_its_reason(self):
         # A new module imports a module of the library that has no file. The broker fails such a build as a whole

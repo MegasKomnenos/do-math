@@ -20,6 +20,12 @@ LIMIT_WAITS = 12       # times one session is started again after its provider r
 NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
              'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
              'and the sessions could not do.')
+# What a person does when the CLI of every session of a task ended with an error before the session wrote anything.
+DIED = ('Nothing that a session wrote is in question: the CLI of each session ended with an error before the session '
+        'wrote anything, as when the network or the provider fails. The `session` events of log.json name the folders '
+        'of these sessions, and cli.stderr.log and cli.stdout.jsonl there hold what the CLI said. Where that names '
+        'something of this machine, such as the network, the login of the CLI or its memory, put it right first. '
+        'Then start the same command again.')
 # What a person does when a safeguard of the AI system stopped every session of a task that the run needs.
 STOPPED = ('Nothing is to be repaired by hand. Start the same command again: it starts the session again, with the '
            'same prompt and the same files. The folders of the stopped sessions, which are named above, hold what '
@@ -74,7 +80,15 @@ class Refused(Stop):
 
 
 class Unmade(Stop):
-    """No session of a task left output that the script can use, and the script read what at least one of them left."""
+    """No session of a task left output that the script can use, and the script read what at least one of them left.
+
+    `died` is true when nothing that a session wrote was read: the CLI of every such session had ended with
+    an error before the session wrote anything. A caller that discards a piece of work for what its
+    sessions wrote does not discard it then."""
+
+    def __init__(self, message='', todo=None, died=False):
+        super().__init__(message, todo)
+        self.died = died
 
 
 @contextmanager
@@ -267,7 +281,7 @@ class Sessions:
         in a report. Each of them is then recorded as not done (`undone`, <out>/not-done.json), and
         None is returned in the place of what `read` returns. A check that is made later for the same
         thing takes the record away, since it speaks for the text as it then stands."""
-        problems, previous, stopped = None, {}, []
+        problems, previous, stopped, died = None, {}, [], 0
         provider = provider_for_model(choice['model'])
         for _ in range(attempts):
             text = prompt if problems is None else prompt + AGAIN.format(problems='\n'.join('- ' + p for p in problems))
@@ -276,6 +290,13 @@ class Sessions:
                 stopped.append(folder.relative_to(self.out).as_posix())
                 self.event('safeguard', folder=stopped[-1], kind=kind, section=section)
                 continue
+            # A CLI that ended with an error before its session wrote anything left no work of the session to judge.
+            # Its exit code is in the `session` event that `launch` wrote for this folder.
+            name = folder.relative_to(self.out).as_posix()
+            with self.lock:
+                code = next(event['exit_code'] for event in reversed(self.log)
+                            if event['event'] == 'session' and event['folder'] == name)
+            died += bool(code) and not any((folder / 'output').iterdir())
             try:
                 result = read(folder / 'output')
             except Unusable as exc:
@@ -291,9 +312,12 @@ class Sessions:
                         path.read_text(encoding='utf-8', errors='replace')
                         for path in sorted((folder / 'output').rglob('*')) if path.is_file()}
         if len(stopped) < attempts:
+            died = died == attempts - len(stopped)
             raise Unmade(f'no {kind} session left output the script can use, in {attempts} attempts'
                          + (f', of which a safeguard of the AI system stopped {len(stopped)}' if stopped else '') + ': '
-                         + '; '.join(problems), todo=NO_OUTPUT)
+                         + '; '.join(problems)
+                         + ('. The CLI of every session that was read had ended with an error before the session '
+                            'wrote anything' if died else ''), todo=DIED if died else NO_OUTPUT, died=died)
         if check is None:
             raise Stop(f'a safeguard of the AI system stopped every {kind} session' + (f' of {section}' if section else '')
                        + f', in {attempts} attempts, before it had finished (' + ', '.join(stopped) + '). The run needs '

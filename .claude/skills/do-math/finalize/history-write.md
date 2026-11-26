@@ -44,7 +44,7 @@ A line of the first sort is a publication: something that entered the research's
 | `organization` | A rearrangement of the library by a session that joins what says the same. |
 | `questions` | Questions that the operator put to the research. |
 
-`title` and `description` are the publication's own words about itself. `elements` names the elements it added or replaced; for a `review`, it names the elements whose proofs that review found valid or invalid. `questions` says which questions the publication proposed, resolved, reopened or merged. `by` is the kind of session whose work the publication carries, in the research's own word, and it is empty where the record does not say.
+`title` and `description` are the publication's own words about itself, except the `title` of a line that is no `change`, which the program supplied. `elements` names the elements it added or replaced; for a `review`, it names the elements whose proofs that review found valid or invalid. `questions` says which questions the publication proposed, resolved, reopened or merged. `by` is the kind of session whose work the publication carries, in the research's own word, and it is empty where the record does not say.
 
 | `by` | Whose work that is |
 |---|---|
@@ -63,7 +63,7 @@ The lines of the second sort follow the publications and have no date. A line of
 
 Read the ledger in full. For each publication read its record in `archive/` before you write, because the ledger line is an extract and the entry answers to the record; the line of an approach or of a question carries its record whole, under `description`, and its file in `archive/` adds nothing. If a record is missing from `archive/`, write the entry from the ledger line alone and keep to its words.
 
-In the archive, the account name of the machine's user was replaced by `<account>`. Leave such places alone, and put no path of a machine into an entry.
+In the archive, the account name of the machine's user was replaced by `<account>` inside paths of that user's home folder. Leave such places alone, and put no path of a machine into an entry.
 
 ## How an entry stands in the timeline
 
@@ -108,7 +108,7 @@ An entry is two to four sentences. It reports, and the record explains. How a pr
 
 ### The entry of a publication
 
-The entry of a publication says what was published and whose work it was, names each element, and gives the reviewing session's judgment. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
+The entry of a publication says what was published and whose work it was, names each element, and gives the reviewing session's judgment. Where the publication proposed, resolved, reopened or merged a question, it names the question between backticks, by the name the ledger gives it, and says in a few words what the question asks.
 
 **Whose work it was.** Say it in the plain words of the table of `by` above. Where `by` is empty, the entry does not say whose work it was. Where `by` holds a word that the table does not have, say what the record itself says about where the publication came from. That a second session prepared the change holds for every change, and an entry does not repeat it.
 
@@ -128,7 +128,7 @@ The entry says what the question asks, whether the record gives an answer and wh
 
 ### What holds for every entry
 
-Use plain words. The record speaks in the vocabulary of the research's own procedure, and a reader of the package has not learned it. Say what took place: that a proof of a statement was added, that it was found correct and was not yet accepted because it could still be made simpler, that an earlier proof was replaced, that an approach stopped at a named step. The words that the common text defined for the sessions of this run are working vocabulary as well, and the reader of the timeline has not read that text. In an entry the root is the proposition the research set out to settle, and elements are definitions and statements. An entry carries no identifier of a session, of a build or of a change: the line under the entry gives the path of the record.
+Use plain words. The record speaks in the vocabulary of the research's own procedure, and a reader of the package has not learned it. Say what took place: that a proof of a statement was added, that it was found correct and was not yet accepted because it could still be made simpler, that an earlier proof was replaced, that an approach stopped at a named step. The words that the common text defined for the sessions of this run are working vocabulary as well, and the reader of the timeline has not read that text. In an entry the root is the proposition the research set out to settle, and elements are definitions and statements. An entry carries no identifier of a session, of a build or of a change: the line under the entry gives the path of the record. The name of a question is not such an identifier, also where it begins with the identifier of the session that proposed it: the timeline's heading for the question and the question's file in the archive carry that name, and a reader finds them by it.
 
 Attribute judgments to their source. That a proof is correct, that a step was the important one, that an approach failed for a certain reason: these are the reviewing session's statements or the publication's own, and the entry says whose they are. Add no assessment of your own, however evident it seems from where you stand, and no connection between events that no record draws.
 

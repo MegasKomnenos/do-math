@@ -603,7 +603,7 @@ class PlanTests(PaperCase):
         self.assertIn('"label"', self.problems(lambda plan: plan['statements'][1].update(label='lem:Small.oddSum_mono')))
         self.assertIn('"section" \'nowhere\' is not the id of a section',
                       self.problems(lambda plan: plan['statements'][2].update(section='nowhere')))
-        self.assertEqual(paper.check_plan(self.materials(), ['not', 'an', 'object'], KEYS), ['plan.json holds one JSON object'])
+        self.assertEqual(paper.check_plan(self.found, ['not', 'an', 'object'], KEYS), ['plan.json holds one JSON object'])
 
     def test_a_title_of_the_plan_names_no_lean_name_and_does_not_mention_lean(self):
         # A repair keeps the plan, so a title that mentions Lean has to go back to a planning session.
@@ -701,7 +701,7 @@ class PlanTests(PaperCase):
         # The briefs: the section that owns the formula displays it under the label, and a section that uses it
         # refers to it; a section that neither owns nor uses one is told nothing.
         plan = {**copy.deepcopy(PLAN), 'displays': [display]}
-        materials = self.materials()
+        materials = self.found
         intro, tools, proof = (paper.render_brief(materials, plan, section) for section in plan['sections'])
         self.assertIn('## Displayed formulas that several sections use', tools)
         self.assertIn('- This section displays the formula below with `\\label{eq:tools-gain}`. The element '
@@ -733,12 +733,12 @@ class ManuscriptTests(PaperCase):
         referring = PROOF.replace('The sums increase', 'The sums increase by \\eqref{eq:tools-gain}, that is,')
         self.assertEqual(self.problems(plan, tools=labelled, proof=referring), '')
         # A reference to it from a section that uses it is owed by the section that owns it.
-        found = paper.machine_findings(self.materials(), plan, {**PARTS, 'proof': referring})
+        found = paper.machine_findings(self.found, plan, {**PARTS, 'proof': referring})
         self.assertEqual({finding['part'] for finding in found}, {'tools'})
 
     def test_a_statement_that_is_an_instance_of_a_cited_theorem_carries_the_citation_in_its_proof(self):
         check = lambda instances: ' | '.join(finding['problem'] for finding in paper.machine_findings(
-            self.materials(), PLAN, PARTS, instances))
+            self.found, PLAN, PARTS, instances))
         # The part that proves the lemma cites the work, so the check passes; for a work it does not cite, it fails.
         self.assertEqual(check([('lem:square', 'euclid', 'tools')]), '')
         self.assertIn('part tools: the proof of lem:square takes the result from a theorem of the literature, by the '
@@ -830,7 +830,7 @@ class ManuscriptTests(PaperCase):
         plan['others'].pop()
         plan['statements'].insert(1, {'element': 'Small.expand', 'kind': 'lemma', 'label': 'lem:expand', 'section': 'tools',
                                       'proof': 'cited', 'reason': 'It is used in the form stated.'})
-        self.assertEqual(paper.check_plan(self.materials(), plan, KEYS), [])
+        self.assertEqual(paper.check_plan(self.found, plan, KEYS), [])
         source = '[{\\cite[Book II, Proposition 4]{euclid}}]'
         tools = ('\\begin{lemma}' + source + '\\label{lem:expand}\nFor natural numbers $a$ and $b$, we have '
                  '$(a+b)^2 = a^2 + 2ab + b^2$.\n\\end{lemma}\n\n' + TOOLS.replace(' \\cite[Book II, Proposition 4]{euclid}', ''))
@@ -846,7 +846,7 @@ class ManuscriptTests(PaperCase):
         self.assertIn('\\newcommand{\\RunningHead}{A short title of $x^2$}\n\\uppercasenonmath\\RunningHead\n'
                       '\\begin{document}\n\\title{' + title + '}\n', tex)
         # With the key, it is a text, and it names no Lean name.
-        materials = self.materials()
+        materials = self.found
         self.assertEqual(paper.check_plan(materials, {**PLAN, 'short_title': 'A short title'}, KEYS), [])
         self.assertIn('"short_title", when the plan has it, is a nonempty text',
                       paper.check_plan(materials, {**PLAN, 'short_title': ''}, KEYS))
@@ -907,6 +907,20 @@ class TypesettingTests(unittest.TestCase):
             (folder / 'paper.tex').write_text(text.replace('A sentence.', '\\undefinedmacro'), encoding='utf-8')
             self.assertEqual(paper.tight_displays(folder, recipe), [])
 
+    @unittest.skipUnless(sys.platform == 'win32', 'only Windows keeps a file that a program has open from being removed')
+    def test_a_pdf_that_another_program_has_open_stops_the_run_and_says_what_frees_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
+                                              encoding='utf-8', newline='\n')
+            recipe = paper.tex_recipe(TEX)
+            self.assertEqual(paper.typeset(folder, recipe), [])
+            # A viewer keeps the PDF of the last typesetting open, and the next typesetting cannot take it away.
+            with (folder / 'paper.pdf').open('rb'):
+                with self.assertRaisesRegex(paper.Stop, 'Close the file there and give the command again'):
+                    paper.typeset(folder, recipe)
+            self.assertEqual(paper.typeset(folder, recipe), [])
+
     def test_a_tex_command_that_does_not_finish_stops_the_run_and_goes_to_no_repair(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
@@ -919,6 +933,19 @@ class TypesettingTests(unittest.TestCase):
                     paper.typeset(folder, recipe)
                 # The second typesetting only measures: when it does not finish, nothing is reported.
                 self.assertEqual(paper.tight_displays(folder, recipe), [])
+
+    def test_a_file_that_the_tex_installation_lacks_stops_the_run_and_goes_to_no_repair(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
+                                              encoding='utf-8', newline='\n')
+            recipe = paper.tex_recipe(TEX)
+            # What TeX reports when the class of the preamble, which the script supplies, is not installed.
+            failed = subprocess.CompletedProcess(recipe[0], 1, b"./paper.tex:1: LaTeX Error: File `amsart.cls' not found.\n")
+            with patch('paper.subprocess.run', return_value=failed):
+                # No part of the manuscript names the class, so this is not returned as an error for a repair session.
+                with self.assertRaisesRegex(paper.Stop, "File `amsart.cls' not found"):
+                    paper.typeset(folder, recipe)
 
     def test_the_lines_wider_than_the_text_block_are_read_from_the_log_of_tex(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -2331,6 +2358,18 @@ class SideBySideTests(PaperCase):
         self.assertEqual((state['done'], state['open']), ({}, []))  # no stage after the writing had been reached
         self.assertEqual(len(self.calls('write')), 3)
 
+    def test_a_manuscript_that_passes_when_the_run_is_continued_carries_no_failure_of_an_earlier_settling(self):
+        script = good()
+        script['read'] = [{}]
+        self.stop(script)
+        # A run that ended between a settling that failed and the record of its stage has that failure in its state.
+        state = read_json(self.out / 'state.json')
+        state['open'] = [{'check': paper.TYPESETTING, 'after_repairs': paper.REPAIR_ROUNDS, 'problems': ['an error']}]
+        write_json(self.out / 'state.json', state)
+        self.assertEqual(self.run_paper(good(), resume=True), 0)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
+
     def test_a_run_stopped_in_the_first_reading_is_continued_with_that_reading(self):
         script = good()
         script['read'] = [{}]
@@ -2566,11 +2605,9 @@ class SideBySideTests(PaperCase):
         # A session has the statements of its section, the records of their elements in full, and what those mention.
         self.assertEqual(tools['given'], sorted(['paper-method.md', 'paper.tex', 'prompt.txt', 'records.md', 'session.json',
                                                  'statements.json', 'elements.md'] + RECORD_FILES[3:]))
-        # Of the method it has the two sections that say what a numbered statement has to say, and no other.
-        method = (self.folder(tools) / 'paper-method.md').read_text(encoding='utf-8')
-        self.assertEqual([line[3:] for line in method.splitlines() if line.startswith('## ')],
-                         ['What of the canon the paper leaves out', 'Every numbered statement says what its element says'])
-        self.assertIn(paper.method_part('Every numbered statement says what its element says'), method)
+        # Of the method it has what every session has that is given the method as a file.
+        self.assertEqual((self.folder(tools) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         statements = read_json(self.folder(tools) / 'statements.json')
         self.assertEqual([s['label'] for s in statements], ['lem:increasing', 'lem:square'])
         self.assertEqual([s['label'] for s in read_json(self.folder(intro) / 'statements.json')], ['thm:main'])
@@ -4054,11 +4091,9 @@ class CoverageTests(PaperCase):
         self.assertIn('"nearest", the name of an element as elements.md gives it', again['prompt'])
         self.assertEqual(covering['given'], sorted(['paper-method.md', 'paper.tex', 'prompt.txt', 'records.md', 'session.json',
                                                     'text.json', 'elements.md'] + RECORD_FILES[3:]))
-        # Of the method it has the section that its comparison applies and the two that this section leans on.
-        method = (self.folder(covering) / 'paper-method.md').read_text(encoding='utf-8')
-        self.assertEqual([line[3:] for line in method.splitlines() if line.startswith('## ')],
-                         ['What the running text asserts', 'The reader', 'Results from the literature'])
-        self.assertIn(paper.method_part('What the running text asserts'), method)
+        # Of the method it has what every session has that is given the method as a file.
+        self.assertEqual((self.folder(covering) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         entries = read_json(self.folder(covering) / 'text.json')
         self.assertEqual([(e['entry'], e['kind'], e['part']) for e in entries],
                          [(1, 'running text', 'tools'), (2, 'running text', 'tools')])

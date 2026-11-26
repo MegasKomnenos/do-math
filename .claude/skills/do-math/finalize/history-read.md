@@ -26,7 +26,7 @@ You judge the entries. You do not judge the research, its mathematics or its rev
 
 `text` is the entry. `list` holds the elements of a publication that has many, one item for each element, in groups. It is an empty array in every other entry.
 
-- `archive/`: the records the entries point to. `record` is a path inside the package's archive, and the same file lies in your folder under `archive/<that path>`. In these files the account name of the machine's user was replaced by `<account>`; that is intended.
+- `archive/`: the records the entries point to. `record` is a path inside the package's archive, and the same file lies in your folder under `archive/<that path>`. In these files the account name of the machine's user was replaced by `<account>` inside paths of that user's home folder; that is intended.
 
 The path shows which sort of entry you have before you. A path under `knowledge/` belongs to a publication: something that entered the research's library or its records at one time, with a number in the order of the research, `event`, and a date. The record of a publication is the whole folder in which the named file lies. The files beside that file say which elements the publication added or replaced, and they hold the reviewing session's judgment of each element and its remarks in detail. A path under `canon/approaches/` is the research's text about one way that was tried on one statement. So is a path under `canon/history/` whose folder has a name that ends in `-approaches`: the research moved such a text there when a proof of that statement was accepted. A path under `canon/questions/` is the research's text on what was understood of one question.
 
@@ -81,7 +81,7 @@ The heading and the last line come from the program. An entry therefore carries 
 
 An entry is two to four sentences.
 
-**The entry of a publication** says what was published and whose work it was, names each element, and gives the reviewing session's judgment. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
+**The entry of a publication** says what was published and whose work it was, names each element, and gives the reviewing session's judgment. Where the publication proposed, resolved, reopened or merged a question, it names the question between backticks, by the name the record gives it, and says in a few words what the question asks.
 
 - *Whose work it was* is said in plain words, as in the table above. That a second session prepared the change holds for every change and is not repeated.
 - *Each element* that the publication added or replaced is named by its Lean name between backticks, with one clause in words that says what the element is: what a definition defines, what a statement asserts. The clause is a name that a mathematical reader understands without the library, such as "the triangular numbers" or "that two sequences with the same first value and the same increments are equal". It is not the statement in full, whose hypotheses, constants and exact form are in the record. A formula stands in a clause only where words cannot name the statement, which is the case when a clause in words would fit a neighbouring statement equally well. In a publication that is the result of a review of published proofs, the elements are those whose proofs that review found valid or invalid.
@@ -114,7 +114,7 @@ Against what an entry has to be:
 - **Is the reviewing session's judgment there, in one sentence?**
 - **Has the entry its form?** Two to four sentences; more than three elements in the list, grouped where they belong together, and not strung together in the sentences; each item a name, a colon and one clause.
 - **Is it in plain words?** Where the entry leaves a working term unexplained, put it in plain words.
-- **Does it carry anything it should not?** A path of a machine, an identifier of a session, of a build or of a change, a mention of the package or of how the timeline was made, a reference to another entry of the timeline.
+- **Does it carry anything it should not?** A path of a machine, an identifier of a session, of a build or of a change, a mention of the package or of how the timeline was made, a reference to another entry of the timeline. The name of a question stays whole, also where it begins with the identifier of a session: the timeline's heading for the question and the question's file in the archive carry that name.
 
 Check every entry, also after you have found something in one.
 

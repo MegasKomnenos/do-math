@@ -32,7 +32,7 @@ import package
 import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay
-from runtime_support import read_json, remove_tree, write_json
+from runtime_support import first_commit, git, read_json, remove_tree, write_json
 from support import (DEFS, ROOT, InstanceCase, fixture_settings, kept_copy, module_text, record_text, stop_broker,
                      template, theorem)
 
@@ -322,6 +322,13 @@ class FinalizeCase(InstanceCase):
     def decisions(self):
         return (self.work / 'decisions.md').read_text(encoding='utf-8')
 
+    def noted(self, text):
+        """Add a text to what the research understood of its root question and commit it; returns the commit."""
+        note = self.instance / 'canon' / 'questions' / 'q0.md'
+        note.write_text(note.read_text(encoding='utf-8') + text, encoding='utf-8', newline='\n')
+        git(self.instance, 'commit', '-m', 'a note', '--', 'canon/questions/q0.md')
+        return package.head_commit(self.instance)
+
     def from_the_records(self):
         """Begin this test at a run that has passed every step before the draft, with the plain script.
 
@@ -393,11 +400,9 @@ class TakeTests(FinalizeCase):
                       package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)['kept'])
 
     def test_a_theorem_that_is_not_proved_is_not_kept_for_its_attribute(self):
-        allowed = ['propext', 'Classical.choice', 'Quot.sound']
-        self.assertIn('Small.simp_one', package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'],
-                                                     allowed)['kept'])
+        self.assertIn('Small.simp_one', self.plan['kept'])
         self.index['entries']['Small.simp_one']['axioms'] = ['sorryAx']
-        plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], allowed)
+        plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
         self.assertIn('Small.simp_one', plan['removed'])
         self.assertIn('Small.root', plan['kept'])
 
@@ -563,7 +568,7 @@ class RecordTests(FinalizeCase):
 class RegistryTests(FinalizeCase):
     def first(self):
         folder = self.root / 'first'
-        package.export_commit(self.instance, package.first_commit(self.instance, 'HEAD'), ['canon/lean'], folder, 'canon/')
+        package.export_commit(self.instance, first_commit(self.instance), ['canon/lean'], folder, 'canon/')
         return folder / 'lean'
 
     def test_the_challenge_is_the_first_commit_joined_into_one_module_with_the_proof_left_open(self):
@@ -807,40 +812,48 @@ class RegistryTests(FinalizeCase):
 
 class ArchiveTests(FinalizeCase):
     def test_the_archive_is_the_commit_with_the_account_name_replaced_and_the_ledger_points_into_it(self):
-        commit = package.head_commit(self.instance)
-        # A word that stands in paths and in files of the research plays the account name.
-        info = package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'Small')
+        # The research wrote paths of its machine into a text of the canon: the home folder of the account `pat` with
+        # either separator, with the doubled backslash of a JSON string, and as another system writes it; the home
+        # folder of another account, whose name begins with that name; and a folder that is no home folder. The
+        # name stands there as a word by itself too, and as a part of the word "path".
+        paths = ('Computed in C:\\Users\\{0}\\work and C:/Users/{0}/work, logged under "C:\\\\Users\\\\{0}\\\\log.json", '
+                 'and on the server in /home/{0}/work. Checked in /home/patricia/work. The data is in D:\\srv\\pat\\data. '
+                 'Run by pat along the path above.\n')
+        commit = self.noted(paths.format('pat'))
+        info = package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'pat')
         archive = self.root / 'knowledge' / 'odd-knowledge.tar.xz'
         members = package.archive_members(archive)
         tree = {}
-        for line in package.git_run(self.instance, 'ls-tree', '-r', '-z', commit, '--', 'canon', 'knowledge').split(b'\0'):
+        for line in git(self.instance, 'ls-tree', '-r', '-z', commit, '--', 'canon', 'knowledge').split('\0'):
             if line:
-                head, path = line.split(b'\t', 1)
-                tree[path.decode('utf-8')] = head.decode().split()[2]
+                head, path = line.split('\t', 1)
+                tree[path] = head.split()[2]
         blob = lambda data: hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        self.assertEqual({path.replace('<account>', 'Small'): blob(data.replace(b'<account>', b'Small'))
-                          for path, data in members.items()}, tree)
-        self.assertFalse(any(b'Small' in data or 'Small' in path for path, data in members.items()))
-        self.assertIn('canon/lean/<account>/Defs.lean', members)
-        touched = sum(b'<account>' in data or '<account>' in path for path, data in members.items())
-        self.assertEqual((info['files'], info['touched']), (len(tree), touched))
-        self.assertGreater(touched, 0)
+        # Every member has its path, and the bytes of the commit but for the name inside the paths of the home folder.
+        self.assertEqual({path: blob(data.replace(b'<account>', b'pat')) for path, data in members.items()}, tree)
+        self.assertTrue(members['canon/questions/q0.md'].decode('utf-8').endswith(paths.format('<account>')))
+        self.assertEqual((info['files'], info['touched']), (len(tree), 1))
         manifest = (self.root / 'knowledge' / 'MANIFEST.md').read_text(encoding='utf-8')
         self.assertEqual(package.manifest_sha(self.root / 'knowledge' / 'MANIFEST.md'), package.sha256_file(archive))
-        self.assertIn(f'{touched} files were touched', manifest)
+        self.assertIn('1 files were touched', manifest)
         self.assertIn(commit, manifest)
         # The same commit gives the same archive.
-        again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', 'Small')
+        again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', 'pat')
         self.assertEqual(again['sha256'], info['sha256'])
-        # A name that is only a part of a word of the research is not replaced there: `mal` is in "Small".
-        self.assertEqual(package.knowledge_archive(self.instance, commit, self.root / 'part', 'odd', 'mal')['touched'], 0)
+        # A name that stands in the research only as a word by itself is replaced nowhere: `Small` is the library.
+        self.assertEqual(package.knowledge_archive(self.instance, commit, self.root / 'word', 'odd', 'Small')['touched'], 0)
+        # A home folder that lies neither under `Users` nor under `home` is known by its own path.
+        with patch.object(Path, 'home', return_value=Path('D:/srv/pat')):
+            package.knowledge_archive(self.instance, commit, self.root / 'elsewhere', 'odd', 'pat')
+        elsewhere = package.archive_members(self.root / 'elsewhere' / 'odd-knowledge.tar.xz')['canon/questions/q0.md']
+        self.assertIn(b'The data is in D:\\srv\\<account>\\data.', elsewhere)
         rows = package.ledger({path: data for path, data in members.items()
                                if path.startswith(('knowledge/', 'canon/approaches/', 'canon/questions/'))})
         self.assertEqual([(row['event'], row['kind']) for row in rows], [(1, 'change'), (2, 'question')])
         self.assertEqual(rows[0]['title'], 'A contribution')
         self.assertEqual(rows[0]['review'], 'Useful work.')
         self.assertEqual(rows[0]['contribution'], 'Closed what it took on.')
-        self.assertIn('<account>.sq_step', rows[0]['elements'])
+        self.assertIn('Small.sq_step', rows[0]['elements'])
         self.assertTrue(all(row['record'] in members for row in rows))
         self.assertEqual(rows[1]['record'], 'canon/questions/q0.md')
         beside = package.event_members(rows[0], list(members))
@@ -893,7 +906,9 @@ class DocumentTests(FinalizeCase):
                                ('dependency-map/dependency_map.svg', '<svg/>\n')):
             (folder / relative).parent.mkdir(parents=True, exist_ok=True)
             (folder / relative).write_text(text, encoding='utf-8', newline='\n')
-        package.knowledge_archive(self.instance, package.head_commit(self.instance), folder / 'knowledge', 'odd', 'no-such-account')
+        # The research wrote a path of a home folder into a text of its canon, and the archive is made under another account.
+        package.knowledge_archive(self.instance, self.noted('Computed in /home/pat/work.\n'), folder / 'knowledge', 'odd',
+                                  'no-such-account')
         freeze = package.freeze_hashes(folder)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         return folder, freeze
@@ -921,12 +936,20 @@ class DocumentTests(FinalizeCase):
         faulty('README.md', '[gone](history/absent.md)\n', 'README.md: the link history/absent.md does not resolve')
         faulty('README.md', '[out](../outside.md)\n', 'the link ../outside.md does not resolve inside the package')
         faulty('dependency-map/dependency_map.html', '<img src="missing.svg">\n', 'the link missing.svg')
-        faulty('history/timeline.md', 'Run by pat on the machine.\n', 'history/timeline.md holds the account name', account='pat')
+        faulty('history/timeline.md', 'Computed in C:\\Users\\pat\\work.\n',
+               'history/timeline.md holds the account name inside a path of a home folder', account='pat')
+        # The name as a word by itself is no fault: `oddSum` is a definition of the library. The files that hold it so
+        # are found for the report of the run, a member of the archive after the archive.
+        self.assertEqual(check('oddSum'), [])
+        words = package.account_words(folder, 'oddSum')
+        self.assertLessEqual({'lean/Small/Defs.lean', 'knowledge/odd-knowledge.tar.xz, member canon/lean/Small/Defs.lean'},
+                             set(words))
+        self.assertNotIn('README.md', words)
         # A word of which the name is only a part is not the name: the manifest of the archive says "machine".
-        self.assertEqual(check('achin'), [])
+        self.assertEqual(package.account_words(folder, 'achin'), [])
         # The archive is read by its members and not by its packed bytes, in which a name can stand only by chance.
         # Those bytes begin with the signature of the format, which holds `7zXZ`, and no member has that word.
-        self.assertEqual(check('7zXZ'), [])
+        self.assertEqual(package.account_words(folder, '7zXZ'), [])
         # In a document a colon before a backslash is a formula, so a drive path is found there by its form with a slash.
         faulty('README.md', 'Built in C:/Users/someone/lean.\n', 'README.md holds a drive path')
         faulty('lean/lakefile.toml', "path = 'C:\\Users\\someone\\lean'\n", 'lean/lakefile.toml holds a drive path')
@@ -947,9 +970,9 @@ class DocumentTests(FinalizeCase):
         (folder / 'paper' / 'paper.tex').write_text(formula, encoding='utf-8', newline='\n')
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(check(), [])
-        # A member of the archive that holds the account name is found inside the archive.
-        problems = check('oddSum')
-        self.assertTrue(any('the member canon/lean/Small/Defs.lean holds the account name' in problem for problem in problems))
+        # A member of the archive that holds the account name inside a path of a home folder is found inside the archive.
+        self.assertEqual(check('pat'), ['knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md holds the account '
+                                        'name inside a path of a home folder'])
         # A drive path in a file the pipeline did not write, such as a record of the research, is not its concern.
         (folder / 'records' / 'Small' / 'root.md').write_text('Computed in D:\\data.\n', encoding='utf-8', newline='\n')
         freeze = package.freeze_hashes(folder)
@@ -978,6 +1001,16 @@ class DocumentTests(FinalizeCase):
         bare.write_text('# R\n', encoding='utf-8')
         package.add_solved_entry(bare, 'odd', entry)
         self.assertEqual(bare.read_text(encoding='utf-8'), '# R\n\n## Solved problems\n\n' + entry + '\n')
+        # The file is the repository's and keeps the line endings it has: a checkout on Windows gives it CRLF.
+        windows = self.root / 'windows.md'
+        windows.write_bytes(b'# R\r\n\r\n## Solved problems\r\n\r\n- An earlier one.\r\n')
+        package.add_solved_entry(windows, 'odd', entry)
+        self.assertEqual(windows.read_bytes(), b'# R\r\n\r\n## Solved problems\r\n\r\n- An earlier one.\r\n'
+                         + entry.encode('utf-8') + b'\r\n')
+        unix = self.root / 'unix.md'
+        unix.write_bytes(b'# R\n')
+        package.add_solved_entry(unix, 'odd', entry)
+        self.assertEqual(unix.read_bytes(), b'# R\n\n## Solved problems\n\n' + entry.encode('utf-8') + b'\n')
 
 
 class PaperRunTests(FinalizeCase):
@@ -1157,7 +1190,6 @@ class PromptTests(FinalizeCase):
         compiling = ('## Compiling\n', INSTALLED.as_posix() + '/runtime/lean_broker.py', '--expect-mb 64')
         for name in INSTRUCTIONS:
             text = run.prompt(name, {'part': 'core'} if name in ('simplify', 'foldback') else None)
-            self.assertEqual(finalize.PLACEHOLDER.findall(text), [], name)
             self.assertTrue(text.startswith(common.split('{{')[0]), name)
             self.assertIn('\n## One proof, presented by itself\n', text, name)
             given = name not in ('history-write', 'history-read', 'readme-write', 'package-read')
@@ -1272,7 +1304,18 @@ class RefusalTests(FinalizeCase):
 class RunTests(FinalizeCase):
     def test_a_run_comes_to_its_end_with_the_package_in_place(self):
         config = self.config(authors=[{'name': 'A. Author', 'email': 'a@example.org', 'orcid': '0000'}])
+        # The repository is under Git, as the one that holds the skill is, with its README committed.
+        git = lambda *arguments: subprocess.run(['git', '-C', str(self.repository), '-c', 'user.name=t', '-c', 'user.email=t@t',
+                                                 *arguments], check=True, capture_output=True, text=True).stdout.strip()
+        git('init')
+        git('add', 'README.md')
+        git('commit', '-m', 'before the run')
+        head = git('rev-parse', 'HEAD')
         self.assertEqual(self.run_command(script(), config=config), 0, self.said)
+        # The run commits nothing: the head is the commit it found, nothing is staged, and the package and the entry in
+        # the README stand in the working tree alone.
+        self.assertEqual((git('rev-parse', 'HEAD'), git('diff', '--cached', '--name-only')), (head, ''))
+        self.assertEqual(git('ls-files'), 'README.md')
         # The order of the stages is the program's: each step of the library stage after the one before it.
         steps = self.steps()
         main = [step for step in steps if not step.startswith('3-')]
@@ -1629,6 +1672,14 @@ class RunTests(FinalizeCase):
             'output/lean/Small/Step.lean': STEP.replace('\n\nend Small', '\n\n' + theorem('open_seven', ': oddSum 7 = 49')
                                                         + '\n\nend Small'),
             'output/report.json': json.dumps({'deleted': [], 'cross': [], 'notes': ''})}]
+        # The other part moves what one of its two modules holds into the other and deletes the emptied module.
+        joined = module_text('\n\n'.join([part for part in HELPER_PARTS if part != UNUSED]
+                                         + [theorem('added_six', ': oddSum 6 = 36', proof='rfl'), ROOT_PROOF]),
+                             imports=('Small.Defs', 'Small.Step'))
+        plan['simplify:core'] = [{
+            'output/lean/Small/Root.lean': joined,
+            'output/report.json': json.dumps({'deleted': ['lean/Small/Helper.lean'],
+                                              'cross': [{'id': 'x1', 'done': True, 'note': ''}], 'notes': ''})}]
         with patch('finalize.Run.arrange', side_effect=paper.Stop('halted for the test')):
             self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
         self.assertIn('The run stopped at the step `2.4-arrange`', (self.work / 'report.md').read_text(encoding='utf-8'))
@@ -1640,7 +1691,9 @@ class RunTests(FinalizeCase):
                       'not proved from the allowed axioms: sorryAx', self.decisions())
         merged = self.work / 'lib' / '4-merged' / 'lean' / 'Small'
         self.assertEqual((merged / 'Step.lean').read_text(encoding='utf-8'), STEP)
-        self.assertIn('theorem added_six', (merged / 'Helper.lean').read_text(encoding='utf-8'))
+        # The module that the accepted part deleted is gone from the merged library, and what it held is in the other.
+        self.assertFalse((merged / 'Helper.lean').exists())
+        self.assertEqual((merged / 'Root.lean').read_text(encoding='utf-8'), joined)
 
     def test_a_manuscript_that_fails_its_typesetting_stops_the_run_and_the_next_start_writes_the_paper_anew(self):
         self.from_the_records()
@@ -1748,20 +1801,33 @@ class RunTests(FinalizeCase):
 
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
-        # The selection of this run chooses the root itself as the main theorem of the package.
-        plan = script(selection=[{'output/decision.json': decision(main='Small.root')}], package_read=[{
+        # The selection of this run chooses the root itself as the main theorem of the package. It records the result
+        # as known, and the one work it lists gives context.
+        known = json.loads(decision(main='Small.root'))
+        known['registry']['origin'] = 'source-based'
+        # The reader of the package leaves nothing at its first two sessions, and its findings at the third.
+        plan = script(selection=[{'output/decision.json': json.dumps(known)}], package_read=[{}, {}, {
             'output/findings.json': json.dumps([
                 {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'},
                 {'file': 'README.md', 'quote': '', 'problem': 'It was not read to its end: the last section is missing here.'}])}])
-        self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
+        # So the first start stops in the documents stage, after the prose of the README was accepted.
+        self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        self.assertIn('The run stopped at the step `5-documents`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertEqual((len(self.calls('readme-write')), len(self.calls('package-read'))), (1, 2))
+        self.assertEqual(self.run_command(config=self.config()), 0, self.said)
         # No session may rewrite a sentence of the program: the finding is reported with the package, and the run ends.
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('## What the reader of the package found and the run did not correct', report)
         self.assertIn('- README.md, at "Everything in this folder is under": The licence is not named.', report)
         # A document that the reader could not read is reported without a quote, and is no finding in the prose.
         self.assertIn('- README.md: It was not read to its end: the last section is missing here.', report)
+        # The registry asks a result that was known for a work that has it. The work that is listed gives context, so
+        # the report leaves the field to the user although the list is not empty.
+        self.assertIn('neither the selection nor the record of the root names a work that has it', report)
         self.assertIn('## Stage 5: what the reader of the package found and the run did not correct', self.decisions())
-        self.assertEqual(len(self.calls('readme-write')), 1)  # nothing was found in the prose, so no session corrects
+        # Nothing was found in the prose, so no session corrects. And the stage that was entered again gave the writer
+        # of the prose the figures it had given before, so the accepted prose was not written a second time.
+        self.assertEqual(len(self.calls('readme-write')), 1)
         self.assertTrue((self.solved / 'README.md').is_file())
         # With the root as the main theorem, Challenge.lean states the root once, as it was posed, and the root alone
         # is compared. The paper command is given no other main result, and the README names no second theorem.
@@ -1781,8 +1847,9 @@ class RunTests(FinalizeCase):
 
     def test_a_main_theorem_whose_statement_needs_more_than_the_definitions_is_not_compared(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
-        # The account of this selection names two declarations, and the arrangement renames one of them.
-        account = 'The proof goes through `Small.simp_one` and `Small.twice_zero`.'
+        # The account of this selection names three declarations. The arrangement renames one of them, and the take
+        # removes another, as a later step can remove a declaration or rename it without a table.
+        account = 'The proof goes through `Small.simp_one` and `Small.twice_zero`, and it leaves `Small.unused_two` aside.'
         plan = script(selection=[{'output/decision.json': decision(main='Small.twice_zero', account=account)}],
                       arrange=[{'@copy': [['lean', 'output/lean']],
                                 'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED.replace('simp_one', 'first_odd'),
@@ -1795,8 +1862,11 @@ class RunTests(FinalizeCase):
             {'declaration': name, 'verdict': 'agrees', 'difference': ''}
             for name in ('Small.added_six', 'Small.first_odd', 'Small.named_four')])}]
         # Lake is run in the Lean environment of the settings: the stand-in fails without the variable `lean.env` gives.
-        self.configure(lean={'env': {'DO_MATH_TEST_LAKE': 'given'}})
-        lean = self.halted_after_the_freeze(plan, lake={'needs_variable': 'DO_MATH_TEST_LAKE'})
+        # The instance allows one axiom beyond the three of the registry, and Lean reports it for the root.
+        self.configure(lean={'env': {'DO_MATH_TEST_LAKE': 'given'},
+                             'allowed_axioms': ['propext', 'Classical.choice', 'Quot.sound', 'Lean.ofReduceBool']})
+        lean = self.halted_after_the_freeze(plan, lake={'needs_variable': 'DO_MATH_TEST_LAKE',
+                                                        'axioms': {'Small.root': ['propext', 'Lean.ofReduceBool']}})
         self.assertEqual(read_json(lean / 'comparator.json')['theorem_names'], ['Small.root'])
         self.assertNotIn('twice_zero', (lean / 'Challenge.lean').read_text(encoding='utf-8'))
         self.assertIn('the statement of the main theorem `Small.twice_zero` names declarations outside the definition '
@@ -1809,6 +1879,10 @@ class RunTests(FinalizeCase):
                          ['Small.root', 'Small.twice_zero'])
         freeze = read_json(self.work / 'freeze.json')
         self.assertEqual(freeze['compared'], ['Small.root'])
+        # The freeze passes, since the instance allows the axiom, and the package says that the registry will not.
+        self.assertEqual(freeze['fails'], ["The compared theorems depend on Lean.ofReduceBool, which the settings of the "
+                                           "research allow; the registry's comparator permits propext, Quot.sound, "
+                                           'Classical.choice only'])
         self.assertEqual(freeze['folders']['lean'], canon.tree_hash(lean))
         self.assertEqual(replay(self.work / 'view' / 'frozen')['root_state'], 'formal_proved')
         # The renamed declaration has its record under the new name, and the account of the selection goes to both
@@ -1820,9 +1894,12 @@ class RunTests(FinalizeCase):
         self.assertEqual({item['declaration']: item['why'] for item in todo},
                          {'Small.added_six': 'new', 'Small.first_odd': 'changed',
                           'Small.named_four': 'names a declaration that is gone'})
+        # The name that the library no longer has is listed after the account, for the sessions that read it.
         for view in ('4', 'frozen'):
             self.assertEqual((self.work / 'view' / view / 'canon' / 'questions' / 'q0.md').read_text(encoding='utf-8'),
-                             'The proof goes through `Small.first_odd` and `Small.twice_zero`.\n')
+                             'The proof goes through `Small.first_odd` and `Small.twice_zero`, and it leaves '
+                             '`Small.unused_two` aside.\n\nThe library no longer has these declarations under the names '
+                             'that the account above gives them: `Small.unused_two`.\n')
         self.assertFalse((self.work / 'stage' / 'lake').exists())
         # Nothing was to be folded back, so no fold-back session ran and nothing was built for it.
         self.assertEqual((self.calls('foldback'), self.calls('draft-compare')), ([], []))
@@ -2029,7 +2106,10 @@ class RunTests(FinalizeCase):
         plan['package-read'] = [{'@stopped': ''}]
         # A session that was stopped once is started again as it was, and what it then leaves is taken.
         plan['selection-read'] = [{'@stopped': ''}, plan['selection-read'][0]]
-        self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
+        # The account under which this run is made has the name of the library: a word that stands in most files of the
+        # package, and in no path of a home folder.
+        with patch('package.account_name', return_value='Small'):
+            self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
         for kind, section in (('records-compare', '5-01'), ('package-read', None), ('selection-read', None)):
             first, second = [call for call in self.calls(kind) if call['section'] == section]
             # The same prompt and the same files, with no word of the stop and nothing of the stopped session.
@@ -2049,6 +2129,13 @@ class RunTests(FinalizeCase):
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('- Some of the checks that the list above describes were not made.', report)
         self.assertIn("  - the reading of the package's documents by a session that has the package and nothing else.", report)
+        # The final check did not stop for the account name as a word by itself, and the report lists the files that
+        # hold it so, a member of the archive after the archive.
+        self.assertIn('## Where the account name stands as a word by itself\n\nThe account of this run is named `Small`.',
+                      report)
+        self.assertIn('\n- lean/Small/Root.lean\n', report)
+        self.assertIn('\n- knowledge/odd-knowledge.tar.xz, member canon/lean/Small/Root.lean\n', report)
+        self.assertNotIn('\n- paper/paper.pdf\n', report)
         # The README is in the manifest as it stands, with that item.
         self.assertEqual(package.standalone_problems(
             self.solved, self.work, package.account_name(),
@@ -2072,8 +2159,9 @@ class RunTests(FinalizeCase):
     def test_a_part_whose_session_the_provider_refuses_is_not_discarded_and_the_run_stops_until_it_is_taken(self):
         self.configure(retry_max_seconds=1)  # the wait for a refusal that names no time
         plan = script()
-        # The provider has no capacity for the model at the first two runs of the session, and has it at the third.
-        plan['simplify:core'] = [{'@refused': ''}, {'@refused': ''}] + plan['simplify:core']
+        # The provider has no capacity for the model at the first two runs of the session. At the next two the CLI
+        # ends with an error before the session writes anything, as when the network fails. The fifth run is sound.
+        plan['simplify:core'] = [{'@refused': ''}, {'@refused': ''}, {'@failed': ''}, {'@failed': ''}] + plan['simplify:core']
         with patch('command_sessions.LIMIT_WAITS', 1):
             self.assertEqual(self.run_command(plan, config=self.config()), 2)
         # The session was waited for and started again once, in its folder. Then the run stopped and named the reason.
@@ -2084,9 +2172,21 @@ class RunTests(FinalizeCase):
         self.assertIn('the provider refused the simplify session of core', report)
         self.assertIn('for this reason: model_capacity', report)
         self.assertIn('## What to do\n\nNothing is to be repaired by hand, and no output of a session is in question', report)
-        # The part was not discarded for it: started again, the command launches the session and accepts the part.
+        # The part was not discarded for it. Started again, the command launches the session, and the CLI of both
+        # attempts ends with an error before the session writes anything. That is nothing a session wrote, so the part
+        # is not discarded for it either: the run stops again, and the report says where the words of the CLI are.
+        self.assertEqual(self.run_command(config=self.config()), 2)
+        self.assertEqual(len([call for call in self.calls('simplify') if call['section'] == 'core']), 4)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.3-simplify`', report)
+        self.assertIn('no simplify session left output the script can use, in 2 attempts: output/report.json was not '
+                      'written. The CLI of every session that was read had ended with an error before the session '
+                      'wrote anything', report)
+        self.assertIn('## What to do\n\nNothing that a session wrote is in question', report)
+        self.assertNotIn('the simplification of the part core', self.decisions())
+        # Started once more, the command launches the session and accepts the part.
         self.assertEqual(self.run_command(config=self.config()), 0, self.said)
-        self.assertEqual(len([call for call in self.calls('simplify') if call['section'] == 'core']), 3)
+        self.assertEqual(len([call for call in self.calls('simplify') if call['section'] == 'core']), 5)
         self.assertNotIn('the simplification of the part core', self.decisions())
 
     def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
@@ -2141,13 +2241,19 @@ class RunTests(FinalizeCase):
         self.assertEqual({item['declaration']: item['why'] for item in todo},
                          {'Small.named_four': 'names a declaration that is gone', 'Small.root': 'changed'})
 
-    def test_axioms_beyond_the_three_at_the_freeze_stop_the_run(self):
+    def test_each_fault_of_what_lean_reports_and_of_the_registry_files_stops_the_run_at_the_freeze(self):
         self.from_the_records()
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
-        self.assertEqual(self.run_command(script(), config=self.config(), lake={'axioms': {'Small.root': ['propext', 'sorryAx']}}), 2)
+        # Lean reports for the root an axiom that the instance does not allow, what it prints for the main theorem has
+        # no axioms line, and the title that the plan of the paper gives is longer than the registry takes for a name.
+        lake = {'axioms': {'Small.root': ['propext', 'sorryAx'], 'Small.sq_step': None}}
+        with patch.dict(PLAN, title='T' * 301):
+            self.assertEqual(self.run_command(script(), config=self.config(), lake=lake), 2)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The run stopped at the step `2.7-freeze`', report)
-        self.assertIn('Small.root depends on axioms beyond the three: sorryAx', report)
+        self.assertIn('Small.root depends on axioms that the instance does not allow: sorryAx', report)
+        self.assertIn('Check.lean prints no axioms line for Small.sq_step', report)
+        self.assertIn('formalization.yaml: project.name is a nonempty text of at most 300 characters', report)
         self.assertNotIn('2.7-freeze', read_json(self.work / 'state.json')['steps'])
         self.assertFalse(self.solved.exists())
 
@@ -2170,6 +2276,20 @@ class RunTests(FinalizeCase):
         self.assertIn('the program failed in this step:\nTraceback (most recent call last):', report)
         self.assertIn('TypeError: a defect of the program', report)
         self.assertNotIn('2.6-draft', read_json(self.work / 'state.json')['steps'])
+
+    def test_a_package_that_fails_the_final_check_stops_the_run_and_is_not_moved(self):
+        self.from_the_records()
+        # The session that writes the prose of the README links to a file that the package does not have.
+        plan = script(readme_write=[{'output/outline.md': 'The proof is by induction; see [the notes](notes/absent.md).\n',
+                                     'output/obtained.md': 'The research made {{facts.publications}} publication.\n'}])
+        self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `6-check`', report)
+        self.assertIn('the package does not pass its final check: README.md: the link notes/absent.md does not resolve '
+                      'inside the package', report)
+        self.assertNotIn('6-check', read_json(self.work / 'state.json')['steps'])
+        self.assertTrue((self.work / 'package' / 'README.md').is_file())
+        self.assertFalse(self.solved.exists())
 
 
 class SelectionTests(FinalizeCase):

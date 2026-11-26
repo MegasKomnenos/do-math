@@ -27,7 +27,8 @@ from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance
                        refuting_proofs, render, replay, root_settlement, root_solved)
 from retention import capture, refusal
 from ending import authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
+from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp,
+                             first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
                              replace_file, session_host,
                              terminate_process, write_json, write_text)
@@ -1088,7 +1089,7 @@ class Runner:
         record = self.state.get('root_check')
         if record and record['proof'] == proof and record['revision'] == self.model['revision']:
             return
-        commit = git(self.instance, 'rev-list', '--max-parents=0', 'HEAD').split()[0]
+        commit = first_commit(self.instance)
         first = json.loads(git(self.instance, 'show', commit + ':canon/index.json'))
         differences = statement_differences(first, Canon(self.instance).load_index(), root)
         checked = {'proof': proof, 'revision': self.model['revision'], 'compared_with_commit': commit,

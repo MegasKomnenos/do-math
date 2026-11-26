@@ -380,6 +380,13 @@ def git(instance, *args):
     return result.stdout.strip()
 
 
+def first_commit(instance, commit="HEAD"):
+    """The commit with which an instance began: the commit without a parent that `commit` descends from.
+
+    runner.initialize makes exactly one such commit, so the history of an instance has one."""
+    return git(instance, "rev-list", "--max-parents=0", commit).split()[0]
+
+
 
 def lean_config(settings):
     """The broker configuration in force: settings plus the values derived on this host.

@@ -127,7 +127,9 @@ class KnowledgeTests(ScenarioCase):
                          ('def', [], False, None))
 
     def test_a_verdict_belongs_to_the_proof_it_judged(self):
-        self.direct()
+        # The root's accepted proof names statements without a proof, so the root is not settled, and review may
+        # put in its place a proof that it holds back (check.assessment_check).
+        self.split()
         first = self.elements()['Small.root']['verdict']['change']
         source = Canon(self.instance).lean / 'Small/Root.lean'
         original = source.read_bytes()
@@ -135,10 +137,16 @@ class KnowledgeTests(ScenarioCase):
         def offer(proof, **verdict):
             folder = self.candidate(replace={'Small.root': self.root_text(proof=proof)},
                                     records={'Small/root.md': self.root_record('By cases on $n$.')})
-            assessment = self.verdicts(folder, **{'Small.root': verdict})
-            if not verdict:
-                assessment['elements'] = []
-            return self.publish(folder, assessment)[0]
+            return self.publish(folder, self.verdicts(folder, **{'Small.root': verdict}))[0]
+
+        def unjudged(change):
+            """The change with the verdicts taken out of its published assessment, where the replay reads them.
+
+            The transport check passes no assessment that leaves a proof of the candidate unjudged, so the
+            change is published with a verdict and the file is changed afterwards."""
+            path = self.instance / 'knowledge/changes' / change / 'assessment.json'
+            write_json(path, {**read_json(path), 'elements': []})
+            return change
 
         # Review declined the replacement: the canon keeps its proof, and that proof keeps its verdict.
         offer('cases n <;> sorry', correct='not_confirmed', accepted=False, replaces=False,
@@ -154,7 +162,7 @@ class KnowledgeTests(ScenarioCase):
                          ('held', second, HELD_REASON))
         # A later proof that the review of its change did not judge does not inherit the judgment of the proof
         # it replaced, and it is not confirmed either.
-        third = offer('induction n <;> sorry')
+        third = unjudged(offer('induction n <;> sorry'))
         model = replay(self.instance)
         root = model['elements']['Small.root']
         self.assertEqual((root['verdict']['correct'], root['verdict']['accepted'], root['verdict']['change']),
@@ -164,9 +172,7 @@ class KnowledgeTests(ScenarioCase):
         # only for the elements an instance began with: a proof that a reviewed change brought without a verdict
         # has had no reading of its statement against what was meant, so it settles nothing.
         folder = self.candidate(replace={'Small.root': self.root_formal()})
-        assessment = self.verdicts(folder)
-        assessment['elements'] = []
-        self.publish(folder, assessment)
+        unjudged(self.publish(folder)[0])
         model = replay(self.instance)
         root = model['elements']['Small.root']
         self.assertEqual((root['lean_proof'], root['verdict']['correct'], root['standing'], root['settled'],

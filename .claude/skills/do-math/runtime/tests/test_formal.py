@@ -107,6 +107,24 @@ class BothCompilers:
         self.assertTrue(any(error.startswith('Small.Above:') and 'sumZero' in error for error in result['errors']),
                         result['errors'])
 
+    def test_a_private_helper_under_the_name_of_a_statement_belongs_to_that_statement(self):
+        # `holder.step` is private and its name extends `holder`. The proof of `holder` is complete and does not
+        # name it; the proof of `throughStep` names it.
+        body = '\n\n'.join(['private theorem holder.step : oddSum 1 = 1 := by\n  sorry',
+                            theorem('holder', SUM_ZERO, proof='rfl'),
+                            theorem('throughStep', ': oddSum 1 = 1', uses=['holder.step'], proof='exact h1')])
+        folder = self.candidate(modules={'Small/Helper.lean': module_text(body)},
+                                records={'Small/holder.md': record_text('The empty sum is zero.'),
+                                         'Small/throughStep.md': record_text('One odd number sums to one.')})
+        result = read_json(folder / 'prepared.json')
+        self.assertEqual(result['added'], ['Small.holder', 'Small.throughStep'])  # the helper is no element
+        holder, through = result['entries']['Small.holder'], result['entries']['Small.throughStep']
+        # The helper's open proof counts as the statement's, although Lean's list of axioms for the statement is empty.
+        self.assertEqual((holder['lean_proof'], holder['axioms'], beyond_allowed(holder, ALLOWED)), ('sorry', [], ['sorryAx']))
+        # A proof that names the helper names the statement, and Lean reports the `sorry` beneath it.
+        self.assertIn('Small.holder', through['uses'])
+        self.assertEqual((through['lean_proof'], through['axioms']), ('complete', ['sorryAx']))
+
 
 class FormalStatusTests(BothCompilers, InstanceCase):
 
@@ -146,15 +164,23 @@ class FormalStatusTests(BothCompilers, InstanceCase):
         folder = self.candidate(replace={'Small.sumZero': ZERO}, records={'Small/sumZero.md': PROVED_ZERO_RECORD})
         # The module of `fromZero` is not changed by the candidate, and its index is taken again with it.
         self.assertEqual(read_json(folder / 'prepared.json')['changed_modules'], ['Small.Zero'])
-        _, engine = self.publish(folder)
+        # Review leaves the proof of the lemma undetermined at first, so the lemma is not settled and its proof
+        # can still be taken out again. What Lean reports for the theorem above follows the proof all the same.
+        unconfirmed = self.verdicts(folder, **{'Small.sumZero': {'correct': 'undetermined', 'accepted': False}})
+        _, engine = self.publish(folder, unconfirmed)
         self.assertEqual(source.read_bytes(), before)
         above = self.element('Small.fromZero')
-        self.assertEqual((above['axioms'], above['formal'], above['settled']), ([], True, True))
+        self.assertEqual((above['axioms'], above['formal'], above['settled']), ([], True, False))
         # And back: when the proof of the lemma is opened again, what rests on it is no longer formal.
         folder = self.candidate(replace={'Small.sumZero': OPEN_ZERO}, records={'Small/sumZero.md': ZERO_RECORD})
         self.publish(folder, engine=engine)
         above = self.element('Small.fromZero')
         self.assertEqual((above['axioms'], above['formal']), (['sorryAx'], False))
+        # A proof of the lemma that review confirms and accepts settles what rests on it as well.
+        folder = self.candidate(replace={'Small.sumZero': ZERO}, records={'Small/sumZero.md': PROVED_ZERO_RECORD})
+        self.publish(folder, engine=engine)
+        above = self.element('Small.fromZero')
+        self.assertEqual((above['axioms'], above['formal'], above['settled']), ([], True, True))
 
 
 class EarlierFilesTests(ScenarioCase):

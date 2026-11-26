@@ -38,7 +38,8 @@ import package
 import paper
 from paper import produce
 from package import write_json, write_text  # they make a file's folder and write its lines with LF ends
-from runtime_support import alive, contain_session_processes, popen_options, read_json, remove_tree, rename_directory
+from runtime_support import (alive, contain_session_processes, first_commit, git, popen_options, read_json, remove_tree,
+                             rename_directory)
 from settings import validate
 
 RUNTIME = Path(__file__).resolve().parent
@@ -184,7 +185,8 @@ class Run:
 
         A step that has an entry in state.json has passed its exit check and is not made again. `work`
         returns when the exit check has passed and raises otherwise. Where it returns values of the
-        state (the main theorem, after the selection and after the arrangement), they are entered
+        state (the main theorem, after the selection and after the arrangement, and what the final check
+        collected for the report), they are entered
         together with the step: a state that another thread saves while the step is under way does not
         hold them, so a step that is entered again starts from the state it started from. `keep` names
         the products that are not cleared when the step is entered again, for a step that continues
@@ -333,13 +335,16 @@ class Run:
         """A simplification: when its sessions leave nothing usable it is discarded and the fact recorded.
 
         Returns what `work` returns, or None when the part was discarded. A part is discarded for what
-        its sessions left and for nothing else (Unmade). Whatever else stops the task stops the run: an
+        its sessions wrote and for nothing else (Unmade). Whatever else stops the task stops the run: an
         instruction file with a name the command does not give, a session that could not be started or
-        that a safeguard stopped every time, a session that its provider refused through every wait
-        (Refused), an interruption of the command. The same command, started again, tries the part again."""
+        that a safeguard stopped every time, sessions whose CLI ended with an error before they wrote
+        anything (Unmade.died), a session that its provider refused through every wait (Refused), an
+        interruption of the command. The same command, started again, tries the part again."""
         try:
             return work()
         except Unmade as error:
+            if error.died:
+                raise
             self.decide(what, f'Discarded; that part of the library keeps the form it had. {error}')
             return None
 
@@ -351,14 +356,22 @@ class Run:
         root as its corollary."""
         return self.state['main'] if self.state['main'] != self.root else None
 
-    def proof_account(self):
-        """The selection's account of the chosen proof, with the names that the library has after the arrangement.
+    def proof_account(self, index):
+        """The selection's account of the chosen proof, for a library that has the given index.
 
         The account names elements between backticks, by their names in the research's library, and the
         arrangement may rename them. The README's writer takes the names of declarations from the account
-        alone, so each renamed name is given its new one, as in the records (package.follow_renames)."""
-        account = read_json(self.work / 'lib' / '0-selected' / 'decision.json')['account']
-        return package.with_new_names(account, read_json(self.work / 'lib' / '4-arranged' / 'renames.json'))
+        alone, so each renamed name is given its new one, as in the records (package.follow_renames). The
+        steps that simplify, arrange and fold back can also remove such an element, or give it another name
+        of which no table tells. The names of the research that the library no longer has are therefore
+        listed in a last paragraph."""
+        account = package.with_new_names(read_json(self.work / 'lib' / '0-selected' / 'decision.json')['account'],
+                                         read_json(self.work / 'lib' / '4-arranged' / 'renames.json'))
+        research = canon.read_index(self.work / 'source' / 'canon' / 'index.json')['entries']
+        gone = sorted({name for name in package.BACKTICKED.findall(account)
+                       if name in research and name not in index['entries']})
+        return account.strip() + ('\n\nThe library no longer has these declarations under the names that the account '
+                                  'above gives them: ' + ', '.join(f'`{name}`' for name in gone) + '.' if gone else '') + '\n'
 
     def paper_run(self, view, out, **options):
         """The paper command in this process, on a view, with the run's bound on sessions; returns its exit code.
@@ -537,8 +550,8 @@ class Run:
             differing = [name for name, value in (('instance', str(instance)), ('name', self.name), ('configuration', identity))
                          if run[{'configuration': 'config'}.get(name, name)] != value]
             try:
-                package.git_run(instance, 'cat-file', '-e', run['commit'] + '^{commit}')
-            except CanonError:
+                git(instance, 'cat-file', '-e', run['commit'] + '^{commit}')
+            except RuntimeError:
                 differing.append('pinned commit')
             if differing:
                 raise Refusal(f'{self.work} holds a run that differs from this one in: ' + ', '.join(differing)
@@ -566,8 +579,8 @@ class Run:
             raise Refusal(str(error))
         try:
             commit = package.head_commit(instance)
-            first = package.first_commit(instance, commit)
-        except CanonError as error:
+            first = first_commit(instance, commit)
+        except RuntimeError as error:
             raise Refusal(f'the repository of the instance cannot be read: {error}')
         if self.work.exists():
             remove_tree(self.work)  # what a refused start left; a run that began has state.json
@@ -1345,9 +1358,10 @@ class Run:
 
     def draft(self):
         arranged, records = self.work / 'lib' / '4-arranged', self.work / 'lib' / '5-records'
+        index = read_json(arranged / 'index.json')
         view = package.make_view(self.work / 'view' / '4', arranged / 'lean', records / 'records',
-                                 records / 'bibliography.bib', read_json(arranged / 'index.json'),
-                                 self.work / 'source', self.settings, self.proof_account())
+                                 records / 'bibliography.bib', index, self.work / 'source', self.settings,
+                                 self.proof_account(index))
         code = self.paper_run(view, self.work / 'draft', draft=True, main=self.paper_main())
         lacking = [name for name in ('plan.json', 'study.md', 'draft.json') if not (self.work / 'draft' / name).is_file()]
         if code != 0 or lacking:
@@ -1802,7 +1816,8 @@ class Run:
             raise Stop(f'lake env lean Check.lean ended with exit code {code}: ' + (out + err)[-1500:])
         axioms = package.axioms_printed(out)
         problems = [f'Check.lean prints no axioms line for {name}' for name in (self.root, main) if name not in axioms]
-        problems += [f'{name} depends on axioms beyond the three: ' + ', '.join(sorted(set(found) - set(self.allowed)))
+        problems += [f'{name} depends on axioms that the instance does not allow: '
+                     + ', '.join(sorted(set(found) - set(self.allowed)))
                      for name, found in axioms.items() if set(found) - set(self.allowed)]
         problems += package.definition_problems(lean, first, self.definitions)
         if entries[self.root]['statement_hash'] != self.statement_hash:
@@ -1812,13 +1827,20 @@ class Run:
             raise Stop('the frozen library does not pass its check: ' + '; '.join(problems))
         remove_tree(stage)
         package.make_view(self.work / 'view' / 'frozen', folded / 'lean', self.package / 'records',
-                          folded / 'bibliography.bib', index, self.work / 'source', self.settings, self.proof_account())
+                          folded / 'bibliography.bib', index, self.work / 'source', self.settings,
+                          self.proof_account(index))
         requires = ', '.join(f"{p['name']} {p.get('inputRev') or p['rev'][:12]}" for p in
                              read_json(lean / 'lake-manifest.json')['packages'] if not p.get('inherited'))
+        # The instance may allow an axiom beyond the three that the registry's comparator permits (comparator.json).
+        # A compared theorem that depends on one passes the check above, and the registry will not take it.
+        outside = sorted({axiom for name in compared for axiom in axioms[name]} - set(package.PERMITTED_AXIOMS))
+        fails = measure['fails'] + ([f"The compared theorems depend on {', '.join(outside)}, which the settings of the "
+                                     "research allow; the registry's comparator permits "
+                                     + ', '.join(package.PERMITTED_AXIOMS) + ' only'] if outside else [])
         write_json(self.work / 'freeze.json', {**package.freeze_hashes(self.package), 'compared': compared,
                                                'axioms': {name: axioms[name] for name in (self.root, main)},
                                                'check_output': out, 'toolchain': toolchain, 'requires': requires,
-                                               'title': title, 'fails': measure['fails']})
+                                               'title': title, 'fails': fails})
 
     # -- stage 3: history and knowledge archive ---------------------------------------------------------
 
@@ -1986,10 +2008,12 @@ class Run:
         timeline = [entry for path in sorted((self.work / 'history' / 'entries').glob('*.json')) for entry in read_json(path)]
         correspondence = read_json(self.package / 'paper' / 'correspondence.json')
         plan = read_json(self.work / 'paper' / 'plan.json')
-        # The sessions of the run are in its own log and in the logs of its two runs of the paper command.
+        # The sessions of the run are in its own log and in the logs of its two runs of the paper command. Those of
+        # this stage are left out: the figures go to the session that writes the prose of the README, and a stage
+        # that is entered again gives that session the figures it gave before, or its accepted output is made again.
         launched = [event for log in (self.sessions.log, *(read_json(self.work / name / 'log.json')
                                                            for name in ('draft', 'paper')))
-                    for event in log if event['event'] == 'session']
+                    for event in log if event['event'] == 'session' and event['kind'] not in ('readme-write', 'package-read')]
         models = list(dict.fromkeys(event['model'] for event in launched))
         # The numbered statements that the paper cites and does not prove; the library proves each of them.
         cited = [row['element'] for row in correspondence.get('statements', []) if row.get('cited')]
@@ -2004,7 +2028,7 @@ class Run:
                    package.read_text(SKILL / 'finalize' / 'licences' / (self.config['licence'] + '.txt')))
         fails = freeze['fails']
         introduction = self.work / 'paper' / 'parts' / (plan['sections'][0]['id'] + '.tex')
-        given = {'facts.json': as_json(facts), 'account.md': self.proof_account(),
+        given = {'facts.json': as_json(facts), 'account.md': self.proof_account(index),
                  'introduction.tex': introduction.read_bytes() if introduction.is_file() else '',
                  'timeline.md': (self.package / 'history' / 'timeline.md').read_bytes()}
 
@@ -2087,6 +2111,8 @@ class Run:
         problems = package.standalone_problems(self.package, self.work, self.account, read_json(self.work / 'freeze.json'))
         if problems:
             raise Stop('the package does not pass its final check: ' + '; '.join(problems))
+        # The files that hold the account name as a word by itself stop nothing. They are kept for the report.
+        return {'account_words': package.account_words(self.package, self.account) if self.account else []}
 
     def finish(self):
         """Move the package into solved/, list it in the repository's README, write the report, delete the rest."""
@@ -2108,13 +2134,17 @@ class Run:
         if not self.config['authors']:
             fill.append('`project.authors` and `project.responsible_maintainers` in `lean/formalization.yaml`: the '
                         'configuration names no author, and the registry requires people in both.')
-        if not facts.get('registry_sources'):
+        registry = decision['registry']
+        # The registry asks a result that was known for a work that has it, and a work that gives context is none.
+        # The works are read from the file the freeze wrote, which also lists the one the record of the root names.
+        listed = package.provenance(registry, self.solved / 'lean' / 'formalization.yaml')['sources']
+        if registry.get('origin') != 'original' and not any(
+                work.get('relationship') in ('formalizes', 'adapts', 'independently-proves') for work in listed):
             fill.append('`sources` in `lean/formalization.yaml`: the selection recorded the result as known, and '
-                        'neither the selection nor the record of the root names a source for it. The registry '
+                        'neither the selection nor the record of the root names a work that has it. The registry '
                         'requires at least one source with the relationship `formalizes`, `adapts` or '
                         '`independently-proves`.')
         fill += [f'{rule}. The registry will not accept the package as it is.' for rule in fails]
-        registry = decision['registry']
         fill.append('What the result is in the literature. '
                     'Under "Where the result comes from" the README says what the research\'s records hold: whose '
                     'question the result settles, where that was posed, and on what grounds the result is recorded '
@@ -2153,6 +2183,7 @@ class Run:
         unmade = self.not_done()
         found = self.work / 'findings.json'
         uncorrected = [f for f in (read_json(found) if found.is_file() else []) if not f.get('in_prose')]
+        words = self.state.get('account_words', [])
         self.stop_broker()
         write_text(self.work / 'report.md', '\n'.join([
             f'# Report of the run: {self.name}', '',
@@ -2186,9 +2217,9 @@ class Run:
             '- The history: every entry points to a member of the archive and was read by a session that had only the '
             'entries and those records; the archive has the SHA-256 its manifest states.',
             '- The final check: every relative link resolves inside the package; no file and no member of the archive '
-            'holds the account name; no document the pipeline wrote holds a drive path; every text file ends its '
-            'lines with LF; `lean/` and `records/` have the hashes of the freeze; every line of `MANIFEST.sha256` '
-            'holds.', '',
+            'holds the account name inside a path of a home folder; no document the pipeline wrote holds a drive '
+            'path; every text file ends its lines with LF; `lean/` and `records/` have the hashes of the freeze; '
+            'every line of `MANIFEST.sha256` holds.', '',
             '## What was not verified', '',
             "- The classification codes were checked for their form, not against the registry's lists.",
             "- The registry's verifier and Lean's comparator were not run on the package.",
@@ -2214,6 +2245,13 @@ class Run:
                'needs its line in `MANIFEST.sha256` written again, and under `lean/` and `records/` a change is a '
                'change to what was built and compared.', '', *package.finding_lines(uncorrected), '']
               if uncorrected else []),
+            *(['## Where the account name stands as a word by itself', '',
+               f'The account of this run is named `{self.account}`. The final check stops a run when a file holds that '
+               'name inside a path of a home folder, and it found no such file. These files hold the name as a word by '
+               'itself, where it can be a declaration, a folder or a word of a sentence, and the run did not stop for '
+               'them. Judge each: where the word is your name, the file gives it to every reader of the package. A file '
+               'of the package that you then change needs its line in `MANIFEST.sha256` written again.', '',
+               *['- ' + place for place in words], ''] if words else []),
             '## What you fill in before a submission to the registry', '', *['- ' + item for item in fill], '',
             '## The choices', '', 'Every choice the run made, with its reason, is in `decisions.md` beside this file.', '']))
         # The run is at its end here, so what cannot be deleted stops nothing and is named in the report. Windows

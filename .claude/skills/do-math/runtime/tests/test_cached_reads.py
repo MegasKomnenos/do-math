@@ -46,7 +46,10 @@ class CachedReads(unittest.TestCase):
     def test_a_replaced_file_is_read_again(self):
         write_json(self.path, {"sections": [1]})
         self.assertEqual(read_json_cached(self.path), {"sections": [1]})
-        write_json(self.path, {"sections": [2]})  # the same size, and possibly the same timestamp
+        seen = os.stat(self.path)
+        write_json(self.path, {"sections": [2]})  # another file of the same size under the same name
+        # A replacement can carry the timestamp of the version before it (runtime_support.file_stamp); here it does.
+        os.utime(self.path, ns=(seen.st_atime_ns, seen.st_mtime_ns))
         self.assertEqual(read_json_cached(self.path), {"sections": [2]})
         self.assertEqual(self.reads, 2)
 

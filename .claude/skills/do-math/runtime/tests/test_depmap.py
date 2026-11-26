@@ -340,7 +340,6 @@ class Derivation(MapCase):
                          ('euclid', ['statement', 'no proof', 'not settled', 'from the literature']))
         self.assertNotIn('source', self.unit(data, 'Lib.held'))
         self.assertIn('<dt data-word="from the literature">', draw.guide_of(data))
-        self.assertEqual(depmap.last_component('Lib.«a.b»'), 'a.b')
 
     def test_units_are_grouped_by_the_folder_of_their_module(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.a', 'Lib.b'], module='Lib.Root'),
@@ -786,6 +785,16 @@ class Drawing(MapCase):
         self.assertIn('--all needs the instance', errors.getvalue())
         self.assertIn('is not a dependency map written by this command', errors.getvalue())
         self.assertIn('is neither an instance folder nor a dependency_map.json', errors.getvalue())
+        # A map from which a unit was taken out by hand, while a line still names it, is refused with the same code
+        # and by the name of that unit, and no folder is made for it.
+        cut = read_json(first / 'dependency_map.json')
+        cut['units'] = [unit for unit in cut['units'] if unit['id'] != 'Lib.sign']
+        write_json(Path(temp.name) / 'cut.json', cut)
+        third = Path(temp.name) / 'third'
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(depmap.main([str(Path(temp.name) / 'cut.json'), '--out', str(third)]), 2)
+        self.assertIn('Lib.sign, which is not among its units', errors.getvalue())
+        self.assertFalse(third.exists())
         # An error that the operating system reports ends the command with the same code: here the output folder is a file.
         blocked = Path(temp.name) / 'blocked'
         blocked.write_bytes(b'')
@@ -946,6 +955,16 @@ class Page(MapCase):
                     page.reload()
                     self.assertFalse(page.evaluate(seen)['focus'])
                     self.assertIn('no unit and no folded step named ' + missing, page.inner_text('#content'))
+                # A unit may itself carry a name that every object of the page's script answers to. Its card is a card
+                # like any other: with the root selected, what the root rests on is followed through that unit.
+                inherited = tempfile.TemporaryDirectory()
+                self.addCleanup(inherited.cleanup)
+                depmap.write(self.map([statement('Lib.root', 'unit', uses=['constructor']),
+                                       statement('constructor', 'unit', uses=['Lib.a']), statement('Lib.a', 'unit')]),
+                             inherited.name)
+                page.goto((Path(inherited.name) / 'dependency_map.html').resolve().as_uri() + '#node=Lib.root')
+                page.reload()
+                self.assertEqual(page.evaluate(seen)['kept'], ['Lib.a', 'Lib.root', 'constructor'])
                 # On the map of a refuted root each end of the refutation line says what the other end is to it.
                 against = self.map([statement('Lib.root', 'unit', proof=None), statement('Lib.notRoot', 'unit', refutes='Lib.root')])
                 other = tempfile.TemporaryDirectory()

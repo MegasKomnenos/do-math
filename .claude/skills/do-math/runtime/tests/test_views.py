@@ -685,6 +685,9 @@ class CanonToolTests(ScenarioCase):
         last = self.tool('log', '--last', '1')
         self.assertIn(second, last)
         self.assertNotIn(first, last)
+        # A number below 1 names no recent changes; read as a slice it would print every change.
+        self.assertEqual(json.loads(self.tool('log', '--last', '0', code=1)),
+                         {'error': '--last takes the number of recent changes to print, 1 or more'})
 
 
 if __name__ == '__main__':

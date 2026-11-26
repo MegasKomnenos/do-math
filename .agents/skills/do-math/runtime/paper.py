@@ -76,7 +76,7 @@ readings found and the resolving session or the last narrow repair answered with
 "kept" in that event and does not make the exit code 2.
 """
 import argparse
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import difflib
 import hashlib
 import json
@@ -177,6 +177,10 @@ from package import said as shortened  # a text on one line, cut at a word where
 LABEL_FORM = re.compile(r'[a-z]+:[a-z0-9-]+')
 OVERFULL = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) '
                       r'(?:detected at line (\d+)|in (?:paragraph|alignment) at lines (\d+)--(\d+))')
+# What TeX and BibTeX write when a file of the TeX installation is missing: the class, a package or the bibliography
+# style of the preamble that the script supplies. No part can be the cause, since the machine checks keep
+# \documentclass, \usepackage, \input, \include and \bibliographystyle out of the parts (FORBIDDEN).
+MISSING_FILE = re.compile(r"LaTeX Error: File `[^']*' not found|I couldn't open style file \S+")
 
 PREAMBLE = r'''\documentclass{amsart}
 \usepackage{amssymb}
@@ -293,6 +297,16 @@ def load_collection():
                        + ('\nThe last lines of fetch.py:\n' + last if last else ''))
     papers = {entry['key']: read_file(EXEMPLARS / (entry['key'] + '.tex')) for entry in manifest}
     return manifest, papers, fetched
+
+
+def unfetched_collection():
+    """The manifest, the papers by key and the keys that are missing or differ, for a dry run: nothing is fetched.
+
+    A run fetches such a paper over the network; here it is an empty text."""
+    manifest, wrong = collection_state()
+    papers = {entry['key']: '' if entry['key'] in wrong else read_file(EXEMPLARS / (entry['key'] + '.tex'))
+              for entry in manifest}
+    return manifest, papers, wrong
 
 
 def render_exemplars(manifest):
@@ -1849,13 +1863,28 @@ def tex_recipe(command):
     return [[*command, 'paper.tex']]
 
 
+def remove_pdf(folder):
+    """Take paper.pdf out of a folder, so that a PDF there is always one of the manuscript beside it.
+
+    Windows does not remove a file that another program has open, and a viewer keeps a PDF open while it shows
+    it. The command cannot free the file, so it stops and says what does."""
+    path = Path(folder) / 'paper.pdf'
+    try:
+        path.unlink(missing_ok=True)
+    except PermissionError as exc:
+        raise Stop(f'{path} cannot be removed ({exc}). On Windows that is so while another program has the file open, '
+                   'as a viewer has while it shows the paper. Close the file there and give the command again: '
+                   '--resume continues a run that was stopped, and --typeset-only typesets a finished manuscript')
+
+
 def typeset(folder, recipe):
     """Run the TeX commands in the folder; returns the errors of the run, or nothing when paper.pdf was made.
 
-    A command that does not finish within TEX_SECONDS stops the run, as one that cannot be started does: it
-    reports no error that a change of a part would answer, so it is not handed to a repair session."""
+    A command that does not finish within TEX_SECONDS stops the run, as one that cannot be started does, and so
+    does one that does not find a file of the TeX installation (MISSING_FILE): it reports no error that a change
+    of a part would answer, so it is not handed to a repair session."""
     folder = Path(folder)
-    (folder / 'paper.pdf').unlink(missing_ok=True)
+    remove_pdf(folder)
     cites = bool(CITE.search(uncommented(read_file(folder / 'paper.tex'))))
     for command in recipe:
         bibtex = Path(command[0]).stem.lower() == 'bibtex'
@@ -1877,6 +1906,14 @@ def typeset(folder, recipe):
         if done.returncode and not (bibtex and done.returncode == 1):  # BibTeX returns 1 for warnings
             log = folder / 'paper.log'
             text = (log.read_text(encoding='utf-8', errors='replace') if log.is_file() else '') + '\n' + output
+            lacking = MISSING_FILE.search(text)
+            if lacking:
+                raise Stop(f'{command[0]} did not find a file of the TeX installation: {lacking[0]}. The class, the '
+                           'packages and the bibliography style are those of the preamble that the script supplies, '
+                           'and a part names no such file, so no part of the manuscript causes this and it goes to no '
+                           'repair session. Install what is missing, or give another TeX command, and give the command '
+                           'again: --resume continues a run that was stopped, and --typeset-only typesets a finished '
+                           'manuscript')
             lines = text.splitlines()
             starts = [i for i, line in enumerate(lines) if line.startswith('!') or re.match(r'\S*:\d+: ', line)
                       or 'error:' in line.lower()][:10]
@@ -2510,8 +2547,6 @@ papers, that show the practice from which the manuscript departs, as the text ab
 what differs and what a paper written like these would have at that place.
 '''
 
-# The sections of the method that a session which compares numbered statements receives, and nothing else of it.
-COMPARE_SECTIONS = ('What of the canon the paper leaves out', 'Every numbered statement says what its element says')
 COMPARE_PROMPT = CONTEXT + '''
 
 This session compares the numbered statements of one section of the manuscript, "{title}", with the statements they come \
@@ -2519,10 +2554,10 @@ from; other sessions do the same for the other sections. The paper is of use onl
 says exactly what was proved.
 
 In this folder:
-- `paper-method.md` holds two sections of the method the manuscript was written by, "What of the canon the paper leaves \
-out" and "Every numbered statement says what its element says". They say what a numbered statement has to say and which \
-differences from the record are permitted. The other sections that they name are not in this folder; what of those bears \
-on this comparison is in this prompt.
+- `paper-method.md` is the method the manuscript was written by, here without its last two sections, which other \
+sections name and which say what each session is given and how a manuscript is checked. Its sections "What of the canon \
+the paper leaves out" and "Every numbered statement says what its element says" say what a numbered statement has to \
+say and which differences from the record are permitted.
 - `statements.json` lists {listed}: for each its label, its number, the element it \
 states, the statement of that element in words as its record gives it, the element's Lean statement, and the statement \
 as the manuscript has it.
@@ -2926,8 +2961,6 @@ with the research beside it. So a proof that you rewrite is rewritten from the p
 by step, and not from the proof in the manuscript alone. Use no source other than the files in this folder.
 '''
 
-# The sections of the method that a session which compares the running text receives, and nothing else of it.
-COVER_SECTIONS = ('What the running text asserts', 'The reader', 'Results from the literature')
 COVER_PROMPT = CONTEXT + '''
 
 This session compares the running text of one section of the manuscript, "{title}", with what the research proved; \
@@ -2939,11 +2972,11 @@ research as it stands, and nothing is added to the library for the sake of a sen
 therefore cut from the paper, or reworded, by a repair session.
 
 In this folder:
-- `paper-method.md` holds the section "What the running text asserts" of the method the manuscript was written by, which \
-says what the paper may assert outside its numbered statements and when an element covers an assertion. With it come \
-the two sections that it leans on: "The reader", which says what the reader of the paper knows from the textbooks, and \
-"Results from the literature". No other section of the method is in this folder; what of the others bears on this \
-comparison is in this prompt.
+- `paper-method.md` is the method the manuscript was written by, here without its last two sections, which other \
+sections name and which say what each session is given and how a manuscript is checked. Its section "What the running \
+text asserts" says what the paper may assert outside its numbered statements and when an element covers an assertion. \
+That section leans on two others: "The reader", which says what the reader of the paper knows from the textbooks, and \
+"Results from the literature".
 - `text.json` lists what this session compares, each entry with its number ("entry"), its kind, the part it stands in \
 ("part", the id of this section{abstract}), the lines of `paper.tex` it occupies and its text. An entry of the kind \
 "running text" is a passage of the section outside the numbered statements and outside the proofs. An entry of the \
@@ -3157,6 +3190,17 @@ def changed_materials(stored, fresh):
     return found
 
 
+def same_canon(out, stored, fresh, lost):
+    """Stop when the materials that the canon gives now are not those that the run in `out` was begun with.
+
+    `lost` says, as a clause of the message, what cannot be done for that reason."""
+    differing = changed_materials(stored, fresh)
+    if differing:
+        raise Stop(f'what the proof of the root rests on is no longer what {out / "materials.json"} holds, so the canon '
+                   f'has changed since the run began, and {lost}; start a new run in a new folder. They differ in '
+                   + '; '.join(differing))
+
+
 def part_lines(text):
     """The lines of a part as `assemble` puts them into paper.tex."""
     return text.strip('\n').split('\n')
@@ -3220,6 +3264,12 @@ def chosen_numbers(text, count):
 def size(files, wanted=lambda name: True):
     """The bytes of the files of a session whose names `wanted` accepts."""
     return sum(len(text if isinstance(text, bytes) else text.encode('utf-8')) for name, text in files.items() if wanted(name))
+
+
+def answered_each(response, count, actions=('revised', 'kept')):
+    """Whether a response answers each of `count` findings: an object with an "action" among `actions` and a "note"."""
+    return len(response) == count and all(isinstance(r, dict) and r.get('action') in actions and is_text(r.get('note'))
+                                          for r in response)
 
 
 def read_draft(folder):
@@ -3369,6 +3419,13 @@ def carried_plan(materials, plan, draft):
         named = lambda entry: renamed.get(entry.get('element'), entry.get('element')) if isinstance(entry, dict) else None
         plan['displays'] = [{**entry, 'element': named(entry)} for entry in plan['displays'] if named(entry) in elements]
     return plan, notes
+
+
+def judged_in_order(verdicts, labels):
+    """Whether a comparison gives one verdict for each of `labels`, in their order: "same", or "differs" with the difference."""
+    return ([v.get('label') if isinstance(v, dict) else None for v in verdicts] == labels
+            and all(v.get('verdict') in ('same', 'differs') for v in verdicts)
+            and all(is_text(v.get('difference')) for v in verdicts if v['verdict'] == 'differs'))
 
 
 class Paper(Sessions):
@@ -3655,9 +3712,7 @@ class Paper(Sessions):
 
             def read(output):
                 found = self.load(output / 'comparison.json', list)
-                if [v.get('label') if isinstance(v, dict) else None for v in found] != labels \
-                        or not all(v.get('verdict') in ('same', 'differs') for v in found) \
-                        or not all(is_text(v.get('difference')) for v in found if v['verdict'] == 'differs') \
+                if not judged_in_order(found, labels) \
                         or not all(is_text(v.get('text')) for v in found
                                    if v['verdict'] == 'differs' and v['label'] in slips and v.get('partial') is not True):
                     raise Unusable(['output/comparison.json has one object for each entry of statements.json, in their '
@@ -3883,7 +3938,7 @@ class Paper(Sessions):
         typeset once, and what fails is reported and not repaired."""
         for round_number in range(rounds + 1):
             tex, spans, _ = self.assemble()
-            (self.out / 'paper.pdf').unlink(missing_ok=True)  # a PDF beside the manuscript is always a PDF of it
+            remove_pdf(self.out)  # a PDF beside the manuscript is always a PDF of it
             found = machine_findings(self.materials, self.plan, self.parts,
                                      [(row['label'], row['key'], row['proof']) for row in self.instances()])
             kind, problems, where = 'machine', [item['problem'] for item in found], [item['part'] for item in found]
@@ -3904,8 +3959,9 @@ class Paper(Sessions):
                     where = [part_at(spans, int(line[1])) if (line := WIDE_LINE.match(problem)) else None
                              for problem in problems]
                     self.event('check', check=WIDE, problems=problems)
-            # What an earlier pass left open about wide lines is replaced by what this pass finds.
-            self.open = [item for item in self.open if item['check'] != WIDE]
+            # What an earlier pass left open about the machine checks, the typesetting or wide lines is replaced by
+            # what this pass finds.
+            self.open = [item for item in self.open if item['check'] not in (MACHINE, TYPESETTING, WIDE)]
             if not problems:
                 self.save()
                 return True
@@ -3994,8 +4050,7 @@ class Paper(Sessions):
             response = None
             if answers:
                 response = self.load(output / 'response.json', list)
-                if len(response) != len(items) or not all(isinstance(r, dict) and r.get('action') in actions
-                                                          and is_text(r.get('note')) for r in response):
+                if not answered_each(response, len(items), actions):
                     raise Unusable([f'output/response.json has one object for each of the {len(items)} findings, with an '
                                     '"action" of ' + ' or '.join(f'"{action}"' for action in actions) + ' and a "note"'])
                 faults = [fault for item, r in zip(items, response) if r['action'] == 'moved'
@@ -4313,16 +4368,14 @@ class Paper(Sessions):
 
         def read(output):
             verdicts = self.load(output / 'comparison.json', list)
-            if [v.get('label') if isinstance(v, dict) else None for v in verdicts] != labels \
-                    or not all(v.get('verdict') in ('same', 'differs') for v in verdicts) \
-                    or not all(is_text(v.get('difference')) for v in verdicts if v['verdict'] == 'differs'):
+            if not judged_in_order(verdicts, labels):
                 raise Unusable(['output/comparison.json has one object for each entry of statements.json, in their order, '
                                 'with its "label", a "verdict" of "same" or "differs", and for "differs" the "difference"'])
             return verdicts
 
         entries = [{key: row[key] for key in ('label', 'number', 'element', 'record_statement', 'lean_statement',
                                               'paper_statement')} for row in rows]
-        files = {'paper-method.md': ''.join(f'## {title}\n\n{method_part(title)}\n\n' for title in COMPARE_SECTIONS),
+        files = {'paper-method.md': method_before_checks(),
                  'paper.tex': tex,
                  'statements.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
@@ -4446,8 +4499,7 @@ class Paper(Sessions):
 
         def read(output):
             response = self.load(output / 'response.json', list)
-            if len(response) != len(findings) or not all(isinstance(r, dict) and r.get('action') in ('revised', 'kept')
-                                                         and is_text(r.get('note')) for r in response):
+            if not answered_each(response, len(findings)):
                 raise Unusable([f'output/response.json has one object for each of the {len(findings)} findings, in their '
                                 'order, with an "action" of "revised" or "kept" and a "note"'])
             plan, problems = self.plan, []
@@ -4587,7 +4639,7 @@ class Paper(Sessions):
                                 'not in the entries ' + ', '.join(str(entry) for entry in loose)])
             return found
 
-        files = {'paper-method.md': ''.join(f'## {title}\n\n{method_part(title)}\n\n' for title in COVER_SECTIONS),
+        files = {'paper-method.md': method_before_checks(),
                  'paper.tex': tex,
                  'text.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_section_records(self.materials, self.plan, section, self.layout),
@@ -5436,6 +5488,17 @@ class Paper(Sessions):
         return lines
 
 
+@contextmanager
+def stops_recorded(run):
+    """The work of a run that is begun or taken up: when it stops, the log receives the `end` event of a run that
+    failed, and the stop goes on to the caller."""
+    try:
+        yield
+    except Stop as exc:
+        run.event('end', status='failed', error=str(exc))
+        raise
+
+
 def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=False, dry=False,
             draft=False, from_draft=None, title_page=None, gate=None, main=None):
     """The whole command for a new paper, or with `resume` for one whose run was stopped; returns the exit code.
@@ -5471,10 +5534,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
     given = read_draft(from_draft) if from_draft and not resume else None  # and so does a folder that holds no draft
     if dry:
         # A paper that is missing is fetched by a run, over the network; a dry run names it and fetches nothing.
-        manifest, wrong = collection_state()
-        papers = {entry['key']: read_file(EXEMPLARS / (entry['key'] + '.tex')) if entry['key'] not in wrong else ''
-                  for entry in manifest}
-        fetched = None
+        (manifest, papers, wrong), fetched = unfetched_collection(), None
     else:
         manifest, papers, fetched = load_collection()  # stops, before anything is written, when papers stay missing
     run = Paper(instance, out, tex, choice or {}, parallel, dry, gate)
@@ -5512,11 +5572,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                        + '; continue it with --resume alone')
         draft, from_draft = bool(begun.get('draft')), from_draft or begun.get('from_draft')
         run.materials = read_json(out / 'materials.json')
-        differing = changed_materials(run.materials, materials)
-        if differing:
-            raise Stop(f'what the proof of the root rests on is no longer what {out / "materials.json"} holds, so the canon '
-                       'has changed since the run began and it cannot be continued; start a new run in a new folder. '
-                       'They differ in ' + '; '.join(differing))
+        same_canon(out, run.materials, materials, 'the run cannot be continued')
         run.take_up()
         said.append(f"The materials of the canon are those of materials.json: {len(run.materials['elements'])} elements.")
         said += chosen_said(run.materials)
@@ -5555,7 +5611,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                         'problems. What follows describes a planning session of a run without a draft.')
         print('\n'.join(run.preview(said)))
         return 0
-    try:
+    with stops_recorded(run):
         if run.narrow is not None and run.narrow.get('pass'):
             run.act()  # the run had come to its end and was stopped while it acted on findings it had left open
         else:
@@ -5568,9 +5624,6 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                 return run.draft()
             run.write_parts()
             run.after_writing()
-    except Stop as exc:
-        run.event('end', status='failed', error=str(exc))
-        raise
     return run.finish()
 
 
@@ -5605,22 +5658,13 @@ def ended_run(instance, out, tex, choice, parallel, dry, gate):
                    'to act on')
     model = replay(instance)
     settling_proof(model)
-    if dry:
-        manifest, wrong = collection_state()
-        run.collection = manifest
-        run.papers = {entry['key']: read_file(EXEMPLARS / (entry['key'] + '.tex')) if entry['key'] not in wrong else ''
-                      for entry in manifest}
-    else:
-        run.collection, run.papers, _ = load_collection()
+    run.collection, run.papers, _ = unfetched_collection() if dry else load_collection()
     run.materials = read_json(out / 'materials.json')
     run.sketched = run.recorded_draft()
     # The materials are taken as the run took them: with the declarations of its draft, around its main result.
-    differing = changed_materials(run.materials, extract(instance, model, run.further(model),
-                                                         run.materials['main'] if 'settles' in run.materials else None))
-    if differing:
-        raise Stop(f'what the proof of the root rests on is no longer what {out / "materials.json"} holds, so the canon '
-                   'has changed since the run began, and its open findings cannot be repaired from the records as they '
-                   'are now; start a new run in a new folder. They differ in ' + '; '.join(differing))
+    same_canon(out, run.materials, extract(instance, model, run.further(model),
+                                           run.materials['main'] if 'settles' in run.materials else None),
+               'its open findings cannot be repaired from the records as they are now')
     run.take_up()
     if run.plan is None or not all(run.written(section) for section in run.plan['sections']):
         raise Stop(f'{out} does not hold the plan and every part of the manuscript whose findings its log lists')
@@ -5657,11 +5701,8 @@ def act_on_open(instance, out, tex=None, choice=None, parallel=PARALLEL, numbers
                      **{'pass': True, 'typeset': any(number in chosen and check == WIDE for number, check, _, _ in listed),
                         'uncompared': [problem['label'] for number, check, _, problem in listed
                                        if number in chosen and check == UNCOMPARED]})
-    try:
+    with stops_recorded(run):
         run.act()
-    except Stop as exc:
-        run.event('end', status='failed', error=str(exc))
-        raise
     return run.finish()
 
 
@@ -5685,11 +5726,8 @@ def close_open(instance, out, tex=None, choice=None, parallel=PARALLEL, gate=Non
     run, _ = ended_run(instance, out, tex, choice, parallel, False, gate)
     run.event('closing', open=[{'check': item['check'], 'problems': len(item['problems'])} for item in run.open],
               parallel=run.parallel)
-    try:
+    with stops_recorded(run):
         run.close()
-    except Stop as exc:
-        run.event('end', status='failed', error=str(exc))
-        raise
     return run.finish()
 
 
@@ -5744,11 +5782,8 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
         run.done, run.readings, run.rewritten = state['done'], state['readings'], state['rewritten']
         run.placed = state.get('placed')
     run.event('typeset only', tex=run.recipe[0])
-    try:
+    with stops_recorded(run):
         run.settle()
-    except Stop as exc:
-        run.event('end', status='failed', error=str(exc))
-        raise
     return run.finish()
 
 

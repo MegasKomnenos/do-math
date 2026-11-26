@@ -241,6 +241,9 @@ def question_view(instance, model, qid, history=False):
 
 
 def log(model, last):
+    if last < 1:
+        # As a slice, [-0:] is the whole list and a negative number leaves out the oldest changes.
+        raise CanonError('--last takes the number of recent changes to print, 1 or more')
     changes = sorted(model['changes'].values(), key=lambda c: c['sequence'])[-last:]
     lines = []
     for change in changes:

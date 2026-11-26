@@ -265,12 +265,14 @@ class PublicationTests(PublicationCase):
                               'element': None, 'question': None})
             published = self.instance / 'knowledge/changes' / cid
             self.assertEqual(sorted(p.name for p in published.iterdir()),
-                             ['applied.json', 'assessment.json', 'change.json', 'feedback.md', 'provenance.json'])
+                             ['applied.json', 'assessment.json', 'change.json', 'feedback.md', 'provenance.json', 'verify.json'])
             self.assertEqual(read_json(published / 'applied.json'),
                              {'added': ['Small.oddSum_succ'], 'replaced': ['Small.root'],
                               'records': ['Small.oddSum_succ', 'Small.root'], 'retired': []})
             self.assertEqual(read_json(published / 'change.json'), read_json(folder / 'change.json'))
-            self.assertEqual(read_json(published / 'assessment.json'), self.verdicts(folder, **HOLD))
+            # The assessment confirms the step, which is complete in Lean, so it names the review's own compile.
+            compiled = {'formal_check': {'build': read_json(published / 'verify.json')['build']}}
+            self.assertEqual(read_json(published / 'assessment.json'), {**self.verdicts(folder, **HOLD), **compiled})
             self.assertEqual(read_json(published / 'provenance.json'),
                              {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
                               'review_session': pipeline['review'], 'pipeline': pipeline['id']})
@@ -537,7 +539,9 @@ class PublicationTests(PublicationCase):
         second = self.candidate(modules={'Small/Step.lean': ZERO}, records={'Small/oddSum_zero.md': ZERO_RECORD})
         cid, engine = self.publish(first)
         before = self.canon_bytes()
-        record, _ = self.publish(second, engine=engine, expect=False)
+        # The second candidate no longer applies to the canon, so its review cannot compile it and confirms nothing.
+        unconfirmed = self.verdicts(second, **{'Small.oddSum_zero': {'correct': 'undetermined', 'accepted': False}})
+        record, _ = self.publish(second, unconfirmed, engine=engine, expect=False)
         self.assertIsNone(record)
         self.assert_sent_to_a_replacement_peer(engine, second, 'module Small/Step.lean already exists in the canon',
                                                before, [cid])
@@ -572,7 +576,9 @@ class PublicationTests(PublicationCase):
                                               'entries': {'Small.oddSum_succ': {'kind': 'theorem', 'lean_proof': 'complete',
                                                                                 'written_proof': False}}})
         before = self.canon_bytes()
-        record, engine = self.publish(folder, expect=False)
+        # A review cannot compile this candidate either, so it does not confirm the proof.
+        unconfirmed = self.verdicts(folder, **{'Small.oddSum_succ': {'correct': 'undetermined', 'accepted': False}})
+        record, engine = self.publish(folder, unconfirmed, expect=False)
         self.assertIsNone(record)
         self.assert_sent_to_a_replacement_peer(engine, folder, 'unknown constant Small.gone', before, [])
         self.assertFalse((self.canon().lean / 'Small/Step.lean').exists())
@@ -689,6 +695,7 @@ class InterruptedPublicationTests(PublicationCase):
         self.assertEqual((saved['stage'], bool(saved.get('installed'))), (stage, installed))
         self.assertEqual(self.events(), [saved['event']] if event_written else [])
         self.assertEqual(('Publish ' + saved['event']['id']) in git(self.instance, 'log', '--format=%s'), committed)
+        left = {path: path.read_bytes() for path in self.canon().history.rglob('*') if path.is_file()}
         # The broker makes the folder of a build when it takes the request up, which can be after this line.
         queued = sorted(set(self.builds()) | ({saved['build']} if saved.get('build') else set()))
         recovered = runtime.Runner(self.instance, self.skill)
@@ -701,6 +708,9 @@ class InterruptedPublicationTests(PublicationCase):
         if saved.get('build'):
             self.assertIn(saved['build'], self.builds())
         self.assert_published_once(recovered, folder, saved['event'])
+        # What the runner that ended had written into the history stands as it wrote it.
+        for path, data in left.items():
+            self.assertEqual(path.read_bytes(), data, path.name)
         # A third runner finds nothing left to do.
         again = runtime.Runner(self.instance, self.skill)
         again.publish()
@@ -720,11 +730,12 @@ class InterruptedPublicationTests(PublicationCase):
         self.assertEqual(canon.load_index()['revision'], 1)
         self.assertEqual(read_json(canon.root / 'records.json')['Small.root']['approaches'], ['induction'])
         self.assertEqual((canon.records / 'Small/root.md').read_text(encoding='utf-8'), ROOT_RECORD)
-        # The record was replaced once: one entry, and it still shows what the first text lacked.
-        self.assertEqual([p.name for p in (canon.history / 'Small/root').glob('*-record.md')], ['000001-record.md'])
+        # The record and the proof were each replaced once, and the history holds nothing else: the approach
+        # entry and the evidence were new, so a runner that writes them a second time leaves no difference.
+        self.assertEqual(sorted(p.relative_to(canon.history).as_posix() for p in canon.history.rglob('*') if p.is_file()),
+                         ['Small/root/000001-proof.md', 'Small/root/000001-record.md'])
+        # Each entry still shows what the text it replaced lacked.
         self.assertIn('-## Proof', (canon.history / 'Small/root/000001-record.md').read_text(encoding='utf-8'))
-        # The proof was replaced once as well, and its entry still holds the difference to the old text.
-        self.assertEqual([p.name for p in (canon.history / 'Small/root').glob('*-proof.md')], ['000001-proof.md'])
         self.assertIn('-  have step := oddSum_succ',
                       (canon.history / 'Small/root/000001-proof.md').read_text(encoding='utf-8'))
         self.assertEqual((canon.approaches / 'Small/root/induction.md').read_text(encoding='utf-8'),
@@ -757,6 +768,18 @@ class InterruptedPublicationTests(PublicationCase):
 
     def test_ended_after_the_event_was_written_and_before_the_canon_was_put_in_place(self):
         self.interrupt('runner.Runner.install_canon', 'commit', event_written=True)
+
+    def test_ended_after_the_modules_were_put_in_place_and_before_the_index(self):
+        # The canon holds the modules of the change while its index is still the one from before it. The runner
+        # that follows writes nothing more into the history for the replaced proof, whose source no longer
+        # matches that index (Runner.keep_replaced_proofs), and puts the index in place.
+        put_in_place = runtime.sync_tree
+
+        def modules_only(source, target):
+            put_in_place(source, target)
+            raise RuntimeError('simulated end of the runner')
+
+        self.interrupt('runner.sync_tree', 'commit', event_written=True, side_effect=modules_only)
 
     def test_ended_after_the_library_was_put_in_place_and_before_the_written_part(self):
         self.interrupt('runner.apply_written', 'commit', event_written=True)
@@ -809,6 +832,41 @@ class InterruptedPublicationTests(PublicationCase):
         # The commit is made, and the runner ends before it saves that the publication is over. The runner that
         # follows finds the commit of this publication and makes no second one.
         self.interrupt('runner.Runner.notify', 'commit', installed=True, event_written=True, committed=True)
+
+    def test_a_question_text_that_a_merge_moved_is_not_moved_again(self):
+        # An organizer merges op-a, which has an understanding text, into op-b, which has none, so the text
+        # becomes op-b's before the event is written (Runner.join_question_texts). The runner ends after that
+        # move, and the runner after it ends once the event is written. Each is followed by one that meets the
+        # merge again: first with the questions as they stood before it, where op-a has no text left to move,
+        # and then with op-a an alias of op-b, where the text stands in its place already.
+        self.questions('qops', [{'id': name, 'statement': f'What does {name} ask?', 'grounds': 'Unexplained.'}
+                                for name in ('op-a', 'op-b')])
+        folder = self.candidate(understanding={'op-a.md': 'Each odd number completes the next square.\n'})
+        _, engine = self.publish(folder, role='explore', question='op-a')
+        questions = self.canon().questions
+        text = (questions / 'op-a.md').read_text(encoding='utf-8')
+        ended = RuntimeError('simulated end of the runner')
+        with patch('runner.rename_directory', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.organize(merge_questions=[{'from': 'op-a', 'into': 'op-b', 'reason': 'Both ask the same thing.'}],
+                          engine=engine)
+        self.assertEqual(sorted(p.name for p in questions.iterdir()), ['op-b.md'])
+
+        def after_the_event(path, value):
+            write_json(path, value)
+            if Path(path).parent.name == 'events':
+                raise ended
+
+        with patch('runner.write_json', side_effect=after_the_event), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.drain(runtime.Runner(self.instance, self.skill))
+        self.assertEqual([event['kind'] for event in self.events()], ['questions', 'change', 'organization'])
+        recovered = runtime.Runner(self.instance, self.skill)
+        self.drain(recovered)
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(replay(self.instance)['question_aliases'], {'op-a': 'op-b'})
+        self.assertEqual(sorted(p.name for p in questions.iterdir()), ['op-b.md'])
+        self.assertEqual((questions / 'op-b.md').read_text(encoding='utf-8'), text)
+        self.assertFalse((self.canon().history / 'questions').exists())
+        self.assertEqual(self.leftovers(), [])
 
 
 class ReviewedCandidateTests(PublicationCase):
@@ -1287,17 +1345,36 @@ theorem oddSum_zero_square : oddSum 0 = square 0 := by
                 self.assertIn(message, '\n'.join(receipt['errors']))
                 self.assertIn('prepare reported errors', check_session(output.parent)[0])
 
-    def test_a_rearrangement_puts_an_alternative_proof_under_the_statement_s_own_name(self):
-        # A second proof of the root entered as a declaration of its own (design record, section 10.3).
+    # The written proof of the second proof of the root, which the retirement puts into the root's own record.
+    GNOMON = 'Each odd number $2k + 1$ is the gnomon that turns $k^2$ into $(k + 1)^2$.'
+
+    def alternative_proof(self):
+        """Publish a second proof of the root as a declaration of its own (design record, section 10.3)."""
         alternative = module_text('''/-- Another proof of the root, by pairing terms. -/
 theorem root_alt (n : Nat) : oddSum n = n * n := by
   -- pair the k-th odd number with the gnomon of the k-th square
   sorry''')
-        pairing = 'Each odd number $2k + 1$ is the gnomon that turns $k^2$ into $(k + 1)^2$.'
         first = self.candidate(modules={'Small/Alt.lean': alternative},
                                records={'Small/root_alt.md': record_text('The root, proved by pairing terms.',
-                                                                         proves='Small.root', proof=pairing)})
-        cid, engine = self.publish(first)
+                                                                         proves='Small.root', proof=self.GNOMON)})
+        return self.publish(first)
+
+    def retirement(self, engine, cid):
+        """An organizer's output, not yet prepared, that moves that proof under the root's own name and
+        removes the separate declaration."""
+        sid, output = self.organizer(engine, [cid])
+        write_json(output / 'organization.json', {'batch': [cid], 'merge_questions': [], 'delete': ['Small.Alt']})
+        write_json(output / 'change.json', {
+            'title': 'The pairing proof under the root', 'description': 'The alternative proof stands under Small.root.',
+            'retire': [{'alternative': 'Small.root_alt', 'into': 'Small.root',
+                        'reason': 'The module of the root can hold the proof now.'}]})
+        write(output / 'rewrite/lean/Small/Root.lean', ROOT.replace(ORIGINAL, PAIRING))
+        write(output / 'records/Small/root.md', ROOT_RECORD.replace(
+            'By induction on $n$: adding the next odd number $2k + 1$ to $k^2$ gives $(k + 1)^2$.', self.GNOMON))
+        return sid, output
+
+    def test_a_rearrangement_puts_an_alternative_proof_under_the_statement_s_own_name(self):
+        cid, engine = self.alternative_proof()
         model = replay(self.instance)
         self.assertEqual(model['elements']['Small.root']['proofs'], ['Small.root', 'Small.root_alt'])
         self.assertEqual((model['elements']['Small.root']['standing'], model['root_state']), ('no_proof', 'informal_proved'))
@@ -1312,15 +1389,7 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
             records={'Small/twice.md': record_text('Twice the sum of odd numbers is twice the square.',
                                                    proof='Add the root to itself.')})
         # The organizer moves the proof under the statement's own name and removes the separate declaration.
-        sid, output = self.organizer(engine, [cid])
-        write_json(output / 'organization.json', {'batch': [cid], 'merge_questions': [], 'delete': ['Small.Alt']})
-        write_json(output / 'change.json', {
-            'title': 'The pairing proof under the root', 'description': 'The alternative proof stands under Small.root.',
-            'retire': [{'alternative': 'Small.root_alt', 'into': 'Small.root',
-                        'reason': 'The module of the root can hold the proof now.'}]})
-        write(output / 'rewrite/lean/Small/Root.lean', ROOT.replace(ORIGINAL, PAIRING))
-        write(output / 'records/Small/root.md', ROOT_RECORD.replace(
-            'By induction on $n$: adding the next odd number $2k + 1$ to $k^2$ gives $(k + 1)^2$.', pairing))
+        sid, output = self.retirement(engine, cid)
         receipt = self.prepare(output, role='organizer')
         self.assertEqual(receipt['retired'], [{'alternative': 'Small.root_alt', 'into': 'Small.root'}])
         self.assertEqual(check_session(output.parent), [])
@@ -1336,7 +1405,7 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
         with self.subTest("the alternative's record goes to the history and the statement's own record stays"):
             self.assertFalse((canon.records / 'Small/root_alt.md').exists())
             self.assertEqual((canon.history / 'Small/root_alt/000002-retired.md').read_text(encoding='utf-8'), alt_record)
-            self.assertIn(pairing, (canon.records / 'Small/root.md').read_text(encoding='utf-8'))
+            self.assertIn(self.GNOMON, (canon.records / 'Small/root.md').read_text(encoding='utf-8'))
             self.assertEqual(sorted(read_json(canon.root / 'records.json')), ['Small.oddSum', 'Small.root'])
         with self.subTest('the verdict of the proof moves with it'):
             model = replay(self.instance)
@@ -1361,6 +1430,60 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
             record, _ = self.publish(waiting, engine=engine, expect=False)
             self.assertIsNone(record)
             self.assert_sent_to_a_replacement_peer(engine, waiting, 'Small.Alt', before, events)
+
+    def test_a_retired_record_that_went_to_the_history_is_not_moved_again(self):
+        # The record of a retired alternative goes to the history before the publication is saved as installed.
+        # The runner ends between the two, and the one that follows repeats the installation with that record
+        # in the history already.
+        cid, engine = self.alternative_proof()
+        canon = self.canon()
+        alt_record = (canon.records / 'Small/root_alt.md').read_text(encoding='utf-8')
+        sid, output = self.retirement(engine, cid)
+        self.prepare(output, role='organizer')
+        with patch('runner.record_summary', side_effect=RuntimeError('simulated end of the runner')), \
+                self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.finish(engine, sid)
+        self.assertFalse(read_json(self.instance / 'runner/state.json')['publication'].get('installed'))
+        self.assertFalse((canon.records / 'Small/root_alt.md').exists())
+        recovered = runtime.Runner(self.instance, self.skill)
+        self.drain(recovered)
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(recovered.state['jobs'][recovered.state['sessions'][sid]['job']]['status'], 'done')
+        self.assertEqual((canon.history / 'Small/root_alt/000002-retired.md').read_text(encoding='utf-8'), alt_record)
+        self.assertEqual(sorted(read_json(canon.root / 'records.json')), ['Small.oddSum', 'Small.root'])
+        self.assertEqual(replay(self.instance)['elements']['Small.root']['standing'], 'accepted')
+        self.assertEqual(self.leftovers(), [])
+
+    def test_a_candidate_whose_declaration_a_rearrangement_moved_passes_the_review_s_own_compile(self):
+        # A rearrangement moves declarations between modules. A candidate that was prepared before it and
+        # replaces the proof of a moved declaration still applies, because a replacement finds its declaration
+        # through the index, and commands.verify compiles the module in which the declaration now stands. The
+        # transport check takes that build, although the module that the peer's receipt names is gone.
+        statement, description = ': oddSum 1 = 1', 'The first odd number is one.'
+        low = module_text(theorem('low', statement, doc=description))
+        cid, engine = self.publish(self.candidate(modules={'Small/Low.lean': low},
+                                                  records={'Small/low.md': record_text(description)}))
+        waiting = self.candidate(replace={'Small.low': theorem('low', statement, proof='rfl', doc=description)})
+        self.assertEqual(read_json(waiting / 'prepared.json')['changed_modules'], ['Small.Low'])
+        sid, output = self.organizer(engine, [cid])
+        write_json(output / 'organization.json', {'batch': [cid], 'merge_questions': [], 'delete': ['Small.Low']})
+        write_json(output / 'change.json', {'title': 'The first odd number in another module',
+                                            'description': 'Small.low stands in Small.First with its text unchanged.'})
+        write(output / 'rewrite/lean/Small/First.lean', low)
+        self.prepare(output, role='organizer')
+        job = self.finish(engine, sid)
+        self.assertEqual(job['status'], 'done', job.get('last_error'))
+        self.assertEqual(self.canon().load_index()['entries']['Small.low']['module'], 'Small.First')
+        task = {'kind': 'candidate', 'candidate': str(waiting), 'candidate_hashes': runtime.tree_hashes(waiting)}
+        review = self.session(engine, 'sreview', 'review', None, task, None)
+        (review / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
+        with patch('builtins.print'):
+            self.assertEqual(verify(review, 64, 120), 0)
+        outcome = read_json(review / 'work/verify/outcome.json')
+        self.assertEqual(outcome['changed_modules'], ['Small.First'])
+        write_json(review / 'output/assessment.json',
+                   {**self.verdicts(waiting), 'formal_check': {'build': outcome['build']}})
+        self.assertEqual(check_session(review), [])
 
     def test_question_merges_are_published_without_a_build_and_without_a_change(self):
         self.questions('qops', [{'id': 'op-a', 'statement': 'Why do the sums complete squares?', 'grounds': 'Unexplained.'},

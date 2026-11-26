@@ -50,7 +50,7 @@ For an item from the records, read the finding against the Lean first. A hypothe
 
 The limits have one reason: the other parts are being changed at this moment by sessions that cannot see your work.
 
-- You change only the modules of your part.
+- You change only the modules of your part, and a module that you add lies directly in the folder of your part.
 - The declarations of `interface` keep their names and their statements, with their implicit arguments, the order of their arguments and any attribute that affects other files. Where an item asks for another form of such a statement, the new form enters as a declaration of its own under a new name, and the old one stays and is derived from it.
 - A declaration of your part that `interface` does not list can be restated in place, and then every use of it inside your part is brought along.
 - An item was given to the part that holds the declaration it concerns, so whatever the item requires is added by you and by no other part. If closing it needs a fact that belongs to another part, prove what you need inside your own modules, as a `private` declaration where it is only a means, or report the item as not closed.

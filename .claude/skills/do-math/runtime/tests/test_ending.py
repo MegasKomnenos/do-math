@@ -67,7 +67,7 @@ if config.get('hold_at') == number:
     time.sleep(120)
 if config.get('refuse_at') == number:
     print(json.dumps({'type': 'error', 'message': "You've hit your usage limit. Try again later."}), flush=True)
-    raise SystemExit(1)
+    raise SystemExit(config.get('refuse_exit', 1))
 if config.get('fail_at') == number:
     raise SystemExit(2)
 if number in config.get('output_limit_at', []):
@@ -392,12 +392,20 @@ class EndingTests(InstanceCase):
         self.assertFalse((directory / 'exit.json').exists())
 
     def test_refusal_is_interruption_not_worker_authorization(self):
-        _, _, directory = self.prepare(config={'refuse_at': 1})
-        state = self.run_host(directory)
-        self.assertEqual(state['authorization']['basis'], 'interrupted')
-        receipt = read_json(directory / 'turns/0001/turn-termination.json')
-        self.assertEqual(receipt['refusal']['reason'], 'usage_limit')
-        self.assertEqual(read_json(directory / 'exit.json')['exit_code'], 1)
+        # The refusal in the turn's stream ends the session, whatever exit code the CLI gave the refused turn:
+        # the host starts no further turn against a provider that has just refused one.
+        for code in (1, 0):
+            with self.subTest(exit_code=code):
+                engine, sid, directory = self.prepare(config={'refuse_at': 1, 'refuse_exit': code})
+                state = self.run_host(directory)
+                self.assertEqual((state['authorization']['basis'], state['resumptions']), ('interrupted', 1))
+                receipt = read_json(directory / 'turns/0001/turn-termination.json')
+                self.assertEqual(receipt['refusal']['reason'], 'usage_limit')
+                self.assertEqual(read_json(directory / 'exit.json')['exit_code'], code)
+                self.assertEqual(len((directory / 'work/turns.jsonl').read_text().splitlines()), 2)
+                pipeline = engine.state['jobs'][engine.state['sessions'][sid]['job']]['pipeline']
+                engine.state['pipelines'][pipeline]['stage'] = 'done'
+                engine.save()
 
     def prepare_claude(self, maximum=3, role='attempt', config=None):
         engine, sid, directory = self.prepare(maximum, role, {'claude_stream': True, **(config or {})})

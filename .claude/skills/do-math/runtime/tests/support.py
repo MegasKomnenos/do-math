@@ -20,7 +20,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from canon import beyond_allowed
-from canon_tool import build_candidate
+from canon_tool import build_candidate, verify
 from check import check_session, tree_hashes
 from lean_broker import Paths, broker_alive, terminate_tree
 from runner import Runner, main, uid
@@ -327,7 +327,12 @@ class InstanceCase(unittest.TestCase):
                                 for r in change['resolutions']]}
 
     def publish(self, folder, assessment=None, role='attempt', question=None, engine=None, expect=True):
-        """Publish a prepared candidate as the runner does after a review: queue it and carry it through."""
+        """Publish a prepared candidate as the runner does after a review: queue it and carry it through.
+
+        The review's output passes the transport check first, which the runner makes before it queues a
+        publication. An assessment that confirms a proof complete in Lean rests on the review's own compile of
+        the candidate; where the assessment given names none, the compile is made here by the command a review
+        runs. A verdict that does not confirm such a proof, such as `undetermined`, needs no compile."""
         engine = engine or Runner(self.instance, self.skill)
         state = engine.state
         producer, peer, review, pid = uid('s'), uid('s'), uid('s'), uid('p')
@@ -336,19 +341,30 @@ class InstanceCase(unittest.TestCase):
         if question:
             write_json(engine.session_dir(producer) / 'declaration.json',
                        {'question': {'id': question, 'at': time.time(), 'by': 'session'}, 'at': time.time()})
-        output = engine.session_dir(review) / 'output'
-        write_json(output / 'assessment.json', assessment or self.verdicts(folder))
-        (output / 'feedback.md').write_text('Checked.', encoding='utf-8')
+        session = engine.session_dir(review)
+        task = {'kind': 'candidate', 'candidate': str(folder), 'candidate_hashes': tree_hashes(folder),
+                'source': str(engine.session_dir(producer)), 'peer': str(engine.session_dir(peer))}
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': review, 'role': 'review',
+                                            'pipeline': pid, 'task': task})
+        assessment = assessment or self.verdicts(folder)
+        entries = read_json(folder / 'prepared.json')['entries']
+        if 'formal_check' not in assessment and any(
+                row.get('correct') == 'confirmed' and entries.get(row.get('element'), {}).get('lean_proof') == 'complete'
+                for row in assessment.get('elements', [])):
+            with patch.object(subprocess, 'Popen', POPEN), patch('builtins.print') as shown:
+                self.assertEqual(verify(session, self.expect_mb, self.patience), 0, shown.call_args)
+            build = read_json(session / 'work/verify/outcome.json')['build']
+            assessment = {**assessment, 'formal_check': {'build': build}}
+        write_json(session / 'output/assessment.json', assessment)
+        (session / 'output/feedback.md').write_text('Checked.', encoding='utf-8')
+        self.assertEqual(check_session(session), [])
         key = pid + ':review:' + peer
         state['pipelines'][pid] = {'id': pid, 'role': role, 'stage': 'review', 'producer': producer, 'peer': peer,
                                    'review': review, 'record': None, 'element': None, 'previous_peers': []}
         state['jobs'][pid + ':producer'] = {'id': pid + ':producer', 'role': role, 'task': {}, 'pipeline': pid,
                                             'status': 'done', 'session': producer, 'retries': 0, 'not_before': 0}
         state['jobs'][key] = {'id': key, 'role': 'review', 'pipeline': pid, 'status': 'running', 'session': review,
-                              'retries': 0, 'not_before': 0,
-                              'task': {'kind': 'candidate', 'candidate': str(folder),
-                                       'candidate_hashes': tree_hashes(folder),
-                                       'source': str(engine.session_dir(producer)), 'peer': str(engine.session_dir(peer))}}
+                              'retries': 0, 'not_before': 0, 'task': task}
         for sid, session_role, job in ((producer, role, pid + ':producer'), (peer, 'peer', key), (review, 'review', key)):
             state['sessions'][sid] = {'id': sid, 'role': session_role, 'job': job, 'status': 'ended', 'model': 'codex/test',
                                       'effort': 'low', 'provider': 'codex', 'started_at': time.time(), 'host': None,

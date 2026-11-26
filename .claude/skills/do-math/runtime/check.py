@@ -254,8 +254,13 @@ def findings_check(values, model, known):
             need(qid in model['questions'] or qid in model['question_aliases'], 'finding reopens an unknown question')
 
 
-def audit_formal(instance, session, check, receipt):
-    """Review's own compile of the candidate: a finished build of this session that compiled the changed modules afresh."""
+def audit_formal(instance, session, check):
+    """Review's own compile of the candidate: a finished build of this session whose targets were compiled afresh.
+
+    The build is the one `commands.verify` made, which the last check below confirms, and the targets of that
+    build are the modules the candidate changes on the canon as it stands, with the extraction. The modules
+    named in the peer's receipt are not looked for: a rearrangement published after the candidate was prepared
+    can have moved a declaration it replaces into another module, and the candidate still applies there."""
     need(isinstance(check, dict), 'confirming a proof that is complete in Lean needs formal_check')
     build = text(check.get('build'), 'formal_check.build')
     need(BUILD_ID.fullmatch(build), 'formal_check.build is the ID of the build that commands.verify reported')
@@ -267,9 +272,10 @@ def audit_formal(instance, session, check, receipt):
     modules = record['modules']
     need(all(m['status'] == 'cached' or (m['status'] == 'finished' and m.get('exit_code') == 0) for m in modules.values()),
          'the review build did not compile')
-    for module in receipt['changed_modules']:
+    for module in record['targets']:
         need(modules.get(module, {}).get('job') and modules[module]['status'] == 'finished',
-             f'review must compile the changed module {module} itself (commands.verify does)')
+             'review must compile the changed modules itself (commands.verify does); the build named in '
+             f'formal_check took {module} from the cache')
     outcome = Path(instance) / 'sessions' / session / 'work/verify/outcome.json'
     need(outcome.is_file() and read_json(outcome).get('build') == record['id'] and read_json(outcome).get('ok') is True,
          'formal_check.build is not the build of the last successful commands.verify')
@@ -324,7 +330,7 @@ def assessment_check(data, root, candidate, model, instance, sid):
                  'the place of one the canon has, and an added element enters with your verdict')
         formal = formal or (proved and entry['lean_proof'] == 'complete' and row['correct'] == 'confirmed')
     if formal:
-        audit_formal(instance, sid, data.get('formal_check'), receipt)
+        audit_formal(instance, sid, data.get('formal_check'))
     questions = {q['id'] for q in change['questions']}
     verdicts = {}
     for row in array(data.get('questions', []), 'assessment.questions'):

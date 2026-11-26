@@ -171,7 +171,7 @@ __SVG__
   var unit = Object.create(null), into = {}, out = {};
   data.units.forEach(function (u) { unit[u.id] = u; into[u.id] = []; out[u.id] = []; });
   data.edges.forEach(function (e, i) { e.el = 'e' + i; into[e.target].push(e); out[e.source].push(e); });
-  var edgeEl = {}, byNode = {}, nodeEl = {};
+  var edgeEl = {}, byNode = Object.create(null), nodeEl = {};
   function adj(n) { return byNode[n] || (byNode[n] = { into: [], out: [] }); }
   svg.querySelectorAll('g.edge').forEach(function (g) {
     edgeEl[g.id] = g;
@@ -599,7 +599,7 @@ __SVG__
 
   // Upstream follows incoming edges to the end, downstream follows outgoing edges; only the edges on those chains are kept.
   function walk(start, dir, N, E) {
-    var queue = [start], seen = {};
+    var queue = [start], seen = Object.create(null);
     seen[start] = true;
     while (queue.length) {
       var n = queue.shift();

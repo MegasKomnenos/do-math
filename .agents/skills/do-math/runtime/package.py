@@ -22,7 +22,7 @@ import canon
 from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file,
                    name_path, parse_record, path_name, sha256_text, tree_hash)
 from command_sessions import read_file as read_text
-from runtime_support import popen_options, read_json, write_text as write_file
+from runtime_support import git, popen_options, read_json, write_text as write_file
 
 MAX_LINES = 10_000       # physical lines of a Lean file, the registry's rule and the canon's
 CHALLENGE_LINES = 1_000   # the registry's limits on Challenge.lean
@@ -85,27 +85,12 @@ def files_under(root):
 
 # ----------------------------------------------------------------------------- the research as Git has it
 
-def git_run(repository, *arguments):
-    """The output of a Git command in a repository, as bytes; an error says what Git said."""
-    environment = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
-    done = subprocess.run(['git', '-C', str(repository), '-c', 'core.autocrlf=false', '-c', 'core.quotepath=false',
-                           *arguments], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment,
-                          **popen_options())
-    if done.returncode:
-        raise CanonError('Git: ' + done.stderr.decode('utf-8', errors='replace').strip())
-    return done.stdout
-
-
 def head_commit(repository):
-    return git_run(repository, 'rev-parse', 'HEAD').decode().strip()
-
-
-def first_commit(repository, commit):
-    return git_run(repository, 'rev-list', '--max-parents=0', commit).decode().split()[-1]
+    return git(repository, 'rev-parse', 'HEAD')
 
 
 def commit_time(repository, commit):
-    return int(git_run(repository, 'show', '-s', '--format=%ct', commit).decode().strip())
+    return int(git(repository, 'show', '-s', '--format=%ct', commit))
 
 
 def git_members(repository, commit, paths):
@@ -808,8 +793,8 @@ def packages_problems(manifest, packages_dir):
             continue
         folder = Path(packages_dir) / package['name']
         try:
-            head = git_run(folder, 'rev-parse', 'HEAD').decode().strip() if folder.is_dir() else None
-        except CanonError:
+            head = git(folder, 'rev-parse', 'HEAD') if folder.is_dir() else None
+        except RuntimeError:
             head = None
         if head != package['rev']:
             problems.append(f"the package {package['name']} is not at {package['rev'][:12]} in {packages_dir} "
@@ -1091,26 +1076,36 @@ def freeze_hashes(package):
 # ----------------------------------------------------------------------------- stage 3: archive and ledger
 
 def account_name():
-    """The account name of the machine's user, which no file of a package may hold."""
+    """The account name of the machine's user, which no file of a package may hold inside a path of a home folder."""
     import getpass
     return getpass.getuser()
 
 
 def account_pattern(account):
-    """Where a text holds the account name: the name with no letter and no digit beside it.
+    """Where a text holds the account name inside a path of a home folder; group 1 is the path before the name.
 
-    A short account name is a part of ordinary words, as `sam` is of "same" and `pat` of "path", and such a
-    word is not the name. In a path or a sentence the name has a separator, a space or the end beside it."""
-    return re.compile(rb'(?<![A-Za-z0-9])' + re.escape(account.encode('utf-8')) + rb'(?![A-Za-z0-9])')
+    The name counts as the account name in two places: as the path component that follows `Users` or
+    `home`, and as a component of the path of this account's home folder, wherever that folder lies. The
+    components are parted by a slash or by a backslash, which a JSON string doubles. As a word by itself
+    the name does not count. An account can be named `root`, `lean` or `main`, and such a word is a
+    declaration, a folder of the package or a word of a sentence (account_words lists where it stands)."""
+    name, parted = re.escape(account.encode('utf-8')), rb'(?:/|\\{1,2})'
+    before = [rb'(?:[Uu]sers|home)' + parted]
+    parts = re.split(r'[\\/]', str(Path.home()))
+    if account in parts:
+        # The home folder's own path counts where it begins a path, and not where it ends a longer one.
+        before.append(rb'(?<![\\/])' + parted.join(re.escape(part.encode('utf-8'))
+                                                    for part in parts[:parts.index(account)]) + parted)
+    return re.compile(rb'(?<![A-Za-z0-9_.-])(' + b'|'.join(before) + rb')' + name + rb'(?![A-Za-z0-9])')
 
 
 def knowledge_archive(repository, commit, folder, name, account):
     """`<name>-knowledge.tar.xz` and `MANIFEST.md`: `canon/` and `knowledge/` of a commit, as Git stores them.
 
-    One change is made to the members: the account name is replaced by `<account>` wherever it
-    stands by itself (account_pattern), in a member's bytes and in its path, which also covers the home
-    folder's path. The archive is the same for the same commit: members in Git's order, the commit's time
-    on each, no owner."""
+    One change is made to the members: in a member's bytes the account name is replaced by `<account>`
+    wherever it stands inside a path of a home folder (account_pattern). A member's own path is a path
+    inside the research's repository and is kept. The archive is the same for the same commit: members
+    in Git's order, the commit's time on each, no owner."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     archive = folder / f'{name}-knowledge.tar.xz'
@@ -1119,10 +1114,9 @@ def knowledge_archive(repository, commit, folder, name, account):
     count = size = touched = 0
     with lzma.open(archive, 'wb', preset=6) as packed, tarfile.open(fileobj=packed, mode='w|', format=tarfile.PAX_FORMAT) as out:
         for path, data in git_members(repository, commit, ['canon', 'knowledge']):
-            changed = named.sub(ACCOUNT.encode(), data) if named else data
-            renamed = named.sub(ACCOUNT.encode(), path.encode('utf-8')).decode('utf-8') if named else path
-            touched += changed != data or renamed != path
-            info = tarfile.TarInfo(renamed)
+            changed = named.sub(rb'\g<1>' + ACCOUNT.encode(), data) if named else data
+            touched += changed != data
+            info = tarfile.TarInfo(path)
             info.size, info.mtime, info.mode = len(changed), stamp, 0o644
             out.addfile(info, io.BytesIO(changed))
             count += 1
@@ -1138,12 +1132,13 @@ def knowledge_archive(repository, commit, folder, name, account):
         f'- Commit: `{commit}`', f'- Date of the commit: {date}', f'- Files: {count}',
         f'- Size unpacked: {size} bytes', f'- Size of the archive: {archive.stat().st_size} bytes',
         f'- SHA-256 of the archive: `{digest}`', '',
-        (f'One change was made to the files. The account name of the machine on which the research ran is replaced by '
-         f'`{ACCOUNT}` wherever it stood, which also covers the path of the home folder. {touched} files were touched '
+        (f'One change was made to the files. Where a file gave a path of a home folder with the account name of the '
+         f'machine on which the research ran, that name is replaced by `{ACCOUNT}`. {touched} files were touched '
          'by this. Other paths of that machine in the research\'s own records stand as they were written.' if touched
-         else 'No file of the archive holds the account name of the machine on which the research ran, so the files are '
-              'in the archive as the commit has them. Where a record in the archive mentions a file path of that '
-              'machine, the path is kept as it was written; it is not a path of this package.'), '',
+         else 'No file of the archive gives a path of a home folder with the account name of the machine on which the '
+              'research ran, so the files are in the archive as the commit has them. Where a record in the archive '
+              'mentions a file path of that machine, the path is kept as it was written; it is not a path of this '
+              'package.'), '',
         '## Verifying and unpacking', '',
         '```text', f'sha256sum {archive.name}', f'tar -xJf {archive.name}', '```', '',
         'The first command prints the SHA-256 above. The second writes `canon/` and `knowledge/` into the current folder.',
@@ -1586,9 +1581,10 @@ def standalone_problems(package, work, account, freeze):
     """The final check of a package, made once: it stands alone and is what the freeze hashed.
 
     Every relative link of its Markdown and HTML resolves inside it; no file and no member of the
-    archive holds the account name; no document the pipeline wrote holds a drive path or the work
-    folder's path; every text file ends its lines with LF; `lean/` and `records/` have the hashes of
-    the freeze; every line of `MANIFEST.sha256` holds and every other file has a line.
+    archive holds the account name inside a path of a home folder (account_pattern); no document the
+    pipeline wrote holds a drive path or the work folder's path; every text file ends its lines with
+    LF; `lean/` and `records/` have the hashes of the freeze; every line of `MANIFEST.sha256` holds and
+    every other file has a line.
 
     A text file is a file that is UTF-8 and holds no NUL byte. The archive and the typeset paper are
     not, so the members of the archive, which are the research's own bytes, are not read for this."""
@@ -1609,13 +1605,11 @@ def standalone_problems(package, work, account, freeze):
         named = account_pattern(account)
         for relative, path in files.items():
             # The archive is read by its members. In its packed bytes the name can stand only by chance.
-            packed = relative.endswith('-knowledge.tar.xz')
-            if (not packed and named.search(path.read_bytes())) or named.search(relative.encode('utf-8')):
-                problems.append(f'{relative} holds the account name')
-            if packed:
-                held = [name for name, data in archive_members(path).items()
-                        if named.search(data) or named.search(name.encode('utf-8'))]
-                problems += [f'{relative}: the member {name} holds the account name' for name in held]
+            if relative.endswith('-knowledge.tar.xz'):
+                problems += [f'{relative}: the member {name} holds the account name inside a path of a home folder'
+                             for name, data in archive_members(path).items() if named.search(data)]
+            elif named.search(path.read_bytes()):
+                problems.append(f'{relative} holds the account name inside a path of a home folder')
     for relative, path in files.items():
         data = path.read_bytes()
         if b'\r' in data and b'\0' not in data:
@@ -1657,19 +1651,38 @@ def standalone_problems(package, work, account, freeze):
     return problems
 
 
+def account_words(package, account):
+    """The files of a package that hold the account name as a word by itself, for the report of the run.
+
+    The final check does not stop for them, because such a word need not be the name (account_pattern);
+    the user judges each. The word is the name with no letter and no digit beside it, so `pat` is not
+    found in "path". The archive is read by its members, and a member is given after the archive."""
+    word = re.compile(rb'(?<![A-Za-z0-9])' + re.escape(account.encode('utf-8')) + rb'(?![A-Za-z0-9])')
+    found = []
+    for relative, path in files_under(package).items():
+        if relative.endswith('-knowledge.tar.xz'):
+            found += [f'{relative}, member {name}' for name, data in archive_members(path).items() if word.search(data)]
+        elif word.search(path.read_bytes()):
+            found.append(relative)
+    return found
+
+
 def add_solved_entry(readme, name, entry):
     """Add one entry under "Solved problems" in the repository's README, creating the section when it is absent.
 
-    The entry is one list item. An entry for the same package is not added twice."""
+    The entry is one list item. An entry for the same package is not added twice. The file is the
+    repository's and keeps the line endings it has: a checkout on Windows can give it CRLF."""
     readme = Path(readme)
-    text = read_text(readme) if readme.is_file() else ''
+    raw = readme.read_bytes().decode('utf-8-sig') if readme.is_file() else ''
+    text = raw.replace('\r\n', '\n')
+    write = lambda new: write_file(readme, new.replace('\n', '\r\n') if '\r\n' in raw else new)
     if f'(solved/{name}/README.md)' in text:
         return False
     lines = text.split('\n')
     heading = next((i for i, line in enumerate(lines) if re.fullmatch(r'#+\s*Solved problems\s*', line)), None)
     if heading is None:
         body = text.rstrip('\n')
-        write_text(readme, (body + '\n\n' if body else '') + '## Solved problems\n\n' + entry + '\n')
+        write((body + '\n\n' if body else '') + '## Solved problems\n\n' + entry + '\n')
         return True
     level = len(lines[heading]) - len(lines[heading].lstrip('#'))
     end = next((i for i in range(heading + 1, len(lines)) if re.match(r'#{1,' + str(level) + r'}\s', lines[i])), len(lines))
@@ -1677,5 +1690,5 @@ def add_solved_entry(readme, name, entry):
         end -= 1
     blank = [''] if end == heading + 1 else []
     lines[end:end] = blank + [entry] + ([''] if end < len(lines) and lines[end].strip() else [])
-    write_text(readme, '\n'.join(lines))
+    write('\n'.join(lines))
     return True

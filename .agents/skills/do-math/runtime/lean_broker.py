@@ -646,7 +646,7 @@ class Broker:
         self.state = {"jobs": {}, "builds": {}, "version": None}
         self.calibration = Calibration(self.paths.calibration)
         self.hosts = {}
-        self.trees = {}  # job ID -> (pid, when its processes were listed, their PIDs)
+        self.trees = {}  # job ID -> (pid, when its processes were listed, their identities)
         self.library = self.library_key = None  # the Library of the current environment; False if it has none
         self.dirty = False  # the state has changed since it was written
         self.urgent = False  # a change that does not wait for STATE_SECONDS: a compile has ended
@@ -1166,15 +1166,24 @@ class Broker:
         Which processes belong to the tree is found by listing every process of the machine, and that
         costs far more than reading the memory of a few known ones. So the tree is listed again only
         every TREE_SECONDS, and at each poll in between the memory of the processes last listed is
-        read; one that has ended since counts as nothing, and one started since is counted from the
-        next listing."""
+        read. Each is kept with its identity (process_identity) and read only while that identity
+        holds: one that has ended since counts as nothing, and so does a process to which the system
+        has given its PID since. One started since is counted from the next listing."""
         measured = job["measured"]
         if not job.get("pid") or not alive(job.get("lean")):
             return
         tree = self.trees.get(job["id"])
         if tree is None or tree[0] != job["pid"] or time.monotonic() - tree[1] >= TREE_SECONDS:
-            tree = self.trees[job["id"]] = (job["pid"], time.monotonic(), process_tree(job["pid"]))
-        current = round(private_memory_mb(tree[2]), 1)
+            listed = []
+            for pid in process_tree(job["pid"]):
+                try:
+                    identity = process_identity(pid)
+                except OSError:  # refused: a process of another account has the PID by now (runtime_support.alive)
+                    continue
+                if identity:
+                    listed.append(identity)
+            tree = self.trees[job["id"]] = (job["pid"], time.monotonic(), listed)
+        current = round(private_memory_mb([member["pid"] for member in tree[2] if alive(member)]), 1)
         measured["sampled_at"] = time.time()
         if current != measured["current_mb"]:
             measured["current_mb"] = current

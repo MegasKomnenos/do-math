@@ -3,8 +3,8 @@
 Listing every process of the machine to find a compile's process tree costs far more than reading the
 memory of a few known processes. So the broker lists the tree at most once every TREE_SECONDS and
 reads the memory of the processes last listed at each poll in between. These tests fix that the
-memory is read at every poll, that the listing is renewed when it is due, and that nothing is kept
-for a job that has ended.
+memory is read at every poll, that the listing is renewed when it is due, that a listed process is
+read only while its PID is still its own, and that nothing is kept for a job that has ended.
 """
 from pathlib import Path
 import sys
@@ -32,7 +32,7 @@ class SamplingOfARunningCompile(BrokerFixture):
             patch.object(lean_broker, "private_memory_mb", side_effect=lambda pids: read.append(list(pids)) or real_memory(pids)))
 
     def test_the_memory_is_read_at_every_poll_and_the_tree_is_listed_only_when_a_listing_is_due(self):
-        # One running compile serves the three cases: each sets the listing that the broker holds for the job and
+        # One running compile serves the four cases: each sets the listing that the broker holds for the job and
         # counts from nothing. The compile outlasts them on any machine, and the fixture ends it after the test.
         job_id, job = self.running_job(sleep=30)
         with self.subTest("the tree is listed once and the memory read at every poll"):
@@ -60,6 +60,16 @@ class SamplingOfARunningCompile(BrokerFixture):
                 self.broker.sample(job)
             self.assertEqual(listed, [job["pid"]])
             self.assertIn(job["pid"], read[-1])
+        with self.subTest("a listed process whose PID has passed to another process is not read"):
+            # A process of the tree can end between two listings, and the system can give its PID to a process that
+            # is none of the compile's. Read as the compile's, that process's memory would become the compile's peak
+            # and, when the compile ends, the baseline or an excess of its imports in the calibration table.
+            listed, read, (tree, memory) = self.counted()
+            ended = {"pid": lean_broker.os.getpid(), "birth": "a process of the compile that has ended"}
+            self.broker.trees[job_id] = (job["pid"], lean_broker.time.monotonic(), [job["lean"], ended])
+            with patch.object(lean_broker, "TREE_SECONDS", 3600), tree, memory:
+                self.broker.sample(job)
+            self.assertEqual((listed, read), ([], [[job["pid"]]]))
 
     def test_nothing_is_kept_for_a_job_that_has_ended(self):
         job_id, job = self.running_job()

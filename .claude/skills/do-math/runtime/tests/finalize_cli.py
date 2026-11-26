@@ -8,7 +8,8 @@ a file or folder of the session copied to another place in it. Every call is rec
 the session was given. Run as `finalize_cli.py lake ...` it is Lake: `build` succeeds unless
 `lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
 runs the stand-in compiler's extraction; `env lean Check.lean` prints an axioms line for every name
-that Check.lean asks about, and fails at a name that no module Check.lean imports declares; and every
+that Check.lean asks about, with the axioms that `lake.json` gives the name under `axioms` and no such
+line for a name it gives null, and fails at a name that no module Check.lean imports declares; and every
 call fails when `lake.json` names under `needs_variable` a variable that its environment does not have.
 Run as `finalize_cli.py version` it is Lean's version command.
 """
@@ -40,16 +41,17 @@ def stand_in_session(scenario):
             break
         except (FileExistsError, PermissionError):
             time.sleep(0.01)
-    stopped = refused = False
+    stopped = refused = failed = False
     try:
         record = scenario / 'calls.json'
         calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
         if key is not None:
             entries = script[key]
             entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
-            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped, and an entry
-            # `{'@refused': ...}` for one whose provider has no capacity for the model.
-            stopped, refused = '@stopped' in entry, '@refused' in entry
+            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped, an entry
+            # `{'@refused': ...}` for one whose provider has no capacity for the model, and an entry `{'@failed': ...}`
+            # for one whose CLI ended with an error that is neither, before the session wrote anything.
+            stopped, refused, failed = '@stopped' in entry, '@refused' in entry, '@failed' in entry
             for source, target in entry.get('@copy', []):
                 if (folder / source).is_dir():
                     shutil.copytree(folder / source, folder / target, dirs_exist_ok=True)
@@ -57,7 +59,7 @@ def stand_in_session(scenario):
                     (folder / target).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(folder / source, folder / target)
             for name, content in entry.items():
-                if name not in ('@copy', '@stopped', '@refused'):
+                if name not in ('@copy', '@stopped', '@refused', '@failed'):
                     (folder / name).parent.mkdir(parents=True, exist_ok=True)
                     (folder / name).write_text(content, encoding='utf-8', newline='\n')
         calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
@@ -65,6 +67,10 @@ def stand_in_session(scenario):
         record.write_text(json.dumps(calls), encoding='utf-8')
     finally:
         lock.unlink()
+    if failed:
+        # An error of the CLI that is no refusal of the provider, as when the connection to it is lost.
+        print(json.dumps({'type': 'error', 'message': 'stream disconnected before completion'}))
+        return 1
     if refused:
         # What the Codex CLI writes when the provider has no capacity for the model.
         print(json.dumps({'type': 'error', 'message': 'Selected model is at capacity'}))
@@ -115,6 +121,9 @@ def stand_in_lake(scenario, arguments):
                 print(f'Check.lean: the stand-in finds no declaration {name} in the modules the file imports')
                 return 1
             axioms = settings.get('axioms', {}).get(name, ['propext', 'Quot.sound'])
+            if axioms is None:  # what is printed for this name holds no axioms line that the program can read
+                print(f'{name} : a statement')
+                continue
             print(f"{name} : a statement\n'{name}' depends on axioms: [{', '.join(axioms)}]" if axioms
                   else f"'{name}' does not depend on any axioms")
         return 0

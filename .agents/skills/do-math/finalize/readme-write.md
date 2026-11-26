@@ -20,7 +20,7 @@ If the figure you would like to give has no key in `facts.json`, write the sente
 
 - `facts.json`: the figures the program computed from the finished package, by key. Read it in full, so that you know which figures you can use.
 - `introduction.tex`: the introduction of the paper, in LaTeX. It states the result, places it, and outlines the proof for a mathematical reader. The paper does not mention Lean.
-- `account.md`: an account of the chosen proof as a whole: what is proved, how the proof goes from its main results to the main theorem and to the root, and where its difficulty lies. It names the library's declarations.
+- `account.md`: an account of the chosen proof as a whole: what is proved, how the proof goes from its main results to the main theorem and to the root, and where its difficulty lies. It names declarations of the library. A later step may have removed one of them, or given it another name that the program could not follow; the last paragraph of the file, where there is one, lists the names that the library no longer has.
 - `timeline.md`: the history of the research, one entry for each event in time order. Every entry was checked against the research's own record.
 - Only when this is the correcting session: `findings.json` and `previous/`. The last section says what they are.
 
@@ -30,7 +30,7 @@ Read all of them in full. They are your only sources: both sections say what the
 
 `outline.md` tells a visitor how the proof goes. The visitor may be a mathematician who wants to know whether the paper is worth opening, or someone who works with Lean and wants to find their way into the library. The section that precedes yours in the README has already given the result, so the outline begins with the proof.
 
-Say which results the proof is built from, how the main theorem follows from them and the root from the main theorem, which idea carries the argument, and where its difficulty lies. `introduction.tex` and `account.md` say this for two different readers; take the mathematics from them and write for a reader between the two. Where it helps the visitor find a result in the library or on the dependency map, name its declaration between backticks, using only names that `account.md` gives. Formulas are written in LaTeX between dollar signs and kept few.
+Say which results the proof is built from, how the main theorem follows from them and the root from the main theorem, which idea carries the argument, and where its difficulty lies. `introduction.tex` and `account.md` say this for two different readers; take the mathematics from them and write for a reader between the two. Where it helps the visitor find a result in the library or on the dependency map, name its declaration between backticks, using only names that `account.md` gives and does not list in that last paragraph. Formulas are written in LaTeX between dollar signs and kept few.
 
 The outline presents the chosen proof by itself, as the common text requires of every text that presents mathematics: no other route, no word about how the proof was found.
 

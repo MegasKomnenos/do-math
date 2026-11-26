@@ -66,6 +66,8 @@ import importlib.util
 from pathlib import Path
 import sys
 
+from canon import name_parts
+
 HERE = Path(__file__).resolve().parent
 SCHEMA = 1
 FILES = {'data': 'dependency_map.json', 'svg': 'dependency_map.svg', 'html': 'dependency_map.html'}
@@ -80,19 +82,6 @@ def drawing():
         sys.modules[name] = module
         spec.loader.exec_module(module)
     return sys.modules[name]
-
-
-def last_component(name):
-    """The last component of a Lean name; a component written between « and » may contain dots."""
-    current, quoted = '', False
-    for char in name:
-        if char in '«»':
-            quoted = char == '«'
-        elif char == '.' and not quoted:
-            current = ''
-        else:
-            current += char
-    return current or name
 
 
 def folder_of(module):
@@ -218,7 +207,7 @@ def derive(model, everything=False):
 
     def card(name, role):
         element = elements[name]
-        unit = {'id': name, 'label': element['short'] or last_component(name), 'role': role, 'kind': element['kind'],
+        unit = {'id': name, 'label': element['short'] or name_parts(name)[-1], 'role': role, 'kind': element['kind'],
                 'module': element['module'], 'group': folder_of(element['module']), 'root': name == root,
                 'description': element['description'], 'lean': element['statement']}
         if role == 'proof':
@@ -254,13 +243,13 @@ def derive(model, everything=False):
         groups.setdefault(unit['group'], []).append(unit['id'])
     root_element = elements[root]
     return {'schema': SCHEMA, 'title': 'Dependency map of ' + root,
-            'root': root, 'root_label': root_element['short'] or last_component(root),
+            'root': root, 'root_label': root_element['short'] or name_parts(root)[-1],
             'root_state': model.get('root_state'), 'library': model.get('library'),
             'revision': model.get('revision'), 'sequence': model.get('sequence'),
             'scope': 'all' if everything else 'root',
             'units': units, 'edges': edges,
             'groups': [{'id': key, 'label': key, 'units': groups[key]} for key in sorted(groups)],
-            'folded': {name: {'label': elements[name]['short'] or last_component(name), 'kind': elements[name]['kind'],
+            'folded': {name: {'label': elements[name]['short'] or name_parts(name)[-1], 'kind': elements[name]['kind'],
                               'description': elements[name]['description']} for name in order(folded_names)},
             'counts': {'elements': len(elements), 'units': len(units), 'edges': len(edges), 'groups': len(groups)}}
 
@@ -314,6 +303,12 @@ def main(argv=None):
             data = read_json(source)
             if not isinstance(data, dict) or data.get('schema') != SCHEMA or not isinstance(data.get('units'), list):
                 raise ValueError(f'{source} is not a dependency map written by this command')
+            # A file that was changed after the command wrote it can keep a line whose unit it no longer holds.
+            # The drawing needs both ends of every line, so the file is refused here, with the name that is missing.
+            units = {unit['id'] for unit in data['units']}
+            stray = sorted({edge[end] for edge in data['edges'] for end in ('source', 'target')} - units)
+            if stray:
+                raise ValueError(f'{source} has a line to or from {stray[0]}, which is not among its units')
             if args.all:
                 raise ValueError('--all needs the instance; a map drawn again keeps the scope it was derived with')
         elif (source / 'instance.json').is_file():
