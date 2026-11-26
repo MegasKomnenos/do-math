@@ -43,7 +43,7 @@ The feedback covers the important mathematical assertions of the candidate, incl
 
 ## One entry for each element
 
-The elements you judge are those the candidate adds and those whose proof it replaces. The candidate's `prepared.json` names them in its lists `added` and `replaced`, and `commands.verify` prints the same two lists when you build the candidate yourself. The transport check compares your entries with the lists in `prepared.json` and refuses an assessment that omits a name, repeats one or adds another. Under `entries`, `prepared.json` also says of each of these elements what kind of declaration it is, whether its Lean proof is complete or ends in `sorry`, and whether its record carries a written proof. [The candidate change](change-format.md) describes the candidate and that file.
+The candidate's `prepared.json` names the elements you judge in its lists `added` and `replaced`, and `commands.verify` prints the same two lists when you build the candidate yourself. The transport check compares your entries with the lists in `prepared.json` and refuses an assessment that omits a name, repeats one or adds another. Under `entries`, `prepared.json` also says of each of these elements what kind of declaration it is, whether its Lean proof is complete or ends in `sorry`, and whether its record carries a written proof. [The candidate change](change-format.md) describes the candidate and that file.
 
 Each entry has the element's name and four judgments.
 
@@ -87,7 +87,7 @@ The runner writes this text, with the change's ID and revision, at the end of ev
 
 ## Questions and resolutions
 
-An entry of `questions` has `proposal`, the ID of the proposed question, `verdict` and `reason`. The verdict is `admitted`, `declined` or `revise`. A declined duplicate also names the existing question in `duplicate_of`; that field is allowed only with `declined`. `declined` and `revise` record two different judgments behind a refusal, which later peers read differently; the role guide explains, under "Questions the candidate proposes or resolves", when each applies and what its reason says.
+An entry of `questions` has `proposal`, the ID of the proposed question, `verdict` and `reason`. The verdict is `admitted`, `declined` or `revise`. A declined duplicate also names the existing question in `duplicate_of`; that field is allowed only with `declined`. The role guide explains, under "Questions the candidate proposes or resolves", when `declined` and `revise` each apply and what the reason of each says.
 
 An entry of `resolutions` has `proposal`, the ID of the proposed resolution, `resolved` as a Boolean, and `reason`. An accepted resolution says in its reason why the text that the candidate carries as the question's understanding so far answers what the question's statement asks, and names what remains to be done when the candidate does not carry it. The assertions the text relies on are elements, so their verdicts, in this assessment or already in the canon, are part of what you weigh. Question `q0` is not resolved in this way.
 

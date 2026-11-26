@@ -844,6 +844,29 @@ class BrokerTests(BrokerFixture):
                 self.assertEqual(job["status"], "finished")
                 self.assertEqual(self.broker.calibration.known(job["closure"]), verdict)
 
+    def test_a_calibration_that_ended_while_no_broker_was_alive_gives_no_baseline(self):
+        # The state is written when a compile starts and then at most every STATE_SECONDS. Of a calibration
+        # that ended while no broker was alive, the next broker has the peak last written, here that of
+        # the start. Taken as the baseline, it would be reserved for every later compile with those imports.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        self.until(lambda: self.jobs("running"))
+        calibration = self.jobs("running")[0]
+        self.assertEqual(calibration["kind"], "calibration")
+        self.wait_gone(calibration["host"], limit=30)  # no poll meanwhile: the broker that started it has died
+        self.assertTrue((self.paths.job(calibration["id"]) / "exit.json").exists())
+        self.start_broker()
+        self.until(lambda: self.finished(job_id))
+        job = self.broker.state["jobs"][job_id]
+        self.assertEqual(self.broker.state["jobs"][calibration["id"]]["exit_code"], 0)
+        self.assertIsNone(self.broker.calibration.entry(job["closure"]))
+        self.assertEqual((job["status"], job["exit_code"]), ("finished", 0))
+        self.assertEqual(job["reserve"]["certain_mb"], 40)  # no baseline: the whole estimate is reserved
+        # The next compile with those imports has them measured.
+        second = self.submit(self.session_file("s1", "B.lean"), expect_mb=40)
+        self.until(lambda: self.finished(second))
+        self.assertGreater(self.broker.calibration.baseline(job["closure"]), 10)
+
     def test_failed_and_cancelled_jobs_report_their_own_exit_codes(self):
         self.start_broker()
         self.broker.config["cpu_threads_budget"] = 1

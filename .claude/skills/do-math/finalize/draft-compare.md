@@ -4,7 +4,7 @@ A paper will be written from the library in your folder, which is what the chose
 
 ## What the step is for
 
-After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. The first paper made from such a library stated more than the library proved, in four places, and the difference was found after the paper was written. The library was extended, and its records and the documents around it were made again. Here the order is the other way round: by the user's decision, if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
+After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. When a paper states more than its library proves and the difference is found only after the paper is written, the library has to be extended, and its records and the documents around it made again. Here the order is the other way round: by the user's decision, if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
 
 When you have ended, nothing in the draft says more than a declaration of the library says.
 

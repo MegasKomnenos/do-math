@@ -504,6 +504,11 @@ def batches(items, size, key=lambda item: ''):
     return [(f'{number:02d}', group) for number, group in enumerate(found, 1)]
 
 
+def with_new_names(text, renames):
+    """A text in which every renamed declaration that stands between backticks has its new name."""
+    return BACKTICKED.sub(lambda match: '`' + renames.get(match[1], match[1]) + '`', text)
+
+
 def follow_renames(records_root, renames, removed):
     """Bring the records to a table of renamed declarations and a list of removed ones.
 
@@ -522,12 +527,10 @@ def follow_renames(records_root, renames, removed):
     for new, text in moved.items():
         write_text(records_root / (name_path(new) + '.md'), text.replace('\r\n', '\n'))
     if renames:
-        ticked = lambda match: '`' + renames.get(match[1], match[1]) + '`'
         header = lambda match: match[1] + renames.get(match[2], match[2])
         for path in files_under(records_root).values():
             text = read_text(path)
-            changed = BACKTICKED.sub(ticked, text)
-            changed = re.sub(r'^((?:proves|refutes):\s*)(\S+)[ \t]*$', header, changed, flags=re.M)
+            changed = re.sub(r'^((?:proves|refutes):\s*)(\S+)[ \t]*$', header, with_new_names(text, renames), flags=re.M)
             if changed != text:
                 write_text(path, changed)
     for folder in sorted((p for p in records_root.rglob('*') if p.is_dir()), reverse=True):
@@ -1255,9 +1258,9 @@ def event_members(row, names):
 
 # What the research's own words for a publication's source are, where the event does not carry one.
 SESSION_OF = {'organization': 'organizer', 'questions': 'operator', 'review': 'review'}
-# An entry of the history is two to four sentences, and an item of its list one clause. The first run of the
-# pipeline produced entries of 957 and 236 words that retold the mathematics of every element, which is harder
-# to read than the records they condense; the program therefore refuses an entry beyond these bounds.
+# An entry of the history is two to four sentences, and an item of its list one clause. A longer entry retells
+# the mathematics of its elements and is harder to read than the records it condenses, so the program refuses
+# an entry beyond these bounds.
 HISTORY_TEXT_WORDS, HISTORY_ITEM_WORDS = 120, 30
 PUBLICATION = {'change': 'change', 'review': 'review of published proofs', 'organization': 'organization of the library',
                'questions': 'questions placed by the operator'}

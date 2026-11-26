@@ -367,6 +367,13 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual(self.resolved(frontier, 'op-b'), f'- op-b — resolved by {cid}/res · aliases: op-a')
         self.assertIn(f'State: resolved\nSource: operator publication qops\n- Resolved by {cid}/res\nAliases: op-a\n',
                       '\n'.join(resolved_question_lines(model)))
+        # The question is one question after the merge, so the text that settled it is what a session
+        # reads when it asks for that question, under either identifier.
+        for qid in ('op-b', 'op-a'):
+            with self.subTest(question=qid):
+                shown = question_view(self.instance, model, qid)
+                self.assertEqual(shown.splitlines()[0], 'op-b · resolved')
+                self.assertIn(ACCOUNT.strip(), shown)
 
     def test_a_question_resolved_before_its_merge_resolves_the_question_it_merges_into(self):
         self.questions('qops', [question('op-a'), question('op-b')])
@@ -378,20 +385,6 @@ class QuestionKnowledgeTests(QuestionCase):
         self.assertEqual((survivor['state'], survivor['resolutions']), ('resolved', [cid + '/res']))
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         self.assertEqual(self.resolved(frontier, 'op-b'), f'- op-b — resolved by {cid}/res · aliases: op-a')
-
-    def test_an_account_written_under_a_merged_alias_is_the_surviving_questions_understanding(self):
-        self.questions('qops', [question('op-a'), question('op-b')])
-        self.organize([{'from': 'op-a', 'into': 'op-b', 'reason': 'Both ask about the same scale.'}])
-        self.account('op-a', resolution_id='res')
-        model = replay(self.instance)
-        self.assertEqual(model['questions']['op-b']['state'], 'resolved')
-        # The question is one question after the merge, so the text that settled it is what a session
-        # reads when it asks for that question, under either identifier.
-        for qid in ('op-b', 'op-a'):
-            with self.subTest(question=qid):
-                shown = question_view(self.instance, model, qid)
-                self.assertEqual(shown.splitlines()[0], 'op-b · resolved')
-                self.assertIn(ACCOUNT.strip(), shown)
 
     def test_a_finding_that_reopens_through_an_alias_reopens_the_surviving_question_and_stays_beside_it(self):
         self.questions('qops', [question('op-a'), question('op-b')])

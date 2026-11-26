@@ -116,8 +116,7 @@ def board(instance, state=None, model=None):
         rows.append({'pipeline': pid, 'session': pipeline['producer'], 'role': pipeline['role'],
                      'stage': pipeline['stage'] if pipeline['producer'] else 'queued',
                      'elements': sorted({s['element'] for s in sections}), 'sections': sections,
-                     'question': question,
-                     'declared_at': min((s['at'] for s in sections if s.get('at')), default=None)})
+                     'question': question})
     return rows
 
 

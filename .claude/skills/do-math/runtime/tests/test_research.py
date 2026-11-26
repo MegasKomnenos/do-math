@@ -19,7 +19,7 @@ from coordination import (board, claims_lock, lease, lease_table, main as coordi
                           section, updates, wait)
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
 from lean_broker import Paths, broker_status, ensure_broker
-from runner import Runner, archive_finished, initialize, main, start
+from runner import Runner, archive_finished, initialize, main, start, status
 from runtime_support import InstanceLock, alive, read_json, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
@@ -51,9 +51,10 @@ def second_proof(case):
     case.scenario('second', lambda: publish_second_proof(case))
 
 
-def initialized(base, name, root=ROOT, modules=None, records=None):
+def initialized(base, name, root=ROOT, modules=None, records=None, declaration='Small.root'):
     """An instance created through runner.initialize, as the operator creates one: the fixture's canon with
-    the given text of the root module, and further modules and records (which replace the fixture's own)."""
+    the given text of the root module, and further modules and records (which replace the fixture's own).
+    `declaration` is the name given to init as the root declaration."""
     base = Path(base)
     canon = base / (name + '-canon')
     write_canon(canon, root)
@@ -65,7 +66,7 @@ def initialized(base, name, root=ROOT, modules=None, records=None):
     (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
                                   encoding='utf-8')
     write_json(base / 'settings.json', fixture_settings())
-    initialize(base / name, base / 'goal.md', canon, 'Small.root', base / 'settings.json')
+    initialize(base / name, base / 'goal.md', canon, declaration, base / 'settings.json')
     return base / name
 
 
@@ -2198,6 +2199,31 @@ class RunnerTests(ScenarioCase):
             runner.tick()
         self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'attempt'])
 
+    def test_status_reports_the_runner_alive_while_the_process_of_its_start_record_lives(self):
+        # Runner.run writes its start record, runner/process.json, before its first pass: the runner's process,
+        # the token that start gave it and the time. start confirms the runner from that record and from the
+        # token on the runner's standard output, and status reports the runner alive while the recorded process
+        # lives (reference/operations.md reads a runner that ended by itself from `runner_alive` false). The root
+        # is formally proved and dispatch is stopped here, so the runner's own pass finds nothing to do and run
+        # returns after it. The runner is this test's own process, which stays alive.
+        self.formal()
+        runner = self.runner()
+        runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
+        reported = status(self.instance)
+        self.assertEqual((reported['runner_alive'], reported['stopped']), (False, False))  # no runner was started yet
+        with patch('runner.subprocess.Popen'), patch('builtins.print') as shown:
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            runner.run('token-1')
+        record = read_json(self.instance / 'runner/process.json')
+        self.assertEqual((record['process'], record['token']), (runner.identity, 'token-1'))
+        self.assertIsInstance(record['at'], float)
+        self.assertEqual(json.loads(shown.call_args.args[0])['token'], 'token-1')
+        reported = status(self.instance)
+        self.assertEqual((reported['runner_alive'], reported['finished'], reported['stopped']), (True, True, True))
+        # The record outlives its process. Once it names a process that is gone, the runner is reported as not alive.
+        write_json(self.instance / 'runner/process.json', {**record, 'process': {'pid': 2 ** 22, 'birth': 'gone'}})
+        self.assertFalse(status(self.instance)['runner_alive'])
+
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
         with patch('builtins.print') as shown:
@@ -2325,13 +2351,26 @@ class InitializeTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
 
-    def test_a_root_that_already_has_a_proof_is_refused(self):
+    def test_a_canon_refused_after_the_directory_was_created_leaves_no_instance(self):
+        # What runner.initialize itself refuses after it has created the directory (reference/operations.md,
+        # Create and start): a library that does not compile, a root declaration that is not a theorem, and a
+        # root that already has a proof, in Lean or in its record. Each case differs in one thing from the
+        # canon of the fixture, which init accepts.
+        broken = ROOT.replace('/-- The sum', '-- fail: unknown constant Small.gone\n/-- The sum')
         complete = ROOT.replace('  sorry', '  rfl')
         written = RECORDS['Small/root.md'] + '\n## Proof\n\nBy induction on $n$, comparing consecutive squares.\n'
-        for name, root, records in (('lean', complete, None), ('written', ROOT, {'Small/root.md': written})):
+        proved = ('the root declaration Small.root already has a proof',)
+        cases = (('broken', ('the canon does not compile', 'Small.Root', 'unknown constant Small.gone'), {'root': broken}),
+                 ('definition', ('the root declaration Small.oddSum is not a theorem of the canon',),
+                  {'declaration': 'Small.oddSum'}),
+                 ('lean', proved, {'root': complete}),
+                 ('written', proved, {'records': {'Small/root.md': written}}))
+        for name, reasons, changed in cases:
             with self.subTest(name):
-                with self.assertRaisesRegex(ValueError, 'the root declaration Small.root already has a proof'):
-                    initialized(self.root, name, root=root, records=records)
+                with self.assertRaises(ValueError) as refused:
+                    initialized(self.root, name, **changed)
+                for reason in reasons:
+                    self.assertIn(reason, str(refused.exception))
                 self.assertFalse((self.root / name / 'instance.json').exists())
 
     def test_a_server_whose_command_is_not_found_is_refused_before_anything_is_created(self):

@@ -29,7 +29,7 @@ You read all of these files and write none of them. The commands below are the w
 
 ## Elements
 
-An element is a declaration that an author wrote in a module of the library, together with its record. In the views an element has one of four kinds. A `theorem` is a statement, and only statements have a standing. A `def`, an `opaque` and an `inductive` are definitions; a `structure` is shown as an `inductive`, and an `abbrev` or an `instance` as a `def`. An instance needs a record like any other definition, so give it a name of your choosing instead of leaving Lean to generate one.
+In the views an element has one of four kinds. A `theorem` is a statement, and only statements have a standing. A `def`, an `opaque` and an `inductive` are definitions; a `structure` is shown as an `inductive`, and an `abbrev` or an `instance` as a `def`. An instance needs a record like any other definition, so give it a name of your choosing instead of leaving Lean to generate one.
 
 Some declarations of the library are not elements and need no record: a declaration marked `private`, and everything Lean generates for a declaration an author wrote, such as the fields and the constructor of a structure, the constructors of an inductive type, equation lemmas and auxiliary proofs. What they use counts as used by the element they belong to, so a proof that reaches a statement through a private helper is recorded as resting on that statement.
 
@@ -70,7 +70,7 @@ Whichever form a proof takes, name in it the statements the argument uses, and t
 
 Three things are refused. An `axiom` declaration is refused: what you want to assume is stated as a `theorem` whose proof is left open, and the frontier then shows it as work that remains. A definition whose body contains `sorry` is refused, because every statement that used it would be about an unknown object. And a `theorem` whose statement is not a proposition is refused.
 
-Keep prose out of the Lean source apart from a short doc comment: a module is compiled again whenever its source changes in any byte, prose included. What Lean must check is in the source, and what a reader needs is in the record.
+Keep prose out of the Lean source apart from a short doc comment: a module is compiled again whenever its source changes in any byte, prose included.
 
 ## Reading the canon: the commands
 

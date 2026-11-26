@@ -74,6 +74,7 @@ readings found and the resolving session or the last narrow repair answered with
 "kept" in that event and does not make the exit code 2.
 """
 import argparse
+from contextlib import nullcontext
 import difflib
 import hashlib
 import json
@@ -85,7 +86,7 @@ import sys
 
 from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
 from cli_adapter import build_command, provider_for_model
-from command_sessions import PARALLEL, Sessions, Stop, Unusable, collapsed, is_text, read_file
+from command_sessions import PARALLEL, Sessions, Stop, Unusable, alone, collapsed, is_text, read_file
 import depmap
 from knowledge import ROOT_QUESTION, STANDINGS, refuting_proofs, replay
 from runtime_support import contain_session_processes, popen_options, read_json, write_json, write_text
@@ -2043,7 +2044,8 @@ is not stated.
 name in words of an object that has no symbol. "meaning" says exactly what it denotes, with its conventions: where an \
 index starts, how a quantity is normalised. "elements" are the names of the definitions of the materials whose object \
 the entry denotes. It names several where the canon spreads one mathematical object over several declarations, it is \
-empty for an entry that denotes no element, and a definition is named in one entry only.
+empty for an entry that denotes no element, and a definition is named in one entry only. The method's section "What \
+each session works from" says which objects receive an entry, and why.
 - "displays": the displayed formulas that more than one section needs, each {"label", "section", "element", "formula", \
 "used_in"}; an empty array when there is none. The sections are written side by side, and a writer cannot refer to a \
 formula that another writer numbers, because nothing tells the first that it will be there. A formula that two \
@@ -2075,19 +2077,6 @@ source of each listed result and enters it into the record only where it finds a
 form the element has; the script then changes the plan to cite it. So list a result when you are confident that the \
 literature has it in that form, and do not list a result that this research found, however natural it looks.
 '''
-PLAN_NOTATION = '''
-The notation carries more than it would in a paper written by one hand. The sections are written side by side, so a \
-writer never sees how another section names an object, and the plan is the only place where two writers can agree. Give \
-an entry to every object that more than one section speaks of: the objects of the problem, and equally every auxiliary \
-function, quantity, set, constant or condition that is defined in one section and used in another, or used in the proofs \
-of two sections. This includes objects that the materials do not hold as a definition, such as a quantity that several \
-records introduce in passing. An object that one section alone uses needs no entry, and its writer names it. The brief \
-that each writer receives shows, at every element of another section that its own elements name, the entry under which \
-the paper knows that element; a writer who finds none there has to invent a name, and two writers invent two.
-
-When the plan absorbs a definition into several places that lie in different sections, the first of them in the order \
-of the paper defines the object, and the later ones use it under its entry in the notation.
-'''
 PLAN_ACCEPTS = '''
 The script accepts the plan when every element of the materials appears in it exactly once; when kinds, labels, sections \
 and reasons have the form above; when the main result is a theorem stated in the first section before every other \
@@ -2105,11 +2094,7 @@ materials; for every other object the notation rests on your reading.'''
 PLAN_CLOSING = ''' A plan that fails goes to a new planning session with the list of failures.
 
 Write also `output/study.md`: your account of how the chosen papers are written, as the method's section "The papers \
-this paper is written like" describes it, in free text. Every session that writes or repairs receives it, and it is \
-all that such a session has of the papers you do \
-not name for its section. So where the papers differ by the kind of section, say what each kind does: how introductions \
-are built, how a section of preliminaries, a section that carries a long computation, and a section that proves the main \
-theorem open, proceed and close.
+this paper is written like" describes it, in free text.
 
 Use no source other than the files in this folder. Write no part of the paper itself.
 '''
@@ -2130,7 +2115,10 @@ ELEMENTS_SECTION = ('Your brief gives an element of another section by what it s
                     'because a proof of this section needs to know how such an element is proved, open its file. '
                     '`plan.json` is the whole plan, for a question about another section that the brief does not answer.')
 ELEMENTS_WHOLE = ('`plan.json` says which element each numbered statement states and into which statements the other '
-                  'elements are written. Open the records of the elements whose text you change.')
+                  'elements are written. Open the records of the elements whose text you change. One kind of proof is '
+                  'not rewritten from its record: where the manuscript proves a result by citing a general theorem and '
+                  'giving the specialisation, the proof keeps that form (method, section "Results from the '
+                  'literature"), and the longer proof in the record is not written into the paper.')
 
 STUDY_FILE = '''- `study.md` is the planning session's account of how the papers it chose for this paper are written, part \
 by part, made so that sessions which do not see each other write from one reading of the same papers.'''
@@ -2140,8 +2128,7 @@ WRITE_PROMPT = CONTEXT + '''
 This session writes one section of the paper: "{title}", whose id in the plan is `{id}`.{also}
 
 The sections are written by sessions that do not see each other at work. {order} What makes one paper of the sections is \
-the plan, which an earlier session made and the script checked. It fixes the numbered statements with their kinds and \
-labels, the section of each, what becomes of every other element, and the notation.
+the plan, which an earlier session made and the script checked.
 
 In this folder:
 ''' + METHOD_BEFORE_CHECKS + '''
@@ -2170,9 +2157,8 @@ the other sections. An equation, a subsection or a remark of another section can
 one in `parts/`: a repair of that section may remove it. The one exception is a formula that the brief lists under \
 "Displayed formulas that several sections use", when the brief has that heading: the plan fixes the label of such a \
 formula and the section that displays it.
-- Use the notation of the plan for every object that the plan names. An object that the plan does not name is yours to \
-name: introduce its notation inside your section, where it is first used, and do not rely on another section having \
-introduced it.
+- An object that the plan does not name is yours to name: introduce its notation inside your section, where it is \
+first used, and do not rely on another section having introduced it.
 - An element of another section that has no number cannot be referred to. The brief says so at the element, and it gives \
 the record in full where a proof of this section may use it: its content is then written at the place of use. An object \
 that another section defines in its running text is used here under the notation of the plan and is not defined a \
@@ -2581,10 +2567,13 @@ reported is what such a finding asks to be corrected. A finding of the compariso
 session that compared the text outside the numbered statements and the proofs with the results of the research. It gives \
 a passage that asserts something which none of those results states, and what the passage asserts beyond the result \
 that comes nearest ("where", "quote", "asserts", "difference"; "nearest" is the research's own name for that result and \
-names nothing in the manuscript). Such a finding asks that the passage be cut, or reworded so that it no longer asserts \
-that difference; it is answered when the manuscript no longer asserts it at that place, and a cut is sound when nothing \
-that stays in the manuscript rests on what was cut. The array is empty when the only changes are corrections of the \
-LaTeX.
+names nothing in the manuscript). Where it has "source" in the place of "nearest", the passage says something of the \
+cited work with that key, and "difference" is what it says of the work beyond what was read of the work. Such a \
+finding asks that the passage be cut, or reworded so that it no longer asserts that difference. A derivation that a \
+proof uses has a third answer: it is moved into that proof as it is, where it is a step of the argument and no longer \
+a result of the paper, so one change takes the passage out and another has it in the proof. The finding is answered \
+when the manuscript no longer asserts the difference at that place, and a cut is sound when nothing that stays in the \
+manuscript rests on what was cut. The array is empty when the only changes are corrections of the LaTeX.
 - "changes": the changed passages in the order of the manuscript, each {{"change": <its number>, "part": <"abstract", or \
 the id of the section, which follows `sec:` in the label after its heading>, "lines": <the lines of `paper.tex` at which \
 the new text stands, or the line after which text was taken out>, "before": <the passage as it was read>, "after": <the \
@@ -2642,11 +2631,8 @@ still has at that place; otherwise it may be empty.
 
 SKETCH_PROMPT = CONTEXT + '''
 
-This run of the script makes the draft of the paper, and not yet the paper. The library can still be changed now. After \
-this run it is brought into its final form and frozen, and from then on the paper may state only what the library \
-contains. The draft exists so that whatever the paper will want to state, and the library does not yet contain, is found \
-while it can still be added, and not when a writer reaches for it and nothing can be added any more. The method's \
-section "The draft that comes before the paper" describes this.
+This run of the script makes the draft of the paper, and not yet the paper. The library can still be changed now, and \
+the method's section "The draft that comes before the paper" says what the draft is for and what becomes of it.
 
 This session sketches one section of the paper: "{title}", whose id in the plan is `{id}`.{also} Other sessions sketch \
 the other sections at the same time. A sketch contains no prose of the paper. It fixes what the section will state: its \
@@ -2951,21 +2937,17 @@ each entry. {spans}
 
 Read each entry where it stands in `paper.tex`. Find in it every assertion of mathematics about the objects of the \
 paper: every sentence or formula that says that something holds, follows, equals, is bounded, exists, fails or cannot \
-be improved. For each assertion look for an element that covers it, as that section of the method describes: an \
-element whose statement says the same or says more, so that the assertion is that statement, a special case of it, a \
-weaker form of it, or the same thing in words. Read both in the notation and the conventions of the manuscript. Where \
-the statement in words and the Lean statement of an element differ, the Lean statement is what was proved. Check a \
-special case at its boundary: an element that is stated for $n \\ge 1$ does not cover a sentence about $n = 0$.
+be improved. For each assertion look for an element that covers it, as that section of the method describes. Read \
+both in the notation and the conventions of the manuscript. Where the statement in words and the Lean statement of an \
+element differ, the Lean statement is what was proved. Check a special case at its boundary: an element that is stated \
+for $n \\ge 1$ does not cover a sentence about $n = 0$.
 
 Report every assertion that no element covers. Report it also when it is true and its proof would be short: the \
 question is whether the library states it, and a claim that is easy to prove is as unproved there as a hard one. An \
 assertion that follows only from two elements together, and that no single element states, is not covered.
 
 That section of the method also says what in the running text is no assertion in this sense, and none of that is \
-reported: for example a sentence that says what the paper, a section or a proof does or will do; a definition, and the \
-introduction of a notation; a sentence that says where a hypothesis is used or why a definition is made as it is; a \
-fact that the reader of the method knows from the textbooks of the area and that the text uses with an ordinary \
-phrase. And how a passage is worded is not in question.{main}
+reported. And how a passage is worded is not in question.{main}
 
 {literature}
 
@@ -3492,7 +3474,7 @@ class Paper(Sessions):
 
         # Only the plan of a draft is asked for the results to cite, and the note on the main result is empty when the
         # declaration that settles the root is the main result.
-        prompt = (PLAN_OPENING + PLAN_KEYS + (PLAN_CITATIONS if draft else '') + PLAN_NOTATION + PLAN_ACCEPTS
+        prompt = (PLAN_OPENING + PLAN_KEYS + (PLAN_CITATIONS if draft else '') + PLAN_ACCEPTS
                   + main_note(self.materials) + PLAN_CLOSING)
         self.take_plan(*self.session('plan', prompt, self.planning_kit(), read,
                                      self.writer, attempts=PLAN_ATTEMPTS))
@@ -3537,7 +3519,7 @@ class Paper(Sessions):
                      'problems.md': '\n'.join(['# What the check of the plan found', '',
                                                *('- ' + problem for problem in problems)]) + '\n',
                      'draft.json': json.dumps(draft, ensure_ascii=False, indent=2) + '\n'}
-            prompt = PLAN_REPAIR_PROMPT.format(plan_keys=PLAN_KEYS + PLAN_NOTATION + PLAN_ACCEPTS + main_note(self.materials))
+            prompt = PLAN_REPAIR_PROMPT.format(plan_keys=PLAN_KEYS + PLAN_ACCEPTS + main_note(self.materials))
             carried = self.session('plan', prompt, files, read, self.writer, 'from-draft', attempts=PLAN_ATTEMPTS)
         self.take_plan(carried, study)
         self.sketched = draft
@@ -5798,12 +5780,15 @@ def main(argv=None):
             raise Stop('--title-page goes with a run and with --typeset-only; --open-findings keeps the author line that '
                        'the folder holds')
         choice = {'model': args.model, 'effort': args.effort}
-        if args.open_findings is not None:
-            return act_on_open(args.instance, args.out, args.tex, choice, args.parallel, args.open_findings, args.dry_run)
-        if args.typeset_only:
-            return typeset_only(args.instance, args.out, args.tex, choice, args.parallel, args.title_page)
-        return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run,
-                       args.draft, args.from_draft, args.title_page, main=args.main)
+        # A dry run writes nothing, so it may be given beside a command that is at work in the folder; no other may.
+        with nullcontext() if args.dry_run else alone(args.out):
+            if args.open_findings is not None:
+                return act_on_open(args.instance, args.out, args.tex, choice, args.parallel, args.open_findings,
+                                   args.dry_run)
+            if args.typeset_only:
+                return typeset_only(args.instance, args.out, args.tex, choice, args.parallel, args.title_page)
+            return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run,
+                           args.draft, args.from_draft, args.title_page, main=args.main)
     except (Stop, OSError, ValueError) as exc:
         print('paper.py: ' + str(exc), file=sys.stderr)
         return 1

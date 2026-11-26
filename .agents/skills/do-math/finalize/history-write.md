@@ -17,7 +17,7 @@ Two requirements follow from this reading. The first is that the timeline has no
 
 The second is that an entry is easier to read than the record it condenses. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, what the reviewing session made of it, what was tried on a statement and how far it came, which question was opened or answered. An entry that tells this lets the reader decide which record to open, and the record then gives the mathematics, complete and reviewed.
 
-The second requirement is the harder one to keep, because breaking it feels like care. A record is full of mathematics that is true and reviewed. Each sentence of it can be repeated in an entry without adding a claim, and a session that wants to be faithful and complete repeats it. In an earlier run, the entry for a publication of nineteen elements was a single paragraph of more than nine hundred words, which restated every element with its formula and the reviewing session's remarks one by one. Each of its sentences was in the record, and the entry was harder to read than the record itself. An entry is faithful when what it says is in the record. It is not asked to carry what the record carries.
+The second requirement is the harder one to keep, because breaking it feels like care. A record is full of mathematics that is true and reviewed. Each sentence of it can be repeated in an entry without adding a claim, and a session that wants to be faithful and complete repeats it. The entry of a publication of many elements can then run to many hundred words in one paragraph and restate every element with its formula and the reviewing session's remarks one by one. Each of its sentences is in the record, and the entry is harder to read than the record itself. An entry is faithful when what it says is in the record. It is not asked to carry what the record carries.
 
 After you, a second session reads each entry with nothing but the record it points to. What the record does not say it takes out, and an entry that retells its record it cuts back to what happened.
 
@@ -98,7 +98,7 @@ Record: `canon/approaches/...`
 Record: `canon/questions/q0.md`
 ```
 
-You supply `<text>` and, for a publication with many elements, the list under it. The heading of a publication gives its number, its date and its kind. The heading of an approach gives the statement and the title of the approach, and the heading of a question gives the question's name. The last line gives the path of the record. An entry repeats none of these.
+You supply `<text>` and, for a publication with many elements, the list under it. An entry repeats nothing that its heading or the last line gives: the number, date and kind of a publication, the statement and title of an approach, the name of a question, the path of the record.
 
 A reader who has looked up one heading reads the entry under it by itself. Each entry therefore says what happened in terms that need no other entry.
 
@@ -108,7 +108,7 @@ An entry is two to four sentences. It reports, and the record explains. How a pr
 
 ### The entry of a publication
 
-The entry of a publication says what was published and whose work it was. It names each element and says in one clause what the element is. It gives the reviewing session's judgment in one sentence. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
+The entry of a publication says what was published and whose work it was, names each element, and gives the reviewing session's judgment. Where the publication proposed, resolved, reopened or merged a question, it says which question and, in a few words, what the question asks.
 
 **Whose work it was.** Say it in the plain words of the table of `by` above. Where `by` is empty, the entry does not say whose work it was. Where `by` holds a word that the table does not have, say what the record itself says about where the publication came from. That a second session prepared the change holds for every change, and an entry does not repeat it.
 
@@ -128,7 +128,7 @@ The entry says what the question asks, whether the record gives an answer and wh
 
 ### What holds for every entry
 
-Use plain words. The record speaks in the vocabulary of the research's own procedure, and a reader of the package has not learned it. Say what took place: that a proof of a statement was added, that it was found correct and was not yet accepted because it could still be made simpler, that an earlier proof was replaced, that an approach stopped at a named step. The words that the common text defined for the sessions of this run are working vocabulary as well, and the reader of the timeline has not read that text. In an entry the root is the proposition the research set out to settle, and elements are definitions and statements. Identifiers of sessions, of builds and of changes are not needed in an entry, because the line under the entry gives the path of the record.
+Use plain words. The record speaks in the vocabulary of the research's own procedure, and a reader of the package has not learned it. Say what took place: that a proof of a statement was added, that it was found correct and was not yet accepted because it could still be made simpler, that an earlier proof was replaced, that an approach stopped at a named step. The words that the common text defined for the sessions of this run are working vocabulary as well, and the reader of the timeline has not read that text. In an entry the root is the proposition the research set out to settle, and elements are definitions and statements. An entry carries no identifier of a session, of a build or of a change: the line under the entry gives the path of the record.
 
 Attribute judgments to their source. That a proof is correct, that a step was the important one, that an approach failed for a certain reason: these are the reviewing session's statements or the publication's own, and the entry says whose they are. Add no assessment of your own, however evident it seems from where you stand, and no connection between events that no record draws.
 

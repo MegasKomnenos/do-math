@@ -73,13 +73,6 @@ def stand_in_session(scenario):
                 if name != '@stopped':
                     (folder / name).parent.mkdir(parents=True, exist_ok=True)
                     (folder / name).write_text(content, encoding='utf-8', newline='\n')
-        elif task['kind'] == 'place':
-            # A scenario that says nothing of the check of the places has a session that finds every element
-            # at the first place the plan gave it.
-            listed = json.loads((folder / 'placed.json').read_text(encoding='utf-8'))
-            (folder / 'output' / 'placement.json').write_text(json.dumps([
-                {'element': entry['element'], 'found': True, 'where': entry['planned'][0], 'note': ''}
-                for entry in listed]), encoding='utf-8', newline='\n')
         calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
                       'given': given, 'prompt': prompt, 'met': met})
         record.write_text(json.dumps(calls), encoding='utf-8')

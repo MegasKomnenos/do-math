@@ -1477,6 +1477,21 @@ class TransportCheckTests(PublicationCase):
             self.assert_refused(self.peer_errors(replace={'Small.base': settled_text('base', ['low'])}),
                                 'Small.base has a formal proof, and the new proof of Small.base is not formal; '
                                 'the statement would no longer be formal')
+        with self.subTest('a named statement that is settled only through the proof being replaced'):
+            # `open3` has no proof under its own name and becomes settled through `open3Alt` alone, another proof
+            # of the same statement. A proof of `open3Alt` that names `open3` then names a settled statement, and
+            # under it the statement would rest on itself: neither proof would settle it.
+            another = 'The first three odd numbers sum to nine, by another argument.'
+            self.publish(self.candidate(
+                modules={'Small/OpenAlt.lean': module_text(theorem('open3Alt', SETTLED['open3'][0], doc=another),
+                                                           imports=('Small.Settled',))},
+                records={'Small/open3Alt.md': record_text(another, weight='unit', proof='Add one, three and five.',
+                                                          proves='Small.open3')}), engine=self.engine)
+            self.assertEqual(carried_by(replay(self.instance), 'Small.open3Alt'), {'settled'})
+            circular = theorem('open3Alt', SETTLED['open3'][0], ['open3'], 'exact h1', doc=another)
+            self.assert_refused(self.peer_errors(replace={'Small.open3Alt': circular}),
+                                'Small.open3 is settled, and the new proof of Small.open3Alt names Small.open3, which is '
+                                'settled only through the proof of Small.open3Alt that this candidate replaces')
         with self.subTest('a section held on the statement does not lift the condition'):
             self.section_on('Small.pair')
             self.assert_refused(self.peer_errors(**incomplete), 'that proof is replaced only by a proof that is complete')

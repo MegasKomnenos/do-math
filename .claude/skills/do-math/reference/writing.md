@@ -1,8 +1,8 @@
 # Writing mathematics another session can use
 
-Your role guide identifies the work you will leave for another reader. This guide explains how to make that work understandable without the conversation in which it was produced. The reader needs to recognize the objects, follow the argument and judge what its evidence supports. When those are clear, the reader can continue from what you established.
+Your role guide identifies the work you will leave for another reader. This guide explains how to make that work understandable without the conversation in which it was produced. To continue from what you established, the reader needs to recognize the objects, follow the argument and judge what its evidence supports.
 
-Start with what the reader must understand. An omitted condition can change the meaning of a correct result. An unexplained formula can force the next session to reconstruct an argument you already completed. Writing is therefore part of preserving the mathematics: develop the explanation that makes the result and its limits available.
+An omitted condition can change the meaning of a correct result. An unexplained formula can force the next session to reconstruct an argument you already completed. Writing is therefore part of preserving the mathematics: develop the explanation that makes the result and its limits available.
 
 What you write is read by later sessions and, in the end, by the user who runs the research. This guide is about making the mathematics usable by the next session; [How this user likes to be written for](user-writing-preferences.md) is about how the same writing reaches that user. Both apply to what you write.
 

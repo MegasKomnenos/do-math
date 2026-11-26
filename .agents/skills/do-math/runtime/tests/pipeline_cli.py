@@ -3,12 +3,14 @@
 The scripted research is small and real: the sum of the first n odd numbers is n * n. The Lean it
 writes is written as valid Lean 4, so the script can also be run against Lean itself in place of the
 stand-in compiler; test_pipeline, the only test that uses it, runs it against the stand-in."""
+import contextlib
+import io
 import json
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from canon_tool import build_candidate
+from canon_tool import prepare, verify
 from coordination import lease, section
 from runtime_support import read_json, write_json
 
@@ -97,12 +99,14 @@ def write(path, text):
     path.write_text(text, encoding='utf-8', newline='\n')
 
 
-def prepared(folder, name):
-    result = build_candidate(instance, inp['session'], folder, session / 'work' / name, 64, None,
-                             'peer', fresh=role == 'review')
-    if not result['ok']:
-        raise RuntimeError('scripted candidate did not build: ' + json.dumps(result['errors']))
-    return result
+def built(command):
+    """Build as a session does, by the function behind its command, which writes the receipt itself.
+
+    The command prints a summary for the session; it is kept out of the stream that the host reads."""
+    with contextlib.redirect_stdout(io.StringIO()) as summary:
+        code = command(session, 64, None)
+    if code:
+        raise RuntimeError('scripted candidate did not build: ' + summary.getvalue())
 
 
 if role in ('attempt', 'explore', 'formalizer'):
@@ -142,7 +146,7 @@ elif role == 'peer':
                                     'statement': 'Why does adding consecutive odd numbers complete a square at every step?',
                                     'grounds': 'The scripted proof uses the identity without saying what it shows.'}]
     write_json(output / 'change.json', change)
-    write_json(output / 'prepared.json', prepared(output, 'prepare'))
+    built(prepare)
 elif role == 'review':
     # The scripted reviews raise no concern and the scripted research contests nothing, so the runner assigns
     # no comprehensive review: every review here is the review of a candidate.
@@ -167,9 +171,8 @@ elif role == 'review':
             verdict['replaces'] = True
         assessment['elements'].append(verdict)
     if formal:
-        result = prepared(candidate, 'verify')
-        write_json(session / 'work/verify/outcome.json', result)
-        assessment['formal_check'] = {'build': result['build']}
+        built(verify)
+        assessment['formal_check'] = {'build': read_json(session / 'work/verify/outcome.json')['build']}
     write_json(output / 'assessment.json', assessment)
 elif role == 'organizer':
     write_json(output / 'organization.json', {'batch': task['batch'], 'merge_questions': []})

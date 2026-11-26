@@ -10,7 +10,7 @@ Each command is an argument array: pass its elements separately to the process, 
 
 **Your session directory.** Use `work/` for scratch mathematics, Lean files under development, computations and intermediate artifacts. Use `output/` for the retained report or role output your successor will read. Keep the files and any generated caches in your own session directory. The runner preserves `pack.md`, which is your starting context, `input.json`, the copies of the guides under `context/`, and the available CLI conversation. `inbox/` receives messages for you. Your role's guides state the entry file and fields of your output.
 
-**The canon and the derived views.** `canon/` under the instance holds the knowledge of the research: the Lean library and the written files beside it. `knowledge/` holds the views the runner renders and the published judgments. [The canon](canon.md) shows where the folders and files of both are and gives the commands by which `commands.canon` reads the canon. You read these and never write in them: follow the views to the canon, and write your contributions in your own output.
+**The canon and the derived views.** `canon/` under the instance holds the knowledge of the research, and `knowledge/` the views the runner renders and the published judgments. [The canon](canon.md) shows where the folders and files of both are and gives the commands by which `commands.canon` reads the canon. You read these and never write in them: follow the views to the canon, and write your contributions in your own output.
 
 Read required documents in full. If a file-reading tool truncates its output, retrieve the omitted ranges before treating the document as read. A successful read command can still have returned only part of the file.
 

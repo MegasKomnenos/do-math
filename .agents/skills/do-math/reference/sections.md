@@ -1,6 +1,6 @@
 # Sections: choosing and registering what you take on
 
-The common introduction explains sections, their occupancy, the element's lease and the division of a statement under "Seeing work that is still underway: the board". This guide gives what an attempt or a peer needs in order to register one.
+The common introduction explains sections under "Seeing work that is still underway: the board". This guide gives what an attempt or a peer needs in order to register one.
 
 ## Stating a section
 

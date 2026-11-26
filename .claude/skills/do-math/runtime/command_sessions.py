@@ -1,5 +1,6 @@
 """The session runner that the paper command and the finalize pipeline share: it launches one session in a folder, waits out a usage limit, reads what the session wrote, and runs sessions side by side."""
 from concurrent.futures import ThreadPoolExecutor, wait
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import re
@@ -10,7 +11,7 @@ import time
 from cli_adapter import detect_usage_limit, provider_for_model
 from launch import worker_command, worker_environment
 from retention import events, model_refused
-from runtime_support import popen_options, read_json, write_json, write_text
+from runtime_support import InstanceLock, popen_options, read_json, write_json, write_text
 from settings import load_settings
 
 SESSION_ATTEMPTS = 2   # sessions for one task before the command gives up on output it can read, unless the caller says otherwise
@@ -57,6 +58,38 @@ class Unusable(Exception):
     def __init__(self, problems):
         super().__init__('; '.join(problems))
         self.problems = list(problems)
+
+
+class Held(Stop):
+    """Another command is at work in the folder of the run, so this one does not begin."""
+
+
+@contextmanager
+def alone(folder):
+    """Hold the folder of a run for the command that calls this; Held when another command is at work in it.
+
+    A command keeps the state and the log of its run in memory and writes them whole, numbers the folders
+    of its sessions from what it found at its start, and clears what it is about to make again. Two commands
+    at work in one folder do each of these against the other. A run can stand still for hours while it waits
+    for a usage limit to end, and its folder then looks like that of a command that has ended. So the command
+    holds a lock beside the folder, as the runner holds one in its instance (runtime_support.InstanceLock):
+    the operating system frees it when the command ends or dies, and the command takes the file away with it."""
+    folder = Path(folder).resolve()
+    lock = InstanceLock(folder.with_name(folder.name + '.lock'))
+    lock.path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        lock.__enter__()
+    except RuntimeError:
+        raise Held(f'another command is at work in {folder} and holds {lock.path}. It goes on by itself, also '
+                   'while it waits for a usage limit to end; give the command again when it has ended') from None
+    try:
+        yield
+    finally:
+        lock.__exit__(None, None, None)
+        try:
+            lock.path.unlink()
+        except OSError:
+            pass  # a command that is starting has the file open at this moment; a later command removes it
 
 
 def is_text(value):
@@ -251,6 +284,13 @@ class Sessions:
                 if not self.dry:
                     write_json(self.out / 'not-done.json', self.undone)
 
+    def interrupt(self):
+        """The command is being stopped from outside: the sessions that run end with it, and no other is started."""
+        self.stopping.set()
+        with self.lock:
+            for process in list(self.running):
+                process.kill()
+
     def side_by_side(self, tasks):
         """Run tasks that do not depend on each other, up to `parallel` at a time; their results, in the order of the tasks.
 
@@ -276,11 +316,7 @@ class Sessions:
             while wait(futures, timeout=0.5).not_done:  # a wait with an end, so that an interrupt reaches this thread
                 pass
         except BaseException:
-            # The command is being stopped from outside. The sessions that run end with it, and no other is started.
-            self.stopping.set()
-            with self.lock:
-                for process in list(self.running):
-                    process.kill()
+            self.interrupt()
             pool.shutdown(wait=True)
             raise
         pool.shutdown()

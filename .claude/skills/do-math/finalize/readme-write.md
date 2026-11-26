@@ -4,7 +4,7 @@ The package is nearly complete: the library is frozen, the paper is typeset, the
 
 ## Why the README is written last, and why you write no figure
 
-In the first packaging of this kind the READMEs were written beside the work, before what they describe had settled. Their counts of modules, declarations and lines were rewritten several times as the library changed. Here the documents come after everything they describe, and every figure in them is read by the program from the finished products.
+A README that is written beside the work, before what it describes has settled, has its counts of modules, declarations and lines rewritten each time the library changes. Here the documents come after everything they describe, and every figure in them is read by the program from the finished products.
 
 For your two sections this means that you write no figure yourself. Wherever a count, a size, a duration, a date or a version number would stand, you write a placeholder of this form:
 

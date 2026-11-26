@@ -1053,6 +1053,37 @@ class EndTests(FinalizeCase):
         self.assertEqual(set(package.files_under(run.solved)), {'kept.md'})
 
 
+class StepTests(FinalizeCase):
+    def test_a_step_that_is_entered_again_decides_anew_and_stage_3_leaves_the_decisions_as_they_are(self):
+        # A step that stopped is made again from its start, and what its first start decided may no longer be so.
+        # Here the part that the first start discarded is accepted by the second, and decisions.md says that alone.
+        with patch('finalize.REPOSITORY', self.repository):
+            run = finalize.Run(self.instance, 'odd', finalize.default_config())
+        run.state = {'steps': {}}
+        run.decide('Stage 0: start', 'The research is read.')
+        run.sessions = finalize.Sessions(self.instance, run.work)
+
+        def halts():
+            raise paper.Stop('halted for the test')
+
+        def discards():
+            run.decide('Step 3: the simplification of the part aux', 'Discarded; that part keeps the form it had.')
+            halts()
+
+        # Stage 3 is entered first, before a step of the library has decided anything, and stops.
+        with self.assertRaises(finalize.Halt):
+            run.step('3-history', [], [], halts, decides=False)
+        with self.assertRaises(finalize.Halt):
+            run.step('2.3-simplify', [], [], discards)
+        self.assertIn('Discarded', self.decisions())
+        run.step('2.3-simplify', [], [], lambda: run.decide('Step 3: the parts', 'Every part was accepted.'))
+        # Entered again after that, stage 3 takes nothing away from what the step of the library decided.
+        run.step('3-history', [], [], lambda: None, decides=False)
+        self.assertEqual(self.decisions(), '# Decisions of the run\n\n## Stage 0: start\n\nThe research is read.\n'
+                                           '\n## Step 3: the parts\n\nEvery part was accepted.\n')
+        self.assertEqual(list(read_json(run.work / 'state.json')['steps']), ['2.3-simplify', '3-history'])
+
+
 class PromptTests(FinalizeCase):
     def prepared(self):
         run = finalize.Run(self.instance, 'odd', finalize.default_config())
@@ -1063,8 +1094,9 @@ class PromptTests(FinalizeCase):
     def test_every_instruction_file_of_the_skill_is_filled_with_the_names_the_command_gives(self):
         run = self.prepared()
         common = package.read_text(INSTALLED / 'finalize' / 'common.md')
-        # The two sections on Lean that every session given a Lean file has, and what only the section on compiling
-        # holds, which only a session whose step writes Lean has.
+        # The two sections on Lean that every session has except those that work on the history, on the README or on
+        # the finished package, and what only the section on compiling holds, which only a session whose step writes
+        # Lean has.
         lean = ('## Reading the imported library\n', '## What every Lean file of the library keeps\n')
         compiling = ('## Compiling\n', INSTALLED.as_posix() + '/runtime/lean_broker.py', '--expect-mb 64')
         for name in INSTRUCTIONS:
@@ -1072,7 +1104,7 @@ class PromptTests(FinalizeCase):
             self.assertEqual(finalize.PLACEHOLDER.findall(text), [], name)
             self.assertTrue(text.startswith(common.split('{{')[0]), name)
             self.assertIn('\n## One proof, presented by itself\n', text, name)
-            given = name not in ('history-write', 'history-read', 'readme-write')
+            given = name not in ('history-write', 'history-read', 'readme-write', 'package-read')
             self.assertEqual([part in text for part in lean], [given] * len(lean), name)
             compiles = name in ('selection', 'restore', 'simplify', 'arrange', 'foldback')
             self.assertEqual([part in text for part in compiling], [compiles] * len(compiling), name)
@@ -1128,6 +1160,15 @@ class RefusalTests(FinalizeCase):
     def test_a_lean_environment_that_does_not_answer_is_refused(self):
         self.configure(lean={'version_command': [sys.executable, '-c', 'raise SystemExit(3)']})
         self.refused('does not answer its version command', config=self.config())
+
+    def test_a_command_given_while_another_is_at_work_for_the_name_is_refused(self):
+        # A command that is at work holds the lock beside its work folder. It is held here as that command holds it.
+        lock = self.work.with_name('finalize-odd.lock')
+        with finalize.alone(self.work):
+            self.refused('another command is at work in', config=self.config())
+            self.assertFalse(self.work.exists())
+            self.assertTrue(lock.is_file())  # the refused command left the lock of the other alone
+        self.assertFalse(lock.exists())  # and the command that held the folder took its lock away with it
 
     def test_the_settings_are_the_working_file_and_the_research_is_the_commit(self):
         # The committed settings hold a key the runtime refuses; the working file is valid. The working tree of the
@@ -1436,7 +1477,11 @@ class RunTests(FinalizeCase):
         taken_helper = module_text('\n\n'.join(part for part in HELPER_PARTS if part != UNUSED))
         strict = record_text('The sums increase strictly.')
         faulty = {
-            'selection-read': {'output/reading.json': json.dumps({'claims': [{'option': 'a', 'claim': 'It rests on the step.'}]})},
+            # The first claim has no verdict. The second does not hold and does not say whether it is printed.
+            'selection-read': {'output/reading.json': json.dumps({'claims': [
+                {'option': 'a', 'claim': 'It rests on the step.'},
+                {'option': 'a', 'claim': 'It has four modules.', 'holds': False, 'correction': 'It has three.',
+                 'changes_comparison': False}]})},
             'review': {'output/review.json': json.dumps({'parts': [{'id': 'core', 'modules': ['Small.Root', 'Small.Helper']}],
                                                          'cross': [{'id': 'x1', 'owner': 'nobody', 'what': 'w'}]})},
             'simplify:core': {'output/lean/Small/Step.lean': STEP, 'output/report.json': json.dumps(
@@ -1471,6 +1516,7 @@ class RunTests(FinalizeCase):
             told.setdefault(call['kind'] + ':' + str(call['section']), []).append(call['prompt'])
         for key, wanted in (
                 ('selection-read:None', 'claim 1 has no verdict'),
+                ('selection-read:None', 'whether the claim stands in a text that the package prints ("printed")'),
                 ('review:None', 'modules in no part: Small.Step'),
                 ('review:None', 'the cross-part item x1 has no owner that is a part'),
                 ('simplify:core', 'Small.Step is not a module of this part'),
@@ -1577,6 +1623,34 @@ class RunTests(FinalizeCase):
         self.assertEqual(self.run_command(config=self.config()), 1)
         self.assertIn(f'{self.solved} exists', self.said)
 
+    def test_an_interrupt_of_the_command_ends_the_session_of_the_history_that_runs_beside_the_library(self):
+        # The stand-in of a session waits for the lock of the scenario, which this test holds, so the first session
+        # of the history is running when the interrupt comes. It comes where Ctrl-C does, in the thread of the
+        # command, which is at its first step and waits for no session of its own.
+        lock = self.scenario / 'calls.lock'
+        lock.write_bytes(b'')
+        # Were the session not ended, the command would wait for it without end. The lock is given up after a
+        # while, so that the session then records its call and the test fails.
+        release = threading.Timer(30, lock.unlink)
+        release.start()
+        self.addCleanup(lock.unlink, missing_ok=True)
+        self.addCleanup(release.cancel)
+        pause = threading.Event()
+
+        def interrupted():
+            while not list((self.work / 'sessions').glob('*-history-write-01/cli.stdout.jsonl')):
+                pause.wait(0.05)
+            raise KeyboardInterrupt
+
+        with patch('finalize.Run.selection', side_effect=interrupted), self.assertRaises(KeyboardInterrupt):
+            self.run_command(script(), config=self.config())
+        # The session was ended before it recorded its call, and the step of the history stopped for the interrupt
+        # before the command came back.
+        self.assertEqual(self.calls(), [])
+        checks = [(event['check'], event['problems']) for event in read_json(self.work / 'log.json')
+                  if event['event'] == 'check']
+        self.assertIn(('exit check of 3-history', ['the command was interrupted']), checks)
+
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         # The selection of this run chooses the root itself as the main theorem of the package.
@@ -1612,8 +1686,19 @@ class RunTests(FinalizeCase):
 
     def test_a_main_theorem_whose_statement_needs_more_than_the_definitions_is_not_compared(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
-        plan = script(selection=[{'output/decision.json': decision(main='Small.twice_zero')}])
+        # The account of this selection names two declarations, and the arrangement renames one of them.
+        account = 'The proof goes through `Small.simp_one` and `Small.twice_zero`.'
+        plan = script(selection=[{'output/decision.json': decision(main='Small.twice_zero', account=account)}],
+                      arrange=[{'@copy': [['lean', 'output/lean']],
+                                'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED.replace('simp_one', 'first_odd'),
+                                'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd'}),
+                                'output/removed.json': '[]'}])
         plan['records-write:5-01'][0]['output/findings.json'] = '[]'  # the writers found nothing, and the draft has no gap
+        # The record of the renamed declaration is due: the research's index has no declaration of that name.
+        plan['records-write:5-01'][0]['output/records/Small/first_odd.md'] = record_text('The first odd number is one.')
+        plan['records-compare:5-01'] = [{'output/verdicts.json': json.dumps([
+            {'declaration': name, 'verdict': 'agrees', 'difference': ''}
+            for name in ('Small.added_six', 'Small.first_odd', 'Small.named_four')])}]
         # Lake is run in the Lean environment of the settings: the stand-in fails without the variable `lean.env` gives.
         self.configure(lean={'env': {'DO_MATH_TEST_LAKE': 'given'}})
         lean = self.halted_after_the_freeze(plan, lake={'needs_variable': 'DO_MATH_TEST_LAKE'})
@@ -1631,7 +1716,18 @@ class RunTests(FinalizeCase):
         self.assertEqual(freeze['compared'], ['Small.root'])
         self.assertEqual(freeze['folders']['lean'], canon.tree_hash(lean))
         self.assertEqual(replay(self.work / 'view' / 'frozen')['root_state'], 'formal_proved')
-        self.assertEqual((self.work / 'view' / 'frozen' / 'canon' / 'questions' / 'q0.md').read_text(encoding='utf-8'), ACCOUNT + '\n')
+        # The renamed declaration has its record under the new name, and the account of the selection goes to both
+        # runs of the paper command with that name.
+        self.assertIn('Renamed: `Small.simp_one` to `Small.first_odd`', self.decisions())
+        arranged = set(package.files_under(self.work / 'lib' / '4-arranged' / 'records'))
+        self.assertTrue('Small/first_odd.md' in arranged and 'Small/simp_one.md' not in arranged, arranged)
+        todo = self.session_file(self.calls('records-write')[0], 'todo.json')
+        self.assertEqual({item['declaration']: item['why'] for item in todo},
+                         {'Small.added_six': 'new', 'Small.first_odd': 'changed',
+                          'Small.named_four': 'names a declaration that is gone'})
+        for view in ('4', 'frozen'):
+            self.assertEqual((self.work / 'view' / view / 'canon' / 'questions' / 'q0.md').read_text(encoding='utf-8'),
+                             'The proof goes through `Small.first_odd` and `Small.twice_zero`.\n')
         self.assertFalse((self.work / 'stage' / 'lake').exists())
         # Nothing was to be folded back, so no fold-back session ran and nothing was built for it.
         self.assertEqual((self.calls('foldback'), self.calls('draft-compare')), ([], []))
@@ -2011,15 +2107,6 @@ class SelectionTests(FinalizeCase):
         self.assertEqual(self.stopped_at_the_take(script(selection_read=[{'output/reading.json': json.dumps(reading)}])), 2)
         self.assertEqual(len(self.calls('selection')), 1)
         self.assertIn('The independent reading corrected a claim about option a: It has three.\n', self.decisions())
-
-    def test_a_reading_that_does_not_say_whether_a_wrong_claim_is_printed_is_not_accepted(self):
-        unsaid = {'output/reading.json': json.dumps({'claims': [
-            {'option': 'a', 'claim': 'It has four modules.', 'holds': False, 'correction': 'It has three.',
-             'changes_comparison': False}]})}
-        self.assertEqual(self.run_command(script(selection_read=[unsaid]), config=self.config()), 2)
-        report = (self.work / 'report.md').read_text(encoding='utf-8')
-        self.assertIn('The run stopped at the step `1-selection`', report)
-        self.assertIn('whether the claim stands in a text that the package prints ("printed")', report)
 
     def test_an_accepted_output_inside_a_step_that_stopped_is_not_made_again_and_may_not_change(self):
         unread = {'output/reading.json': json.dumps({'claims': 'none'})}

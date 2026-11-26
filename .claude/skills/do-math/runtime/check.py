@@ -1,5 +1,6 @@
 """Check transport structure and evidence identities; sessions judge mathematics."""
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -8,7 +9,7 @@ import re
 from availability import no_research_outcome, reported_availability
 from canon import BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, tree_hash
 from coordination import section_entries
-from knowledge import ROOT_QUESTION, canonical_question, replay
+from knowledge import ROOT_QUESTION, canonical_question, replay, settle
 # Loaded with this module and not inside audit_formal: a session host checks a review's output when the session
 # ends, possibly hours after it started, and a module it first loaded then would come from the installation as it
 # then stands, beside the modules the host loaded at its start.
@@ -116,14 +117,27 @@ def carried_by(model, declaration):
     return ({'settled'} if settled == [declaration] else set()) | ({'formal'} if formal == [declaration] else set())
 
 
+def settled_apart(model, declaration):
+    """The elements as they stand when the proof of one declaration settles nothing.
+
+    A statement that is settled here is settled through proofs that do not rest on that declaration.
+    The standings are computed again on a copy of the model, by the computation that made it
+    (knowledge.settle)."""
+    trial = deepcopy(model)
+    trial['verdicts'][declaration] = {'element': declaration, 'correct': 'not_confirmed', 'accepted': False}
+    settle(trial)
+    return trial['elements']
+
+
 def stays_settled(model, receipt, declaration):
     """A settled statement's proof is replaced only by a proof under which the statement stays settled.
 
     A statement that supersedes a settled one is better only once it is settled itself, so the
     derivation of the old statement from it replaces the old proof after that and not before. What a
     machine can decide of the new proof is checked here: it is complete in Lean, every statement it
-    names is settled, and where the old proof made the statement formal, the new one is formal too.
-    Review's acceptance of it is the remaining condition, which the check of the assessment makes."""
+    names is settled without counting the proof it replaces, and where the old proof made the statement
+    formal, the new one is formal too. Review's acceptance of it is the remaining condition, which the
+    check of the assessment makes."""
     carried = carried_by(model, declaration)
     if not carried:
         return
@@ -133,6 +147,7 @@ def stays_settled(model, receipt, declaration):
          f'{statement} is settled through the proof of {declaration}; that proof is replaced only by a proof that is '
          'complete in Lean and names settled statements, so that the statement stays settled. A further proof of '
          'another kind enters as a declaration of its own with "proves"')
+    apart = settled_apart(model, declaration)
     for used in entry['uses']:
         if used in elements:
             if elements[used]['kind'] != 'theorem':
@@ -141,6 +156,12 @@ def stays_settled(model, receipt, declaration):
             need(target['statement_settled'],
                  f'{statement} is settled, and the new proof of {declaration} names {used}, which is not settled; '
                  'the statement would no longer be settled')
+            # A named statement that is settled through the replaced proof alone would wait for the new proof,
+            # and the new proof for it: neither would be settled, and the statement would not be either.
+            need(apart[target['name']]['statement_settled'],
+                 f'{statement} is settled, and the new proof of {declaration} names {used}, which is settled only '
+                 f'through the proof of {declaration} that this candidate replaces; the statement would rest on '
+                 'itself and would no longer be settled')
             need('formal' not in carried or target['statement_formal'],
                  f'{statement} has a formal proof, and the new proof of {declaration} names {used}, which has none; '
                  'the statement would no longer be formal')

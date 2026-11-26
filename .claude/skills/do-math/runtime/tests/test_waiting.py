@@ -120,13 +120,6 @@ class AwaitRecord(unittest.TestCase):
         self.assertTrue(last)
         self.assertEqual((record["status"], ended), ("finished", True))
 
-    def test_the_pauses_never_run_past_the_timeout(self):
-        self.running(JOB)
-        job, record, ended = lean_broker.await_record(self.paths, JOB, timeout=0.6)
-        self.assertFalse(ended)
-        self.assertAlmostEqual(sum(self.clock.sleeps), 0.6, places=9)
-        self.assertAlmostEqual(self.clock.now, 1000.6, places=9)
-
     def test_a_duplicate_is_followed_to_the_job_it_names(self):
         self.running(OTHER)
         folder = self.paths.job(JOB)

@@ -4,7 +4,7 @@ The library in your folder is what the chosen proof rests on: the root `{{root}}
 
 ## Why one reader of the whole comes first
 
-A session that simplifies one part sees that part closely and the rest hardly at all. It cannot know that another part proves the same lemma under another name, that a statement it could improve is used in a form every user has to convert, or that a general fact it is about to add is being added next door as well. In the first packaging of this kind, two sessions each added the same lemma to their own part, because both had been allowed to, and the merge found the same name declared in two files. What crosses parts therefore has to be seen by one reader and assigned by that reader, each item to exactly one part.
+A session that simplifies one part sees that part closely and the rest hardly at all. It cannot know that another part proves the same lemma under another name, that a statement it could improve is used in a form every user has to convert, or that a general fact it is about to add is being added next door as well, which leaves the merge with one name declared in two files. What crosses parts therefore has to be seen by one reader and assigned by that reader, each item to exactly one part.
 
 The parts work at the same time and nobody sees another's changes until all are merged. This fixes what an assignment can be. The session of a part may change only the modules of its part, and the declarations of its part that other parts use keep their names and statements. An item that crosses parts is carried out by its owner inside the owner's modules, with the old declaration kept under its name. What then follows in the other parts, such as moving their proofs to the new form, is done after the merge by one session that reads the whole library again and arranges it.
 
@@ -26,7 +26,7 @@ Research under pressure leaves things of the following kinds. They are examples 
 
 ## The parts
 
-A part is a set of modules that one session will simplify. Every module of the library outside the definition modules lies in exactly one part; the definition modules, which the common text says how to recognize, lie in none, because nobody changes them. The module of the root lies in a part like any other; the root and the main theorem keep their names and their statements, whichever part holds them.
+A part is a set of modules that one session will simplify. Every module of the library outside the definition modules lies in exactly one part; the definition modules, which the first line of `rests-on.md` names, lie in none, because nobody changes them. The module of the root lies in a part like any other; the root and the main theorem keep their names and their statements, whichever part holds them.
 
 Cut the library where the mathematics cuts. A part should be one portion of the argument, such that the session that takes it can read all of it, proofs included, more than once, and can understand what it proves without the rest. As a sense of scale and not a rule, that is a few thousand lines of Lean. Count what crosses a cut: every declaration that another part uses is frozen in name and statement for the session that owns it, so a cut through the middle of one argument freezes much of what most needs improving, while a cut between two arguments that meet in a few stated results freezes only those. Where two modules hold duplicates of each other, putting them into one part lets one session resolve the duplication without any item.
 

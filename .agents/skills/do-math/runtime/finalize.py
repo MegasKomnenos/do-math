@@ -31,7 +31,7 @@ import traceback
 
 import canon
 from canon import CanonError, module_file, name_path, parse_record
-from command_sessions import Sessions, Stop, Unusable, collapsed, is_text
+from command_sessions import Held, Sessions, Stop, Unusable, alone, collapsed, is_text
 import knowledge
 import package
 import paper
@@ -47,10 +47,11 @@ NAME = re.compile(r'[a-z0-9][a-z0-9-]*')
 PART_ID = re.compile(r'[a-z0-9][a-z0-9-]*')
 PLACEHOLDER = re.compile(r'\{\{([a-z_]+)\}\}')
 # The sections of finalize/common.md that concern the library's Lean files, and the instructions whose sessions
-# are given no Lean file: their prompts carry the common text without those sections. Of the other instructions,
-# those whose step writes Lean are the only ones that compile, and the only ones given the section on compiling.
+# work on the history, on the README or on the finished package: their prompts carry the common text without
+# those sections. Of the other instructions, those whose step writes Lean are the only ones that compile, and the
+# only ones given the section on compiling.
 LEAN_SECTIONS = ('Reading the imported library', 'Compiling', 'What every Lean file of the library keeps')
-WITHOUT_LEAN = ('history-write', 'history-read', 'readme-write')
+WITHOUT_LEAN = ('history-write', 'history-read', 'readme-write', 'package-read')
 COMPILING = ('selection', 'restore', 'simplify', 'arrange', 'foldback')
 FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
 # What the entry of a cited work holds for each sentence of a record that cites it (bring_records): the record, the
@@ -177,15 +178,28 @@ class Run:
                     return step['products'][relative]
         return None
 
-    def step(self, sid, reads, writes, work, keep=()):
+    def step(self, sid, reads, writes, work, keep=(), decides=True):
         """One step: its inputs compared with what their steps left, its own folders cleared, its work, its record.
 
         A step that has an entry in state.json has passed its exit check and is not made again. `work`
         returns when the exit check has passed and raises otherwise. `keep` names the products that
-        are not cleared when the step is entered again, for a step that continues what it has on disk."""
+        are not cleared when the step is entered again, for a step that continues what it has on disk.
+
+        A step that is entered again is made again from its start, so what its earlier start wrote into
+        decisions.md goes: the state keeps the length of that file as the step first found it, and the
+        file is cut back to that length. The steps of the library, the paper and the documents follow one
+        another, so what stands after that length is this step's. Stage 3 runs beside them and decides
+        nothing; its steps are given `decides=False` and leave the file as it is."""
         with self.lock:
             if sid in self.state['steps']:
                 return
+            if decides:
+                path = self.work / 'decisions.md'
+                text = path.read_text(encoding='utf-8') if path.is_file() else ''
+                began = self.state.setdefault('decided', {}).setdefault(sid, len(text))
+                if len(text) > began:
+                    write_text(path, text[:began])
+                self.save()
         try:
             for relative in reads:
                 known = self.recorded(relative)
@@ -329,6 +343,15 @@ class Run:
         another. Where the selection chose a stronger theorem, the paper states that theorem first and the
         root as its corollary."""
         return self.state['main'] if self.state['main'] != self.root else None
+
+    def proof_account(self):
+        """The selection's account of the chosen proof, with the names that the library has after the arrangement.
+
+        The account names elements between backticks, by their names in the research's library, and the
+        arrangement may rename them. The README's writer takes the names of declarations from the account
+        alone, so each renamed name is given its new one, as in the records (package.follow_renames)."""
+        account = read_json(self.work / 'lib' / '0-selected' / 'decision.json')['account']
+        return package.with_new_names(account, read_json(self.work / 'lib' / '4-arranged' / 'renames.json'))
 
     def paper_run(self, view, out, **options):
         """The paper command in this process, on a view, with the run's bound on sessions; returns its exit code.
@@ -488,9 +511,6 @@ class Run:
 
     def start(self):
         """Stage 0: the refusals, and for a new run the pinned research, the settings and the seeded cache."""
-        if not NAME.fullmatch(self.name):
-            raise Refusal(f'the name {self.name!r} does not name a package: lower-case letters, digits and hyphens, '
-                          'beginning with a letter or a digit')
         instance = self.instance
         if not ((instance / 'instance.json').is_file() and (instance / 'canon').is_dir() and (instance / '.git').exists()):
             raise Refusal(f'{instance} is not an instance of this runtime with a Git repository of its own')
@@ -1308,10 +1328,9 @@ class Run:
 
     def draft(self):
         arranged, records = self.work / 'lib' / '4-arranged', self.work / 'lib' / '5-records'
-        decision = read_json(self.work / 'lib' / '0-selected' / 'decision.json')
         view = package.make_view(self.work / 'view' / '4', arranged / 'lean', records / 'records',
                                  records / 'bibliography.bib', read_json(arranged / 'index.json'),
-                                 self.work / 'source', self.settings, decision['account'])
+                                 self.work / 'source', self.settings, self.proof_account())
         code = self.paper_run(view, self.work / 'draft', draft=True, main=self.paper_main())
         lacking = [name for name in ('plan.json', 'study.md', 'draft.json') if not (self.work / 'draft' / name).is_file()]
         if code != 0 or lacking:
@@ -1776,7 +1795,7 @@ class Run:
             raise Stop('the frozen library does not pass its check: ' + '; '.join(problems))
         remove_tree(stage)
         package.make_view(self.work / 'view' / 'frozen', folded / 'lean', self.package / 'records',
-                          folded / 'bibliography.bib', index, self.work / 'source', self.settings, decision['account'])
+                          folded / 'bibliography.bib', index, self.work / 'source', self.settings, self.proof_account())
         requires = ', '.join(f"{p['name']} {p.get('inputRev') or p['rev'][:12]}" for p in
                              read_json(lean / 'lake-manifest.json')['packages'] if not p.get('inherited'))
         write_json(self.work / 'freeze.json', {**package.freeze_hashes(self.package), 'compared': compared,
@@ -1969,9 +1988,9 @@ class Run:
         # skill's file Windows line endings, and no text file of the package has them.
         write_text(self.package / 'LICENSE',
                    package.read_text(SKILL / 'finalize' / 'licences' / (self.config['licence'] + '.txt')))
-        fails = list(self.state['measured']['fails'] if freeze['compared'] == [self.root] else freeze['fails'])
+        fails = freeze['fails']
         introduction = self.work / 'paper' / 'parts' / (plan['sections'][0]['id'] + '.tex')
-        given = {'facts.json': as_json(facts), 'account.md': decision['account'],
+        given = {'facts.json': as_json(facts), 'account.md': self.proof_account(),
                  'introduction.tex': introduction.read_bytes() if introduction.is_file() else '',
                  'timeline.md': (self.package / 'history' / 'timeline.md').read_bytes()}
 
@@ -2070,7 +2089,7 @@ class Run:
                                  + package.release_of(freeze['toolchain'])
                                  + (f", {freeze['requires']}" if freeze['requires'] else '')
                                  + f"; root `{self.root}`.")
-        fails = self.state['measured']['fails'] if freeze['compared'] == [self.root] else freeze['fails']
+        fails = freeze['fails']
         fill = []
         if not self.config['authors']:
             fill.append('`project.authors` and `project.responsible_maintainers` in `lean/formalization.yaml`: the '
@@ -2221,7 +2240,18 @@ class Run:
     # -- the order --------------------------------------------------------------------------------------
 
     def run(self):
-        """The whole command; returns the exit code."""
+        """The whole command; returns the exit code. It holds the work folder for itself while it runs (alone)."""
+        if not NAME.fullmatch(self.name):
+            raise Refusal(f'the name {self.name!r} does not name a package: lower-case letters, digits and hyphens, '
+                          'beginning with a letter or a digit')
+        try:
+            with alone(self.work):
+                return self.stages()
+        except Held as held:
+            raise Refusal(str(held))
+
+    def stages(self):
+        """The stages in their order; returns the exit code."""
         self.start()
         self.load()
         if '6-check' in self.state['steps'] and not self.package.exists():
@@ -2234,9 +2264,10 @@ class Run:
 
         def beside():
             try:
-                self.step('3-archive', [], ['package/knowledge', 'history/ledger.json', 'history/archive.json'], self.archive)
+                self.step('3-archive', [], ['package/knowledge', 'history/ledger.json', 'history/archive.json'], self.archive,
+                          decides=False)
                 self.step('3-history', ['package/knowledge', 'history/ledger.json', 'history/archive.json'],
-                          ['history/entries', 'package/history'], self.history)
+                          ['history/entries', 'package/history'], self.history, decides=False)
             except BaseException as error:
                 failed.append(error)
 
@@ -2267,20 +2298,24 @@ class Run:
                 self.step('2.6-compare', [lib + '4-arranged', 'draft', lib + '6-sources', folded + 'lean', folded + 'index.json',
                                           folded + 'foldback.json', folded + 'records', folded + 'sources.json'],
                           [lib + '6-draft'], self.compare_draft)
-                self.step('2.7-freeze', ['source', 'first', lib + '0-selected', lib + '6-draft', folded + 'lean',
-                                         folded + 'index.json', folded + 'records', folded + 'bibliography.bib'],
+                self.step('2.7-freeze', ['source', 'first', lib + '0-selected', lib + '4-arranged', lib + '6-draft',
+                                         folded + 'lean', folded + 'index.json', folded + 'records',
+                                         folded + 'bibliography.bib'],
                           ['package/lean', 'package/records', 'view/frozen', 'freeze.json'], self.freeze)
                 self.step('4-map', ['view/frozen'], ['package/dependency-map'], self.depmap)
                 self.step('4-paper', [lib + '0-selected', 'view/frozen', lib + '6-draft'],
                           ['paper', 'package/paper', 'title-page.json'],
                           self.write_paper, keep=('paper',))
-            finally:
-                history.join()
+            except Halt as halt:
+                failed.insert(0, halt)  # the step of this thread that stopped is reported before a step of stage 3
+            while history.is_alive():
+                history.join(0.5)  # a wait with an end, so that an interrupt reaches this thread
             if failed:
                 raise failed[0]
-            self.step('5-documents', ['source', lib + '0-selected', folded + 'index.json', 'freeze.json', 'paper',
-                                      'history/entries', 'history/archive.json', 'package/lean', 'package/records',
-                                      'package/knowledge', 'package/history', 'package/dependency-map', 'package/paper'],
+            self.step('5-documents', ['source', lib + '0-selected', lib + '4-arranged', folded + 'index.json',
+                                      'freeze.json', 'paper', 'history/entries', 'history/archive.json', 'package/lean',
+                                      'package/records', 'package/knowledge', 'package/history',
+                                      'package/dependency-map', 'package/paper'],
                       ['facts.json', 'findings.json', 'package/LICENSE', 'package/README.md', 'package/MANIFEST.sha256'],
                       self.documents)
             self.step('6-check', ['freeze.json', 'package/lean', 'package/records', 'package/knowledge', 'package/history',
@@ -2294,6 +2329,13 @@ class Run:
         except Halt as halt:
             self.stopped(halt)
             return 2
+        except BaseException:
+            # The command is being stopped from outside. An interrupt reaches this thread alone, so the sessions of
+            # stage 3 are ended here, as those that run side by side are, and the command ends when its thread has.
+            self.sessions.interrupt()
+            if history.is_alive():
+                history.join()
+            raise
         finally:
             self.stop_broker()
 

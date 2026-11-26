@@ -679,7 +679,7 @@ class Broker:
         - a compile is about to start (launch): a Lean that ran with no record of its host could not
           be followed by the next broker, which would start the same job beside it;
         - a compile has ended (finish): the next broker would end it a second time, from the memory
-          last written, and record that as the compile's peak and, for a calibration, as the baseline;
+          last written, and record that as the compile's peak, and a calibration would have to run again (adopt);
         - a client has asked for the state (tick, saved_state).
 
         Whatever else a death of the broker leaves unwritten, the next broker finds on disk: a
@@ -1239,7 +1239,7 @@ class Broker:
             # and launcher.direct, since the key itself is a hash it cannot recompute.
             identity = {"imports": job["imports"], "version": self.state["version"],
                         "environment_key": job["environment_key"], "direct": job["direct"]}
-            if job["exit_code"] == 0:
+            if job["exit_code"] == 0 and not job.get("unmeasured"):
                 self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"],
                                                  self.closure_mb(job["imports"]))
             elif job["exit_code"] is not None and 0 < job["exit_code"] < 2 ** 31 and not job.get("cancel_requested"):
@@ -1250,6 +1250,7 @@ class Broker:
                 # A launch error, a cancellation or a crash records nothing, so the next compile calibrates
                 # again. A crash is a negative code (a POSIX signal) or a Windows code of 2**31 and above
                 # (0xC0000005 and the like): an execution failure, not Lean's verdict on the imports.
+                # A success that no broker measured (adopt) records nothing either: its peak is a stale one.
                 # The compiles that waited for this one go ahead on their own estimates rather than
                 # wait for another calibration that might fail the same way.
                 for waiting in self.state["jobs"].values():
@@ -1635,6 +1636,10 @@ class Broker:
                 (job_dir / "CANCEL").unlink(missing_ok=True)
                 self.log(event="requeued", job=job_id, reason="Lean had not started")
                 continue
+            if job["kind"] == "calibration" and (job_dir / "exit.json").exists():
+                # It ended while no broker measured it, so the peak last written is not the baseline of
+                # its imports; finish() records nothing for it.
+                job["unmeasured"] = True
             self.log(event="adopted", job=job_id, host=job.get("host"), lean=job.get("lean"))
 
     def tick(self):

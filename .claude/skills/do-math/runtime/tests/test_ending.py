@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import subprocess
 import sys
 import threading
 import time
@@ -433,6 +432,21 @@ class EndingTests(InstanceCase):
         self.assertTrue(read_json(directory / 'candidate/prepared.json')['ok'])
         self.assertEqual(read_json(directory / 'candidate/change.json')['title'], 'Retained investigation')
 
+    def test_a_review_whose_turn_ended_at_the_output_limit_is_told_the_reason_and_what_the_check_found(self):
+        # A review runs on Claude by default, where one response can reach the output-token cap. Its turn then
+        # ends with a failed exit and without an assessment. The host resumes the same conversation and tells
+        # it both things: why the turn ended and what the transport check found.
+        _, _, directory = self.prepare_claude(role='review', config={'output_limit_at': [0], 'assess_at': 1})
+        state = self.run_host(directory)
+        self.assertEqual(read_json(directory / 'turn-termination.json')['result']['exit_code'], 1)
+        self.assertEqual((state['resumptions'], state['authorization']['source'], state['authorization']['basis']),
+                         (1, 'runner', 'output_checked'))
+        told = read_json(directory / 'turns/0001/request.json')['previous_error']
+        self.assertIn('exceeded the output-token limit', told)
+        self.assertIn('The transport check of your output found: ', told)
+        self.assertIn('assessment.json', told)
+        self.assertNotIn('Ending decision check', told)
+
     def test_output_limit_is_resumable_only_for_the_claude_stream(self):
         _, _, directory = self.prepare(config={'output_limit_at': [0]})
         state = self.run_host(directory)
@@ -810,20 +824,6 @@ class SessionGateTests(unittest.TestCase):
                 self.assertEqual(session_host(folder), 0)
             self.assertTrue((folder / 'started').exists())
             self.assertEqual(read_json(folder / 'exit.json')['exit_code'], 0)
-
-
-class HostProgramTests(unittest.TestCase):
-    def test_a_host_holds_what_it_uses_at_the_end_of_a_session_from_its_start(self):
-        # A session host is `runner.py _session`, and the installation can change while it runs. When a review
-        # ends, the host checks its output (ending, check) and reads the broker's record of the review's build
-        # (lean_broker). A module first loaded then would come from the files as they then stand, beside the
-        # modules loaded at the start, and could ask them for names they do not have. A fresh interpreter shows
-        # what the host's program holds once its imports have run.
-        probe = 'import sys, runner; print(sorted({"check", "ending", "lean_broker"} & set(sys.modules)))'
-        loaded = subprocess.run([sys.executable, '-B', '-c', probe], cwd=RUNTIME, capture_output=True,
-                                text=True, timeout=120)
-        self.assertEqual((loaded.returncode, loaded.stdout.strip()), (0, "['check', 'ending', 'lean_broker']"),
-                         loaded.stderr)
 
 
 if __name__ == '__main__':

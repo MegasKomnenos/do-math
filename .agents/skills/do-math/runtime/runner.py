@@ -32,7 +32,7 @@ from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work,
                              replace_file, session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
-# The functions that use context and lean_broker, here and in check and canon, import them at that point.
+# The functions that use context and lean_broker, here and in canon, import them at that point.
 # Both are loaded here as well, so that a process started from this file holds the whole runtime from its
 # start. The runner and a session host run for hours, and a module first loaded during that time comes from
 # the installed files as they have become: it fails where it names something that the modules loaded at the

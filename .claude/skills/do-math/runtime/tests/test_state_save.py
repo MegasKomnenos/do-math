@@ -44,18 +44,15 @@ class CompactWriter(unittest.TestCase):
         self.folder = Path(folder.name)
         self.path = self.folder / "state é.json"
 
-    def test_the_file_parses_to_the_value_that_was_written(self):
-        runtime_support.write_json_compact(self.path, VALUE)
-        self.assertEqual(runtime_support.read_json(self.path), VALUE)
-        self.assertEqual(json.loads(self.path.read_text(encoding="utf-8")), VALUE)
-
     def test_it_holds_the_same_data_as_the_indented_writer_in_fewer_bytes(self):
         other = self.folder / "indented.json"
         runtime_support.write_json(other, VALUE)
         runtime_support.write_json_compact(self.path, VALUE)
+        self.assertEqual(runtime_support.read_json(self.path), VALUE)
         self.assertEqual(runtime_support.read_json(self.path), runtime_support.read_json(other))
         self.assertLess(self.path.stat().st_size, other.stat().st_size)
         text = self.path.read_text(encoding="utf-8")
+        self.assertEqual(json.loads(text), VALUE)
         self.assertTrue(text.endswith("\n"))
         self.assertEqual(text.count("\n"), 1)  # one line: nothing is indented
         self.assertIn("경로 é", text)  # written as text, not as escapes, like the indented form

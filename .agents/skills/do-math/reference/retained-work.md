@@ -17,7 +17,7 @@ Use `output/report.md` as the entry point to your retained work. Start it while 
 | Approaches and where they stopped | For each approach: the idea, what it established, where it stops and why, and what that failure actually excludes. |
 | Remaining work and artifacts | Unresolved opportunities, remaining obligations, and paths to code, data, logs and notes. |
 
-The peer turns this material into a candidate, and it helps to know how. Your Lean definitions and statements become elements, each with a record that the peer writes. Your arguments become the proofs in those records. Your account of each approach becomes an entry among the approaches tried on the statement it was aimed at, and what an exploration came to understand enters the understanding so far of its question. You do not write records or entries yourself. What you can do is leave, for each thing you found, what its record will need: what the statement says in words, why it holds, how its Lean form corresponds to the mathematics, and which elements its proof rests on. [The written texts of the canon](records.md), which your peer receives, describes those formats.
+The peer turns this material into a candidate. Your Lean definitions and statements become elements, each with a record that the peer writes, and your arguments become the proofs in those records. Your account of each approach becomes an entry among the approaches tried on the statement it was aimed at, and what an exploration came to understand enters the understanding so far of its question. You write no records or entries yourself, but you can leave, for each thing you found, what its record will need: what the statement says in words, why it holds, how its Lean form corresponds to the mathematics, and which elements its proof rests on. [The written texts of the canon](records.md), which your peer receives, describes those formats.
 
 State mathematical dependencies where the argument uses them. Identify an element of the canon by its Lean name and explain how you use it. A reference for motivation or history is different from a premise.
 
@@ -25,9 +25,9 @@ Keep scratch work in `work/` and what the peer should treat as your results in `
 
 ## Working Lean files
 
-You write and compile your own Lean against a copy of the canon's library. The copy is made by `commands.canon` with the command `checkout` and a folder, for example `checkout work/lean`. A relative folder is taken from your session directory; the folder has to be inside that directory and must be new or empty. The command copies the module root of the library into it and prints the folder and the revision of the canon it copied.
+You write and compile your own Lean against a copy of the canon's library. The copy is made by `commands.canon` with the command `checkout` and a folder of your session directory, for example `checkout work/lean`, and the command prints the revision of the canon it copied.
 
-In the copy, add your declarations in new module files under the library's folder, in the form [The canon](canon.md) gives for the canon's files. To try a new proof of a statement that already exists, change the body of its declaration in your copy and leave its statement as it is. A new definition or statement always goes into a new file, since that is how it will enter the canon.
+In the copy, a new definition or statement always goes into a new module file under the library's folder, in the form [The canon](canon.md) gives for the canon's files, since that is how it will enter the canon. To try a new proof of a statement that already exists, change the body of its declaration in your copy and leave its statement as it is.
 
 Compile with the `build` command of the Lean broker. In the `commands.lean` array, replace `<command>` with `build` and append the folder of your copy, the files you want compiled, given as paths under that folder, and the two required options:
 
@@ -35,11 +35,11 @@ Compile with the `build` command of the Lean broker. In the `commands.lean` arra
 <commands.lean with build> <folder> <file.lean>... --session <your session ID> --expect-mb <MiB>
 ```
 
-The broker compiles the named files together with every module of the copy that they import. The modules you did not change are the canon's own, and the broker normally takes their compiled form from its cache, so that only your files are compiled. [Lean](lean.md) explains the memory estimate, how to wait for a build that outlasts your shell tool, and how to read a build's result.
+[Lean](lean.md) describes `checkout` and `build` under "Building against the canon and your own modules", and explains the memory estimate, how to wait for a build that outlasts your shell tool, and how to read a build's result.
 
 Your copy does not follow the canon. When a publication adds something you need, check the canon out again into a new folder and carry your own files over; say in the report which revision your files were last built against.
 
-What you hand on is this: for a new module, its file; for a new proof of an existing statement, the complete text of that declaration. Copy the new modules into `output/lean/`, each at the path its module name gives. Put the text of a declaration whose proof you wrote anew into `output/replace/`, one file for each declaration, named after the declaration, and say in the report which imports the declaration's module gains with it. List all of these files in the report; the working copy stays in `work/`. The peer assembles the candidate from these and has it compiled as a whole on the current canon. Producing sessions do not prepare candidates, and the command for it refuses them. A declaration that does not compile yet is still worth handing on, with what stopped it.
+Hand on each new module as its file, copied into `output/lean/` at the path its module name gives, and each new proof of an existing statement as the complete text of that declaration, put into `output/replace/` as one file for each declaration, named after the declaration; say in the report which imports the declaration's module gains with it. List all of these files in the report; the working copy stays in `work/`. The peer assembles the candidate from these and has it compiled as a whole on the current canon. Producing sessions do not prepare candidates, and the command for it refuses them. A declaration that does not compile yet is still worth handing on, with what stopped it.
 
 ## The outcome
 
@@ -52,7 +52,7 @@ When finishing normally, write `output/outcome.json`:
 
 For a session that undertook research, this small manifest makes the endpoint easy to find. It is not a success certificate or a publication gate. The runner forwards retained producing material to a peer even if an interruption prevents the manifest or the report from being completed. Save important work throughout so that there is material to recover.
 
-Attempts and peers register sections with the coordination commands. An explorer registers no sections; it occupies one question. A formalizer receives its statement in its assignment, and the runner records for it a section that covers the whole of that statement. None of these roles changes the canon directly; the peer writes the candidate and review judges it.
+An explorer registers no sections; it occupies one question. A formalizer receives its statement in its assignment, and the runner records for it a section that covers the whole of that statement.
 
 ## Continuing an attempt, exploration, formalization or peer session
 
@@ -91,7 +91,7 @@ Use this outcome only for a session that never began mathematical investigation.
 
 ## Reporting that all the work that remains is occupied
 
-Your session outcome says what you did. An availability report concerns something else: whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that the sections other pipelines hold cover all the work that remains for the root:
+Your session outcome says what you did; an availability report says whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition, and not in the ordinary outcome of a session that undertook research. You can add this report when you have determined that the sections other pipelines hold cover all the work that remains for the root:
 
 ```json
 {
@@ -105,4 +105,4 @@ Your session outcome says what you did. An availability report concerns somethin
 
 Read the current `commands.updates` result and copy its `availability_snapshot` token into the report. When an attempt runs that command, the command saves the elements of the work that remains together with the sections registered on each, as they were when you examined them, and the token identifies that snapshot. These are the elements that `list --remaining` returns: the frontier's elements whose proof is not accepted, and those whose proof names a statement that has since been refuted. You judge whether those sections cover the work. The runner checks whether that state has changed; it does not prove coverage or interpret a prose explanation. Not seeing a promising approach yourself is not enough to report that all the work is occupied.
 
-An accepted report makes the runner wait before launching further attempts. A stale or invalid report cannot prevent a valid `no_research` outcome from closing your session. It only means that the report cannot suppress new attempts. The transport check reports invalid fields or snapshot tokens so you can correct them before exiting.
+An accepted report makes the runner wait before launching further attempts. A stale or invalid report does not, and it cannot prevent a valid `no_research` outcome from closing your session. The transport check reports invalid fields or snapshot tokens so you can correct them before exiting.

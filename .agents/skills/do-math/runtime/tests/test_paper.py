@@ -251,6 +251,13 @@ RECORD_FILES = ['root.md', 'elements.md', 'references.bib'] + [
                                              'root', 'sq_step')]
 
 
+def found_at(*places):
+    """What the session that looks for the elements without a number writes when it finds each of them: for every
+    (name after `Small.`, place), in the order of the plan's `others`, the element as found at that place."""
+    return [{'output/placement.json': json.dumps([{'element': 'Small.' + name, 'found': True, 'where': where, 'note': ''}
+                                                  for name, where in places])}]
+
+
 def good():
     """A scenario in which every session does its work at the first attempt."""
     return {'plan': [{'output/plan.json': json.dumps(PLAN), 'output/study.md': STUDY}],
@@ -262,7 +269,9 @@ def good():
             'compare:intro': [{'output/comparison.json': json.dumps(SAME[:1])}],
             'compare:tools': [{'output/comparison.json': json.dumps(SAME[1:])}],
             # No sentence of the running text asserts more than an element states.
-            'cover': [{'output/coverage.json': '[]'}]}
+            'cover': [{'output/coverage.json': '[]'}],
+            # Where a repair has changed a part, every element without a number is found where the plan put it.
+            'place': found_at(('oddSum', 'sec:intro'), ('oddSum_succ', 'thm:main'), ('expand', 'sec:tools'))}
 
 
 def answered(note, action='revised'):
@@ -310,6 +319,7 @@ PROOF_BASED = PROOF.replace('By induction on $n$.', 'By induction on $n$, from $
 
 
 _SETTLED = None
+_RUNS = {}  # for each run of the command that several tests start from, the folders that it left
 
 
 class PaperCase(InstanceCase):
@@ -366,6 +376,22 @@ class PaperCase(InstanceCase):
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             return paper.close_open(self.instance, self.out, TEX, parallel=1)
+
+    def taken_up(self, name, run):
+        """Start the test from a run of the command that several tests take up, under the name `name`.
+
+        `run` makes that run. The first test that asks calls it, and the folder of the paper and the record of the
+        sessions are then kept for the test process. Every later test receives a copy of both, as each test
+        receives a copy of the instance, so that no test sees what another did to the run."""
+        if name not in _RUNS:
+            run()
+            kept = Path(tempfile.mkdtemp(dir=_SETTLED.parent))  # beside the kept instance, and removed with it
+            shutil.copytree(self.out, kept / 'paper')
+            shutil.copytree(self.scenario, kept / 'scenario')
+            _RUNS[name] = kept
+        else:
+            shutil.copytree(_RUNS[name] / 'paper', self.out)
+            shutil.copytree(_RUNS[name] / 'scenario', self.scenario, dirs_exist_ok=True)
 
     def said(self, arguments):
         """What the command prints last when it is run with these arguments after the instance, and its exit code."""
@@ -1572,7 +1598,9 @@ class RunTests(PaperCase):
         self.assertTrue((self.out / 'paper.pdf').is_file())
 
     def test_what_the_repair_after_the_last_reading_beside_real_papers_keeps_goes_on_with_its_reason(self):
-        rounds = paper.LIKENESS_ROUNDS
+        # Two readings show what this test is about: a repair that rewrites, and then the narrow repair after the last
+        # reading that the bound allows. That the readings end at the bound of the command is in the test above.
+        rounds = 2
         script = good()
         script['likeness'] = [{'output/likeness.json': json.dumps(departed(f'reading {n}'))} for n in range(1, rounds + 1)]
         script['repair:likeness'] = [{'output/intro.tex': INTRO + f'Version {n} of the introduction.\n',
@@ -1580,7 +1608,8 @@ class RunTests(PaperCase):
         # The repair after the last of these readings is narrow, and its session keeps the text.
         script['repair:narrow'] = [{'output/response.json': answered('A shorter abstract would drop a hypothesis.', 'kept')}]
         script['resolve'] = keeps(1)
-        self.assertEqual(self.run_paper(script), 0)
+        with patch('paper.LIKENESS_ROUNDS', rounds):
+            self.assertEqual(self.run_paper(script), 0)
         kinds = self.kinds(5)
         # It changed nothing, so no session reads changes. The repairs before it rewrote the introduction, so the
         # manuscript is read by itself once more, as before.
@@ -2556,6 +2585,20 @@ class SideBySideTests(PaperCase):
         self.assertIn('--typeset-only typesets a finished manuscript; it goes with neither --resume nor --dry-run', first)
         self.assertIn('--parallel is the number of sessions that run side by side, at least 1', second)
 
+    def test_a_command_given_while_another_is_at_work_in_the_folder_is_refused_and_a_dry_run_is_not(self):
+        # A command that is at work holds the lock beside the folder of the run. It is held here as that command holds it.
+        lock = self.out.with_name('paper.lock')
+        with command_sessions.alone(self.out):
+            code, said = self.said(['--tex', *TEX])
+            self.assertEqual(code, 1)
+            self.assertIn('another command is at work in', said)
+            self.assertFalse(self.out.exists())
+            self.assertFalse((self.scenario / 'calls.json').exists())
+            self.assertTrue(lock.is_file())  # the refused command left the lock of the other alone
+            # A dry run writes nothing, so it is not refused.
+            self.assertEqual(self.said(['--dry-run', '--tex', *TEX])[0], 0)
+        self.assertFalse(lock.exists())  # the command that held the folder took its lock away with it
+
 
 class OpenFindingsTests(PaperCase):
     """A run that came to its end with findings left open, taken up again with --open-findings.
@@ -2580,8 +2623,15 @@ class OpenFindingsTests(PaperCase):
             script['write:tools'] = [{'output/tools.tex': self.OFF}]
             script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
             script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
-        with patch('paper.READING_ROUNDS', 1), patch('paper.STAGES', paper.STAGES[:4]):
-            self.assertEqual(self.run_paper(script), 2)
+        def run():
+            with patch('paper.READING_ROUNDS', 1), patch('paper.STAGES', paper.STAGES[:4]):
+                self.assertEqual(self.run_paper(script), 2)
+
+        # Three tests start from the run with the statement that differs as the class words it: it is made once.
+        if comparison and self.DIFFERENCE == type(self).DIFFERENCE:
+            self.taken_up('findings left open', run)
+        else:
+            run()
         self.kept = paper.KEPT + 'The reader is expected to expand a square.'
         self.left = [{'check': paper.READING, 'after_repairs': 1,
                       'problems': [{**EXPANSION, 'open_because': self.kept}, {**BASE, 'open_because': self.kept}]}]
@@ -2748,7 +2798,7 @@ class OpenFindingsTests(PaperCase):
         self.assertIn(b'       difference: The manuscript has k\\xb2 + 2k = (k + 1)\\xb2.', shown.buffer.getvalue())
 
     def test_a_run_without_open_findings_and_a_run_that_has_not_ended_are_refused(self):
-        self.assertEqual(self.run_paper(good()), 0)
+        self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))
         launched = len(self.calls())
         with self.assertRaisesRegex(paper.Stop, 'came to its end with no finding left open \\(complete\\); there is nothing to act on'):
             self.run_paper(good(), open_findings='all')
@@ -3233,6 +3283,8 @@ def written_from_draft():
     script['write:tools'] = [{'output/tools.tex': TOOLS_CITED}]
     script['compare:tools'] = [{'output/comparison.json': json.dumps(
         [{'label': label, 'verdict': 'same', 'difference': ''} for label in CITED_LABELS])}]
+    # The carried plan gives no number to other elements than the plan of `good` does.
+    script['place'] = found_at(('oddSum', 'sec:intro'), ('oddSum_succ', 'lem:increasing'), ('unused', 'sec:tools'))
     return script
 
 
@@ -3767,6 +3819,9 @@ def restructuring():
                          {**moved, 'output/plan.json': json.dumps(JOINED_PLAN)}]
     # The lemma was reworded, so its present text has no verdict; it is compared before the running text is.
     script['compare:proof'] = [{'output/comparison.json': json.dumps([SAME[2]])}]
+    # The plan that the second resolving session returns gives no number to the first lemma, and cites in `proof`.
+    script['place'] = found_at(('oddSum', 'sec:intro'), ('oddSum_succ', 'thm:main'), ('oddSum_mono', 'thm:main'),
+                               ('expand', 'sec:proof'))
     return script
 
 
@@ -3976,7 +4031,7 @@ class CoverageTests(PaperCase):
 
     def test_what_stays_uncovered_is_open_and_is_acted_on_as_an_open_finding(self):
         reason = 'The bound is the content of Lemma 2.1.'
-        self.assertEqual(self.run_paper(asserting(kept=reason)), 2)
+        self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
         # The repair kept the sentence, so nothing changed: no session reads changes, and no section is compared again.
         self.assertEqual(self.kinds(7), [*COMPARED, *COVERED, ('repair', 'narrow-coverage-tools')])
         left = [{'check': paper.COVERAGE, 'after_repairs': 1, 'problems': [{**REPORTED, 'open_because': paper.KEPT + reason}]}]
@@ -4010,7 +4065,7 @@ class CoverageTests(PaperCase):
 
     def test_what_one_repair_left_uncovered_is_taken_out_and_the_run_ends_without_a_person(self):
         reason = 'The bound is the content of Lemma 2.1.'
-        self.assertEqual(self.run_paper(asserting(kept=reason)), 2)
+        self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
         launched = len(self.calls())
         script = good()
         # The first session says the same in other words, which is no deletion. The second deletes.
@@ -4151,7 +4206,7 @@ class CoverageTests(PaperCase):
         self.assertIn('does not stand inside a proof unchanged', run.move_faults(finding, PARTS, paper.assemble(PLAN, PARTS)[1])[0])
 
     def test_the_abstract_is_held_to_the_main_result_as_a_numbered_statement_is(self):
-        self.assertEqual(self.run_paper(good()), 0)
+        self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))
         intro, tools = self.calls('cover')
         self.assertIn('Hold what the abstract says of the main result to the element of the main result, `Small.root`, as a '
                       'numbered statement is held to its element.', intro['prompt'])
@@ -4213,7 +4268,8 @@ class PlacementTests(PaperCase):
         self.assertIn('in_text', read_json(self.out / 'correspondence.json')['others'][0])
 
     def test_the_check_is_made_again_after_a_pass_that_changed_a_part(self):
-        self.assertEqual(self.run_paper(asserting(kept='The bound is the content of Lemma 2.1.')), 2)
+        reason = 'The bound is the content of Lemma 2.1.'
+        self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
         # The repair kept the sentence, so the parts are as their writers left them, and nothing was looked for.
         self.assertEqual(self.calls('place'), [])
         script = good()

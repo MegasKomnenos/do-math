@@ -14,7 +14,7 @@ point of the design is that Lean gives the answer: a `sorry`, an axiom of the au
 and reported anew when what it rests on changed, and the statement identities compared for the root
 are those of Lean's terms. It needs Lean 4.36.0, looked for under `.skill-workspace/do-math-toolchains`
 of a folder above this file, or named by the environment variable DO_MATH_TEST_LEAN, and is skipped
-without it.
+without it. A name in that variable that is not a file is an error, so that these tests are not skipped unnoticed.
 """
 import hashlib
 import json
@@ -77,16 +77,39 @@ def rewrite(path, old, new):
     path.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
 
 
-class FormalStatusTests(InstanceCase):
+class BothCompilers:
+    """What the stand-in compiler and Lean itself are both held to: a test written here runs in a class of each.
+
+    FormalStatusTests runs it on the instance that tests/canon_lean.py compiled and LeanItselfTests on the
+    instance that Lean compiled, so that the two compilers are asked the same thing with one expectation."""
+
     def element(self, name):
         return replay(self.instance)['elements'][name]
 
+    def test_an_axiom_the_author_declares_is_refused_and_what_rests_on_it_is_not_formal(self):
+        body = 'private axiom shortcut : oddSum 1 = 1\n\n' + theorem('onShortcut', ': oddSum 1 = 1', uses=['shortcut'], proof='exact h1')
+        folder = self.candidate(modules={'Small/Short.lean': module_text(body)},
+                                records={'Small/onShortcut.md': record_text('One odd number sums to one.')}, prepare=False)
+        result = self.prepare(folder, expect_ok=False)
+        self.assertTrue(any('Small.shortcut is declared as an axiom in Small.Short' in error for error in result['errors']),
+                        result['errors'])
+        entry = result['entries']['Small.onShortcut']
+        self.assertEqual((entry['lean_proof'], entry['axioms']), ('complete', ['_private.Small.Short.0.Small.shortcut']))
+        self.assertEqual(beyond_allowed(entry, ALLOWED), ['_private.Small.Short.0.Small.shortcut'])
+
+
+class FormalStatusTests(BothCompilers, InstanceCase):
+
     def lemma_and_what_rests_on_it(self):
-        """`sumZero` without a proof in one module, and `fromZero`, proved from it, in a module that imports it."""
-        folder = self.candidate(modules={'Small/Zero.lean': module_text(OPEN_ZERO),
-                                         'Small/Above.lean': module_text(ABOVE, imports=('Small.Defs', 'Small.Zero'))},
-                                records={'Small/sumZero.md': ZERO_RECORD, 'Small/fromZero.md': ABOVE_RECORD})
-        return self.publish(folder)
+        """`sumZero` without a proof in one module, and `fromZero`, proved from it, in a module that imports it.
+
+        Published once for the test process (InstanceCase.scenario); a test that asks works on a copy of it."""
+        def build():
+            folder = self.candidate(modules={'Small/Zero.lean': module_text(OPEN_ZERO),
+                                             'Small/Above.lean': module_text(ABOVE, imports=('Small.Defs', 'Small.Zero'))},
+                                    records={'Small/sumZero.md': ZERO_RECORD, 'Small/fromZero.md': ABOVE_RECORD})
+            self.publish(folder)
+        self.scenario('open lemma and what rests on it', build)
 
     def test_a_published_proof_is_formal_by_the_axioms_lean_reported(self):
         folder = self.candidate(modules={'Small/Zero.lean': module_text(ZERO)}, records={'Small/sumZero.md': ZERO_RECORD})
@@ -107,13 +130,13 @@ class FormalStatusTests(InstanceCase):
         self.assertFalse(above['settled'])  # it rests on a statement without a proof
 
     def test_a_theorem_in_a_module_that_did_not_change_becomes_formal_when_what_it_rests_on_is_proved(self):
-        _, engine = self.lemma_and_what_rests_on_it()
+        self.lemma_and_what_rests_on_it()
         source = self.instance / 'canon/lean/Small/Above.lean'
         before = source.read_bytes()
         folder = self.candidate(replace={'Small.sumZero': ZERO}, records={'Small/sumZero.md': PROVED_ZERO_RECORD})
         # The module of `fromZero` is not changed by the candidate, and its index is taken again with it.
         self.assertEqual(read_json(folder / 'prepared.json')['changed_modules'], ['Small.Zero'])
-        self.publish(folder, engine=engine)
+        _, engine = self.publish(folder)
         self.assertEqual(source.read_bytes(), before)
         above = self.element('Small.fromZero')
         self.assertEqual((above['axioms'], above['formal'], above['settled']), ([], True, True))
@@ -122,17 +145,6 @@ class FormalStatusTests(InstanceCase):
         self.publish(folder, engine=engine)
         above = self.element('Small.fromZero')
         self.assertEqual((above['axioms'], above['formal']), (['sorryAx'], False))
-
-    def test_an_axiom_the_author_declares_is_refused_and_what_rests_on_it_is_not_formal(self):
-        body = 'private axiom shortcut : oddSum 1 = 1\n\n' + theorem('onShortcut', ': oddSum 1 = 1', uses=['shortcut'], proof='exact h1')
-        folder = self.candidate(modules={'Small/Short.lean': module_text(body)},
-                                records={'Small/onShortcut.md': record_text('One odd number sums to one.')}, prepare=False)
-        result = self.prepare(folder, expect_ok=False)
-        self.assertTrue(any('Small.shortcut is declared as an axiom in Small.Short' in error for error in result['errors']),
-                        result['errors'])
-        entry = result['entries']['Small.onShortcut']
-        self.assertEqual((entry['lean_proof'], entry['axioms']), ('complete', ['_private.Small.Short.0.Small.shortcut']))
-        self.assertEqual(beyond_allowed(entry, ALLOWED), ['_private.Small.Short.0.Small.shortcut'])
 
 
 class EarlierFilesTests(ScenarioCase):
@@ -280,7 +292,10 @@ class RootCheckTests(ScenarioCase):
 def lean_program():
     named = os.environ.get('DO_MATH_TEST_LEAN')
     if named:
-        return Path(named) if Path(named).is_file() else None
+        if not Path(named).is_file():
+            # A skip would say that no compiler was found, of a run that was given one by name.
+            raise FileNotFoundError(f'DO_MATH_TEST_LEAN names {named}, which is not a file')
+        return Path(named)
     name = 'lean.exe' if os.name == 'nt' else 'lean'
     for folder in Path(__file__).resolve().parents:
         found = sorted((folder / '.skill-workspace/do-math-toolchains').glob('lean-4.36.0/*/bin/' + name))
@@ -316,7 +331,7 @@ def lean_settings():
 
 
 @unittest.skipUnless(LEAN, 'Lean 4.36.0 was not found under .skill-workspace/do-math-toolchains; name it in DO_MATH_TEST_LEAN')
-class LeanItselfTests(ScenarioCase):
+class LeanItselfTests(BothCompilers, ScenarioCase):
     """The same instance and the same paths as above, compiled by Lean 4.36.0."""
     root_variant = 'lean'  # the key of this compiler's instance among the instances kept for the test process
     expect_mb, patience = EXPECT_MB, PATIENCE
@@ -327,9 +342,6 @@ class LeanItselfTests(ScenarioCase):
         support.ROOT_STATEMENTS.setdefault('lean', ROOT_STATEMENTS['default'])
         with patch.object(support, 'fixture_settings', lean_settings):
             super().setUp()
-
-    def element(self, name):
-        return replay(self.instance)['elements'][name]
 
     def kinds(self):
         """Theorems proved in each way and left open, and a module above them that names two of them."""
@@ -358,17 +370,6 @@ class LeanItselfTests(ScenarioCase):
         # The axiom of the computation is no element; the index names it as one Lean generated.
         hidden = Canon(self.instance).load_index()['hidden'][computed['axioms'][0]]
         self.assertEqual((hidden['axiom'], hidden['generated']), (True, True))
-
-    def test_lean_reports_an_axiom_of_the_author_and_the_candidate_is_refused(self):
-        body = 'private axiom shortcut : oddSum 1 = 1\n\n' + theorem('onShortcut', ': oddSum 1 = 1', uses=['shortcut'], proof='exact h1')
-        folder = self.candidate(modules={'Small/Short.lean': module_text(body)},
-                                records={'Small/onShortcut.md': record_text('One odd number sums to one.')}, prepare=False)
-        result = self.prepare(folder, expect_ok=False)
-        self.assertTrue(any('Small.shortcut is declared as an axiom in Small.Short' in error for error in result['errors']),
-                        result['errors'])
-        entry = result['entries']['Small.onShortcut']
-        self.assertEqual((entry['lean_proof'], entry['axioms']), ('complete', ['_private.Small.Short.0.Small.shortcut']))
-        self.assertEqual(beyond_allowed(entry, ALLOWED), ['_private.Small.Short.0.Small.shortcut'])
 
     def test_a_theorem_in_a_module_that_did_not_change_is_compiled_again_and_becomes_formal(self):
         self.kinds()
