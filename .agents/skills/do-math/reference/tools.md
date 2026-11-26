@@ -10,27 +10,15 @@ Each command is an argument array: pass its elements separately to the process, 
 
 **Your session directory.** Use `work/` for scratch mathematics, Lean files under development, computations and intermediate artifacts. Use `output/` for the retained report or role output your successor will read. Keep the files and any generated caches in your own session directory. The runner preserves `pack.md`, which is your starting context, `input.json`, the copies of the guides under `context/`, and the available CLI conversation. `inbox/` receives messages for you. Your role's guides state the entry file and fields of your output.
 
-**The canon.** `canon/` under the instance holds the knowledge of the research: the Lean library and the written files beside it. [The canon](canon.md) shows where its folders and files are.
-
-You read the canon and never write in it. A change to it is a candidate that a peer or an organizer assembles in its own `output/`, and publication is the runner's work. The commands under Reading the canon below are the way to read it, because a view joins what Lean knows of an element with what its record says and a traversal returns the whole of what its rule selects. The files are there for the cases where you need the source itself: to read or change the body of a Lean proof, or to see more of a declaration than its printed statement.
-
-**The derived views.** `knowledge/` under the instance holds views the runner renders and the published judgments. `frontier.md` is the frontier with the questions, `index.md` the self-descriptions of all elements in the order of the Lean structure, `board.md` the work underway, and `state.json` the same state in structured form. `changes/<id>/` holds one published change with review's assessment and feedback, `reviews/<id>/` a comprehensive review, `organizations/<id>/` an organizer's output, and `questions/<id>/` questions the operator placed. Read these and follow them to the canon; write your contributions in your own output.
+**The canon and the derived views.** `canon/` under the instance holds the knowledge of the research: the Lean library and the written files beside it. `knowledge/` holds the views the runner renders and the published judgments. [The canon](canon.md) shows where the folders and files of both are and gives the commands by which `commands.canon` reads the canon. You read these and never write in them: follow the views to the canon, and write your contributions in your own output.
 
 Read required documents in full. If a file-reading tool truncates its output, retrieve the omitted ranges before treating the document as read. A successful read command can still have returned only part of the file.
 
 Working paths can be absolute when invoking tools. What a later reader needs has to be in the canon: state the mathematics as elements, publish the files a record relies on as its evidence, or cite a stable published source. A reference to a producer's private working file cannot support an ordinary session, which may read only what is published.
 
-## Reading the canon
-
-`commands.canon` reads the canon. [The canon](canon.md) lists its reading commands under "Reading the canon: the commands" and describes what each view shows. The same array has one further command, `checkout <folder>`, which copies the library, `canon/lean`, into a new or empty folder inside your session directory, so that you can build your own Lean files against it.
-
-An element is named by its declaration name as the canon shows it, for example `Parking.Columns.dq_col`.
-
-The canon changes while you work, as other sessions' changes are published. A notice arrives in your inbox at each publication, and running a reading command again returns the current state. A copy made with `checkout` does not follow those changes. The command prints, as JSON, the folder and the revision of the canon it copied; note the revision if you will need it, since nothing in the folder records it. A later checkout into another folder gives the current library.
-
 ## Current research and coordination
 
-The views in your starting context tell you what the research held when you launched. To see what has changed since, use the reading commands above for the canon and `commands.updates` for the work underway.
+The views in your starting context tell you what the research held when you launched. To see what has changed since, use the reading commands of [The canon](canon.md) for the canon and `commands.updates` for the work underway.
 
 `commands.updates` returns the current revision and the state of the root; the live board, with each pipeline's sections and the question each exploration holds; the element and question leases; the current questions with their state and holder; the concerns; the comprehensive review assignments; and the messages in your inbox. The user inputs it returns are your original launch snapshot. Publications, sections, questions and leases remain live.
 

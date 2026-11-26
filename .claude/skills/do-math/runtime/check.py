@@ -9,6 +9,10 @@ from availability import no_research_outcome, reported_availability
 from canon import BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, tree_hash
 from coordination import section_entries
 from knowledge import ROOT_QUESTION, canonical_question, replay
+# Loaded with this module and not inside audit_formal: a session host checks a review's output when the session
+# ends, possibly hours after it started, and a module it first loaded then would come from the installation as it
+# then stands, beside the modules the host loaded at its start.
+from lean_broker import BUILD_ID, Paths, job_record
 from runtime_support import read_json
 from settings import PRODUCERS
 
@@ -231,7 +235,6 @@ def findings_check(values, model, known):
 
 def audit_formal(instance, session, check, receipt):
     """Review's own compile of the candidate: a finished build of this session that compiled the changed modules afresh."""
-    from lean_broker import BUILD_ID, Paths, job_record
     need(isinstance(check, dict), 'confirming a proof that is complete in Lean needs formal_check')
     build = text(check.get('build'), 'formal_check.build')
     need(BUILD_ID.fullmatch(build), 'formal_check.build is the ID of the build that commands.verify reported')

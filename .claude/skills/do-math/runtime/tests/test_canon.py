@@ -799,9 +799,6 @@ class ApplyLeanTests(TempCase):
             apply_lean(self.lean, folder, change, self.index)
         self.assertEqual(self.text(), LIB)
 
-    def test_a_conflict_is_an_error_of_the_canon(self):
-        self.assertTrue(issubclass(Conflict, CanonError))
-
     def test_a_replacement_stands_where_the_declaration_stood(self):
         folder, change = self.candidate(replace={'Small.second': NEW_SECOND})
         self.assertEqual(apply_lean(self.lean, folder, change, self.index), ['Small.Lib'])
@@ -1819,6 +1816,21 @@ class CheckAppliedTests(unittest.TestCase):
         self.records['Small/step'] = parse_record(record_text('A counterexample.', refutes='Small.absent'))
         self.refused('Small.step: "refutes: Small.absent" names no declaration of the canon')
 
+    def test_proves_and_refutes_relate_two_theorems(self):
+        # A definition has no standing, so a claim is refused when either end of it is one, even where Lean
+        # confirms the pair: a `def` can state a proposition, or its negation, as a theorem does.
+        self.add(entry('Small.total', 'def'))
+        for key, kind in (('proves', 'same'), ('refutes', 'negation')):
+            for claimant, target, definition in (('Small.step', 'Small.oddSum', 'Small.oddSum'),
+                                                 ('Small.total', 'Small.root', 'Small.total')):
+                with self.subTest(key=key, claimant=claimant):
+                    self.records['Small/step'] = parse_record(STEP_RECORD)
+                    self.records['Small/total'] = parse_record(STEP_RECORD)
+                    self.records[name_path(claimant)] = parse_record(record_text('A claim.', **{key: target}))
+                    self.new['pairs'] = {f'{kind}|{claimant}|{target}': True}
+                    self.refused(f'{claimant}: "{key}: {target}" relates two theorems, '
+                                 f'and {definition} is declared as def')
+
     def test_a_replaced_declaration_without_any_record(self):
         del self.records['Small/root']
         del self.existing['Small.root']
@@ -2245,7 +2257,9 @@ class WrittenPartTests(TempCase):
         write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
         write(self.canon.approaches / 'Small/root/direct.md', APPROACH)
         write(self.canon.approaches / 'Small/other/kept.md', APPROACH)
-        retire_approaches(self.canon, 'Small.root', 15)
+        # The runner regenerates records.json, which lists the approaches of each element, when this says
+        # that approaches were moved (runner.py, publish).
+        self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
         self.assertFalse((self.canon.approaches / 'Small/root').exists())
         self.assertEqual(self.files(self.canon.history), ['Small/root/000015-approaches/direct.md',
                                                           'Small/root/000015-approaches/induction.md'])
@@ -2259,8 +2273,8 @@ class WrittenPartTests(TempCase):
 
     def test_retire_approaches_does_nothing_without_approaches(self):
         (self.canon.approaches / 'Small/empty').mkdir(parents=True)
-        retire_approaches(self.canon, 'Small.root', 15)
-        retire_approaches(self.canon, 'Small.empty', 15)
+        self.assertFalse(retire_approaches(self.canon, 'Small.root', 15))
+        self.assertFalse(retire_approaches(self.canon, 'Small.empty', 15))
         self.assertFalse(self.canon.history.exists())
         self.assertTrue((self.canon.approaches / 'Small/empty').is_dir())
 
@@ -2275,13 +2289,6 @@ class WrittenPartTests(TempCase):
         self.assertEqual(list(read_approaches(self.canon, 'Small.root.even')), ['cases'])
         self.assertEqual(read_approaches(self.canon, 'Small.root'), {})
 
-    def test_retire_approaches_says_whether_it_moved_anything(self):
-        # The runner regenerates records.json, which lists the approaches of each element, when this
-        # says that approaches were moved (runner.py, publish).
-        write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
-        self.assertFalse(retire_approaches(self.canon, 'Small.other', 15))
-        self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
-
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
     def test_retire_approaches_waits_for_a_reader_that_holds_an_entry(self):
         # A session that reads an approach entry holds its file open without delete sharing, as Python's
@@ -2295,6 +2302,20 @@ class WrittenPartTests(TempCase):
         self.assertGreaterEqual(sleep.call_count, 1)
         self.assertEqual(self.files(self.canon.history), ['Small/root/000015-approaches/induction.md'])
         self.assertEqual(self.files(self.canon.approaches), [])
+
+    def test_retire_approaches_leaves_the_emptied_folder_when_it_cannot_be_removed(self):
+        # Windows removes no folder that a process holds, such as the current directory of a shell in which
+        # an operator or a session reads the entries. By then the entries are in the history, and a folder
+        # without entries reads as no approaches, so the folder stays and the publication goes on. The refusal
+        # is the one such a removal meets; nothing else is replaced.
+        write(self.canon.approaches / 'Small/root/induction.md', APPROACH)
+        with patch.object(Path, 'rmdir', side_effect=PermissionError('injected sharing violation')) as removal:
+            self.assertTrue(retire_approaches(self.canon, 'Small.root', 15))
+        removal.assert_called_once_with()
+        self.assertEqual(self.files(self.canon.history), ['Small/root/000015-approaches/induction.md'])
+        self.assertTrue((self.canon.approaches / 'Small/root').is_dir())
+        self.assertEqual(read_approaches(self.canon, 'Small.root'), {})
+        self.assertFalse(retire_approaches(self.canon, 'Small.root', 16))
 
     def test_read_record(self):
         write(record_file(self.canon, 'Small.root'), ROOT_RECORD)

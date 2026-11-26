@@ -81,7 +81,7 @@ You do not write whether an element is settled or formal. The runner computes bo
 
 ## What the work contributed
 
-`contribution` is your assessment of what this work contributed to the research. The role guide describes the judgment under "What the work contributed to the research".
+Your role guide describes, under "What the work contributed to the research", the judgment that `contribution` records.
 
 The runner writes this text, with the change's ID and revision, at the end of every approach entry and every understanding text the change carries, and into the log of changes. It stands there because that is where a session choosing its work will read it: an attempt reading the approaches tried on a statement learns from it whether another round of the same kind is likely to help. The same text goes to each of those places, so when the change touches several statements or a statement and a question, name what each part of your assessment refers to.
 
@@ -89,7 +89,7 @@ The runner writes this text, with the change's ID and revision, at the end of ev
 
 An entry of `questions` has `proposal`, the ID of the proposed question, `verdict` and `reason`. The verdict is `admitted`, `declined` or `revise`. A declined duplicate also names the existing question in `duplicate_of`; that field is allowed only with `declined`. `declined` and `revise` record two different judgments behind a refusal, which later peers read differently; the role guide explains, under "Questions the candidate proposes or resolves", when each applies and what its reason says.
 
-An entry of `resolutions` has `proposal`, the ID of the proposed resolution, `resolved` as a Boolean, and `reason`. A candidate that proposes a resolution carries the text that is to settle the question, as the question's understanding so far. An accepted resolution says in its reason why that text answers what the question's statement asks, and names what remains to be done when the candidate does not carry it. The assertions the text relies on are elements, so their verdicts, in this assessment or already in the canon, are part of what you weigh. Question `q0` is not resolved in this way.
+An entry of `resolutions` has `proposal`, the ID of the proposed resolution, `resolved` as a Boolean, and `reason`. An accepted resolution says in its reason why the text that the candidate carries as the question's understanding so far answers what the question's statement asks, and names what remains to be done when the candidate does not carry it. The assertions the text relies on are elements, so their verdicts, in this assessment or already in the canon, are part of what you weigh. Question `q0` is not resolved in this way.
 
 ## Evidence for a proof that is complete in Lean
 

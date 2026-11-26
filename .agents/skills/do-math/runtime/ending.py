@@ -9,6 +9,7 @@ import time
 import uuid
 
 from availability import no_research_outcome
+from check import CANDIDATE_CHANGED, check_session
 from launch import worker_command, worker_environment
 from retention import conversation_identity, events, output_limit, refusal
 from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
@@ -94,8 +95,6 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
 def output_problems(session):
     """What the transport check finds in a session's output, as the runner will find it when it collects the
     session, and whether that is the one finding no further turn of the session can remove."""
-    # check reads the canon, which the host of a producing role never needs, so it is loaded only here.
-    from check import CANDIDATE_CHANGED, check_session
     problems = check_session(session)
     return problems, problems == [CANDIDATE_CHANGED]
 

@@ -14,7 +14,7 @@ The user said what best means when judging that case, and the sentence is the st
 
 > the staircase is a better one. but the direct proof is also quite okay. insight is good. elegance and conciseness is also good. following mathematical research standards is required
 
-The case was this. The root said that each row of a certain triangle of numbers is unimodal. The research held a direct proof of that, and a proof through a stronger statement, called the staircase, which also says where each row has its peak and from which unimodality follows as a corollary. The staircase proof was the larger of the two.
+In that case the root said that each row of a certain triangle of numbers is unimodal. The research held a direct proof of that, and a proof through a stronger statement, called the staircase, which also says where each row has its peak and from which unimodality follows as a corollary.
 
 The sentence is read as follows, and the reading was confirmed with the user. The standards of mathematical research are a threshold, for the choice and for everything built from it: an option has to be presentable as mathematics at the level of a research paper, with a precisely stated theorem, a proof that can be told and checked as an argument, and known results attributed to their sources. Above that threshold insight ranks first. The staircase was preferred although it was larger, because it shows more of why the result holds and says more about the objects. Elegance and conciseness come after insight. And more than one option can be acceptable: the direct proof was "also quite okay", so a runner-up need not be faulted in order to justify the choice.
 

@@ -27,7 +27,7 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 import canon
 import lean_broker
 import runtime_support
-from test_lean_broker import BrokerFixture
+from broker_fixture import BrokerFixture
 
 INTERVAL = lean_broker.STATE_SECONDS  # as the broker serves with it; the tests below set their own
 

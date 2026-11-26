@@ -32,6 +32,13 @@ from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work,
                              replace_file, session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
+# The functions that use context and lean_broker, here and in check and canon, import them at that point.
+# Both are loaded here as well, so that a process started from this file holds the whole runtime from its
+# start. The runner and a session host run for hours, and a module first loaded during that time comes from
+# the installed files as they have become: it fails where it names something that the modules loaded at the
+# start do not have.
+import context
+import lean_broker
 
 SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
@@ -936,13 +943,18 @@ class Runner:
         # go to its history. Any publication can bring that about: a change that adds or replaces the proof,
         # a change that writes an entry on a statement whose proof is already accepted, the entry that
         # record_declined made above for a replacement review declined, or a review's finding that restores
-        # a proof's confirmation. Read from the model, so that a repeat after a crash finds them gone.
-        moved = False
+        # a proof's confirmation. Read from the model, so that a repeat after a crash finds them gone. The
+        # model has each element's entries from the summary of the records, which is written again below once
+        # entries have moved. A runner that ended between the move and that writing left the summary listing
+        # entries that are gone, and the repeat moves nothing, so the summary is written again as well when
+        # it still lists entries on such a statement.
+        stale = False
         for name, element in self.model['elements'].items():
             if element['standing'] == 'accepted':
                 for target in {name, element['statement_of']}:
-                    moved = retire_approaches(canon, target, event['sequence']) or moved
-        if moved:
+                    stale = (retire_approaches(canon, target, event['sequence'])
+                             or bool(self.model['elements'][target]['approaches']) or stale)
+        if stale:
             write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
             self.model = replay(self.instance)
         self.attempt_dispatch_ready()

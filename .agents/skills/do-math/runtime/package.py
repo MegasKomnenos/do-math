@@ -21,7 +21,9 @@ import time
 import canon
 from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file,
                    name_path, parse_record, path_name, sha256_text, tree_hash)
+from command_sessions import read_file as read_text
 from runtime_support import popen_options, read_json, write_text as write_file
+from depmap import folder_of
 
 MAX_LINES = 10_000       # physical lines of a Lean file, the registry's rule and the canon's
 CHALLENGE_LINES = 1_000   # the registry's limits on Challenge.lean
@@ -71,10 +73,6 @@ def product_hash(path):
     """The identity of a product: the SHA-256 of a file, `canon.tree_hash` of a folder."""
     path = Path(path)
     return tree_hash(path) if path.is_dir() else sha256_file(path)
-
-
-def read_text(path):
-    return Path(path).read_text(encoding='utf-8-sig').replace('\r\n', '\n')
 
 
 def files_under(root):
@@ -197,11 +195,6 @@ def definition_modules(first_lean, library, root_module):
     if root_module not in imports:
         raise CanonError(f'the first commit has no module {root_module}')
     return import_order(imports, import_closure(imports, imports[root_module]))
-
-
-def folder_of(module):
-    """The part a module belongs to in the arranged library: its name without the last component."""
-    return module.rsplit('.', 1)[0] if '.' in module else module
 
 
 # ----------------------------------------------------------------------------- step 1: the take
@@ -437,8 +430,6 @@ def make_view(view, lean_root, records_root, bibliography, index, source, settin
     question in place of the research's own."""
     import knowledge
     view, source = Path(view), Path(source)
-    if view.exists():
-        shutil.rmtree(view)
     (view / 'canon' / 'questions').mkdir(parents=True)
     shutil.copytree(lean_root, view / 'canon' / 'lean')
     shutil.copytree(records_root, view / 'canon' / 'records')
@@ -1100,22 +1091,31 @@ def account_name():
     return getpass.getuser()
 
 
+def account_pattern(account):
+    """Where a text holds the account name: the name with no letter and no digit beside it.
+
+    A short account name is a part of ordinary words, as `sam` is of "same" and `pat` of "path", and such a
+    word is not the name. In a path or a sentence the name has a separator, a space or the end beside it."""
+    return re.compile(rb'(?<![A-Za-z0-9])' + re.escape(account.encode('utf-8')) + rb'(?![A-Za-z0-9])')
+
+
 def knowledge_archive(repository, commit, folder, name, account):
     """`<name>-knowledge.tar.xz` and `MANIFEST.md`: `canon/` and `knowledge/` of a commit, as Git stores them.
 
     One change is made to the members: the account name is replaced by `<account>` wherever it
-    stands, in a member's bytes and in its path, which also covers the home folder's path. The archive
-    is the same for the same commit: members in Git's order, the commit's time on each, no owner."""
+    stands by itself (account_pattern), in a member's bytes and in its path, which also covers the home
+    folder's path. The archive is the same for the same commit: members in Git's order, the commit's time
+    on each, no owner."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     archive = folder / f'{name}-knowledge.tar.xz'
     stamp = commit_time(repository, commit)
-    needle = account.encode('utf-8')
+    named = account_pattern(account) if account else None
     count = size = touched = 0
     with lzma.open(archive, 'wb', preset=6) as packed, tarfile.open(fileobj=packed, mode='w|', format=tarfile.PAX_FORMAT) as out:
         for path, data in git_members(repository, commit, ['canon', 'knowledge']):
-            changed = data.replace(needle, ACCOUNT.encode()) if needle else data
-            renamed = path.replace(account, ACCOUNT) if account else path
+            changed = named.sub(ACCOUNT.encode(), data) if named else data
+            renamed = named.sub(ACCOUNT.encode(), path.encode('utf-8')).decode('utf-8') if named else path
             touched += changed != data or renamed != path
             info = tarfile.TarInfo(renamed)
             info.size, info.mtime, info.mode = len(changed), stamp, 0o644
@@ -1602,13 +1602,14 @@ def standalone_problems(package, work, account, freeze):
             resolved = (path.parent / target).resolve()
             if not resolved.is_relative_to(package) or not resolved.exists():
                 problems.append(f'{relative}: the link {target} does not resolve inside the package')
-    needle = account.encode('utf-8')
-    if needle:
+    if account:
+        named = account_pattern(account)
         for relative, path in files.items():
-            if needle in path.read_bytes() or account in relative:
+            if named.search(path.read_bytes()) or named.search(relative.encode('utf-8')):
                 problems.append(f'{relative} holds the account name')
             if relative.endswith('-knowledge.tar.xz'):
-                held = [name for name, data in archive_members(path).items() if needle in data or account in name]
+                held = [name for name, data in archive_members(path).items()
+                        if named.search(data) or named.search(name.encode('utf-8'))]
                 problems += [f'{relative}: the member {name} holds the account name' for name in held]
     for relative, path in files.items():
         data = path.read_bytes()

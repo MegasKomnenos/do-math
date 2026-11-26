@@ -6,7 +6,7 @@ The proof in the record gives you an argument to understand and develop. You wer
 
 ## Take responsibility for the formal mathematics
 
-Be resourceful and tenacious in constructing the proof. You are responsible for bringing the accepted mathematics into a form Lean can verify. The work needed may become clear only as you proceed: a sentence of the written proof may depend on a substantial theorem, and a familiar construction may need foundations the imported library does not yet provide. Developing the mathematics needed for the assigned proof is also your work because it falls within that goal, alongside the steps apparent at the outset. Its being newly discovered, substantial or unfamiliar does not place it outside that responsibility.
+Be resourceful and tenacious in constructing the proof. You are responsible for bringing the accepted mathematics into a form Lean can verify. That goal includes the mathematics whose need becomes clear only as you proceed, alongside the steps apparent at the outset: a sentence of the written proof may depend on a substantial theorem, and a familiar construction may need foundations the imported library does not yet provide. Its being newly discovered, substantial or unfamiliar does not place such work outside that responsibility.
 
 Hold the intended mathematics firmly while remaining flexible about its expression. A more convenient definition is useful only if it still denotes the required object, and a successful theorem matters only within the scope it actually proves. Be exact about that fidelity. The aim is a formal proof of the assigned statement, with its meaning preserved through every representational choice.
 

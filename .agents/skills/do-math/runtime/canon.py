@@ -1154,6 +1154,12 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
                 continue
             if target not in new['entries']:
                 errors.append(f'{name}: "{key}: {target}" names no declaration of the canon')
+            elif entry['kind'] not in STATEMENT_KINDS or new['entries'][target]['kind'] not in STATEMENT_KINDS:
+                # A definition has no standing (knowledge.settle), so neither end of the claim can be one.
+                other = name if entry['kind'] not in STATEMENT_KINDS else target
+                errors.append(f'{name}: "{key}: {target}" relates two theorems, and {other} is declared as '
+                              f"{new['entries'][other]['kind']}; a statement is a theorem, and so is what proves "
+                              'or refutes it')
             elif not new.get('pairs', {}).get(f'{kind}|{name}|{target}'):
                 errors.append(f'{name}: Lean did not confirm that its statement is '
                               + ('the statement of ' if kind == 'same' else 'the negation of the statement of ') + target)
@@ -1286,7 +1292,12 @@ def retire_approaches(canon, name, revision):
     for path in entries:
         replace_file(path, target / path.name)
     if not any(folder.iterdir()):
-        folder.rmdir()
+        try:
+            folder.rmdir()
+        except PermissionError:
+            # Windows removes no folder that a process holds, such as the current directory of a shell that
+            # reads the canon. The entries are in the history, and a folder without entries holds no approach.
+            pass
     return True
 
 

@@ -12,7 +12,7 @@ Nothing you submit goes through review. For the merging of questions the researc
 | `merge_questions` | Array of `{from, into, reason}` naming two questions that ask the same thing. Omit it or use an empty array when you merge none. |
 | `delete` | Array of module names to remove from the library, for example `"Parking.Columns.AltProof"`. It belongs to a rearrangement and takes effect only together with a change; omit it otherwise. |
 
-**The batch.** Your batch was fixed when you were launched. Changes published during your session are not in it and remain for the next organizer, and acknowledging your batch does not mark them as processed. The transport check refuses a `batch` that differs from the assigned one.
+**The batch.** Changes published during your session are not in your batch and remain for the next organizer. The transport check refuses a `batch` that differs from the assigned one.
 
 **Merging questions.** `from` and `into` are IDs of existing questions, and `reason` explains why the two ask the same thing; the runner does not compare their wording. After publication the old identifier is an alias of the surviving question, and a resolution recorded against either resolves it. Question `q0` keeps its identity in both directions: it is not merged into another question, and no question is merged into it. A proposal that duplicates `q0` is declined at review. The merged question has one understanding so far. The text of the surviving question is the one the question's view shows from then on. When the surviving question has no text, the text of the question merged away becomes its text; when both have one, the text of the question merged away goes to the history of the merged question, where `question <id> --history` shows it. Your role guide explains what a merge leaves to the explorations that hold either question.
 
@@ -31,7 +31,7 @@ output/
   prepared.json                   written by commands.prepare
 ```
 
-[The candidate change](change-format.md) describes the parts this layout shares with a peer's candidate: `change.json` with its required `title` and `description`, new modules under `lean/`, the replacement of a proof in place through `replace`, and records. What follows is what is particular to you. An organizer's change holds Lean modules, replacements and records only. It proposes no questions and no resolutions, and it carries no approach entries and no understanding texts; the transport check refuses a change that does.
+[The candidate change](change-format.md) describes the parts this layout shares with a peer's candidate: `change.json` with its required `title` and `description`, new modules under `lean/`, the replacement of a proof in place through `replace`, and records. An organizer's change holds Lean modules, replacements and records only. It proposes no questions and no resolutions, and it carries no approach entries and no understanding texts; the transport check refuses a change that does.
 
 ### Elements stating that two things agree
 
@@ -48,7 +48,7 @@ A rearrangement, which your role guide explains under "Rearrange modules so that
 - Under `rewrite/lean/`, write the complete new text of every module you change and of every module you create, each at the path it has, or is to have, in the library. A file there takes the place of the existing file with that path.
 - In `delete` of `organization.json`, list the modules that no longer exist after the rearrangement.
 - In `retire` of `change.json`, list each separate declaration you remove, as `{"alternative": "<the declaration that is another proof>", "into": "<the statement's own declaration>", "reason": "..."}`, with exactly these three keys.
-- In `records/`, put the record of the statement's own declaration with the written proof that the alternative's record carried. The alternative's record leaves the canon with its declaration and is kept in the history, so without this the statement's record would go on describing the proof that no longer stands.
+- In `records/`, put the record of the statement's own declaration with the written proof that the alternative's record carried.
 
 A module in which nothing changes except a reference to the alternative, which becomes a reference to the statement's own declaration, can be handled in either of two ways. You can rewrite the module under `rewrite/lean/`, or you can name the declaration in `replace` and give its new text, which leaves the rest of the file as the canon has it. Use one of the two for a module and not both: the files under `rewrite/lean/` are put in place after the replacements are made, so a rewritten module discards a replacement made in it.
 
@@ -59,11 +59,11 @@ A rearrangement is valid when every other element has the name and the statement
 - each retired alternative is gone afterwards, and the statement's own declaration named in `into` is still there;
 - the proof now under the statement's own name names the elements that the alternative's proof named, and is complete in Lean exactly if the alternative's proof was. A retirement moves a proof and does not change it.
 
-These checks compare names, kinds and statements. For a definition they also compare the text of the declaration, and for every proof whether it is complete in Lean and which elements it names, where a reference to a retired declaration counts as a reference to the statement's own. A file under `rewrite/lean/` replaces the whole module, so every declaration in it has to be the text the canon has, copied unchanged apart from such references. A definition whose text you altered is refused, because every statement that mentions it would then mean something else while keeping its verdict. A proof that names other elements than before, or that became complete or incomplete, is refused, because no review judged that proof. Beyond this the checks do not read the text of a proof, so leave it as it is.
+For a definition the checks also compare the text of the declaration, and for every proof whether it is complete in Lean and which elements it names, where a reference to a retired declaration counts as a reference to the statement's own. A file under `rewrite/lean/` replaces the whole module, so every declaration in it has to be the text the canon has, copied unchanged apart from such references. A definition whose text you altered is refused, because every statement that mentions it would then mean something else while keeping its verdict. A proof that names other elements than before, or that became complete or incomplete, is refused, because no review judged that proof. Beyond this the checks do not read the text of a proof, so leave it as it is.
 
 ### Preparing the change
 
-Run `commands.prepare` when the change is assembled; [The candidate change](change-format.md) describes the command, what it checks, its exit codes and how to wait for its build under "Preparing the candidate". Correct what it reports and run it again. Its result in `prepared.json` is bound to every file of your `output/`, `organization.json` included, so prepare again after any edit. The command is for a change; when you submit only `organization.json`, there is nothing to prepare.
+Run `commands.prepare` when the change is assembled; [The candidate change](change-format.md) describes it under "Preparing the candidate". Correct what it reports and run it again. Its result in `prepared.json` is bound to every file of your `output/`, `organization.json` included, so prepare again after any edit. The command is for a change; when you submit only `organization.json`, there is nothing to prepare.
 
 ## What happens to your output
 

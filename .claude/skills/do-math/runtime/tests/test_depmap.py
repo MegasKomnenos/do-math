@@ -29,18 +29,19 @@ SVG = '{http://www.w3.org/2000/svg}'
 
 
 def statement(name, weight='step', uses=(), mentions=(), module='Lib.Main', short=None, proves=None,
-              proof='informal', standing='accepted', refutes=None):
+              proof='informal', standing='accepted', refutes=None, source=None):
     """A theorem of a hand-made canon. proof: None, 'informal' (written, Lean ends in sorry) or 'formal'."""
     return {'name': name, 'kind': 'theorem', 'weight': weight, 'uses': list(uses), 'mentions': list(mentions),
-            'module': module, 'short': short, 'proves': proves, 'proof': proof, 'standing': standing, 'refutes': refutes}
+            'module': module, 'short': short, 'proves': proves, 'proof': proof, 'standing': standing, 'refutes': refutes,
+            'source': source}
 
 
-def definition(name, weight='step', uses=(), mentions=(), module='Lib.Defs', short=None, kind='def'):
+def definition(name, weight='step', uses=(), mentions=(), short=None, kind='def'):
     return {'name': name, 'kind': kind, 'weight': weight, 'uses': list(uses), 'mentions': list(mentions),
-            'module': module, 'short': short, 'proves': None, 'proof': 'formal', 'standing': None}
+            'module': 'Lib.Defs', 'short': short, 'proves': None, 'proof': 'formal', 'standing': None}
 
 
-def write_canon(folder, rows, root='Lib.root'):
+def write_canon(folder, rows):
     """The files replay reads, for a canon given as rows; every proof receives the verdict its row names."""
     folder = Path(folder)
     entries, records, verdicts = {}, {}, []
@@ -52,7 +53,7 @@ def write_canon(folder, rows, root='Lib.root'):
                          'prop': theorem, 'statement_uses': row['mentions'], 'uses': row['uses'], 'library': [],
                          'lean_proof': 'complete' if formal else 'sorry'}
         records[name] = {'weight': row['weight'], 'short': row['short'], 'proves': row['proves'], 'refutes': row.get('refutes'),
-                         'source': None, 'description': 'What ' + name + ' is.', 'proof': row['proof'] == 'informal',
+                         'source': row.get('source'), 'description': 'What ' + name + ' is.', 'proof': row['proof'] == 'informal',
                          'statement': False, 'approaches': [], 'path': 'records/' + name.replace('.', '/') + '.md'}
         if theorem and row['proof']:
             verdicts.append({'element': name, 'correct': 'not_confirmed' if row['standing'] == 'not_confirmed' else 'confirmed',
@@ -74,7 +75,7 @@ def write_canon(folder, rows, root='Lib.root'):
     pairs.update({f"negation|{row['name']}|{row['refutes']}": True for row in rows if row.get('refutes')})
     for part in ('canon', 'knowledge/events', 'knowledge/changes/c1'):
         (folder / part).mkdir(parents=True, exist_ok=True)
-    write_json(folder / 'instance.json', {'schema': 2, 'root': root, 'library': 'Lib'})
+    write_json(folder / 'instance.json', {'schema': 2, 'root': 'Lib.root', 'library': 'Lib'})
     write_json(folder / 'settings.json', defaults())
     write_json(folder / 'canon/index.json', {'revision': 1, 'modules': {}, 'entries': entries, 'aux': {}, 'pairs': pairs})
     write_json(folder / 'canon/records.json', records)
@@ -88,10 +89,10 @@ def write_canon(folder, rows, root='Lib.root'):
 
 
 class MapCase(unittest.TestCase):
-    def map(self, rows, everything=False, root='Lib.root'):
+    def map(self, rows, everything=False):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        return depmap.derive(replay(write_canon(temp.name, rows, root)), everything)
+        return depmap.derive(replay(write_canon(temp.name, rows)), everything)
 
     @staticmethod
     def ids(data):
@@ -194,7 +195,7 @@ class Derivation(MapCase):
         write_json(Path(folder.name) / 'dependency_map.json', self.map(rows))
         with contextlib.redirect_stdout(io.StringIO()) as shown:
             self.assertEqual(depmap.main([str(Path(folder.name) / 'dependency_map.json'), '--out', folder.name]), 0)
-        self.assertIn('scope: what the refutation of the root rests on', shown.getvalue())
+        self.assertIn('scope: the units the refutation of the root rests on', shown.getvalue())
 
     def test_a_card_carries_the_statement_in_words_that_its_record_gives(self):
         # The refutation is a step by its record and has a card all the same, so its card carries the statement
@@ -268,6 +269,16 @@ class Derivation(MapCase):
         self.assertEqual(edge['kind'], 'mention')
         self.assertEqual(edge['proof'], {'direct': True, 'via': ['Lib.s']})
 
+    def test_a_definition_is_joined_to_what_its_body_names_and_to_what_its_type_mentions(self):
+        data = self.map([statement('Lib.root', 'unit', mentions=['Lib.tool']),
+                         definition('Lib.tool', 'unit', uses=['Lib.part'], mentions=['Lib.object']),
+                         definition('Lib.part', 'unit'), definition('Lib.object', 'unit')])
+        self.assertEqual(self.ids(data), ['Lib.object', 'Lib.part', 'Lib.tool', 'Lib.root'])
+        named = self.edge(data, 'Lib.part', 'Lib.tool')
+        self.assertEqual((named['kind'], named['proof'], named['statement']), ('direct', {'direct': True, 'via': []}, None))
+        typed = self.edge(data, 'Lib.object', 'Lib.tool')
+        self.assertEqual((typed['kind'], typed['proof'], typed['statement']), ('mention', None, {'direct': True, 'via': []}))
+
     def test_alternatives_can_close_a_cycle_and_the_map_is_still_drawn(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.t']),
                          statement('Lib.s', 'unit', proof=None),
@@ -285,7 +296,7 @@ class Derivation(MapCase):
         data = self.map([
             statement('Lib.root', 'unit', uses=['Lib.held', 'Lib.open', 'Lib.gap', 'Lib.formal'], short='the main theorem',
                       mentions=['Lib.Shape']),
-            statement('Lib.held', 'unit', standing='held'), statement('Lib.open', 'unit', proof=None),
+            statement('Lib.held', 'unit', standing='held'), statement('Lib.open', 'unit', proof=None, source='euclid'),
             statement('Lib.gap', 'unit', standing='not_confirmed'), statement('Lib.formal', 'unit', proof='formal'),
             definition('Lib.Shape', 'unit', kind='inductive')])
         root = self.unit(data, 'Lib.root')
@@ -298,6 +309,12 @@ class Derivation(MapCase):
         self.assertEqual(found, {'root': ('accepted', False, False), 'held': ('held', False, False),
                                  'open': ('no_proof', False, False), 'gap': ('not_confirmed', False, False),
                                  'formal': ('accepted', True, True), 'Shape': (None, None, None)})
+        # A statement that its record takes from a published source says so on its card, and the page explains the words.
+        taken = self.unit(data, 'Lib.open')
+        self.assertEqual((taken['source'], draw.status_of(taken)),
+                         ('euclid', ['statement', 'no proof', 'not settled', 'from the literature']))
+        self.assertNotIn('source', self.unit(data, 'Lib.held'))
+        self.assertIn('<dt data-word="from the literature">', draw.guide_of(data))
         self.assertEqual(depmap.last_component('Lib.«a.b»'), 'a.b')
 
     def test_units_are_grouped_by_the_folder_of_their_module(self):
@@ -350,8 +367,8 @@ def lines_of(data, geometry):
 class Drawing(MapCase):
     def test_every_unit_and_edge_is_drawn_and_marked_for_the_page(self):
         data = self.map(wide_canon())
-        # A record may hold any text. The end tag of a script in a description does not end the data of the page.
-        self.unit(data, 'Lib.count')['description'] = 'What Lib.count is, written beside </script> in its record.'
+        # A record may hold any text. No markup in a description ends the data of the page or opens anything inside them.
+        self.unit(data, 'Lib.count')['description'] = 'What Lib.count is, written beside </script>, <!-- and <script> in its record.'
         svg, page = draw.render(data)
         tree = ElementTree.fromstring(svg)  # well formed although a label carries <, " and &
         nodes = tree.findall(f".//{SVG}g[@class='node']")
@@ -380,6 +397,7 @@ class Drawing(MapCase):
         self.assertIn(svg, page)
         payload = page.split('<script type="application/json" id="map-data">', 1)[1].split('</script>', 1)[0]
         self.assertEqual(json.loads(payload), data)
+        self.assertNotIn('<', payload)
 
     def test_a_statement_whose_proof_is_a_card_of_its_own_does_not_say_no_proof(self):
         # The root is posed without a proof and proved by another declaration, as a root fixed with the user is.

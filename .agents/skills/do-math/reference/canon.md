@@ -23,9 +23,9 @@ canon/
 
 `<Name>` is a path that follows the name of the declaration: the declaration `Parking.Columns.dq_col` has the record `records/Parking/Columns/dq_col.md`. A component of a name that Windows cannot hold as a file name is encoded: a reserved device name such as `Aux` gets a trailing `%`, and a forbidden character becomes `%` followed by its two-digit hexadecimal code.
 
-Three derived views are in the folder `knowledge/` of the instance: `frontier.md`, the frontier followed by the pending concerns and the questions; `index.md`, the self-description of every record in the order of the Lean structure, each with its current standing; and `board.md`. The runner renders them. Your starting context carries the frontier and the board as they stood at your launch. The `frontier` command below returns the frontier as it is now, the files can be read at any time, and `commands.updates`, which [Tools and working files](tools.md) describes, returns the current board, the questions and the concerns.
+Three derived views are in the folder `knowledge/` of the instance: `frontier.md`, the frontier followed by the pending concerns and the questions; `index.md`, the self-description of every record in the order of the Lean structure, each with its current standing; and `board.md`, the work underway. The runner renders them. The folder also holds `state.json`, the same state in structured form, and the published judgments: `changes/<id>/` holds one published change with review's assessment and feedback, `reviews/<id>/` a comprehensive review, `organizations/<id>/` an organizer's output, and `questions/<id>/` questions the operator placed. Your starting context carries the frontier and the board as they stood at your launch. The `frontier` command below returns the frontier as it is now, the files can be read at any time, and `commands.updates`, which [Tools and working files](tools.md) describes, returns the current board, the questions and the concerns.
 
-You read all of these files and write none of them. A session changes the canon only through a candidate, which the runner applies at publication. `index.json` and `records.json` are made by machine at each publication. The history is kept apart from the other folders so that a text search of `records/` or `lean/` returns the canon as it is and not the texts that were replaced.
+You read all of these files and write none of them. The commands below are the way to read the canon, because a view joins what Lean knows of an element with what its record says and a traversal returns the whole of what its rule selects. A session changes the canon only through a candidate, which a peer or an organizer assembles in its own `output/` and the runner applies at publication. `index.json` and `records.json` are made by machine at each publication. The history is kept apart from the other folders so that a text search of `records/` or `lean/` returns the canon as it is and not the texts that were replaced.
 
 ## Elements
 
@@ -70,7 +70,7 @@ Whichever form a proof takes, name in it the statements the argument uses, and t
 
 Three things are refused. An `axiom` declaration is refused: what you want to assume is stated as a `theorem` whose proof is left open, and the frontier then shows it as work that remains. A definition whose body contains `sorry` is refused, because every statement that used it would be about an unknown object. And a `theorem` whose statement is not a proposition is refused.
 
-Keep prose out of the Lean source apart from a short doc comment. The broker that compiles the library keeps compiled modules under a key that includes their source, so prose in a source would cause the module to be compiled again each time the prose changed. What Lean must check is in the source, and what a reader needs is in the record.
+Keep prose out of the Lean source apart from a short doc comment: a module is compiled again whenever its source changes in any byte, prose included. What Lean must check is in the source, and what a reader needs is in the record.
 
 ## Reading the canon: the commands
 
@@ -80,7 +80,7 @@ The canon is read with one command, `commands.canon` in your `input.json`. It is
 python <canon tool> view <session directory> Tri.two_mul_tri --full
 ```
 
-The output is text. An error, for instance that no element has the name given, is reported as a JSON object with the key `error` and exit code 1.
+An element is named by its declaration name as the canon shows it, as `Tri.two_mul_tri` is above. The output is text. An error, for instance that no element has the name given, is reported as a JSON object with the key `error` and exit code 1.
 
 | Command and arguments | What it returns |
 |---|---|
@@ -103,7 +103,7 @@ A `list` takes at most one of the selectors `--module`, `--uses`, `--used-by`, `
 
 A list returns one line for each element it selects and ends with the count. The lines come in a fixed order, by name, or in the order in which the elements are reached from the starting element, so the same command on the same canon returns the same lines. These commands start no Lean process. They read the structural index and the records, which describe the canon as of its latest publication.
 
-The same array has one further command, `checkout`, which copies the library for your own Lean work; [Retained work](retained-work.md) describes it.
+The same array has one further command, `checkout <folder>`, which copies the library, `canon/lean`, for your own Lean work; [Lean](lean.md) describes it under "Building against the canon and your own modules".
 
 The commands correspond to the directions of traversal that the common introduction names. Containment is `list --module`. Use is `list --uses` and `list --used-by`, and the view of an element shows one step of each. Object is `list --about` with a definition. Standing is `frontier` and `list --remaining`.
 
@@ -169,7 +169,7 @@ The Lean source of a statement is opened in two situations. One is to read or ch
 
 ## Occasions for reading
 
-**When you take something on.** Read the element in full with `view <element> --full`: its Lean statement, what its record says of it, review's verdict and reason, and the approaches tried. Then, for each definition on its `objects` line, run `list --about` with that definition. This returns everything the canon states about the object, and it is the reading the common introduction asks for: it shows you whether a piece you were about to build is already there, and under which name. `list --uses <element> --deep` shows what the statement already rests on, and `list --used-by <element>` what depends on it. For a question, `question <question>` gives the grounds on which it was asked and the understanding so far.
+**When you take something on.** Read the element in full with `view <element> --full`: its Lean statement, what its record says of it, review's verdict and reason, and the approaches tried. Then, for each definition on its `objects` line, run `list --about` with that definition. This is the reading the common introduction asks for: it shows you whether a piece you were about to build is already there, and under which name. `list --uses <element> --deep` shows what the statement already rests on, and `list --used-by <element>` what depends on it. For a question, `question <question>` gives the grounds on which it was asked and the understanding so far.
 
 **When you need a tool or a lemma.** A lemma about an object is found from the object: `list --about` with its definition. A part of the mathematics is found from its modules: `list --module` with a prefix. These commands cover the instance's own library. The imported library, Mathlib and the toolchain, is searched by its own means and is used directly, without an element; [Lean](lean.md) opens with where its sources lie.
 

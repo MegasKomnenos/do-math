@@ -57,4 +57,4 @@ Throughout, look for what must not be in a published package: a path of a drive 
 
 `file` is the path of the document inside the package. `quote` is the passage, copied exactly, short enough to be found and long enough to be unique; where the finding is that something is missing, quote the sentence after which it would stand. `problem` says what is wrong and what the package shows in its place, with the file where you saw it, so that the session or the person who acts on the finding does not have to search.
 
-An empty array says that you read every document named above against the package and found nothing. If you could not read one of them, that is itself a finding: name the file, leave `quote` empty, and say under `problem` that it was not read and why.
+If you could not read one of the documents named above, that is itself a finding: name the file, leave `quote` empty, and say under `problem` that it was not read and why.

@@ -1089,7 +1089,9 @@ def page_of(svg, data, bare=()):
     head, rest = template.split('__GUIDE__', 1)
     middle, rest = rest.split('__SVG__', 1)
     between, tail = rest.split('__DATA__', 1)
-    payload = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')
+    # In a script element </script ends the data, and <!-- followed by <script keeps the element open past its
+    # own end tag. With every < written as an escape, no text of a record begins either.
+    payload = json.dumps(data, ensure_ascii=False).replace('<', '\\u003c')
     return head.replace('__TITLE__', esc(data['title'])) + guide_of(data, bare) + middle + svg + between + payload + tail
 
 

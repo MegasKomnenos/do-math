@@ -29,7 +29,7 @@ You write and compile your own Lean against a copy of the canon's library. The c
 
 In the copy, add your declarations in new module files under the library's folder, in the form [The canon](canon.md) gives for the canon's files. To try a new proof of a statement that already exists, change the body of its declaration in your copy and leave its statement as it is. A new definition or statement always goes into a new file, since that is how it will enter the canon.
 
-Compile with the `build` command of the Lean broker. In the `commands.lean` array, replace `<command>` with `build` and append the folder of your copy, the files you want compiled, and the two required options:
+Compile with the `build` command of the Lean broker. In the `commands.lean` array, replace `<command>` with `build` and append the folder of your copy, the files you want compiled, given as paths under that folder, and the two required options:
 
 ```text
 <commands.lean with build> <folder> <file.lean>... --session <your session ID> --expect-mb <MiB>

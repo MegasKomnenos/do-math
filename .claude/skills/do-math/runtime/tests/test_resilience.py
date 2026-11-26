@@ -457,5 +457,40 @@ class HeldCanonFileTests(InstanceCase):
         self.assertEqual(target.read_text(encoding='utf-8'), text)
 
 
+class LoadedAtStartTests(unittest.TestCase):
+    def test_a_process_started_from_the_runner_script_holds_every_module_its_functions_import(self):
+        # The runner and a session host keep for hours the modules they loaded at their start
+        # (reference/operations.md, Restarts, runner failures and installation updates). An import inside a
+        # function is carried out when the function first runs, for a host when it checks its session's output
+        # at the end. A module first loaded then comes from the installed files as they have become, and fails
+        # where it names something that the modules loaded at the start do not have. So a fresh process that
+        # has imported runner.py, as the runner, a session host and the archiver do, already holds every module
+        # of the runtime folder that a function of a loaded module imports.
+        probe = '\n'.join([
+            'import ast, sys',
+            'from pathlib import Path',
+            'runtime = Path(sys.argv[1])',
+            'sys.path.insert(0, str(runtime))',
+            'import runner',
+            'late = set()',
+            "for loaded in [name for name in list(sys.modules) if (runtime / (name + '.py')).is_file()]:",
+            "    tree = ast.parse((runtime / (loaded + '.py')).read_text(encoding='utf-8'))",
+            '    for function in ast.walk(tree):',
+            '        if isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):',
+            '            for node in ast.walk(function):',
+            '                if isinstance(node, ast.ImportFrom):',
+            '                    named = [node.module]',
+            '                elif isinstance(node, ast.Import):',
+            '                    named = [alias.name for alias in node.names]',
+            '                else:',
+            '                    continue',
+            '                late.update(name for name in named',
+            "                            if name and name not in sys.modules and (runtime / (name + '.py')).is_file())",
+            "print(' '.join(sorted(late)))"])
+        result = subprocess.run([sys.executable, '-B', '-c', probe, str(Path(runtime.__file__).resolve().parent)],
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual((result.returncode, result.stdout.strip()), (0, ''), result.stderr)
+
+
 if __name__ == '__main__':
     unittest.main()

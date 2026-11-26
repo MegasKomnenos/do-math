@@ -579,6 +579,29 @@ class ContextTests(InstanceCase):
                 # It holds the operator's entry point as well, which reference/operations.md links to.
                 self.assertEqual((folder / 'context/SKILL.md').read_bytes(), (self.skill / 'SKILL.md').read_bytes())
 
+    def test_the_account_guide_goes_only_to_the_peer_and_the_review_of_the_text_of_q0(self):
+        account = 'reference/q0-account.md'
+        carrying = self.candidate(understanding={'q0.md': UNDERSTANDING}, prepare=False)
+        other = self.candidate(understanding={'narrower.md': UNDERSTANDING}, prepare=False)
+        # A peer's assignment names the question its producer held. A review's names the candidate folder,
+        # and a comprehensive review's names none.
+        cases = [('peer', {'source_role': 'explore', 'question': 'q0'}, True),
+                 ('peer', {'source_role': 'explore', 'question': 'narrower'}, False),
+                 ('review', {'kind': 'candidate', 'candidate': str(carrying)}, True),
+                 ('review', {'kind': 'candidate', 'candidate': str(other)}, False),
+                 ('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}, False),
+                 ('explore', {'question': 'q0'}, False)]
+        for number, (role, task, expected) in enumerate(cases):
+            with self.subTest(role=role, task=task):
+                folder = self.session(f'account-{number}')
+                inp = self.pack(folder, role, task)
+                self.assertEqual(account in inp['documents'], expected)
+                if expected:
+                    # The guide is the last of the role's guides, embedded in the pack like the others.
+                    self.assertEqual(inp['documents'][-1], account)
+                body = (folder / 'pack.md').read_text(encoding='utf-8')
+                self.assertEqual('<!-- begin ' + account + ' -->' in body, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

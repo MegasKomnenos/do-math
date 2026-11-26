@@ -1414,9 +1414,9 @@ class Run:
         def fold(part, given_items):
             inside = lambda module: package.folder_of(module) == part
             given = {**library, **records, 'items.json': as_json(given_items), 'part.json': as_json({
-                'id': part, 'title': part, 'modules': [m for m in modules if inside(m) and m not in self.definitions],
-                'inside': '', 'interface': package.interface(index, [m for m in modules if inside(m)],
-                                                             (self.root, self.state['main'])), 'cross': []})}
+                'id': part, 'modules': [m for m in modules if inside(m) and m not in self.definitions],
+                'interface': package.interface(index, [m for m in modules if inside(m)],
+                                               (self.root, self.state['main']))})}
 
             def read(output):
                 report = Sessions.load(output / 'report.json')  # first: a report that does not parse goes back to a session
@@ -2190,7 +2190,9 @@ class Run:
         # The run is at its end here, so what cannot be deleted stops nothing and is named in the report. Windows
         # refuses to delete a file that another program holds open, and a folder that holds one.
         left = []
-        for path in self.work.iterdir():
+        # state.json is deleted first. Without it a start that finds the package in solved/ refuses, as after any
+        # run that ended. With it and without the files deleted here, that start would enter this end and fail.
+        for path in sorted(self.work.iterdir(), key=lambda path: path.name != 'state.json'):
             if path.name not in KEPT_AT_END:
                 try:
                     remove_tree(path) if path.is_dir() else path.unlink()

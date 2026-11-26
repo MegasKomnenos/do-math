@@ -12,7 +12,7 @@ For your two sections this means that you write no figure yourself. Wherever a c
 {{facts.<key>}}
 ```
 
-with `<key>` replaced by a key of `facts.json`. The two opening braces, the word `facts`, the full stop, the key and the two closing braces are literal text of what you write. The program replaces each placeholder by the value of that key after you have ended, and it refuses a placeholder whose key `facts.json` does not have. This is the only place in this instruction where braces are meant literally, and these placeholders are yours to write, not something that has been filled in for you.
+with `<key>` replaced by a key of `facts.json`. The two opening braces, the word `facts`, the full stop, the key and the two closing braces are literal text of what you write: these placeholders are yours to write, not something that has been filled in for you. The program replaces each placeholder by the value of that key after you have ended, and it refuses a placeholder whose key `facts.json` does not have.
 
 If the figure you would like to give has no key in `facts.json`, write the sentence without the figure. Numbers that belong to the mathematics, as in a statement about every $n \ge 1$, are not figures in this sense and are written as mathematics.
 
@@ -36,7 +36,7 @@ The outline presents the chosen proof by itself, as the common text requires of 
 
 ## How the result was obtained
 
-`obtained.md` tells the visitor where the proof comes from: that it was found by a research run in which AI sessions worked on the proposition in succession, how that research went in its main stages, and how its work was reviewed along the way. `timeline.md` is the source. Condense it to the course a visitor needs: where the research began, the turns the timeline itself reports, and how the root came to be settled. This section and the history are the two texts of the package whose subject is the research, so it may speak of approaches that were tried and left. The research usually proved more than the package keeps: the library under `lean/` holds the one proof the package presents. Where you name results or declarations of the research that are not part of that proof, say that they are in the knowledge archive and not in the library, so that a visitor does not look for them under `lean/`.
+`obtained.md` tells the visitor where the proof comes from: that it was found by a research run in which AI sessions worked on the proposition in succession, how that research went in its main stages, and how its work was reviewed along the way. `timeline.md` is the source. Condense it to the course a visitor needs: where the research began, the turns the timeline itself reports, and how the root came to be settled. The subject of this section is the research, so it may speak of approaches that were tried and left. The research usually proved more than the package keeps: the library under `lean/` holds the one proof the package presents. Where you name results or declarations of the research that are not part of that proof, say that they are in the knowledge archive and not in the library, so that a visitor does not look for them under `lean/`.
 
 Hold it to the standard of the timeline it is written from. Say nothing that the timeline does not say, give judgments as the judgments of the reviews that made them, and add no assessment of your own. The section is not the place for the mathematics, which the outline and the paper carry, nor for what was checked and by whom, which the program's own section states from its logs.
 

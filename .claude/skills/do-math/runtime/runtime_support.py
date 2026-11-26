@@ -181,18 +181,11 @@ def rename_directory(source, destination):
     Keep the same staged tree throughout the retry. The caller may advance its
     workflow only after this returns; persistent or unexpected errors propagate.
     """
-    deadline = time.monotonic() + 60.0
-    while True:
+    def rename(source, destination):
         if os.path.lexists(destination):
             raise FileExistsError(f'directory destination already exists: {destination}')
-        try:
-            os.rename(source, destination)
-            return
-        except OSError as exc:
-            if (os.name != 'nt' or getattr(exc, 'winerror', None) not in (5, 32, 33)
-                    or time.monotonic() >= deadline):
-                raise
-            time.sleep(0.05)
+        os.rename(source, destination)
+    _retried(rename, source, destination)
 
 
 

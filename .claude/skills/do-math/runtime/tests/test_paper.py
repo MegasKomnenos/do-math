@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -414,6 +415,15 @@ class RefusalTests(InstanceCase):
         self.assertFalse(out.exists())
 
 
+    def test_the_script_refuses_a_command_line_it_cannot_read_and_writes_nothing(self):
+        # Run as the file the operator runs, so that what the script does before it reads its arguments runs too.
+        out = self.root / 'paper'
+        result = subprocess.run([sys.executable, '-B', str(THIS.parents[1] / 'paper.py'), str(self.instance),
+                                 '--out', str(out), '--no-such-option'], capture_output=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertTrue(result.stderr.startswith(b'usage:'), result.stderr)
+        self.assertFalse(out.exists())
+
 class RefutedMaterialsTests(RefutedRootCase):
     def assert_refutation_materials(self, proof):
         materials = paper.extract(self.instance, replay(self.instance))
@@ -504,10 +514,14 @@ class MaterialsTests(PaperCase):
 
 
 class PlanTests(PaperCase):
+    def setUp(self):
+        super().setUp()
+        self.found = self.materials()  # once for the test: no test of this class changes the instance
+
     def problems(self, change):
         plan = copy.deepcopy(PLAN)
         change(plan)
-        return ' | '.join(paper.check_plan(self.materials(), plan, KEYS))
+        return ' | '.join(paper.check_plan(self.found, plan, KEYS))
 
     def other(self, plan, name):
         return next(item for item in plan['others'] if item['element'] == name)
@@ -666,8 +680,12 @@ class PlanTests(PaperCase):
 
 
 class ManuscriptTests(PaperCase):
+    def setUp(self):
+        super().setUp()
+        self.found = self.materials()  # once for the test: no test of this class changes the instance
+
     def problems(self, plan=PLAN, **changed):
-        found = paper.machine_findings(self.materials(), plan, {**PARTS, **changed})
+        found = paper.machine_findings(self.found, plan, {**PARTS, **changed})
         return ' | '.join(finding['problem'] for finding in found)
 
     def test_the_formula_that_several_sections_use_stands_in_the_section_that_the_plan_names(self):
@@ -1053,6 +1071,10 @@ class RunTests(PaperCase):
         self.assertEqual((self.out / 'sessions' / '04-write-tools' / 'study.md').read_text(encoding='utf-8'), STUDY)
         self.assertIn('The papers come before the writing.', calls[3]['prompt'])
         self.assertNotIn('output/study', calls[3]['prompt'])
+        # A session that writes has the method without its last section, of which its prompt carries what concerns
+        # it; the planning session has the whole method.
+        whole, cut = ((self.folder(call) / 'paper-method.md').read_text(encoding='utf-8') for call in (calls[0], calls[3]))
+        self.assertEqual(cut, whole[:whole.index('\n## What is checked after writing\n') + 1])
         # Two readings beside papers the plan did not choose, each with papers of its own, found nothing.
         likeness = self.calls('likeness')
         for call, keys in zip(likeness, (FIRST_FOUR, NEXT_FOUR)):
@@ -2213,12 +2235,12 @@ class SideBySideTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'holds no run of this command to continue'):
             paper.produce(self.instance, self.root / 'elsewhere', TEX, resume=True)
 
-    def continued(self, script, after, code=0, again=None):
+    def continued(self, script, after, again=None):
         """Stop a run with `script`, continue it with the sessions that do their work, and compare what was launched then."""
         self.stop(script)
         launched = len(self.calls())
         state = read_json(self.out / 'state.json') if (self.out / 'state.json').is_file() else None
-        self.assertEqual(self.run_paper(again or good(), resume=True), code)
+        self.assertEqual(self.run_paper(again or good(), resume=True), 0)
         self.assertEqual(self.kinds(launched), after)
         return state
 
@@ -2476,6 +2498,11 @@ class SideBySideTests(PaperCase):
         # A session has the statements of its section, the records of their elements in full, and what those mention.
         self.assertEqual(tools['given'], sorted(['paper-method.md', 'paper.tex', 'prompt.txt', 'records.md', 'session.json',
                                                  'statements.json', 'elements.md'] + RECORD_FILES[3:]))
+        # Of the method it has the two sections that say what a numbered statement has to say, and no other.
+        method = (self.folder(tools) / 'paper-method.md').read_text(encoding='utf-8')
+        self.assertEqual([line[3:] for line in method.splitlines() if line.startswith('## ')],
+                         ['What of the canon the paper leaves out', 'Every numbered statement says what its element says'])
+        self.assertIn(paper.method_part('Every numbered statement says what its element says'), method)
         statements = read_json(self.folder(tools) / 'statements.json')
         self.assertEqual([s['label'] for s in statements], ['lem:increasing', 'lem:square'])
         self.assertEqual([s['label'] for s in read_json(self.folder(intro) / 'statements.json')], ['thm:main'])
@@ -3906,6 +3933,11 @@ class CoverageTests(PaperCase):
         self.assertIn('"nearest", the name of an element as elements.md gives it', again['prompt'])
         self.assertEqual(covering['given'], sorted(['paper-method.md', 'paper.tex', 'prompt.txt', 'records.md', 'session.json',
                                                     'text.json', 'elements.md'] + RECORD_FILES[3:]))
+        # Of the method it has the section that its comparison applies and the two that this section leans on.
+        method = (self.folder(covering) / 'paper-method.md').read_text(encoding='utf-8')
+        self.assertEqual([line[3:] for line in method.splitlines() if line.startswith('## ')],
+                         ['What the running text asserts', 'The reader', 'Results from the literature'])
+        self.assertIn(paper.method_part('What the running text asserts'), method)
         entries = read_json(self.folder(covering) / 'text.json')
         self.assertEqual([(e['entry'], e['kind'], e['part']) for e in entries],
                          [(1, 'running text', 'tools'), (2, 'running text', 'tools')])

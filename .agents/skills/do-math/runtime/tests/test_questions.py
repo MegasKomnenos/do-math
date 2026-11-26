@@ -45,8 +45,8 @@ LATER_ACCOUNT = ('The loss comes from bounding `Small.oddSum` term by term; a te
 CONTRIBUTION = 'Closed what it took on.'  # the contribution support.verdicts writes for review
 
 
-def question(qid, statement=None):
-    return {'id': qid, 'statement': statement or ('What ' + qid + ' asks.'),
+def question(qid):
+    return {'id': qid, 'statement': 'What ' + qid + ' asks.',
             'grounds': 'Several proofs stall at the same scale; understanding it would show why.'}
 
 

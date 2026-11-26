@@ -4,7 +4,7 @@ A paper will be written from the library in your folder, which is what the chose
 
 ## What the step is for
 
-After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. The first paper made from such a library stated more than the library proved, in four places, and the difference was found after the paper was written. The library was extended, and its records and the documents around it were made again. Here the order is the other way round, and now the draft gives way wherever it still asks for more. The user's decision reads that if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
+After this step the library is frozen, and the paper's writers receive the drafted statements with the sentence that they were compared with the library and are to stand as drafted. So this comparison is what makes that sentence true. The first paper made from such a library stated more than the library proved, in four places, and the difference was found after the paper was written. The library was extended, and its records and the documents around it were made again. Here the order is the other way round: by the user's decision, if the paper still wants a sentence the library does not cover, the sentence is cut or reworded in the paper and the library is not reopened.
 
 When you have ended, nothing in the draft says more than a declaration of the library says.
 
@@ -17,7 +17,7 @@ When you have ended, nothing in the draft says more than a declaration of the li
   "declaration": "Lib.tail_lt", "lean": "...", "record": "..."}]
 ```
 
-`kind` is `statement` (a numbered statement of the paper), `formula` (a displayed formula that a later proof refers to) or `assertion` (something a section needs to assert outside its numbered statements). `label` is the LaTeX label of the statement or formula, and `section` the section of the paper it stands in. `draft` is the text as drafted, in LaTeX. `declaration` is the declaration that is now to state it, with its Lean statement under `lean` and its statement in words, from its record, under `record`; it is `null` when no declaration states it.
+`kind` is `statement` (a numbered statement of the paper), `formula` (a displayed formula that a later proof refers to) or `assertion` (something a section needs to assert outside its numbered statements). `label` is the LaTeX label of the statement or formula, and `section` the section of the paper it stands in. `draft` is the text as drafted, in LaTeX. `declaration` is the declaration that is now to state it, with its text in the Lean source under `lean` and its record under `record`, whose part `## Statement` is the statement in words; it is `null` when no declaration states it.
 
 - `lean/`: the library, for the definitions a statement uses and for whatever the row does not show.
 - `records/`: the records, for the meaning and the notation of the objects.

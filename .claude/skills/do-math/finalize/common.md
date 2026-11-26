@@ -44,7 +44,7 @@ When this is the folder of a Lake project, the sources of its packages lie under
 
 ## Compiling
 
-Only a step that writes or changes Lean compiles, and its instruction says when.
+Your instruction says when to compile.
 
 No session runs `lean` or `lake` itself. Every compile of the run goes through one service, which starts a compile when the machine has memory for it and keeps what it compiled. Where several Lean processes were started at once instead, the machine ran out of memory, and a compile that had died that way was read as Lean rejecting a proof.
 

@@ -30,7 +30,7 @@ You judge the entries. You do not judge the research, its mathematics or its rev
 
 The path shows which sort of entry you have before you. A path under `knowledge/` belongs to a publication: something that entered the research's library or its records at one time, with a number in the order of the research, `event`, and a date. The record of a publication is the whole folder in which the named file lies. The files beside that file say which elements the publication added or replaced, and they hold the reviewing session's judgment of each element and its remarks in detail. A path under `canon/approaches/` is the research's text about one way that was tried on one statement. So is a path under `canon/history/` whose folder has a name that ends in `-approaches`: the research moved such a text there when a proof of that statement was accepted. A path under `canon/questions/` is the research's text on what was understood of one question.
 
-You have nothing else, and you look nowhere else. You compile nothing.
+You compile nothing.
 
 The records name the sessions of the research in the research's own words. The timeline's reader has not learned these words, and an entry says in plain words who is meant.
 

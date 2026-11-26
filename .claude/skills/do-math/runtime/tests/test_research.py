@@ -18,8 +18,9 @@ from canon import Canon
 from coordination import (board, claims_lock, lease, lease_table, main as coordination_main, message, release,
                           section, updates, wait)
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
+from lean_broker import Paths, broker_status, ensure_broker
 from runner import Runner, archive_finished, initialize, main, start
-from runtime_support import InstanceLock, read_json, write_json
+from runtime_support import InstanceLock, alive, read_json, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
                      ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, stop_broker, take,
@@ -1580,6 +1581,41 @@ class RunnerTests(ScenarioCase):
         self.assertEqual([(s['session'], s['whole']) for s in row['sections']], [('sa', False), (first, True)])
         self.assertEqual(runner.available_elements(), [])
 
+    # -- a publication that the next runner completes ----------------------------------------------------
+
+    def test_approaches_moved_before_a_runner_ended_are_taken_out_of_the_summary_by_the_next_runner(self):
+        # A publication moves the approaches tried on a statement whose proof is accepted to its history, and
+        # then writes the summary of the records again, from which the research state takes the approaches of
+        # each element. A runner that ended between the two left the summary listing an entry that is gone.
+        # The runner that completes the publication finds nothing to move, and writes the summary all the same.
+        self.direct()  # the root's proof is accepted
+        runner = self.runner()
+        folder = self.candidate(approaches={'Small/root/induction.md': (
+            '---\ntitle: Induction on the number of terms\nsessions: s-early\n---\n'
+            '## Idea\n\nCompare the sum for n + 1 with the sum for n.\n\n'
+            '## Where it stops\n\nThe comparison is not carried out.\n')})
+        summaries = []
+
+        def ended_at_the_second_summary(path, value):
+            if Path(path).name == 'records.json':
+                summaries.append(value)
+                if len(summaries) == 2:  # the first follows the installation of the change, the second the move
+                    raise RuntimeError('simulated end of the runner')
+            return write_json(path, value)
+
+        with patch('runner.write_json', side_effect=ended_at_the_second_summary), \
+                self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.publish(folder, engine=runner, expect=False)
+        canon = Canon(self.instance)
+        self.assertFalse((canon.approaches / 'Small/root').exists())
+        self.assertEqual(read_json(canon.root / 'records.json')['Small.root']['approaches'], ['induction'])
+        recovered = self.runner()
+        self.drain(recovered)
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(read_json(canon.root / 'records.json')['Small.root']['approaches'], [])
+        self.assertEqual(recovered.model['elements']['Small.root']['approaches'], [])
+        self.assertEqual([p.name for p in (canon.history / 'Small/root').glob('*-approaches/*.md')], ['induction.md'])
+
     # -- launch spacing, exploration requests and priority ----------------------------------------------
 
     def test_attempts_and_explorations_share_one_spacing_and_a_queued_element_launches_none(self):
@@ -2132,6 +2168,20 @@ class RunnerTests(ScenarioCase):
             self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
         begin.assert_called_once()
         self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
+
+    def test_restart_broker_ends_the_live_broker_and_starts_another(self):
+        # A broker of the instance is alive, as it is after any compile; it is started here as a client starts one.
+        paths = Paths(self.instance)
+        first = ensure_broker(paths)['process']
+        (self.instance / 'control/STOP').touch()
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['restart-broker', str(self.instance)]), 0, shown.call_args)
+        second = json.loads(shown.call_args.args[0])['broker']['process']
+        # The command returns once the old process has ended and another broker has written its receipt.
+        self.assertFalse(alive(first))
+        self.assertNotEqual(second, first)
+        # The instance is then served by that broker: asked for its state, the live broker is the new process.
+        self.assertEqual(broker_status(paths)['broker']['process'], second)
 
     def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
         # stop and resume write and remove control/STOP. The runner's own pass reads it: while it

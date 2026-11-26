@@ -6,7 +6,7 @@ The library that the chosen proof rests on, with `{{root}}` as its root and `{{m
 
 Three things can only be done by a reader who has the whole library and may change all of it.
 
-The first is to finish the simplifications that cross parts. The reviewing session gave each such item to one part, and the session of that part carried it out inside its own modules with the old declaration kept under its name, because the sessions of the other parts were writing against the old form at that moment. The proofs in those other parts still use the old form. You move them to the new one.
+The first is to finish the simplifications that cross parts. The reviewing session gave each such item to one part, and the session of that part carried it out inside its own modules with the old declaration kept under its name, because the sessions of the other parts were writing against the old form at that moment. The proofs in those other parts still use the old form.
 
 The second is to remove what is left behind once that is done: the old declaration that now only derives itself from its successor, a module that shrank to a few lines because another part still imported it, a general fact that two parts each kept private and that should be stated once. The user's standing decision for this work is that what is not used is deleted.
 
@@ -31,7 +31,7 @@ Read `review.json` and all reports before the Lean, so that you read the library
 
 **Bring the comments to the mathematics.** A comment that describes how the research went, or that mentions another proof, comes to say what the declaration states, or goes. The common text gives the rule and its reason.
 
-Some things stay as they are. The definition modules keep their paths and their bytes. `{{root}}` and `{{main}}` keep their names and their statements. Every convention of the common text holds for every file.
+The definition modules keep their paths and their bytes, and `{{root}}` and `{{main}}` their names and their statements. Every convention of the common text holds for every file.
 
 Work in this order, in `lean/` itself, and build after each kind of change, with `lean/` as the module root and every `.lean` file under it named as a file to compile, in several commands if the list is too long for one. When a build has passed, keep a copy of that state in a folder of your own before you go on, so that you can return to it. Changing the name of a module changes the import line of every module that imports it; make such changes by script, and build afterwards.
 
@@ -39,7 +39,7 @@ Work in this order, in `lean/` itself, and build after each kind of change, with
 
 The program takes the library you return and requires three things. The whole library builds. It passes the four checks that the common text says the program makes of every Lean file. And every public declaration that `declarations.md` lists is accounted for: it is in the new library under its name, or under the new name that `renames.json` gives for it, or it is listed in `removed.json`. A declaration that you made private is no longer public and is listed in `removed.json` with that reason. A declaration that you united with another is listed there with the name of the one that remains.
 
-Your arrangement is taken whole or not at all. If it fails one of these checks, it is discarded and the merged library goes on as you received it, so the cross-part items stay unfinished and the leftovers stay in. End on a state that builds. If you cannot bring a rearrangement to build, return the last state that did, even where that means a smaller rearrangement than you intended.
+Your arrangement is taken whole or not at all. If it fails one of these checks, it is discarded and the merged library goes on as you received it, so the cross-part items stay unfinished and the leftovers stay in. If you cannot bring a rearrangement to build, return the last state that did, even where that means a smaller rearrangement than you intended.
 
 ## What you write
 

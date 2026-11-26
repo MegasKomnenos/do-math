@@ -236,11 +236,10 @@ class FinalizeCase(InstanceCase):
         """Stands in for paper.produce: writes the files that the pipeline reads of a run of the paper command."""
         out = Path(out)
         self.produced.append({'instance': Path(instance).name, 'out': out.name, 'resume': resume, 'draft': draft,
-                              'from_draft': from_draft, 'gate': gate, 'parallel': parallel, 'main': main,
+                              'gate': gate, 'parallel': parallel, 'main': main,
                               'title_page': read_json(title_page) if title_page else None,
                               'root_state': replay(instance)['root_state'],
-                              'drafted': read_json(Path(from_draft) / 'draft.json') if from_draft else None,
-                              'history': threading.active_count()})
+                              'drafted': read_json(Path(from_draft) / 'draft.json') if from_draft else None})
         out.mkdir(parents=True, exist_ok=True)
         write_json(out / 'materials.json', {})
         write_json(out / 'plan.json', PLAN)
@@ -794,6 +793,8 @@ class ArchiveTests(FinalizeCase):
         # The same commit gives the same archive.
         again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', 'Small')
         self.assertEqual(again['sha256'], info['sha256'])
+        # A name that is only a part of a word of the research is not replaced there: `mal` is in "Small".
+        self.assertEqual(package.knowledge_archive(self.instance, commit, self.root / 'part', 'odd', 'mal')['touched'], 0)
         rows = package.ledger({path: data for path, data in members.items()
                                if path.startswith(('knowledge/', 'canon/approaches/', 'canon/questions/'))})
         self.assertEqual([(row['event'], row['kind']) for row in rows], [(1, 'change'), (2, 'question')])
@@ -882,6 +883,8 @@ class DocumentTests(FinalizeCase):
         faulty('README.md', '[out](../outside.md)\n', 'the link ../outside.md does not resolve inside the package')
         faulty('dependency-map/dependency_map.html', '<img src="missing.svg">\n', 'the link missing.svg')
         faulty('history/timeline.md', 'Run by pat on the machine.\n', 'history/timeline.md holds the account name', account='pat')
+        # A word of which the name is only a part is not the name: the manifest of the archive says "machine".
+        self.assertEqual(check('achin'), [])
         # In a document a colon before a backslash is a formula, so a drive path is found there by its form with a slash.
         faulty('README.md', 'Built in C:/Users/someone/lean.\n', 'README.md holds a drive path')
         faulty('lean/lakefile.toml', "path = 'C:\\Users\\someone\\lean'\n", 'lean/lakefile.toml holds a drive path')
@@ -1152,6 +1155,14 @@ class RefusalTests(FinalizeCase):
         self.assertTrue(cached)
         self.assertLessEqual(cached, {path.name for path in (self.work / 'runner' / 'lean' / 'cache').iterdir()})
         self.assertTrue((self.work / 'runner' / 'lean' / 'broker.log').is_file())
+
+    def test_the_script_refuses_a_command_line_it_cannot_read(self):
+        # Run as the file the operator runs, so that what the script does before it reads its arguments runs too.
+        # Without --name the command line cannot be read, and the run does not begin.
+        result = subprocess.run([sys.executable, '-B', str(THIS.parents[1] / 'finalize.py'), str(self.instance)],
+                                capture_output=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertTrue(result.stderr.startswith(b'usage:'), result.stderr)
 
 
 class RunTests(FinalizeCase):
@@ -1541,6 +1552,31 @@ class RunTests(FinalizeCase):
         self.assertIn('- `sessions`: ', report)
         self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md', 'sessions'])
 
+    def test_an_end_that_is_interrupted_is_entered_again_or_refused_by_the_next_start(self):
+        self.from_the_records()
+        # The first start is interrupted when the package has been moved and the repository's README has no entry yet.
+        with patch('package.add_solved_entry', side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+            self.run_command(script(), config=self.config())
+        self.assertTrue((self.solved / 'README.md').is_file())
+        self.assertFalse((self.work / 'package').exists())
+        self.assertNotIn('(solved/odd/README.md)', (self.repository / 'README.md').read_text(encoding='utf-8'))
+        # The second start enters the end again, and is interrupted while it deletes the files of the run.
+        real = finalize.remove_tree
+
+        def interrupted(path):
+            if Path(path) == self.work / 'sessions':
+                raise KeyboardInterrupt
+            real(path)
+
+        with patch('finalize.remove_tree', side_effect=interrupted), self.assertRaises(KeyboardInterrupt):
+            self.run_command(config=self.config())
+        self.assertEqual((self.repository / 'README.md').read_text(encoding='utf-8').count('(solved/odd/README.md)'), 1)
+        self.assertIn('The package is in place: `solved/odd/`', (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertTrue((self.work / 'sessions').is_dir())
+        # The run has ended. The third start refuses as after any run that ended, although files of the run are left.
+        self.assertEqual(self.run_command(config=self.config()), 1)
+        self.assertIn(f'{self.solved} exists', self.said)
+
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
         # The selection of this run chooses the root itself as the main theorem of the package.
@@ -1903,6 +1939,26 @@ class RunTests(FinalizeCase):
         self.assertIn('Small.root depends on axioms beyond the three: sorryAx', report)
         self.assertNotIn('2.7-freeze', read_json(self.work / 'state.json')['steps'])
         self.assertFalse(self.solved.exists())
+
+    def test_a_draft_that_the_paper_command_does_not_make_stops_the_run(self):
+        self.from_the_records()
+        self.paper_code = 1  # the paper command ends without having made the draft
+        self.assertEqual(self.run_command(script(), config=self.config()), 2)
+        self.assertIn('the paper command did not make the draft: exit code 1', (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertNotIn('2.6-draft', read_json(self.work / 'state.json')['steps'])
+        self.assertEqual(self.steps()[-1], '2.6-draft')  # no later step was entered
+
+    def test_a_defect_of_the_program_in_a_step_stops_the_run_at_that_step_with_the_traceback(self):
+        # An exception that no exit check raises is a defect of the program. The run stops at the step all the same:
+        # the report names the step and holds the traceback, and the step is not recorded as passed.
+        self.from_the_records()
+        with patch('finalize.Run.draft', side_effect=TypeError('a defect of the program')):
+            self.assertEqual(self.run_command(script(), config=self.config()), 2, self.said)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.6-draft`', report)
+        self.assertIn('the program failed in this step:\nTraceback (most recent call last):', report)
+        self.assertIn('TypeError: a defect of the program', report)
+        self.assertNotIn('2.6-draft', read_json(self.work / 'state.json')['steps'])
 
 
 class SelectionTests(FinalizeCase):

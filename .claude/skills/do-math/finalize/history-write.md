@@ -13,17 +13,15 @@ The reading of those words that was agreed with the user has four parts.
 - Each entry points to the record it condenses, so that a reader who wants the substance opens that record in the archive.
 - An entry makes no claim of its own and does not retell the mathematics.
 
-Two requirements follow from this reading, and an entry has to meet both.
+Two requirements follow from this reading. The first is that the timeline has no authority of its own. Everything an entry says is something the record says. A session that writes about research is drawn to do more: to say which step was the decisive one, to connect two events, to tell the story as a story. Each of these adds something that no record contains and that nobody reviewed, in a package whose other texts were all checked against their sources.
 
-The first requirement is that the timeline has no authority of its own. Everything an entry says is something the record says. A session that writes about research is drawn to do more: to say which step was the decisive one, to connect two events, to tell the story as a story. Each of these adds something that no record contains and that nobody reviewed, in a package whose other texts were all checked against their sources.
-
-The second requirement is that an entry is easier to read than the record it condenses. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, what the reviewing session made of it, what was tried on a statement and how far it came, which question was opened or answered. An entry that tells this lets the reader decide which record to open, and the record then gives the mathematics, complete and reviewed. So an entry reports the event, and the content of the record stays in the record: its proofs, its reasons, its explanations, its formulas.
+The second is that an entry is easier to read than the record it condenses. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, what the reviewing session made of it, what was tried on a statement and how far it came, which question was opened or answered. An entry that tells this lets the reader decide which record to open, and the record then gives the mathematics, complete and reviewed.
 
 The second requirement is the harder one to keep, because breaking it feels like care. A record is full of mathematics that is true and reviewed. Each sentence of it can be repeated in an entry without adding a claim, and a session that wants to be faithful and complete repeats it. In an earlier run, the entry for a publication of nineteen elements was a single paragraph of more than nine hundred words, which restated every element with its formula and the reviewing session's remarks one by one. Each of its sentences was in the record, and the entry was harder to read than the record itself. An entry is faithful when what it says is in the record. It is not asked to carry what the record carries.
 
 After you, a second session reads each entry with nothing but the record it points to. What the record does not say it takes out, and an entry that retells its record it cuts back to what happened.
 
-This text is one of the two in the package whose subject is the research, so the rule of the common text that the package's texts do not speak of the research does not apply to it. It may speak of everything the record reports, including approaches that the package's proof does not use. It does not speak of the package or of this run.
+The timeline's subject is the research, so an entry may speak of everything the record reports, including approaches that the package's proof does not use. It does not speak of the package or of this run.
 
 ## What you are given
 
@@ -122,11 +120,11 @@ The entry of a publication says what was published and whose work it was. It nam
 
 ### The entry of an approach
 
-The heading already names the statement and the approach. The entry says in a clause of words what was tried, what the record says the approach established, and how it ended: that it led to the proof that was accepted, or that it stopped, and at which step. Keep to the record's word for how it ended, since an approach that stopped was not refuted. The idea is named, as an element is named, and the account of it stays in the record. The list of such an entry is empty.
+The entry says in a clause of words what was tried, what the record says the approach established, and how it ended: that it led to the proof that was accepted, or that it stopped, and at which step. Keep to the record's word for how it ended, since an approach that stopped was not refuted. The idea is named, as an element is named, and the account of it stays in the record.
 
 ### The entry of a question
 
-The heading already names the question. The entry says what the question asks, whether the record gives an answer and which, and what the record names as not understood or not done. A record of this kind is often a long account of the mathematics. The entry says in a few words what that account is about, and the account itself stays in the record. The list of such an entry is empty.
+The entry says what the question asks, whether the record gives an answer and which, and what the record names as not understood or not done. A record of this kind is often a long account of the mathematics. The entry says in a few words what that account is about, and the account itself stays in the record.
 
 ### What holds for every entry
 

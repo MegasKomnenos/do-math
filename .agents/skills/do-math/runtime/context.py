@@ -88,6 +88,13 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/canon.md',
                  'reference/lean.md', 'reference/tools.md']
     documents += ['reference/' + name for name in ROLE_REFERENCES[role]]
+    # The guide to the account of the problem as a whole, the understanding so far of q0, goes to the two sessions
+    # that act on it and to no other: the peer whose producer held q0 writes the account, and the review whose
+    # candidate carries the text judges it. A comprehensive review has no candidate.
+    writes = role == 'peer' and task.get('question') == 'q0'
+    judges = role == 'review' and 'candidate' in task and (Path(task['candidate']) / 'questions/q0.md').is_file()
+    if writes or judges:
+        documents.append('reference/q0-account.md')
     inp = {'schema': 1, 'instance': str(instance), 'session': session.name, 'role': role,
            'pipeline': pipeline, 'task': task, 'revision': revision,
            'references': str(context / 'reference'), 'documents': documents,

@@ -96,6 +96,8 @@ PREFERENCES = REFERENCE / 'user-writing-preferences.md'
 READER_SECTION = 'The reader'  # the part of the method that the reading session receives, and nothing else of it
 # The part of the method that a reading beside real papers receives, and nothing else of it.
 LIKENESS_SECTION = 'Reading the manuscript beside real papers'
+# The last section of the method. A session that writes, sketches or repairs receives the method without it.
+CHECKS_SECTION = 'What is checked after writing'
 EXEMPLARS = Path(__file__).resolve().parents[1] / 'exemplars'  # the collection: manifest.json, <key>.tex, fetch.py
 MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'category', 'field', 'pages', 'licence',
                    'abstract', 'sha256', 'why')
@@ -207,6 +209,15 @@ def method_part(title):
     if not match:
         raise Stop(f'{METHOD} has no section "{title}"')
     return match[1].strip()
+
+
+def method_before_checks():
+    """The method document without its last section, for a session that writes, sketches or repairs."""
+    text = read_file(METHOD)
+    match = re.search(r'^## ' + re.escape(CHECKS_SECTION) + r'\n', text, re.M)
+    if not match:
+        raise Stop(f'{METHOD} has no section "{CHECKS_SECTION}"')
+    return text[:match.start()]
 
 
 # ----------------------------------------------------------------------------- the collection of real papers
@@ -1951,10 +1962,15 @@ one part of the work. No session can ask another what it meant, and nobody answe
 
 METHOD_FILE = '''- `paper-method.md` is the method that every session follows. Read it in full before anything else.'''
 # The same entry for a session that writes, sketches or repairs. The last section of the method describes what the
-# script and other sessions do after the writing, and the prompt of such a session carries what of that concerns it.
-METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows. Read it before anything else, \
-in full up to its last section, "What is checked after writing". That section says what the script and other sessions \
-do with the manuscript once it is written; what of it concerns this session is in this prompt.'''
+# script and other sessions do after the writing. Such a session receives the method without that section
+# (method_before_checks), and its prompt carries what of the section concerns it. The section before it, now the last
+# of the file, instructs the sessions that read the manuscript beside real papers, and the prompt of a repair that
+# takes up what they found names it.
+METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows, here without its last section, \
+"What is checked after writing", which other sections name. That section says what the script and other sessions do \
+with the manuscript once it is written; what of it concerns this session is in this prompt. Read the file in full \
+before anything else, except its last section here, "Reading the manuscript beside real papers": it instructs the \
+sessions that read the manuscript beside real papers, and you read it when this prompt names it.'''
 
 PREFERENCES_FILE = '''- `user-writing-preferences.md` describes the writing that the person who will read the paper first \
 prefers, with the occasions on which the preferences came to light. The method says how it bears on a paper.'''
@@ -2177,10 +2193,9 @@ you finish, read your part from its first line as the reader of the method would
 follow. Use no source other than the files in this folder.
 '''
 # What the writer of a section is told when the paper is written from a draft (--from-draft).
-DRAFTED = (' Under "The statements and formulas of this section as they were drafted" the brief also gives the numbered '
-           'statements of this section, and the displayed formulas that its proofs refer to, in the form in which an '
-           'earlier session drafted them. Each was compared with the library, and the library was then frozen. They stand '
-           'in your section as they are drafted there, for the reason the brief gives at that place.')
+DRAFTED = (' Under "The statements and formulas of this section as they were drafted" the brief also gives texts of '
+           'this section that an earlier session drafted. They stand in your section as they are drafted there, for the '
+           'reason the brief gives at that place.')
 ORDER_FIRST = ('The introduction, which is this section, is written first and alone; the other sections are written after '
                'it, side by side, and their writers receive it.')
 ORDER_AGAIN = ('The introduction, which is this section, is written alone; the sections in `parts/` were written by an '
@@ -2493,6 +2508,8 @@ papers, that show the practice from which the manuscript departs, as the text ab
 what differs and what a paper written like these would have at that place.
 '''
 
+# The sections of the method that a session which compares numbered statements receives, and nothing else of it.
+COMPARE_SECTIONS = ('What of the canon the paper leaves out', 'Every numbered statement says what its element says')
 COMPARE_PROMPT = CONTEXT + '''
 
 This session compares the numbered statements of one section of the manuscript, "{title}", with the statements they come \
@@ -2500,9 +2517,10 @@ from; other sessions do the same for the other sections. The paper is of use onl
 says exactly what was proved.
 
 In this folder:
-- `paper-method.md` is the method the manuscript was written by. Its sections "What of the canon the paper leaves out" and \
-"Every numbered statement says what its element says" say what a numbered statement has to say and which differences from \
-the record are permitted.
+- `paper-method.md` holds two sections of the method the manuscript was written by, "What of the canon the paper leaves \
+out" and "Every numbered statement says what its element says". They say what a numbered statement has to say and which \
+differences from the record are permitted. The other sections that they name are not in this folder; what of those bears \
+on this comparison is in this prompt.
 - `statements.json` lists {listed}: for each its label, its number, the element it \
 states, the statement of that element in words as its record gives it, the element's Lean statement, and the statement \
 as the manuscript has it.
@@ -2702,11 +2720,9 @@ fact that both proofs use as "wanted", the label of the statement in whose proof
 "reason" the two proofs that use it. Where that first proof belongs to another section, the session of that section \
 lists the fact. The library can then receive it as a declaration, which both proofs use as they use a lemma.
 
-A gap is not a fault of the sketch, and a sketch without gaps is not a better one. Each gap goes to a session that \
-tries to add the wanted statement to the library; where that fails, the paper will state what the library has. What \
-harms the paper is a gap that is not declared: a text that silently says more than its element is found by the \
-comparison at best, and is then replaced by what the element says. And declare a gap only where a paper would in fact \
-state the result in that form; a statement is not strengthened because a stronger one looks attainable.
+A gap that is declared is no fault of the sketch, and what harms the paper is one that is not declared; the method's \
+section "The draft that comes before the paper" says what becomes of each. Declare a gap only where a paper would in \
+fact state the result in that form; a statement is not strengthened because a stronger one looks attainable.
 
 Write no part of the paper itself. Use no source other than the files in this folder.
 '''
@@ -2902,6 +2918,8 @@ with the research beside it. So a proof that you rewrite is rewritten from the p
 by step, and not from the proof in the manuscript alone. Use no source other than the files in this folder.
 '''
 
+# The sections of the method that a session which compares the running text receives, and nothing else of it.
+COVER_SECTIONS = ('What the running text asserts', 'The reader', 'Results from the literature')
 COVER_PROMPT = CONTEXT + '''
 
 This session compares the running text of one section of the manuscript, "{title}", with what the research proved; \
@@ -2913,8 +2931,11 @@ research as it stands, and nothing is added to the library for the sake of a sen
 therefore cut from the paper, or reworded, by a repair session.
 
 In this folder:
-- `paper-method.md` is the method the manuscript was written by. Its section "What the running text asserts" says what \
-the paper may assert outside its numbered statements and when an element covers an assertion.
+- `paper-method.md` holds the section "What the running text asserts" of the method the manuscript was written by, which \
+says what the paper may assert outside its numbered statements and when an element covers an assertion. With it come \
+the two sections that it leans on: "The reader", which says what the reader of the paper knows from the textbooks, and \
+"Results from the literature". No other section of the method is in this folder; what of the others bears on this \
+comparison is in this prompt.
 - `text.json` lists what this session compares, each entry with its number ("entry"), its kind, the part it stands in \
 ("part", the id of this section{abstract}), the lines of `paper.tex` it occupies and its text. An entry of the kind \
 "running text" is a passage of the section outside the numbered statements and outside the proofs. An entry of the \
@@ -3134,6 +3155,12 @@ def changed_materials(stored, fresh):
 def part_lines(text):
     """The lines of a part as `assemble` puts them into paper.tex."""
     return text.strip('\n').split('\n')
+
+
+def written_parts(folder, names):
+    """The texts of the parts among `names` that `folder` holds as <name>.tex, by name; an empty file is no part."""
+    texts = {name: read_file(folder / (name + '.tex')) for name in names if (folder / (name + '.tex')).is_file()}
+    return {name: text for name, text in texts.items() if text.strip()}
 
 
 def changed_passages(before, after):
@@ -3422,7 +3449,7 @@ class Paper(Sessions):
     def kit(self, section):
         """The files of a session that writes or repairs one section: its brief, the records, the account of the
         chosen papers and the papers the plan names for the section."""
-        files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
+        files = {'paper-method.md': method_before_checks(), 'user-writing-preferences.md': read_file(PREFERENCES),
                  'brief.md': render_brief(self.materials, self.plan, section, self.layout, self.sketched),
                  'plan.json': self.plan_text(), **self.records()}
         if self.collection is not None:
@@ -3748,11 +3775,11 @@ class Paper(Sessions):
         names = [section['id']] + (['abstract'] if first else [])
 
         def read(output):
-            missing = [f'output/{name}.tex was not written or is empty' for name in names
-                       if not (output / (name + '.tex')).is_file() or not read_file(output / (name + '.tex')).strip()]
+            written = written_parts(output, names)
+            missing = [f'output/{name}.tex was not written or is empty' for name in names if name not in written]
             if missing:
                 raise Unusable(missing)
-            return {name: read_file(output / (name + '.tex')) for name in names}
+            return written
 
         with self.lock:  # the parts that are finished now; a part that is finished later is not seen by this session
             finished = {other['id']: self.parts[other['id']] for other in sections if self.written(other)}
@@ -3958,9 +3985,7 @@ class Paper(Sessions):
         told_response = RESPONSE_MOVED if kind == 'coverage' else RESPONSE
 
         def read(output):
-            changed = {name: read_file(output / (name + '.tex')) for name in names
-                       if (output / (name + '.tex')).is_file() and read_file(output / (name + '.tex')).strip()}
-            changed = {name: text for name, text in changed.items() if text != self.parts[name]}
+            changed = {name: text for name, text in written_parts(output, names).items() if text != self.parts[name]}
             response = None
             if answers:
                 response = self.load(output / 'response.json', list)
@@ -3992,7 +4017,7 @@ class Paper(Sessions):
             else (WHOLE_KINDS if section is None else SECTION_KINDS)[kind]
         if section is None:
             papers = {s['id']: self.section_papers(s) for s in sections}
-            files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
+            files = {'paper-method.md': method_before_checks(), 'user-writing-preferences.md': read_file(PREFERENCES),
                      'plan.json': self.plan_text(), **self.records(), **given}
             if self.collection is not None:
                 files['study.md'] = self.study
@@ -4217,11 +4242,7 @@ class Paper(Sessions):
                                          for section, stated in groups if stated])
             # A section whose comparison was not made (session) has no verdicts; its statements stay not compared.
             verdicts = [verdict for result in results if result for verdict in result]
-            digests = {row['label']: row['paper_statement_sha256'] for row in rows}
-            self.compared = {v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
-                                          'record_disagreement': v['record_disagreement']
-                                          if is_text(v.get('record_disagreement')) else '',
-                                          'sha256': digests[v['label']]} for v in verdicts}
+            self.compared = self.kept_verdicts(verdicts, rows)
             self.save()
             differing = [{'label': v['label'], 'difference': v['difference']} for v in verdicts if v['verdict'] == 'differs']
             # A disagreement inside an element's record is reported beside the paper; no repair of the manuscript removes it.
@@ -4242,6 +4263,14 @@ class Paper(Sessions):
             if not self.settle() or not self.read_again():
                 return False
 
+    @staticmethod
+    def kept_verdicts(verdicts, rows):
+        """The verdicts of a comparison as `compared` keeps them, by label, each with the digest of the text of its row."""
+        digests = {row['label']: row['paper_statement_sha256'] for row in rows}
+        return {v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
+                             'record_disagreement': v['record_disagreement'] if is_text(v.get('record_disagreement')) else '',
+                             'sha256': digests[v['label']]} for v in verdicts}
+
     def compare_rows(self, rows, tex, spans):
         """Compare once the numbered statements of these rows of the correspondence, whose present text has no verdict.
 
@@ -4256,11 +4285,7 @@ class Paper(Sessions):
                                      self.compare_section(section, stated, tex, spans, listed)
                                      for section, stated in groups if stated])
         verdicts = [verdict for result in results if result for verdict in result]
-        digests = {row['label']: row['paper_statement_sha256'] for row in rows}
-        self.compared.update({v['label']: {'verdict': v['verdict'], 'difference': v.get('difference') or '',
-                                           'record_disagreement': v['record_disagreement']
-                                           if is_text(v.get('record_disagreement')) else '',
-                                           'sha256': digests[v['label']]} for v in verdicts})
+        self.compared.update(self.kept_verdicts(verdicts, rows))
         self.save()
         self.event('comparison', round=1 + sum(event['event'] == 'comparison' for event in self.log),
                    statements=[row['label'] for row in rows],
@@ -4288,7 +4313,8 @@ class Paper(Sessions):
 
         entries = [{key: row[key] for key in ('label', 'number', 'element', 'record_statement', 'lean_statement',
                                               'paper_statement')} for row in rows]
-        files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
+        files = {'paper-method.md': ''.join(f'## {title}\n\n{method_part(title)}\n\n' for title in COMPARE_SECTIONS),
+                 'paper.tex': tex,
                  'statements.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
                  **{name: text for name, text in self.records().items() if name.startswith('elements')}}
@@ -4552,7 +4578,8 @@ class Paper(Sessions):
                                 'not in the entries ' + ', '.join(str(entry) for entry in loose)])
             return found
 
-        files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
+        files = {'paper-method.md': ''.join(f'## {title}\n\n{method_part(title)}\n\n' for title in COVER_SECTIONS),
+                 'paper.tex': tex,
                  'text.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_section_records(self.materials, self.plan, section, self.layout),
                  **{name: text for name, text in self.records().items() if name.startswith('elements')},
@@ -5185,8 +5212,7 @@ class Paper(Sessions):
         old, text = stated(self.parts), running(self.parts)
 
         def read(output):
-            parts = {name: read_file(output / (name + '.tex')) for name in self.parts
-                     if (output / (name + '.tex')).is_file() and read_file(output / (name + '.tex')).strip()}
+            parts = written_parts(output, self.parts)
             new = {**self.parts, **parts}
             now = stated(new)
             problems = [f'the statement with \\label{{{label}}} has the text it had; restate it as its element says it'
@@ -5250,9 +5276,8 @@ class Paper(Sessions):
         changed = {}
         if present:
             def read(output):
-                parts = {name: read_file(output / (name + '.tex')) for name in self.parts
-                         if (output / (name + '.tex')).is_file() and read_file(output / (name + '.tex')).strip()}
-                parts = {name: content for name, content in parts.items() if content != self.parts[name]}
+                parts = {name: content for name, content in written_parts(output, self.parts).items()
+                         if content != self.parts[name]}
                 new = {**self.parts, **parts}
                 found = compared(new)
                 faults = [f'the passage {number} of removals.json still stands in the text, or its formula is still '
@@ -5332,10 +5357,7 @@ class Paper(Sessions):
         if self.plan is None:
             return
         sections = self.plan['sections']
-        for name in ['abstract'] + [section['id'] for section in sections]:
-            path = out / 'parts' / (name + '.tex')
-            if path.is_file() and read_file(path).strip():
-                self.parts[name] = read_file(path)
+        self.parts.update(written_parts(out / 'parts', ['abstract'] + [section['id'] for section in sections]))
         if not self.written(sections[0]):  # the introduction and the abstract are written by one session, or not at all
             for name in ('abstract', sections[0]['id']):
                 self.parts.pop(name, None)

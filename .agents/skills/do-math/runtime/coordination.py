@@ -8,6 +8,7 @@ finishes review. Choosing is serialized per element or question: one session at 
 lease, registers and so passes the lease to the next waiting session. Leases and registrations
 are decided first-wins under one instance lock."""
 import argparse
+from collections import namedtuple
 from contextlib import contextmanager
 import json
 import os
@@ -251,74 +252,88 @@ def view(element, table, rows):
             'sections': [s for r in rows for s in r['sections'] if s['element'] == element]}
 
 
-def lease(session, element):
-    """Take a element's lease if no one holds it. A refusal records nothing."""
-    inp, instance = context(session)
+# Taking a lease, waiting for one and giving one up go the same way for an element and for a question, so
+# lease, wait and release are written once. A Leases names what differs: the word for what is leased, the
+# command that waits, and the functions that read the session, resolve the name, load the table, give the
+# reason for a refusal, show the answer and save. `blocked` receives (model, rows, table, name, pipeline, sid).
+Leases = namedtuple('Leases', 'noun wait_command context known table blocked view save')
+ELEMENT_LEASES = Leases('element', 'wait', context, known, lease_table,
+                        lambda model, rows, table, element, pipeline, sid: blocked(model, rows, element, pipeline),
+                        view, save)
+
+
+def lease(session, name, kind=ELEMENT_LEASES):
+    """Take the lease of an element, or of a question (question_lease), if no one holds it. A refusal records nothing."""
+    inp, instance = kind.context(session)
     sid = inp['session']
     with claims_lock(instance):
         model, state = replay(instance), read_json(instance / 'runner/state.json')
-        element = known(model, element)
-        rows, table = board(instance, state, model), lease_table(instance, state, model)
-        reason = blocked(model, rows, element, inp.get('pipeline'))
-        entry = table.get(element, {'holders': [], 'queue': []})
+        name = kind.known(model, name)
+        rows, table = board(instance, state, model), kind.table(instance, state, model)
+        reason = kind.blocked(model, rows, table, name, inp.get('pipeline'), sid)
+        entry = table.get(name, {'holders': [], 'queue': []})
         mine = any(h['session'] == sid for h in entry['holders'])
         if reason is None and entry['holders'] and not mine:
-            reason = 'Another session holds this element\'s lease. Wait for it with commands.wait or choose another element.'
+            reason = (f"Another session holds this {kind.noun}'s lease. Wait for it with commands.{kind.wait_command} "
+                      f'or choose another {kind.noun}.')
         if reason:
-            return {'leased': False, 'reason': reason, **view(element, table, rows)}
-        leave(table, sid, keep=element)
+            return {'leased': False, 'reason': reason, **kind.view(name, table, rows)}
+        leave(table, sid, keep=name)
         if not mine:
-            table[element] = {'holders': [{'session': sid, 'since': time.time()}], 'queue': entry['queue']}
-        save(instance, table, state)
-        return {'leased': True, **view(element, table, rows)}
+            table[name] = {'holders': [{'session': sid, 'since': time.time()}], 'queue': entry['queue']}
+        kind.save(instance, table, state)
+        return {'leased': True, **kind.view(name, table, rows)}
 
 
-def wait(session, element, timeout=None):
-    """Join the element's queue and return once the lease is this session's, or at the timeout."""
-    inp, instance = context(session)
+def wait(session, name, timeout=None, kind=ELEMENT_LEASES):
+    """Join the queue of an element, or of a question (question_wait), and return once the lease is this
+    session's, or at the timeout."""
+    inp, instance = kind.context(session)
     sid = inp['session']
     deadline = None if timeout is None else time.monotonic() + timeout
     while True:
         with claims_lock(instance):
             model, state = replay(instance), read_json(instance / 'runner/state.json')
-            element = known(model, element)
-            rows, table = board(instance, state, model), lease_table(instance, state, model)
-            reason = blocked(model, rows, element, inp.get('pipeline'))
+            name = kind.known(model, name)
+            rows, table = board(instance, state, model), kind.table(instance, state, model)
+            reason = kind.blocked(model, rows, table, name, inp.get('pipeline'), sid)
             if reason:
-                # Only this element's place ends; a place on another element is kept.
-                entry = table.get(element)
+                # Only the place on this element or question ends; a place on another one is kept.
+                entry = table.get(name)
                 if entry:
                     entry['holders'] = [h for h in entry['holders'] if h['session'] != sid]
                     entry['queue'] = [w for w in entry['queue'] if w['session'] != sid]
-                    save(instance, table, state)
-                return {'leased': False, 'reason': reason, **view(element, table, rows)}
-            entry = table.setdefault(element, {'holders': [], 'queue': []})
+                    kind.save(instance, table, state)
+                return {'leased': False, 'reason': reason, **kind.view(name, table, rows)}
+            entry = table.setdefault(name, {'holders': [], 'queue': []})
             if not any(x['session'] == sid for x in entry['holders'] + entry['queue']):
-                leave(table, sid, keep=element)
+                leave(table, sid, keep=name)
                 entry['queue'].append({'session': sid, 'since': time.time()})
             table = normalize(table, state)
-            save(instance, table, state)
-            if any(h['session'] == sid for h in table.get(element, {}).get('holders', [])):
-                return {'leased': True, **view(element, table, rows)}
-            position = [w['session'] for w in table[element]['queue']].index(sid) + 1
+            kind.save(instance, table, state)
+            if any(h['session'] == sid for h in table.get(name, {}).get('holders', [])):
+                return {'leased': True, **kind.view(name, table, rows)}
+            position = [w['session'] for w in table[name]['queue']].index(sid) + 1
         if deadline is not None and time.monotonic() >= deadline:
             return {'leased': False, 'waiting': True, 'position': position, 'timeout': True,
-                    'hint': 'Your place is kept; run wait again, or take another element.', **view(element, table, rows)}
+                    'hint': f'Your place is kept; run {kind.wait_command} again, or take another {kind.noun}.',
+                    **kind.view(name, table, rows)}
         time.sleep(WAIT_POLL_SECONDS)
 
 
-def release(session, element):
-    """Give up a element's lease, or leave its queue, without registering a section."""
-    inp, instance = context(session)
+def release(session, name, kind=ELEMENT_LEASES):
+    """Give up the lease of an element, or of a question (question_release), or leave its queue, without
+    registering a section or taking the question."""
+    inp, instance = kind.context(session)
     with claims_lock(instance):
         model, state = replay(instance), read_json(instance / 'runner/state.json')
-        element = known(model, element)
-        table = lease_table(instance, state, model)
-        entry = table.get(element, {'holders': [], 'queue': []})
+        name = kind.known(model, name)
+        table = kind.table(instance, state, model)
+        entry = table.get(name, {'holders': [], 'queue': []})
         entry['holders'] = [h for h in entry['holders'] if h['session'] != inp['session']]
         entry['queue'] = [w for w in entry['queue'] if w['session'] != inp['session']]
-        save(instance, table, state)
-        return {'released': True, **view(element, normalize(table, state), board(instance, state, model))}
+        kind.save(instance, table, state)
+        return {'released': True, **kind.view(name, normalize(table, state), board(instance, state, model))}
 
 
 def section(session, element, request_file):
@@ -452,74 +467,23 @@ def save_question_leases(instance, table, state):
     write_json(Path(instance) / 'runner' / 'question-leases.json', normalize(table, state))
 
 
+QUESTION_LEASES = Leases('question', 'question_wait', question_context, known_question, question_lease_table,
+                         question_blocked, question_view, save_question_leases)
+
+
 def question_lease(session, question):
     """Take a question's lease if no one holds it. A refusal records nothing."""
-    inp, instance = question_context(session)
-    sid = inp['session']
-    with claims_lock(instance):
-        model, state = replay(instance), read_json(instance / 'runner/state.json')
-        question = known_question(model, question)
-        rows, table = board(instance, state, model), question_lease_table(instance, state, model)
-        reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
-        entry = table.get(question, {'holders': [], 'queue': []})
-        mine = any(h['session'] == sid for h in entry['holders'])
-        if reason is None and entry['holders'] and not mine:
-            reason = "Another session holds this question's lease. Wait for it with commands.question_wait or choose another question."
-        if reason:
-            return {'leased': False, 'reason': reason, **question_view(question, table, rows)}
-        leave(table, sid, keep=question)
-        if not mine:
-            table[question] = {'holders': [{'session': sid, 'since': time.time()}], 'queue': entry['queue']}
-        save_question_leases(instance, table, state)
-        return {'leased': True, **question_view(question, table, rows)}
+    return lease(session, question, QUESTION_LEASES)
 
 
 def question_wait(session, question, timeout=None):
     """Join the question's queue and return once the lease is this session's, or at the timeout."""
-    inp, instance = question_context(session)
-    sid = inp['session']
-    deadline = None if timeout is None else time.monotonic() + timeout
-    while True:
-        with claims_lock(instance):
-            model, state = replay(instance), read_json(instance / 'runner/state.json')
-            question = known_question(model, question)
-            rows, table = board(instance, state, model), question_lease_table(instance, state, model)
-            reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
-            if reason:
-                entry = table.get(question)
-                if entry:
-                    entry['holders'] = [h for h in entry['holders'] if h['session'] != sid]
-                    entry['queue'] = [w for w in entry['queue'] if w['session'] != sid]
-                    save_question_leases(instance, table, state)
-                return {'leased': False, 'reason': reason, **question_view(question, table, rows)}
-            entry = table.setdefault(question, {'holders': [], 'queue': []})
-            if not any(x['session'] == sid for x in entry['holders'] + entry['queue']):
-                leave(table, sid, keep=question)
-                entry['queue'].append({'session': sid, 'since': time.time()})
-            table = normalize(table, state)
-            save_question_leases(instance, table, state)
-            if any(h['session'] == sid for h in table.get(question, {}).get('holders', [])):
-                return {'leased': True, **question_view(question, table, rows)}
-            position = [w['session'] for w in table[question]['queue']].index(sid) + 1
-        if deadline is not None and time.monotonic() >= deadline:
-            return {'leased': False, 'waiting': True, 'position': position, 'timeout': True,
-                    'hint': 'Your place is kept; run question_wait again, or take another question.',
-                    **question_view(question, table, rows)}
-        time.sleep(WAIT_POLL_SECONDS)
+    return wait(session, question, timeout, QUESTION_LEASES)
 
 
 def question_release(session, question):
     """Give up a question's lease, or leave its queue, without taking the question."""
-    inp, instance = question_context(session)
-    with claims_lock(instance):
-        model, state = replay(instance), read_json(instance / 'runner/state.json')
-        question = known_question(model, question)
-        table = question_lease_table(instance, state, model)
-        entry = table.get(question, {'holders': [], 'queue': []})
-        entry['holders'] = [h for h in entry['holders'] if h['session'] != inp['session']]
-        entry['queue'] = [w for w in entry['queue'] if w['session'] != inp['session']]
-        save_question_leases(instance, table, state)
-        return {'released': True, **question_view(question, normalize(table, state), board(instance, state, model))}
+    return release(session, question, QUESTION_LEASES)
 
 
 def question_take(session, question):

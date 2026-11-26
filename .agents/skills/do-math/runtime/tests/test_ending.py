@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import subprocess
 import sys
 import threading
 import time
@@ -809,6 +810,20 @@ class SessionGateTests(unittest.TestCase):
                 self.assertEqual(session_host(folder), 0)
             self.assertTrue((folder / 'started').exists())
             self.assertEqual(read_json(folder / 'exit.json')['exit_code'], 0)
+
+
+class HostProgramTests(unittest.TestCase):
+    def test_a_host_holds_what_it_uses_at_the_end_of_a_session_from_its_start(self):
+        # A session host is `runner.py _session`, and the installation can change while it runs. When a review
+        # ends, the host checks its output (ending, check) and reads the broker's record of the review's build
+        # (lean_broker). A module first loaded then would come from the files as they then stand, beside the
+        # modules loaded at the start, and could ask them for names they do not have. A fresh interpreter shows
+        # what the host's program holds once its imports have run.
+        probe = 'import sys, runner; print(sorted({"check", "ending", "lean_broker"} & set(sys.modules)))'
+        loaded = subprocess.run([sys.executable, '-B', '-c', probe], cwd=RUNTIME, capture_output=True,
+                                text=True, timeout=120)
+        self.assertEqual((loaded.returncode, loaded.stdout.strip()), (0, "['check', 'ending', 'lean_broker']"),
+                         loaded.stderr)
 
 
 if __name__ == '__main__':

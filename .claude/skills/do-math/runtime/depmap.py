@@ -325,11 +325,8 @@ def main(argv=None):
         say('depmap: ' + str(error), sys.stderr)
         return 2
     counts = data['counts']
-    refuted = str(data.get('root_state') or '').endswith('refuted')
-    scope = ('every unit of the canon' if data['scope'] == 'all' else
-             'what the refutation of the root rests on' if refuted else 'what the proof of the root rests on')
     say(f"{counts['units']} units, {counts['edges']} edges, {counts['groups']} groups; "
-        f"{len(data['folded'])} folded elements on edges; scope: {scope}")
+        f"{len(data['folded'])} folded elements on edges; scope: {drawing().scope_words(data)}")
     for path in result['files'].values():
         say(path)
     return 0

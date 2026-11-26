@@ -23,7 +23,7 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import lean_broker
 import runtime_support
-from test_lean_broker import BrokerFixture
+from broker_fixture import BrokerFixture
 
 MIB = 1024 * 1024
 

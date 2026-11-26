@@ -14,7 +14,7 @@ Research under pressure leaves things of the following kinds. They are examples 
 
 ## What you are given
 
-- `lean/`: the whole library. Only the modules of your part are yours to change. The rest is there so that your modules compile and so that you can see what uses your results.
+- `lean/`: the whole library. What lies outside your part is there so that your modules compile and so that you can see what uses your results.
 - `part.json`: your part, in this form.
 
 ```json
@@ -50,7 +50,7 @@ Before you delete or rename a declaration, search all of `lean/` for its name, s
 
 Edit the files in `lean/` in place and build there, as the section "Compiling" describes. While you work, build the modules you changed. A change that you cannot get through the compiler in a reasonable number of attempts is undone and noted in your report.
 
-The program accepts your part when no file outside it differs and the whole library builds with your modules in place, each module with exit code 0. A part that fails this is discarded whole, and the library keeps the form it had there, so everything you did is lost with the one change that broke the build. Before you end, build the whole library once, by naming every `.lean` file under `lean/` as a file to compile, in several commands if the list is too long for one. The modules you did not touch and that import nothing you changed come from the service's store. End on a state that builds: if the last change does not, undo it.
+The program accepts your part when no file outside it differs and the whole library builds with your modules in place, each module with exit code 0. A part that fails this is discarded whole, and the library keeps the form it had there, so everything you did is lost with the one change that broke the build. Before you end, build the whole library once, by naming every `.lean` file under `lean/` as a file to compile, in several commands if the list is too long for one. End on a state that builds: if the last change does not, undo it.
 
 ## What you write
 
