@@ -453,7 +453,7 @@ class ContextTests(InstanceCase):
                 overrides = [command.argv[i + 1] for i, arg in enumerate(command.argv[:-1]) if arg == '-c']
                 config = tomllib.loads('\n'.join(overrides))
                 self.assertEqual(config['model_context_window'], 1_000_000)
-                self.assertEqual(config['model_auto_compact_token_limit'], 900_000)
+                self.assertEqual(config['model_auto_compact_token_limit'], 950_000)
                 self.assertEqual(command.argv[command.argv.index('--model') + 1], model.split('/', 1)[1])
                 self.assertEqual(command.argv[-1], '-')
         for model, expected in (
@@ -473,7 +473,7 @@ class ContextTests(InstanceCase):
             environment = worker_environment()
             self.assertNotIn('CLAUDE_CODE_DISABLE_1M_CONTEXT', environment)
             self.assertNotIn('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', environment)
-            self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '900000')
+            self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '950000')
             self.assertEqual(os.environ['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '200000')
         with patch.dict(os.environ, {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '32000'}):
             # The worker's output cap is explicit, not the operator's or the CLI default.

@@ -8,7 +8,7 @@ from runtime_support import write_json
 
 
 CONTEXT_WINDOW = 1_000_000
-AUTO_COMPACT_TOKENS = 900_000
+AUTO_COMPACT_TOKENS = 950_000
 # Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
 MAX_OUTPUT_TOKENS = 128_000
 # Milliseconds the Claude CLI waits for an MCP server to start before beginning the turn without it.
