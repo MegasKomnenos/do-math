@@ -117,9 +117,10 @@ GLOSSARY = {
                            'judged it.',
     'correct, held back': 'Review found the proof correct and did not accept it: it can still be made simpler, or it closes '
                           'a part only by large computation done without an understanding of why that part holds.',
-    'accepted': 'Review found the proof correct and accepted it. A statement that was in the library before any review, '
-                'and whose Lean proof is complete, stands as accepted as well: no review has judged that proof, and Lean '
-                'has checked it.',
+    'accepted': 'Review found the proof correct and accepted it. Two kinds of statement stand as accepted without a '
+                'review, because Lean has checked their complete proofs: a statement that was in the library before '
+                'any review, and one that was added later to say that two definitions or two statements agree, or to '
+                'derive a statement from one that agrees with it.',
     'settled': 'One of its proofs is accepted, and every statement that proof names is settled in the same way.',
     'not settled': 'No proof of it is accepted and rests on settled statements only.',
     'formal': 'One of its proofs is complete in Lean: it rests on nothing but the allowed axioms, with no gap below it.',

@@ -179,6 +179,7 @@ class FinalizeCase(InstanceCase):
     """An instance whose root is proved in Lean through a step, made once through the real publication path."""
 
     changes_guides = True  # `skill` below writes the stand-in instruction files into the copy
+    reads_the_instance = False  # set by a class whose tests read the published instance and write nothing into it
 
     def starting_instance(self):
         """The published instance once the first test has made it; before that, the one `init` created."""
@@ -217,6 +218,9 @@ class FinalizeCase(InstanceCase):
             self.publish(folder)
             self.configure(lean={'version_command': [sys.executable, '-B', str(CLI), 'version']})
             _SETTLED = kept_copy(self.instance, 'do-math-finalize-')
+        if self.reads_the_instance:
+            # The kept instance itself and no copy of it: the tests of such a class write nothing into it.
+            self.instance = _SETTLED
         self.repository = self.root / 'repository'
         self.repository.mkdir()
         (self.repository / 'README.md').write_text('# The repository\n\n## Solved problems\n\n- An earlier one.\n\n## Other\n',
@@ -355,6 +359,8 @@ class FinalizeCase(InstanceCase):
 # ----------------------------------------------------------------------------- the scripts, each alone
 
 class TakeTests(FinalizeCase):
+    reads_the_instance = True
+
     def setUp(self):
         super().setUp()
         self.index = canon.read_index(self.instance / 'canon' / 'index.json')
@@ -399,6 +405,27 @@ class TakeTests(FinalizeCase):
         self.assertIn('Small.unused_two',
                       package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)['kept'])
 
+    def test_a_command_that_ends_with_in_is_removed_with_the_element_it_stands_above(self):
+        # `open Classical in` applies to the one declaration that follows it, and Lean gives that declaration a
+        # span that begins below the line. Left behind, the line would apply to whatever follows the removed element.
+        target = self.root / 'lean'
+        shutil.copytree(self.lean, target)
+        path = target / 'Small' / 'Helper.lean'
+        before = path.read_text(encoding='utf-8')
+        entries = self.index['entries']
+        gone = canon.declaration_text(before, entries['Small.unused_two']['span'])
+        path.write_text(before.replace(gone, 'set_option maxHeartbeats 400000 in\nopen Classical in\n' + gone),
+                        encoding='utf-8', newline='\n')
+        # The spans as Lean gives them for that file: from the two lines on, every declaration stands two lines lower.
+        first = entries['Small.unused_two']['span'][0]
+        for entry in entries.values():
+            if entry['file'] == 'Small/Helper.lean' and entry['span'][0] >= first:
+                entry['span'][0] += 2
+                entry['span'][2] += 2
+        plan = package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
+        self.assertEqual(plan['removed'], self.plan['removed'])
+        self.assertEqual(plan['files']['Small/Helper.lean'], self.plan['files']['Small/Helper.lean'])
+
     def test_a_theorem_that_is_not_proved_is_not_kept_for_its_attribute(self):
         self.assertIn('Small.simp_one', self.plan['kept'])
         self.index['entries']['Small.simp_one']['axioms'] = ['sorryAx']
@@ -420,8 +447,27 @@ class TakeTests(FinalizeCase):
         _, _, problems = package.restored_files(self.plan['spans'], before, {'Small/Extra.lean': EXTRA})
         self.assertIn('no file of the taken library', problems[0])
 
+    def test_the_texts_by_which_sessions_read_the_library_say_what_the_index_and_the_records_hold(self):
+        # The digest of the selection: the declaration whose proof settles the root, the units under it with the
+        # descriptions of their records, and the settled units that proof does not rest on, of which this research
+        # has none. An element of weight step that the proof rests on is not listed.
+        digest = package.selection_digest(replay(self.instance), self.index)
+        self.assertIn('## Declarations whose proof formally settles the root\n\n### `Small.root`\n\nIt rests on ', digest)
+        self.assertIn('\n- `Small.sq_step`: Passing from n to n + 1 adds the odd number 2n + 1.\n', digest)
+        self.assertNotIn('Small.helper_zero', digest)
+        self.assertTrue(digest.endswith('that these proofs do not rest on\n\nNone.\n'), digest)
+        # What rests on what, for the elements the take keeps: the line of the root names what its proof names.
+        rests = package.rests_on_text(self.index, set(self.plan['kept']))
+        self.assertIn('; proof names `Small.helper_zero`, `Small.sq_step`, `Small.twice_zero`\n', rests)
+        self.assertNotIn('Small.stray', rests)
+        # The declarations by module, each with its statement; the module of the step is the last by name.
+        self.assertTrue(package.declarations_text(self.index).endswith(
+            '\n## `Small.Step`\n\n- theorem `Small.sq_step (n : Nat) : oddSum (n + 1) = oddSum n + (2 * n + 1)`\n'))
+
 
 class LibraryCheckTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_each_fault_of_a_lean_file_and_of_a_definition_module_is_found(self):
         lean = self.root / 'lean'
         shutil.copytree(self.instance / 'canon' / 'lean', lean)
@@ -504,6 +550,8 @@ class LibraryCheckTests(FinalizeCase):
 
 
 class RecordTests(FinalizeCase):
+    reads_the_instance = True
+
     def test_the_list_holds_new_and_changed_elements_and_records_that_name_what_is_gone(self):
         base = canon.read_index(self.instance / 'canon' / 'index.json')
         records = self.root / 'records'
@@ -515,10 +563,14 @@ class RecordTests(FinalizeCase):
         # A record can name what is gone in its header alone, as the statement it proves, and nowhere between backticks.
         (records / 'Small' / 'twice_zero.md').write_text(
             record_text('Twice the empty sum is zero.', weight='unit', proves='Small.stray'), encoding='utf-8')
+        # And it can name what is gone without the library's first component, as a text inside the namespace does.
+        (records / 'Small' / 'simp_one.md').write_text(
+            record_text('The first odd number is one, the case that `stray` goes on from.'), encoding='utf-8')
         todo = {item['declaration']: item for item in package.record_todo(now, base, records)}
         self.assertEqual({name: item['why'] for name, item in todo.items()},
                          {'Small.helper_zero': 'changed', 'Small.fresh': 'new',
                           'Small.named_four': 'names a declaration that is gone',
+                          'Small.simp_one': 'names a declaration that is gone',
                           'Small.twice_zero': 'names a declaration that is gone'})
         self.assertIsNone(todo['Small.fresh']['record'])
         self.assertEqual(todo['Small.named_four']['record'], 'records/Small/named_four.md')
@@ -537,11 +589,15 @@ class RecordTests(FinalizeCase):
     def test_records_follow_renamed_and_removed_declarations(self):
         records = self.root / 'records'
         shutil.copytree(self.instance / 'canon' / 'records', records)
+        # A record names the renamed declaration in its header too, as the statement it proves.
+        (records / 'Small' / 'twice_zero.md').write_text(
+            record_text('Twice the empty sum is zero.', weight='unit', proves='Small.unused_two'), encoding='utf-8')
         package.follow_renames(records, {'Small.unused_two': 'Small.Sums.two'}, ['Small.stray'])
         self.assertFalse((records / 'Small' / 'unused_two.md').exists())
         self.assertFalse((records / 'Small' / 'stray.md').exists())
         self.assertIn('first two odd numbers', (records / 'Small' / 'Sums' / 'two.md').read_text(encoding='utf-8'))
         self.assertIn('`Small.Sums.two`', (records / 'Small' / 'named_four.md').read_text(encoding='utf-8'))
+        self.assertIn('\nproves: Small.Sums.two\n', (records / 'Small' / 'twice_zero.md').read_text(encoding='utf-8'))
 
     def test_the_cited_sources_are_listed_with_the_records_that_cite_them_in_the_header_or_in_the_text(self):
         index = canon.read_index(self.instance / 'canon' / 'index.json')
@@ -566,6 +622,8 @@ class RecordTests(FinalizeCase):
 
 
 class RegistryTests(FinalizeCase):
+    reads_the_instance = True
+
     def first(self):
         folder = self.root / 'first'
         package.export_commit(self.instance, first_commit(self.instance), ['canon/lean'], folder, 'canon/')
@@ -586,6 +644,30 @@ class RegistryTests(FinalizeCase):
         fails = package.challenge_measure('module\n\nimport Elsewhere.Thing\n' + 'x\n' * 1001)['fails']
         self.assertEqual(len(fails), 2)
         self.assertTrue(any('1004 lines' in fail for fail in fails) and any('Elsewhere.Thing' in fail for fail in fails))
+
+    def test_the_challenge_keeps_outside_imports_once_and_joins_the_definition_modules_in_import_order(self):
+        # A research on an imported library, as one on Mathlib is: its definition modules import from outside the
+        # library, and one definition module imports another, which here comes later by name.
+        first = self.root / 'outside'
+        outside = 'public import Mathlib.Data.Finset.Card'
+        package.write_text(first / 'Lib' / 'Kernel.lean',
+                           f'module\n\n{outside}\n\nnamespace Lib\n\ndef kernel : Nat := 0\n\nend Lib\n')
+        package.write_text(first / 'Lib' / 'Defs.lean',
+                           f'module\n\n{outside}\npublic import Lib.Kernel\nimport Mathlib.Tactic\n\n'
+                           'namespace Lib\n\ndef twice : Nat := kernel + kernel\n\nend Lib\n')
+        package.write_text(first / 'Lib' / 'Root.lean',
+                           'module\n\npublic import Lib.Defs\n\nnamespace Lib\n\n'
+                           'theorem root : twice = 0 := by\n  sorry\n\nend Lib\n')
+        definitions = package.definition_modules(first, 'Lib', 'Lib.Root')
+        self.assertEqual(definitions, ['Lib.Kernel', 'Lib.Defs'])
+        # One header: each import from outside once, as it was written, and no import of a module that is now inside.
+        text = package.challenge_text(first, definitions, 'Lib.Root')
+        self.assertEqual(text, f'module\n\n{outside}\nimport Mathlib.Tactic\n\n'
+                               'namespace Lib\n\ndef kernel : Nat := 0\n\nend Lib\n\n'
+                               'namespace Lib\n\ndef twice : Nat := kernel + kernel\n\nend Lib\n\n'
+                               'namespace Lib\n\ntheorem root : twice = 0 := by\n  sorry\n\nend Lib\n')
+        measure = package.challenge_measure(text)
+        self.assertEqual((measure['imports'], measure['fails']), (['Mathlib.Data.Finset.Card', 'Mathlib.Tactic'], []))
 
     def frozen(self, compared=('Small.root',), authors=()):
         lean = self.root / 'package' / 'lean'
@@ -1906,10 +1988,11 @@ class RunTests(FinalizeCase):
                       'modules (`Small.twice`)', self.decisions())
         self.assertIn('#print axioms Small.twice_zero', (lean / 'Check.lean').read_text(encoding='utf-8'))
         # The root and the main theorem keep their names and statements, and the part that holds them is told so,
-        # although no module of another part uses either.
+        # although no module of another part uses either. So does the definition that the statement of the main
+        # theorem names: with another body the theorem would say something else under the same text.
         core = next(call for call in self.calls('simplify') if call['section'] == 'core')
         self.assertEqual([item['declaration'] for item in self.session_file(core, 'part.json')['interface']],
-                         ['Small.root', 'Small.twice_zero'])
+                         ['Small.root', 'Small.twice', 'Small.twice_zero'])
         freeze = read_json(self.work / 'freeze.json')
         self.assertEqual(freeze['compared'], ['Small.root'])
         # The freeze passes, since the instance allows the axiom, and the package says that the registry will not.
@@ -1942,6 +2025,38 @@ class RunTests(FinalizeCase):
         self.assertEqual([call['section'] for call in self.calls('records-write')], ['5-01'])
         # The sources step 5 verified were not verified again in step 6.
         self.assertEqual([call['section'] for call in self.calls('sources')], ['5'])
+
+    def test_the_freeze_builds_against_the_packages_of_the_lake_project_of_the_lean_environment(self):
+        # A research that imports a library has a Lake project as its Lean environment (`lean.cwd`). The package takes
+        # its toolchain, its `[[require]]` blocks and its packages from that project, and the one Lake build of the
+        # freeze is made on a copy whose manifest names the folder in which the environment already holds the
+        # packages, so that Lake fetches nothing.
+        project = self.root / 'project'
+        mathlib = project / '.lake' / 'packages' / 'mathlib'
+        mathlib.mkdir(parents=True)
+        (project / 'lean-toolchain').write_text('leanprover/lean4:v4.99.0\n', encoding='utf-8')
+        (project / 'lakefile.toml').write_text('name = "env"\n\n[[require]]\nname = "mathlib"\nrev = "v4.99.0"\n',
+                                               encoding='utf-8')
+        git = lambda *arguments: subprocess.run(['git', '-C', str(mathlib), '-c', 'user.name=t', '-c', 'user.email=t@t',
+                                                 *arguments], check=True, capture_output=True, text=True).stdout.strip()
+        git('init')
+        (mathlib / 'file').write_text('x', encoding='utf-8')
+        git('add', 'file')
+        git('commit', '-m', 'one')
+        entry = {'name': 'mathlib', 'type': 'git', 'rev': git('rev-parse', 'HEAD'), 'inputRev': 'v4.99.0',
+                 'inherited': False}
+        write_json(project / 'lake-manifest.json', {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': [entry]})
+        self.configure(lean={'cwd': str(project)})
+        lean = self.halted_after_the_freeze(script())
+        self.assertEqual((lean / 'lean-toolchain').read_text(encoding='utf-8'), 'leanprover/lean4:v4.99.0\n')
+        self.assertIn('[[require]]\nname = "mathlib"\nrev = "v4.99.0"\n', (lean / 'lakefile.toml').read_text(encoding='utf-8'))
+        # The manifest of the package names the packages folder of the published layout, and the build was made
+        # against the folder of the project.
+        manifest = read_json(lean / 'lake-manifest.json')
+        self.assertEqual((manifest['packages'], manifest['packagesDir']), ([entry], '.lake/packages'))
+        self.assertEqual(read_json(self.scenario / 'built.json'),
+                         {'packagesDir': (project / '.lake' / 'packages').as_posix()})
+        self.assertEqual(read_json(self.work / 'freeze.json')['requires'], 'mathlib v4.99.0')
 
     STRONGER = {'key': 'euler1748', 'states': 'For all $m$ and $n$, $s(m+n) = s(m) + n(2m+n)$.',
                 'where': 'Chapter 1, section 2'}
@@ -2009,9 +2124,11 @@ class RunTests(FinalizeCase):
         self.assertEqual((item['from'], item['declaration'], item['wanted']),
                          ('source', 'Small.helper_zero', self.STRONGER['states']))
         self.assertIn('The work euler1748 states this form (Chapter 1, section 2)', item['detail'])
-        # The fold-back session of the part that holds the root and the main theorem is told that both stay as they are.
+        # The fold-back session of the part that holds the root and the main theorem is told that both stay as they are,
+        # and with them the definition that their statements name, which lies in a module of the part's folder.
         part = self.session_file(self.calls('foldback')[0], 'part.json')
-        self.assertEqual([entry['declaration'] for entry in part['interface']], ['Small.root', 'Small.sq_step'])
+        self.assertEqual([entry['declaration'] for entry in part['interface']],
+                         ['Small.oddSum', 'Small.root', 'Small.sq_step'])
         # The source is entered for the declaration that has its form, by the session that opened it again.
         self.assertEqual([(r['declaration'], r['source'], r['result']) for r in self.session_file(check, 'requests.json')],
                          [('Small.block_sum', 'euler1748', 'the empty sum')])
@@ -2152,6 +2269,12 @@ class RunTests(FinalizeCase):
             ('selection-read', None)), 1)
         self.assertEqual(sorted((event['kind'], event['section'], event['attempts']) for event in log
                                 if event['event'] == 'not done'), [('package-read', None, 2), ('records-compare', '5-01', 2)])
+        # The sessions that check ran on the first model of the role `review`, and every other session on the first
+        # entry of `models`, so that a different model checks than wrote.
+        writer = read_json(self.instance / 'settings.json')['models'][0]['model']
+        checking = {'selection-read', 'records-compare', 'sources', 'draft-compare', 'history-read', 'package-read'}
+        self.assertEqual({call['kind'] for call in self.calls() if call['model'] == 'claude/opus'}, checking)
+        self.assertEqual({call['model'] for call in self.calls() if call['kind'] not in checking}, {writer})
         readme = (self.solved / 'README.md').read_text(encoding='utf-8')
         self.assertIn('- Not made: some of the checks that the items above describe. A safeguard of the AI system stopped '
                       'the session that had the task, each time the session was started', readme)

@@ -1030,7 +1030,6 @@ class QuestionCoordinationTests(QuestionCase):
         listed = {q['id']: (q['state'], q['occupied_by'], q['free']) for q in answer['questions']}
         self.assertEqual(listed, {'q0': ('open', ['sroot'], False), 'op-scale': ('open', ['sa'], False),
                                   'op-block': ('open', [], True)})
-        self.assertEqual(answer['questions'][1]['statement'], 'What op-scale asks.')
         self.assertEqual({r['session']: r['question'] for r in answer['board']}, rows)
         self.assertIsNone(answer['availability_snapshot'])  # only an attempt receives one
         visible = self.board_text()
@@ -1204,6 +1203,23 @@ class QuestionCoordinationTests(QuestionCase):
         self.assertTrue(taken['taken'], taken)
         self.assertEqual(taken['question'], 'op-b')
         self.assertEqual(read_json(c / 'declaration.json')['question']['id'], 'op-b')
+
+    def test_a_lease_and_a_place_in_its_queue_follow_a_question_into_the_one_it_is_merged_into(self):
+        self.ask('op-a', 'op-b')
+        root, a, b = self.session('sroot'), self.session('sa'), self.session('sb')
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_take(root, 'q0')['taken'])
+        self.assertTrue(question_lease(a, 'op-a')['leased'])
+        self.assertEqual(question_wait(b, 'op-a', timeout=0)['position'], 1)
+        self.organize([{'from': 'op-a', 'into': 'op-b', 'reason': 'Same scale.'}], engine=self.engine)
+        # The saved table still names op-a. It is read under the question that remains, so the runner does
+        # not count that question as free, and the holder takes it with the lease it has.
+        leases = question_lease_table(self.instance)
+        self.assertEqual({qid: ([h['session'] for h in entry['holders']], [w['session'] for w in entry['queue']])
+                          for qid, entry in leases.items()}, {'op-b': (['sa'], ['sb'])})
+        self.assertEqual(question_availability(self.instance, self.engine.state)['free'], [])
+        taken = question_take(a, 'op-b')
+        self.assertTrue(taken['taken'], taken)
 
     def test_only_explorers_use_question_commands(self):
         for role in ('attempt', 'peer', 'review', 'formalizer', 'organizer'):

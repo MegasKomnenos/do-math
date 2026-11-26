@@ -376,7 +376,8 @@ class ContextTests(InstanceCase):
         self.assertIn('a peer or an organizer', json.loads(text)['error'])
 
     def test_worker_commands_keep_auth_separate_from_customizations(self):
-        folder = self.session('isolated')
+        folder = self.root / 'isolated'  # the command writes its two files into a folder; it reads no instance
+        folder.mkdir()
         server = {'explicit': {'command': sys.executable, 'args': ['server.py']}}
         codex = worker_command('codex', 'codex/gpt-6.1-sol', 'xhigh', folder, server)
         # Retention copies the CLI's native transcript, so the worker session must persist.
@@ -417,7 +418,8 @@ class ContextTests(InstanceCase):
             self.assertEqual(env['TASK_PROBE'], 'kept')
 
     def test_a_worker_is_launched_without_the_tools_it_is_asked_to_withhold_and_with_all_of_them_otherwise(self):
-        folder = self.session('withheld')
+        folder = self.root / 'withheld'
+        folder.mkdir()
         plain = worker_command('claude', 'claude/opus', 'xhigh', folder, {})
         without = worker_command('claude', 'claude/opus', 'xhigh', folder, {}, withheld=('ScheduleWakeup', 'Monitor'))
         codex = worker_command('codex', 'codex/gpt-6.1-sol', 'xhigh', folder, {}, withheld=('ScheduleWakeup',))
@@ -443,7 +445,8 @@ class ContextTests(InstanceCase):
         self.assertEqual(launched, expected.argv)
 
     def test_context_request_applies_to_every_worker_model(self):
-        folder = self.session('long-context')
+        folder = self.root / 'long-context'
+        folder.mkdir()
         for model in ('codex/gpt-6.1-sol', 'codex/gpt-6-astra', 'codex/custom-model'):
             with self.subTest(model=model):
                 command = worker_command('codex', model, 'xhigh', folder)

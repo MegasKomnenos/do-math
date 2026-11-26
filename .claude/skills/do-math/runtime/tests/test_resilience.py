@@ -127,7 +127,7 @@ class DirectoryRenameTests(unittest.TestCase):
 
 
 class StateFileSharingTests(unittest.TestCase):
-    # Every state and view file is written through write_json or write_text and read through read_json.
+    # Every state and view file is written through write_json or write_text and read through read_json or read_bytes.
     # On Windows a reader holding the destination without delete sharing fails the replacement, and one
     # holding the file without read sharing fails the read; both calls wait for the handle instead.
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
@@ -154,30 +154,70 @@ class StateFileSharingTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
     def test_read_waits_for_a_held_file_and_does_not_retry_other_refusals(self):
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                      ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'state.json'
             support.write_json(path, {'version': 1})
-            read_text = Path.read_text
-            held = []
+            # A real handle that shares the file with no reader. Python's open reports the refusal as errno 13
+            # without a Windows error code, and read_json has to wait on the error in that form.
+            handle = kernel.CreateFileW(str(path), 0x80000000, 0, None, 3, 0, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            closed = False
 
-            def held_source(self, *args, **kwargs):
-                if held:
-                    raise held.pop(0)
-                return read_text(self, *args, **kwargs)
+            def release(_):
+                nonlocal closed
+                if not closed:
+                    kernel.CloseHandle(handle)
+                    closed = True
 
-            sharing = PermissionError('injected sharing violation')
-            sharing.winerror = 32
+            try:
+                with patch('runtime_support.time.sleep', side_effect=release) as sleep:
+                    self.assertEqual(support.read_json(path), {'version': 1})
+                self.assertGreaterEqual(sleep.call_count, 1)
+            finally:
+                if not closed:
+                    kernel.CloseHandle(handle)
+            # A refusal that carries another Windows error code is no held file and is raised at once.
             refused = PermissionError('injected privilege refusal')
             refused.winerror = 1314
-            with patch.object(Path, 'read_text', held_source), patch('runtime_support.time.sleep') as sleep:
-                held.append(sharing)
-                self.assertEqual(support.read_json(path), {'version': 1})
-                self.assertEqual(sleep.call_count, 1)
-                held.append(refused)
+            with patch.object(Path, 'read_text', side_effect=refused), patch('runtime_support.time.sleep') as sleep:
                 with self.assertRaises(PermissionError) as caught:
                     support.read_json(path)
                 self.assertIs(caught.exception, refused)
-                self.assertEqual(sleep.call_count, 1)
+                sleep.assert_not_called()
+
+
+class InstanceLockTests(unittest.TestCase):
+    def test_a_lock_asked_for_with_a_wait_is_taken_once_its_holder_lets_it_go(self):
+        # The coordination commands of all sessions and the runner's launch of an explorer meet at one lock
+        # and wait up to thirty seconds for it (coordination.claims_lock). Only the pause of that wait is
+        # replaced: at the first pause the holder lets the lock go, as a command that has finished does.
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'claims.lock'
+            holder = support.InstanceLock(path)
+            holder.__enter__()
+            pauses = []
+
+            def let_go(seconds):
+                if not pauses:
+                    holder.__exit__(None, None, None)
+                pauses.append(seconds)
+
+            try:
+                with patch('runtime_support.time.sleep', side_effect=let_go), support.InstanceLock(path, wait=30.0):
+                    self.assertEqual(len(pauses), 1)
+                    # The one that waited holds the lock now: a request without a wait is refused at once.
+                    with self.assertRaisesRegex(RuntimeError, 'already has a running runner'):
+                        support.InstanceLock(path).__enter__()
+            finally:
+                if not pauses:
+                    holder.__exit__(None, None, None)
 
 
 class ProcessIdentityTests(unittest.TestCase):
@@ -200,6 +240,22 @@ class ProcessIdentityTests(unittest.TestCase):
         stat = b'77 (\xff\xfe) x) S 1 77 77 0 -1 4194560 0 0 0 0 0 0 0 0 20 0 1 0 12345 0 0'
         with patch.object(Path, 'read_bytes', return_value=stat), patch.object(Path, 'read_text', return_value='boot\n'):
             self.assertEqual(support.process_identity(77), {'pid': 77, 'birth': 'boot:12345'})
+
+    @unittest.skipUnless(os.name == 'nt', 'the refusal is what Windows answers for a process this account may not open')
+    def test_a_recorded_process_whose_number_went_to_a_process_that_cannot_be_opened_is_not_alive(self):
+        # A recorded identity outlives its process, and after a reboot its number can belong to a process of
+        # the system or of another account, which Windows refuses to open with access denied. Only that answer
+        # is stood in for. The recorded process is then not alive, so the runner that is started again collects
+        # its session (Runner.collect); a refusal passed on would end that runner at every start.
+        recorded = {'pid': os.getpid(), 'birth': 'a process from before the reboot'}
+
+        def refused(access, inherit, pid):
+            ctypes.set_last_error(5)  # ERROR_ACCESS_DENIED
+            return None
+
+        with patch.object(support.WIN, 'OpenProcess', side_effect=refused) as asked:
+            self.assertFalse(support.alive(recorded))
+        self.assertTrue(asked.called)
 
     def test_a_process_that_holds_the_number_of_a_recorded_one_is_not_terminated(self):
         # A recorded identity outlives its process, and the system gives the number to a later process.
@@ -348,14 +404,14 @@ class MemoryReserveTests(InstanceCase):
         engine = runtime.Runner(self.instance, self.skill)
         engine.reserve = support.EmergencyMemory(1024)
         engine.state['explore_requested'] = True
-        write_json, failures = support.write_json, [MemoryError()]
+        write, failures = support.write_json_compact, [MemoryError()]
 
         def short_of_memory(path, value):
             if failures:
                 raise failures.pop()
-            return write_json(path, value)
+            return write(path, value)
 
-        with patch('runner.write_json', side_effect=short_of_memory) as written, \
+        with patch('runner.write_json_compact', side_effect=short_of_memory) as written, \
                 patch('runtime_support.os.write') as notice:
             engine.save()
         self.assertEqual(written.call_count, 2)
@@ -363,7 +419,7 @@ class MemoryReserveTests(InstanceCase):
         notice.assert_called_once_with(2, b'Runner memory reserve released; dispatch will wait for recovery.\n')
         self.assertTrue(support.read_json(engine.state_path)['explore_requested'])
         failures.append(MemoryError())
-        with patch('runner.write_json', side_effect=short_of_memory) as written, self.assertRaises(MemoryError):
+        with patch('runner.write_json_compact', side_effect=short_of_memory) as written, self.assertRaises(MemoryError):
             engine.save()
         self.assertEqual(written.call_count, 1)
 
@@ -445,6 +501,8 @@ class LaunchFailureTests(InstanceCase):
         job = recovered.state['jobs'][key]
         self.assertEqual((session['status'], job['status'], job['last_error']),
                          ('failed', 'pending', 'session ended without retained research material'))
+        # The next attempt of this job continues nothing, so its assignment carries no word of the failed launch.
+        self.assertNotIn('previous_error', job['task'])
         self.assertEqual(recovered.state['blocks'], {})
 
 

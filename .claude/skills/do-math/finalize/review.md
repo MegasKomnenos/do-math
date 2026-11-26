@@ -26,7 +26,7 @@ Research under pressure leaves things of the following kinds. They are examples 
 
 ## The parts
 
-A part is a set of modules that one session will simplify. Every module of the library outside the definition modules lies in exactly one part; the definition modules, which the first line of `rests-on.md` names, lie in none, because nobody changes them. The module of the root lies in a part like any other; the root and the main theorem keep their names and their statements, whichever part holds them.
+A part is a set of modules that one session will simplify. Every module of the library outside the definition modules lies in exactly one part; the definition modules, which the first line of `rests-on.md` names, lie in none, because nobody changes them. The module of the root lies in a part like any other; the root and the main theorem keep their names and their statements, whichever part holds them, and a definition that either statement rests on keeps its text, so propose no other form of such a definition.
 
 Cut the library where the mathematics cuts. A part should be one portion of the argument, such that the session that takes it can read all of it, proofs included, more than once, and can understand what it proves without the rest. As a sense of scale and not a rule, that is a few thousand lines of Lean. Count what crosses a cut: every declaration that another part uses is frozen in name and statement for the session that owns it, so a cut through the middle of one argument freezes much of what most needs improving, while a cut between two arguments that meet in a few stated results freezes only those. Where two modules hold duplicates of each other, putting them into one part lets one session resolve the duplication without any item.
 

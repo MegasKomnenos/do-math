@@ -24,7 +24,7 @@ The user's decision that this step carries out reads: "the frozen library should
 
 `from` is `records`, `draft` or `source`. `declaration` is the declaration the item concerns: the one a record writer's finding is about, the one a gap is nearest to, or the one whose stronger form a source states. For an item from the records, `kind` is `hypothesis`, `conclusion`, `comment` or `other`, and `detail` is what the writer saw. For an item from the draft, `kind` is `statement` (the paper states a numbered statement otherwise than its declaration does), `formula` (a displayed formula that a later proof refers to and that no declaration states) or `assertion` (something a section needs to assert that no declaration states); `wanted` is what the paper wants to say, and `detail` is what the draft recorded about the gap, as a rule what the library has in its place and why the paper wants the other form. For an item from a source, `kind` is `statement` or `assertion`, `wanted` is the statement of the source in the library's notation, as the session that read the source wrote it down, and `detail` names the source and the place in it.
 
-- `part.json`: your part. `modules` are the modules you may change. `interface` lists the declarations of your part that keep their names and their statements, each with its statement: those that modules of other parts use, and the root and the main theorem where they lie in your part.
+- `part.json`: your part. `modules` are the modules you may change. `interface` lists the declarations of your part that keep their names and their statements, each with its statement: those that modules of other parts use, and, where they lie in your part, the root, the main theorem and every declaration that the statement of either rests on, whether the statement names it or the body of a definition under the statement does.
 
 ```json
 {"id": "Lib.Count", "modules": ["Lib.Count.Basic"],
@@ -51,7 +51,7 @@ For an item from the records, read the finding against the Lean first. A hypothe
 The limits have one reason: the other parts are being changed at this moment by sessions that cannot see your work.
 
 - You change only the modules of your part, and a module that you add lies directly in the folder of your part.
-- The declarations of `interface` keep their names and their statements, with their implicit arguments, the order of their arguments and any attribute that affects other files. Where an item asks for another form of such a statement, the new form enters as a declaration of its own under a new name, and the old one stays and is derived from it.
+- The declarations of `interface` keep their names and their statements, with their implicit arguments, the order of their arguments and any attribute that affects other files; a definition among them keeps its body as well, since another body changes what every statement that rests on it says. Where an item asks for another form of such a statement, the new form enters as a declaration of its own under a new name, and the old one stays and is derived from it.
 - A declaration of your part that `interface` does not list can be restated in place, and then every use of it inside your part is brought along.
 - An item was given to the part that holds the declaration it concerns, so whatever the item requires is added by you and by no other part. If closing it needs a fact that belongs to another part, prove what you need inside your own modules, as a `private` declaration where it is only a means, or report the item as not closed.
 

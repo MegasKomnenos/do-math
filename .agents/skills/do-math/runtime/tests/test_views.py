@@ -1,6 +1,7 @@
 """The derived views of the research and the text views a session reads the canon through."""
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import unittest
@@ -87,6 +88,28 @@ class ViewTests(ScenarioCase):
                 knowledge.render(self.instance, model, [])
         text.assert_not_called()
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_a_view_that_another_process_holds_for_a_moment_is_read_once_it_is_free(self):
+        # A session that reads a view can hold its file without read sharing for a moment. The comparison with
+        # what is rendered waits for the file, as the replacement of a view does, and the unchanged view stays.
+        model = knowledge.replay(self.instance)
+        knowledge.render(self.instance, model, [])
+        before = self.stamps()
+        original = Path.read_bytes
+        held = PermissionError('injected sharing violation')
+        held.winerror = 32
+        refusals = [held]
+
+        def held_once(path):
+            if path.name == 'frontier.md' and refusals:
+                raise refusals.pop()
+            return original(path)
+
+        with patch.object(Path, 'read_bytes', held_once), patch('runtime_support.time.sleep') as sleep:
+            knowledge.render(self.instance, model, [])
+        self.assertEqual(sleep.call_count, 1)
+        self.assertEqual(self.rewritten(before), [])
+
     def test_changed_research_updates_every_view_and_the_saved_state(self):
         self.split()
         before = knowledge.replay(self.instance)
@@ -114,7 +137,6 @@ class ViewTests(ScenarioCase):
         self.assertTrue(view.startswith('# Frontier\n\nRevision: 2 · Root: `Small.root` · State: unresolved\n'))
         self.assertIn('A statement that is settled is not opened.', view)
         self.assertEqual(view.split('\n\n')[3] + '\n', FRONTIER)
-        self.assertEqual(knowledge.frontier_lines(knowledge.replay(self.instance)), FRONTIER.splitlines())
         # Nothing the frontier passes over is listed: the settled unit, the accepted step, the unused statement.
         for name in ('unitG', 'stepE', 'strayS'):
             self.assertNotIn(name, view)

@@ -55,6 +55,7 @@ WINDOWS_PRIORITY = {"normal": 0x20, "below_normal": 0x4000, "idle": 0x40}
 P90 = 1.2816  # the standard-normal 90th percentile: an estimate is read as a probable peak
 HISTORY = 20  # samples kept per import closure
 KEEP_FINISHED = 200  # finished job records kept in the broker state; result.json files stay
+KEEP_BUILD_SECONDS = 600.0  # a finished build stays in the broker state, where `status` lists it, this long; its result.json stays
 READY_SECONDS = 20.0
 # The emitted files a `module` file reads of a module it imports. Of the others, `.olean.private` holds proofs
 # and `.olean.server` editor data; the `.ir.sig` that Lean 4.36 adds is written by `lean` without content of its own.
@@ -669,10 +670,11 @@ class Broker:
     def save(self, now=False):
         """Write the calibration table and the library's sizes if they changed, and the state when it is due.
 
-        The state holds every recent job and build, and the whole of it is written each time: 62 MB
-        and about a second in one instance. So a change waits until STATE_SECONDS have passed since
-        the last write, with these exceptions, which are written at once (`now`) or at the end of the
-        poll (`urgent`):
+        The state holds every job and build that has not ended and those that ended lately (prune),
+        a build with a row for every module it reached. The whole of it is written each time, and
+        the broker measures and starts nothing meanwhile. So a change waits until STATE_SECONDS have
+        passed since the last write, with these exceptions, which are written at once (`now`) or at
+        the end of the poll (`urgent`):
 
         - the broker starts or exits (start, serve), so that what `version` and `status` read is its own;
         - a compile is about to start (launch): a Lean that ran with no record of its host could not
@@ -1393,18 +1395,22 @@ class Broker:
             self.log(event="cache_skipped", key=key, error=str(exc))
 
     def prune(self):
-        """Keep the KEEP_FINISHED most recently finished jobs and builds in the state; result.json files stay.
+        """Keep the KEEP_FINISHED most recently finished jobs in the state and a finished build for KEEP_BUILD_SECONDS;
+        result.json files stay.
 
         A build keeps what its waiting modules need of the finished ones in its own record, so a
-        job can go once it has finished. A pruned build loses its lib folder, which no compile
+        job can go once it has finished. A finished build is read from its result.json; in the
+        state it serves `status` alone, which lists it for KEEP_BUILD_SECONDS. Its record holds a
+        row for every module it reached, so it goes when that time has passed and does not weigh
+        on every later write of the state. A pruned build loses its lib folder, which no compile
         reads once the build is over."""
         finished = sorted((j for j in self.state["jobs"].values() if j["status"] in FINISHED),
                           key=lambda j: j["finished_at"] or 0)
         for job in finished[:-KEEP_FINISHED] if len(finished) > KEEP_FINISHED else []:
             del self.state["jobs"][job["id"]]
-        builds = sorted((b for b in self.state["builds"].values() if b["status"] in FINISHED),
-                        key=lambda b: b["finished_at"] or 0)
-        for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
+        listed_since = time.time() - KEEP_BUILD_SECONDS
+        for build in [b for b in self.state["builds"].values()
+                      if b["status"] in FINISHED and (b["finished_at"] or 0) <= listed_since]:
             del self.state["builds"][build["id"]]
             shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 
@@ -1658,9 +1664,10 @@ class Broker:
                 (job_dir / "CANCEL").unlink(missing_ok=True)
                 self.log(event="requeued", job=job_id, reason="Lean had not started")
                 continue
-            if job["kind"] == "calibration" and (job_dir / "exit.json").exists():
-                # It ended while no broker measured it, so the peak last written is not the baseline of
-                # its imports; finish() records nothing for it.
+            if job["kind"] == "calibration":
+                # No broker measured it from the last write of the state to this moment, and it can end
+                # before this broker reads its memory. The peak last written is then not the baseline of
+                # its imports, so finish() records nothing for it and the imports are measured again.
                 job["unmeasured"] = True
             self.log(event="adopted", job=job_id, host=job.get("host"), lean=job.get("lean"))
 
@@ -2037,7 +2044,7 @@ def broker_status(paths):
                         "modules": {s: sum(m["status"] == s for m in b["modules"].values())
                                     for s in ("cached", "queued", "running", "finished", "failed", "cancelled")}}
                        for b in state.get("builds", {}).values() if b["status"] in ACTIVE
-                       or b["finished_at"] and b["finished_at"] > time.time() - 600],
+                       or b["finished_at"] and b["finished_at"] > time.time() - KEEP_BUILD_SECONDS],
             "calibration": str(paths.calibration), "cache": str(paths.cache)}
 
 

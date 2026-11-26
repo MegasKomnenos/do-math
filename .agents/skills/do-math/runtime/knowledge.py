@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from canon import Canon, beyond_allowed, name_path, read_approaches
-from runtime_support import read_json, write_json, write_text
+from runtime_support import read_bytes, read_json, write_json, write_text
 
 ROOT_QUESTION = 'q0'
 ROOT_QUESTION_STATEMENT = 'The root problem itself, taken as a whole.'
@@ -712,14 +712,20 @@ def escape(text):
     return str(text).replace('<', '&lt;').replace('>', '&gt;')
 
 
-def render(instance, model, board, leases=None):
+def render(instance, model, board, leases=None, research=True):
+    """Write the derived views of an instance.
+
+    frontier.md and board.md show who holds what, so they follow the board. index.md and state.json hold
+    the research alone. A caller whose model is the one these two were last written from passes
+    `research=False`, and they are then left as they are, neither built nor read."""
     instance = Path(instance)
     base = instance / 'knowledge'
 
     def write_view(path, content):
-        # Board changes trigger rendering too. Leave unchanged research files alone.
+        # Board changes trigger rendering too. Leave unchanged research files alone. A session can hold a view
+        # for a moment while it reads it, so the comparison waits for the file as the replacement does.
         try:
-            if path.read_bytes() == content.encode('utf-8'):
+            if read_bytes(path) == content.encode('utf-8'):
                 return
         except FileNotFoundError:
             pass
@@ -745,19 +751,20 @@ def render(instance, model, board, leases=None):
     lines += frontier_notes(model, investigation)
     lines += question_lines(model)
     write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
-    index = ['# Index of the canon', '', f"Revision: {model['sequence']}", '',
-             'What each record says about its element, in the order of the Lean structure, with the current standing. '
-             'This view is derived; nothing here is written by hand.', '']
-    by_module = {}
-    for name, element in elements.items():
-        by_module.setdefault(element['module'], []).append(element)
-    for module in sorted(by_module):
-        index += [f'## {module}', '']
-        for element in sorted(by_module[module], key=lambda e: e['name']):
-            standing = STANDINGS.get(element['standing'], element['kind'])
-            index.append(f"- `{element['name']}` · {element['weight']} · {standing} — {escape(element['description'])}")
-        index.append('')
-    write_view(base / 'index.md', '\n'.join(index) + '\n')
+    if research:
+        index = ['# Index of the canon', '', f"Revision: {model['sequence']}", '',
+                 'What each record says about its element, in the order of the Lean structure, with the current standing. '
+                 'This view is derived; nothing here is written by hand.', '']
+        by_module = {}
+        for name, element in elements.items():
+            by_module.setdefault(element['module'], []).append(element)
+        for module in sorted(by_module):
+            index += [f'## {module}', '']
+            for element in sorted(by_module[module], key=lambda e: e['name']):
+                standing = STANDINGS.get(element['standing'], element['kind'])
+                index.append(f"- `{element['name']}` · {element['weight']} · {standing} — {escape(element['description'])}")
+            index.append('')
+        write_view(base / 'index.md', '\n'.join(index) + '\n')
     board_lines = ['# Research work and occupied sections', '', f"Research revision: {model['sequence']}", '',
                    'Saved pipeline state, not process liveness. Sections and questions remain occupied through peer and review.', '']
     for row in board:
@@ -780,6 +787,8 @@ def render(instance, model, board, leases=None):
             queue = ', '.join(w['session'] for w in entry['queue']) or '(none)'
             board_lines.append(f'- {name} · lease: {lease_holders} · waiting: {queue}')
     write_view(base / 'board.md', '\n'.join(board_lines) + '\n')
+    if not research:
+        return
     try:
         previous = read_json(base / 'state.json')
     except FileNotFoundError:

@@ -6,7 +6,8 @@ or else `<kind>`, one entry for each session in turn and the last entry for ever
 entry maps a path under the session's folder to its text; the key `@copy` lists pairs of paths, each
 a file or folder of the session copied to another place in it. Every call is recorded with the files
 the session was given. Run as `finalize_cli.py lake ...` it is Lake: `build` succeeds unless
-`lake.json` of the scenario names a text that Challenge.lean then holds; `env lean DoMathExtract.lean`
+`lake.json` of the scenario names a text that Challenge.lean then holds, and writes into `built.json` of the
+scenario the packages folder that the manifest of the built project names; `env lean DoMathExtract.lean`
 runs the stand-in compiler's extraction, after one more hypothesis was put behind the text of Challenge.lean
 that `lake.json` names under `elaborates_otherwise`, as where Lean elaborates what that file prints to another
 statement than the library's; `env lean Check.lean` prints an axioms line for every name
@@ -104,7 +105,7 @@ def stand_in_lake(scenario, arguments):
             print('error: Challenge.lean: the stand-in refuses this text')
             return 1
         manifest = json.loads(Path('lake-manifest.json').read_text(encoding='utf-8'))
-        Path('built.json').write_text(json.dumps({'packagesDir': manifest['packagesDir']}), encoding='utf-8')
+        (scenario / 'built.json').write_text(json.dumps({'packagesDir': manifest['packagesDir']}), encoding='utf-8')
         return 0
     if arguments[:2] == ['env', 'lean'] and arguments[2] == 'DoMathExtract.lean':
         sys.path.insert(0, str(THIS.parent))

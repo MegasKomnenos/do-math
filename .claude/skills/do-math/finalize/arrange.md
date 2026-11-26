@@ -31,7 +31,7 @@ Read `review.json` and all reports before the Lean, so that you read the library
 
 **Bring the comments to the mathematics.** A comment that describes how the research went, or that mentions another proof, comes to say what the declaration states, or goes. The common text gives the rule and its reason.
 
-The definition modules keep their paths and their bytes, and `{{root}}` and `{{main}}` their names and their statements. Every convention of the common text holds for every file.
+The definition modules keep their paths and their bytes, and `{{root}}` and `{{main}}` their names and their statements. A definition that either statement rests on, whether the statement names it or the body of a definition under the statement does, keeps its name and its text as well: the selection described the result in words from the main theorem as it stood, and the package prints that description as it was written. Every convention of the common text holds for every file.
 
 Work in this order, in `lean/` itself, and build after each kind of change, with `lean/` as the module root and every `.lean` file under it named as a file to compile, in several commands if the list is too long for one. When a build has passed, keep a copy of that state in a folder of your own before you go on, so that you can return to it. Changing the name of a module changes the import line of every module that imports it; make such changes by script, and build afterwards.
 

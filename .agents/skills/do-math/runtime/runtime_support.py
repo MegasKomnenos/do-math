@@ -59,6 +59,12 @@ class EmergencyMemory:
 
 
 def read_json(path):
+    """The parsed content of a JSON file; on Windows a refused read is made again for up to two seconds.
+
+    A read is refused while another process holds the file without read sharing or is replacing it.
+    Python's open reports that as errno 13 with no Windows error code, so winerror is None here. The
+    operations of _retried call Windows directly and receive the code itself, which is why the two
+    lists of codes differ."""
     deadline = time.monotonic() + 2.0
     while True:
         try:
@@ -173,6 +179,12 @@ def remove_file(path):
     """Remove a file that a Windows reader may briefly hold without delete sharing, with the retry of _retried;
     until the removal succeeds the file stays."""
     _retried(os.unlink, path)
+
+
+def read_bytes(path):
+    """The bytes of a file that a Windows process may briefly hold without read sharing, read with the retry
+    of _retried."""
+    return _retried(Path.read_bytes, Path(path))
 
 
 def rename_directory(source, destination):

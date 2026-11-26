@@ -330,6 +330,14 @@ class PaperCase(InstanceCase):
         """The published instance once the first test has made it; before that, the one `init` created."""
         return _SETTLED or super().starting_instance()
 
+    @property
+    def read_from(self):
+        """The instance for a call that reads an instance and writes nothing into it, as the paper command does.
+
+        It is the test's own copy once the test has one, and until then the instance the test starts from, of
+        which no copy is then made. A test that changes the instance does so through `instance`."""
+        return self.instance if 'instance' in vars(self) else self.starts_from
+
     def setUp(self):
         global _SETTLED
         super().setUp()
@@ -367,23 +375,23 @@ class PaperCase(InstanceCase):
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
             if only:
-                return paper.typeset_only(self.instance, self.out, tex, **options)
+                return paper.typeset_only(self.read_from, self.out, tex, **options)
             if open_findings is not None:
-                return paper.act_on_open(self.instance, self.out, tex, parallel=parallel, numbers=open_findings)
-            return paper.produce(self.instance, self.out, tex, parallel=parallel, resume=resume, **options)
+                return paper.act_on_open(self.read_from, self.out, tex, parallel=parallel, numbers=open_findings)
+            return paper.produce(self.read_from, self.out, tex, parallel=parallel, resume=resume, **options)
 
     def close(self, script):
         """The pass that closes what a finished run left open, as a caller with nobody to ask makes it."""
         write_json(self.scenario / 'script.json', script)
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print'):
-            return paper.close_open(self.instance, self.out, TEX, parallel=1)
+            return paper.close_open(self.read_from, self.out, TEX, parallel=1)
 
     def taken_up(self, name, run):
         """Start the test from a run of the command that several tests take up, under the name `name`.
 
         `run` makes that run. The first test that asks calls it, and the folder of the paper and the record of the
-        sessions are then kept for the test process. Every later test receives a copy of both, as each test
-        receives a copy of the instance, so that no test sees what another did to the run."""
+        sessions are then kept for the test process. Every later test receives a copy of both, so that no test
+        sees what another did to the run."""
         if name not in _RUNS:
             run()
             kept = Path(tempfile.mkdtemp(dir=_SETTLED.parent))  # beside the kept instance, and removed with it
@@ -397,7 +405,7 @@ class PaperCase(InstanceCase):
     def said(self, arguments):
         """What the command prints last when it is run with these arguments after the instance, and its exit code."""
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
-            code = paper.main([str(self.instance), '--out', str(self.out), *arguments])
+            code = paper.main([str(self.read_from), '--out', str(self.out), *arguments])
         return code, shown.call_args.args[0]
 
     def part(self, name):
@@ -418,14 +426,15 @@ class PaperCase(InstanceCase):
         return [e for e in read_json(self.out / 'log.json') if e['event'] == kind]
 
     def materials(self):
-        return paper.extract(self.instance, replay(self.instance))
+        return paper.extract(self.read_from, replay(self.read_from))
 
     def settled_materials(self):
         """The materials of the instance as it was published, for a test that reads them and changes no instance.
 
-        The first test that asks makes them from its own copy of the instance, before it does anything else to
-        that copy, and they are kept for the test process. Each test receives a copy of them, so that no test
-        sees what another did to them, and a test that uses nothing else of the instance is given no copy of it."""
+        The first test that asks makes them from the instance it reads (read_from), before it changes anything in
+        an instance of its own, and they are kept for the test process. Each test receives a copy of them, so that
+        no test sees what another did to them, and a test that uses nothing else of the instance is given no copy
+        of it."""
         global _FOUND
         if _FOUND is None:
             _FOUND = self.materials()
@@ -1046,23 +1055,35 @@ class CollectionTests(PaperCase):
 class FetchTests(unittest.TestCase):
     """The collection's own fetch.py, with the requests to arXiv answered by the test."""
 
+    def setUp(self):
+        # The script is compiled from its source here, so that the tests leave no bytecode beside the collection.
+        script = THIS.parents[2] / 'exemplars' / 'fetch.py'
+        self.fetch = types.ModuleType('exemplars_fetch')
+        self.fetch.__file__ = str(script)
+        exec(compile(script.read_text(encoding='utf-8'), str(script), 'exec'), self.fetch.__dict__)
+        self.folder = Path(tempfile.mkdtemp(prefix='do-math-fetch-'))
+        self.addCleanup(shutil.rmtree, self.folder, True)
+
+    def fetched(self, papers, request):
+        """Run the script on a manifest of these papers, each (key, SHA-256), with `request` answering for arXiv.
+
+        The papers have the arXiv identifiers 0001.00001v1, 0001.00002v1 and so on. Returns the exit code and
+        the lines the script printed."""
+        (self.folder / 'manifest.json').write_text(json.dumps(
+            [{'key': key, 'arxiv': f'0001.0000{number}v1', 'sha256': digest}
+             for number, (key, digest) in enumerate(papers, 1)]), encoding='utf-8')
+        with patch.object(self.fetch, 'HERE', str(self.folder)), patch.object(self.fetch, '_request', side_effect=request), \
+                patch('builtins.print') as shown:
+            code = self.fetch.main([])
+        return code, [str(call.args[0]) for call in shown.call_args_list]
+
     def test_a_download_that_was_cut_short_fails_its_paper_and_the_other_papers_are_fetched(self):
         import gzip
         import http.client
         import io
         import tarfile
-        # The script is compiled from its source here, so that the test leaves no bytecode beside the collection.
-        script = THIS.parents[2] / 'exemplars' / 'fetch.py'
-        fetch = types.ModuleType('exemplars_fetch')
-        fetch.__file__ = str(script)
-        exec(compile(script.read_text(encoding='utf-8'), str(script), 'exec'), fetch.__dict__)
-        folder = Path(tempfile.mkdtemp(prefix='do-math-fetch-'))
-        self.addCleanup(shutil.rmtree, folder, True)
         source = b'\\documentclass{amsart}\n\\begin{document}\n\\maketitle\nA paper.\n\\end{document}\n'
         digest = hashlib.sha256(source).hexdigest()
-        (folder / 'manifest.json').write_text(json.dumps(
-            [{'key': key, 'arxiv': f'0001.0000{number}v1', 'sha256': digest}
-             for number, key in enumerate(('broken', 'cut', 'short', 'whole'), 1)]), encoding='utf-8')
         packed = gzip.compress(source)
         # An archive that is not compressed, with the source as its one member.
         archive = io.BytesIO()
@@ -1080,16 +1101,42 @@ class FetchTests(unittest.TestCase):
                 return archive.getvalue()[:520]
             return packed[:-12] if url.endswith('0001.00002v1') else packed
 
-        with patch.object(fetch, 'HERE', str(folder)), patch.object(fetch, '_request', side_effect=request), \
-                patch('builtins.print') as shown:
-            self.assertEqual(fetch.main([]), 1)
-        said = [str(call.args[0]) for call in shown.call_args_list]
+        code, said = self.fetched([(key, digest) for key in ('broken', 'cut', 'short', 'whole')], request)
+        self.assertEqual(code, 1)
         self.assertTrue(any(line.startswith('broken: FAILED, download failed') for line in said), said)
         self.assertTrue(any(line.startswith('cut: FAILED, the e-print is not a complete gzip file') for line in said), said)
         self.assertTrue(any(line.startswith('short: FAILED, the e-print is not a complete tar archive') for line in said), said)
         self.assertEqual(said[-1], '3 paper(s) could not be rebuilt as recorded: broken, cut, short')
-        self.assertEqual(sorted(path.name for path in folder.iterdir()), ['manifest.json', 'whole.tex'])
-        self.assertEqual((folder / 'whole.tex').read_bytes(), source)
+        self.assertEqual(sorted(path.name for path in self.folder.iterdir()), ['manifest.json', 'whole.tex'])
+        self.assertEqual((self.folder / 'whole.tex').read_bytes(), source)
+
+    def test_the_files_of_a_source_are_joined_as_the_script_says_and_written_only_with_the_digest_of_the_manifest(self):
+        import io
+        import tarfile
+        # The main file has a comment line, a comment behind text, a comment environment, a file that it inputs and
+        # a bibliography whose .bbl the archive holds, and it goes on behind the end of the document.
+        files = {'main.tex': '% A comment line.\n\\documentclass{amsart}\n\\begin{document}\n\\maketitle\n\\input{part}\n'
+                             'Kept. % behind text\n\\begin{comment}\nLeft out.\n\\end{comment}\n\\bibliography{refs}\n'
+                             '\\end{document}\nBehind the end.\n',
+                 'part.tex': 'A part.\n', 'main.bbl': '\\begin{thebibliography}{1}\n\\end{thebibliography}\n'}
+        archive = io.BytesIO()
+        with tarfile.open(fileobj=archive, mode='w') as tar:
+            for name, text in files.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(text)
+                tar.addfile(member, io.BytesIO(text.encode('ascii')))
+        joined = (b'\\documentclass{amsart}\n\\begin{document}\n\\maketitle\nA part.\nKept. % behind text\n'
+                  b'\\begin{thebibliography}{1}\n\\end{thebibliography}\n\\end{document}\n')
+        self.assertEqual(self.fetch.build(archive.getvalue()), joined)
+        # The same source answers for two papers. The file of the one for which the manifest records another
+        # digest is not written.
+        digest = hashlib.sha256(joined).hexdigest()
+        code, said = self.fetched([('joined', digest), ('other', '0' * 64)], lambda url: archive.getvalue())
+        self.assertEqual(code, 1)
+        self.assertTrue(any(line.startswith(f'other: FAILED, rebuilt file has SHA-256 {digest}, the manifest records')
+                            for line in said), said)
+        self.assertEqual(sorted(path.name for path in self.folder.iterdir()), ['joined.tex', 'manifest.json'])
+        self.assertEqual((self.folder / 'joined.tex').read_bytes(), joined)
 
 
 class LikenessShapeTests(unittest.TestCase):
@@ -2362,9 +2409,14 @@ class SideBySideTests(PaperCase):
         for words in ('the canon has changed since the run began', 'new elements: Small.oddSum',
                       'elements whose record or standing changed: Small.sq_step'):
             self.assertIn(words, str(stopped.exception))
-        # The revision alone says nothing about what the proof rests on.
-        write_json(self.out / 'materials.json', {**kept, 'revision': kept['revision'] - 1})
+        # A publication that changes nothing the proof rests on does not stop the run: it raises the revision, and it
+        # can add a declaration, a work of the bibliography and another account of the problem as a whole.
+        write_json(self.out / 'materials.json', {
+            **kept, 'revision': kept['revision'] - 1, 'identifiers': kept['identifiers'][1:], 'bibliography': '',
+            'bibliography_keys': [], 'understanding': 'An earlier account.'})
         self.assertEqual(paper.changed_materials(read_json(self.out / 'materials.json'), self.materials()), [])
+        # What the proof rests on beside the elements is compared key by key.
+        self.assertEqual(paper.changed_materials({**kept, 'main': 'Small.sq_step'}, self.materials()), ['"main"'])
         # A plan that does not pass the check, with parts written from it, is not a run that can go on.
         plan = read_json(self.out / 'plan.json')
         plan['sections'][1].pop('exemplars')
@@ -4445,6 +4497,22 @@ class PlacementTests(PaperCase):
         script['remove'] = [{'output/tools.tex': TOOLS}]
         self.assertEqual(self.close(script), 0)
         self.assertEqual(self.kinds()[-2:], [('remove', None), ('place', None)])
+        self.assertTrue(all('in_text' in item for item in read_json(self.out / 'correspondence.json')['others']
+                            if item['treatment'] != 'not_stated'))
+
+    def test_a_closing_pass_stopped_in_the_check_makes_it_when_the_run_is_continued(self):
+        reason = 'The bound is the content of Lemma 2.1.'
+        self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
+        script = good()
+        script['remove'] = [{'output/tools.tex': TOOLS}]
+        script['place'] = [{}]  # the session that looks for the elements leaves nothing, in each of its attempts
+        with self.assertRaises(paper.Stop):
+            self.close(script)
+        launched = len(self.calls())
+        # The pass took the sentence out and left nothing open, so the continued run ends with exit code 0 and no
+        # closing pass follows it. It makes the check itself, for the text as the pass left it.
+        self.assertEqual(self.run_paper(good(), resume=True), 0)
+        self.assertEqual(self.kinds(launched), PLACED)
         self.assertTrue(all('in_text' in item for item in read_json(self.out / 'correspondence.json')['others']
                             if item['treatment'] != 'not_stated'))
 

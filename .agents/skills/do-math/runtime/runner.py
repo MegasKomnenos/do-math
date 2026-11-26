@@ -12,7 +12,8 @@ import traceback
 import uuid
 
 from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, apply_rearrangement, apply_written,
-                   build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
+                   build_outcome, candidate_records, check_applied, check_written_bases, copy_tree,
+                   declaration_text, drop_modules,
                    empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_index,
                    read_record, record_file, required_pairs, retire_approaches, sha256_text, start_build,
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
@@ -31,7 +32,7 @@ from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work,
                              first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
                              replace_file, session_host,
-                             terminate_process, write_json, write_text)
+                             terminate_process, write_json, write_json_compact, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
 # The functions that use context and lean_broker, here and in canon, import them at that point.
 # Both are loaded here as well, so that a process started from this file holds the whole runtime from its
@@ -49,6 +50,19 @@ PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 
 
 def uid(prefix):
     return prefix + uuid.uuid4().hex
+
+
+def copy_to_disk(source, target):
+    """Copy a file, with the content of the copy on the disk when this returns; returns the copy.
+
+    The folder of a publication's event is made once: a runner that finds it under its name does not make it
+    again, and every command replays its files (knowledge.replay). After a loss of power that folder must not
+    hold a file whose content never arrived on the disk. The copy takes no read-only flag from its source."""
+    with open(source, 'rb') as inp, open(target, 'wb') as out:
+        shutil.copyfileobj(inp, out)
+        out.flush()
+        os.fsync(out.fileno())
+    return target
 
 
 def operator_questions(data, model):
@@ -213,12 +227,15 @@ class Runner:
         self.archive_due = False
 
     def save(self):
+        # Without indentation (write_json_compact): the state holds every session the instance has had, so in
+        # a long run it is megabytes, and it is written whole at each step of a launch, a collection and a
+        # publication.
         try:
-            write_json(self.state_path, self.state)
+            write_json_compact(self.state_path, self.state)
         except MemoryError:
             if self.reserve is None or not self.reserve.release():
                 raise
-            write_json(self.state_path, self.state)
+            write_json_compact(self.state_path, self.state)
 
     def session_dir(self, sid):
         return self.instance / 'sessions' / sid
@@ -240,9 +257,8 @@ class Runner:
         self.state['pipelines'][pid] = {'id': pid, 'role': role, 'stage': 'producing', 'producer': None,
                                          'peer': None, 'review': None, 'record': None,
                                          'element': (task or {}).get('element'), 'previous_peers': []}
-        key = self.enqueue(role, task or {}, pid, pid + ':producer')
-        self.save()
-        return key
+        # enqueue saves the state, the new pipeline with it: the job's key is new with the pipeline's ID.
+        return self.enqueue(role, task or {}, pid, pid + ':producer')
 
     def selection(self, role):
         now = time.time()
@@ -371,7 +387,6 @@ class Runner:
         now = time.time()
         job.update(status='pending', session=None,
                    not_before=now + (min(delay, 1) if availability else delay), last_error=reason)
-        job['task']['previous_error'] = reason
         block_key = 'model:' + session['model']
         # A typed refusal already recorded its own scope and backoff history.
         # Invalid output is a job failure, not evidence that its model is unavailable.
@@ -382,8 +397,11 @@ class Runner:
                 self.state['blocks'][block_key] = {'until': until, 'reason': reason, 'source': 'retry'}
         session.update(status='failed', reason=reason)
         if job['role'] not in PRODUCERS:
-            # The replacement continues this job's own stage. A review job assesses one candidate, so the
-            # review of an earlier candidate that a new peer replaced is not partial work of this job.
+            # The replacement continues this job's own stage, so its assignment says why the earlier session
+            # did not finish and where what that session left is. A review job assesses one candidate, so the
+            # review of an earlier candidate that a new peer replaced is not partial work of this job. A producing
+            # job is retried only when its session left nothing (finish), so its next session is told of no earlier one.
+            job['task']['previous_error'] = reason
             previous = job['task'].setdefault('previous_partial_sessions', [])
             path = str(self.session_dir(session['id']))
             if path not in previous:
@@ -790,6 +808,8 @@ class Runner:
             try:
                 change, records = self.effective_change(publication)
                 receipt = read_json(candidate / PREPARED)
+                # A receipt of an earlier version of `prepare` has no `written_bases`, and nothing is compared for it.
+                check_written_bases(canon, change, receipt.get('written_bases', {}))
                 changed = apply_lean(stage / 'lean', candidate, change, index, receipt.get('bases'),
                                      self.model['library'])
                 removed = []
@@ -912,8 +932,8 @@ class Runner:
             if stage.exists():
                 remove_tree(stage)
             if kind == 'change':
-                shutil.copytree(self.session_dir(sid) / 'output', stage)
-                shutil.copyfile(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
+                shutil.copytree(self.session_dir(sid) / 'output', stage, copy_function=copy_to_disk)
+                copy_to_disk(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
                 write_json(stage / 'applied.json', applied)
                 pipeline = self.state['pipelines'][job['pipeline']]
                 write_json(stage / 'provenance.json', {
@@ -921,7 +941,7 @@ class Runner:
                     'review_session': sid, 'pipeline': pipeline['id']})
                 verified = self.session_dir(sid) / 'work/verify/outcome.json'
                 if verified.is_file():
-                    shutil.copyfile(verified, stage / 'verify.json')
+                    copy_to_disk(verified, stage / 'verify.json')
             elif kind == 'questions':
                 stage.mkdir()
                 write_json(stage / 'questions.json', publication['questions'])
@@ -930,10 +950,10 @@ class Runner:
                 output = self.session_dir(sid) / 'output'
                 for name in ('organization.json', 'change.json'):
                     if (output / name).is_file():
-                        shutil.copyfile(output / name, stage / name)
+                        copy_to_disk(output / name, stage / name)
                 write_json(stage / 'applied.json', applied or {'added': [], 'replaced': [], 'records': [], 'retired': []})
             else:
-                shutil.copytree(self.session_dir(sid) / 'output', stage)
+                shutil.copytree(self.session_dir(sid) / 'output', stage, copy_function=copy_to_disk)
             # knowledge/questions/ appears with an instance's first operator publication of questions.
             destination.parent.mkdir(exist_ok=True)
             rename_directory(stage, destination)
@@ -1291,8 +1311,7 @@ class Runner:
             if self.waits_for_its_kind(job):
                 continue
             if job['not_before'] <= time.time() and self.selection(job['role']):
-                self.dispatch(job['id'])
-                changed = True
+                self.dispatch(job['id'])  # saves what it changes
         if changed:
             self.save()
 
@@ -1339,7 +1358,9 @@ class Runner:
         holding = {n: ([h['session'] for h in e['holders']], [w['session'] for w in e['queue']]) for n, e in leases.items()}
         signature = json.dumps([rows, holding, self.model['sequence'], investigations], sort_keys=True)
         if signature != self.last_board:
-            render(self.instance, self.model, rows, leases)
+            # A change of the board leaves the research as it is. The views that hold the research alone were
+            # written when this runner last made its model (publish), or are written here on its first pass.
+            render(self.instance, self.model, rows, leases, research=self.last_board is None)
             self.last_board = signature
 
     def ingest_inputs(self):

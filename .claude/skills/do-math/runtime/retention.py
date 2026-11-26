@@ -59,6 +59,10 @@ def conversation(source, destination, native, *, append=False, label=None, note=
                 payload = event.get('item', event.get('message', event))
             if payload is None:
                 continue
+            if kind in ('assistant', 'user') and isinstance(payload, dict) and 'content' in payload:
+                # A Claude message arrives inside the API's account of the call (model, stop reason, token
+                # counts). The role and the content are what was said; the rest stays in the raw source.
+                payload = {key: payload[key] for key in ('role', 'content') if key in payload}
             body = readable(payload)
             fence = '`' * max(3, 1 + max((len(x) for x in re.findall(r'`+', body)), default=0))
             out.write(f'## {label or Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')

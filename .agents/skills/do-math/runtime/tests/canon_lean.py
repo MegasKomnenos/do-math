@@ -4,7 +4,11 @@ It accepts what the broker passes (`-R root`, `-o file`, `--threads=N`, the sour
 `--version`. A module is "compiled" by parsing its declarations and writing four of the five files
 that Lean 4.36 emits for a `module` file; it does not write the fifth, `.ir.sig`. The public file
 depends on names, kinds, statements and the bodies of definitions, so a changed proof leaves it
-unchanged, as the real compiler does when the auxiliary declarations stay the same. The source
+unchanged. Lean 4.36 leaves its public files unchanged only when the auxiliary declarations and the
+axioms of every declaration stay the same: it keeps those axioms in the compiled module, so a proof
+that becomes complete or is opened again changes them. A `module` file above such a proof is
+therefore taken from the cache here and compiled again under Lean, which test_formal.LeanItselfTests
+shows. The source
 `DoMathExtract.lean` is answered with the rows canon.extraction_source asks for, computed from the
 sources under the root instead of from a compiled environment. As in Lean, a pair is decided only
 between declarations of the modules that file imports, directly or through others, and a name that a

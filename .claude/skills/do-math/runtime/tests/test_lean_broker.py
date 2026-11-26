@@ -843,18 +843,23 @@ class BrokerTests(BrokerFixture):
                 self.assertEqual(job["status"], "finished")
                 self.assertEqual(self.broker.calibration.known(job["closure"]), verdict)
 
-    def test_a_calibration_that_ended_while_no_broker_was_alive_gives_no_baseline(self):
+    def test_a_calibration_that_no_broker_measured_to_its_end_gives_no_baseline(self):
         # The state is written when a compile starts and then at most every STATE_SECONDS. Of a calibration
-        # that ended while no broker was alive, the next broker has the peak last written, here that of
+        # that was running when its broker died, the next broker has the peak last written, here that of
         # the start. Taken as the baseline, it would be reserved for every later compile with those imports.
+        # The compile can end while no broker is alive, or after the next broker has started and before that
+        # broker has read its memory once. The second is made here: the exit is kept from the starting broker.
         self.start_broker()
         job_id = self.submit(self.session_file("s1"), expect_mb=40)
         self.until(lambda: self.jobs("running"))
         calibration = self.jobs("running")[0]
         self.assertEqual(calibration["kind"], "calibration")
         self.wait_gone(calibration["host"], limit=30)  # no poll meanwhile: the broker that started it has died
-        self.assertTrue((self.paths.job(calibration["id"]) / "exit.json").exists())
+        exit_file = self.paths.job(calibration["id"]) / "exit.json"
+        aside = exit_file.with_name("exit.aside")
+        exit_file.replace(aside)  # the folder as a broker finds it that starts while the compile is still running
         self.start_broker()
+        aside.replace(exit_file)  # the compile ends before the first poll of that broker
         self.until(lambda: self.finished(job_id))
         job = self.broker.state["jobs"][job_id]
         self.assertEqual(self.broker.state["jobs"][calibration["id"]]["exit_code"], 0)
@@ -1291,7 +1296,9 @@ class BuildTests(BrokerFixture):
 
     def test_build_follows_imports_caches_and_rebuilds_only_what_changed(self):
         self.start_broker()
-        root = self.tree()
+        # B and C are asserted below to have run side by side. The broker starts one compile in a pass, so C starts
+        # a pass after B and has to find B still running: both run long enough for a slow pass on a loaded machine.
+        root = self.tree(B={"sleep": 2}, C={"sleep": 2})
         first = self.build(root, [root / "D.lean"])
         self.until(lambda: self.build_record(first)["status"] in lean_broker.FINISHED)
         record = self.build_record(first)
@@ -1688,19 +1695,21 @@ class BuildTests(BrokerFixture):
         self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
 
     def test_a_pruned_build_loses_its_lib_folder_and_keeps_its_result(self):
-        # Pruning is the one place the broker deletes a folder. It takes the lib folder of the build it
-        # prunes from the state and nothing else, and that build's outcome stays readable from its result.json.
+        # Pruning is the one place the broker deletes a folder. A finished build stays in the state for
+        # KEEP_BUILD_SECONDS, the time for which `status` lists it. When a compile ends after that time, the
+        # broker prunes the build from the state and takes its lib folder and nothing else, and the build's
+        # outcome stays readable from its result.json.
         self.start_broker()
         def build_once(name):
             root = self.instance / "sessions/s1/work" / name
             build_id = self.build(root, [source(root / "Target.lean", imports=(), marker=name)])
             self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
             return build_id
-        with patch.object(lean_broker, "KEEP_FINISHED", 1):
-            first = build_once("first")
-            first_lib = Path(self.build_record(first)["lib"])
-            self.assertTrue((first_lib / "Target.olean").is_file())
-            second = build_once("second")
+        first = build_once("first")
+        first_lib = Path(self.build_record(first)["lib"])  # within the time: the end of its own compile left it
+        self.assertTrue((first_lib / "Target.olean").is_file())
+        self.build_record(first)["finished_at"] -= lean_broker.KEEP_BUILD_SECONDS  # the time has passed
+        second = build_once("second")
         self.assertNotIn(first, self.broker.state["builds"])
         self.assertFalse(first_lib.exists())
         self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())

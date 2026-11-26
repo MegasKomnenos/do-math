@@ -20,6 +20,7 @@ Layout under <instance>/canon/:
 import difflib
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -539,8 +540,7 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
             if sha256_text(current) != entry['source_sha']:
                 raise CanonError(f'the source of {entry["name"]} does not match the index; the index is stale')
             if bases.get(entry['name'], entry['source_sha']) != entry['source_sha']:
-                raise CanonError(f'the proof of {entry["name"]} was replaced by another publication after this '
-                                 'candidate was written; the candidate has to be made again on the current canon')
+                raise replaced_since(entry['name'])
             replacement = (candidate / item['file']).read_text(encoding='utf-8-sig').replace('\r\n', '\n')
             text = replace_span(text, entry['span'], replacement)
         imports = [name for _, item in items for name in item['imports']]
@@ -549,6 +549,35 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
         write_text(path, text)
         changed.append('.'.join(PurePosixPath(relative).with_suffix('').parts))
     return sorted(set(changed))
+
+
+def replaced_since(name):
+    return CanonError(f'the proof of {name} was replaced by another publication after this '
+                      'candidate was written; the candidate has to be made again on the current canon')
+
+
+def written_base(canon, name):
+    """The identity of the proof as the canon's record of a declaration carries it.
+
+    It covers the written proof and the statement the record says the declaration proves or refutes. With
+    the Lean text of the declaration, these are what a replacement replaces (check_applied). A candidate can
+    bring a new proof and leave the Lean text as it is, so `prepare` keeps this identity beside that of the
+    Lean text for every declaration the candidate replaces."""
+    record = read_record(canon, name)
+    meta, sections = (record['meta'], record['sections']) if record else ({}, {})
+    return sha256_text('\n'.join([meta.get('proves') or '', meta.get('refutes') or '',
+                                  (sections.get('Proof') or '').strip()]))
+
+
+def check_written_bases(canon, change, bases):
+    """Refuse a replacement whose declaration another publication gave a new proof under the same Lean text.
+
+    bases maps a replaced declaration to the written_base its record had when the candidate was prepared.
+    apply_lean compares the Lean text in the same way and finds the proofs replaced with a new Lean text."""
+    for item in change['replace']:
+        name = item['declaration']
+        if name in bases and bases[name] != written_base(canon, name):
+            raise replaced_since(name)
 
 
 def sync_tree(source, target):
@@ -569,7 +598,13 @@ def sync_tree(source, target):
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
         temporary = destination.with_name(destination.name + '.installing')
-        temporary.write_bytes(data)
+        # On the disk before it takes its name. The runner saves, through to the disk, that the publication is
+        # installed and then removes the stage these files came from; after a loss of power the canon must not
+        # hold, under that record, a file whose content never arrived there.
+        with temporary.open('wb') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
         replace_file(temporary, destination)
     for path in sorted(p for p in target.rglob('*') if p.is_file()):
         if path.relative_to(target).as_posix() not in wanted:
@@ -1248,10 +1283,14 @@ def apply_written(canon, candidate, change, applied, revision, change_id, contri
         for path in sorted(p for p in (candidate / 'evidence').rglob('*') if p.is_file()):
             target = canon.evidence / path.relative_to(candidate / 'evidence')
             target.parent.mkdir(parents=True, exist_ok=True)
-            # Written beside the file and moved onto it, as a module is installed (sync_tree): a session that
-            # reads the evidence a record refers to has the earlier file or the new one, each of them whole.
+            # Written beside the file, sent to the disk and moved onto it, as a module is installed (sync_tree): a
+            # session that reads the evidence a record refers to has the earlier file or the new one, each of them
+            # whole, and after a loss of power the canon holds no file whose content never arrived on the disk.
             temporary = target.with_name(target.name + '.installing')
-            shutil.copyfile(path, temporary)
+            with path.open('rb') as source, temporary.open('wb') as stream:
+                shutil.copyfileobj(source, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
             replace_file(temporary, target)
     addition = candidate / 'bibliography.bib'
     if addition.is_file():

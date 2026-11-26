@@ -2,7 +2,7 @@
 
 An attempt, an exploration or a formalizer leaves its work for a peer, who takes the same line of work over and writes the change to the canon. What the producing session leaves is material and not a finished product, and the peer reads all of it, including the conversation. Two things make that material usable: a report that says where everything is and what it means, and Lean files in which the session's definitions and statements are written and, as far as possible, compiled.
 
-A peer also receives this guide. The report and the outcome described here belong to the producing session whose work the peer develops; the peer's own output is the candidate that [The candidate change](change-format.md) describes. The sections on working Lean files and on continuing a session apply to the peer as well.
+A peer also receives this guide. The report and the outcome described here belong to the producing session whose work the peer develops; the peer's own output is the candidate that [The candidate change](change-format.md) describes. The sections on working Lean files, on a compaction and on continuing a session apply to the peer as well.
 
 ## The report
 
@@ -40,6 +40,12 @@ Compile with the `build` command of the Lean broker. In the `commands.lean` arra
 Your copy does not follow the canon. When a publication adds something you need, check the canon out again into a new folder and carry your own files over; say in the report which revision your files were last built against.
 
 Hand on each new module as its file, copied into `output/lean/` at the path its module name gives, and each new proof of an existing statement as the complete text of that declaration, put into `output/replace/` as one file for each declaration, named after the declaration; say in the report which imports the declaration's module gains with it. List all of these files in the report; the working copy stays in `work/`. The peer assembles the candidate from these and has it compiled as a whole on the current canon. Producing sessions do not prepare candidates, and the command for it refuses them. A declaration that does not compile yet is still worth handing on, with what stopped it.
+
+## What a compaction of your context leaves
+
+Hours of work fill the context that your conversation can hold. Before it is full, the CLI replaces the conversation up to that point with a summary, and you go on from that summary, the last few messages and the files in your session directory. This is a compaction, and a long session can meet more than one. The guides you read at launch are part of what is replaced; `pack.md` still holds them.
+
+A file comes through a compaction as you wrote it: a statement in Lean, an argument in the report or in a note under `work/`, the script and the output of a computation. What stood only in the conversation comes through as far as the summary carries it. The summary is written when the CLI asks for it, from what the conversation holds at that moment, and it has room for a small part of that: it can carry a result as one line, without its exact statement or its proof. What a file holds is not lost when the summary leaves it out; what no file holds is kept by the summary or not at all. The CLI's record of the conversation, which the summary may point you to, does not supply what the summary left out. It holds the commands you ran, their output and the messages you wrote, and little or none of the reasoning between them. An argument that you worked out and wrote nowhere can therefore be gone after a compaction, and whoever takes your work over reads that same record and does not find it either. The summary itself stays in the record as one of its messages, and a peer finds there what the producing session still had in mind at a compaction and had not written to a file.
 
 ## The outcome
 

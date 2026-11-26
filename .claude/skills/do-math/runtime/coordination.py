@@ -514,7 +514,9 @@ def updates(session):
             if inp['role'] == 'attempt' else None)
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     availability = question_availability(instance, state, model, rows)
-    questions = [{'id': qid, 'statement': q['statement'], 'state': q['state'],
+    # Who holds each question, and whether it is free. What a question asks is not sent again with every call:
+    # the frontier lists the open questions with their statements, and the canon commands print any question.
+    questions = [{'id': qid, 'state': q['state'],
                   'occupied_by': availability['occupied'].get(qid, []), 'free': qid in availability['free']}
                  for qid, q in model['questions'].items() if q['canonical'] == qid]
     return {'revision': model['sequence'], 'root_state': model['root_state'],

@@ -215,13 +215,22 @@ def attribute_named(texts):
     return names
 
 
+IN_PREFIX = re.compile(r'\s*[A-Za-z_].*\bin\s*')  # a command that ends with `in`, as `open Classical in` does
+
+
 def without_elements(text, spans):
     """A source text less the declarations at the given spans, each removed as a whole.
 
-    A line that the removal leaves empty goes with it, and where two blank lines then meet one of
-    them goes, so that the file reads as it would had the declaration never stood there."""
+    The lines directly above a declaration that end with `in`, such as `open Classical in` or
+    `set_option maxHeartbeats 400000 in`, are commands that apply to that declaration alone, and Lean
+    gives the declaration a span that begins below them. They are removed with it: left behind, they
+    would apply to whatever follows. A line that the removal leaves empty goes with it, and where two
+    blank lines then meet one of them goes, so that the file reads as it would had the declaration
+    never stood there."""
     lines = text.split('\n')
     for first, start, last, end in sorted((list(span) for span in spans), reverse=True):
+        while first > 1 and not lines[first - 1][:start].strip() and IN_PREFIX.fullmatch(lines[first - 2]):
+            first, start = first - 1, 0
         merged = lines[first - 1][:start] + lines[last - 1][end:]
         lines[first - 1:last] = [merged] if merged.strip() else []
         at = first - 1
@@ -237,7 +246,7 @@ def take(index, lean_root, library, root, definitions, allowed):
     a definition module, every element that carries an attribute or is an instance, and what any of
     these reach. A declaration that is no element stays in its file, so the elements such a
     declaration names are kept as well (the index holds them under `hidden`). Every other element is
-    removed as a whole, by its span.
+    removed as a whole: its span, and the lines above it that end with `in` (without_elements).
 
     `allowed` are the axioms the instance allows. One kind of element is never kept for its attribute
     or because a declaration that is no element names it: a theorem that is not proved from those
@@ -330,14 +339,12 @@ def lean_form_problems(lean_root, lean_only=True):
     """Every `.lean` file begins with `module` after its comments and has at most 10,000 physical lines.
 
     A module root holds .lean files only, so any other file there is a problem. Without `lean_only` the
-    folder is a Lake project, which holds other files too: they and Lake's own folder are passed over."""
+    folder is a Lake project, which holds other files too: they are passed over."""
     problems = []
     for relative, path in files_under(lean_root).items():
         if not relative.endswith('.lean'):
             if lean_only:
                 problems.append(f'{relative} is no Lean file; a module root holds .lean files only')
-            continue
-        if not lean_only and relative.startswith('.lake/'):
             continue
         lines = read_text(path).split('\n')
         if not header_scan(lines)[1]:
@@ -614,14 +621,26 @@ def interface(index, modules, fixed=()):
     """The declarations of a set of modules that keep their names and statements, with their statements.
 
     They are the declarations that elements of other modules use, and those of `fixed` that lie in these
-    modules: the root and the main theorem, which every later step of a run finds by name."""
-    modules = set(modules)
-    used = set(fixed)
-    for entry in index['entries'].values():
+    modules: the root and the main theorem, which every later step of a run finds by name. With each
+    of `fixed` comes what its statement rests on: the elements the statement names and, from a
+    definition among them, what the body of the definition names, as canon.statement_differences
+    goes from a statement. A part that changed one of these would change what the theorem says while
+    the text of its statement stays."""
+    modules, entries = set(modules), index['entries']
+    used, pending = set(), list(fixed)
+    while pending:
+        name = pending.pop()
+        if name in used:
+            continue
+        used.add(name)
+        entry = entries.get(name)
+        if entry is not None:
+            pending += entry['statement_uses'] + ([] if entry['kind'] in canon.STATEMENT_KINDS else entry['uses'])
+    for entry in entries.values():
         if entry['module'] not in modules:
             used.update(entry['uses'] + entry['statement_uses'])
-    return [{'declaration': name, 'statement': index['entries'][name]['statement']}
-            for name in sorted(used) if name in index['entries'] and index['entries'][name]['module'] in modules]
+    return [{'declaration': name, 'statement': entries[name]['statement']}
+            for name in sorted(used) if name in entries and entries[name]['module'] in modules]
 
 
 def part_output(output, base_lean, owns, definitions, may_add=lambda module: True):

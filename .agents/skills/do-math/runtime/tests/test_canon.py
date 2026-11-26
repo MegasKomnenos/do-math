@@ -96,6 +96,25 @@ class TempCase(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
 
+    def moves(self, work):
+        """The files that `work` moved into place, each with the sizes of the files sent to the disk before its move.
+
+        What reaches the disk is seen at the system call that sends it there, and a move at the call that makes it."""
+        flushed, moved = [], []
+        fsync, replace = os.fsync, os.replace
+
+        def flush(descriptor):
+            flushed.append(os.fstat(descriptor).st_size)
+            return fsync(descriptor)
+
+        def move(temporary, destination):
+            moved.append((Path(destination).name, list(flushed)))
+            return replace(temporary, destination)
+
+        with patch.object(os, 'fsync', side_effect=flush), patch.object(os, 'replace', side_effect=move):
+            work()
+        return moved
+
 
 # --------------------------------------------------------------------------------------- names and paths
 
@@ -943,6 +962,15 @@ class TreeTests(TempCase):
             sync_tree(source, target)
         self.assertTrue(sleep.called)
         self.assertEqual([p.relative_to(target).as_posix() for p in target.rglob('*') if p.is_file()], ['Small/Defs.lean'])
+
+    def test_sync_tree_has_a_changed_file_on_the_disk_before_it_takes_its_name(self):
+        # The runner saves, through to the disk, that a publication is installed, and then removes the stage the
+        # modules came from. A module that the system still held in memory when the machine lost power would stand
+        # in the canon without its content, and the runner that follows would install nothing again.
+        source = self.tree('source', {'Small/Defs.lean': 'defs', 'Small/Root.lean': 'new root'})
+        target = self.tree('target', {'Small/Defs.lean': 'defs', 'Small/Root.lean': 'old root'})
+        self.assertEqual(self.moves(lambda: sync_tree(source, target)), [('Root.lean', [len('new root')])])
+        self.assertEqual((target / 'Small/Root.lean').read_text(encoding='utf-8'), 'new root')
 
     def test_copy_tree_replaces_what_the_target_held(self):
         source = self.tree('source', {'Small/Defs.lean': 'defs'})
@@ -2217,6 +2245,14 @@ class WrittenPartTests(TempCase):
         self.assertEqual(seen, ['n,sum\n1,1\n'])
         self.assertEqual(target.read_text(encoding='utf-8'), 'n,sum\n1,1\n2,4\n')
         self.assertEqual(self.files(self.canon.evidence), ['Small/root/table.csv'])
+
+    def test_an_evidence_file_is_on_the_disk_before_it_takes_its_name(self):
+        # As a module of the library is (TreeTests): the publication is saved as installed after this copy, and no
+        # runner copies the file a second time.
+        (self.candidate / 'evidence/Small/root').mkdir(parents=True)
+        (self.candidate / 'evidence/Small/root/data.bin').write_bytes(bytes(range(256)))
+        self.assertEqual(self.moves(lambda: self.apply([])), [('data.bin', [256])])
+        self.assertEqual((self.canon.evidence / 'Small/root/data.bin').read_bytes(), bytes(range(256)))
 
     def test_the_bibliography_of_a_candidate_is_merged(self):
         write(self.canon.bibliography, '@book{knuth1997,\n  title = {The Art of Computer Programming}\n}\n')

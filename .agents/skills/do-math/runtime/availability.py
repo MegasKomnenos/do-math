@@ -89,12 +89,7 @@ def reported_availability(session, outcome):
     if path is None or not path.exists():
         raise ValueError('availability.snapshot must be a token returned by updates')
     observed = read_json(path)
-    if (not isinstance(observed, dict) or set(observed) != {'epoch', 'elements'}
-            or type(observed['epoch']) is not int or observed['epoch'] < 0
-            or not isinstance(observed['elements'], dict)
-            or not all(isinstance(n, str) and isinstance(ids, list)
-                       and all(isinstance(s, str) for s in ids)
-                       for n, ids in observed['elements'].items())
-            or snapshot_token(observed) != token):
+    # retain_snapshot named the file by the token of its content, so content with that token is the view updates saved.
+    if snapshot_token(observed) != token:
         raise ValueError('availability snapshot is invalid or changed')
     return observed

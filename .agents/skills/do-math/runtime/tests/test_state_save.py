@@ -4,7 +4,7 @@ How: the broker writes its whole state each time, without indentation and encode
 first two classes fix what readers rely on: the file parses to the same value, it is replaced as a
 whole, and the broker's own readers (job_record, broker_status) read what the broker saved.
 
-When: the state of an instance that has run for days is tens of megabytes, so the broker writes it at
+When: the broker writes its whole state each time and measures nothing while it does, so it writes it at
 most every STATE_SECONDS, and at once only when it starts or exits, before a compile starts, after one
 has ended, and when a client asks. The third class fixes that cadence and what clients rely on under
 it: a change waits for the interval, a request is answered with the state as it is, a waiting client

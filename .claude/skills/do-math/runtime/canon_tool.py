@@ -12,7 +12,7 @@ import sys
 from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
                    build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
-                   start_build, tree_hash, update_index, wait_build, with_importers)
+                   start_build, tree_hash, update_index, wait_build, with_importers, written_base)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, question_proposal_lines, replay, resolved_question_lines)
 from runtime_support import read_json, write_json
@@ -277,7 +277,7 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
     index = canon.load_index()
     result = {'ok': False, 'tree': tree, 'revision': index['revision'], 'build': None, 'errors': [],
               'changed_modules': [], 'added': [], 'replaced': [], 'records': [], 'retired': [], 'entries': {},
-              'bases': {}}
+              'bases': {}, 'written_bases': {}}
     try:
         change = load_change(candidate)
     except (CanonError, OSError, ValueError) as exc:
@@ -286,6 +286,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
     organizer = role == 'organizer'
     organization = read_json(candidate / 'organization.json') if organizer else {}
     records = candidate_records(candidate, change)
+    # Taken with the index above, before any build is waited for: the proofs this candidate was written against.
+    written_before = {item['declaration']: written_base(canon, item['declaration']) for item in change['replace']}
     state_path = folder / 'state.json'
     state = read_json(state_path) if state_path.exists() else {}
     lean_root = folder / 'lean'
@@ -346,7 +348,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
                   entries={name: entry_info(new_index, name, written(name))
                            for name in checked['added'] + checked['replaced'] if name in new_index['entries']},
                   bases={name: index['entries'][name]['source_sha'] for name in checked['replaced']
-                         if name in index['entries']})
+                         if name in index['entries']},
+                  written_bases={name: base for name, base in written_before.items() if name in index['entries']})
     return result
 
 

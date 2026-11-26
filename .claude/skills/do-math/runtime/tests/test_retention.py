@@ -224,8 +224,9 @@ class RetentionTests(unittest.TestCase):
                         native = storage / 'projects/project' / (identity + '.jsonl')
                         announcement = {'type': 'system', 'session_id': identity}
                         rows = [
-                            {'type': 'assistant', 'message': {'role': 'assistant',
-                             'content': [{'type': 'text', 'text': message}]}},
+                            {'type': 'assistant', 'message': {'model': 'claude-model', 'role': 'assistant',
+                             'content': [{'type': 'text', 'text': message}], 'stop_reason': 'end_turn',
+                             'usage': {'input_tokens': 2, 'cache_read_input_tokens': 861766}}},
                             {'type': 'user', 'message': {'role': 'user',
                              'content': [{'type': 'tool_result', 'tool_use_id': 'call1', 'content': tool_output}]}},
                         ]
@@ -249,6 +250,9 @@ class RetentionTests(unittest.TestCase):
                     self.assertIn(message, body)
                     self.assertIn(tool_output, body)
                     self.assertNotIn('TRANSPORT_ONLY', body)
+                    if provider == 'claude':
+                        # The API's account of the call stays in the copied transcript, out of the readable text.
+                        self.assertNotIn('cache_read_input_tokens', body)
 
     def test_output_limit_is_read_from_the_claude_stream_only(self):
         message = "API Error: Claude's response exceeded the 64000 output token maximum."

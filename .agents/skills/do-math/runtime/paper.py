@@ -3171,13 +3171,18 @@ the text it had, and the text outside the statements and the proofs is unchanged
 # ----------------------------------------------------------------------------- the run
 
 def changed_materials(stored, fresh):
-    """In what the materials taken from the canon now differ from those a run was started with; empty when in nothing.
+    """In what the materials on which the proof of the root rests now differ from those a run was started with;
+    empty when in nothing.
 
-    The revision is not compared. It counts the publications of the instance, and a publication that
-    changes nothing the proof of the root rests on leaves the paper's materials as they were."""
+    Compared are the root, the main result with the declaration that settles the root and the declarations of a
+    draft ("main", "settles", "further"), the axioms, and the elements with their records. Nothing else is. The
+    revision counts the publications of the instance, "identifiers" names every declaration and module of the
+    instance, and the bibliography and the account of the problem as a whole belong to the whole research. A
+    publication that changes nothing the proof of the root rests on can change each of these, and the run goes on
+    with them as materials.json holds them, which is what a run that was not stopped does."""
     fresh = json.loads(json.dumps(fresh))
-    found = [f'"{key}"' for key in sorted(set(stored) | set(fresh))
-             if key not in ('revision', 'elements') and stored.get(key) != fresh.get(key)]
+    found = [f'"{key}"' for key in ('root', 'main', 'settles', 'further', 'axioms', 'allowed_axioms')
+             if stored.get(key) != fresh.get(key)]
     old, new = ({element['name']: element for element in materials['elements']} for materials in (stored, fresh))
     for words, names in (('elements that are no longer among them', [name for name in old if name not in new]),
                          ('new elements', [name for name in new if name not in old]),
@@ -4791,6 +4796,10 @@ class Paper(Sessions):
                 self.save()
             if not self.done[name]:
                 return
+        # A pass over what a finished run left open ends with the check of the places (act, close). A run that
+        # is continued after such a pass was stopped in that check comes here with every stage complete, and the
+        # check is made now, for the text as the pass left it. For a text that was checked it launches nothing.
+        self.place()
 
     def finish(self):
         _, _, rows = self.assemble()

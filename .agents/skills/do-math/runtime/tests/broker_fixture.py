@@ -107,8 +107,7 @@ class BrokerFixture(unittest.TestCase):
         info = lean_broker.broker_alive(self.paths)
         if info:
             runtime_support.terminate_process(info["process"])
-            while runtime_support.alive(info["process"]):
-                time.sleep(0.02)
+            self.wait_gone(info["process"])
 
     @staticmethod
     def wait_gone(identity, limit=10):

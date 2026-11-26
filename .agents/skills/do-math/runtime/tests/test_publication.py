@@ -199,7 +199,30 @@ class PublicationTests(PublicationCase):
     def test_a_publication_adds_modules_replaces_a_proof_in_place_and_regenerates_what_is_derived(self):
         before = self.canon().load_index()['entries']['Small.root']
         folder = self.induction(extras=True)
-        cid, engine = self.publish(folder, self.verdicts(folder, **HOLD))
+        flushed, renamed = set(), []
+        fsync, rename = os.fsync, runtime.rename_directory
+
+        def flush(descriptor):
+            flushed.add(os.fstat(descriptor).st_ino)
+            return fsync(descriptor)
+
+        def rename_noting_the_files(source, destination):
+            if Path(destination).parent.name == 'changes':
+                for path in sorted(Path(source).rglob('*')):
+                    if path.is_file():
+                        with path.open('rb') as stream:
+                            renamed.append((path.name, os.fstat(stream.fileno()).st_ino in flushed))
+            return rename(source, destination)
+
+        with patch.object(os, 'fsync', side_effect=flush), \
+                patch('runner.rename_directory', side_effect=rename_noting_the_files):
+            cid, engine = self.publish(folder, self.verdicts(folder, **HOLD))
+        with self.subTest('the files of the event are on the disk before their folder takes its name'):
+            # A runner that finds the folder does not make it again, and every command replays its files. A file that
+            # the system still held in memory when the machine lost power would stand there without its content.
+            # What reaches the disk is seen at the system call that sends it there.
+            self.assertIn(('assessment.json', True), renamed)
+            self.assertEqual([name for name, on_disk in renamed if not on_disk], [])
         canon, index = self.canon(), self.canon().load_index()
         with self.subTest('the new module is added as the candidate wrote it'):
             self.assertEqual((canon.lean / 'Small/Step.lean').read_text(encoding='utf-8'), STEP)
@@ -565,6 +588,23 @@ class PublicationTests(PublicationCase):
         self.assert_sent_to_a_replacement_peer(engine, second, 'the proof of Small.root was replaced by another publication',
                                                before, [cid])
         self.assertEqual(self.root_declaration(), SKETCH)
+
+    def test_a_replacement_of_a_written_proof_that_another_publication_replaced_goes_to_a_replacement_peer(self):
+        # The first candidate gives the root a written proof and leaves the Lean text of its declaration as it
+        # is, as a proof that names no statement of the canon does. That text then does not show that the proof
+        # was replaced. The record does, and the receipt of the second candidate holds what the record said.
+        first = self.candidate(replace={'Small.root': ORIGINAL}, records={'Small/root.md': ROOT_RECORD})
+        second = self.candidate(replace={'Small.root': PAIRING}, records={'Small/root.md': ROOT_RECORD})
+        cid, engine = self.publish(first)
+        self.assertEqual(self.root_declaration(), ORIGINAL)
+        before = self.canon_bytes()
+        with patch('runner.start_build', wraps=runtime.start_build) as started:
+            record, _ = self.publish(second, engine=engine, expect=False)
+        started.assert_not_called()
+        self.assertIsNone(record)
+        self.assert_sent_to_a_replacement_peer(engine, second, 'the proof of Small.root was replaced by another publication',
+                                               before, [cid])
+        self.assertEqual(self.root_declaration(), ORIGINAL)
 
     def test_a_candidate_that_does_not_build_on_the_current_canon_goes_to_a_replacement_peer(self):
         # The receipt says what was true when the peer prepared the candidate; the canon may have moved since,

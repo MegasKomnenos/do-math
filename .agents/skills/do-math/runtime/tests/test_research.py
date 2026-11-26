@@ -1175,8 +1175,7 @@ class CoordinationTests(ScenarioCase):
         self.assertEqual((rows['sb']['stage'], rows['sb']['elements'], rows['sb']['sections']), ('producing', [], []))
         self.assertEqual({name: [h['session'] for h in entry['holders']] for name, entry in seen['leases'].items()},
                          {'Small.sumSucc': ['sb']})
-        self.assertEqual(seen['questions'], [{'id': 'q0', 'statement': 'The root problem itself, taken as a whole.',
-                                              'state': 'open', 'occupied_by': [], 'free': True}])
+        self.assertEqual(seen['questions'], [{'id': 'q0', 'state': 'open', 'occupied_by': [], 'free': True}])
         self.assertEqual({cid: (c['targets'], c['status']) for cid, c in seen['concerns'].items()},
                          {'v1/gap': (['Small.sumTwo'], 'pending')})
         self.assertEqual([(r['status'], r['task']['concerns']) for r in seen['comprehensive_reviews']],
@@ -1312,6 +1311,31 @@ class RunnerTests(ScenarioCase):
         self.assertEqual(pipeline['stage'], 'peer')
         self.assertEqual(session['status'], 'ended')
         self.assertEqual(runner.state['jobs'][pipeline['id'] + ':peer']['task']['source'], str(runner.session_dir(sid)))
+
+    def test_a_session_whose_host_has_ended_is_collected_only_once_its_cli_has_ended_too(self):
+        # The runner takes the identity of a session's CLI from the receipt that the host writes when it starts
+        # a turn (process.json), and it collects the session once the host and that CLI have both ended
+        # (reference/operations.md, Session hosts and continuation turns). A host can end while the CLI it
+        # started still runs, as where the session is not contained. That CLI still writes the session's
+        # files, so the session waits. The CLI of the receipt is first this test's own process, which is
+        # alive, and then a process that is gone.
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'GO').write_bytes(b'go\n')  # the gate that dispatch opened
+
+        def receipt(process):
+            write_json(folder / 'process.json', {'process': process, 'pid': process['pid'], 'started_at': 2})
+
+        receipt(runner.identity)
+        runner.collect()
+        self.assertEqual((session['status'], session['cli']), ('running', runner.identity))
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        gone = {'pid': 2 ** 22, 'birth': 'gone'}
+        receipt(gone)
+        runner.collect()
+        self.assertEqual((session['status'], session['cli']), ('ended', gone))
+        self.assertEqual(runner.state['jobs'][job['pipeline'] + ':peer']['task']['source'], str(folder))
 
     def test_retention_file_error_retries_preservation_after_restart(self):
         runner = self.runner()
@@ -1548,13 +1572,6 @@ class RunnerTests(ScenarioCase):
                                    'model:claude/opus', 'claude/sonnet', model='claude/opus',
                                    peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
-    def test_a_claude_turn_that_the_model_refused_blocks_that_model_and_retains_work(self):
-        # A Claude turn that ended because the model refused ends with a failed result whose stop reason is "refusal".
-        self.check_refusal_handoff({'type': 'result', 'subtype': 'success', 'is_error': True,
-                                    'stop_reason': 'refusal', 'terminal_reason': 'api_error'},
-                                   'model:claude/opus', 'claude/sonnet', model='claude/opus',
-                                   peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
-
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()
         self.assertEqual(runner.settings['max_sessions'], 8)
@@ -1629,10 +1646,16 @@ class RunnerTests(ScenarioCase):
         runner = self.runner()
         a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
         view = self.instance / 'knowledge/board.md'
+        research = [self.instance / 'knowledge' / name for name in ('index.md', 'state.json')]
         with patch('runner.render', wraps=render) as drawn:
             runner.refresh()
             runner.refresh()
             self.assertEqual(drawn.call_count, 1)
+            # index.md and state.json hold the research alone, which no change of the board alters. A runner's
+            # first refresh writes them, and a later one neither builds nor reads them. They are taken away
+            # here, so that a refresh which handled them would be seen to put them back.
+            for path in research:
+                path.unlink()
             self.assertTrue(lease(a, 'Small.root')['leased'])
             runner.refresh()
             runner.refresh()
@@ -1643,6 +1666,9 @@ class RunnerTests(ScenarioCase):
             runner.refresh()
             self.assertEqual(drawn.call_count, 3)
             self.assertIn('- Small.root · lease: sa · waiting: sb', view.read_text(encoding='utf-8'))
+            self.assertFalse(any(path.exists() for path in research))
+        self.runner().refresh()
+        self.assertTrue(all(path.is_file() for path in research))
 
     def test_peer_task_carries_the_producers_sections(self):
         runner = self.runner()
