@@ -54,4 +54,4 @@ A section request takes one of three forms:
 
 The first takes the whole of the statement. The second takes an exact part of it. The third registers a statement you have formulated yourself, on the element it is aimed at. `reasons` is needed only when other sessions hold sections on the element.
 
-A registered section cannot be withdrawn, so register it once you have decided to pursue it. The transport check accepts a candidate that replaces the proof of an element only when its pipeline holds a section on that statement.
+A registered section cannot be withdrawn, so register it once you have decided to pursue it. The transport check accepts a candidate that replaces the proof of an element whose statement is not settled only when its pipeline holds a section on that statement.

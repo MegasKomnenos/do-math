@@ -1340,6 +1340,26 @@ class BuildTests(BrokerFixture):
         self.assertEqual({n: (m["status"], m["exit_code"]) for n, m in modules.items()},
                          {n: ("finished", 0) for n in "ABCD"})
 
+    def test_a_broker_started_under_another_lean_reuses_neither_modules_nor_baselines(self):
+        # The Lean version is read when a broker starts, and every module key and calibration key is made from it
+        # together with the environment key (reference/lean-broker.md). version_command is no part of the
+        # environment key, so the version alone changes here, as when the Lean behind an unchanged command is replaced.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        target = source(root / "Target.lean")
+        first = self.built(root, [target])
+        self.assertEqual(first["status"], "finished", first)
+        environment = self.broker.state["environment_key"]
+        self.write_settings(version_command=[sys.executable, "-c", "print('Lean (version 9.9.9-other)')"])
+        self.start_broker()
+        self.assertIn("9.9.9-other", self.broker.state["version"])
+        self.assertEqual(self.broker.state["environment_key"], environment)
+        module = self.built(root, [target])["modules"]["Target"]
+        self.assertEqual((module["status"], module["exit_code"]), ("finished", 0))  # compiled, not taken from the cache
+        self.assertNotEqual(module["key"], first["modules"]["Target"]["key"])
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual(len({j["closure"] for j in calibrations}), 2)  # the imports were measured again
+
     def test_fresh_review_target_recompiles_while_unchanged_dependency_is_cached(self):
         self.start_broker()
         root = self.instance / 'sessions/sreview/work/lean'
@@ -1503,6 +1523,26 @@ class BuildTests(BrokerFixture):
         self.assertFalse(os.path.samefile(olean, self.paths.cache / (key + ".olean")))
         self.assertIn("SECOND", olean.with_name("Target.olean.private").read_text(encoding="utf-8"))
 
+    def test_a_module_whose_source_changed_while_it_compiled_is_not_kept_under_its_key(self):
+        # The broker compares a module's source with the hash in its key and then starts Lean, which opens the
+        # file after that. An edit made in between is compiled, and its output must not be kept under the key
+        # of the earlier bytes, where every later build of those bytes would take it from the cache.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        target = source(root / "Target.lean", imports=(), marker="FIRST")
+        build_id = self.build(root, [target])
+        self.until(lambda: self.build_record(build_id)["modules"]["Target"]["status"] == "running")
+        source(target, imports=(), marker="SECOND")  # the comparison has been made; Lean has yet to end
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        module = self.build_record(build_id)["modules"]["Target"]
+        self.assertEqual((module["status"], module["exit_code"]), ("finished", 0))
+        self.assertIsNone(self.broker.cached_module(module["key"]))
+        # The bytes that stand there now are compiled under their own key, and that entry is kept.
+        again = self.built(root, [target])["modules"]["Target"]
+        self.assertEqual((again["status"], again["exit_code"]), ("finished", 0))
+        self.assertNotEqual(again["key"], module["key"])
+        self.assertIsNotNone(self.broker.cached_module(again["key"]))
+
     def test_failed_module_fails_its_dependents_with_the_reason(self):
         self.start_broker()
         root = self.tree(A={"exit": 1})
@@ -1554,6 +1594,39 @@ class BuildTests(BrokerFixture):
         self.assertIn("wrote no .olean", module["reason"])
         self.assertIn("module Target failed", record["reason"])
         self.assertEqual(list(self.paths.cache.iterdir()), [])
+
+    def test_the_files_of_a_cache_entry_are_on_the_disk_before_its_manifest_is_written(self):
+        # The manifest makes an entry complete and is written through to the disk. A file it names that the
+        # system still held in memory when the machine lost power would stand in the cache without its content,
+        # complete by its manifest, for every later build; not even a fresh compile replaces a complete entry.
+        # What reaches the disk is seen here at the system call that sends it there.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        flushed, at_manifest = [], []
+        fsync, write, cache = os.fsync, lean_broker.write_json, self.broker.cache_module
+
+        def flush(descriptor):
+            flushed.append(descriptor)
+            return fsync(descriptor)
+
+        def cache_counting_from_nothing(*arguments):
+            del flushed[:]
+            return cache(*arguments)
+
+        def write_noting_the_manifest(path, value):
+            if Path(path).name.endswith(".artifacts.json"):
+                at_manifest.append(len(flushed))
+            return write(path, value)
+
+        with patch.object(lean_broker.os, "fsync", side_effect=flush), \
+                patch.object(self.broker, "cache_module", side_effect=cache_counting_from_nothing), \
+                patch.object(lean_broker, "write_json", side_effect=write_noting_the_manifest):
+            record = self.built(root, [source(root / "Target.lean", imports=())])
+        self.assertEqual(record["status"], "finished", record)
+        key = record["modules"]["Target"]["key"]
+        stored = [p for p in self.paths.cache.glob(key + ".*") if p.name != key + ".artifacts.json"]
+        self.assertTrue(stored)
+        self.assertEqual(at_manifest, [len(stored)])
 
     def test_build_rejects_bad_targets_cycles_and_shadowing(self):
         self.start_broker()

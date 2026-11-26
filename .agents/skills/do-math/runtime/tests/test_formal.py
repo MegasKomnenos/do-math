@@ -445,6 +445,27 @@ class LeanItselfTests(BothCompilers, ScenarioCase):
         with self.assertRaisesRegex(ValueError, 'root statement changed'):
             runtime.Runner(self.instance, self.skill)
 
+    def test_lean_decides_a_claim_of_another_proof_or_a_refutation_and_keeps_what_an_open_proof_names(self):
+        # The stand-in compiler decides both from the text: a pair by comparing two statements as they are
+        # written, and what a proof names by the names that occur in it. Lean compares the terms of the two
+        # statements and gives the constants of the proof term, where a `have` that the rest of an open proof
+        # does not use still stands.
+        statements = '\n\n'.join([theorem('rootAgain', ROOT_STATEMENTS['default']),
+                                  theorem('notRoot', ': ¬ (∀ n : Nat, oddSum n = n * n)'),
+                                  theorem('other', '(n : Nat) : oddSum n = n + n'),
+                                  theorem('viaAgain', ': oddSum 1 = 1', uses=['rootAgain'])])
+        records = {'Small/rootAgain.md': record_text('The root once more.', proves='Small.root'),
+                   'Small/notRoot.md': record_text('The negation of the root.', refutes='Small.root'),
+                   'Small/other.md': record_text('Not the root.', proves='Small.root'),
+                   'Small/viaAgain.md': record_text('One odd number sums to one.')}
+        folder = self.candidate(modules={'Small/Pairs.lean': module_text(statements)}, records=records, prepare=False)
+        result = self.prepare(folder, expect_ok=False)
+        # The two claims that hold are confirmed, and the one that does not is the only thing refused.
+        self.assertEqual(len(result['errors']), 1, result['errors'])
+        self.assertIn('Small.other: Lean did not confirm that its statement is the statement of Small.root',
+                      result['errors'][0])
+        self.assertIn('Small.rootAgain', result['entries']['Small.viaAgain']['uses'])
+
 
 if __name__ == '__main__':
     unittest.main()

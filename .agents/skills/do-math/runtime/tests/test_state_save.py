@@ -71,12 +71,16 @@ class CompactWriter(unittest.TestCase):
         self.assertGreater(self.path.stat().st_size, 4 * runtime_support.WRITE_BUFFER_BYTES)
         self.assertEqual(runtime_support.read_json(self.path), big)
 
-    def test_a_value_that_cannot_be_encoded_leaves_the_old_file(self):
+    def test_a_value_that_cannot_be_written_leaves_the_old_file_and_nothing_beside_it(self):
         runtime_support.write_json_compact(self.path, VALUE)
-        with self.assertRaises(TypeError):
-            runtime_support.write_json_compact(self.path, {"bad": object()})
-        self.assertEqual(runtime_support.read_json(self.path), VALUE)
-        self.assertEqual([p.name for p in self.folder.iterdir()], [self.path.name])
+        # An object fails while it is encoded, before any file is opened. A lone surrogate is encoded and fails
+        # when its text is turned into bytes, after the file beside the state was opened; that file is removed again.
+        for bad, error in ((object(), TypeError), ("\ud800", UnicodeEncodeError)):
+            with self.subTest(error=error.__name__):
+                with self.assertRaises(error):
+                    runtime_support.write_json_compact(self.path, {"bad": bad})
+                self.assertEqual(runtime_support.read_json(self.path), VALUE)
+                self.assertEqual([p.name for p in self.folder.iterdir()], [self.path.name])
 
 
 class BrokerSavesItsState(BrokerFixture):

@@ -23,7 +23,6 @@ from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_
                    name_path, parse_record, path_name, sha256_text, tree_hash)
 from command_sessions import read_file as read_text
 from runtime_support import popen_options, read_json, write_text as write_file
-from depmap import folder_of
 
 MAX_LINES = 10_000       # physical lines of a Lean file, the registry's rule and the canon's
 CHALLENGE_LINES = 1_000   # the registry's limits on Challenge.lean
@@ -47,7 +46,9 @@ DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
 # so a drive path is looked for there in its form with a slash, which is the form a session is given paths in.
 DRIVE_PATH_IN_MARKUP = re.compile(r'(?<![A-Za-z])[A-Za-z]:/(?!/)')
 LINK = re.compile(r'\]\(([^)\s]+)(?:\s+"[^"]*")?\)|(?:href|src)\s*=\s*"([^"]*)"')
-AXIOM_LINE = re.compile(r"'([^']+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S)
+# Lean prints the name between apostrophes, and a name can hold one itself, as `step'` does: the apostrophe that
+# closes the name is the one that a space follows.
+AXIOM_LINE = re.compile(r"'((?:[^'\n]|'(?=[^ \n]))+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)", re.S)
 
 
 def write_text(path, content):
@@ -284,13 +285,9 @@ def take(index, lean_root, library, root, definitions, allowed):
     hidden = index.get('hidden', {})
     kept, staying = set(), set()
     while True:
-        pending = list(seeds - kept)
-        while pending:
-            name = pending.pop()
-            if name in kept or name not in entries:
-                continue
-            kept.add(name)
-            pending += entries[name]['uses'] + entries[name]['statement_uses']
+        for name in seeds:
+            if name not in kept:
+                kept |= rests_from(index, name)
         holders = {entries[name]['module'] for name in kept} | set(definitions) | {entries[root]['module']}
         staying = import_closure(imports, holders)
         # What a declaration that is no element names stays with it.
@@ -392,7 +389,8 @@ def index_problems(index, root, statement_hash, allowed, records=None):
     """The checks of a library that read its index.
 
     The root is a theorem with the statement the instance fixed; every theorem has a complete proof
-    from the allowed axioms; no two names differ only in case; and `canon.check_applied` reports
+    from the allowed axioms, and no declaration that is no element has an open proof; no two names
+    differ only in case; and `canon.check_applied` reports
     nothing. With `records` (by name path) the records are due: every element has one, every record
     has an element, and what a record claims to prove or refute Lean confirmed. Without, the same
     check runs with an empty record for every element, so that it reports what does not concern records."""
@@ -408,6 +406,10 @@ def index_problems(index, root, statement_hash, allowed, records=None):
             foreign = canon.beyond_allowed(item, allowed)
             if foreign:
                 problems.append(f'{name} is not proved from the allowed axioms: ' + ', '.join(foreign))
+    # A declaration that is no element, such as a private lemma, stays in its file through every step. Where no
+    # element uses it, no element's list of axioms shows that its proof is open, so the index is asked for it.
+    opened = {item.get('user') or name for name, item in index.get('hidden', {}).items() if item.get('sorry')}
+    problems += [f'{name}, a declaration that is no element, has an open proof (`sorry`)' for name in sorted(opened)]
     for group in canon.case_collisions(entries):
         problems.append('the names ' + ', '.join(group) + ' differ only in the case of their letters')
     if records is None:
@@ -1467,9 +1469,10 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               'derived the proposition from the main theorem, or added declarations that the paper states. Lean compiled '
               'the result. The reviews of the research did not judge these changes.',
               '- The research, the library, the records, the paper and this document were produced by AI sessions run '
-              f"by do-math ({facts['models']}). do-math is a program that conducts mathematical research in Lean: its "
-              'sessions state and prove in Lean, other sessions review each publication, and what the reviews accept '
-              f"becomes the library with its records. {human}",
+              f"by do-math. The sessions that made this package from the research ran on {facts['models']}. do-math is "
+              'a program that conducts mathematical research in Lean: its sessions state and prove in Lean, other '
+              'sessions review each publication, and what the reviews accept becomes the library with its records. '
+              f'{human}',
               '- Not checked: the files under `lean/` that are prepared for a formal-proof registry, which the last '
               "section of this document describes. That registry's verifier was not run on them, and the "
               'classification codes in `lean/formalization.yaml` were checked for their form and not against its '

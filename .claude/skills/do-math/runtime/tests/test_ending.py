@@ -377,6 +377,20 @@ class EndingTests(InstanceCase):
         self.assertIn('no_research is incompatible with registered sections',
                       read_json(directory / 'turns/0001/request.json')['previous_error'])
 
+    def test_a_defect_of_the_program_met_while_an_opt_out_is_read_ends_the_host_and_is_not_told_to_the_session(self):
+        # What a session wrote wrongly in outcome.json fails with a ValueError, and a file that cannot be read
+        # with an OSError; the next turn is told either, as in the test above. A KeyError comes from the program's
+        # own code, and no file of a session causes it. The host ends with it and resumes nothing, and the runner
+        # collects the session as one whose host was lost
+        # (test_host_loss_is_recorded_as_interruption_and_retained_work_reaches_peer).
+        _, _, directory = self.prepare(maximum=1)
+        with patch('ending.no_research_outcome', side_effect=KeyError('sections')), \
+                patch('ending.worker_command', side_effect=self.command) as resume, self.assertRaises(KeyError):
+            session_host(directory)
+        resume.assert_not_called()
+        self.assertIsNone(read_json(directory / 'end-check.json')['authorization'])
+        self.assertFalse((directory / 'exit.json').exists())
+
     def test_refusal_is_interruption_not_worker_authorization(self):
         _, _, directory = self.prepare(config={'refuse_at': 1})
         state = self.run_host(directory)

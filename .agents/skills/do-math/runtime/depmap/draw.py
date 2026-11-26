@@ -92,9 +92,10 @@ STANDINGS = {'no_proof': ('no proof', '#B8475A'), 'not_confirmed': ('proof not c
 KINDS = {'theorem': 'statement', 'def': 'definition', 'opaque': 'opaque definition', 'inductive': 'inductive type'}
 CARD_WORDS = {'statement': 'a statement', 'definition': 'a definition', 'proof': 'a proof on its own card', 'root': 'the root'}
 ROOT_STATES = {'formal_proved': 'the root is proved, and the proof is complete in Lean',
-               'informal_proved': 'the root is settled by accepted proofs; no proof of it is complete in Lean yet',
+               'informal_proved': 'the root is settled by accepted proofs; none of the proofs that settle it is complete in Lean yet',
                'formal_refuted': 'the root is refuted, and the refutation is complete in Lean',
-               'informal_refuted': 'the root is refuted by a settled statement; the refutation is not complete in Lean yet',
+               'informal_refuted': 'the root is refuted by a settled statement; none of the proofs that settle that statement is '
+                                   'complete in Lean yet',
                'contested': 'the root and its negation both have settled proofs, so neither stands',
                'unresolved': 'the root is open'}
 # What the words on a card mean, for a reader who does not know the research method. The page shows the

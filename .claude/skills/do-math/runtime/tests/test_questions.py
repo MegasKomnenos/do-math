@@ -1328,21 +1328,26 @@ class QuestionDispatchTests(QuestionCase):
         self.assertTrue(question_take(runner.session_dir(later), 'op-scale')['taken'])
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['free'], [])
 
-    def test_root_assignment_is_saved_before_the_explorer_launches(self):
+    def test_root_assignment_is_saved_before_the_coordination_lock_is_released(self):
+        from contextlib import contextmanager
         runner = self.runner()
+        key = runner.producer('explore')
         seen = []
-        prepare = runner.make_pack
 
-        def observe(sid, job):
-            # An explorer's question command reads the saved state, not the runner's memory.
-            seen.append((question_availability(self.instance)['occupied'],
-                         read_json(self.instance / 'runner/state.json')['jobs'][job['id']]['task'].get('question'),
-                         read_json(runner.session_dir(sid) / 'declaration.json')['question']['by']))
-            return prepare(sid, job)
+        @contextmanager
+        def observed(instance):
+            # The lock that dispatch takes, looked at from inside as the last thing before it is released. The
+            # explorer whose question command takes the lock next reads the saved state, not the runner's memory.
+            with claims_lock(instance):
+                yield
+                [session] = (self.instance / 'sessions').iterdir()
+                seen.append((question_availability(self.instance)['occupied'],
+                             read_json(self.instance / 'runner/state.json')['jobs'][key]['task'].get('question'),
+                             read_json(session / 'declaration.json')['question']['by']))
 
-        with patch.object(runner, 'make_pack', side_effect=observe), patch('runner.subprocess.Popen') as host:
+        with patch('runner.claims_lock', observed), patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
-            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            self.assertTrue(runner.dispatch(key))
             host.assert_called_once()
         self.assertEqual([(list(occupied), assigned, by) for occupied, assigned, by in seen], [(['q0'], 'q0', 'runner')])
 

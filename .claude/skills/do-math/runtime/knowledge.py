@@ -213,11 +213,27 @@ def questions_event(model, event, folder):
             'source': event['id'], 'origin': data['source'], 'resolutions': []})
 
 
+def in_canon(instance, model, event):
+    """Whether the index the model was made from holds the library as this published event left it.
+
+    The runner writes the event of a publication before it puts the publication's index in place, and that
+    index carries the event's sequence as its revision (Runner.publish, canon.update_index). A reader that
+    comes between the two has the event of a change to the library and the index from before it."""
+    if event['kind'] not in ('change', 'organization') or model['revision'] >= event['sequence']:
+        return True
+    applied = read_json(instance / 'knowledge' / event['folder'] / 'applied.json')
+    return not (applied['added'] or applied['replaced'] or applied.get('retired'))
+
+
 def replay(instance):
     instance = Path(instance)
     model = new_model(instance)
-    for event in sorted((read_json(p) for p in (instance / 'knowledge/events').glob('*.json')),
-                        key=lambda e: e['sequence']):
+    events = sorted((read_json(p) for p in (instance / 'knowledge/events').glob('*.json')), key=lambda e: e['sequence'])
+    # Publications are made one at a time, so only the last event can be ahead of the index. It is left out
+    # until the index has it: the model is then the research as it stood before that publication.
+    if events and not in_canon(instance, model, events[-1]):
+        events.pop()
+    for event in events:
         folder = instance / 'knowledge' / event['folder']
         {'change': change_event, 'review': assessment_event, 'organization': organization_event,
          'questions': questions_event}[event['kind']](model, event, folder)

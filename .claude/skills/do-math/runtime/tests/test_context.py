@@ -382,6 +382,7 @@ class ContextTests(InstanceCase):
         # Retention copies the CLI's native transcript, so the worker session must persist.
         self.assertNotIn('--ephemeral', codex.argv)
         self.assertIn('--ignore-user-config', codex.argv)
+        self.assertIn('--ignore-rules', codex.argv)
         self.assertIn('project_doc_max_bytes=0', codex.argv)
         self.assertIn('skip_host_skill_discovery', codex.argv)
         overrides = [codex.argv[i+1] for i, value in enumerate(codex.argv[:-1]) if value == '-c']
@@ -391,12 +392,17 @@ class ContextTests(InstanceCase):
         self.assertEqual([value.partition('=')[0] for value in overrides if value.startswith('mcp_servers')],
                          ['mcp_servers'])
         self.assertEqual(tomllib.loads('\n'.join(overrides))['mcp_servers'], server)
+        self.assertEqual(tomllib.loads('\n'.join(overrides))['developer_instructions'], '')
         for name in ('hooks', 'memories', 'plugins', 'apps', 'multi_agent'):
             self.assertTrue(any(codex.argv[i:i+2] == ['--disable', name] for i in range(len(codex.argv))))
         claude = worker_command('claude', 'claude/opus', 'xhigh', folder, server)
         self.assertNotIn('--no-session-persistence', claude.argv)
         self.assertNotIn('--bare', claude.argv)
         self.assertEqual(claude.argv[claude.argv.index('--setting-sources') + 1], '')
+        # The two files asserted below reach the CLI only through these arguments.
+        self.assertEqual(claude.argv[claude.argv.index('--settings') + 1], str(folder / 'worker-settings.json'))
+        self.assertEqual(claude.argv[claude.argv.index('--mcp-config') + 1], str(folder / 'worker-mcp.json'))
+        self.assertIn('--disable-slash-commands', claude.argv)
         self.assertIn('--strict-mcp-config', claude.argv)
         config = read_json(folder / 'worker-settings.json')
         self.assertTrue(config['disableAllHooks'])

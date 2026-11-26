@@ -71,7 +71,7 @@ Do not write a proof you have not followed in the Lean. Where you cannot follow 
 [{"declaration": "Lib.count_le", "kind": "hypothesis", "detail": "..."}]
 ```
 
-`kind` is `hypothesis` (a hypothesis stronger than the proof needs, or one no proof uses), `conclusion` (a conclusion, or a whole declaration, that nothing uses), `comment` (a comment that uses a symbol it does not define, misstates its declaration, or speaks of something other than the mathematics) or `other`. `detail` says what you saw and where, exactly enough that a session with the library and this line can act on it: which hypothesis, at which step the proof would go through without it, what the weaker form would be. Report what you verified in the Lean.
+`declaration` names a public declaration of the library, and the program refuses a finding that names anything else. For what you saw in a private declaration, name the public declaration whose proof uses it, or a public declaration of its module where no proof uses it, and say in `detail` which private declaration is meant. `kind` is `hypothesis` (a hypothesis stronger than the proof needs, or one no proof uses), `conclusion` (a conclusion, or a whole declaration, that nothing uses), `comment` (a comment that uses a symbol it does not define, misstates its declaration, or speaks of something other than the mathematics) or `other`. `detail` says what you saw and where, exactly enough that a session with the library and this line can act on it: which hypothesis, at which step the proof would go through without it, what the weaker form would be. Report what you verified in the Lean.
 
 The program accepts a record only if it parses, and you can run the same check on the files you wrote:
 

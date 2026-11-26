@@ -59,11 +59,13 @@ Paper.resolve say it for a run that was stopped inside one of them.
 Paper.act). --parallel bounds the sessions that run side by side (Sessions.side_by_side), and
 --dry-run launches no session and prints what the run would do next (Paper.preview).
 
---tex takes the rest of the command line, so it comes last. It names tectonic, latexmk or pdflatex,
-which are run in the way each needs, or any other command, which is run once in the folder of the
-manuscript with `paper.tex` appended and has to leave paper.pdf. Without --tex the first of the
-three found on PATH is used. When there is none, everything except the typesetting is done and the
-command says so; --typeset-only later typesets the manuscript that <out> already holds.
+--tex takes the rest of the command line, so it comes last. The name of tectonic, latexmk or pdflatex
+by itself is run in the way that program needs. Any other command, also one of the three with options
+of its own, is run once in the folder of the manuscript with `paper.tex` appended; it has to leave
+paper.pdf with the references and the bibliography resolved, which the script does not check. Without
+--tex the first of the three found on PATH is used. When there is none, everything except the
+typesetting is done and the command says so; --typeset-only later typesets the manuscript that <out>
+already holds.
 
 Exit codes: 0 the paper is complete, or with --draft the draft is; 1 refused or failed; 2 produced
 with findings left open (the last `end` event of log.json names them under "open"): a numbered
@@ -171,6 +173,7 @@ REF = re.compile(r'\\(?:eq|page)?ref\{([^}]*)\}')
 LABEL = re.compile(r'\\label\{([^}]*)\}')
 SECTION_ID = re.compile(r'[a-z][a-z0-9-]*')
 from package import MSC as MSC_CODE  # a code of the MSC 2020, such as 05A15; the pipeline holds its selection to the same form
+from package import said as shortened  # a text on one line, cut at a word where it is longer than the length given
 LABEL_FORM = re.compile(r'[a-z]+:[a-z0-9-]+')
 OVERFULL = re.compile(r'Overfull \\hbox \(([0-9.]+)pt too wide\) '
                       r'(?:detected at line (\d+)|in (?:paragraph|alignment) at lines (\d+)--(\d+))')
@@ -900,8 +903,10 @@ def check_plan(materials, plan, keys):
                 'the section that displays it is the first that needs it')
     # The titles stand in the manuscript as the plan has them, and a repair keeps the plan. A Lean name or the
     # word Lean in a title is therefore reported here, where a planning session can still change it. So is a
-    # character of the title of the paper that is not ASCII: the machine checks of the manuscript report it as
-    # they do in a part (machine_findings), and no repair session can change the title.
+    # character that is not ASCII in the title of the paper, in its short title or in the title of a section. The
+    # machine checks of the manuscript report such a character in the title of the paper as they do in a part
+    # (machine_findings) and do not look at the other two, where TeX can fail on it; no repair session can change
+    # any of the three.
     pattern = identifier_pattern(materials['identifiers'])
     titles = [('the title', plan.get('title')), ('the short title', plan.get('short_title'))] \
         + [(f"the title of section {s.get('id')!r}", s.get('title')) for s in sections] \
@@ -913,10 +918,11 @@ def check_plan(materials, plan, keys):
             if found:
                 bad(f'{where} has ' + ', '.join(found) + '; the paper names no declaration of the canon and does not '
                     'mention Lean (method, section "The implementation does not show")')
-    strange = sorted({char for char in plan['title'] if ord(char) > 127}) if is_text(plan.get('title')) else []
-    if strange:
-        bad('the title is written in ASCII, as the parts of the manuscript are; write these characters as LaTeX: '
-            + ' '.join(strange))
+    for where, title in titles[:2 + len(sections)]:  # the title, the short title and the titles of the sections
+        strange = sorted({char for char in title if ord(char) > 127}) if is_text(title) else []
+        if strange:
+            bad(f'{where} is written in ASCII, as the parts of the manuscript are; write these characters as LaTeX: '
+                + ' '.join(strange))
     placed = {}
     for item in statements + others:
         name = item.get('element')
@@ -1046,12 +1052,6 @@ def check_plan(materials, plan, keys):
                 'other\'s text, and no entry of "notation" names it in its "elements"; give the symbol or the name under '
                 'which the paper knows this object')
     return problems
-
-
-def shortened(text, length=120):
-    """A text on one line, cut to a length that a list can carry."""
-    text = collapsed(text)
-    return text if len(text) <= length else text[:length].rsplit(' ', 1)[0] + ' ...'
 
 
 class Layout:
@@ -1404,7 +1404,7 @@ def render_brief(materials, plan, section, layout=None, draft=None):
         lines.append(f"- {layout.called(item['element'])} · section `{item['section']}`"
                      + (' · cited, not proved' if proof == 'cited' else f' · proved in section `{proof}`'
                         if proof not in (None, item['section']) else '')
-                     + f" · {element['short'] or shortened(element['description'] or '')} · `{item['element']}`")
+                     + f" · {element['short'] or shortened(element['description'] or '', 120)} · `{item['element']}`")
     lines += ['', '## What the plan puts into this section', '', collapsed(section['content']), '', *layout.assignment(sid), '',
               *display_lines(plan, section),
               *(drafted_lines(plan, section, draft)
@@ -1691,6 +1691,11 @@ def found_statements(plan, parts):
     return found
 
 
+def cited_keys(text):
+    r"""The keys of the bibliography that the \cite commands of a text name, in their order."""
+    return [key.strip() for match in CITE.finditer(text) for key in match[1].split(',')]
+
+
 def identifier_pattern(names):
     """Matches a Lean name of the canon: a full dotted name, or a last component that no ordinary word resembles."""
     words = set()
@@ -1747,7 +1752,7 @@ def machine_findings(materials, plan, parts, instances=()):
         if here is None or proof is None:
             continue
         if proof == 'cited':
-            if element['source'] not in [k.strip() for m in CITE.finditer(here['text']) for k in m[1].split(',')]:
+            if element['source'] not in cited_keys(here['text']):
                 bad(item['section'], f"part {item['section']}: {label} is a result from the literature; its statement "
                     f"carries \\cite{{{element['source']}}}")
             if here['proof_follows']:
@@ -1761,8 +1766,7 @@ def machine_findings(materials, plan, parts, instances=()):
                 f"\\begin{{proof}}[Proof of ...~\\ref{{{label}}}]")
     for item in plan['others']:
         key = elements[item['element']]['source']
-        if item['treatment'] == 'cited' and key not in [k.strip() for m in CITE.finditer(uncommented(parts[item['section']]))
-                                                        for k in m[1].split(',')]:
+        if item['treatment'] == 'cited' and key not in cited_keys(uncommented(parts[item['section']])):
             bad(item['section'], f"part {item['section']}: the plan cites the result with the bibliography key {key} "
                 'here, and the part does not')
     # A formula that several sections use is displayed by the section the plan names, under the plan's label.
@@ -1773,7 +1777,7 @@ def machine_findings(materials, plan, parts, instances=()):
                 'no such label: ' + shortened(entry['formula'], 200))
     # A statement that the draft found to be an instance of a cited theorem is proved by that citation.
     for label, key, proof in instances:
-        if key not in [k.strip() for m in CITE.finditer(uncommented(parts[proof])) for k in m[1].split(',')]:
+        if key not in cited_keys(uncommented(parts[proof])):
             bad(proof, f"part {proof}: the proof of {label} takes the result from a theorem of the literature, by the "
                 f"specialisation that the brief gives; it carries \\cite{{{key}}}")
     # Labels and citations resolve. A label the plan gives to a section is that section's: when it is defined twice
@@ -1794,7 +1798,7 @@ def machine_findings(materials, plan, parts, instances=()):
         plain = uncommented(text)
         for target in sorted({m[1] for m in REF.finditer(plain)} - set(labels)):
             bad(owner.get(target, name), f'{name}: \\ref{{{target}}} points to a label that the manuscript does not define')
-        for key in sorted({k.strip() for m in CITE.finditer(plain) for k in m[1].split(',')} - keys):
+        for key in sorted(set(cited_keys(plain)) - keys):
             bad(name, f'{name}: \\cite{{{key}}} is not a key of the bibliography; only works in the bibliography of the '
                 'materials are cited')
         commands = sorted({m[1] for m in FORBIDDEN.finditer(plain)})
@@ -1846,7 +1850,10 @@ def tex_recipe(command):
 
 
 def typeset(folder, recipe):
-    """Run the TeX commands in the folder; returns the errors of the run, or nothing when paper.pdf was made."""
+    """Run the TeX commands in the folder; returns the errors of the run, or nothing when paper.pdf was made.
+
+    A command that does not finish within TEX_SECONDS stops the run, as one that cannot be started does: it
+    reports no error that a change of a part would answer, so it is not handed to a repair session."""
     folder = Path(folder)
     (folder / 'paper.pdf').unlink(missing_ok=True)
     cites = bool(CITE.search(uncommented(read_file(folder / 'paper.tex'))))
@@ -1858,7 +1865,10 @@ def typeset(folder, recipe):
             done = subprocess.run(command, cwd=folder, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, timeout=TEX_SECONDS, **popen_options())
         except subprocess.TimeoutExpired:
-            return [f'{command[0]} did not finish within {TEX_SECONDS} seconds']
+            raise Stop(f'{command[0]} did not finish within {TEX_SECONDS} seconds. No part of the manuscript is known '
+                       'to cause that, so it goes to no repair session. See why the TeX command takes this long, as '
+                       'it can when it fetches its files at its first run, and give the command again: --resume '
+                       'continues a run that was stopped, and --typeset-only typesets a finished manuscript')
         except OSError as exc:
             raise Stop(f'{command[0]} could not be started: {exc}')
         output = done.stdout.decode('utf-8', errors='replace').replace('\r\n', '\n')
@@ -1924,8 +1934,8 @@ def tight_displays(folder, recipe):
     """The displayed formulas of the typeset manuscript in `folder` that have less room than they need.
 
     Each is given by the line of paper.tex at which it ends. A display that the log of the manuscript itself
-    reports as too wide is left to `wide_lines`. When the second typesetting fails, nothing is reported: the
-    manuscript itself was typeset, and this measurement adds to that and decides nothing about it."""
+    reports as too wide is left to `wide_lines`. When the second typesetting fails or does not finish, nothing is
+    reported: the manuscript itself was typeset, and this measurement adds to that and decides nothing about it."""
     folder = Path(folder)
     measured = folder / 'displays'
     measured.mkdir(exist_ok=True)
@@ -1933,7 +1943,10 @@ def tight_displays(folder, recipe):
                read_file(folder / 'paper.tex').replace('\\begin{document}', DISPLAY_ROOM + '\\begin{document}', 1))
     if (folder / 'references.bib').is_file():
         shutil.copyfile(folder / 'references.bib', measured / 'references.bib')
-    if typeset(measured, recipe):
+    try:
+        if typeset(measured, recipe):
+            return []
+    except Stop:  # the TeX command did not finish in its time
         return []
     logs = [path.read_text(encoding='utf-8', errors='replace') if path.is_file() else ''
             for path in (folder / 'paper.log', measured / 'paper.log')]
@@ -2012,8 +2025,8 @@ title, a symbol) is LaTeX; inside a JSON string a backslash is written twice.
 '''
 PLAN_KEYS = '''- "exemplars": the keys of the ''' + str(CHOSEN_PAPERS) + ''' papers you chose, all different, exactly as \
 `exemplars.md` gives them.
-- "title": the title of the paper. Like the parts of the manuscript it is plain ASCII: a letter with an accent is \
-written with TeX's accent command.
+- "title": the title of the paper. Like the parts of the manuscript it is plain ASCII, and so are "short_title" and \
+the "title" of every section: a letter with an accent is written with TeX's accent command.
 - "short_title": the title in a shorter form, for the running head. The head is one line of small capitals at the top \
 of every page, beside the page number, and it has room for about fifty-five letters and spaces. Leave the key out when \
 the title itself is no longer than that. A head that does not fit is not printed, and the pages then carry their \
@@ -2526,8 +2539,9 @@ same objects, the same hypotheses, the same quantifiers and ranges, the same con
 read with the definitions and the notation of the manuscript. A difference the method permits is no difference as long \
 as the mathematical content is the same. Where a convention changed, for example an index that now starts at one, check \
 that the statement was carried over correctly, case by case at the boundary. Where the statement in words and the Lean \
-statement of an element disagree with each other, say so in "record_disagreement": the Lean statement is the one that \
-was proved, and such a disagreement lies in the element's record, which no repair of the manuscript can change.
+statement of an element disagree with each other, the Lean statement is the one that was proved: give the verdict by \
+it, and report the disagreement in "record_disagreement": it lies in the element's record, which no repair of the \
+manuscript can change.
 
 A statement that the paper takes from the literature carries its citation in the brackets that follow the opening of \
 its environment: the work, and the place in it where the result stands. The record of its element names the work in \
@@ -2749,7 +2763,8 @@ the same hypotheses, the same quantifiers and ranges, the same conclusion, neith
 notation of the plan. A difference the method permits is no difference as long as the mathematical content is the same. \
 Where a convention changed, for example an index that now starts at one, check that the statement was carried over \
 correctly, case by case at the boundary. Where the statement in words and the Lean statement of an element disagree \
-with each other, say so in "record_disagreement": the Lean statement is the one that was proved.
+with each other, the Lean statement is the one that was proved: give the verdict by it, and report the disagreement in \
+"record_disagreement".
 
 An entry whose "declared_gap" is not null is expected to differ, and is judged like the others. When it differs, the \
 gap goes on to the sessions that extend the library, and nothing more is asked of you for it. When you find that it says \
@@ -4230,11 +4245,15 @@ class Paper(Sessions):
             groups = [(section, [row for row in rows if home[row['label']] == section['id']]) for section in sections]
             results = self.side_by_side([lambda section=section, stated=stated: self.compare_section(section, stated, tex, spans)
                                          for section, stated in groups if stated])
-            # A section whose comparison was not made (session) has no verdicts; its statements stay not compared.
+            # A section whose comparison was not made (session) has no verdicts of this round. A statement of it keeps
+            # the verdict that an earlier round gave its present text, and without such a verdict it stays not compared.
             verdicts = [verdict for result in results if result for verdict in result]
-            self.compared = self.kept_verdicts(verdicts, rows)
+            self.compared = {**{row['label']: self.compared[row['label']] for row in rows
+                                if row['comparison']['verdict'] != 'not compared'},
+                             **self.kept_verdicts(verdicts, rows)}
             self.save()
-            differing = [{'label': v['label'], 'difference': v['difference']} for v in verdicts if v['verdict'] == 'differs']
+            differing = [{'label': row['label'], 'difference': self.compared[row['label']]['difference']} for row in rows
+                         if row['label'] in self.compared and self.compared[row['label']]['verdict'] == 'differs']
             # A disagreement inside an element's record is reported beside the paper; no repair of the manuscript removes it.
             disagreements = [{'label': label, 'record_disagreement': judged['record_disagreement']}
                              for label, judged in self.compared.items() if judged['record_disagreement']]
@@ -4741,9 +4760,13 @@ class Paper(Sessions):
             print(line)
         if self.closed:
             count = lambda kind: sum(entry['kind'] == kind for entry in self.closed)
+            differing = sum(entry['kind'] == 'differs' or (entry['kind'] == 'restated' and entry['verdict'] != 'same')
+                            for entry in self.closed)
             print(f"What the bounded repairs had left open was closed without a person: {count('removed')} passages that "
                   f"no element covers were taken out, and {count('restated')} statements were restated as their elements "
-                  'say them; the last `end` event of log.json lists them under "closed".')
+                  'say them; the last `end` event of log.json lists them under "closed".'
+                  + (f' The comparison that followed did not find {differing} statements to say what their elements '
+                     'say; the same list has each with its verdict.' if differing else ''))
         if self.kept:
             print(f'{len(self.kept)} findings of the readings were answered with a reason, and the text stays as it is '
                   'there; the last `end` event of log.json lists them under "kept", each with the reason.')

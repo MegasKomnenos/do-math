@@ -83,7 +83,7 @@ The signs are material for a judgment and not conditions. A result that an accou
 
 ## Approaches tried
 
-A statement whose proof is not accepted carries the approaches that were tried on it, one file for each approach, at `approaches/<Name>/<id>.md`. `<Name>` follows the name of the statement the approach was aimed at. `<id>` is a short identifier of letters, digits, `_` and `-`, chosen by the first author of the entry and kept when the entry is replaced.
+A statement whose proof is not accepted carries the approaches that were tried on it, one file for each approach, at `approaches/<Name>/<id>.md`. `<Name>` follows the name of the statement the approach was aimed at. `<id>` is a short identifier of letters, digits, `_` and `-`, beginning with a letter or a digit, chosen by the first author of the entry and kept when the entry is replaced.
 
 ```markdown
 ---

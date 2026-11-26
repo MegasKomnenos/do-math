@@ -2353,10 +2353,13 @@ class RunnerTests(ScenarioCase):
 
     def test_rejected_settings_edit_keeps_the_last_valid_settings(self):
         runner = self.runner()
+        # The settings in force are not the installed ones, which a return to the defaults would give as well.
+        self.configure(max_sessions=5)
         runner.reload_settings()
+        self.assertEqual(runner.settings['max_sessions'], 5)
         (self.instance / 'settings.json').write_text('{not json', encoding='utf-8')
         runner.reload_settings()
-        self.assertEqual(runner.settings['max_sessions'], 8)
+        self.assertEqual(runner.settings['max_sessions'], 5)
         self.assertIn('error', runner.state['settings_error'])
         config = defaults()
         config['max_sessions'] = 3

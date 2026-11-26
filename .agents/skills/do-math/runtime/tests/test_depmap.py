@@ -234,6 +234,19 @@ class Derivation(MapCase):
         self.assertEqual((root['standing'], root['settled']), ('held', True))
         self.assertEqual((other['standing'], other['settled']), ('accepted', True))
 
+    def test_a_statement_is_formal_through_a_proof_that_does_not_settle_it(self):
+        # The root is settled by its written proof, which review accepted. Its second proof is complete in Lean, and
+        # review held it back. The statement is settled and, independently of that, one of its proofs is formal.
+        data = self.map([statement('Lib.root', 'unit'),
+                         statement('Lib.rootInLean', proves='Lib.root', proof='formal', standing='held', module='Lib.Later')])
+        root, other = self.unit(data, 'Lib.root'), self.unit(data, 'Lib.rootInLean')
+        self.assertEqual(draw.status_of(root), ['root', 'statement', 'accepted', 'settled', 'formal'])
+        self.assertEqual(draw.status_of(other), ['another proof', 'correct, held back', 'not settled', 'formal'])
+        # No proof that settles the root is formal, so the root is not proved formally. Under the title the drawing
+        # says so of the proofs that settle the root, and not of every proof of it.
+        self.assertEqual(data['root_state'], 'informal_proved')
+        self.assertIn('the proofs that settle it', draw.state_words(data))
+
     def test_a_proof_named_by_another_proof_is_read_as_its_statement(self):
         data = self.map([statement('Lib.root', 'unit', uses=['Lib.aAgain']), statement('Lib.a', 'unit', proof=None),
                          statement('Lib.aAgain', 'unit', proves='Lib.a', module='Lib.Later')])
@@ -295,6 +308,14 @@ class Derivation(MapCase):
         self.assertFalse(self.unit(data, 'Lib.s')['settled'])
         svg = draw.render(data)[0]
         self.assertEqual(len(ElementTree.fromstring(svg).findall(f".//{SVG}g[@class='edge']")), len(data['edges']))
+        # The layout turns one edge of the cycle around to place the cards and draws it in its own direction all the
+        # same: every line leaves the card of what is used and ends, where its arrowhead is, at the card of what uses it.
+        geometry = draw.layered(data, {unit['id']: draw.card_of(unit) for unit in data['units']})
+        for edge, route in zip(data['edges'], geometry['edges']):
+            for (px, py), name in ((route['points'][0], edge['source']), (route['points'][-1], edge['target'])):
+                x, y, w, h = geometry['cards'][name]
+                self.assertTrue(px in (x, x + w) and y <= py <= y + h, (edge['source'], edge['target'], name))
+            self.assertEqual((route['pieces'][0][0], route['pieces'][-1][-1]), (route['points'][0], route['points'][-1]))
 
     def test_a_unit_carries_its_label_its_lean_name_its_kind_and_its_standing(self):
         data = self.map([
@@ -358,14 +379,12 @@ def hub_canon():
     return rows
 
 
-def lines_of(data, geometry):
-    """The straight parts of every net, each once, with the units the net joins: (start, end, net, units)."""
+def lines_of(geometry):
+    """The straight parts of every net, each once: (start, end, net)."""
     nets = {}
-    for edge, route in zip(data['edges'], geometry['edges']):
-        routes, ends = nets.setdefault(route['net'], ([], set()))
-        routes.append(route['points'])
-        ends.update((edge['source'], edge['target']))
-    return [(start, end, net, ends) for net, (routes, ends) in nets.items() for start, end in draw.stretches(routes)]
+    for route in geometry['edges']:
+        nets.setdefault(route['net'], []).append(route['points'])
+    return [(start, end, net) for net, routes in nets.items() for start, end in draw.stretches(routes)]
 
 
 class Drawing(MapCase):
@@ -552,6 +571,9 @@ class Drawing(MapCase):
         self.assertIn(guide, page)
         self.assertIn('<a href="#node=Lib.root">every row is unimodal</a>: the root is open.', guide)
         self.assertIn('9 units, each a card, in 3 groups, joined by 15 lines. 1 smaller step has no card', guide)
+        # The short name of the root is text, whatever its record wrote in it: none of it is read as markup of the page.
+        marked = draw.guide_of({**data, 'root_label': 'rows with k < n & "more"'})
+        self.assertIn('>rows with k &lt; n &amp; &quot;more&quot;</a>: the root is open.', marked)
         # The glossary explains the words on the cards of this map, and the two words the map is made of.
         said = {word for unit in data['units'] for word in draw.status_of(unit)}
         self.assertEqual(set(re.findall(r'<dt data-word="([^"]+)"', guide)), said | {'unit', 'step'})
@@ -606,15 +628,16 @@ class Drawing(MapCase):
             for route in geometry['edges']:  # every line runs at right angles
                 for (x1, y1), (x2, y2) in zip(route['points'], route['points'][1:]):
                     self.assertTrue(abs(x1 - x2) < 0.01 or abs(y1 - y2) < 0.01, route['points'])
-            lines = lines_of(data, geometry)
-            for (x1, y1), (x2, y2), net, ends in lines:  # no line passes through a card that is not one of its ends
-                for name, (x, y, w, h) in geometry['cards'].items():
-                    inside = min(x1, x2) < x + w - 0.5 and max(x1, x2) > x + 0.5 and min(y1, y2) < y + h - 0.5 and max(y1, y2) > y + 0.5
-                    self.assertFalse(inside and name not in ends, (name, (x1, y1), (x2, y2)))
+            for edge, route in zip(data['edges'], geometry['edges']):  # no line passes through a card that is not one of its two ends
+                for (x1, y1), (x2, y2) in zip(route['points'], route['points'][1:]):
+                    for name, (x, y, w, h) in geometry['cards'].items():
+                        inside = min(x1, x2) < x + w - 0.5 and max(x1, x2) > x + 0.5 and min(y1, y2) < y + h - 0.5 and max(y1, y2) > y + 0.5
+                        self.assertFalse(inside and name not in (edge['source'], edge['target']), (name, (x1, y1), (x2, y2)))
+            lines = lines_of(geometry)
             # Two nets never lie on one stretch, and where they run side by side they keep the distance of two ends on a card.
             for flat in (True, False):
                 along = sorted(((a[flat], min(a[not flat], b[not flat]), max(a[not flat], b[not flat]), net)
-                                for a, b, net, _ in lines if abs(a[flat] - b[flat]) < 0.01))
+                                for a, b, net in lines if abs(a[flat] - b[flat]) < 0.01))
                 for index, (at, low, high, net) in enumerate(along):
                     for other, start, end, second in along[index + 1:]:
                         if other - at >= draw.PORT_MIN - 0.01:

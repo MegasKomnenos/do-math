@@ -183,8 +183,12 @@ class Run:
         """One step: its inputs compared with what their steps left, its own folders cleared, its work, its record.
 
         A step that has an entry in state.json has passed its exit check and is not made again. `work`
-        returns when the exit check has passed and raises otherwise. `keep` names the products that
-        are not cleared when the step is entered again, for a step that continues what it has on disk.
+        returns when the exit check has passed and raises otherwise. Where it returns values of the
+        state (the main theorem, after the selection and after the arrangement), they are entered
+        together with the step: a state that another thread saves while the step is under way does not
+        hold them, so a step that is entered again starts from the state it started from. `keep` names
+        the products that are not cleared when the step is entered again, for a step that continues
+        what it has on disk.
 
         A step that is entered again is made again from its start, so what its earlier start wrote into
         decisions.md goes: the state keeps the length of that file as the step first found it, and the
@@ -218,7 +222,7 @@ class Run:
                     continue
                 remove_tree(target) if target.is_dir() else target.unlink()
             self.sessions.event('step', step=sid)
-            work()
+            found = work()
             record = {'products': {relative: package.product_hash(self.path(relative)) for relative in writes
                                    if self.path(relative).exists()},
                       'read': {relative: self.recorded(relative) for relative in reads}}
@@ -230,6 +234,7 @@ class Run:
         except Exception:
             raise Halt(sid, 'the program failed in this step:\n' + traceback.format_exc())
         with self.lock:
+            self.state.update(found or {})
             self.state['steps'][sid] = record
             self.save()
         self.sessions.event('check', check='exit check of ' + sid, problems=[])
@@ -590,7 +595,7 @@ class Run:
         except (OSError, subprocess.SubprocessError) as error:
             raise Refusal(f'the Lean environment does not answer its version command: {error}')
         meta = read_json(source / 'instance.json')
-        package.export_commit(instance, first, ['canon/index.json', 'canon/lean'], self.work / 'first', strip='canon/')
+        package.export_commit(instance, first, ['canon/lean'], self.work / 'first', strip='canon/')
         root_module = canon.read_index(source / 'canon' / 'index.json')['entries'][meta['root']]['module']
         definitions = package.definition_modules(self.work / 'first' / 'lean', meta['library'], root_module)
         cache = instance / 'runner' / 'lean' / 'cache'
@@ -599,7 +604,7 @@ class Run:
         measured = package.challenge_measure(package.challenge_text(self.work / 'first' / 'lean', definitions, root_module))
         self.state = {'run': {'instance': str(instance), 'name': self.name, 'commit': commit, 'first': first,
                               'config': identity},
-                      'definitions': definitions, 'root_module': root_module, 'version': version, 'measured': measured,
+                      'definitions': definitions, 'root_module': root_module, 'version': version,
                       'main': None, 'accepted': {},
                       'steps': {'0-start': {'products': {name: package.product_hash(self.work / name)
                                                          for name in ('source', 'first', 'settings.json')}, 'read': {}}}}
@@ -689,8 +694,6 @@ class Run:
         write_json(target / 'index.json', chosen['index'])
         write_json(target / 'decision.json', decision)
         write_json(target / 'reading.json', reading)
-        with self.lock:
-            self.state['main'] = option['main']
         lines = [f"The main theorem is `{option['main']}` (option {option['id']}"
                  + (', with the root derived from it by a module the program compiled' if derivation is not None else '')
                  + f"). {decision['reasons'].strip()}", '', 'The options compared:']
@@ -706,6 +709,7 @@ class Run:
         lines += ['', f"For the registry the result is recorded as {registry['origin']}. "
                   + registry.get('novelty', '').strip()]
         self.decide('Stage 1: selection', '\n'.join(lines))
+        return {'main': option['main']}
 
     def read_decision(self, output, index, model, bibliography):
         """The exit check of the selection on one output; returns the decision, its derivations and the index of the choice."""
@@ -1051,8 +1055,6 @@ class Run:
         else:
             for relative, text in result['files'].items():
                 write_text(target / 'lean' / relative, text)
-            with self.lock:
-                self.state['main'] = result['renames'].get(self.state['main'], self.state['main'])
             if result['renames'] or result['removed']:
                 self.decide('Step 4: the arrangement', 'Renamed: ' + (', '.join(
                     f'`{old}` to `{new}`' for old, new in sorted(result['renames'].items())) or 'nothing')
@@ -1063,6 +1065,7 @@ class Run:
         shutil.copyfile(taken / 'bibliography.bib', target / 'bibliography.bib')
         write_json(target / 'index.json', result['index'])
         write_json(target / 'renames.json', result['renames'])
+        return {'main': result['renames'].get(self.state['main'], self.state['main'])}
 
     # -- stage 2, step 5 and the records of step 6 ------------------------------------------------------
 
@@ -1320,6 +1323,13 @@ class Run:
         if dropped:
             self.decide(f'Step {tag}: the records', 'The records of declarations the library no longer has were deleted: '
                         + ', '.join(f'`{name}`' for name in dropped) + '.')
+        # What a comparer says of a record that it corrected is kept in the decisions, since the work folder goes at
+        # the end; its instruction has it say there as well which part of a record it could not compare.
+        corrected = [verdict for verdict in verdicts
+                     if verdict['verdict'] == 'corrected' and is_text(verdict.get('difference'))]
+        if corrected:
+            self.decide(f'Step {tag}: what the comparison of the records corrected', '\n'.join(
+                f"- `{verdict['declaration']}`: {collapsed(verdict['difference'])}" for verdict in corrected))
         return findings
 
     def records(self):
@@ -1432,13 +1442,13 @@ class Run:
                                 'note': 'the declaration it concerns is in no part: it is not in the library, or it '
                                         'stands in a definition module, which stays as it was posed'})
             else:
-                by_part.setdefault(package.folder_of(entry['module']), []).append(item)
+                by_part.setdefault(depmap.folder_of(entry['module']), []).append(item)
         modules = [module for module, _ in canon.library_modules(arranged / 'lean', self.library)]
         library, records = tree('lean/', arranged / 'lean'), tree('records/', self.work / 'lib' / '5-records' / 'records')
         target = self.work / 'lib' / '6-parts'
 
         def fold(part, given_items):
-            inside = lambda module: package.folder_of(module) == part
+            inside = lambda module: depmap.folder_of(module) == part
             given = {**library, **records, 'items.json': as_json(given_items), 'part.json': as_json({
                 'id': part, 'modules': [m for m in modules if inside(m) and m not in self.definitions],
                 'interface': package.interface(index, [m for m in modules if inside(m)],

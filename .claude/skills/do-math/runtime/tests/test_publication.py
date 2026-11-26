@@ -198,7 +198,6 @@ class PublicationCase(InstanceCase):
 class PublicationTests(PublicationCase):
     def test_a_publication_adds_modules_replaces_a_proof_in_place_and_regenerates_what_is_derived(self):
         before = self.canon().load_index()['entries']['Small.root']
-        old_record = (self.canon().records / 'Small/root.md').read_text(encoding='utf-8')
         folder = self.induction(extras=True)
         cid, engine = self.publish(folder, self.verdicts(folder, **HOLD))
         canon, index = self.canon(), self.canon().load_index()
@@ -238,7 +237,6 @@ class PublicationTests(PublicationCase):
             self.assertIn(cid, left)
             self.assertIn('`records/Small/root.md`', left)
             self.assertIn('-## Proof', left)  # the current text has a proof and the replaced one had none
-            self.assertNotEqual(old_record, ROOT_RECORD)
             self.assertFalse((canon.history / 'Small/oddSum_succ').exists())
         with self.subTest('the replaced proof leaves its difference in the history'):
             left = (canon.history / 'Small/root/000001-proof.md').read_text(encoding='utf-8')
@@ -403,6 +401,34 @@ class PublicationTests(PublicationCase):
         self.assertIsNone(record)
         self.assert_sent_to_a_replacement_peer(engine, folder, 'the statement of Small.root changed in place', before, [])
         self.assertEqual(self.root_declaration(), ORIGINAL)
+
+    def test_a_refused_candidate_is_not_installed_when_the_runner_ended_while_its_stage_was_being_removed(self):
+        # The check refused a candidate that changes the statement of the root, and the runner ended while it
+        # removed the candidate's stage: the staged index and one module were gone. The state it had saved holds
+        # no publication, so the runner that follows takes nothing from what is left of the stage, and the
+        # review's session, left as running, is collected again.
+        changed = DOC + 'theorem root (n : Nat) : oddSum n = n * n + 0 := by\n  sorry'
+        folder = self.candidate(replace={'Small.root': changed}, prepare=False)
+        receipt = self.prepare(folder, expect_ok=False)
+        write_json(folder / 'prepared.json', {**receipt, 'ok': True, 'errors': []})
+        before = self.canon_bytes()
+
+        def partly(stage):
+            (stage / 'index.json').unlink()
+            (stage / 'lean/Small/Defs.lean').unlink()
+            raise RuntimeError('simulated end of the runner')
+
+        engine = runtime.Runner(self.instance, self.skill)
+        with patch('runner.remove_tree', side_effect=partly), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.publish(folder, engine=engine, expect=False)
+        saved = read_json(self.instance / 'runner/state.json')
+        self.assertIsNone(saved['publication'])
+        self.assertEqual(saved['sessions'][self.review_job(engine, folder)['session']]['status'], 'running')
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.publish()
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(self.canon_bytes(), before)
+        self.assertEqual(self.events(), [])
 
     def test_a_replacement_that_review_declined_leaves_declaration_and_record_while_the_rest_is_published(self):
         # The root has a proof already, correct and held back; review is asked whether a new one takes its place.
@@ -652,7 +678,8 @@ class InterruptedPublicationTests(PublicationCase):
     def builds(self):
         return sorted(p.name for p in (self.instance / 'runner/lean/builds').iterdir())
 
-    def interrupt(self, target, stage, installed=False, builds=0, event_written=False, side_effect=None):
+    def interrupt(self, target, stage, installed=False, builds=0, event_written=False, committed=False,
+                  side_effect=None):
         folder = self.induction(extras=True)
         engine = runtime.Runner(self.instance, self.skill)
         failure = side_effect or RuntimeError('simulated end of the runner')
@@ -661,7 +688,7 @@ class InterruptedPublicationTests(PublicationCase):
         saved = read_json(self.instance / 'runner/state.json')['publication']
         self.assertEqual((saved['stage'], bool(saved.get('installed'))), (stage, installed))
         self.assertEqual(self.events(), [saved['event']] if event_written else [])
-        self.assertNotIn('Publish ' + saved['event']['id'], git(self.instance, 'log', '--format=%s'))
+        self.assertEqual(('Publish ' + saved['event']['id']) in git(self.instance, 'log', '--format=%s'), committed)
         # The broker makes the folder of a build when it takes the request up, which can be after this line.
         queued = sorted(set(self.builds()) | ({saved['build']} if saved.get('build') else set()))
         recovered = runtime.Runner(self.instance, self.skill)
@@ -725,17 +752,51 @@ class InterruptedPublicationTests(PublicationCase):
     def test_ended_while_checking_what_changed(self):
         self.interrupt('runner.check_applied', 'check')
 
-    def test_ended_before_the_canon_was_put_in_place(self):
-        self.interrupt('runner.Runner.install_canon', 'commit')
+    def test_ended_before_the_event_was_written(self):
+        self.interrupt('runner.rename_directory', 'commit')
+
+    def test_ended_after_the_event_was_written_and_before_the_canon_was_put_in_place(self):
+        self.interrupt('runner.Runner.install_canon', 'commit', event_written=True)
 
     def test_ended_after_the_library_was_put_in_place_and_before_the_written_part(self):
-        self.interrupt('runner.apply_written', 'commit')
+        self.interrupt('runner.apply_written', 'commit', event_written=True)
 
     def test_ended_after_the_written_part_and_before_that_was_saved(self):
-        self.interrupt('runner.record_summary', 'commit')
+        self.interrupt('runner.record_summary', 'commit', event_written=True)
 
-    def test_ended_after_the_canon_was_installed_and_before_the_event_was_written(self):
-        self.interrupt('runner.rename_directory', 'commit', installed=True)
+    def test_ended_while_the_stage_was_being_removed(self):
+        # The removal had taken the staged index and one module when the runner ended. The canon was installed
+        # and saved as installed before the removal began, so the runner that follows installs nothing from
+        # what is left of the stage, and the canon keeps the module.
+        def partly(stage):
+            (stage / 'index.json').unlink()
+            (stage / 'lean/Small/Step.lean').unlink()
+            raise RuntimeError('simulated end of the runner')
+
+        self.interrupt('runner.remove_tree', 'commit', installed=True, event_written=True, side_effect=partly)
+
+    def test_a_reader_has_the_canon_before_a_change_or_after_it_with_the_verdicts_of_its_review(self):
+        # Every command a session runs replays the instance, at whatever moment of a publication it is called.
+        # The Lean proof of the step is complete and review did not confirm it. A complete proof without a
+        # verdict stands as accepted, as the proofs an instance began with do (knowledge.standing_of), so a
+        # reader must not find the step in the index before the event that carries review's verdict on it.
+        folder = self.induction()
+        doubted = {'correct': 'not_confirmed', 'accepted': False, 'reason': 'The unfolding is asserted and not shown.'}
+        ended = RuntimeError('simulated end of the runner')
+        with patch('runner.Runner.install_canon', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.publish(folder, self.verdicts(folder, **{'Small.oddSum_succ': doubted}), expect=False)
+        [event] = self.events()
+        before = replay(self.instance)
+        self.assertEqual((before['sequence'], 'Small.oddSum_succ' in before['elements'],
+                          before['elements']['Small.root']['standing']), (0, False, 'no_proof'))
+        with patch('runner.apply_written', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.drain(runtime.Runner(self.instance, self.skill))
+        after = replay(self.instance)
+        step = after['elements']['Small.oddSum_succ']
+        self.assertEqual((after['sequence'], step['lean_proof'], step['standing']), (1, 'complete', 'not_confirmed'))
+        self.drain(runtime.Runner(self.instance, self.skill))
+        self.assertEqual(self.events(), [event])
+        self.assertEqual(replay(self.instance)['elements']['Small.oddSum_succ']['standing'], 'not_confirmed')
 
     def test_ended_at_the_git_commit(self):
         def broken(instance, *args):
@@ -743,6 +804,11 @@ class InterruptedPublicationTests(PublicationCase):
                 raise RuntimeError('simulated unavailable commit')
             return git(instance, *args)
         self.interrupt('runner.git', 'commit', installed=True, event_written=True, side_effect=broken)
+
+    def test_ended_after_the_git_commit_and_before_the_publication_was_closed(self):
+        # The commit is made, and the runner ends before it saves that the publication is over. The runner that
+        # follows finds the commit of this publication and makes no second one.
+        self.interrupt('runner.Runner.notify', 'commit', installed=True, event_written=True, committed=True)
 
 
 class ReviewedCandidateTests(PublicationCase):

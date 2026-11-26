@@ -554,6 +554,9 @@ def archive_work(session):
                     tar.add(session / name, arcname=name, recursive=False)
             stored = _archive_entries(part)
             if stored == entries:
+                # On disk before work/ is removed: the check above read the archive back from the system's cache.
+                with part.open("rb+") as stream:
+                    os.fsync(stream.fileno())
                 os.replace(part, archive)
         finally:
             part.unlink(missing_ok=True)

@@ -39,11 +39,10 @@ from settings import load_settings
 SCRIPT = Path(__file__).resolve()
 MIB = 1024 * 1024
 POLL = 0.25
-# A client that waits for a job looks for the job's result file, which costs a file-system lookup, and
-# reads the broker's whole state only now and then, since that file grows with the instance's jobs.
+# A client that waits for a job looks for the job's result file, which costs a file-system lookup, and reads
+# the broker's whole state only at the start and at its timeout, since that file grows with the instance's jobs.
 WAIT_FIRST = 0.25  # the first pause of a waiting client; each later pause is half as long again
 WAIT_CAP = 1.0  # the longest pause between two looks for the result file
-WAIT_STATE = 10.0  # the seconds between two reads of the broker's state while the result file is absent
 STATE_SECONDS = 10.0  # the broker writes state.json at most this often, and at once in the cases Broker.save names
 STATE_REQUEST = ".state"  # an empty file with this suffix in the queue asks the broker to write its state now
 TREE_SECONDS = 1.0  # a running compile's processes are listed again at most this often
@@ -1293,7 +1292,17 @@ class Broker:
             except OSError as exc:
                 job.update(status="failed", reason=str(exc))
             else:
-                self.cache_module(job["key"], files, identities, self.paths.job(job["id"]))
+                # launch() compared the source with the hash its key was made from, and Lean opened the file after
+                # that. The output is kept under the key only if the file still holds those bytes: kept after an
+                # edit made in between, it would be given to every later build of the earlier bytes.
+                try:
+                    unchanged = hashlib.sha256(Path(job["source"]).read_bytes()).hexdigest() == job.get("source_sha256")
+                except OSError:
+                    unchanged = False
+                if unchanged:
+                    self.cache_module(job["key"], files, identities, self.paths.job(job["id"]))
+                else:
+                    self.log(event="cache_skipped", key=job["key"], error="the source changed while the module compiled")
         build = self.state["builds"].get(job["build"])
         if build is None:
             return
@@ -1359,6 +1368,10 @@ class Broker:
             temporary = self.paths.cache / f".{key}{suffix}.{uuid.uuid4().hex}"
             try:
                 shutil.copyfile(source, temporary)
+                # On the disk before the manifest names it: the manifest is written through to the disk, and after a
+                # loss of power it must not stand beside a file whose content never arrived there.
+                with temporary.open("rb+") as stream:
+                    os.fsync(stream.fileno())
                 os.replace(temporary, target)
             except OSError as exc:
                 temporary.unlink(missing_ok=True)
@@ -1876,7 +1889,7 @@ def await_record(paths, job_id, timeout=None, broker_first=False):
     written only every STATE_SECONDS. The broker writes `result.json` into the job's or build's folder
     when it ends and when it is answered as a duplicate, and at no other time, so between two reads of
     the whole record only the presence of that file is looked at. The record is read in full
-    at the start, when the file has appeared, every WAIT_STATE seconds, and once more when the timeout
+    at the start, when the file has appeared, and once more when the timeout
     has passed, so that a job which ended during the last pause is still returned as ended. The pauses
     grow from WAIT_FIRST to WAIT_CAP and never run past the timeout.
 
@@ -1886,12 +1899,11 @@ def await_record(paths, job_id, timeout=None, broker_first=False):
     timeout is honoured first."""
     deadline = None if timeout is None else time.monotonic() + timeout
     checked = 0.0 if broker_first else time.monotonic()
-    pause, record, read_at = WAIT_FIRST, None, 0.0
+    pause, record = WAIT_FIRST, None
     while True:
-        now = time.monotonic()
-        expired = deadline is not None and now >= deadline
-        if record is None or expired or now - read_at >= WAIT_STATE or result_file(paths, job_id).exists():
-            record, read_at = job_record(paths, job_id), now
+        expired = deadline is not None and time.monotonic() >= deadline
+        if record is None or expired or result_file(paths, job_id).exists():
+            record = job_record(paths, job_id)
             if record is None:
                 raise ValueError(f"unknown job: {job_id}")
             if record["status"] == "duplicate":

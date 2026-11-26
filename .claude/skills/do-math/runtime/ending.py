@@ -197,7 +197,7 @@ def supervise(session, launch):
         rejected = None
         try:
             empty = no_research_outcome(session, policy['role']) if limit is None and not output_role else None
-        except (OSError, ValueError, TypeError, KeyError) as exc:
+        except (OSError, ValueError) as exc:
             # The session goes on, so the next turn is told why, as the transport check would tell it.
             empty, rejected = None, 'output/outcome.json: ' + str(exc)
         if empty is not None:

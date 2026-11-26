@@ -45,6 +45,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(codex.provider, "codex")
         self.assertEqual(codex.argv[0], str(self.root / "program files" / "codex.exe"))
         self.assertEqual(codex.argv[codex.argv.index("--cd") + 1], str(workdir.resolve()))
+        self.assertEqual(codex.argv[codex.argv.index("--sandbox") + 1], "danger-full-access")
         self.assertEqual(codex.argv[-1], "-")
         configs = [codex.argv[i + 1] for i, arg in enumerate(codex.argv) if arg == "-c"]
         self.assertEqual(tomllib.loads("\n".join(configs)),
@@ -55,6 +56,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(claude.cwd, workdir.resolve())
         self.assertEqual(claude.argv[claude.argv.index("--effort") + 1], "max")
         self.assertIn("--verbose", claude.argv)
+        self.assertIn("--dangerously-skip-permissions", claude.argv)
         self.assertNotIn("--bare", claude.argv)
         self.assertEqual(claude.argv[claude.argv.index("--model") + 1], "sonnet")
         for model in ("claude/opus", "claude/fable", "claude/claude-sonnet-example"):

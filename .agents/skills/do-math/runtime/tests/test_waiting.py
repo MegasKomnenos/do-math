@@ -2,7 +2,7 @@
 
 The broker's state file grows with the jobs of the instance, so a waiting client does not read the
 whole of it at every look. It looks for the job's result file and reads the whole record only at the
-start, when that file has appeared, every WAIT_STATE seconds and once when the timeout has passed.
+start, when that file has appeared, and once when the timeout has passed.
 These tests fix what callers rely on: what is returned, that a job which ends is
 seen, that the timeout is kept exactly, and how seldom the state is read. They run on a stand-in clock,
 so they take no real time and do not depend on the load of the machine; no broker is started.
@@ -83,10 +83,9 @@ class AwaitRecord(unittest.TestCase):
         self.running(JOB)
         job, record, ended = lean_broker.await_record(self.paths, JOB, timeout=60)
         self.assertEqual((job, record["status"], ended), (JOB, "running", False))
-        # At the start, at the first look once WAIT_STATE seconds have passed since the last read, and once at
-        # the timeout: 7 reads in a minute, where a read at each of four looks a second would have been 240.
-        self.assertLessEqual(self.reads, 2 + int(60 / lean_broker.WAIT_STATE))
-        self.assertGreaterEqual(self.reads, int(60 / lean_broker.WAIT_STATE))
+        # At the start and once at the timeout, however long the wait: the state file grows with the instance's
+        # jobs, and a read at each look would take in the whole of it about once a second.
+        self.assertEqual(self.reads, 2)
         self.assertEqual(self.clock.sleeps[0], lean_broker.WAIT_FIRST)
         self.assertLessEqual(max(self.clock.sleeps), lean_broker.WAIT_CAP)
         self.assertAlmostEqual(sum(self.clock.sleeps), 60, places=6)

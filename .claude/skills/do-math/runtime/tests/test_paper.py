@@ -613,12 +613,20 @@ class PlanTests(PaperCase):
         self.assertIn(f"the title of section {PLAN['sections'][1]['id']!r} has Mathlib, Small.sq_step;", named)
         self.assertEqual(self.problems(lambda plan: plan.update(title='A lean proof of a clean identity')), '')
 
-    def test_the_title_of_the_paper_is_written_in_ascii(self):
+    def test_the_titles_of_the_plan_are_written_in_ascii(self):
         # The machine checks hold the title to ASCII and a repair keeps the plan, so the check of the plan reports it.
         self.assertEqual(self.problems(lambda plan: plan.update(title='A theorem of Erdős')),
                          'the title is written in ASCII, as the parts of the manuscript are; write these characters '
                          'as LaTeX: ő')
         self.assertEqual(self.problems(lambda plan: plan.update(title='A theorem of Erd\\H{o}s')), '')
+        # The short title and the title of a section stand in the manuscript as well, and no machine check looks at them.
+        self.assertEqual(self.problems(lambda plan: plan.update(short_title='Sums and π')),
+                         'the short title is written in ASCII, as the parts of the manuscript are; write these '
+                         'characters as LaTeX: π')
+        self.assertEqual(self.problems(lambda plan: plan['sections'][1].update(title='Sums and π')),
+                         "the title of section 'tools' is written in ASCII, as the parts of the manuscript are; write "
+                         'these characters as LaTeX: π')
+        self.assertEqual(self.problems(lambda plan: plan['sections'][1].update(title='Sums and $\\pi$')), '')
 
     def test_the_plan_chooses_six_different_papers_of_the_collection(self):
         self.assertIn('"exemplars" names 5 papers; it names exactly 6 different ones',
@@ -763,7 +771,8 @@ class ManuscriptTests(PaperCase):
         # in a comment and in a label; a name of a result the paper does not use is a name of the canon too.
         self.assertIn('oddSum_succ', self.problems(proof=PROOF + 'By \\texttt{oddSum\\_succ}.\n'))
         self.assertIn('sq_step_alt', self.problems(proof=PROOF + '% compare sq_step_alt\n'))
-        self.assertIn('oddSum', self.problems(tools=TOOLS.replace('lem:increasing', 'lem:oddSum')))
+        self.assertIn('tools: Lean names of the canon appear: oddSum;',
+                      self.problems(tools=TOOLS.replace('lem:increasing', 'lem:oddSum')))
         self.assertIn('Small.Step', self.problems(abstract=ABSTRACT + 'See the module Small.Step.\n'))
         # An ordinary word that happens to end a Lean name is not one, and neither is ordinary mathematics.
         self.assertEqual(self.problems(proof=PROOF + 'The root of the induction is the case $n = 0$; we expand $x_n$.\n'), '')
@@ -898,6 +907,19 @@ class TypesettingTests(unittest.TestCase):
             (folder / 'paper.tex').write_text(text.replace('A sentence.', '\\undefinedmacro'), encoding='utf-8')
             self.assertEqual(paper.tight_displays(folder, recipe), [])
 
+    def test_a_tex_command_that_does_not_finish_stops_the_run_and_goes_to_no_repair(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
+                                              encoding='utf-8', newline='\n')
+            recipe = paper.tex_recipe(TEX)
+            with patch('paper.subprocess.run', side_effect=subprocess.TimeoutExpired(recipe[0], paper.TEX_SECONDS)):
+                # No part of the manuscript causes this, so it is not returned as an error for a repair session.
+                with self.assertRaisesRegex(paper.Stop, 'did not finish within 600 seconds'):
+                    paper.typeset(folder, recipe)
+                # The second typesetting only measures: when it does not finish, nothing is reported.
+                self.assertEqual(paper.tight_displays(folder, recipe), [])
+
     def test_the_lines_wider_than_the_text_block_are_read_from_the_log_of_tex(self):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / 'paper.log'
@@ -972,6 +994,8 @@ class FetchTests(unittest.TestCase):
     def test_a_download_that_was_cut_short_fails_its_paper_and_the_other_papers_are_fetched(self):
         import gzip
         import http.client
+        import io
+        import tarfile
         # The script is compiled from its source here, so that the test leaves no bytecode beside the collection.
         script = THIS.parents[2] / 'exemplars' / 'fetch.py'
         fetch = types.ModuleType('exemplars_fetch')
@@ -983,13 +1007,22 @@ class FetchTests(unittest.TestCase):
         digest = hashlib.sha256(source).hexdigest()
         (folder / 'manifest.json').write_text(json.dumps(
             [{'key': key, 'arxiv': f'0001.0000{number}v1', 'sha256': digest}
-             for number, key in enumerate(('broken', 'cut', 'whole'), 1)]), encoding='utf-8')
+             for number, key in enumerate(('broken', 'cut', 'short', 'whole'), 1)]), encoding='utf-8')
         packed = gzip.compress(source)
+        # An archive that is not compressed, with the source as its one member.
+        archive = io.BytesIO()
+        with tarfile.open(fileobj=archive, mode='w') as tar:
+            member = tarfile.TarInfo('main.tex')
+            member.size = len(source)
+            tar.addfile(member, io.BytesIO(source))
 
         def request(url):
-            # The first paper's connection ends inside the body, and the second paper's body arrives without its end.
+            # The first paper's connection ends inside the body, the second paper's body arrives without its end,
+            # and the third paper's archive ends inside its member, behind a header that is whole.
             if url.endswith('0001.00001v1'):
                 raise http.client.IncompleteRead(b'')
+            if url.endswith('0001.00003v1'):
+                return archive.getvalue()[:520]
             return packed[:-12] if url.endswith('0001.00002v1') else packed
 
         with patch.object(fetch, 'HERE', str(folder)), patch.object(fetch, '_request', side_effect=request), \
@@ -998,7 +1031,8 @@ class FetchTests(unittest.TestCase):
         said = [str(call.args[0]) for call in shown.call_args_list]
         self.assertTrue(any(line.startswith('broken: FAILED, download failed') for line in said), said)
         self.assertTrue(any(line.startswith('cut: FAILED, the e-print is not a complete gzip file') for line in said), said)
-        self.assertEqual(said[-1], '2 paper(s) could not be rebuilt as recorded: broken, cut')
+        self.assertTrue(any(line.startswith('short: FAILED, the e-print is not a complete tar archive') for line in said), said)
+        self.assertEqual(said[-1], '3 paper(s) could not be rebuilt as recorded: broken, cut, short')
         self.assertEqual(sorted(path.name for path in folder.iterdir()), ['manifest.json', 'whole.tex'])
         self.assertEqual((folder / 'whole.tex').read_bytes(), source)
 
@@ -4397,6 +4431,25 @@ class SafeguardTests(PaperCase):
         self.assertFalse(any('not_done' in row['comparison'] for row in correspondence['statements']))
         self.assertEqual((correspondence['not_done'], read_json(self.out / 'not-done.json')), ([], []))
         self.assertNotIn('not_done', self.events('end')[-1])
+
+    def test_a_difference_is_not_lost_when_the_next_comparison_of_its_section_is_not_made(self):
+        found = {'label': 'lem:increasing', 'verdict': 'differs', 'difference': 'The paper has a strict inequality.'}
+        script = good()
+        # The first comparison of the section finds a difference, the repair keeps the statement, and the second
+        # comparison of the section is stopped in each of its attempts.
+        script['compare:tools'] = [{'output/comparison.json': json.dumps([found, SAME[2]])}] + self.STOPPED
+        script['repair:comparison'] = [{'output/response.json': answered('The statement is the one of the element.', 'kept')}]
+        self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 2)
+        self.assertEqual(len([call for call in self.calls('compare') if call['section'] == 'tools']), 3)
+        self.assertEqual(len(self.events('not done')), 1)
+        # The text that was found to differ still stands, so its verdict stands and the difference is open at the
+        # end. The other statement of the section keeps its verdict as well, and nothing is listed as not made.
+        rows = {row['label']: row['comparison'] for row in read_json(self.out / 'correspondence.json')['statements']}
+        self.assertEqual([rows[label]['verdict'] for label in LABELS], ['same', 'differs', 'same'])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], [(item['check'], item['problems']) for item in end['open']], 'not_done' in end),
+                         ('open_findings', [(paper.COMPARISON, [{'label': found['label'], 'difference': found['difference']}])],
+                          False))
 
     def test_a_reading_that_is_not_made_ends_the_readings_and_unread_changes_stay(self):
         script = asserting()  # the repair of the running text cuts a sentence, and a session reads the change

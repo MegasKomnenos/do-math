@@ -724,9 +724,6 @@ class Runner:
         was published after its session ended. A replacement peer therefore receives the original work,
         the earlier peer's work and the reason, and its candidate receives a new review. An organizer's
         change is made again by a replacement organizer."""
-        stage = self.instance / 'runner' / ('stage-' + publication['event']['id'])
-        if stage.exists():
-            remove_tree(stage)
         job = self.state['jobs'][publication['job']]
         session = self.state['sessions'][publication['session']]
         # As where a changed candidate is found (advance_build), the session is left as running until its work has
@@ -734,6 +731,14 @@ class Runner:
         # publishing would then belong to no publication and never be collected.
         session.update(status='running', record=None)
         self.state['publication'] = None
+        # That state is saved before the stage is removed. A removal can stop part-way, when the runner is ended
+        # or Windows refuses a file that another process holds. A publication still saved would then have a stage
+        # without its index and with part of its modules; the next runner would check the candidate against the
+        # canon's own index, where a refused replacement shows no difference, and install what is left of the stage.
+        self.save()
+        stage = self.instance / 'runner' / ('stage-' + publication['event']['id'])
+        if stage.exists():
+            remove_tree(stage)
         if publication['event']['kind'] == 'change':
             self.replace_peer(job, session, 'the candidate could not be published on the current canon: ' + reason)
         else:
@@ -838,8 +843,9 @@ class Runner:
     def keep_replaced_proofs(self, publication):
         """Leave in the history the Lean text of every proof this publication takes out of the source.
 
-        It runs before the new sources are installed. A repeat after a crash finds either the entry
-        already written or sources that no longer match the old index, and writes nothing then."""
+        It runs before the new sources are installed. A repeat after a crash finds the entry already
+        written, sources that no longer match the old index, or sources and an index that are already
+        those of the stage, and writes nothing then."""
         event, applied = publication['event'], publication['applied']
         canon = Canon(self.instance)
         stage = self.instance / 'runner' / ('stage-' + event['id'])
@@ -862,7 +868,9 @@ class Runner:
                               'lean/' + new[name]['file'])
 
     def install_canon(self, publication):
-        """Put the built module root and its index in place of the canon's. Each step can be repeated after a crash."""
+        """Put the built module root and its index in place of the canon's. Each step can be repeated after a crash.
+
+        The stage is left in place: publish removes it once the publication is saved as installed."""
         event = publication['event']
         canon = Canon(self.instance)
         stage = self.instance / 'runner' / ('stage-' + event['id'])
@@ -873,8 +881,6 @@ class Runner:
             # Read as an index of any version: a publication that an earlier version of this code carried
             # past its checks is installed by this one in the present form.
             write_json(canon.index, read_index(stage / 'index.json'))
-        if stage.exists():
-            remove_tree(stage)
 
     def publish(self):
         """Carry the current publication forward, and start the next one in the queue when none is underway."""
@@ -898,30 +904,10 @@ class Runner:
         canon = Canon(self.instance)
         destination = self.instance / 'knowledge' / event['folder']
         applied = publication.get('applied')
-        if not publication.get('installed'):
-            if applied is not None:
-                candidate = self.publication_candidate(publication)
-                change = load_change(candidate)
-                self.keep_replaced_proofs(publication)
-                self.install_canon(publication)
-                assessment = (read_json(self.session_dir(sid) / 'output/assessment.json') if kind == 'change' else None)
-                apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
-                              assessment['contribution'] if assessment else None,
-                              lambda qid: canonical_question(self.model, qid))
-                if assessment:
-                    self.record_declined(publication, candidate, assessment)
-                for item in applied['retired']:
-                    # The alternative's record goes with its declaration; the statement's own record stays.
-                    old = record_file(canon, item['alternative'])
-                    if old.is_file():
-                        target = canon.history / name_path(item['alternative']) / f"{event['sequence']:06d}-retired.md"
-                        target.parent.mkdir(parents=True, exist_ok=True)
-                        replace_file(old, target)
-                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
-            if kind == 'organization':
-                self.join_question_texts(publication)
-            publication['installed'] = True
-            self.save()
+        if kind == 'organization' and not publication.get('installed'):
+            # Before the event is written: the merges are read against the questions as they stood before this
+            # publication (self.model), and a runner that starts after the event was written has them merged.
+            self.join_question_texts(publication)
         if not destination.exists():
             stage = self.instance / 'runner' / ('event-' + event['id'])
             if stage.exists():
@@ -952,9 +938,43 @@ class Runner:
             # knowledge/questions/ appears with an instance's first operator publication of questions.
             destination.parent.mkdir(exist_ok=True)
             rename_directory(stage, destination)
+        # The event is written before the canon is put in place, and a replay counts the event of a change to
+        # the library only once the index carries its sequence (knowledge.replay). Every command a session
+        # runs replays, at whatever moment of a publication it is called. It then has the canon without this
+        # change or with it, and in the second case each proof the change brought has the verdict of its
+        # review. An index in place before its event would show such a reader complete proofs without a
+        # verdict, and a proof without a verdict stands as accepted (knowledge.standing_of).
         event_path = self.instance / 'knowledge/events' / (event['id'] + '.json')
         if not event_path.exists():
             write_json(event_path, event)
+        if not publication.get('installed'):
+            if applied is not None:
+                candidate = self.publication_candidate(publication)
+                change = load_change(candidate)
+                self.keep_replaced_proofs(publication)
+                self.install_canon(publication)
+                assessment = (read_json(self.session_dir(sid) / 'output/assessment.json') if kind == 'change' else None)
+                apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
+                              assessment['contribution'] if assessment else None,
+                              lambda qid: canonical_question(self.model, qid))
+                if assessment:
+                    self.record_declined(publication, candidate, assessment)
+                for item in applied['retired']:
+                    # The alternative's record goes with its declaration; the statement's own record stays.
+                    old = record_file(canon, item['alternative'])
+                    if old.is_file():
+                        target = canon.history / name_path(item['alternative']) / f"{event['sequence']:06d}-retired.md"
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        replace_file(old, target)
+                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
+            publication['installed'] = True
+            self.save()
+        # The stage is removed only here, after the save that marks the canon as installed. A removal can stop
+        # part-way, when the runner is ended or Windows refuses a file that another process holds. A runner that
+        # installed again from what such a removal left would take the missing modules out of the canon (sync_tree).
+        staged = self.instance / 'runner' / ('stage-' + event['id'])
+        if staged.exists():
+            remove_tree(staged)
         self.model = replay(self.instance)
         # When a statement has an accepted proof, under any of its declarations, the approaches tried on it
         # go to its history. Any publication can bring that about: a change that adds or replaces the proof,

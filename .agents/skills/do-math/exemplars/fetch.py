@@ -121,19 +121,22 @@ def unpack(data):
     except tarfile.TarError:
         return {"main.tex": data}
     total = 0
-    with tar:
-        for member in tar.getmembers():
-            name = _safe_name(member.name)
-            if name is None:
-                raise BuildError("archive member with an unsafe name: %r" % member.name)
-            if not member.isfile():
-                continue
-            total += member.size
-            if total > MAX_BYTES:
-                raise BuildError("unpacked source is larger than %d bytes" % MAX_BYTES)
-            handle = tar.extractfile(member)
-            if handle is not None:
-                files[name] = handle.read()
+    try:
+        with tar:
+            for member in tar.getmembers():
+                name = _safe_name(member.name)
+                if name is None:
+                    raise BuildError("archive member with an unsafe name: %r" % member.name)
+                if not member.isfile():
+                    continue
+                total += member.size
+                if total > MAX_BYTES:
+                    raise BuildError("unpacked source is larger than %d bytes" % MAX_BYTES)
+                handle = tar.extractfile(member)
+                if handle is not None:
+                    files[name] = handle.read()
+    except tarfile.TarError as exc:  # an archive that was cut short behind its first header, or damaged on its way
+        raise BuildError("the e-print is not a complete tar archive: %s" % exc)
     return files
 
 

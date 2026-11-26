@@ -456,6 +456,12 @@ class LibraryCheckTests(FinalizeCase):
         cased['entries']['Small.Helper_zero'] = {**cased['entries']['Small.helper_zero'], 'name': 'Small.Helper_zero'}
         self.assertTrue(any('differ only in the case' in problem for problem in package.index_problems(
             cased, 'Small.root', hash_, allowed)))
+        # A private lemma is no element, so no entry shows a proof that it leaves open. The index holds it apart.
+        opened = json.loads(json.dumps(index))
+        self.assertTrue(opened['hidden'])
+        for item in opened['hidden'].values():
+            item['sorry'] = True
+        self.assertIn('Small.hidden_three, a declaration that is no element, has an open proof (`sorry`)', check(opened))
         # Records are checked only where they are due.
         lacking = {path: record for path, record in records.items() if path != 'Small/helper_zero'}
         self.assertTrue(any('Small.helper_zero has no record' in problem for problem in check(index, lacking)))
@@ -464,6 +470,32 @@ class LibraryCheckTests(FinalizeCase):
         claim = json.loads(json.dumps(records))
         claim['Small/helper_zero']['meta']['proves'] = 'Small.simp_one'
         self.assertTrue(any('Lean did not confirm' in problem for problem in check(index, claim)))
+
+    def test_what_a_part_returns_is_held_to_the_modules_it_may_change(self):
+        # A part returns files under lean/ and names in its report the files it deleted. Each is a module that the
+        # part owns or, for a new file, one that it may add. A definition module is neither.
+        base, output = self.instance / 'canon' / 'lean', self.root / 'output'
+        for relative in ('Small/Step.lean', 'Small/Sums/New.lean'):
+            package.write_text(output / 'lean' / relative, STEP)
+        owns = lambda module: module in ('Small.Step', 'Small.Helper', 'Small.Absent')
+        write_json(output / 'report.json', {'deleted': ['lean/Small/Helper.lean']})
+        files, deleted, problems = package.part_output(output, base, owns, ['Small.Defs'])
+        self.assertEqual((sorted(files), deleted, problems),
+                         (['Small/Step.lean', 'Small/Sums/New.lean'], ['Small/Helper.lean'], []))
+        write_json(output / 'report.json', {'deleted': ['Small/Absent.lean', 'Small/Defs.lean', 'Small/Root.lean',
+                                                        'Small/notes.txt']})
+        _, _, problems = package.part_output(output, base, owns, ['Small.Defs'], lambda module: False)
+        wanted = ('the new module Small.Sums.New does not lie in this part',
+                  'lean/Small/Absent.lean is listed as deleted and the library has no such file',
+                  'Small.Defs is a definition module', 'Small.Root is not a module of this part',
+                  'lean/Small/notes.txt is no Lean file')
+        self.assertEqual(len(problems), len(wanted), problems)
+        for problem, reason in zip(problems, wanted):
+            self.assertIn(reason, problem)
+        write_json(output / 'report.json', {'deleted': 'Small/Helper.lean'})
+        _, deleted, problems = package.part_output(output, base, owns, ['Small.Defs'])
+        self.assertEqual(deleted, [])
+        self.assertIn('"deleted" in report.json is an array of paths', problems[0])
 
 
 class RecordTests(FinalizeCase):
@@ -763,10 +795,14 @@ class RegistryTests(FinalizeCase):
         self.assertEqual(Path(beside[0]), Path('C:/t/bin/lake.exe'))
 
     def test_the_axioms_are_read_from_what_lean_prints(self):
+        # A name can hold an apostrophe, and so can the statement that `#check` prints on the line before it.
         printed = ("Small.root (n : Nat) : x\n'Small.root' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n"
-                   "'Small.clean' does not depend on any axioms\n'Small.open' depends on axioms: [sorryAx]\n")
+                   "'Small.clean' does not depend on any axioms\n'Small.open' depends on axioms: [sorryAx]\n"
+                   "Small.step' (h' : x) : y\n'Small.step'' depends on axioms: [propext]\n"
+                   "'Small.end'' does not depend on any axioms\n")
         self.assertEqual(package.axioms_printed(printed), {'Small.root': ['propext', 'Classical.choice', 'Quot.sound'],
-                                                           'Small.clean': [], 'Small.open': ['sorryAx']})
+                                                           'Small.clean': [], 'Small.open': ['sorryAx'],
+                                                           "Small.step'": ['propext'], "Small.end'": []})
 
 
 class ArchiveTests(FinalizeCase):
@@ -1088,6 +1124,20 @@ class StepTests(FinalizeCase):
         self.assertEqual(self.decisions(), '# Decisions of the run\n\n## Stage 0: start\n\nThe research is read.\n'
                                            '\n## Step 3: the parts\n\nEvery part was accepted.\n')
         self.assertEqual(list(read_json(run.work / 'state.json')['steps']), ['2.3-simplify', '3-history'])
+        # A value that the work of a step returns is entered with the step and not before. A state that is saved
+        # while the step is under way, as a step of stage 3 saves it, holds neither the value nor the step.
+        saved = []
+
+        def renames():
+            run.save()
+            saved.append(read_json(run.work / 'state.json'))
+            return {'main': 'Small.renamed'}
+
+        run.state['main'] = 'Small.chosen'
+        run.step('2.4-arrange', [], [], renames, decides=False)
+        self.assertEqual((saved[0]['main'], '2.4-arrange' in saved[0]['steps']), ('Small.chosen', False))
+        state = read_json(run.work / 'state.json')
+        self.assertEqual((state['main'], '2.4-arrange' in state['steps']), ('Small.renamed', True))
 
 
 class PromptTests(FinalizeCase):
@@ -1353,6 +1403,9 @@ class RunTests(FinalizeCase):
         self.assertIn('Lean is installed through elan', readme)
         self.assertIn('The warnings concern that one file; no declaration of the library uses `sorry`.', readme)
         self.assertIn('do-math is a program that conducts mathematical research in Lean', readme)
+        # The models are those of the sessions that made the package; nothing is said of the models of the research.
+        self.assertIn('The sessions that made this package from the research ran on ', readme)
+        self.assertNotIn('run by do-math (', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
         self.assertIn('### Where the result comes from\n\nThe identity is classical; the records name nobody who posed it.\n\n'
                       'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
@@ -1386,6 +1439,9 @@ class RunTests(FinalizeCase):
         self.assertIn('The title is long. Kept because: It names the result.', decisions)
         # What the writers of the records found after the fold-back is kept in the decisions, since the work folder goes.
         self.assertIn('- `Small.sq_step_strict` (other): Its doc comment says less than it states.', decisions)
+        # So is what the comparer of a record says of its correction, where it also says what it could not compare.
+        self.assertIn('## Step 6: what the comparison of the records corrected\n\n- `Small.sq_step_strict`: A word.\n',
+                      decisions)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The package is in place: `solved/odd/`', report)
         self.assertNotIn('`project.authors`', report)

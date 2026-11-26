@@ -143,4 +143,4 @@ A corrected entry is held to the same standard as a written one.
 
 The program counts as a word whatever stands between two spaces. It refuses a corrected `text` of more than 120 words and a corrected item of more than 30 words. Both numbers are ceilings, and neither is a length to reach.
 
-The program requires a verdict for every entry. If the record of an entry is not in `archive/`, the entry cannot be checked: give that entry no verdict, and the program will stop and report it. A verdict of `stands` on an entry whose record you did not read would pass an unchecked text into the package.
+The program requires a verdict for every entry. If the record of an entry is not in `archive/`, the entry cannot be checked: give that entry no verdict. The program then launches one more session for the task, and when that session gives the entry no verdict either, the run stops and reports the entry, which is the right outcome. A verdict of `stands` on an entry whose record you did not read would pass an unchecked text into the package.
