@@ -518,6 +518,37 @@ class ContextTests(InstanceCase):
         handed = json.loads(after_a_batch(own)[1])['hookSpecificOutput']['additionalContext']
         self.assertEqual(handed, 'Message from the runner of this research:\n' + 'y' * 2_000)
         self.assertFalse(late.is_file())
+        # A message that is longer than that by itself fits after no batch. It is handed over alone and does
+        # not stay to hold back the messages sent after it.
+        alone = send_message(folder, 'operator', 'z' * 10_500)
+        handed = json.loads(after_a_batch(own)[1])['hookSpecificOutput']['additionalContext']
+        self.assertEqual(handed, 'Message from the operator of this research:\n' + 'z' * 10_500)
+        self.assertFalse(alone.is_file())
+
+    @unittest.skipUnless(os.name == 'nt', 'only Windows refuses to move a file that another process holds open')
+    def test_a_waiting_message_whose_file_another_process_holds_is_not_overtaken_by_a_later_one(self):
+        # Windows does not move a file that another process has open without sharing its removal, as Python's
+        # open has it, and the operator reads what waits in messages/. The held message stays, and the one sent
+        # after it waits behind it. The hold is real: the file is open here while the hook's command runs.
+        folder = self.root / 'held'
+        folder.mkdir()
+        open_messages(folder)
+        worker_command('claude', 'claude/opus', 'xhigh', folder, {})
+        (entry,) = read_json(folder / 'worker-settings.json')['hooks']['PostToolBatch'][0]['hooks']
+        event = json.dumps({'hook_event_name': 'PostToolBatch', 'cwd': str(folder), 'tool_calls': []}).encode()
+
+        def after_a_batch():
+            done = subprocess.run([entry['command'], *entry['args']], input=event, capture_output=True, cwd=folder)
+            return done.returncode, done.stdout.decode()
+
+        first = send_message(folder, 'operator', 'Take the bound to be 7.')
+        second = send_message(folder, 'operator', 'Correction: the bound is 9.')
+        with first.open('rb'):
+            self.assertEqual(after_a_batch(), (0, ''))
+        self.assertTrue(first.is_file() and second.is_file())
+        self.assertEqual(json.loads(after_a_batch()[1])['hookSpecificOutput']['additionalContext'],
+                         'Message from the operator of this research:\nTake the bound to be 7.\n\n'
+                         'Message from the operator of this research:\nCorrection: the bound is 9.')
 
     def test_dispatch_makes_the_messages_folder_for_a_claude_session_and_for_no_other(self):
         engine = Runner(self.instance, self.skill)

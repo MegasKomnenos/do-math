@@ -288,12 +288,19 @@ def wait(session, name, timeout=None, kind=ELEMENT_LEASES):
                     kind.save(instance, table, state)
                 return {'leased': False, 'reason': reason, **kind.view(name, table, rows)}
             entry = table.setdefault(name, {'holders': [], 'queue': []})
-            if not any(x['session'] == sid for x in entry['holders'] + entry['queue']):
+            joined = not any(x['session'] == sid for x in entry['holders'] + entry['queue'])
+            if joined:
                 leave(table, sid, keep=name)
                 entry['queue'].append({'session': sid, 'since': time.time()})
             table = normalize(table, state)
-            kind.save(instance, table, state)
-            if any(h['session'] == sid for h in table.get(name, {}).get('holders', [])):
+            leased = any(h['session'] == sid for h in table.get(name, {}).get('holders', []))
+            # The table is written when this look changed this session's place in it: the session joined the
+            # queue, or the lease is now its own. A look that finds the session still waiting writes nothing.
+            # Every reader of the table drops the sessions that ended and passes a free lease on for itself
+            # (normalize), so the table reads the same whether or not it was written again.
+            if joined or leased:
+                kind.save(instance, table, state)
+            if leased:
                 return {'leased': True, **kind.view(name, table, rows)}
             position = [w['session'] for w in table[name]['queue']].index(sid) + 1
         if deadline is not None and time.monotonic() >= deadline:

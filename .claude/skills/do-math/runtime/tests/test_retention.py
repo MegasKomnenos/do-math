@@ -321,12 +321,21 @@ class RetentionTests(unittest.TestCase):
                     else:
                         native = storage / 'projects/project' / (identity + '.jsonl')
                         announcement = {'type': 'system', 'session_id': identity}
+                        # The report of a delegated agent that finished while the session was at work in a turn. The
+                        # CLI records it as an attachment and as no message; an attachment of another type is a
+                        # record of the CLI's own.
+                        report = 'The delegated check found no counterexample for n up to 9.'
                         rows = [
                             {'type': 'assistant', 'message': {'model': 'claude-model', 'role': 'assistant',
                              'content': [{'type': 'text', 'text': message}], 'stop_reason': 'end_turn',
                              'usage': {'input_tokens': 2, 'cache_read_input_tokens': 861766}}},
                             {'type': 'user', 'message': {'role': 'user',
                              'content': [{'type': 'tool_result', 'tool_use_id': 'call1', 'content': tool_output}]}},
+                            {'type': 'attachment', 'attachment': {
+                                'type': 'queued_command', 'commandMode': 'task-notification',
+                                'prompt': '<task-notification>\n<result>' + report + '</result>\n</task-notification>'}},
+                            {'type': 'attachment', 'attachment': {'type': 'deferred_tools_record',
+                                                                  'entries': ['CLI_RECORD_ONLY']}},
                         ]
                         stream_item = {'type': 'assistant', 'message': {'content': 'TRANSPORT_ONLY'}}
                     native.parent.mkdir(parents=True)
@@ -343,7 +352,7 @@ class RetentionTests(unittest.TestCase):
                     self.assertEqual((session / copied).read_bytes(), raw)
                     self.assertTrue(receipt['cli_activity'])
                     self.assertIsNone(receipt['limitation'])
-                    self.assertEqual(receipt['conversation_items'], 2)
+                    self.assertEqual(receipt['conversation_items'], 3 if provider == 'claude' else 2)
                     body = (session / receipt['conversation']).read_text(encoding='utf-8')
                     self.assertIn(message, body)
                     self.assertIn(tool_output, body)
@@ -351,6 +360,9 @@ class RetentionTests(unittest.TestCase):
                     if provider == 'claude':
                         # The API's account of the call stays in the copied transcript, out of the readable text.
                         self.assertNotIn('cache_read_input_tokens', body)
+                        # What reached the session in the middle of a turn is part of what it was told.
+                        self.assertIn(report, body)
+                        self.assertNotIn('CLI_RECORD_ONLY', body)
 
     def test_output_limit_is_read_from_the_claude_stream_only(self):
         message = "API Error: Claude's response exceeded the 64000 output token maximum."
@@ -468,6 +480,41 @@ class RetentionTests(unittest.TestCase):
             self.assertTrue((copy / 'subagents/agent-a1.jsonl').is_file())
             # The readable conversation holds the preview and names the copy that holds the full output.
             self.assertIn(copy.name + '/', (session / 'conversation.md').read_text(encoding='utf-8'))
+
+    def test_what_capture_retains_is_on_the_disk_when_it_returns(self):
+        # The runner saves, through to the disk, that a session is retained once capture has returned
+        # (Runner.finish), and nothing captures that session again. A copy that the system still held in memory
+        # when the machine lost power would stand in the session folder without its content. What reaches the
+        # disk is seen at the system call that sends it there.
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            session = root / 'session'
+            session.mkdir()
+            project = root / 'profile/.claude/projects/project'
+            (project / identity / 'tool-results').mkdir(parents=True)
+            (project / identity / 'tool-results/call1.txt').write_text('The full output.', encoding='utf-8')
+            (project / (identity + '.jsonl')).write_text(json.dumps({'type': 'assistant', 'message': {
+                'role': 'assistant', 'content': [{'type': 'text', 'text': 'A first lemma about the root.'}]}}) + '\n',
+                encoding='utf-8')
+            (session / 'cli.stdout.jsonl').write_text(
+                json.dumps({'type': 'system', 'session_id': identity}), encoding='utf-8')
+            (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+            flushed, fsync = set(), os.fsync
+
+            def flush(descriptor):
+                flushed.add(os.fstat(descriptor).st_ino)
+                return fsync(descriptor)
+
+            with patch.dict(os.environ, {}, clear=True), patch('retention.Path.home', return_value=root / 'profile'), \
+                    patch.object(os, 'fsync', side_effect=flush):
+                receipt = capture(session, 'claude')
+            retained = [receipt['conversation'], *receipt['native_transcripts'],
+                        *(name + '/tool-results/call1.txt' for name in receipt['native_companions'])]
+            self.assertEqual(len(retained), 3)
+            for name in retained:
+                with (session / name).open('rb') as stream:
+                    self.assertIn(os.fstat(stream.fileno()).st_ino, flushed, name)
 
 
 if __name__ == '__main__':

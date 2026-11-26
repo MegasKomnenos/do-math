@@ -367,6 +367,31 @@ class GitEnvironmentTests(unittest.TestCase):
                 support.git(instance, 'commit', '-m', 'In the instance')
             self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
 
+    def test_a_callers_refusal_of_one_way_line_endings_does_not_stop_the_instances_commits(self):
+        # A user's Git configuration can convert line endings (core.autocrlf) and refuse to add a file whose
+        # line endings that conversion would not give back (core.safecrlf). The runtime writes its files with
+        # line feeds alone, so with both set Git would refuse them at `git add`, which ends init, or the runner
+        # at a publication. Git reads that configuration from the home folder, which is given here with both
+        # settings, and the file has line feeds alone, as a file of the runtime has. The repository and every
+        # Git call are real.
+        with tempfile.TemporaryDirectory() as temp:
+            home, instance = Path(temp) / 'home', Path(temp) / 'instance'
+            for folder in (home, instance):
+                folder.mkdir()
+            (home / '.gitconfig').write_text('[core]\n\tautocrlf = true\n\tsafecrlf = true\n', encoding='utf-8')
+            (instance / 'root.md').write_bytes(b'The root.\n')
+            with patch.dict(os.environ, {'HOME': str(home), 'USERPROFILE': str(home),
+                                         'XDG_CONFIG_HOME': str(home / 'xdg')}):
+                support.git(instance, 'init')
+                # Git does refuse the file when it is added without the options of support.git; without that
+                # the commit below would show nothing.
+                outside = subprocess.run(['git', '-C', str(instance), 'add', '--', 'root.md'], capture_output=True)
+                self.assertNotEqual(outside.returncode, 0)
+                self.assertIn(b'CRLF', outside.stderr)
+                support.git(instance, 'add', '--', 'root.md')
+                support.git(instance, 'commit', '-m', 'In the instance')
+            self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
+
 
 class PeerRecoveryTests(InstanceCase):
     def peer(self):

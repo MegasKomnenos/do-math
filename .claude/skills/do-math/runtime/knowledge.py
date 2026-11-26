@@ -8,7 +8,7 @@ the root are computed afresh on each replay, so no session writes them.
 from copy import deepcopy
 from pathlib import Path
 
-from canon import Canon, beyond_allowed, name_path, read_approaches
+from canon import Canon, beyond_allowed, name_path, read_approaches, read_record
 from runtime_support import read_bytes, read_json, write_json, write_text
 
 ROOT_QUESTION = 'q0'
@@ -861,7 +861,6 @@ def record_summary(instance, index):
     """What the records declare about their elements, gathered by machine at each publication.
 
     Replay reads this one file instead of every record. It holds nothing a record does not."""
-    from canon import read_record
     canon = Canon(instance)
     summary = {}
     for name in index['entries']:

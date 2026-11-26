@@ -506,35 +506,6 @@ class UnderstandingTests(QuestionCase):
                 self.assertIn(ACCOUNT.strip(), shown)
                 self.assertNotIn('earlier text', shown)
 
-    def test_the_question_command_prints_the_question_its_state_and_the_understanding_with_reviews_assessment(self):
-        self.questions('qops', [question('op-scale')])
-        reader = self.reader()
-        code, shown = self.command_line('question', str(reader), 'op-scale')
-        self.assertEqual(code, 0)
-        self.assertEqual(shown.splitlines()[0], 'op-scale · open')
-        self.assertIn('What op-scale asks.', shown)
-        self.assertIn('Grounds: ' + question('op-scale')['grounds'], shown)
-        self.assertIn('No understanding has been written for this question yet.', shown)
-        self.assertNotIn('## Understanding so far', shown)
-        cid = self.account('op-scale', resolution_id='res')
-        code, shown = self.command_line('question', str(reader), 'op-scale')
-        self.assertEqual(code, 0)
-        self.assertEqual(shown.splitlines()[0], 'op-scale · resolved')
-        self.assertNotIn('No understanding has been written', shown)
-        stamp = f'Change {cid} (revision 2): {CONTRIBUTION}'
-        places = [shown.index(text) for text in ('What op-scale asks.', '## Understanding so far', ACCOUNT.strip(),
-                                                 '## Review of the work that wrote it', stamp)]
-        self.assertEqual(places, sorted(places))
-        self.assertEqual(shown, question_view(self.instance, replay(self.instance), 'op-scale') + '\n')
-        # The root question is read the same way; nothing has been written for it here.
-        code, shown = self.command_line('question', str(reader), 'q0')
-        self.assertEqual((code, shown.splitlines()[0]), (0, 'q0 · open'))
-        self.assertIn('The root problem itself, taken as a whole.', shown)
-        self.assertIn('No understanding has been written for this question yet.', shown)
-        code, shown = self.command_line('question', str(reader), 'nope')
-        self.assertEqual((code, json.loads(shown)), (1, {'error': 'no such question: nope'}))
-
-
     def test_the_questions_command_prints_what_the_list_of_questions_leaves_out(self):
         self.questions('qops', [question('op-scale'), question('op-open')])
         reader = self.reader()

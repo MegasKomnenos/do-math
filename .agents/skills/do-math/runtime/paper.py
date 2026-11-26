@@ -5180,9 +5180,11 @@ class Paper(Sessions):
                 part = named_part(self.plan, problem.get('section'))
                 return self.plan['sections'][0]['id'] if part == 'abstract' else part
 
-            reasons ={entry['finding'].get('quote'): left[entry['number']] for entry in narrow['findings']
-                       if entry['check'] == COVERAGE and entry['number'] in left}
             item = next((item for item in self.open if item['check'] == COVERAGE), None)
+            # The reason with which each passage is open now: the one this repair left it with, and for a finding
+            # that this repair did not take up the one it carried before.
+            reasons = {problem.get('quote'): problem['open_because'] for problem in (item['problems'] if item else [])
+                       if 'open_because' in problem}
             problems = [problem for problem in (item['problems'] if item else []) if home(problem) not in covered] \
                 + [{**finding, 'open_because': reasons.get(finding['quote'], COVERED_AGAIN)}
                    for findings in covered.values() for finding in findings]
@@ -5213,8 +5215,8 @@ class Paper(Sessions):
                           'changed, and the running text of the section is compared with the elements again',
                 WIDE:'the manuscript is typeset again and every line of a part that is too wide goes to repair, while '
                       'one in the title, a heading, the author line or the bibliography is text that no repair '
-                      'changes and is reported again; this is done whenever a finding is acted on, since the '
-                      'typesetting cannot tell these lines from new ones'}
+                      'changes and is reported again; this is done whenever such a line is chosen or the pass changes '
+                      'a part, since the typesetting cannot tell these lines from new ones'}
         listed = self.listed()
         for item in self.open:
             say('')
@@ -5890,7 +5892,14 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
                    'typesets only a manuscript that an earlier run finished apart from the typesetting')
     # What is open now is what the last end that is not a failure lists: --open-findings may have acted on what the
     # run left. The machine checks and the typesetting are made again here, so what they left before is not kept.
-    latest = next(event for event in reversed(run.log) if event['event'] == 'end' and event.get('status') != 'failed')
+    last = max(number for number, event in enumerate(run.log) if event['event'] == 'end' and event.get('status') != 'failed')
+    latest = run.log[last]
+    # A pass over what the run left open begins with an `open findings` or a `closing` event. Where one follows
+    # that end, the pass was stopped: the parts and state.json are as the pass left them, while that end lists
+    # what was open before it. Only --resume brings the pass to its end.
+    if any(event['event'] in ('open findings', 'closing') for event in run.log[last + 1:]):
+        raise Stop(f'a pass over what the run in {out} left open was stopped before the run ended anew; continue it '
+                   'with --resume before the manuscript is typeset')
     run.open = [item for item in latest.get('open', []) if item['check'] not in (MACHINE, TYPESETTING)]
     run.kept = list(latest.get('kept', []))
     run.closed = list(latest.get('closed', []))
@@ -5907,9 +5916,6 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
                         if row['comparison']['verdict'] != 'not compared'}
     if (out / 'state.json').is_file():
         state = read_json(out / 'state.json')
-        if state.get('narrow'):
-            raise Stop(f'the run in {out} was stopped in the last repair of findings and the reading of its changes; '
-                       'continue it with --resume before the manuscript is typeset')
         run.done, run.readings, run.rewritten = state['done'], state['readings'], state['rewritten']
         run.placed = state.get('placed')
     run.event('typeset only', tex=run.recipe[0])

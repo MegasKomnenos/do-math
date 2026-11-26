@@ -23,7 +23,7 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
 from canon import (Canon, CanonError, add_imports, apply_lean, apply_rearrangement, apply_written,
-                   beyond_allowed, build_outcome, candidate_records, check_applied, copy_tree,
+                   beyond_allowed, build_outcome, candidate_records, check_applied, copy_canon, copy_tree,
                    declaration_text, drop_modules, empty_index, extraction_source, header_scan, history_entry,
                    library_modules, load_change, merge_bibliography, module_file, name_parts, name_path,
                    parse_approach, parse_record, parse_rows, path_name, path_part, read_approaches, read_index,
@@ -32,7 +32,7 @@ from canon import (Canon, CanonError, add_imports, apply_lean, apply_rearrangeme
                    with_review)
 from check import Invalid, check_session, prepared_candidate
 from lean_broker import Paths, job_record
-from runtime_support import read_json, write_json
+from runtime_support import process_identity, read_json, write_json
 from support import InstanceCase, earlier_form, module_text, record_text
 
 
@@ -985,6 +985,52 @@ class TreeTests(TempCase):
         self.assertEqual([p.relative_to(target).as_posix() for p in target.rglob('*') if p.is_file()], ['Small/Defs.lean'])
         copy_tree(source, self.root / 'fresh')
         self.assertEqual((self.root / 'fresh/Small/Defs.lean').read_text(encoding='utf-8'), 'defs')
+
+    def instance_at(self, revision, publication=None, runner=True):
+        """What copy_canon reads of an instance: one module, the index at a revision, the publication in the
+        runner's saved state, and the receipt of a runner, which is this process, unless `runner` is false."""
+        instance = self.root / 'instance'
+        write(instance / 'canon/lean/Small/Defs.lean', 'defs')
+        write(instance / 'canon/index.json', json.dumps({**empty_index(), 'revision': revision}))
+        write(instance / 'runner/state.json', json.dumps({'publication': publication}))
+        receipt = instance / 'runner/process.json'
+        if runner:
+            write(receipt, json.dumps({'process': process_identity(os.getpid())}))
+        else:
+            receipt.unlink(missing_ok=True)
+        return instance
+
+    def test_copy_canon_keeps_a_copy_that_no_installation_was_written_under(self):
+        writing = {'stage': 'commit', 'changed': ['Small.Defs'], 'removed': []}
+        for publication, runner in ((None, True),                            # no publication is under way
+                                    ({**writing, 'stage': 'build'}, True),   # one that has not reached its commit
+                                    ({**writing, 'changed': []}, True),      # one that changes no module
+                                    ({**writing, 'installed': True}, True),  # one whose index is in place
+                                    (writing, False)):                       # one whose runner has ended
+            with self.subTest(publication=publication, runner=runner):
+                copy_canon(self.instance_at(3, publication, runner), self.root / 'copy', 3)
+                self.assertEqual((self.root / 'copy/Small/Defs.lean').read_text(encoding='utf-8'), 'defs')
+
+    def test_copy_canon_keeps_no_copy_that_an_installation_can_have_been_written_under(self):
+        # A publication that changes or removes a module stands between the save of its commit and the save of
+        # its installation, under a runner that is alive; or the index was put in place after the caller read
+        # it at revision 3.
+        for publication, held in (({'stage': 'commit', 'changed': ['Small.Defs'], 'removed': []}, 3),
+                                  ({'stage': 'commit', 'changed': [], 'removed': ['Small.Gone']}, 3),
+                                  (None, 4)):
+            with self.subTest(publication=publication, held=held):
+                with self.assertRaisesRegex(CanonError, 'run the command again'):
+                    copy_canon(self.instance_at(held, publication), self.root / 'copy', 3)
+                self.assertFalse((self.root / 'copy').exists())
+        # A file that went away under the copy. With an installation under way the command is to be run again;
+        # with none, the failure is the copy's own and is raised as it is.
+        gone = shutil.Error([('Small/Gone.lean', 'copy/Small/Gone.lean', 'No such file or directory')])
+        with patch('canon.copy_tree', side_effect=gone):
+            with self.assertRaisesRegex(CanonError, 'run the command again'):
+                copy_canon(self.instance_at(3, {'stage': 'commit', 'changed': [], 'removed': ['Small.Gone']}),
+                           self.root / 'copy', 3)
+            with self.assertRaises(shutil.Error):
+                copy_canon(self.instance_at(3), self.root / 'copy', 3)
 
 
 # --------------------------------------------------------------------------------------- the structural index
@@ -2777,6 +2823,28 @@ class CandidateToolTests(InstanceCase):
             canon_tool.checkout(session, 'work/mine')
         self.assertEqual(own.read_text(encoding='utf-8'), 'theorem draft : True := trivial\n')
         self.assertEqual([p.name for p in (session / 'work/mine').iterdir()], ['Draft.lean'])
+
+    def test_checkout_and_prepare_keep_no_copy_made_while_a_publication_is_put_into_the_canon(self):
+        # The runner's saved state as it stands between the save of a publication's commit and the save of its
+        # installation, under a runner that is alive, for which this process stands in.
+        session = self.session('attempt')
+        state = read_json(self.instance / 'runner/state.json')
+        write_json(self.instance / 'runner/state.json',
+                   {**state, 'publication': {'stage': 'commit', 'changed': ['Small.Root'], 'removed': []}})
+        write_json(self.instance / 'runner/process.json', {'process': process_identity(os.getpid())})
+        code, answer = self.tool('checkout', session, session / 'work/canon')
+        self.assertEqual(code, 1)
+        self.assertIn('run the command again', answer['error'])
+        self.assertFalse((session / 'work/canon').exists())
+        folder = self.candidate(modules={'Small/Step.lean': module_text(STEP)},
+                                records={'Small/oddSum_succ.md': STEP_RECORD}, prepare=False)
+        with self.assertRaisesRegex(CanonError, 'run the command again'):
+            canon_tool.build_candidate(self.instance, 'test', folder, self.root / 'work', 64, 5, 'peer')
+        self.assertFalse((self.root / 'work/lean').exists())
+        # Once the publication is installed the same command copies the canon.
+        write_json(self.instance / 'runner/state.json', state)
+        code, answer = self.tool('checkout', session, session / 'work/canon')
+        self.assertEqual((code, answer['revision']), (0, Canon(self.instance).load_index()['revision']))
 
     def test_a_link_in_the_output_of_a_session_is_refused_by_the_transport_check(self):
         # A link leads out of the folder whose files are hashed and copied at publication, so the transport

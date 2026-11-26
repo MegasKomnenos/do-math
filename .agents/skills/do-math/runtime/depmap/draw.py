@@ -125,7 +125,9 @@ GLOSSARY = {
                 'any review, and one that was added later to say that two definitions or two statements agree, or to '
                 'derive a statement from one that agrees with it.',
     'settled': 'One of its proofs is accepted, and every statement that proof names is settled in the same way.',
-    'not settled': 'No proof of it is accepted and rests on settled statements only.',
+    'not settled': 'No proof of it is accepted and rests on settled statements only; or one is, and so is a proof of '
+                   'its negation, so that neither statement stands. On the card of a proof: that proof is not '
+                   'accepted, or it names a statement that is not settled.',
     'formal': 'One of its proofs is complete in Lean: it rests on nothing but the allowed axioms, with no gap below it.',
     'refuted': 'A statement that Lean confirmed as the negation of this one is settled.',
     'refutes the root': 'Lean confirmed that this statement is the negation of the root.',

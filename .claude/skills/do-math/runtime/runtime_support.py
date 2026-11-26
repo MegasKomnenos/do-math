@@ -161,6 +161,21 @@ def _write_chunks(path, chunks):
         temp.unlink(missing_ok=True)
 
 
+def copy_to_disk(source, target):
+    """Copy a file, with the content of the copy on the disk when this returns; returns the copy.
+
+    For a copy that is made once and that a record saved through to the disk then stands for. The folder of a
+    publication's event is made once: a runner that finds it under its name does not make it again, and every
+    command replays its files (knowledge.replay). What the runner retains of a session is captured once
+    (retention.capture). After a loss of power such a copy must not stand there without its content. The copy
+    takes no read-only flag from its source."""
+    with open(source, 'rb') as inp, open(target, 'wb') as out:
+        shutil.copyfileobj(inp, out)
+        out.flush()
+        os.fsync(out.fileno())
+    return target
+
+
 def remove_unfinished_writes(folder):
     """Remove, anywhere under a folder, the files that writes which did not finish left there.
 
@@ -414,10 +429,16 @@ def git(instance, *args):
     # repository, or a template from which `git init` copies hooks into each new one. Such a hook checks that
     # person's own commits, their message or their files. One that refused a commit made here would end init,
     # or the runner at that publication and at every start after it.
+    # core.safecrlf=false: the same person's Git configuration can convert line endings (core.autocrlf) and, with
+    # core.safecrlf set to true, refuse to add a file whose line endings that conversion would not give back.
+    # The runtime writes its files with line feeds alone, so Git would then refuse them at `git add`, which
+    # would end init, or the runner at a publication and at every start after it. Only that refusal is switched
+    # off here: the conversion stays as that person set it, so what a commit stores is the same as before.
     result = subprocess.run(
         ["git", "-C", str(instance), "-c", "user.name=do-math",
          "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "-c", "commit.gpgsign=false",
          "-c", "core.hooksPath=" + (Path(instance) / ".git" / "hooks-not-used").as_posix(),
+         "-c", "core.safecrlf=false",
          "--literal-pathspecs", *args],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         encoding="utf-8", errors="replace", **popen_options())

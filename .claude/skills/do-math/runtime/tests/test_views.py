@@ -746,6 +746,11 @@ class CanonToolTests(ScenarioCase):
                                  'grounds': 'Several approaches stop there.'},
                                 {'id': 'block', 'statement': 'What does the common block say about the object?',
                                  'grounds': 'The same obstruction recurs.'}])
+        head = '\n\nWhat does the common block say about the object?\n\nGrounds: The same obstruction recurs.\n'
+        text = self.tool('question', 'block')
+        self.assertTrue(text.startswith('block · open' + head))
+        self.assertIn('No understanding has been written for this question yet.', text)
+        self.assertNotIn('## Understanding so far', text)
         folder = self.candidate(understanding={'q0.md': 'The sum grows by one odd number at a time.\n',
                                                'block.md': 'The block is the overlap of two squares.\n'},
                                 resolutions=[{'id': 'answer', 'question': 'block'}])
@@ -753,8 +758,16 @@ class CanonToolTests(ScenarioCase):
         text = self.tool('question', 'q0')
         self.assertIn('## Understanding so far\n\nThe sum grows by one odd number at a time.\n', text)
         self.assertIn(f'## Review of the work that wrote it\n\nChange {change} (revision 2): Closed what it took on.\n', text)
-        self.assertTrue(self.tool('question', 'block').startswith(
-            'block · resolved\n\nWhat does the common block say about the object?\n\nGrounds: The same obstruction recurs.\n'))
+        text = self.tool('question', 'block')
+        self.assertTrue(text.startswith('block · resolved' + head))
+        self.assertNotIn('No understanding has been written', text)
+        # The statement, the understanding and review's assessment of the work that wrote it stand in that order.
+        places = [text.index(part) for part in (head, '## Understanding so far', 'The block is the overlap of two squares.',
+                                                '## Review of the work that wrote it',
+                                                f'Change {change} (revision 2): Closed what it took on.')]
+        self.assertEqual(places, sorted(places))
+        # The command prints the view as the function that makes it returns it.
+        self.assertEqual(text, canon_tool.question_view(self.instance, knowledge.replay(self.instance), 'block') + '\n')
         self.assertIn('No understanding has been written', self.tool('question', 'scale'))
         # A merged question answers under either name with the text of the one that remains.
         self.organize(batch=[change], merge_questions=[{'from': 'scale', 'into': 'block', 'reason': 'Both ask about the block.'}])

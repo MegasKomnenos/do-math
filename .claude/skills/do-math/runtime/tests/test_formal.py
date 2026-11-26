@@ -4,7 +4,10 @@ A statement is formal when its module compiles and Lean reports that its proof d
 axioms only. The report is `Lean.collectAxioms`, asked in the extraction of the index
 (canon.extraction_source); do-math works out no axioms of its own and nothing checks Lean's answer a
 second time. Whether the root that was settled is the root of the instance's first commit is read
-from the two indexes (canon.statement_differences, Runner.check_root).
+from the two indexes and from the files of the modules that the root's module imported at that
+commit (canon.statement_differences, canon.definition_modules, Runner.check_root). A candidate that
+would change one of those files is refused when it is prepared and again at publication
+(canon.check_definition_modules).
 
 The first classes run with the stand-in compiler of tests/canon_lean.py and show what the runtime does
 with the rows: which modules it extracts, what it stores, what it does with files and state that an

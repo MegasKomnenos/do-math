@@ -66,7 +66,7 @@ Run `commands.prepare` when the change is assembled; [The candidate change](chan
 
 ## What happens to your output
 
-The transport check, which you run on your session directory before you end, confirms the structure: the exact batch, question merges that name existing questions and leave `q0` alone, each with a reason, and, when there is a change, that it is well formed, was prepared for exactly these files without errors, holds only what an organizer's change may hold, and that each entry of `retire` names an alternative that is another proof of its `into` and whose proof does not stand lower than the proof it displaces.
+The transport check, which you run on your session directory before you end, confirms the structure: the exact batch, question merges that name existing questions and leave `q0` alone, each with a reason, and, when there is a change, that it is well formed, was prepared for exactly these files without errors, holds only what an organizer's change may hold, and that each entry of `retire` names an alternative that is another proof of its `into` and whose proof does not stand lower than the proof it displaces: its standing is not the lower of the two, and where the two standings are the same, it is complete in Lean if the displaced proof is.
 
 The runner then publishes your output without review, in its turn in the publication queue. It applies the change to the canon as it is at that moment, builds it and repeats the machine checks. Other changes may have been published while you worked. If your change no longer applies or does not build, a replacement organizer receives your output and the reason and makes the change again.
 

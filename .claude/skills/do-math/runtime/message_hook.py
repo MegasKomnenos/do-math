@@ -24,9 +24,11 @@ WHOLE = 10_000
 def deliver(session):
     """Move the messages that wait for a session to DELIVERED, oldest first, and return their texts as one
     text, each under a line that names its sender; None when none was moved. A message that cannot be read
-    or moved now stays where it waits. So does a message that would carry the text past WHOLE, with those
-    after it: they are handed over after a later batch, so that no message is cut because another waited
-    with it. A message that is longer than WHOLE by itself is handed over alone."""
+    or moved now, as while another process holds its file, stays where it waits, with those after it, so
+    that none is handed over before one that was sent earlier. So does a message that would carry the text
+    past WHOLE, with those after it: they are handed over after a later batch, so that no message is cut
+    because another waited with it. A message that is longer than WHOLE by itself is handed over alone. A
+    file that does not hold a message is passed over."""
     waiting = os.path.join(session, WAITING)
     texts = []
     for name in sorted(os.listdir(waiting)):
@@ -40,7 +42,9 @@ def deliver(session):
             if texts and len('\n\n'.join(texts + [text])) > WHOLE:
                 break
             os.replace(path, os.path.join(waiting, DELIVERED, name))
-        except (OSError, ValueError, KeyError, TypeError):
+        except OSError:
+            break
+        except (ValueError, KeyError, TypeError):
             continue
         texts.append(text)
     return '\n\n'.join(texts) or None

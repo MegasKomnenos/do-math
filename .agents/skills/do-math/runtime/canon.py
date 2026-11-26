@@ -25,7 +25,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 
-from runtime_support import first_commit, git, read_json, remove_file, replace_file, write_text
+from runtime_support import alive, first_commit, git, read_json, remove_file, replace_file, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -666,6 +666,42 @@ def copy_tree(source, target):
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(source, target)
+
+
+def copy_canon(instance, target, revision):
+    """A fresh copy of the canon's module root, as copy_tree makes it, for a command that read the index at
+    `revision`; CanonError when the copy cannot be taken for the library of that revision.
+
+    The runner puts a publication into the canon while sessions run their commands: each changed module by
+    itself, then the removal of each module that is gone, then the index (Runner.install_canon). A copy made
+    meanwhile can hold one module as the publication leaves it and another as it was, or fail on a file that
+    went away under it, and what is built on it then fails for a reason that is in no file of the session.
+    The runner saves that a publication has reached the stage `commit` before it writes into the canon, and
+    that it is installed once the index is in place (Runner.publish). So the saved state is read after the
+    copy, and the index after the state. A publication that changes or removes a module and stands between
+    those two saves, under a runner that is alive, can have been written under the copy. An index with
+    another revision was put in place after the caller read it. The state is read first, so that an
+    installation which ends between the two reads shows in the index. A runner that ended inside an
+    installation writes nothing more: the canon stays as it left it until the next runner starts, and a copy
+    is then kept, as every other command goes on reading that canon."""
+    instance = Path(instance)
+    canon = Canon(instance)
+    failed = None
+    try:
+        copy_tree(canon.lean, target)
+    except OSError as exc:
+        failed = exc
+    publication = read_json(instance / 'runner/state.json').get('publication') or {}
+    receipt = instance / 'runner/process.json'
+    installing = (publication.get('stage') == 'commit' and not publication.get('installed')
+                  and bool(publication.get('changed') or publication.get('removed'))
+                  and receipt.exists() and alive(read_json(receipt)['process']))
+    if installing or canon.load_index()['revision'] != revision:
+        shutil.rmtree(target, ignore_errors=True)
+        raise CanonError('a publication was put into the canon, or was being put there, while this command read '
+                         'it, so its copy of the library was not kept; run the command again')
+    if failed is not None:
+        raise failed
 
 
 # ----------------------------------------------------------------------------- extraction

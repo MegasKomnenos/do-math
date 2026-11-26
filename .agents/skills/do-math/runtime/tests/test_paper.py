@@ -1564,7 +1564,10 @@ class RunTests(PaperCase):
     def test_a_repair_session_that_changes_nothing_is_followed_by_one_that_is_told_so(self):
         script = good()
         script['write:proof'] = [{'output/proof.tex': PROOF + '\\undefinedmacro\n'}]
-        script['repair:typeset'] = [{'output/proof.tex': PROOF + '\\undefinedmacro\n'}, {'output/proof.tex': PROOF}]
+        # The first repair writes the part as it was, in the way a program on Windows may write a file: with a byte
+        # order mark at its head and CRLF line ends. A part is read without them, so that session changed nothing.
+        same = '\ufeff' + (PROOF + '\\undefinedmacro\n').replace('\n', '\r\n')
+        script['repair:typeset'] = [{'output/proof.tex': same}, {'output/proof.tex': PROOF}]
         self.assertEqual(self.run_paper(script), 0)
         self.assertIn('no part was changed', self.calls('repair')[1]['prompt'])
 
@@ -3098,7 +3101,7 @@ class OpenFindingsTests(PaperCase):
         # A pass that was stopped is neither begun again nor typeset; it is continued with --resume.
         with self.assertRaisesRegex(paper.Stop, 'has not come to its end'):
             self.run_paper(script, open_findings='all')
-        with self.assertRaisesRegex(paper.Stop, 'was stopped in the last repair of findings'):
+        with self.assertRaisesRegex(paper.Stop, 'left open was stopped before the run ended anew'):
             self.run_paper(script, only=True)
         script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Read with the proof of Lemma 2.2.')], [(1, True, '')])}]
         self.assertEqual(self.run_paper(script, resume=True), 2)
@@ -3179,6 +3182,7 @@ class SessionsTests(PaperCase):
     def test_sessions_are_launched_without_a_paper_with_servers_and_with_files_of_bytes(self):
         write_json(self.scenario / 'script.json', {'probe': [{'output/found.json': '{"found": 1}'},
                                                              {'output/found.json': '[]'},
+                                                             {'output/found.json': '{"other": 1}'},
                                                              {'output/found.json': '{"found": 2}'}]})
         out = self.root / 'work'
         servers = {'literature': {'command': 'python', 'args': ['server.py']}}
@@ -3197,27 +3201,30 @@ class SessionsTests(PaperCase):
             self.assertEqual((folder / 'data' / 'blob.bin').read_bytes(), b'\x00\xff\r\n')
             self.assertEqual(read_json(folder / 'output' / 'found.json'), {'found': 1})
 
-            # A task is given to a second session, with the reasons, when the first leaves output that cannot be used.
+            # A task is given to another session, with the reasons, when a session leaves output that cannot be used:
+            # output that `read` refuses, and output of another form than `read` expects, at which Python fails.
             def read(output):
                 return paper.Sessions.load(output / 'found.json')['found']
 
-            self.assertEqual(sessions.session('probe', 'Find it.', {}, read, sessions.writer, servers=servers), 2)
+            self.assertEqual(sessions.session('probe', 'Find it.', {}, read, sessions.writer, attempts=3, servers=servers), 2)
             self.assertEqual(sessions.side_by_side([lambda: 1, lambda: 2]), [1, 2])
         calls = self.calls()
-        self.assertEqual([c['folder'] for c in calls], ['01-probe-one', '02-probe', '03-probe'])
+        self.assertEqual([c['folder'] for c in calls], ['01-probe-one', '02-probe', '03-probe', '04-probe'])
         self.assertTrue({'data/blob.bin', 'note.md'} <= set(calls[0]['given']))
         self.assertIn('output/found.json holds a JSON object', calls[2]['prompt'])
         self.assertIn('previous-output/found.json', calls[2]['given'])
+        self.assertIn('the output does not have the form the prompt describes (KeyError', calls[3]['prompt'])
         # Every session received the servers it was launched with, and the log is beside the sessions.
-        self.assertEqual(self.servers, [servers] * 3)
+        self.assertEqual(self.servers, [servers] * 4)
         # Each was launched without the tools by which a session of the Claude CLI arranges to be called again later,
         # and with no other option.
-        self.assertEqual(self.options, [{'withheld': ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')}] * 3)
-        self.assertEqual([e['event'] for e in read_json(out / 'log.json')], ['session', 'session', 'check', 'session'])
+        self.assertEqual(self.options, [{'withheld': ('ScheduleWakeup', 'CronCreate', 'CronDelete', 'CronList', 'Monitor')}] * 4)
+        self.assertEqual([e['event'] for e in read_json(out / 'log.json')],
+                         ['session', 'session', 'check', 'session', 'check', 'session'])
         # With a review role in the settings, the assessor is its first model.
         self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
         self.assertEqual(paper.Sessions(self.instance, out).assessor, {'model': 'claude/opus', 'effort': 'high'})
-        self.assertEqual(paper.Sessions(self.instance, out).count, 3)
+        self.assertEqual(paper.Sessions(self.instance, out).count, 4)
 
     def test_a_cli_that_cannot_be_started_stops_the_command_and_gives_the_gate_back(self):
         gate = threading.BoundedSemaphore(1)
@@ -4463,6 +4470,30 @@ class CoverageTests(PaperCase):
             {**REPORTED, 'quote': weaker, 'asserts': 'The sums are at least $n$.', 'open_because': paper.COVERED_AGAIN}]}])
         self.assertIn(weaker, self.part('tools'))
 
+    def test_a_sentence_that_a_pass_did_not_choose_keeps_its_reason_when_its_section_is_compared_again(self):
+        even = 'Moreover $S_n$ is even whenever $n$ is even.'
+        second = {**UNCOVERED, 'entry': 3, 'quote': even, 'asserts': 'The sums of an even number of terms are even.',
+                  'difference': 'No element speaks of parity.'}
+        script = asserting()
+        # The section ends with two sentences that no element covers, and the repair keeps both.
+        script['write:tools'] = [{'output/tools.tex': TOOLS_SHARP + '\n' + even + '\n'}]
+        script['cover:tools'] = [{'output/coverage.json': json.dumps([UNCOVERED, second])}]
+        script['repair:narrow'] = [{'output/response.json': answers('kept', 'kept')}]
+        self.assertEqual(self.run_paper(script), 2)
+        launched = len(self.calls())
+        # A pass over the first sentence alone cuts it. The section changed, so it is compared once more, and the
+        # second sentence is reported again: it stays open with the reason of the repair that kept it.
+        script = good()
+        script['repair:narrow-coverage-tools'] = [{'output/tools.tex': TOOLS + '\n' + even + '\n',
+                                                   'output/response.json': answered('The sentence is cut.')}]
+        script['changes'] = [{'output/verdicts.json': verdicts([(True, [1], 'Nothing after it rests on the sentence.')], [(1, True, '')])}]
+        script['cover:tools'] = [{'output/coverage.json': json.dumps([{**second, 'entry': 2}])}]
+        self.assertEqual(self.run_paper(script, open_findings='1'), 2)
+        self.assertEqual(self.kinds(launched), [('repair', 'narrow-coverage-tools'), ('changes', None), ('cover', 'tools'), *PLACED])
+        self.assertEqual(self.events('end')[-1]['open'], [{'check': paper.COVERAGE, 'after_repairs': 2, 'problems': [
+            {**REPORTED, 'quote': even, 'asserts': second['asserts'], 'difference': second['difference'],
+             'open_because': paper.KEPT + 'kept 2'}]}])
+
     def test_what_a_repair_writes_during_the_closing_pass_is_compared_once_and_recorded(self):
         reason = 'The bound is the content of Lemma 2.1.'
         self.taken_up(('uncovered', reason), lambda: self.assertEqual(self.run_paper(asserting(kept=reason)), 2))
@@ -4763,6 +4794,10 @@ class PlacementTests(PaperCase):
         with self.assertRaises(paper.Stop):
             self.close(script)
         launched = len(self.calls())
+        # The pass has taken the sentence out and recorded that in state.json, and the last end of the run still
+        # lists the sentence as open: the manuscript is not typeset from that list before the pass is continued.
+        with self.assertRaisesRegex(paper.Stop, 'left open was stopped before the run ended anew'):
+            self.run_paper(good(), only=True)
         # The pass took the sentence out and left nothing open, so the continued run ends with exit code 0 and no
         # closing pass follows it. It makes the check itself, for the text as the pass left it.
         self.assertEqual(self.run_paper(good(), resume=True), 0)
@@ -4842,6 +4877,11 @@ class SafeguardTests(PaperCase):
                          [('compare', 'tools', 'lem:increasing', 2), ('compare', 'tools', 'lem:square', 2),
                           ('cover', 'intro', None, 2)])
         self.assertEqual(read_json(self.out / 'not-done.json'), end['not_done'])
+        # A command that takes the folder up later reads that file. Typesetting the manuscript again leaves the two
+        # statements without a verdict and not open, and the correspondence file and the `end` event name the same checks.
+        self.assertEqual(self.run_paper(good(), only=True), 0)
+        self.assertEqual(read_json(self.out / 'correspondence.json')['not_done'], correspondence['not_done'])
+        self.assertEqual(self.events('end')[-1]['not_done'], end['not_done'])
 
     def test_a_check_that_is_made_later_takes_the_record_away(self):
         script = good()

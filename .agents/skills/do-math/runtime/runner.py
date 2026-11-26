@@ -30,7 +30,7 @@ from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance
 from retention import capture, model_blocked, refusal, usage
 from ending import CONTEXT_LIMIT, HANDED_OVER, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_raw, archive_work, available_memory,
-                             file_stamp, first_commit, git,
+                             copy_to_disk, file_stamp, first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree,
                              remove_unfinished_writes, rename_directory, replace_file, session_host,
                              terminate_process, write_json, write_json_compact, write_text)
@@ -51,19 +51,6 @@ PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 
 
 def uid(prefix):
     return prefix + uuid.uuid4().hex
-
-
-def copy_to_disk(source, target):
-    """Copy a file, with the content of the copy on the disk when this returns; returns the copy.
-
-    The folder of a publication's event is made once: a runner that finds it under its name does not make it
-    again, and every command replays its files (knowledge.replay). After a loss of power that folder must not
-    hold a file whose content never arrived on the disk. The copy takes no read-only flag from its source."""
-    with open(source, 'rb') as inp, open(target, 'wb') as out:
-        shutil.copyfileobj(inp, out)
-        out.flush()
-        os.fsync(out.fileno())
-    return target
 
 
 def operator_questions(data, model):
@@ -1318,7 +1305,10 @@ class Runner:
                 previous = [p['record'] for p in self.state['pipelines'].values()
                             if p['role'] == 'formalizer' and p['record'] and p['element'] == name]
                 self.producer('formalizer', {'element': name, 'previous_changes': previous})
-        due = [cid for cid, change in model['changes'].items() if cid not in model['organized']]
+        # The model keeps the organized changes as a list. They are looked up in a set here, because this
+        # runs on every pass and asks it of every published change.
+        organized = set(model['organized'])
+        due = [cid for cid, change in model['changes'].items() if cid not in organized]
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):
             # make_pack fixes the batch from the published changes when the organizer launches.
             self.enqueue('organizer', {})
@@ -1624,7 +1614,12 @@ class Runner:
         self.ingest_inputs()
         self.attempt_dispatch_ready()
         self.refresh()
-        if not (self.instance / 'control/STOP').exists():
+        if (self.instance / 'control/STOP').exists():
+            # The stop holds back dispatch and nothing else. The work that is due is queued under it as well, as
+            # the follow-ups of a session that ends under it are (finish). Without that, a runner whose root is
+            # formally settled finds no job left below, takes itself for finished and exits while work is due.
+            self.populate()
+        else:
             self.schedule()
         remaining = any(j['status'] in ('pending', 'running') for j in self.state['jobs'].values())
         finished = self.state['complete'] and not self.active() and not remaining

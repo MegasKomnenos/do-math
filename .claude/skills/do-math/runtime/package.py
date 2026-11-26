@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import tarfile
 import time
+import unicodedata
 
 import canon
 from canon import (BIB_ENTRY, CanonError, IMPORT_LINE, declaration_text, header_scan, library_modules, module_file,
@@ -632,8 +633,37 @@ def bibliography_keys(text):
     return set(BIB_ENTRY.findall(text))
 
 
+# TeX's accent commands by the mark each sets on the letter that follows it, and its commands that print a letter.
+TEX_MARKS = {'`': '\u0300', "'": '\u0301', '^': '\u0302', '~': '\u0303', '"': '\u0308', '=': '\u0304', '.': '\u0307',
+             'H': '\u030b', 'c': '\u0327', 'v': '\u030c', 'u': '\u0306', 'k': '\u0328', 'r': '\u030a', 'd': '\u0323'}
+TEX_LETTERS = {'ss': '\u00df', 'ae': '\u00e6', 'AE': '\u00c6', 'oe': '\u0153', 'OE': '\u0152', 'aa': '\u00e5',
+               'AA': '\u00c5', 'o': '\u00f8', 'O': '\u00d8', 'l': '\u0142', 'L': '\u0141', 'i': '\u0131', 'j': '\u0237'}
+TEX_ACCENT = re.compile(r'''\\(?:([`'^~"=.])|([Hcvukrd])(?![A-Za-z]))\s*'''
+                        r'''(?:\{\s*(\\[ij](?![A-Za-z])|[A-Za-z])\s*\}|(\\[ij](?![A-Za-z])|[A-Za-z]))''')
+TEX_LETTER = re.compile(r'\\(ss|ae|AE|oe|OE|aa|AA|[oOlLij])(?![A-Za-z])(?:\{\}|\s+)?')
+
+
+def plain(text):
+    r"""A title or a name written in TeX, as a file that is no TeX gives it.
+
+    An accent command with its letter, such as `\H{o}` or `{\'a}`, and a command for a letter, such as `\o` or
+    `\ss`, become the letter that TeX prints for them, and the braces go. A formula between dollar signs stays as
+    it is written, braces included, since its commands stand for no letters. Any other command stays as well,
+    without its braces. Spaces and line ends become single spaces."""
+    def words(part):
+        part = TEX_ACCENT.sub(lambda found: unicodedata.normalize(
+            'NFC', (found[3] or found[4])[-1] + TEX_MARKS[found[1] or found[2]]), part)
+        return TEX_LETTER.sub(lambda found: TEX_LETTERS[found[1]], part).replace('{', '').replace('}', '')
+
+    parts = re.split(r'(\$[^$]*\$)', text)
+    return ' '.join(''.join(part if number % 2 else words(part) for number, part in enumerate(parts)).split())
+
+
 def bibliography_field(text, key, field):
-    """One field of one entry of a BibTeX file, without its braces; empty when it is not there."""
+    """One field of one entry of a BibTeX file, without its braces; empty when it is not there.
+
+    A title and an author are words in TeX and come as `plain` gives them. Any other field is an identifier or
+    an address: a web address can hold `\\~n`, which is no accent there, so such a field loses its braces alone."""
     entry = re.search(r'@\w+\s*\{\s*' + re.escape(key) + r'\s*,(.*?)(?=^@|\Z)', text, re.S | re.M)
     if not entry:
         return ''
@@ -650,7 +680,8 @@ def bibliography_field(text, key, field):
             if depth == 0:
                 break
         out.append(char)
-    return ' '.join(''.join(out).replace('{', '').replace('}', '').split())
+    value = ''.join(out)
+    return plain(value) if field in ('title', 'author') else ' '.join(value.replace('{', '').replace('}', '').split())
 
 
 # ----------------------------------------------------------------------------- parts
@@ -1053,7 +1084,7 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     sections = (root_record or {}).get('sections', {})
     return {
         'version': 'v0.4',
-        'project': {'name': title, 'description': decision['sentence'], 'authors': authors, 'license': licence,
+        'project': {'name': plain(title), 'description': decision['sentence'], 'authors': authors, 'license': licence,
                     'responsible_maintainers': names},
         'classification': {'arxiv': list(registry['arxiv']), 'msc2020': list(registry['msc2020'])},
         'sources': sources,
@@ -1421,7 +1452,7 @@ def package_facts(package, name, library, root, main, index, freeze, archive, ti
     modules += [top] if top.is_file() else []
     entries = index['entries']
     statements = correspondence.get('statements', [])
-    return {'name': name, 'title': title, 'library': library, 'root': root, 'main': main,
+    return {'name': name, 'title': plain(title), 'library': library, 'root': root, 'main': main,
             'toolchain': toolchain, 'requires': requires, 'pinned_commit': commit,
             'modules': len(modules), 'lines': sum(read_text(path).count('\n') for path in modules),
             'declarations': len(entries), 'theorems': sum(e['kind'] == 'theorem' for e in entries.values()),

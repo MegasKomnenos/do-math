@@ -6,7 +6,7 @@ import re
 import shutil
 import time
 from cli_adapter import codex_error_message, detect_usage_limit
-from runtime_support import write_json
+from runtime_support import copy_to_disk, write_json
 
 
 def readable(value):
@@ -59,6 +59,13 @@ def conversation(source, destination, native, *, append=False, label=None, note=
                 payload = event.get('payload')
             elif native and kind in ('assistant', 'user'):
                 payload = event.get('message', event)
+            elif native and kind == 'attachment':
+                # A notification that reaches a Claude session while it is at work in a turn is recorded by the
+                # CLI as an attachment of the type queued_command, and as no message: the report of a delegated
+                # agent that finished meanwhile, and the notice that a command left in the background has ended.
+                item = event.get('attachment')
+                if isinstance(item, dict) and item.get('type') == 'queued_command':
+                    payload = item.get('prompt')
             elif not native and kind in ('item.completed', 'assistant', 'user', 'error', 'turn.failed'):
                 payload = event.get('item', event.get('message', event))
             if payload is None:
@@ -71,6 +78,10 @@ def conversation(source, destination, native, *, append=False, label=None, note=
             fence = '`' * max(3, 1 + max((len(x) for x in re.findall(r'`+', body)), default=0))
             out.write(f'## {label or Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')
             written += 1
+        # On the disk when this returns, as the copies that capture makes are: the runner saves, through to the
+        # disk, that the session is retained once capture has returned, and nothing captures it again.
+        out.flush()
+        os.fsync(out.fileno())
     return written
 
 
@@ -184,13 +195,17 @@ def capture(session, provider):
             paths = root.glob('*/' + identity + '.jsonl')
         for path in paths:
             destination = session / ('transcript-' + identity + '.jsonl')
-            shutil.copyfile(path, destination)
+            # Through to the disk (copy_to_disk), this copy and the folder below: the runner saves, through to the
+            # disk, that the session is retained once this function has returned (Runner.finish), and nothing
+            # captures it again. After a loss of power the copies must not stand there without their content.
+            copy_to_disk(path, destination)
             copied.append(destination.name)
             # Claude keeps large tool outputs and subagent conversations in a folder named
             # after the transcript; the transcript's tool result then holds only a preview.
             companion = path.with_suffix('')
             if provider == 'claude' and companion.is_dir():
-                shutil.copytree(companion, session / ('transcript-' + identity), dirs_exist_ok=True)
+                shutil.copytree(companion, session / ('transcript-' + identity), dirs_exist_ok=True,
+                                copy_function=copy_to_disk)
                 companions.append('transcript-' + identity)
             break
     native_activity = False

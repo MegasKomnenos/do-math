@@ -783,13 +783,24 @@ class CoordinationTests(ScenarioCase):
         runner = self.runner()
         folders = [self.session(runner, 's' + str(i)) for i in range(6)]
         runtime = str(Path(__file__).resolve().parents[1])
-        begin = time.time() + 3  # every process imports first, then asks at the same instant
-        launcher = ('import sys, time; sys.path.insert(0, %r); import coordination; '
-                    'time.sleep(max(0, %r - time.time())); '
-                    'sys.argv = ["coordination.py", "lease", sys.argv[1], "Small.root"]; '
-                    'raise SystemExit(coordination.main())') % (runtime, begin)
-        processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
+        # Every process imports first and leaves a file that says so. When all six have, the file `go` is made,
+        # which each of them looks for every few milliseconds, so that they ask at the same instant.
+        launcher = ('import os, sys, time\n'
+                    'sys.path.insert(0, %r)\n'
+                    'import coordination\n'
+                    'session, imported, go = sys.argv[1:]\n'
+                    'open(imported, "w").close()\n'
+                    'while not os.path.exists(go):\n'
+                    '    time.sleep(0.005)\n'
+                    'sys.argv = ["coordination.py", "lease", session, "Small.root"]\n'
+                    'raise SystemExit(coordination.main())\n') % runtime
+        imported, go = [self.root / ('imported-' + f.name) for f in folders], self.root / 'go'
+        processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f), str(mark), str(go)],
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f, mark in zip(folders, imported)]
+        deadline = time.monotonic() + 60
+        while not all(mark.exists() for mark in imported) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        go.touch()
         results = []
         for process in processes:
             # communicate() reads and closes both pipes; a child that printed no answer shows its traceback.
@@ -895,10 +906,14 @@ class CoordinationTests(ScenarioCase):
         runner = self.runner()
         a, b = (self.session(runner, sid) for sid in ('sa', 'sb'))
         self.assertTrue(lease(a, 'Small.root')['leased'])
+        table = self.instance / 'runner/leases.json'
         pauses = []
 
         def pause(seconds):
-            pauses.append(seconds)
+            # The table of leases as the look before this pause left it: which file stands there, and when
+            # it was written.
+            written = os.stat(table)
+            pauses.append((written.st_ino, written.st_mtime_ns))
             self.assertLess(len(pauses), 4, 'the waiting command did not read what the runner saved')
             if len(pauses) == 3:
                 # The holder's session ends. No command of a session says so; the runner's state does.
@@ -912,6 +927,9 @@ class CoordinationTests(ScenarioCase):
         # Four looks: the first reads the research, the next two find the runner's state as it was, and the
         # fourth reads again what the runner saved.
         self.assertEqual(read.call_count, 2)
+        # The first look put sb into the queue and wrote the table. The next two found sb still waiting and
+        # left the file as the first look had written it.
+        self.assertEqual(len(set(pauses)), 1)
 
     def test_element_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
         # Attempts and peers reach these commands only through the argv in input.json.
@@ -1724,6 +1742,30 @@ class RunnerTests(ScenarioCase):
         self.assertFalse((folders['sattempt'] / 'cli.stdout.jsonl').exists())
         self.assertTrue((folders['sattempt'] / 'raw.tar.xz').is_file())
 
+    def test_the_work_of_a_review_without_a_pipeline_is_packed_only_once_its_job_has_ended(self):
+        # A comprehensive review and an organizer belong to no pipeline, and their work is packed once their own
+        # job has completed (reference/operations.md, Retention and archives). Until then the job can launch
+        # another session that reads the folder of this one. The review here handed its task over, and the pack
+        # of the session that continues it names work/report.md of this one (context.assemble).
+        runner = self.runner()
+        key = runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
+        job = runner.state['jobs'][key]
+        folder = runner.session_dir('stracing')
+        (folder / 'work').mkdir(parents=True)
+        (folder / 'work/report.md').write_text('Where the tracing stands.', encoding='utf-8')
+        session = runner.state['sessions']['stracing'] = session_record('stracing', 'review', key)
+        job.update(status='running', session='stracing')
+        runner.hand_over(job, session)
+        self.assertEqual((session['status'], job['status']), ('ended', 'pending'))
+        archive_finished(self.instance)
+        self.assertTrue((folder / 'work/report.md').is_file())
+        # Once the job is done, no later session of it reads the folder, and the next pass packs the work.
+        job['status'] = 'done'
+        runner.save()
+        archive_finished(self.instance)
+        self.assertFalse((folder / 'work').exists())
+        self.assertTrue((folder / 'work.tar.xz').is_file())
+
     def test_final_archive_request_is_dispatched_before_runner_exit(self):
         self.formal()
         runner = self.runner()
@@ -2496,17 +2538,44 @@ class RunnerTests(ScenarioCase):
     def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
         # stop and resume write and remove control/STOP. The runner's own pass reads it: while it
         # exists, neither a fresh attempt nor a queued follow-up launches, and after resume both do.
+        # The pass still collects under the stop. A session that has ended leaves `running`, which is what the
+        # operator waits for before ending the runner (reference/operations.md, Commands), and the peer work that
+        # its collection creates waits like the follow-up that was queued before.
         runner = self.runner()
         peer = runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'), 'source_role': 'attempt'})
+        sid, session, job = self.ended(runner, 'attempt')
+        (runner.session_dir(sid) / 'GO').write_bytes(b'go\n')  # the gate that dispatch opened
         with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
             host.return_value.pid = runner.identity['pid']
             self.assertEqual(main(['stop', str(self.instance)]), 0)
             runner.tick()
             self.assertEqual(runner.active(), [])
             self.assertEqual(runner.state['jobs'][peer]['status'], 'pending')
+            self.assertEqual((session['status'], runner.state['jobs'][job['pipeline'] + ':peer']['status']),
+                             ('ended', 'pending'))
             self.assertEqual(main(['resume', str(self.instance)]), 0)
             runner.tick()
-        self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'attempt'])
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'peer', 'attempt'])
+
+    def test_work_that_falls_due_under_the_stop_is_queued_and_keeps_the_runner_from_finishing(self):
+        # The stop holds back dispatch and nothing else. The root is formally proved, and an organizer is due for
+        # the one published change. Under the stop the runner queues that job and does not launch it, so it does
+        # not take itself for finished and exit; after resume the organizer launches.
+        self.formal()
+        self.configure(organizer_every_records=1)
+        runner = self.runner()
+        runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
+        with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
+            host.return_value.pid = runner.identity['pid']
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            self.assertFalse(runner.tick())
+            self.assertFalse(runner.state['finished'])
+            self.assertEqual(runner.active(), [])
+            self.assertEqual([job['role'] for job in runner.state['jobs'].values() if job['status'] == 'pending'],
+                             ['organizer'])
+            self.assertEqual(main(['resume', str(self.instance)]), 0)
+            runner.tick()
+        self.assertEqual([s['role'] for _, s in runner.active()], ['organizer'])
 
     def test_status_reports_the_runner_alive_while_the_process_of_its_start_record_lives(self):
         # Runner.run writes its start record, runner/process.json, before its first pass: the runner's process,
@@ -2566,6 +2635,27 @@ class RunnerTests(ScenarioCase):
         restarted = self.runner()
         restarted.ingest_inputs()
         self.assertEqual(len(restarted.state['jobs']), len(runner.state['jobs']))
+
+    def test_a_request_made_after_the_instance_finished_is_taken_up_and_the_runner_goes_on(self):
+        # Once the root is formally settled and the remaining work has ended, the instance is finished and the
+        # runner exits. A review requested after that takes effect at the next start, whose runner goes on until
+        # that work has ended (reference/operations.md, Commands). So the pass that collects the request takes
+        # `finished` back: the runner does not exit while the requested session works, and it keeps a broker
+        # alive for that session again, which a session cannot start for itself (Runner.ensure_broker).
+        self.formal()
+        runner = self.runner()
+        runner.check_root()  # an earlier pass compared the settled root with the first commit; no process starts below
+        with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.tick())
+            self.assertTrue(runner.state['finished'])
+            host.assert_not_called()
+            self.assertEqual(main(['review', str(self.instance), '--element', 'Small.root']), 0)
+            self.assertFalse(runner.tick())
+        self.assertFalse(runner.state['finished'])
+        self.assertEqual([s['role'] for _, s in runner.active()], ['review'])
+        # The pass started the host of that session and then the broker.
+        self.assertEqual([call.args[0][3] for call in host.call_args_list], ['_session', 'serve'])
 
     def test_root_change_requires_new_instance(self):
         self.runner()

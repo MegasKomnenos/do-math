@@ -1646,6 +1646,10 @@ class BuildTests(BrokerFixture):
         root = self.tree()
         with self.assertRaisesRegex(ValueError, "not in the subpath|not a module path"):
             self.build(root, [self.instance / "settings.json"])  # a file that exists, outside the root
+        # A file under the root whose path is no module name. Read as the name `Draft.v2`, it would send the broker
+        # to Draft/v2.lean, another file than the one that was named.
+        with self.assertRaisesRegex(ValueError, "not a module path"):
+            self.build(root, [source(root / "Draft.v2.lean", imports=())])
         with self.assertRaisesRegex(ValueError, "does not exist"):
             self.build(root, [root / "Nope.lean"])
         source(root / "X.lean", imports=("Y",))

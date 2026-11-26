@@ -847,7 +847,7 @@ class InterruptedPublicationTests(PublicationCase):
     def test_ended_before_the_event_was_written(self):
         self.interrupt('runner.rename_directory', 'commit')
 
-    def test_ended_after_the_event_was_written_and_before_the_canon_was_put_in_place(self):
+    def test_ended_after_the_written_part_was_put_in_place_and_before_the_modules(self):
         self.interrupt('runner.Runner.install_canon', 'commit', event_written=True)
 
     def test_ended_after_the_modules_were_put_in_place_and_before_the_index(self):

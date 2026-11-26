@@ -413,7 +413,8 @@ def organization_check(data, root, model, batch):
                               e['lean_proof'] == 'complete')
             need(rank(moving) >= rank(leaving),
                  f"{item['alternative']} would take the place of a proof of {item['into']} that stands higher; "
-                 'a retirement keeps the proof with the higher standing')
+                 'a retirement keeps the proof with the higher standing, and of two proofs with the same standing '
+                 'the one that is complete in Lean')
     regular_tree(root)
 
 

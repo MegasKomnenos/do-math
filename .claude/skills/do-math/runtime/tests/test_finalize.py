@@ -287,21 +287,22 @@ class FinalizeCase(InstanceCase):
                                                 **({'closed': self.closed} if self.closed else {})}])
         return self.paper_code
 
-    def run_command(self, plan=None, config=None, name='odd', lake=None, operating=True):
+    def run_command(self, plan=None, config=None, name='odd', lake=None):
         """One start of the command with the stand-ins in place; returns its exit code.
 
         The run reduces the Lean settings of the instance to what names the Lean environment, so its broker
         would run the stand-in compiler with the defaults of a real one: at low priority, and reserving
-        2 GiB for each compile. With `operating` the reduced settings are given the values the other
-        tests of the runtime give the stand-in compiler, so that a test does not wait on the machine's load."""
+        2 GiB for each compile. The reduced settings are therefore given the values the other tests of the
+        runtime give the stand-in compiler, so that no test waits on the machine's load. `self.kept` holds
+        the keys that the program itself kept of the Lean settings, before those values were added."""
         real = package.reduced_settings
 
         def reduced(settings):
             value = real(settings)
-            if operating:
-                given = fixture_settings()['lean']
-                value['lean'].update({key: given[key] for key in ('priority', 'min_free_memory_mb', 'memory_budget_mb',
-                                                                  'calibration_expect_mb')})
+            self.kept = set(value['lean'])
+            given = fixture_settings()['lean']
+            value['lean'].update({key: given[key] for key in ('priority', 'min_free_memory_mb', 'memory_budget_mb',
+                                                              'calibration_expect_mb')})
             return value
 
         if plan is not None:
@@ -529,6 +530,16 @@ class TakeTests(FinalizeCase):
         self.assertIn('\n- `Small.sq_step`: Passing from n to n + 1 adds the odd number 2n + 1.\n', digest)
         self.assertNotIn('Small.helper_zero', digest)
         self.assertTrue(digest.endswith('that these proofs do not rest on\n\nNone.\n'), digest)
+        # A settled formal theorem of weight unit that the proof of the root does not rest on is listed there, with
+        # its statement and the description of its record: the selection may choose a theorem from which the root
+        # is still to be derived. The model is made to say of `stray` what it says of such a theorem.
+        model = replay(self.instance)
+        model['elements']['Small.stray'].update(weight='unit', settled=True, formal=True)
+        listed = package.selection_digest(model, self.index)
+        self.assertTrue(listed.endswith(
+            'that these proofs do not rest on\n\n### `Small.stray`\n\n```lean\n'
+            + self.index['entries']['Small.stray']['statement']
+            + '\n```\n\nThe first five odd numbers sum to twenty-five.\n'), listed)
         # What rests on what, for the elements the take keeps: the line of the root names what its proof names.
         rests = package.rests_on_text(self.index, set(self.plan['kept']))
         self.assertIn('; proof names `Small.helper_zero`, `Small.sq_step`, `Small.twice_zero`\n', rests)
@@ -882,6 +893,23 @@ class RegistryTests(FinalizeCase):
         self.assertIn('- One (doi:10.1000/1). The library formalises the result of this work. Theorem 1.', lines)
         self.assertIn('- Three (https://example.org/three). A table of values.', lines)
         self.assertIn('- https://example.org/formal. In another prover.', lines)
+
+    def test_a_title_and_a_name_written_in_tex_stand_in_the_registry_file_with_the_letters_tex_prints(self):
+        # A bibliography writes an accented letter with TeX's accent command, and so does the title of the paper,
+        # whose source is ASCII. The registry's file and the README are no TeX: they have the letter. A formula
+        # keeps its braces, and a web address is no TeX, so its `\~r` is no accent.
+        bibliography = ('@article{er1960,\n'
+                        '  author = {Erd{\\H o}s, Paul and S{\\o}rensen, J{\\"u}rgen and {\\L}uczak, Tomasz},\n'
+                        '  title = {On {$\\mathbb{F}_q^n$} and a theorem of {E}rd{\\H{o}}s and {T}ur{\\\'a}n},\n'
+                        '  url = {http://example.org/\\~rado/{a}}\n}\n')
+        entry = package.source_entry(bibliography, 'er1960', 'background', '')
+        self.assertEqual((entry['title'], entry['authors'], entry['id']),
+                         ('On $\\mathbb{F}_q^n$ and a theorem of Erd\u0151s and Tur\u00e1n',
+                          ['Erd\u0151s, Paul', 'S\u00f8rensen, J\u00fcrgen', '\u0141uczak, Tomasz'],
+                          'http://example.org/\\~rado/a'))
+        data = package.formalization('Sums after Erd\\H{o}s and Szemer\\\'edi', json.loads(decision()), BIBLIOGRAPHY,
+                                     finalize.default_config(), 'CC-BY-4.0', [], 'Small', [], None, {}, 't')
+        self.assertEqual(data['project']['name'], 'Sums after Erd\u0151s and Szemer\u00e9di')
 
     def test_each_rule_of_the_registry_that_the_pipeline_controls_is_checked(self):
         lean = self.frozen()
@@ -1296,6 +1324,27 @@ class BuildTests(FinalizeCase):
                          'the Lean broker of the run does not stay alive: No Lean broker became ready')
         self.assertEqual(asked.call_count, 6)  # asked once, and once more after each of five waits
 
+    def test_a_build_whose_compile_did_not_run_to_its_end_is_asked_for_again_and_a_refused_one_is_not(self):
+        # A compile that the operating system ended says nothing about the library, so the same library is built
+        # again; the module that waited for the ended one does not make it a fault of the library. What Lean
+        # rejected, and a build that the broker refused for its sources before any compile, are faults at once. A
+        # compile that ends early at each of three builds is returned as a fault too: a source can end its compile.
+        run = finalize.Run(self.instance, 'odd', finalize.default_config())
+        run.library, run.expect_mb = 'Small', 64
+        row = lambda module, status, code, reason=None: {'module': module, 'status': status, 'exit_code': code,
+                                                         'reason': reason, 'output': ''}
+        waited = row('Small.Root', 'failed', None, 'dependency Small.Step ended with exit code 3221225477')
+        ended = {'ok': False, 'errors': [row('Small.Step', 'finished', 3221225477), waited]}
+        rejected = {'ok': False, 'errors': [row('Small.Step', 'finished', 1)]}
+        refused = {'ok': False, 'errors': [{'module': None, 'status': 'failed', 'reason': 'import cycle', 'output': ''}]}
+        sound = {'ok': True, 'errors': [], 'rows': [], 'pairs': {}}
+        for outcomes, faults in (([ended, sound], 0), ([rejected], 1), ([refused], 1), ([ended, ended, ended], 2)):
+            with patch('finalize.Run.ensure_broker'), patch('canon.start_build', return_value='b') as asked, \
+                    patch('canon.wait_build', side_effect=outcomes):
+                problems, _ = run.build(self.instance / 'canon' / 'lean', False, None, None, None)
+            # One build for each outcome: a build that ended early is asked for anew, and no other is.
+            self.assertEqual((asked.call_count, len(problems)), (len(outcomes), faults), outcomes)
+
     def test_a_broker_that_was_started_and_has_not_written_its_receipt_ends_with_the_run(self):
         # A broker writes its receipt some seconds after it was started. A run that stops within those seconds finds
         # no receipt; a broker left behind then would go on holding broker.log in the work folder. The stand-in is a
@@ -1548,9 +1597,14 @@ class RefusalTests(FinalizeCase):
         unfinished = {'.' + 'b' * 32 + '.olean.' + 'a' * 32, 'b' * 32 + '.artifacts.json.' + 'a' * 32 + '.tmp'}
         for name in unfinished:
             (store / name).write_bytes(b'half a file')
-        self.assertEqual(self.run_command(script(review=[{}]), config=self.config(), operating=False), 2)
+        self.assertEqual(self.run_command(script(review=[{}]), config=self.config()), 2)
         settings = read_json(self.work / 'settings.json')
-        self.assertEqual(set(settings['lean']), {'command', 'version_command', 'cwd', 'env', 'cache_epoch', 'allowed_axioms'})
+        # Of the Lean settings the program keeps what names the Lean environment, so the free memory that this
+        # instance insists on is not among them. The file of the run holds those keys and the four values that
+        # the fixture gives the stand-in compiler.
+        self.assertEqual(self.kept, {'command', 'version_command', 'cwd', 'env', 'cache_epoch', 'allowed_axioms'})
+        self.assertEqual(set(settings['lean']),
+                         self.kept | {'priority', 'min_free_memory_mb', 'memory_budget_mb', 'calibration_expect_mb'})
         self.assertNotIn('no_such_setting', settings)
         self.assertEqual((self.work / 'source' / 'canon' / 'lean' / 'Small' / 'Step.lean').read_text(encoding='utf-8'), STEP)
         self.assertEqual(read_json(self.work / 'state.json')['run']['commit'], package.head_commit(self.instance))
@@ -1597,7 +1651,9 @@ class RefusalTests(FinalizeCase):
 
 class RunTests(FinalizeCase):
     def test_a_run_comes_to_its_end_with_the_package_in_place(self):
-        config = self.config(authors=[{'name': 'A. Author', 'email': 'a@example.org', 'orcid': '0000'}])
+        config = self.config(authors=[{'name': 'A. Author', 'email': 'a@example.org', 'orcid': '0000'}],
+                             human_review={'status': 'self-assessed', 'reviewers': ['R. Reader'],
+                                           'notes': 'The Lean statement was read against the proposition.'})
         # The repository is under Git, as the one that holds the skill is, with its README committed.
         git = lambda *arguments: subprocess.run(['git', '-C', str(self.repository), '-c', 'user.name=t', '-c', 'user.email=t@t',
                                                  *arguments], check=True, capture_output=True, text=True).stdout.strip()
@@ -1751,6 +1807,11 @@ class RunTests(FinalizeCase):
         # The models are those of the sessions that made the package; nothing is said of the models of the research.
         self.assertIn('The sessions that made this package from the research ran on ', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
+        # The configuration of this run states a review by a person. The README states it as it was given, where
+        # the README of a run without one says that no person reviewed the proof.
+        self.assertIn('what the reviews accept becomes the library with its records. Review by a person: '
+                      'self-assessed, by R. Reader. The Lean statement was read against the proposition.\n', readme)
+        self.assertNotIn('No person reviewed the proof', readme)
         self.assertIn('### Where the result comes from\n\nThe identity is classical; the records name nobody who posed it.\n\n'
                       'In `lean/formalization.yaml`, the file that describes the package for a formal-proof registry, the '
                       'result is recorded as original, which there means a result that the formalisation presents first. '
@@ -1866,6 +1927,9 @@ class RunTests(FinalizeCase):
         # No author was configured: none is named, and the report says what the user fills in.
         self.assertNotIn('A. Author', (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertIn('names no author and no responsible maintainer', (self.solved / 'README.md').read_text(encoding='utf-8'))
+        # No review by a person was configured either, and the README says so.
+        self.assertIn('No person reviewed the proof, and no person read the Lean statement against the proposition '
+                      'in words.\n', (self.solved / 'README.md').read_text(encoding='utf-8'))
         self.assertIn('`project.authors` and `project.responsible_maintainers`', (self.work / 'report.md').read_text(encoding='utf-8'))
         self.assertEqual(self.produced[-1]['title_page'], {'authors': [], 'msc2020': ['05A15']})
         # What the paper command closed without a person is in the decisions and in the report.
@@ -2127,12 +2191,23 @@ class RunTests(FinalizeCase):
 
     def test_a_fault_the_reader_finds_in_a_sentence_of_the_script_is_reported_and_the_run_ends(self):
         self.draft = {'statements': [DRAFT['statements'][0]], 'formulas': [], 'gaps': [], 'citations': []}
+        # The plan of this run's paper gives a title with an accent, which the source of a paper writes as a command.
+        plan_title = patch.dict(PLAN, title='Sums of odd numbers, after Erd\\H{o}s')
+        plan_title.start()
+        self.addCleanup(plan_title.stop)
         # The selection of this run chooses the root itself as the main theorem of the package. It records the result
         # as known, and the one work it lists gives context.
         known = json.loads(decision(main='Small.root'))
         known['registry']['origin'] = 'source-based'
+        # The provider refuses the first start of the review, which is started again after a wait of one second. The
+        # prose of the README gives the number of sessions that made the package.
+        self.configure(retry_max_seconds=1)
+        refused_once = [{'@refused': ''}] + script()['review']
+        prose = [{'output/outline.md': 'The proof is by induction.\n',
+                  'output/obtained.md': 'The package was made by {{facts.sessions}} sessions.\n'}]
         # The reader of the package leaves nothing at its first two sessions, and its findings at the third.
-        plan = script(selection=[{'output/decision.json': json.dumps(known)}], package_read=[{}, {}, {
+        plan = script(selection=[{'output/decision.json': json.dumps(known)}], review=refused_once, readme_write=prose,
+                      package_read=[{}, {}, {
             'output/findings.json': json.dumps([
                 {'file': 'README.md', 'quote': 'Everything in this folder is under', 'problem': 'The licence is not named.'},
                 {'file': 'README.md', 'quote': '', 'problem': 'It was not read to its end: the last section is missing here.'}])}])
@@ -2155,6 +2230,12 @@ class RunTests(FinalizeCase):
         # of the prose the figures it had given before, so the accepted prose was not written a second time.
         self.assertEqual(len(self.calls('readme-write')), 1)
         self.assertTrue((self.solved / 'README.md').is_file())
+        # A start that the provider refused is a call of the stand-in and no session. The figure counts the other
+        # calls before the documents stage and the one session that the stand-in logs for each run of the paper command.
+        before = [call for call in self.calls() if call['kind'] not in ('readme-write', 'package-read')]
+        self.assertEqual(len(self.calls('review')), 2)
+        self.assertIn(f'The package was made by {len(before) + 1} sessions.',
+                      (self.solved / 'README.md').read_text(encoding='utf-8'))
         # With the root as the main theorem, Challenge.lean states the root once, as it was posed, and the root alone
         # is compared. The paper command is given no other main result, and the README names no second theorem.
         lean = self.solved / 'lean'
@@ -2163,6 +2244,12 @@ class RunTests(FinalizeCase):
         self.assertEqual((lean / 'Solution.lean').read_text(encoding='utf-8'), 'module\n\npublic import Small.Root\n')
         self.assertEqual([call['main'] for call in self.produced], [None, None])
         self.assertNotIn('The library proves it from its main theorem', (self.solved / 'README.md').read_text(encoding='utf-8'))
+        # The title stands in the documents with the letter that the command prints: in the README of the package,
+        # in the registry's file and in the entry of the repository's README.
+        titled = 'Sums of odd numbers, after Erd\u0151s'
+        self.assertTrue((self.solved / 'README.md').read_text(encoding='utf-8').startswith(f'# {titled}\n'))
+        self.assertEqual(yaml.safe_load((lean / 'formalization.yaml').read_text(encoding='utf-8'))['project']['name'], titled)
+        self.assertIn(f'- [{titled}](solved/odd/README.md): ', (self.repository / 'README.md').read_text(encoding='utf-8'))
 
     def halted_after_the_freeze(self, plan, **options):
         """A run that is stopped at the map, so that the freeze can be looked at in the work folder."""

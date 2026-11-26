@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
-                   build_outcome, candidate_records, check_applied, check_definition_modules, copy_tree,
+                   build_outcome, candidate_records, check_applied, check_definition_modules, copy_canon,
                    declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
                    start_build, tree_hash, update_index, wait_build, with_importers, written_base)
@@ -316,7 +316,7 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
             # is removed before they are made again: a run that ends before it has saved a build of its own, as
             # one does whose candidate cannot be applied, must leave no state that a later run would keep.
             state_path.unlink(missing_ok=True)
-            copy_tree(canon.lean, lean_root)
+            copy_canon(instance, lean_root, index['revision'])
             try:
                 changed = apply_lean(lean_root, candidate, change, index, library=meta['library'])
                 removed = []
@@ -412,8 +412,9 @@ def checkout(session, target):
         raise CanonError('check the canon out inside your session folder')
     if target.exists() and any(target.iterdir()):
         raise CanonError(f'{target} is not empty; choose a new folder, so that your own files are not overwritten')
-    copy_tree(Canon(instance).lean, target)
-    return {'checked_out': str(target), 'revision': Canon(instance).load_index()['revision']}
+    revision = Canon(instance).load_index()['revision']
+    copy_canon(instance, target, revision)
+    return {'checked_out': str(target), 'revision': revision}
 
 
 def main(argv=None):

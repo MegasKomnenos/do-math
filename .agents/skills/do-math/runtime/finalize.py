@@ -67,6 +67,7 @@ KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
 DISAGREES = 'its statement in words says something that its Lean statement does not'
 BUILD_SECONDS = 10      # one wait for a build before the broker is looked at again
 BROKER_SECONDS = 5      # how often the run looks whether its broker is alive
+BUILD_AGAIN = 2         # how often a library is built again after a compile of its build did not run to its end
 
 
 class Refusal(Exception):
@@ -150,6 +151,24 @@ def given_digest(prompt, files):
         digest.update(name.encode('utf-8') + b'\0'
                       + hashlib.sha256(content if isinstance(content, bytes) else content.encode('utf-8')).digest())
     return digest.hexdigest()
+
+
+def ended_early(errors):
+    """Whether a build failed only because compiles did not run to their end, which says nothing about its sources.
+
+    `errors` are those of canon.build_outcome. Lean's verdict on a module is an exit code from 1 up to 2**31 - 1.
+    A compile that the operating system ended has a negative code, a POSIX signal, or a Windows code of 2**31
+    and above, and a job that left no exit code is `failed` with the code None, as the broker tells them
+    (lean_broker.Broker.finish). A module that waited for such a module is `failed` without a code as well. An
+    error that carries no exit code of a compile is another matter: the broker refused the build for its sources
+    before any compile (an import cycle, a file that cannot be read, an import under the library's name whose
+    file is missing), or the output of the extraction could not be read."""
+    def early(error):
+        code = error.get('exit_code', 0)
+        return (error['status'] == 'failed' and code is None) or (
+            error['status'] == 'finished' and code is not None and not 0 < code < 2 ** 31)
+
+    return all(early(error) for error in errors)
 
 
 class Run:
@@ -492,12 +511,15 @@ class Run:
         return problems, index
 
     def build(self, stage, extract, records, modules, onto):
-        """One build of a staged library through the run's broker; returns (errors, index or None)."""
+        """One build of a staged library through the run's broker; returns (errors, index or None).
+
+        A build in which a compile did not run to its end (ended_early) is asked for again, BUILD_AGAIN times at
+        the most."""
         names = [module for module, _ in canon.library_modules(stage, self.library)]
         given = {path: record for path, record in (records or {}).items() if not isinstance(record, CanonError)}
         pairs = canon.required_pairs(given) if extract else []
         targets = (modules if modules is not None else names) if extract else []
-        failures = 0
+        failures = again = 0
         build = None
         while True:
             try:
@@ -506,9 +528,15 @@ class Run:
                     build = canon.start_build(self.work, stage, self.library, 'finalize', self.expect_mb, targets,
                                               pairs)
                 outcome = canon.wait_build(self.work, build, timeout=BUILD_SECONDS)
-                if outcome is not None:
-                    break
                 failures = 0
+                if outcome is None:
+                    continue
+                # A compile that did not run to its end says nothing about the library, so the library is built
+                # again. What the last of these builds gives is returned like any other fault, because a source
+                # can end its own compile each time as well, as a proof whose elaboration overflows the stack does.
+                if outcome['ok'] or again == BUILD_AGAIN or not ended_early(outcome['errors']):
+                    break
+                again, build = again + 1, None
             except RuntimeError as error:  # no broker became ready; it is started again and asked again
                 failures += 1
                 if failures > 5:
@@ -2085,9 +2113,12 @@ class Run:
         # The sessions of the run are in its own log and in the logs of its two runs of the paper command. Those of
         # this stage are left out: the figures go to the session that writes the prose of the README, and a stage
         # that is entered again gives that session the figures it gave before, or its accepted output is made again.
+        # A start that the provider refused is no session: Sessions.launch writes a `session` event for it as for
+        # every start, with the reason under `refused`, and starts the same session again.
         launched = [event for log in (self.sessions.log, *(read_json(self.work / name / 'log.json')
                                                            for name in ('draft', 'paper')))
-                    for event in log if event['event'] == 'session' and event['kind'] not in ('readme-write', 'package-read')]
+                    for event in log if event['event'] == 'session' and not event.get('refused')
+                    and event['kind'] not in ('readme-write', 'package-read')]
         models = list(dict.fromkeys(event['model'] for event in launched))
         # The numbered statements that the paper cites and does not prove; the library proves each of them.
         cited = [row['element'] for row in correspondence.get('statements', []) if row.get('cited')]
