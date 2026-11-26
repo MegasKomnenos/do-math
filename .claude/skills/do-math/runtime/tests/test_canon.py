@@ -24,7 +24,7 @@ from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 import canon_tool
-from canon import (Canon, CanonError, Conflict, add_imports, apply_lean, apply_rearrangement, apply_written,
+from canon import (Canon, CanonError, add_imports, apply_lean, apply_rearrangement, apply_written,
                    beyond_allowed, build_outcome, candidate_records, check_applied, copy_tree,
                    declaration_text, drop_modules, empty_index, extraction_source, header_scan, history_entry,
                    library_modules, load_change, merge_bibliography, module_file, name_parts, name_path,
@@ -794,13 +794,13 @@ class ApplyLeanTests(TempCase):
 
     def test_a_new_module_whose_path_exists_is_a_conflict(self):
         folder, change = self.candidate(modules={'Small/Lib.lean': module_text(STEP)})
-        with self.assertRaisesRegex(Conflict, 'Small/Lib.lean already exists'):
+        with self.assertRaisesRegex(CanonError, 'Small/Lib.lean already exists'):
             apply_lean(self.lean, folder, change, self.index)
         self.assertEqual(self.text(), LIB)
 
     def test_a_replacement_of_a_name_the_index_does_not_have_is_a_conflict(self):
         folder, change = self.candidate(replace={'Small.fourth': 'theorem fourth : True := trivial'})
-        with self.assertRaisesRegex(Conflict, 'Small.fourth is not a declaration of the canon'):
+        with self.assertRaisesRegex(CanonError, 'Small.fourth is not a declaration of the canon'):
             apply_lean(self.lean, folder, change, self.index)
         self.assertEqual(self.text(), LIB)
 
@@ -840,7 +840,7 @@ class ApplyLeanTests(TempCase):
         changed = LIB.replace(SECOND, 'theorem second : oddSum 0 = 0 := by\n  rfl  ')
         write(self.file, changed)
         folder, change = self.candidate(replace={'Small.second': NEW_SECOND})
-        with self.assertRaisesRegex(Conflict, 'Small.second does not match the index'):
+        with self.assertRaisesRegex(CanonError, 'Small.second does not match the index'):
             apply_lean(self.lean, folder, change, self.index)
         self.assertEqual(self.text(), changed)
 
@@ -854,13 +854,13 @@ class ApplyLeanTests(TempCase):
         self.assertEqual(self.text(), published)
         current = source_index(published, {'Small.first': FIRST, 'Small.second': NEW_SECOND, 'Small.third': THIRD})
         later, change = self.candidate(replace={'Small.second': 'theorem second : oddSum 0 = 0 := by\n  simp [oddSum]'})
-        with self.assertRaisesRegex(Conflict, 'the proof of Small.second was replaced by another publication'):
+        with self.assertRaisesRegex(CanonError, 'the proof of Small.second was replaced by another publication'):
             apply_lean(self.lean, later, change, current, bases)
         self.assertEqual(self.text(), published)
 
     def test_a_conflict_on_one_replacement_leaves_the_whole_file_unchanged(self):
         folder, change = self.candidate(replace={'Small.first': NEW_FIRST, 'Small.third': NEW_THIRD})
-        with self.assertRaisesRegex(Conflict, 'the proof of Small.first was replaced by another publication'):
+        with self.assertRaisesRegex(CanonError, 'the proof of Small.first was replaced by another publication'):
             apply_lean(self.lean, folder, change, self.index, {'Small.first': sha256_text('another proof')})
         self.assertEqual(self.text(), LIB)
 

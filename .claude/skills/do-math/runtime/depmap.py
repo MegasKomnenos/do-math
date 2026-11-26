@@ -245,7 +245,7 @@ def derive(model, everything=False):
             edges.append({'source': proof, 'target': name, 'kind': 'alternative', 'via': [],
                           'proof': None, 'statement': None})
     for name in refuting:
-        if name in shown and root in shown:
+        if name in shown:
             edges.append({'source': name, 'target': root, 'kind': 'refutation', 'via': [],
                           'proof': None, 'statement': None})
 

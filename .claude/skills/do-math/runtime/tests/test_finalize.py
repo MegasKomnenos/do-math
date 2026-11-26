@@ -352,7 +352,8 @@ class TakeTests(FinalizeCase):
         super().setUp()
         self.index = canon.read_index(self.instance / 'canon' / 'index.json')
         self.lean = self.instance / 'canon' / 'lean'
-        self.plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'])
+        self.allowed = ['propext', 'Classical.choice', 'Quot.sound']  # the axioms the instance allows, as the command gives them
+        self.plan = package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
 
     def test_what_the_root_rests_on_is_kept_with_attributes_definitions_and_what_a_private_declaration_names(self):
         kept, removed = set(self.plan['kept']), set(self.plan['removed'])
@@ -380,7 +381,7 @@ class TakeTests(FinalizeCase):
     def test_an_index_that_is_not_of_these_sources_is_refused(self):
         self.index['entries']['Small.unused_two']['span'][0] += 1
         with self.assertRaisesRegex(canon.CanonError, 'the source of Small.unused_two is not the text the index was extracted'):
-            package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'])
+            package.take(self.index, self.lean, 'Small', 'Small.root', ['Small.Defs'], self.allowed)
 
     def test_an_attribute_given_by_a_separate_command_keeps_the_element(self):
         target = self.root / 'lean'
@@ -388,7 +389,8 @@ class TakeTests(FinalizeCase):
         path = target / 'Small' / 'Helper.lean'
         path.write_text(path.read_text(encoding='utf-8').replace('\nend Small', '\nattribute [simp] unused_two\n\nend Small'),
                         encoding='utf-8', newline='\n')
-        self.assertIn('Small.unused_two', package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'])['kept'])
+        self.assertIn('Small.unused_two',
+                      package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)['kept'])
 
     def test_a_theorem_that_is_not_proved_is_not_kept_for_its_attribute(self):
         allowed = ['propext', 'Classical.choice', 'Quot.sound']
@@ -886,6 +888,9 @@ class DocumentTests(FinalizeCase):
         faulty('history/timeline.md', 'Run by pat on the machine.\n', 'history/timeline.md holds the account name', account='pat')
         # A word of which the name is only a part is not the name: the manifest of the archive says "machine".
         self.assertEqual(check('achin'), [])
+        # The archive is read by its members and not by its packed bytes, in which a name can stand only by chance.
+        # Those bytes begin with the signature of the format, which holds `7zXZ`, and no member has that word.
+        self.assertEqual(check('7zXZ'), [])
         # In a document a colon before a backslash is a formula, so a drive path is found there by its form with a slash.
         faulty('README.md', 'Built in C:/Users/someone/lean.\n', 'README.md holds a drive path')
         faulty('lean/lakefile.toml', "path = 'C:\\Users\\someone\\lean'\n", 'lean/lakefile.toml holds a drive path')
@@ -1498,8 +1503,13 @@ class RunTests(FinalizeCase):
                         'output/renames.json': '{}', 'output/removed.json': '[]'},
             'records-write:5-01': {'output/records/Small/added_six.md': record_text('Six terms.'), 'output/findings.json': '[]'},
             'records-compare:5-01': {'output/verdicts.json': json.dumps([{'declaration': 'Small.added_six', 'verdict': 'agrees'}])},
+            # The second entry is of a work that no record cites: it keeps words of the work and names no sentence.
             'sources': {'@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/requests.json': '[]',
-                        'output/sources.json': json.dumps([{'status': 'verified', 'identifier': 'isbn:1'}])},
+                        'output/sources.json': json.dumps([
+                            {'status': 'verified', 'identifier': 'isbn:1'},
+                            {'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'parts',
+                             'attributions': [{'declaration': 'Small.sq_step', 'place': 'Chapter 1',
+                                               'quote': 'Words of the work.'}]}])},
             'foldback': {'output/report.json': json.dumps({'deleted': [], 'items': [
                 {'id': 'g1', 'closed': True, 'declarations': ['Small.sq_step_strict'], 'note': ''}]})},
             'records-write:6-01': {'output/records/Small/sq_step_strict.md': strict.replace('---\n', '---\nproves: Small.sq_step\n', 1),
@@ -1533,6 +1543,7 @@ class RunTests(FinalizeCase):
                 ('records-compare:5-01', 'Small.named_four has no verdict'),
                 ('sources:5', 'sources.json has no status of "verified" or "removed" for gauss1801'),
                 ('sources:5', 'sources.json has an entry without "key"'),
+                ('sources:5', 'sources.json: "attributions" of euler1748 is an array of objects'),
                 ('foldback:Small', 'report.json does not say whether the item r1 is closed'),
                 ('records-write:6-01', '"proves: Small.sq_step" is a claim that Lean did not confirm'),
                 ('records-compare:6-01', 'records/Small/sq_step_strict.md was not written'),

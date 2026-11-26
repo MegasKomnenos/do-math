@@ -1647,6 +1647,27 @@ class BuildTests(BrokerFixture):
         self.assertTrue(all(m["status"] == "finished" and m["exit_code"] == 0 for m in record["modules"].values()))
         self.assertEqual([j.get("module") for j in self.jobs(*lean_broker.FINISHED)], ["D"])  # pruning did run
 
+    def test_a_build_whose_broker_died_while_a_module_compiled_is_carried_to_its_end_by_the_next_broker(self):
+        # A publication and a session's candidate are compiled as builds. When the broker dies during one, the next
+        # broker starts from the state its predecessor wrote when it let A's compile start: A is running, and B, C
+        # and D wait for it with neither key nor job. It follows A's compile to its end and then gives the modules
+        # that waited their keys and their compiles.
+        self.start_broker()
+        root = self.tree(A={"sleep": 2})
+        build_id = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
+        compiling = self.build_record(build_id)["modules"]["A"]["job"]
+        self.start_broker()  # no poll of the first broker from here on: it has died
+        self.assertEqual(self.build_record(build_id)["modules"]["A"]["status"], "running")
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertEqual({name: (m["status"], m["exit_code"]) for name, m in record["modules"].items()},
+                         {name: ("finished", 0) for name in "ABCD"})
+        # A's compile was followed, not made a second time.
+        self.assertEqual([j["id"] for j in self.broker.state["jobs"].values() if j.get("module") == "A"], [compiling])
+        self.assertEqual(lean_broker.job_record(self.paths, build_id)["status"], "finished")
+
 
 class OutputKeyTests(BrokerFixture):
     """A module's cache key follows the compiled output of the modules its compile reads, not their sources."""

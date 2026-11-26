@@ -165,10 +165,17 @@ def text_width(text, size, mono=False):
 
 
 def wrap(text, size, width, mono=False, after=' '):
-    """Lines no wider than `width`, broken after the characters in `after`; a piece that is too long stays whole."""
+    """Lines no wider than `width`, broken after the characters in `after`.
+
+    A piece that is wider than a line by itself, as a component of a long Lean name is, is broken where the line is
+    full: after the last underscore it has there, and between two characters when it has none."""
     pieces, current = [], ''
     for char in text:
         current += char
+        while len(current) > 1 and text_width(current.rstrip(), size, mono) > width:
+            cut = current.rfind('_', 0, -1) + 1 or len(current) - 1
+            pieces.append(current[:cut])
+            current = current[cut:]
         if char in after:
             pieces.append(current)
             current = ''

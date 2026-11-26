@@ -47,8 +47,6 @@ UNDERSTANDING = ('The sum grows by one odd number at a time, and each step compl
 
 
 class ContextTests(InstanceCase):
-    changes_guides = True  # test_launch_snapshot_keeps_references_research_views_and_assignment rewrites a guide
-
     def session(self, name):
         """A session folder as the runner's dispatch leaves it before the pack is assembled."""
         folder = self.instance / 'sessions' / name
@@ -57,17 +55,17 @@ class ContextTests(InstanceCase):
             (folder / part).mkdir()
         return folder
 
-    def pack(self, folder, role='attempt', task=None, skill=None):
+    def pack(self, folder, role='attempt', task=None):
         engine = Runner(self.instance, self.skill)
-        return assemble(skill or self.skill, self.instance, folder, role, task or {}, None,
+        return assemble(self.skill, self.instance, folder, role, task or {}, None,
                         engine.model['sequence'], engine.settings)
 
-    def running(self, engine, sid, role='attempt', skill=None):
+    def running(self, engine, sid, role='attempt'):
         """A launched producer as the runner records it, so that its coordination commands are served."""
         key = engine.producer(role)
         job = engine.state['jobs'][key]
         folder = self.session(sid)
-        assemble(skill or self.skill, self.instance, folder, role, {}, job['pipeline'], engine.model['sequence'],
+        assemble(self.skill, self.instance, folder, role, {}, job['pipeline'], engine.model['sequence'],
                  engine.settings)
         engine.state['pipelines'][job['pipeline']]['producer'] = sid
         engine.state['sessions'][sid] = {'id': sid, 'role': role, 'status': 'running', 'job': key}
@@ -246,6 +244,7 @@ class ContextTests(InstanceCase):
     def test_launch_snapshot_keeps_references_research_views_and_assignment(self):
         # Role selection and reading order are checked for every role in
         # test_every_role_receives_its_ordered_guides_and_output_contract.
+        self.changes_guides = True  # this test rewrites a guide, so it works on its own copy of the guides
         first = self.session('first')
         self.pack(first, 'peer', {'source': '/retained/source'})
         source = self.skill / 'reference/change-format.md'
@@ -264,7 +263,7 @@ class ContextTests(InstanceCase):
     def test_input_json_holds_the_assignment_and_every_command_with_its_placeholders(self):
         folder = self.session('s1')
         task = {'source': '/retained/source', 'source_role': 'attempt'}
-        inp = self.pack(folder, 'peer', task, skill=INSTALLED)
+        inp = self.pack(folder, 'peer', task)
         self.assertEqual(read_json(folder / 'input.json'), inp)
         self.assertEqual((inp['instance'], inp['session'], inp['role'], inp['task'], inp['pipeline'], inp['revision']),
                          (str(self.instance), 's1', 'peer', task, None, 0))
@@ -315,7 +314,7 @@ class ContextTests(InstanceCase):
     def test_the_commands_of_input_json_run_once_their_placeholders_are_replaced(self):
         # A session has nothing but these argument arrays, so each kind is run as a session runs it.
         engine = Runner(self.instance, self.skill)
-        attempt = self.running(engine, 'sattempt', skill=INSTALLED)
+        attempt = self.running(engine, 'sattempt')
         commands = read_json(attempt / 'input.json')['commands']
 
         def run(argv, **replace):
@@ -361,13 +360,12 @@ class ContextTests(InstanceCase):
             prepare=False)
         (peer / 'output').rmdir()
         candidate.rename(peer / 'output')
-        commands = self.pack(peer, 'peer', skill=INSTALLED)['commands']
+        commands = self.pack(peer, 'peer')['commands']
         code, text = run(commands['prepare'])
         self.assertEqual((code, json.loads(text).get('ok')), (0, True), text)
         self.assertTrue(read_json(peer / 'output/prepared.json')['ok'])
         review = self.session('sreview')
-        commands = self.pack(review, 'review', {'kind': 'candidate', 'candidate': str(peer / 'output')},
-                             skill=INSTALLED)['commands']
+        commands = self.pack(review, 'review', {'kind': 'candidate', 'candidate': str(peer / 'output')})['commands']
         with self.subTest(command='verify'):
             code, text = run(commands['verify'])
             self.assertEqual((code, json.loads(text).get('ok')), (0, True), text)

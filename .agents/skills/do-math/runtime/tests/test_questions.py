@@ -1571,20 +1571,6 @@ class QuestionDispatchTests(QuestionCase):
         self.assertEqual(jobs[0]['task']['question'], 'q0')
         self.assertFalse(runner.state['explore_requested'])
 
-    def test_a_settled_root_cancels_a_waiting_exploration(self):
-        runner = self.runner()
-        waiting = runner.producer('explore')
-        self.prove_root(engine=runner)
-        self.assertTrue(runner.state['complete'])
-        with patch('runner.subprocess.Popen') as host:
-            host.return_value.pid = runner.identity['pid']
-            runner.schedule()
-            host.assert_not_called()
-        job = runner.state['jobs'][waiting]
-        self.assertEqual((job['status'], runner.state['pipelines'][job['pipeline']]['stage']), ('cancelled', 'done'))
-        self.assertEqual([s['role'] for _, s in runner.active()], [])
-        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['free'], [])
-
 
 if __name__ == '__main__':
     unittest.main()

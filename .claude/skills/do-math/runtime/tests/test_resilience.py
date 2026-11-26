@@ -188,9 +188,18 @@ class ProcessIdentityTests(unittest.TestCase):
         # of the runner and of the broker, which ask about every process they follow.
         own = support.process_identity(os.getpid())
         self.assertEqual(own['pid'], os.getpid())
-        with patch.object(Path, 'read_text', side_effect=ProcessLookupError(3, 'No such process')):
+        with patch.object(Path, 'read_bytes', side_effect=ProcessLookupError(3, 'No such process')):
             self.assertIsNone(support.process_identity(os.getpid()))
             self.assertFalse(support.alive(own))
+
+    @unittest.skipIf(os.name == 'nt', 'the process files of Linux')
+    def test_a_process_whose_name_is_not_text_has_an_identity(self):
+        # /proc/<pid>/stat holds the name a process gave itself: up to 15 bytes that need not be UTF-8 and may
+        # hold a closing parenthesis. A recorded number can come to any process of the machine, and the runner
+        # asks about it on every pass, so such a name must not raise.
+        stat = b'77 (\xff\xfe) x) S 1 77 77 0 -1 4194560 0 0 0 0 0 0 0 0 20 0 1 0 12345 0 0'
+        with patch.object(Path, 'read_bytes', return_value=stat), patch.object(Path, 'read_text', return_value='boot\n'):
+            self.assertEqual(support.process_identity(77), {'pid': 77, 'birth': 'boot:12345'})
 
     def test_a_process_that_holds_the_number_of_a_recorded_one_is_not_terminated(self):
         # A recorded identity outlives its process, and the system gives the number to a later process.

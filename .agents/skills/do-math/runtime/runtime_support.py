@@ -190,32 +190,47 @@ def rename_directory(source, destination):
 
 
 class InstanceLock(AbstractContextManager):
-    """OS lock, released by process death; the lock file itself stays in place."""
-    def __init__(self, path, holder="runner"):
+    """OS lock, released by process death; the lock file itself stays in place.
+
+    `wait` is the number of seconds for which the lock is asked for again while another process holds
+    it; with none the lock is refused at once. `refusal` is what the RuntimeError of a refusal says."""
+    def __init__(self, path, holder="runner", wait=0.0, refusal=None):
         self.path = Path(path)
-        self.holder = holder  # named in the refusal, so a broker log does not blame the runner
+        # The refusal names the holder, so a broker log does not blame the runner.
+        self.refusal = refusal or f"This instance already has a running {holder}"
+        self.wait = wait
         self.stream = None
 
     def __enter__(self):
+        deadline = time.monotonic() + self.wait
         self.stream = self.path.open("a+b")
         if self.path.stat().st_size == 0:
             self.stream.write(b"0")
             self.stream.flush()
-        self.stream.seek(0)
-        try:
-            if os.name == "nt":
-                import msvcrt
-                msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
-                fcntl.flock(self.stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError as exc:
-            self.stream.close()
-            raise RuntimeError(f"This instance already has a running {self.holder}") from exc
-        return self
+        while True:
+            self.stream.seek(0)
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except OSError as exc:
+                if time.monotonic() >= deadline:
+                    self.stream.close()
+                    raise RuntimeError(self.refusal) from exc
+                time.sleep(0.05)
 
     def __exit__(self, *args):
         if self.stream:
+            if os.name == "nt":
+                # Unlocked here and not left to the close: Windows gives no time by which it frees the lock
+                # of a file that is closed while it is locked.
+                import msvcrt
+                self.stream.seek(0)
+                msvcrt.locking(self.stream.fileno(), msvcrt.LK_UNLCK, 1)
             self.stream.close()
 
 
@@ -278,11 +293,12 @@ def process_identity(pid):
         finally:
             WIN.CloseHandle(handle)
     try:
-        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-        if fields[0] == "Z":
+        # As bytes: the name a process gave itself stands in this file and need not be text.
+        fields = Path(f"/proc/{pid}/stat").read_bytes().rsplit(b")", 1)[1].split()
+        if fields[0] == b"Z":
             return None
         boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
-        return {"pid": pid, "birth": boot + ":" + fields[19]}
+        return {"pid": pid, "birth": boot + ":" + fields[19].decode()}
     except (FileNotFoundError, ProcessLookupError):
         # The process ended before its stat file was opened, or it was reaped between the open and the
         # read, which Linux answers with ESRCH. Either way it is gone.

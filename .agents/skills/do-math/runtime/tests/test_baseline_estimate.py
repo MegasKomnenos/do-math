@@ -243,11 +243,12 @@ class EstimatedBaselines(BrokerFixture):
             self.measured(f"Mathlib.S{n}", 200.0, baseline)
         _, same = self.run_job("Mathlib.Same", 200.0)
         self.assertAlmostEqual(same["baseline_mb"], 300.0, places=1)
-        # A set far out on a steep line is held to what was measured.
-        self.measured("Mathlib.Steep", 201.0, 900.0)
-        _, held = self.run_job("Mathlib.Held", 200.5)
-        self.assertLessEqual(held["baseline_mb"], 900.0)
-        self.assertGreaterEqual(held["baseline_mb"], 290.0)
+        # A line through the measured sets can leave their baselines. With the two sets added here it gives 276.2 MiB
+        # for a set of size 200, below every measured baseline, and the estimate is held to the lowest one measured.
+        self.measured("Mathlib.Flat", 300.0, 290.0)
+        self.measured("Mathlib.Steep", 400.0, 900.0)
+        _, held = self.run_job("Mathlib.Held", 200.0)
+        self.assertAlmostEqual(held["baseline_mb"], 290.0, places=1)
 
 
 class TheLibraryTheBrokerFinds(BrokerFixture):

@@ -28,8 +28,7 @@ STOPPED = ('Nothing is to be repaired by hand. Start the same command again: it 
 REFUSED = ('Nothing is to be repaired by hand, and no output of a session is in question: the provider did not take '
            'the session. The reason named above is usage_limit for the usage limit of the account, model_capacity for '
            'a model for which the provider has no capacity, and model_requires_usage_credits for a model that asks for '
-           'usage credits. Start the same command again when the provider takes sessions of that model again; the '
-           'paper command continues with --resume and the same --out.')
+           'usage credits. Start the same command again when the provider takes sessions of that model again.')
 # The tools by which a session of the Claude CLI can arrange to be called again later. Sessions.launch
 # withholds them from every session. The command reads a session's output when its process has ended, and
 # the CLI does not exit while such a call is pending: a reading session that had set itself a reminder
@@ -84,8 +83,8 @@ def alone(folder):
 
     A command keeps the state and the log of its run in memory and writes them whole, numbers the folders
     of its sessions from what it found at its start, and clears what it is about to make again. Two commands
-    at work in one folder do each of these against the other. A run can stand still for hours while it waits
-    for a usage limit to end, and its folder then looks like that of a command that has ended. So the command
+    at work in one folder do each of these against the other. A run can stand still for hours while it waits for
+    a provider that refused a session, and its folder then looks like that of a command that has ended. So the command
     holds a lock beside the folder, as the runner holds one in its instance (runtime_support.InstanceLock):
     the operating system frees it when the command ends or dies, and the command takes the file away with it."""
     folder = Path(folder).resolve()
@@ -95,7 +94,8 @@ def alone(folder):
         lock.__enter__()
     except RuntimeError:
         raise Held(f'another command is at work in {folder} and holds {lock.path}. It goes on by itself, also '
-                   'while it waits for a usage limit to end; give the command again when it has ended') from None
+                   'while it waits for a provider that refused a session; give the command again when it has '
+                   'ended') from None
     try:
         yield
     finally:

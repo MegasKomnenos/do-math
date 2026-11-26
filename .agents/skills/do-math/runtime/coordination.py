@@ -9,15 +9,13 @@ lease, registers and so passes the lease to the next waiting session. Leases and
 are decided first-wins under one instance lock."""
 import argparse
 from collections import namedtuple
-from contextlib import contextmanager
 import json
-import os
 from pathlib import Path
 import time
 import uuid
 from availability import availability_view, retain_snapshot
 from knowledge import ROOT_QUESTION, canonical_question, is_statement, replay
-from runtime_support import alive, read_json, read_json_cached, write_json
+from runtime_support import InstanceLock, alive, read_json, read_json_cached, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
@@ -28,35 +26,10 @@ QUESTION_ROLES = ('explore',)
 ACTIVE_STATUSES = ('starting', 'running', 'publishing')
 
 
-@contextmanager
 def claims_lock(instance):
     """One coordination change at a time per instance; the OS releases the lock if its holder dies."""
-    path = Path(instance) / 'runner' / 'claims.lock'
-    deadline = time.monotonic() + CLAIM_LOCK_SECONDS
-    with path.open('a+b') as stream:
-        if path.stat().st_size == 0:
-            stream.write(b'0')
-            stream.flush()
-        while True:
-            stream.seek(0)
-            try:
-                if os.name == 'nt':
-                    import msvcrt
-                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except OSError:
-                if time.monotonic() >= deadline:
-                    raise RuntimeError('another coordination change is still in progress; run the command again')
-                time.sleep(0.05)
-        try:
-            yield
-        finally:
-            if os.name == 'nt':
-                stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+    return InstanceLock(Path(instance) / 'runner' / 'claims.lock', wait=CLAIM_LOCK_SECONDS,
+                        refusal='another coordination change is still in progress; run the command again')
 
 
 def session_live(state, sid):

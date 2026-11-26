@@ -9,7 +9,7 @@ import re
 from availability import no_research_outcome, reported_availability
 from canon import BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, tree_hash
 from coordination import section_entries
-from knowledge import ROOT_QUESTION, canonical_question, replay, settle
+from knowledge import ROOT_QUESTION, canonical_question, has_proof, is_statement, replay, settle
 # Loaded with this module and not inside audit_formal: a session host checks a review's output when the session
 # ends, possibly hours after it started, and a module it first loaded then would come from the installation as it
 # then stands, beside the modules the host loaded at its start.
@@ -295,7 +295,7 @@ def assessment_check(data, root, candidate, model, instance, sid):
         need(row.get('correct') in VERDICTS, 'correct is one of ' + ', '.join(VERDICTS))
         need(type(row.get('accepted')) is bool, 'accepted must be Boolean')
         text(row.get('reason'), 'element reason')
-        proved = entry['kind'] == 'theorem' and (entry['lean_proof'] == 'complete' or entry['written_proof'])
+        proved = is_statement(entry) and has_proof(entry)
         if proved:
             need(row['correct'] != 'not_applicable', f"{row['element']} has a proof; judge whether it is correct")
         else:

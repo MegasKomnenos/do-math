@@ -17,7 +17,7 @@ Two requirements follow from this reading. The first is that the timeline has no
 
 The second is that an entry is easier to read than the record it condenses. The reader of the timeline wants to follow the course of the research: what was added and when, whose work it was, what the reviewing session made of it, what was tried on a statement and how far it came, which question was opened or answered. An entry that tells this lets the reader decide which record to open, and the record then gives the mathematics, complete and reviewed.
 
-The second requirement is the harder one to keep, because breaking it feels like care. A record is full of mathematics that is true and reviewed. Each sentence of it can be repeated in an entry without adding a claim, and a session that wants to be faithful and complete repeats it. The entry of a publication of many elements can then run to many hundred words in one paragraph and restate every element with its formula and the reviewing session's remarks one by one. Each of its sentences is in the record, and the entry is harder to read than the record itself. An entry is faithful when what it says is in the record. It is not asked to carry what the record carries.
+The second requirement is the harder one to keep, because breaking it feels like care. A record is full of mathematics that is true and reviewed. Each sentence of it can be repeated in an entry without adding a claim, and a session that wants to be faithful and complete repeats it. The entry of a publication of many elements can then run to many hundred words in one paragraph and restate every element with its formula and the reviewing session's remarks one by one, and such an entry is harder to read than the record itself. An entry is faithful when what it says is in the record. It is not asked to carry what the record carries.
 
 After you, a second session reads each entry with nothing but the record it points to. What the record does not say it takes out, and an entry that retells its record it cuts back to what happened.
 
@@ -61,7 +61,7 @@ The lines of the second sort follow the publications and have no date. A line of
 
 - `archive/`: the records these lines point to, at the paths the ledger gives. `record` is a path inside the package's archive, and the same file lies in your folder under `archive/<that path>`. For a publication the record is the whole folder in which that file lies: the files beside it hold the reviewing session's judgment of each element and its remarks in detail.
 
-Read the ledger in full. For each line read its record in `archive/` before you write, because the ledger line is an extract and the entry answers to the record. If a record is missing from `archive/`, write the entry from the ledger line alone and keep to its words.
+Read the ledger in full. For each publication read its record in `archive/` before you write, because the ledger line is an extract and the entry answers to the record; the line of an approach or of a question carries its record whole, under `description`, and its file in `archive/` adds nothing. If a record is missing from `archive/`, write the entry from the ledger line alone and keep to its words.
 
 In the archive, the account name of the machine's user was replaced by `<account>`. Leave such places alone, and put no path of a machine into an entry.
 

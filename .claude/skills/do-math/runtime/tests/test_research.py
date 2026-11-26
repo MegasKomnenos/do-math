@@ -1246,6 +1246,28 @@ class RunnerTests(ScenarioCase):
             runner.finish(sid, session)
         self.assertEqual(runner.state['blocks'], expected)
 
+    def test_sessions_refused_in_flight_together_count_once_and_a_refusal_after_the_wait_counts_again(self):
+        # One refusal by a provider meets every session that is in flight on the model. The wait doubles with
+        # each failure that follows a wait (Runner.backoff), so the refusal of a session that was launched
+        # before the block was set leaves the count as it is, and the refusal of one launched after the wait
+        # had passed raises it.
+        runner = self.runner()
+        capacity = json.dumps({'type': 'error', 'message': 'Selected model is at capacity'})
+
+        def refused(role, started, now):
+            sid, session, _ = self.ended(runner, role)
+            session['started_at'] = started
+            with (runner.session_dir(sid) / 'cli.stdout.jsonl').open('a', encoding='utf-8') as stream:
+                stream.write('\n' + capacity + '\n')
+            with patch('runner.time.time', return_value=now):
+                runner.finish(sid, session)
+            block = runner.state['blocks']['model:codex/gpt-6.1-sol']
+            return block['attempts'], block['until']
+
+        self.assertEqual(refused('attempt', 1000, 2000), (1, 2060))
+        self.assertEqual(refused('explore', 1500, 2010), (1, 2070))  # in flight when the block was set
+        self.assertEqual(refused('formalizer', 2070, 2100), (2, 2220))  # launched once the wait had passed
+
     def test_interrupted_work_without_output_manifest_reaches_peer(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -1313,6 +1335,25 @@ class RunnerTests(ScenarioCase):
         recovered.finish(sid, recovered.state['sessions'][sid])
         self.assertEqual(recovered.state['sessions'][sid]['status'], 'ended')
         self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['status'], 'pending')
+
+    def test_a_defect_of_the_runner_met_while_an_opt_out_is_read_is_not_charged_to_the_session(self):
+        # What a session wrote wrongly in outcome.json, or in the report of availability with it, fails with a
+        # ValueError, and a file that cannot be read with an OSError: the opt-out or the report is then not
+        # taken, and the session is carried on without it. A KeyError there comes from the runner's own code,
+        # and no file of a session causes it. It goes up to the runner's loop, which records it and ends
+        # (Runner.run), and the session waits as it stood: once the defect is repaired, it is collected.
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt', exit_code=0)
+        write_json(runner.session_dir(sid) / 'output/outcome.json', {'disposition': 'no_research'})
+        for reader in ('runner.no_research_outcome', 'runner.reported_availability'):
+            with self.subTest(reader=reader):
+                with patch(reader, side_effect=KeyError('sections')), self.assertRaises(KeyError):
+                    runner.finish(sid, session)
+                self.assertEqual((session['status'], job['status']), ('running', 'running'))
+                self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        runner.finish(sid, session)
+        self.assertEqual((session['status'], session['disposition'], job['status']), ('ended', 'no_research', 'done'))
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
 
     def native_profile(self, folder, rows):
         """A Codex profile holding the native transcript of the session in folder."""

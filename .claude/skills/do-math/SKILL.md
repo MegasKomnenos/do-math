@@ -35,9 +35,9 @@ A changed mathematical proposition requires a new instance, and a Lean statement
 
 Use the folder containing this skill as the installation path. The runner is `runtime/runner.py` in that folder.
 
-Everything inside an instance is written in English, whatever language the user speaks to you in. [Operations](reference/operations.md) describes the root file and the canon folder under "Fix the root in words and in Lean", and under "Convey the user's conditions" the input file for standing instructions and how to carry the user's words into an input.
+Everything inside an instance is written in English, whatever language the user speaks to you in. [Operations](reference/operations.md) describes, under "Convey the user's conditions", the input file for standing instructions and how to carry the user's words into an input.
 
-Confirm what the runner needs on the machine and prepare `settings.json` as [Operations](reference/operations.md) describes under "Prepare the settings and environment", which gives the format and the defaults of the settings.
+Confirm what the runner needs on the machine and prepare `settings.json` as [Operations](reference/operations.md) describes under "Prepare the settings and environment".
 
 When the machine hosts several instances, configure each instance's share of memory explicitly, as [The Lean broker](reference/lean-broker.md) says under "Settings". Operations explains, under "When compiles wait for memory on Windows", why compiles can wait there for the commit limit while physical memory is free, and the recommendation to enlarge the page file, which is the user's choice.
 

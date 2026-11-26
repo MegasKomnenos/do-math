@@ -44,10 +44,6 @@ class CanonError(ValueError):
     """A candidate or a canon file that the runtime cannot carry; the message says what to correct."""
 
 
-class Conflict(CanonError):
-    """The canon changed under a candidate in a way the candidate cannot be applied to."""
-
-
 class Canon:
     """The paths of one instance's canon."""
 
@@ -524,7 +520,7 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
             raise CanonError(f'module {relative} is outside the library; the modules of this canon are '
                              f'{library}.lean and the files under {library}/')
         if target.exists():
-            raise Conflict(f'module {relative} already exists in the canon; a new module needs a new name')
+            raise CanonError(f'module {relative} already exists in the canon; a new module needs a new name')
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(candidate / 'lean' / relative, target)
         changed.append('.'.join(PurePosixPath(relative).with_suffix('').parts))
@@ -532,7 +528,7 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
     for item in change['replace']:
         entry = index['entries'].get(item['declaration'])
         if entry is None:
-            raise Conflict(f'{item["declaration"]} is not a declaration of the canon; a new declaration goes in a new module')
+            raise CanonError(f'{item["declaration"]} is not a declaration of the canon; a new declaration goes in a new module')
         by_file.setdefault(entry['file'], []).append((entry, item))
     for relative, items in by_file.items():
         path = lean_root / relative
@@ -541,10 +537,10 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
         for entry, item in sorted(items, key=lambda pair: pair[0]['span'], reverse=True):
             current = declaration_text(text, entry['span'])
             if sha256_text(current) != entry['source_sha']:
-                raise Conflict(f'the source of {entry["name"]} does not match the index; the index is stale')
+                raise CanonError(f'the source of {entry["name"]} does not match the index; the index is stale')
             if bases.get(entry['name'], entry['source_sha']) != entry['source_sha']:
-                raise Conflict(f'the proof of {entry["name"]} was replaced by another publication after this '
-                               'candidate was written; the candidate has to be made again on the current canon')
+                raise CanonError(f'the proof of {entry["name"]} was replaced by another publication after this '
+                                 'candidate was written; the candidate has to be made again on the current canon')
             replacement = (candidate / item['file']).read_text(encoding='utf-8-sig').replace('\r\n', '\n')
             text = replace_span(text, entry['span'], replacement)
         imports = [name for _, item in items for name in item['imports']]

@@ -1,8 +1,8 @@
 """Shared fixture of the runtime tests: a small instance whose canon is compiled by the stand-in compiler.
 
 The instance is created once per test process by the operator's `init` command (runner.main), whose
-`initialize` builds the canon through a real broker with tests/canon_lean.py as its compiler, and is
-then copied for every test.
+`initialize` builds the canon through a real broker with tests/canon_lean.py as its compiler. A test
+works on a copy of its own, made when the test first uses it.
 Tests that change the canon go through the real candidate, build and publication path with the
 helpers below; nothing here writes the index or the model by hand.
 """
@@ -192,23 +192,32 @@ def template(variant='default'):
 class InstanceCase(unittest.TestCase):
     root_variant = 'default'  # 'closed' states the root without binders, so that its negation can be stated
     expect_mb, patience = 64, 120  # of a build: the memory expected for one compile in MiB, the seconds it may take
-    changes_guides = False  # set by a class whose tests write into the guides; its tests then work on a copy of them
+    changes_guides = False  # set by a class or a test that writes into the guides; it then works on a copy of them
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.instance = self.root / 'instance'
-        shutil.copytree(self.starting_instance(), self.instance)
-        self.addCleanup(stop_broker, self.instance)
+        self.starts_from = self.starting_instance()
+
+    @functools.cached_property
+    def instance(self):
+        """The test's own copy of the instance it starts from, made when the test first asks for it.
+
+        A test that asks for a scenario before it has used its instance is given a copy of that scenario
+        and no other (scenario), and a test that uses no instance is given none."""
+        folder = self.root / 'instance'
+        shutil.copytree(self.starts_from, folder)
+        self.addCleanup(stop_broker, folder)
+        return folder
 
     @functools.cached_property
     def skill(self):
         """The folder of guides a runner is given; a session's pack and its resume texts are read from it.
 
-        It is the installed skill, which a runner and a session host read and do not write. In a class that
-        sets `changes_guides` it is the test's own copy of the installed guides, made when the test first
-        asks for it."""
+        It is the installed skill, which a runner and a session host read and do not write. Where
+        `changes_guides` is set, by a class for all of its tests or by one test before it first asks, it is
+        the test's own copy of the installed guides, made when the test first asks for it."""
         installed = Path(__file__).resolve().parents[2]
         if not self.changes_guides:
             return installed
@@ -237,16 +246,20 @@ class InstanceCase(unittest.TestCase):
 
         The first test that asks for a scenario builds it through the real publication path, on a
         fresh copy of the instance as it was created, and a copy of the built instance is kept. Every
-        test that asks receives the scenario in place of its instance, whatever it did before. The
-        settings of the asking test stay in force. A build can start from another scenario by asking
-        for that one first."""
+        test that asks receives the scenario in place of its instance, whatever it did before; a test
+        that has not used its instance yet is given the scenario as its one copy. The settings of the
+        asking test stay in force. A build can start from another scenario by asking for that one first."""
         key = (self.root_variant, name)
-        settings = read_json(self.instance / 'settings.json')
+        # A test works on a copy once it has asked for `instance`; until then there is none to replace.
+        settings = read_json((self.instance if 'instance' in vars(self) else self.starts_from) / 'settings.json')
 
         def replace_instance(source):
-            stop_broker(self.instance)
-            remove_tree(self.instance)
-            shutil.copytree(source, self.instance)
+            if 'instance' in vars(self):
+                stop_broker(self.instance)
+                remove_tree(self.instance)
+                shutil.copytree(source, self.instance)
+            else:
+                self.starts_from = source
 
         if key not in _SCENARIOS:
             replace_instance(template(self.root_variant))

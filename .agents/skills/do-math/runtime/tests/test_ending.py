@@ -124,8 +124,6 @@ def tearDownModule():
 
 
 class EndingTests(InstanceCase):
-    changes_guides = True  # test_guidance_edits_reach_next_turn_without_restarting_host rewrites two resume texts
-
     def prepare(self, maximum=3, role='attempt', config=None, task=None):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
@@ -288,6 +286,7 @@ class EndingTests(InstanceCase):
                          ('runner', 'output_checked', 'candidate changed after review assignment', 0))
 
     def test_guidance_edits_reach_next_turn_without_restarting_host(self):
+        self.changes_guides = True  # this test rewrites two resume texts, so it works on its own copy of the guides
         _, _, directory = self.prepare(maximum=2, role='explore')
         guidance = self.skill / 'resume'
         original_common = (guidance / 'common.md').read_bytes()

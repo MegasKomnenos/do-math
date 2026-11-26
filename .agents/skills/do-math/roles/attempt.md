@@ -56,7 +56,7 @@ So state things at the time you find them. When you have carried an approach as 
 
 A proof written in words names in Lean the elements it rests on, in the form [The canon](../reference/canon.md) gives under "Lean conventions of the canon's files". A step of your argument that is neither an element nor in the imported library is a statement you still have to make.
 
-A complete Lean proof is optional for this role. You may write one when it helps your mathematical work or completes a proof naturally. Formalizing easy results at the edge of the problem, in order to finish with something that compiles completely, is one of the retreats described above. If you do supply a Lean proof, compile it through the broker, keep the final sources and read the axioms it actually depends on; review will compile the candidate itself. [Retained work](../reference/retained-work.md) explains how to build your own Lean files against the current library, and [Lean](../reference/lean.md) explains compiling, including why compiles are batched at natural points of the work.
+A complete Lean proof is optional for this role. You may write one when it helps your mathematical work or completes a proof naturally. If you do supply a Lean proof, compile it through the broker, keep the final sources and read the axioms it actually depends on; review will compile the candidate itself. [Retained work](../reference/retained-work.md) explains how to build your own Lean files against the current library, and [Lean](../reference/lean.md) explains compiling, including why compiles are batched at natural points of the work.
 
 ## Holding on to the problem and continuing the research
 

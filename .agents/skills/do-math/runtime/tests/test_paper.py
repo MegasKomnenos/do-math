@@ -836,7 +836,7 @@ class ManuscriptTests(PaperCase):
         tex = paper.assemble({**PLAN, 'short_title': ' A short title of $x^2$ '}, PARTS)[0]
         self.assertIn('\\newcommand{\\RunningHead}{A short title of $x^2$}\n\\uppercasenonmath\\RunningHead\n'
                       '\\begin{document}\n\\title{' + title + '}\n', tex)
-        # A plan without the key is carried out as before; with the key, it is a text, and it names no Lean name.
+        # With the key, it is a text, and it names no Lean name.
         materials = self.materials()
         self.assertEqual(paper.check_plan(materials, {**PLAN, 'short_title': 'A short title'}, KEYS), [])
         self.assertIn('"short_title", when the plan has it, is a nonempty text',
@@ -1097,12 +1097,15 @@ class RunTests(PaperCase):
         self.assertEqual((self.out / 'sessions' / '04-write-tools' / 'study.md').read_text(encoding='utf-8'), STUDY)
         self.assertIn('The papers come before the writing.', calls[3]['prompt'])
         self.assertNotIn('output/study', calls[3]['prompt'])
-        # A session that is given the method whole has it without its last section, of which its prompt carries what
-        # concerns it: the planning session as well as a session that writes.
+        # A session that is given the method whole has it without its last two sections, of which its prompt carries
+        # what concerns it: the planning session as well as a session that writes. The two say what the script gives
+        # each session and what is checked after the writing, and no other section of the method follows them.
         whole = paper.read_file(paper.METHOD)
+        cut = whole.index('\n## What each session works from\n') + 1
+        self.assertEqual([line[3:] for line in whole[cut:].splitlines() if line.startswith('## ')],
+                         ['What each session works from', 'What is checked after writing'])
         for call in (calls[0], calls[3]):
-            self.assertEqual((self.folder(call) / 'paper-method.md').read_text(encoding='utf-8'),
-                             whole[:whole.index('\n## What is checked after writing\n') + 1])
+            self.assertEqual((self.folder(call) / 'paper-method.md').read_text(encoding='utf-8'), whole[:cut])
         # Two readings beside papers the plan did not choose, each with papers of its own, found nothing.
         likeness = self.calls('likeness')
         for call, keys in zip(likeness, (FIRST_FOUR, NEXT_FOUR)):
@@ -4212,7 +4215,7 @@ class CoverageTests(PaperCase):
                                          ('place', None)])
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('complete', []))
-        # A repair of findings of another kind has two answers, as before.
+        # A repair of findings of another kind has two answers.
         self.assertNotIn('"moved"', paper.RESPONSE)
 
     def test_a_move_is_refused_when_the_passage_still_stands_outside_or_behind_a_place_that_uses_it(self):
@@ -4419,6 +4422,12 @@ class SafeguardTests(PaperCase):
                       'finished (sessions/', str(stopped.exception))
         self.assertEqual(stopped.exception.todo, command_sessions.STOPPED)
         self.assertEqual(self.events('end')[-1]['status'], 'failed')
+        # Run as the operator runs it, the command says after the reason what the person does next.
+        code, said = self.said(['--resume', '--parallel', '1', '--model', 'claude/opus', '--effort', 'high', '--tex', *TEX])
+        self.assertEqual(code, 1)
+        self.assertTrue(said.startswith('paper.py: a safeguard of the AI system stopped every write session of tools'), said)
+        self.assertTrue(said.endswith('\n' + command_sessions.STOPPED
+                                      + ' This command is started again with --resume and the same --out.'), said)
         # Continued, the run starts the same session again, and comes to its end.
         launched = len(self.calls())
         self.assertEqual(self.run_paper(good(), resume=True, choice=self.CLAUDE), 0)

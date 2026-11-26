@@ -113,7 +113,7 @@ The peer of each exploration of the question replaces the text as a whole. The t
 
 ## Writing the texts of the canon
 
-The texts of the canon differ from an account written from beginning to end. No reader goes through them in order. A session opens the element its work concerns and reads that element by itself, having seen of the others only a line each. Each text therefore has to do its work alone, and each kind of text has a different job. The sections above give their formats.
+The texts of the canon differ from an account written from beginning to end. No reader goes through them in order. A session opens the element its work concerns and reads that element by itself, having seen of the others only a line each. Each text therefore has to do its work alone, and each kind of text has a different job.
 
 The **statement in words** says what the Lean statement says, in the ordinary conventions of mathematics. Where the Lean form differs from it, for instance by counting from zero or by a normalization, say so in the explanation, so that a reader can pass between the two.
 

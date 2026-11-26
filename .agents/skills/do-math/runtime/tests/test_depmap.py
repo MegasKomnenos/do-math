@@ -711,6 +711,30 @@ class Drawing(MapCase):
         # A card at which few lines arrive keeps the height of its words.
         self.assertEqual(geometry['cards']['Lib.first'][3], cards['Lib.first']['height'])
 
+    def test_a_name_wider_than_its_card_is_broken_into_lines_that_fit(self):
+        # A component of a Lean name can be wider than a card, as the names of a library written in the manner of
+        # Mathlib are. The card grows by the lines of the name, and none of them stands out of the card.
+        long = 'Lib.card_filter_insert_subset_le_card_filter_mem_inter_uniqueSets_of_card_sdiff_le_two'
+        plain = 'Lib.' + 'x' * 90  # no underscore to break after, and no short name: its label is as long
+        data = self.map([statement('Lib.root', 'unit', uses=[long, plain]), statement(long, 'unit', short='a bound'),
+                         statement(plain, 'unit')])
+        inner = draw.CARD_WIDTH - draw.TEXT_LEFT - draw.TEXT_RIGHT
+        root = draw.card_of(self.unit(data, 'Lib.root'))
+        self.assertEqual(root['name'], ['Lib.root'])  # a name that fits stands on one line
+        for name in (long, plain):
+            card = draw.card_of(self.unit(data, name))
+            self.assertEqual(''.join(card['name']), name)
+            self.assertGreater(len(card['name']), 2)
+            for line in card['name']:
+                self.assertLessEqual(draw.text_width(line, draw.NAME_SIZE, mono=True), inner, line)
+            self.assertGreater(card['height'], root['height'])
+        # The name is broken after an underscore where it has one; a word of a label that is too wide is broken as well.
+        self.assertTrue(all(line.endswith('_') for line in draw.card_of(self.unit(data, long))['name'][:-1]))
+        label = draw.card_of(self.unit(data, plain))['label']
+        self.assertEqual((''.join(label), len(label) > 1), ('x' * 90, True))
+        for line in label:
+            self.assertLessEqual(draw.text_width(line, draw.LABEL_SIZE), inner, line)
+
     def test_a_character_the_console_cannot_show_is_printed_as_an_escape(self):
         # A Lean name or a path may hold a character outside the encoding of the console the command prints to.
         shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
@@ -924,6 +948,18 @@ class Page(MapCase):
                 depmap.write(self.map([statement('Lib.root', 'unit', proof=None)]), alone.name)
                 page.goto((Path(alone.name) / 'dependency_map.html').resolve().as_uri())
                 self.assertIn(': 1 unit. ', page.get_attribute('#stage svg', 'aria-label'))
+                # A Lean name can be wider than the panel. In the list of what a search finds it is broken, as it is
+                # under the heading of a selected unit, so the panel need not be moved sideways to read it.
+                lengthy = 'Lib.' + 'card_filter_insert_subset_le_' * 4 + 'card'
+                named = tempfile.TemporaryDirectory()
+                self.addCleanup(named.cleanup)
+                depmap.write(self.map([statement('Lib.root', 'unit', uses=[lengthy]), statement(lengthy, 'unit', short='a bound')]),
+                             named.name)
+                page.goto((Path(named.name) / 'dependency_map.html').resolve().as_uri())
+                page.fill('#query', 'bound')
+                self.assertEqual(page.locator('#results a').first.get_attribute('href'), '#node=' + lengthy)
+                self.assertTrue(page.evaluate('''() => { const found = document.querySelector('#results a');
+                    return found.querySelector('code').getBoundingClientRect().right <= found.getBoundingClientRect().right; }'''))
                 # A card is reached and selected from the keyboard.
                 page.goto(address)
                 page.reload()

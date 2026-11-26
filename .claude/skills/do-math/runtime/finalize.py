@@ -32,6 +32,7 @@ import traceback
 import canon
 from canon import CanonError, module_file, name_path, parse_record
 from command_sessions import Held, Sessions, Stop, Unmade, Unusable, alone, collapsed, is_text
+import depmap
 import knowledge
 import package
 import paper
@@ -1200,6 +1201,15 @@ class Run:
                             if rows.get(item['key'], {}).get('status') not in ('verified', 'removed')]
                 problems += [f'{key} is verified without an identifier' for key, row in rows.items()
                              if row.get('status') == 'verified' and not is_text(row.get('identifier'))]
+                # compare_draft carries the entries under "attributions" of every verified work to the paper, also of
+                # a work that no record cites, so the form is required wherever an entry has them.
+                unformed = sorted(key for key, row in rows.items() if not (
+                    isinstance(row.get('attributions', []), list)
+                    and all(isinstance(entry, dict) and all(is_text(entry.get(field)) for field in ATTRIBUTION)
+                            for entry in row.get('attributions', []))))
+                problems += [f'sources.json: "attributions" of {key} is an array of objects, each with '
+                             + ', '.join(f'"{field}"' for field in ATTRIBUTION) + ' as texts that are not empty'
+                             for key in unformed]
                 if not (output / 'bibliography.bib').is_file():
                     raise Unusable(problems + ['output/bibliography.bib was not written'])
                 keys = package.bibliography_keys(package.read_text(output / 'bibliography.bib'))
@@ -1238,13 +1248,9 @@ class Run:
                                         'opened and states the same, or take the citation and what it attributed to '
                                         f'{key} out of the sentence, and the header key `source` where it names {key}')
                         continue
-                    held = row.get('attributions')
-                    if not isinstance(held, list) or not all(
-                            isinstance(entry, dict) and all(is_text(entry.get(field)) for field in ATTRIBUTION)
-                            for entry in held):
-                        problems.append(f'sources.json: "attributions" of {key} is an array of objects, each with '
-                                        + ', '.join(f'"{field}"' for field in ATTRIBUTION) + ' as texts that are not empty')
+                    if key in unformed:
                         continue
+                    held = row.get('attributions', [])
                     for record in item['records']:
                         mine = [entry for entry in held if entry['declaration'] == record['declaration']
                                 and collapsed(entry['sentence']) in collapsed(record['text'])]
@@ -1899,12 +1905,9 @@ class Run:
     # -- stage 4: map and paper -------------------------------------------------------------------------
 
     def depmap(self):
-        done = subprocess.run([sys.executable, '-B', str(RUNTIME / 'depmap.py'), str(self.work / 'view' / 'frozen'),
-                               '--out', str(self.package / 'dependency-map')], stdin=subprocess.DEVNULL,
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **popen_options())
-        if done.returncode != 0:
-            raise Stop(f'the map command ended with exit code {done.returncode}: '
-                       + done.stdout.decode('utf-8', errors='replace')[-1500:])
+        # In this process, as the paper command is run. What the map command answers with exit code 2, a view
+        # that cannot be read or a folder that cannot be written, is raised here and stops the step with its message.
+        depmap.write(depmap.from_instance(self.work / 'view' / 'frozen'), self.package / 'dependency-map')
 
     def write_paper(self):
         out = self.work / 'paper'

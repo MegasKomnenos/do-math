@@ -242,7 +242,7 @@ def without_elements(text, spans):
     return '\n'.join(lines)
 
 
-def take(index, lean_root, library, root, definitions, allowed=None):
+def take(index, lean_root, library, root, definitions, allowed):
     """What step 1 keeps of a library and what it removes; nothing is written.
 
     Kept are the elements reached from the root through `uses` and `statement_uses`, every element of
@@ -251,7 +251,7 @@ def take(index, lean_root, library, root, definitions, allowed=None):
     declaration names are kept as well (the index holds them under `hidden`). Every other element is
     removed as a whole, by its span.
 
-    With `allowed`, the axioms the instance allows, one kind of element is never kept for its attribute
+    `allowed` are the axioms the instance allows. One kind of element is never kept for its attribute
     or because a declaration that is no element names it: a theorem that is not proved from those
     axioms. A finished research holds such theorems beside the proof of its root, and the frozen
     library has to be proved throughout; what the root reaches is proved, since the root is. When a
@@ -268,7 +268,7 @@ def take(index, lean_root, library, root, definitions, allowed=None):
     texts = {module_file(name): read_text(path) for name, path in modules.items()}
     named = attribute_named(texts.values())
     seeds = {root}
-    open_ = {name for name, entry in entries.items() if allowed is not None and entry['kind'] == 'theorem'
+    open_ = {name for name, entry in entries.items() if entry['kind'] == 'theorem'
              and entry['module'] not in definitions and canon.beyond_allowed(entry, allowed)}
     for name, entry in entries.items():
         if entry['file'] not in texts:
@@ -1605,9 +1605,11 @@ def standalone_problems(package, work, account, freeze):
     if account:
         named = account_pattern(account)
         for relative, path in files.items():
-            if named.search(path.read_bytes()) or named.search(relative.encode('utf-8')):
+            # The archive is read by its members. In its packed bytes the name can stand only by chance.
+            packed = relative.endswith('-knowledge.tar.xz')
+            if (not packed and named.search(path.read_bytes())) or named.search(relative.encode('utf-8')):
                 problems.append(f'{relative} holds the account name')
-            if relative.endswith('-knowledge.tar.xz'):
+            if packed:
                 held = [name for name, data in archive_members(path).items()
                         if named.search(data) or named.search(name.encode('utf-8'))]
                 problems += [f'{relative}: the member {name} holds the account name' for name in held]

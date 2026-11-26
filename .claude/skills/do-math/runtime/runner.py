@@ -419,7 +419,11 @@ class Runner:
                              s.get('invocation_started_at', s['started_at']), self.settings['retry_seconds'])
             if signal:
                 previous = self.state['blocks'].get(signal['key'], {})
-                signal['attempts'] = previous.get('attempts', 0) + 1
+                # The count rises when this invocation began after the wait of the earlier refusal had passed.
+                # A session already in flight when that block was set is refused by the same outage: as its
+                # success would not show recovery (below), its refusal is not a further failure after a wait.
+                waited = s.get('invocation_started_at', s['started_at']) >= previous.get('until', 0)
+                signal['attempts'] = max(previous.get('attempts', 0) + (1 if waited else 0), 1)
                 if signal['source'] in ('fallback', 'backoff'):
                     signal['until'] = time.time() + self.backoff(signal['attempts'])
             write_json(session / 'termination.json', {'cause': 'refusal' if signal else 'launch_error' if s.get('launch_error') else 'process_exit',
@@ -448,7 +452,7 @@ class Runner:
                     and s.get('end_check', {}).get('authorization', {}).get('basis') != 'interrupted'):
                 try:
                     outcome = no_research_outcome(session, s['role'])
-                except (OSError, ValueError, TypeError, KeyError) as exc:
+                except (OSError, ValueError) as exc:
                     # An invalid opt-out cannot discard retained research.
                     s['no_research_error'] = str(exc)
                     outcome = None
@@ -1128,7 +1132,7 @@ class Runner:
         if session['role'] == 'attempt':
             try:
                 observed = reported_availability(self.session_dir(sid), outcome)
-            except (OSError, ValueError, TypeError, KeyError) as exc:
+            except (OSError, ValueError) as exc:
                 session['availability_report'] = {'status': 'invalid', 'error': str(exc)}
         if observed is not None:
             current = self.current_availability()

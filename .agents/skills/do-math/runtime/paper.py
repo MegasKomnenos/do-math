@@ -97,8 +97,9 @@ PREFERENCES = REFERENCE / 'user-writing-preferences.md'
 READER_SECTION = 'The reader'  # the part of the method that the reading session receives, and nothing else of it
 # The part of the method that a reading beside real papers receives, and nothing else of it.
 LIKENESS_SECTION = 'Reading the manuscript beside real papers'
-# The last section of the method. No session receives it: one that is given the method whole has it without this section.
-CHECKS_SECTION = 'What is checked after writing'
+# The first of the last two sections of the method, which say what the script gives each session and what is checked
+# after the writing. No session receives the two: one that is given the method whole has it up to this heading.
+GIVEN_SECTION = 'What each session works from'
 EXEMPLARS = Path(__file__).resolve().parents[1] / 'exemplars'  # the collection: manifest.json, <key>.tex, fetch.py
 MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'category', 'field', 'pages', 'licence',
                    'abstract', 'sha256', 'why')
@@ -213,11 +214,11 @@ def method_part(title):
 
 
 def method_before_checks():
-    """The method document without its last section, for every session that is given more of it than single sections."""
+    """The method document without its last two sections, for every session that is given more of it than single sections."""
     text = read_file(METHOD)
-    match = re.search(r'^## ' + re.escape(CHECKS_SECTION) + r'\n', text, re.M)
+    match = re.search(r'^## ' + re.escape(GIVEN_SECTION) + r'\n', text, re.M)
     if not match:
-        raise Stop(f'{METHOD} has no section "{CHECKS_SECTION}"')
+        raise Stop(f'{METHOD} has no section "{GIVEN_SECTION}"')
     return text[:match.start()]
 
 
@@ -748,7 +749,7 @@ def render_digest(materials):
              'names at the element. '
              + ('The records of the main result of the paper and of the declaration that settles the root are given '
                 if chosen else 'The record of the declaration that settles the root is given ')
-             + 'in full, before the list of the elements.', '',
+             + 'in full, before the list of the elements: the account of the whole proof is there.', '',
              *head_lines(materials),
              *(['## The main result of the paper, with its record in full', '', f"### `{materials['main']}`", '',
                 *element_lines(by_name[materials['main']])] if chosen else []),
@@ -1961,16 +1962,17 @@ called the canon, whose main statement, the root, has been settled by a formal p
 an element, and beside it is a written record. The script launches AI sessions, some of them side by side, and each does \
 one part of the work. No session can ask another what it meant, and nobody answers questions while the script runs.'''
 
-# The entry of the method in the prompt of a session that plans, sketches, writes, repairs or resolves. The last
-# section of the method describes what the script and other sessions do after the writing. No session receives it
-# (method_before_checks), and each prompt carries what of the section concerns its session. The section before it, the
-# last of the file, instructs the sessions that read the manuscript beside real papers, and the prompts of a repair
-# and of the resolving session, which take up what they found, name it.
-METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows, here without its last section, \
-"What is checked after writing", which other sections name. That section says what the script and other sessions do \
-with the manuscript once it is written; what of it concerns this session is in this prompt. Read the file in full \
-before anything else, except its last section here, "Reading the manuscript beside real papers": it instructs the \
-sessions that read the manuscript beside real papers, and you read it when this prompt names it.'''
+# The entry of the method in the prompt of a session that plans, sketches, writes, repairs or resolves. The last two
+# sections of the method describe what the script gives each session and what the script and other sessions do after
+# the writing. No session receives them (method_before_checks), and each prompt carries what of them concerns its
+# session. The section before them, the last of the file, instructs the sessions that read the manuscript beside real
+# papers, and the prompts of a repair and of the resolving session, which take up what they found, name it.
+METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows, here without its last two \
+sections, "What each session works from" and "What is checked after writing", which other sections name. They say \
+what the script gives each session, and what the script and other sessions do with the manuscript once it is written; \
+what of them concerns this session is in this prompt. Read the file in full before anything else, except its last \
+section here, "Reading the manuscript beside real papers": it instructs the sessions that read the manuscript beside \
+real papers, and you read it when this prompt names it.'''
 
 PREFERENCES_FILE = '''- `user-writing-preferences.md` describes the writing that the person who will read the paper first \
 prefers, with the occasions on which the preferences came to light. The method says how it bears on a paper.'''
@@ -2044,7 +2046,7 @@ name in words of an object that has no symbol. "meaning" says exactly what it de
 index starts, how a quantity is normalised. "elements" are the names of the definitions of the materials whose object \
 the entry denotes. It names several where the canon spreads one mathematical object over several declarations, it is \
 empty for an entry that denotes no element, and a definition is named in one entry only. The method's section "What \
-each session works from" says which objects receive an entry, and why.
+holds the sections together" says which objects receive an entry, and why.
 - "displays": the displayed formulas that more than one section needs, each {"label", "section", "element", "formula", \
 "used_in"}; an empty array when there is none. The sections are written side by side, and a writer cannot refer to a \
 formula that another writer numbers, because nothing tells the first that it will be there. A formula that two \
@@ -2110,9 +2112,11 @@ others.'''
 ROOT_FIRST = 'The introduction is written from it: read it in full.'
 ROOT_LATER = ('The paper uses the conventions of the root as it is stated in words: read that statement. The rest is '
               'there for when you need more of the whole than the outline in your brief gives.')
-ELEMENTS_SECTION = ('Your brief gives an element of another section by what it says. Where that is not enough, for example '
-                    'because a proof of this section needs to know how such an element is proved, open its file. '
-                    '`plan.json` is the whole plan, for a question about another section that the brief does not answer.')
+ELEMENTS_SECTION = ('Your brief gives an element of another section by what it says: you use a result of another section '
+                    'by its statement and do not need its proof, as an author does who cites a lemma. Where that is not '
+                    'enough, for example because a proof of this section needs to know how such an element is proved, '
+                    'open its file. `plan.json` is the whole plan, for a question about another section that the brief '
+                    'does not answer.')
 ELEMENTS_WHOLE = ('`plan.json` says which element each numbered statement states and into which statements the other '
                   'elements are written. Open the records of the elements whose text you change. One kind of proof is '
                   'not rewritten from its record: where the manuscript proves a result by citing a general theorem and '
@@ -2722,8 +2726,9 @@ sessions do the same for the other sections. The paper is of use only if each of
 proved, and a difference that is not found here is written into the paper.
 
 In this folder:
-- `paper-method.md` is the method the paper is written by, here without its last section, which other sections name \
-and which says what is done once a manuscript is written. Its sections "What of the canon the paper leaves out" and \
+- `paper-method.md` is the method the paper is written by, here without its last two sections, which other sections \
+name and which say what each session is given and what is done once a manuscript is written. Its sections "What of \
+the canon the paper leaves out" and \
 "Every numbered statement says what its element says" say what a statement has to say and which differences from the \
 record are permitted. Its section "The draft that comes before the paper" says what a gap is.
 - `statements.json` lists the sketched statements and formulas of this section: for each its label, whether it is a \
@@ -3090,9 +3095,9 @@ nothing else than the library proves, so each of them is now restated as its ele
 this session and nothing after that: what you write is what the paper will state.
 
 In this folder:
-- `paper-method.md` is the method the manuscript was written by, here without its last section, which other sections \
-name and which says how a manuscript is checked. It says what a numbered statement of the paper is and how it stands \
-to its element.
+- `paper-method.md` is the method the manuscript was written by, here without its last two sections, which other \
+sections name and which say what each session is given and how a manuscript is checked. It says what a numbered \
+statement of the paper is and how it stands to its element.
 - `statements.json` lists the statements. Each has its "label" and "number", the name of its "element", \
 "record_statement", the statement of the element in words, "lean_statement", the same in Lean, "paper_statement", the \
 statement as the manuscript has it, and "difference", what the comparison found.
@@ -5794,7 +5799,11 @@ def main(argv=None):
             return produce(args.instance, args.out, args.tex, choice, args.parallel, args.resume, args.dry_run,
                            args.draft, args.from_draft, args.title_page, main=args.main)
     except (Stop, OSError, ValueError) as exc:
-        print('paper.py: ' + str(exc), file=sys.stderr)
+        # After the reason, what the person does next where the reason alone does not say it (Stop.todo). Such a stop
+        # comes from a session, so the folder holds a run, and this command is started again with --resume.
+        todo = getattr(exc, 'todo', None)
+        print('paper.py: ' + str(exc) + (f'\n{todo} This command is started again with --resume and the same --out.'
+                                         if todo else ''), file=sys.stderr)
         return 1
 
 
