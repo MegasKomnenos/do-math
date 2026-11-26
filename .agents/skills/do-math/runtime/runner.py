@@ -12,9 +12,10 @@ import traceback
 import uuid
 
 from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, apply_rearrangement, apply_written,
-                   build_outcome, candidate_records, check_applied, check_written_bases, copy_tree,
-                   declaration_text, drop_modules,
-                   empty_index, history_entry, library_modules, load_change, name_path, parse_record, read_index,
+                   build_outcome, candidate_records, check_applied, check_definition_modules, check_written_bases,
+                   copy_tree, declaration_text, definition_modules, drop_modules,
+                   empty_index, history_entry, library_modules, load_change, module_file, name_path, parse_record,
+                   read_index,
                    read_record, record_file, required_pairs, retire_approaches, sha256_text, start_build,
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import CANDIDATE_CHANGED, IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
@@ -295,10 +296,13 @@ class Runner:
         if continuing and job['role'] in PRODUCERS:
             # The board reads a producer's sections and question from the declaration of the session that its
             # pipeline names as producer (coordination.board), and that is this session from here on. A
-            # peer's sections stay with the pipeline through previous_peers.
+            # peer's sections stay with the pipeline through previous_peers. The declaration is written through
+            # to the disk, as the one of an explorer or of a formalizer is below: the state saved below names
+            # this session as the producer, and from then on the runner and every coordination command parse
+            # this file. After a loss of power it must not stand there without its content.
             held = Path(job['task']['continues'][-1]) / 'declaration.json'
             if held.exists():
-                shutil.copyfile(held, session / 'declaration.json')
+                write_json(session / 'declaration.json', read_json(held))
         if job['role'] == 'explore' and not continuing:
             # The root question is never left free while an explorer launches: the runner assigns
             # it, under the coordination lock, so no explorer choosing at the same moment takes it.
@@ -338,8 +342,9 @@ class Runner:
             pipeline = self.state['pipelines'][job['pipeline']]
             if job['role'] in PRODUCERS:
                 pipeline['producer'] = sid
-                if job['role'] == 'formalizer':
-                    # The assigned element is the formalizer's whole section; it registers nothing itself.
+                if job['role'] == 'formalizer' and not continuing:
+                    # The assigned element is the formalizer's whole section; it registers nothing itself. A session
+                    # that continues a task holds that section in the declaration carried over above.
                     now = time.time()
                     write_json(session / 'declaration.json', {'sections': [
                         # Sections attach to the statement, also when the proof to formalize is another declaration of it.
@@ -522,10 +527,13 @@ class Runner:
                         or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
             if not material:
                 # A failed launch or a CLI that ended without work counts against its model, so the retry
-                # can take the role's next one. A cancellation, such as kill-session, says nothing about the model.
-                cancelled = (session / 'CANCEL').exists() and not s.get('launch_error')
+                # can take the role's next one. A cancellation, such as kill-session, says nothing about the
+                # model. Neither does the loss of the host, which leaves no exit code: no CLI is known to have
+                # ended, and a host that ended before its first turn launched none.
+                counted = s.get('launch_error') or (s.get('exit_code') is not None
+                                                    and not (session / 'CANCEL').exists())
                 self.retry(job, s, s.get('launch_error') or 'session ended without retained research material',
-                           availability=not cancelled)
+                           availability=bool(counted))
                 return
             # Finish the reads of the producer's declaration before marking the producer complete, as for the
             # candidate of a peer below: a failed read must remain collectable after the fatal-error save.
@@ -548,13 +556,17 @@ class Runner:
         # The output then goes to the transport check.
         failed = s.get('exit_code') != 0 and not (authorization and not interrupted)
         stopped = bool(failed or s.get('refusal') or s.get('launch_error') or interrupted)
-        # A peer's resumed turn is one in which it judges its ending again: an earlier turn of it had ended. When
+        # A peer's resumed turn is one in which it judges its ending again: an earlier turn of it had ended, and
+        # the host has recorded the request of the resumed turn, whose `round` is the number of that turn. When
         # the host records that such a turn failed, by a refusal, a failed invocation or a CLI that did not start,
-        # the candidate that the earlier turn prepared is not discarded. The output goes to the transport check, as
-        # after a resumption that could not be made, and the stage is unfinished only when the check refuses it.
-        # A cancellation by the operator and the loss of the host, which leaves no exit.json, stay interruptions.
-        kept = (stopped and s['role'] == 'peer' and s.get('end_check', {}).get('resumptions', 0) > 0
-                and (session / 'exit.json').is_file() and not (session / 'CANCEL').exists())
+        # or when the host is lost after it recorded that request, while it waits to start the turn or while the
+        # turn runs, the candidate that the earlier turn prepared is not discarded. The output goes to the
+        # transport check, as after a resumption that could not be made, and the stage is unfinished only when the
+        # check refuses it. A cancellation by the operator stays an interruption. So does the loss of a host that
+        # has recorded no such request: the first turn was cut off, or the host was lost before it recorded how
+        # that turn ended.
+        asked = (s.get('end_check', {}).get('request') or {}).get('round', 0) > 0
+        kept = stopped and s['role'] == 'peer' and asked and not (session / 'CANCEL').exists()
         errors = check_session(session) if kept or not stopped else []
         if stopped and (errors or not kept):
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
@@ -893,6 +905,9 @@ class Runner:
                     written, removed = apply_rearrangement(
                         stage / 'lean', candidate, read_json(candidate / 'organization.json').get('delete', []))
                     changed = sorted(set(changed) | set(written))
+                # The refusal that `prepare` makes, made again on the canon as it now is: the runner takes it
+                # from no receipt.
+                check_definition_modules(self.instance, stage / 'lean', [*changed, *removed])
             except (CanonError, OSError, ValueError) as exc:
                 return self.publication_failed(publication, str(exc))
             # A module that imports a changed one is compiled in a new environment, so its index is taken again
@@ -962,20 +977,25 @@ class Runner:
                 history_entry(canon, name, 'proof', event['sequence'], event['id'], before, after,
                               'lean/' + new[name]['file'])
 
-    def install_canon(self, publication):
+    def install_canon(self, publication, index):
         """Put the built module root and its index in place of the canon's. Each step can be repeated after a crash.
 
-        The stage is left in place: publish removes it once the publication is saved as installed."""
+        `index` is the staged index as publish read it, or None for a publication that changed no Lean source
+        and staged none. The stage is left in place: publish removes it once the publication is saved as installed.
+
+        A publication that changed no module and removed none puts no module in place. Its stage holds a copy
+        of the canon's module root and nothing else, and that copy is not sent to the disk when it is made
+        (copy_tree), while the stages the publication reaches are saved through to the disk in the same pass.
+        A runner that starts after a loss of power can therefore find the files of the copy without their
+        content, and installing from them would put those files over the canon's modules."""
         event = publication['event']
         canon = Canon(self.instance)
         stage = self.instance / 'runner' / ('stage-' + event['id'])
-        if (stage / 'lean').exists():
+        if (stage / 'lean').exists() and (publication['changed'] or publication['removed']):
             (stage / 'lean' / (EXTRACT_MODULE + '.lean')).unlink(missing_ok=True)
             sync_tree(stage / 'lean', canon.lean)
-        if (stage / 'index.json').exists():
-            # Read as an index of any version: a publication that an earlier version of this code carried
-            # past its checks is installed by this one in the present form.
-            write_json(canon.index, read_index(stage / 'index.json'))
+        if index is not None:
+            write_json(canon.index, index)
 
     def publish(self):
         """Carry the current publication forward, and start the next one in the queue when none is underway."""
@@ -1047,7 +1067,6 @@ class Runner:
                 candidate = self.publication_candidate(publication)
                 change = load_change(candidate)
                 self.keep_replaced_proofs(publication)
-                self.install_canon(publication)
                 assessment = (read_json(self.session_dir(sid) / 'output/assessment.json') if kind == 'change' else None)
                 apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
                               assessment['contribution'] if assessment else None,
@@ -1061,7 +1080,19 @@ class Runner:
                         target = canon.history / name_path(item['alternative']) / f"{event['sequence']:06d}-retired.md"
                         target.parent.mkdir(parents=True, exist_ok=True)
                         replace_file(old, target)
-                write_json(canon.root / 'records.json', record_summary(self.instance, canon.load_index()))
+                # A replay reads the index and the summary of the records, and no record itself (knowledge.new_model).
+                # So the written part is in place first, and the summary is gathered from it, which reads every record
+                # of the canon, while the index in place is still the one from before this change. The index and the
+                # summary then take their places one directly after the other. Were the summary gathered with the new
+                # index in place, a reader would have, for as long as the gathering takes, the elements of the change
+                # without what their records declare, and a written proof that review accepted would stand as no proof.
+                staged_index = self.instance / 'runner' / ('stage-' + event['id']) / 'index.json'
+                # Read as an index of any version: a publication that an earlier version of this code carried
+                # past its checks is installed by this one in the present form.
+                index = read_index(staged_index) if staged_index.exists() else None
+                summary = record_summary(self.instance, index if index is not None else canon.load_index())
+                self.install_canon(publication, index)
+                write_json(canon.root / 'records.json', summary)
             publication['installed'] = True
             self.save()
         # The stage is removed only here, after the save that marks the canon as installed. A removal can stop
@@ -1134,8 +1165,11 @@ class Runner:
         if self.state['publication'] or self.state['publish_queue']:
             self.publish()
         for sid, s in list(self.active()):
-            if s['status'] == 'publishing':
-                # Its work is done and waits in the publication queue; publish() carries it from here.
+            if s['status'] not in ('starting', 'running'):
+                # Its work is done. As publishing it waits in the publication queue, and publish() carries it
+                # from here. Any other status it took during this pass, after the list of this loop was made:
+                # collecting an earlier session carried the queue forward (finish), and the publication of this
+                # one ended there, published or refused. Collected now, a refused review would be queued again.
                 continue
             session = self.session_dir(sid)
             # Read again only when the file has changed (read_json_cached): this runs on every pass.
@@ -1183,10 +1217,13 @@ class Runner:
         A formal settlement says that some declaration is proved in Lean from the allowed axioms and that
         Lean confirmed its statement to be the root's, or the negation of the root's. What remains to be
         shown is that the root's statement, with every definition it is made of, is still the one that
-        was posed. Every publication is refused that would change a statement or a definition in place,
-        so this holds by construction; here it is read off once more from the two ends, the index in the
-        instance's first commit and the index as it stands (canon.statement_differences). The comparison
-        reads two files and is repeated whenever the settling proof or the library's revision is another.
+        was posed. Every publication is refused that would change a statement or a definition in place, or
+        the file of a module that the root's module imported when the instance was created
+        (canon.check_definition_modules), so this holds by construction; here it is read off once more from
+        the two ends: the index in the instance's first commit against the index as it stands
+        (canon.statement_differences), and the files of those modules in the first commit against the files
+        as they stand. The comparison is repeated whenever the settling proof or the library's revision is
+        another.
 
         A difference is kept with its description, and a comprehensive review of the settling proof is
         requested once for it, so that sessions examine what the settlement now rests on."""
@@ -1201,6 +1238,14 @@ class Runner:
         commit = first_commit(self.instance)
         first = json.loads(git(self.instance, 'show', commit + ':canon/index.json'))
         differences = statement_differences(first, Canon(self.instance).load_index(), root)
+        # Git compares the files, so that a conversion of line endings between the repository and the working
+        # files is no difference. With renames detected, a module moved to another path would be listed under
+        # its new path alone.
+        files = {'canon/lean/' + module_file(module): module for module in definition_modules(self.instance)}
+        if files:
+            listed = git(self.instance, 'diff', '--name-only', '--no-renames', '-z', commit, '--', *files)
+            differences += [f'the file of the definition module {files[path]} is not the file the first commit has'
+                            for path in sorted(listed.split('\0')) if path]
         checked = {'proof': proof, 'revision': self.model['revision'], 'compared_with_commit': commit,
                    'status': 'changed' if differences else 'unchanged', 'differences': differences, 'at': time.time()}
         if differences and not (record and record['differences'] == differences):
@@ -1383,7 +1428,7 @@ class Runner:
             if job['status'] != 'pending' or len(self.active()) >= self.settings['max_sessions']:
                 continue
             # A job whose last session handed its task over continues work that is under way (hand_over).
-            # What cancels or holds back a new attempt or exploration does not apply to it.
+            # What cancels or holds back a new attempt, exploration or formalizer does not apply to it.
             fresh = not job['task'].get('continues')
             if self.state['complete'] and fresh and job['role'] in ('attempt', 'explore'):
                 job['status'] = 'cancelled'
@@ -1394,7 +1439,7 @@ class Runner:
             if job['role'] == 'explore' and fresh and (not self.launch_due()
                                                        or not self.question_slot(launching=True)):
                 continue
-            if job['role'] == 'formalizer' and job['task']['element'] not in formalizable(self.model):
+            if job['role'] == 'formalizer' and fresh and job['task']['element'] not in formalizable(self.model):
                 job['status'] = 'cancelled'
                 self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                 changed = True
@@ -1629,14 +1674,18 @@ def run_usage(sessions):
 
     The cost is the sum over the sessions whose CLI reported one. The token counts are added up for each
     provider apart, because the kinds a provider counts are its own. A session without a record is still
-    running, or a runner that kept no such record collected it."""
-    total = {'cost_usd': 0, 'sessions': 0, 'sessions_without_cost': 0, 'sessions_without_record': 0, 'tokens': {}}
+    running, or a runner that kept no such record collected it. A session one of whose turns left no report is
+    counted as well, because what that turn used is in none of the sums (retention.usage)."""
+    total = {'cost_usd': 0, 'sessions': 0, 'sessions_without_cost': 0, 'sessions_with_unreported_turns': 0,
+             'sessions_without_record': 0, 'tokens': {}}
     for session in sessions.values():
         used = session.get('usage')
         if used is None:
             total['sessions_without_record'] += 1
             continue
         total['sessions'] += 1
+        if used['turns_without_report']:
+            total['sessions_with_unreported_turns'] += 1
         if used['cost_usd'] is None:
             total['sessions_without_cost'] += 1
         else:

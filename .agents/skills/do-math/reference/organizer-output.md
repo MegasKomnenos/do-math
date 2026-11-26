@@ -54,6 +54,7 @@ A rearrangement is valid when every other element has the name and the statement
 
 - no declaration disappears from the canon other than the alternatives you retire;
 - no statement, and no kind of declaration, changes in place;
+- the file of every module that the root's module imported when the instance was created, directly or through another, stays as the canon has it: those modules hold the definitions the root was posed with, so a rearrangement neither rewrites nor deletes one and replaces no declaration in one;
 - each retired alternative is gone afterwards, and the statement's own declaration named in `into` is still there;
 - the proof now under the statement's own name names the elements that the alternative's proof named, and is complete in Lean exactly if the alternative's proof was.
 

@@ -629,7 +629,12 @@ class Run:
                           + '; '.join(changed))
         cache = instance / 'runner' / 'lean' / 'cache'
         if cache.is_dir():
-            shutil.copytree(cache, self.work / 'runner' / 'lean' / 'cache', dirs_exist_ok=True)
+            # The broker of a runner that is still at work writes each file of this folder under another name first,
+            # one that begins with a dot or ends in .tmp, and then moves it into place (lean_broker.cache_module,
+            # runtime_support.write_json). Such a file is no part of an entry and can be gone or held when the copy
+            # comes to it. An entry counts only with all its files in place, and those are the seed.
+            shutil.copytree(cache, self.work / 'runner' / 'lean' / 'cache', dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns('.*', '*.tmp'))
         measured = package.challenge_measure(package.challenge_text(self.work / 'first' / 'lean', definitions, root_module))
         self.state = {'run': {'instance': str(instance), 'name': self.name, 'commit': commit, 'first': first,
                               'config': identity},

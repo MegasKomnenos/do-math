@@ -25,7 +25,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 
-from runtime_support import read_json, remove_file, replace_file, write_text
+from runtime_support import first_commit, git, read_json, remove_file, replace_file, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -554,6 +554,50 @@ def apply_lean(lean_root, candidate, change, index, bases=None, library=None):
 def replaced_since(name):
     return CanonError(f'the proof of {name} was replaced by another publication after this '
                       'candidate was written; the candidate has to be made again on the current canon')
+
+
+def definition_modules(instance):
+    """The modules that the root's module imported when the instance was created, directly or through one another.
+
+    They hold the definitions the root was posed with, and no publication changes their files
+    (check_definition_modules). They are read from the instance's first commit: the module of the root from
+    the index of that commit, and the imports of each module from the header of its file there. The root's
+    own module is not among them, and neither is a module that the root's module does not reach."""
+    instance = Path(instance)
+    meta = read_json(instance / 'instance.json')
+    commit = first_commit(instance)
+    root_module = json.loads(git(instance, 'show', commit + ':canon/index.json'))['entries'][meta['root']]['module']
+    reached, pending = set(), [root_module]
+    while pending:
+        module = pending.pop()
+        if module in reached:
+            continue
+        reached.add(module)
+        header = git(instance, 'show', f'{commit}:canon/lean/{module_file(module)}').replace('\r\n', '\n').split('\n')
+        pending += [name for name in header_scan(header)[2] if name.split('.')[0] == meta['library']]
+    return sorted(reached - {root_module})
+
+
+def check_definition_modules(instance, lean_root, modules):
+    """Refuse an application that changed the file of a definition module.
+
+    lean_root is a copy of the canon's module root to which a candidate was applied, and `modules` are the
+    modules the application wrote or removed there. A candidate changes a module when the file under
+    lean_root is no longer, byte for byte, the file the canon holds; a module the canon does not have is new
+    and is none of the definition modules. Git is asked for the definition modules only when the candidate
+    changes a module, so a candidate that only adds modules costs nothing here."""
+    held = Canon(instance).lean
+    changed = [module for module in modules if (held / module_file(module)).is_file() and not (
+        (Path(lean_root) / module_file(module)).is_file()
+        and (Path(lean_root) / module_file(module)).read_bytes() == (held / module_file(module)).read_bytes())]
+    locked = sorted(set(changed) & set(definition_modules(instance))) if changed else []
+    if locked:
+        raise CanonError(
+            'the candidate changes the file of ' + ', '.join(locked) + ". The modules that the root's module "
+            'imported when the instance was created hold the definitions the root was posed with, and their files '
+            'do not change. A new proof of a statement that stands in such a module enters as a separate '
+            'declaration in a new module, with "proves" in its record, and a rearrangement leaves such a module as '
+            'it is')
 
 
 def written_base(canon, name):

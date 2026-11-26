@@ -1164,9 +1164,10 @@ class FetchTests(unittest.TestCase):
             tar.addfile(member, io.BytesIO(source))
 
         def request(url):
-            # The first paper's connection ends inside the body, the second paper's body arrives without its end,
-            # and the third paper's archive ends inside its member, behind a header that is whole.
-            if url.endswith('0001.00001v1'):
+            # The first paper's connection ends inside the body at both hosts, the second paper's body arrives without
+            # its end, and the third paper's archive ends inside its member, behind a header that is whole. The
+            # fourth paper's connection ends inside the body at the first host only, and the second host answers.
+            if url.endswith('0001.00001v1') or url == self.fetch.HOSTS[0] + '0001.00004v1':
                 raise http.client.IncompleteRead(b'')
             if url.endswith('0001.00003v1'):
                 return archive.getvalue()[:520]
@@ -2306,6 +2307,21 @@ class BriefTests(PaperCase):
                       '`tools`). This section cannot refer to it by a number; where a proof of this section uses it, its '
                       'content is written at that place.', text)
         self.assertIn('Passing from n to n + 1 adds the odd number 2n + 1.', text)
+
+    def test_a_definition_that_the_plan_writes_into_two_sections_is_defined_by_the_first_of_them(self):
+        # The plan writes the sum into the main theorem, which the introduction states and the last section proves.
+        # A definition is needed where the statement stands and where its proof is written, and it is defined once.
+        plan = copy.deepcopy(PLAN)
+        next(item for item in plan['others'] if item['element'] == 'Small.oddSum')['into'] = ['Small.root']
+        self.assertEqual(paper.check_plan(self.found, plan, KEYS), [])
+        intro, _, proof = (paper.render_brief(self.found, plan, section) for section in plan['sections'])
+        written = 'This section writes it into theorem `thm:main`; it has no number.'
+        self.assertIn(written + ' The plan writes it into other sections as well, and this one is the first of them in the '
+                      'order of the paper: this section defines the object.', intro)
+        self.assertIn(written + ' Section `intro` comes before this one in the paper and defines the object; this section '
+                      'uses it under the notation of the plan and does not define it a second time.', proof)
+        # A definition that the plan writes into one section is told neither.
+        self.assertNotIn('defines the object', paper.render_brief(self.found, PLAN, PLAN['sections'][0]))
 
 
 class NamedPartTests(unittest.TestCase):
@@ -3535,7 +3551,7 @@ DRAFT_PLAN = {
     'citations': [{'element': 'Small.expand', 'result': 'the square of a sum', 'reason': 'Euclid has it.'}]}
 EXPAND_TEXT = 'For natural numbers $a$ and $b$, we have $(a+b)^2 = a^2 + 2ab + b^2$.'
 # The draft as the pipeline hands it over: each statement with the element that states it now, the gaps with the
-# declarations that closed them, and a statement that had to go.
+# declarations that closed them, and a statement and a formula that had to go.
 DRAFT = {
     'statements': [
         {'label': 'thm:main', 'section': 'intro', 'element': 'Small.root', 'text': MAIN_TEXT, 'gap': None},
@@ -3546,7 +3562,9 @@ DRAFT = {
         {'label': 'lem:square', 'section': 'tools', 'element': 'Small.sq_step',
          'text': 'For every natural number $k$, we have $k^2 + (2k + 1) = (k + 1)^2$.', 'gap': None}],
     'formulas': [{'label': 'eq:tools-gain', 'section': 'tools', 'host': 'lem:increasing', 'text': GAIN_FORMULA,
-                  'element': 'Small.oddSum_succ', 'gap': 'g2'}],
+                  'element': 'Small.oddSum_succ', 'gap': 'g2'},
+                 {'label': 'eq:tools-bound', 'section': 'tools', 'host': None, 'text': 'S_n \\ge n', 'element': None,
+                  'gap': None, 'cut': True}],
     'gaps': [{'id': 'g1', 'kind': 'statement', 'section': 'tools', 'label': 'lem:increasing', 'host': None,
               'element': 'Small.oddSum_mono_weak', 'wanted': 'The strict inequality.', 'has': 'The weak inequality.',
               'reason': 'The proof of the main theorem uses the strict form.', 'closed_by': 'Small.oddSum_mono'},
@@ -3623,7 +3641,8 @@ class FromDraftTests(PaperCase):
     def test_the_plan_of_the_draft_is_brought_to_the_library_by_script_and_the_briefs_carry_the_draft(self):
         folder = self.draft_folder()
         page = self.root / 'title-page.json'
-        write_json(page, {'authors': [{'name': 'Ada Lovelace', 'address': 'London', 'email': 'ada_l@example.org'}]})
+        write_json(page, {'authors': [{'name': 'Ada Lovelace', 'address': 'London', 'email': 'ada_l@example.org'}],
+                          'msc2020': ['05A15']})
         self.assertEqual(self.run_paper(written_from_draft(), from_draft=folder, title_page=page), 0)
         calls = self.calls()
         # The check of the plan passed, so no session planned anything and none read the collection.
@@ -3665,6 +3684,7 @@ class FromDraftTests(PaperCase):
                       '`eq:tools-gain`, in the proof of `lem:increasing`'):
             self.assertIn(words, drafted)
         self.assertNotIn('A statement that had to go.', brief)
+        self.assertNotIn('S_n \\ge n', brief)
         self.assertEqual(brief, paper.render_brief(materials, CARRIED, CARRIED['sections'][1], draft=DRAFT))
         # The writer of the section has the record of that declaration in full, and is told what it is.
         self.assertIn('written into the running text: `Small.unused`', brief)
@@ -3682,19 +3702,25 @@ class FromDraftTests(PaperCase):
         # The correspondence file names the source of the statement that the paper cites in place of a proof.
         self.assertEqual([r['cited'] for r in rows], [None, None, 'euclid', None])
         self.assertEqual(self.events('end')[-1], {**self.events('end')[-1], 'status': 'complete', 'open': [], 'kept': []})
-        # The author line is written by the script from the title page, of which the folder keeps a copy.
+        # The author line and the subject classification are written by the script from the title page, of which the
+        # folder keeps a copy.
         lines = (self.out / 'paper.tex').read_text(encoding='utf-8').split('\n')
         title = lines.index('\\title{The sum of the first odd numbers}')
-        self.assertEqual(lines[title + 1:title + 5],
-                         ['\\author{Ada Lovelace}', '\\address{London}', '\\email{ada\\_l@example.org}', '\\begin{abstract}'])
+        self.assertEqual(lines[title + 1:title + 6],
+                         ['\\author{Ada Lovelace}', '\\address{London}', '\\email{ada\\_l@example.org}',
+                          '\\subjclass[2020]{05A15}', '\\begin{abstract}'])
         self.assertEqual(read_json(self.out / 'title-page.json'), read_json(page))
-        # Typesetting later keeps the authors, and with another title page it sets the author line anew.
+        # Typesetting later keeps both, read from that copy, and with another title page it sets both anew.
         launched = len(calls)
         self.assertEqual(self.run_paper(good(), only=True), 0)
-        self.assertIn('\\author{Ada Lovelace}', (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        kept = (self.out / 'paper.tex').read_text(encoding='utf-8')
+        self.assertIn('\\author{Ada Lovelace}', kept)
+        self.assertIn('\\subjclass[2020]{05A15}', kept)
         write_json(page, {'authors': []})
         self.assertEqual(self.run_paper(good(), only=True, title_page=page), 0)
-        self.assertNotIn('\\author', (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        anew = (self.out / 'paper.tex').read_text(encoding='utf-8')
+        self.assertNotIn('\\author', anew)
+        self.assertNotIn('\\subjclass', anew)
         self.assertEqual(len(self.calls()), launched)
 
     def test_the_draft_carries_what_the_cited_works_say_and_the_results_that_a_cited_theorem_contains(self):
@@ -4522,6 +4548,24 @@ class CoverageTests(PaperCase):
                          [('restated', 'lem:square', difference, 'same')])
         self.assertIn('k^2 + 2k', end['closed'][0]['before'])
         self.assertIn('k^2 + (2k + 1)', end['closed'][0]['after'])
+
+    def test_a_restatement_that_was_recorded_and_never_reached_its_part_is_made_again(self):
+        _, off = self.differing()
+        script = good()
+        script['restate'] = [{'output/tools.tex': TOOLS}]
+        script['compare:tools'] = [{'output/comparison.json': json.dumps([SAME[2]])}]
+        # The pass is stopped when it has recorded the restatement and before the part has received the new text.
+        with patch.object(paper.Paper, 'keep', side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+            self.close(script)
+        self.assertEqual(self.part('tools'), off)
+        self.assertEqual([entry['verdict'] for entry in read_json(self.out / 'state.json')['closed']], ['not compared'])
+        # The continued run ends with the statement as it was. The pass that follows restates it and records that once.
+        self.assertEqual(self.run_paper(script, resume=True), 2)
+        self.assertEqual(self.close(script), 0)
+        self.assertEqual(len(self.calls('restate')), 2)
+        self.assertEqual(self.part('tools'), TOOLS)
+        self.assertEqual([(entry['kind'], entry['label'], entry['verdict']) for entry in self.events('end')[-1]['closed']],
+                         [('restated', 'lem:square', 'same')])
 
     def test_a_run_stopped_in_the_repair_of_the_running_text_or_after_it_is_continued_there(self):
         script = asserting()

@@ -846,11 +846,18 @@ class InterruptedPublicationTests(PublicationCase):
 
         self.interrupt('runner.sync_tree', 'commit', event_written=True, side_effect=modules_only)
 
-    def test_ended_after_the_library_was_put_in_place_and_before_the_written_part(self):
+    def test_ended_after_the_replaced_proofs_were_kept_and_before_the_written_part(self):
         self.interrupt('runner.apply_written', 'commit', event_written=True)
 
-    def test_ended_after_the_written_part_and_before_that_was_saved(self):
-        self.interrupt('runner.record_summary', 'commit', event_written=True)
+    def test_ended_after_the_index_was_put_in_place_and_before_the_summary_of_the_records(self):
+        # The modules, the index and the written part are in place, and the summary of the records is still the one
+        # from before the change. The runner that follows gathers the summary again from the stage it still has.
+        def index_only(path, value):
+            if Path(path).name == 'records.json':
+                raise RuntimeError('simulated end of the runner')
+            write_json(path, value)
+
+        self.interrupt('runner.write_json', 'commit', event_written=True, side_effect=index_only)
 
     def test_ended_while_the_stage_was_being_removed(self):
         # The removal had taken the staged index and one module when the runner ended. The canon was installed
@@ -863,6 +870,27 @@ class InterruptedPublicationTests(PublicationCase):
 
         self.interrupt('runner.remove_tree', 'commit', installed=True, event_written=True, side_effect=partly)
 
+    def test_a_change_without_lean_puts_no_file_of_its_stage_over_the_canon(self):
+        # A change that touches no module stages a copy of the canon's module root and changes nothing in it. The
+        # copy is not sent to the disk when it is made, so after a loss of power the runner that follows can find
+        # its files without their content, as they are left here. It puts none of them over the canon's modules.
+        folder = self.candidate(approaches={'Small/root/induction.md': APPROACH}, understanding={'q0.md': UNDERSTANDING})
+        ended = RuntimeError('simulated end of the runner')
+        with patch('runner.Runner.install_canon', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.publish(folder, role='explore', question='q0', expect=False)
+        saved = read_json(self.instance / 'runner/state.json')['publication']
+        self.assertEqual((saved['stage'], saved['changed'], saved['removed']), ('commit', [], []))
+        staged = sorted((self.instance / 'runner' / ('stage-' + saved['event']['id']) / 'lean').rglob('*.lean'))
+        self.assertIn('Root.lean', [path.name for path in staged])
+        for path in staged:
+            path.write_bytes(b'')
+        recovered = runtime.Runner(self.instance, self.skill)
+        self.drain(recovered)
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(self.root_source(), ROOT)
+        self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
+        self.assertEqual(self.leftovers(), [])
+
     def test_a_reader_has_the_canon_before_a_change_or_after_it_with_the_verdicts_of_its_review(self):
         # Every command a session runs replays the instance, at whatever moment of a publication it is called.
         # The Lean proof of the step is complete and review did not confirm it. A complete proof without a
@@ -871,13 +899,29 @@ class InterruptedPublicationTests(PublicationCase):
         folder = self.induction()
         doubted = {'correct': 'not_confirmed', 'accepted': False, 'reason': 'The unfolding is asserted and not shown.'}
         ended = RuntimeError('simulated end of the runner')
-        with patch('runner.Runner.install_canon', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+        gather, gathered = runtime.record_summary, []
+
+        def while_the_index_is_the_earlier_one(instance, index):
+            gathered.append((self.canon().load_index()['revision'], 'Small.oddSum_succ' in index['entries']))
+            return gather(instance, index)
+
+        with patch('runner.record_summary', side_effect=while_the_index_is_the_earlier_one), \
+                patch('runner.Runner.install_canon', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
             self.publish(folder, self.verdicts(folder, **{'Small.oddSum_succ': doubted}), expect=False)
+        # The summary of the records is gathered, which reads every record of the canon, for the index of the change
+        # while the index in place is the one from before it: a reader does not wait through the gathering with the
+        # elements of the change and without what their records declare.
+        self.assertEqual(gathered, [(0, True)])
         [event] = self.events()
         before = replay(self.instance)
         self.assertEqual((before['sequence'], 'Small.oddSum_succ' in before['elements'],
                           before['elements']['Small.root']['standing']), (0, False, 'no_proof'))
-        with patch('runner.apply_written', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+        def index_only(path, value):
+            if Path(path).name == 'records.json':
+                raise ended
+            write_json(path, value)
+
+        with patch('runner.write_json', side_effect=index_only), self.assertRaisesRegex(RuntimeError, 'simulated'):
             self.drain(runtime.Runner(self.instance, self.skill))
         after = replay(self.instance)
         step = after['elements']['Small.oddSum_succ']
@@ -1546,14 +1590,14 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
             self.assert_sent_to_a_replacement_peer(engine, waiting, 'Small.Alt', before, events)
 
     def test_a_retired_record_that_went_to_the_history_is_not_moved_again(self):
-        # The retirement is interrupted twice while it is installed. The first runner ends once the event is
-        # written and before the index is in place. Of what its publication applied, a retirement lists nothing
-        # as added and nothing as replaced, so only its `retired` list tells a reader that this event is ahead
-        # of the index (knowledge.in_canon). The reader has the canon from before the retirement: the alternative
-        # with its verdict, and the root without a proof of its own.
-        # The second runner moves the record of the retired alternative to the history, which is done before the
-        # publication is saved as installed, and ends between the two. The one that follows repeats the
-        # installation with that record in the history already.
+        # The retirement is interrupted twice while it is installed. The first runner writes the event and the
+        # written part, with which the record of the retired alternative goes to the history, and ends before the
+        # index is in place. Of what its publication applied, a retirement lists nothing as added and nothing as
+        # replaced, so only its `retired` list tells a reader that this event is ahead of the index
+        # (knowledge.in_canon). The reader has the canon from before the retirement: the alternative with its
+        # verdict, and the root without a proof of its own.
+        # The second runner meets the written part again, with that record in the history already, and ends before
+        # the publication is saved as installed. The one that follows repeats the installation once more.
         cid, engine = self.alternative_proof()
         canon = self.canon()
         alt_record = (canon.records / 'Small/root_alt.md').read_text(encoding='utf-8')
@@ -1579,15 +1623,19 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
         self.assertEqual(self.leftovers(), [])
 
     def test_a_concern_goes_with_the_proof_it_was_raised_about_when_a_retirement_moves_that_proof(self):
-        # The root has a proof of its own, held back, beside the accepted alternative, and a concern is raised about
-        # each of the two proofs. The retirement puts the alternative's proof under the root's own name. The concern
-        # about that proof names the root from then on and stands on the frontier; the concern about the proof the
-        # root had was raised about an earlier proof, and leaves the frontier.
+        # The root has a proof of its own, held back, beside the accepted alternative, and a review publishes a concern
+        # and a finding about each of the two proofs. The retirement puts the alternative's proof under the root's own
+        # name. The concern and the finding about that proof name the root from then on, and the concern stands on the
+        # frontier; the concern and the finding about the proof the root had are about an earlier proof: the concern
+        # leaves the frontier, and the view of the root marks the finding.
         cid, engine = self.alternative_proof()
         own = self.candidate(replace={'Small.root': SKETCH}, records={'Small/root.md': ROOT_RECORD})
         self.publish(own, self.verdicts(own, **HOLD), engine=engine)
         pairing, sketch = 'The pairing may skip the first term.', 'The inductive step is only sketched.'
-        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [], 'concerns': [
+        covers, sound = 'The pairing covers every term from the second on.', 'The induction is sound as far as it goes.'
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [
+            {'concerns': [], 'status': 'confirmed', 'reason': covers, 'validates': ['Small.root_alt']},
+            {'concerns': [], 'status': 'confirmed', 'reason': sound, 'validates': ['Small.root']}], 'concerns': [
             {'id': 'pairing', 'targets': ['Small.root_alt'], 'reason': pairing, 'evidence': 'The case n = 1.'},
             {'id': 'sketch', 'targets': ['Small.root'], 'reason': sketch, 'evidence': 'The record gives no derivation.'}]})
         engine = runtime.Runner(self.instance, self.skill)  # the runner as it stands after that review
@@ -1602,6 +1650,11 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         self.assertIn(f'\n## Concerns\n\n- v1/pairing on `Small.root`: {pairing} (pending); comprehensive review ', frontier)
         self.assertNotIn('v1/sketch', frontier)
+        self.assertEqual([(found['reason'], found['elements'], found['earlier']) for found in model['findings']],
+                         [(covers, ['Small.root'], []), (sound, ['Small.root'], ['Small.root'])])
+        shown = self.command_line('view', self.reader(), 'Small.root')[1].splitlines()
+        self.assertIn(f'later review  v1 (confirmed): {covers}', shown)
+        self.assertIn(f'later review  v1 (confirmed, about an earlier proof): {sound}', shown)
 
     def test_a_candidate_whose_declaration_a_rearrangement_moved_passes_the_review_s_own_compile(self):
         # A rearrangement moves declarations between modules. A candidate that was prepared before it and

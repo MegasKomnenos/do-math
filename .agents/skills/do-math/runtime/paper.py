@@ -5317,6 +5317,12 @@ class Paper(Sessions):
         if fresh:
             self.compare_rows(fresh, tex, spans)
             _, _, rows = self.assemble()
+        # A restatement is recorded before its text is in place (restate). One whose statement still has the text it had
+        # before was not made: the pass that recorded it was stopped between the two. Its record goes, so that the
+        # statement is restated by this pass.
+        texts = {row['label']: row['paper_statement'] for row in rows}
+        self.closed = [entry for entry in self.closed
+                       if entry['kind'] != 'restated' or texts.get(entry['label']) != entry['before']]
         before = {entry['label'] for entry in self.closed if entry['kind'] == 'restated'}
         differing = [row for row in rows if row['comparison']['verdict'] == 'differs' and row['label'] not in before]
         if differing and not self.restate(differing):
@@ -5668,6 +5674,11 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
         if ended is not None:
             raise Stop(f"the run in {out} came to its end ({ended['status']}); there is nothing to continue. "
                        + ('Its draft is draft.json, beside plan.json and study.md' if ended['status'] == 'draft'
+                          else 'Its manuscript failed the machine checks or the typesetting after their repairs, and '
+                               'no option takes such a manuscript up; a run into a new folder writes the paper anew'
+                          if left_failing(ended)
+                          else '--open-findings acts on what it left open, and --typeset-only typesets the manuscript '
+                               'it holds' if ended['status'] == 'open_findings'
                           else '--typeset-only typesets the manuscript it holds'))
         # The run is continued as what it was begun as, which its first event says.
         begun = next((event for event in run.log if event['event'] == 'materials'), {})

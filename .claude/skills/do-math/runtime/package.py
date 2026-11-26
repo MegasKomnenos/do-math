@@ -285,7 +285,7 @@ def take(index, lean_root, library, root, definitions, allowed):
             raise CanonError(f'the source of {name} is not the text the index was extracted from')
         if name not in open_ and (
                 entry['module'] in definitions or carries_attribute(source) or name in named
-                or name.rsplit('.', 1)[-1] in named or any(name.endswith('.' + word) for word in named)):
+                or any(name.endswith('.' + word) for word in named)):
             seeds.add(name)
     imports = local_imports(lean_root, library)
     hidden = index.get('hidden', {})

@@ -10,7 +10,8 @@ from pathlib import Path
 import sys
 
 from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
-                   build_outcome, candidate_records, check_applied, copy_tree, declaration_text, drop_modules,
+                   build_outcome, candidate_records, check_applied, check_definition_modules, copy_tree,
+                   declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
                    start_build, tree_hash, update_index, wait_build, with_importers, written_base)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
@@ -157,7 +158,9 @@ def view(instance, model, name, part=None, full=False, canon_index=None):
         lines.append(f"concern       {cid} ({concern['status']}{earlier}): {concern['reason']}")
     for number in element['findings']:
         finding = model['findings'][number]
-        lines.append(f"later review  {finding['source']} ({finding['status']}): {finding['reason']}")
+        # The proof the element has now came in after the finding (knowledge.proof_changed).
+        earlier = ', about an earlier proof' if name in finding['earlier'] else ''
+        lines.append(f"later review  {finding['source']} ({finding['status']}{earlier}): {finding['reason']}")
     from coordination import board
     for row in board(instance, model=model):
         for section in row['sections']:
@@ -320,6 +323,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
                 if organizer:
                     written, removed = apply_rearrangement(lean_root, candidate, organization.get('delete', []))
                     changed = sorted(set(changed) | set(written))
+                # Before anything is compiled: no build makes a changed definition module acceptable.
+                check_definition_modules(instance, lean_root, [*changed, *removed])
             except (CanonError, OSError) as exc:
                 result['errors'] = [str(exc)]
                 return result

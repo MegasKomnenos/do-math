@@ -232,15 +232,15 @@ def capture(session, provider):
     return receipt
 
 
-def output_limit(session, provider):
-    """The CLI message when Claude's output-token cap ended the turn, or None.
+def output_limit(folder, provider):
+    """The CLI message when Claude's output-token cap ended the turn whose folder is `folder`, or None.
 
     The CLI discards the response that reached the cap; the conversation and files remain,
     so the session host can resume the same conversation instead of ending it."""
     if provider != 'claude':
         return None
     message = None
-    for event in events(Path(session) / 'cli.stdout.jsonl'):
+    for event in events(Path(folder) / 'cli.stdout.jsonl'):
         if event.get('api_error') != 'max_output_tokens':
             continue
         if event.get('type') == 'result':
@@ -255,8 +255,9 @@ def output_limit(session, provider):
     return message
 
 
-def context_limit(session, provider):
-    """Whether a Claude turn ended because its conversation had reached the limit of the context window.
+def context_limit(folder, provider):
+    """Whether the Claude turn whose folder is `folder` ended because its conversation had reached the limit
+    of the context window.
 
     With automatic compaction off (launch.worker_environment) the CLI shortens nothing: it refuses the
     request that no longer fits, and the result of the turn names that ground. The conversation and the
@@ -265,20 +266,24 @@ def context_limit(session, provider):
     if provider != 'claude':
         return False
     return any(event.get('type') == 'result' and event.get('terminal_reason') == 'blocking_limit'
-               for event in events(Path(session) / 'cli.stdout.jsonl'))
+               for event in events(Path(folder) / 'cli.stdout.jsonl'))
 
 
-def refusal(session, provider, model, started, retry_seconds):
-    session = Path(session)
+def refusal(folder, provider, model, started, retry_seconds):
+    """The refusal of a provider or of a model that the streams of one turn show, or None.
+
+    `folder` is the folder of that turn, which holds its cli.stdout.jsonl and cli.stderr.log: the session
+    folder for a first turn and the turn's own folder for a resumed one (ending.turn_directory)."""
+    folder = Path(folder)
     try:
-        limit = detect_usage_limit(provider, session / 'cli.stdout.jsonl', session / 'cli.stderr.log',
+        limit = detect_usage_limit(provider, folder / 'cli.stdout.jsonl', folder / 'cli.stderr.log',
                                    now=time.time(), fallback_seconds=retry_seconds, session_started_at=started)
     except OSError:
         limit = None
     if limit:
         return {'key': 'provider:' + provider, 'until': limit.retry_at,
                 'reason': 'usage_limit', 'source': limit.source}
-    for event in events(session / 'cli.stdout.jsonl'):
+    for event in events(folder / 'cli.stdout.jsonl'):
         if provider == 'claude' and event.get('type') == 'assistant' and event.get('is_api_error_message') is True:
             if event.get('api_error') == 'model_requires_usage_credits':
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,

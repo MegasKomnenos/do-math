@@ -101,12 +101,7 @@ class BrokerSavesItsState(BrokerFixture):
         self.start_broker()
         self.assertEqual(self.broker.state["jobs"][job_id]["status"], "finished")
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], saved["jobs"][job_id]["exit_code"])
-
-    def test_a_state_left_indented_by_an_earlier_broker_is_read_and_then_saved_compactly(self):
-        self.start_broker()
-        job_id = self.submit(self.session_file("s1", marker="OLD"), expect_mb=40)
-        self.until(lambda: self.finished(job_id))
-        self.broker.save(now=True)
+        # A broker of an earlier version left this file indented. The next broker reads it and saves it compactly.
         runtime_support.write_json(self.paths.state, runtime_support.read_json(self.paths.state))
         self.assertGreater(self.paths.state.read_text(encoding="utf-8").count("\n"), 1)
         self.start_broker()

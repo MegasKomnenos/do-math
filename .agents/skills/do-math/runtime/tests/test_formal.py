@@ -30,7 +30,7 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 import canon_tool
 import runner as runtime
 import support
-from canon import (Canon, beyond_allowed, copy_tree, empty_index, library_modules, start_build,
+from canon import (Canon, beyond_allowed, copy_tree, definition_modules, empty_index, library_modules, start_build,
                    statement_differences, update_index, wait_build)
 from canon_tool import view
 from knowledge import frontier_lines, replay
@@ -48,6 +48,7 @@ PROVED_ZERO_RECORD = record_text('The empty sum is zero.', weight='unit', proof=
 ABOVE = theorem('fromZero', SUM_ZERO, uses=['sumZero'], proof='exact h1')
 ABOVE_RECORD = record_text('The same value, from the lemma.')
 DEFINITION_CHANGED = 'the text of the definition Small.oddSum is not the text the first commit has'
+FILE_CHANGED = 'the file of the definition module Small.Defs is not the file the first commit has'
 
 
 def reindex(case):
@@ -305,7 +306,8 @@ class RootCheckTests(ScenarioCase):
         # The stand-in compiler takes the whole text of this definition for its statement, since the text
         # has no `:=`. Lean keeps the type and the body apart; LeanItselfTests shows what it reports.
         difference = 'the statement of Small.oddSum is not the statement the first commit has'
-        self.assertEqual((record['status'], record['differences']), ('changed', [difference]))
+        # The edit also left the file of the definition's module other than the first commit has it.
+        self.assertEqual((record['status'], record['differences']), ('changed', [difference, FILE_CHANGED]))
         requests = self.requests()
         self.assertEqual([(r['kind'], r['elements']) for r in requests], [('review', ['Small.root'])])
         self.assertIn('is not what the first commit of the instance fixed: ' + difference, requests[0]['reason'])
@@ -319,6 +321,19 @@ class RootCheckTests(ScenarioCase):
                          (index['revision'] + 1, 'changed'))
         self.assertEqual(len(self.requests()), 1)
 
+    def test_a_changed_file_of_a_definition_module_is_found_although_the_index_is_the_same(self):
+        # The index says of a definition what Lean made of it when its module was last extracted. A source
+        # edited behind the runner leaves the index as it was, and the comparison of the files finds it.
+        self.formal()
+        source = self.instance / 'canon/lean/Small/Defs.lean'
+        source.write_text(source.read_text(encoding='utf-8') + '\n-- A line added by hand.\n', encoding='utf-8',
+                          newline='\n')
+        engine = runtime.Runner(self.instance, self.skill)
+        engine.check_root()
+        record = runtime.status(self.instance)['root_check']
+        self.assertEqual((record['status'], record['differences']), ('changed', [FILE_CHANGED]))
+        self.assertEqual([(r['kind'], r['elements']) for r in self.requests()], [('review', ['Small.root'])])
+
     def test_an_instance_created_by_the_earlier_code_is_compared_through_its_first_index(self):
         # The first commit of such an instance holds an index in the earlier form; what is compared is in both forms.
         self.formal()
@@ -328,6 +343,70 @@ class RootCheckTests(ScenarioCase):
         self.assertEqual(statement_differences(posed, index, 'Small.root'), [])
         index['entries']['Small.oddSum']['source_sha'] = 'rewritten'
         self.assertEqual(statement_differences(posed, index, 'Small.root'), [DEFINITION_CHANGED])
+
+
+class DefinitionModuleTests(InstanceCase):
+    """The files of the modules that the root's module imported when the instance was created do not change
+    (canon.check_definition_modules). The canon of these tests is the variant 'layered' of tests/support.py."""
+    root_variant = 'layered'
+    LOCKED = "the candidate changes the file of Small.Facts. The modules that the root's module imported when"
+
+    def test_a_proof_that_would_change_a_definition_module_is_refused_when_prepared_and_again_at_publication(self):
+        facts = self.instance / 'canon/lean/Small/Facts.lean'
+        before = facts.read_bytes()
+        folder = self.candidate(replace={'Small.factZero': theorem('factZero', SUM_ZERO, proof='rfl')}, prepare=False)
+        receipt = self.prepare(folder, expect_ok=False)
+        self.assertEqual(len(receipt['errors']), 1, receipt['errors'])
+        self.assertIn(self.LOCKED, receipt['errors'][0])
+        self.assertIsNone(receipt['build'])  # refused before anything is compiled
+        # The runner makes the same check itself: with a receipt that claims success the candidate is still
+        # refused, the module stays as it was, and a replacement peer receives the reason.
+        write_json(folder / 'prepared.json', {**receipt, 'ok': True, 'errors': []})
+        _, engine = self.publish(folder, expect=False)
+        peers = [job for job in engine.state['jobs'].values() if job['role'] == 'peer' and job['status'] == 'pending']
+        self.assertEqual(len(peers), 1)
+        self.assertIn('could not be published on the current canon: ' + self.LOCKED, peers[0]['task']['previous_error'])
+        self.assertEqual(facts.read_bytes(), before)
+        # What the refusal names in its place: the same proof as a declaration of its own, in a new module.
+        proved = module_text(theorem('factZeroProved', SUM_ZERO, proof='rfl'), imports=('Small.Facts',))
+        folder = self.candidate(modules={'Small/FactProof.lean': proved},
+                                records={'Small/factZeroProved.md': record_text('The empty sum is zero.',
+                                                                                proves='Small.factZero')})
+        self.assertEqual(read_json(folder / 'prepared.json')['added'], ['Small.factZeroProved'])
+
+    def test_a_rearrangement_that_rewrites_or_deletes_a_definition_module_is_refused(self):
+        facts = (self.instance / 'canon/lean/Small/Facts.lean').read_text(encoding='utf-8')
+        for label, rewritten, delete in (('rewritten', facts.replace('  sorry', '  rfl'), []),
+                                         ('deleted', None, ['Small.Facts'])):
+            with self.subTest(label):
+                folder = self.candidate(prepare=False)
+                write_json(folder / 'organization.json', {'batch': [], 'merge_questions': [], 'delete': delete})
+                if rewritten:
+                    (folder / 'rewrite/lean/Small').mkdir(parents=True)
+                    (folder / 'rewrite/lean/Small/Facts.lean').write_text(rewritten, encoding='utf-8', newline='\n')
+                receipt = self.prepare(folder, role='organizer', expect_ok=False)
+                self.assertEqual(len(receipt['errors']), 1, receipt['errors'])
+                self.assertIn(self.LOCKED, receipt['errors'][0])
+                self.assertIsNone(receipt['build'])
+
+    def test_a_theorem_outside_the_definition_modules_is_proved_where_it_stands(self):
+        # `Small.Side` is a module of the first commit that the root's module does not import, and the root's
+        # own module is not locked either: its header takes the import that the proof of the root needs.
+        self.assertEqual(definition_modules(self.instance), ['Small.Defs', 'Small.Facts'])
+        root = theorem('root', ROOT_STATEMENTS['default'], uses=['sideOne'],
+                       doc='The sum of the first `n` odd numbers is the square of `n`.')
+        folder = self.candidate(
+            replace={'Small.sideOne': theorem('sideOne', ': oddSum 1 = 1', proof='rfl'), 'Small.root': root},
+            imports={'Small.root': ['Small.Side']},
+            records={'Small/root.md': record_text('The sum of the first n odd numbers equals n times n.',
+                                                  weight='unit', proof='From the sum of one term.')})
+        # The proof of `sideOne` is complete in Lean and is left undetermined, so that no compile of the review is due.
+        self.publish(folder, self.verdicts(folder, **{'Small.sideOne': {'correct': 'undetermined', 'accepted': False}}))
+        lean = self.instance / 'canon/lean/Small'
+        self.assertIn('  rfl', (lean / 'Side.lean').read_text(encoding='utf-8'))
+        self.assertIn('public import Small.Side', (lean / 'Root.lean').read_text(encoding='utf-8'))
+        # The definition modules are those of the first commit, whatever the root's module imports now.
+        self.assertEqual(definition_modules(self.instance), ['Small.Defs', 'Small.Facts'])
 
 
 # ------------------------------------------------------------------------------------------------ Lean itself
@@ -462,7 +541,7 @@ class LeanItselfTests(BothCompilers, ScenarioCase):
         self.assertEqual(engine.model['root_state'], 'formal_proved')  # the proof still compiles; the object is another
         engine.check_root()
         record = engine.state['root_check']
-        self.assertEqual((record['status'], record['differences']), ('changed', [DEFINITION_CHANGED]))
+        self.assertEqual((record['status'], record['differences']), ('changed', [DEFINITION_CHANGED, FILE_CHANGED]))
         requests = [read_json(path) for path in (self.instance / 'control/requests').glob('*.json')]
         self.assertEqual([(r['kind'], r['elements']) for r in requests], [('review', ['Small.root'])])
 

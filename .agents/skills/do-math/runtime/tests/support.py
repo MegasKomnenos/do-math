@@ -112,6 +112,19 @@ def module_text(body, imports=('Small.Defs',)):
     return f'module\n\n{header}\n@[expose] public section\n\nnamespace Small\n\n{body.strip()}\n\nend Small\n'
 
 
+# The canon of the variant 'layered'. The root's module imports `Small.Facts`, which imports the definitions
+# and holds a theorem without a proof. `Small.Side` imports the definitions as well, and the root's module does
+# not import it. The modules that the root's module imports, directly or through one another, are `Small.Defs`
+# and `Small.Facts` (canon.definition_modules).
+ROOTS['layered'] = ROOT.replace('public import Small.Defs', 'public import Small.Facts')
+LAYERED = {
+    'lean/Small/Facts.lean': module_text(theorem('factZero', ': oddSum 0 = 0')),
+    'lean/Small/Side.lean': module_text(theorem('sideOne', ': oddSum 1 = 1')),
+    'records/Small/factZero.md': record_text('The empty sum is zero.', weight='unit'),
+    'records/Small/sideOne.md': record_text('The first odd number is one.'),
+}
+
+
 def earlier_form(index):
     """An index as the code wrote it before the extraction asked Lean for the axioms.
 
@@ -139,9 +152,10 @@ def fixture_settings():
     return config
 
 
-def write_canon(folder, root=ROOT):
+def write_canon(folder, root=ROOT, more=()):
+    """The canon a test instance is created from; `more` holds the further files of a variant by their paths."""
     for name, text in (('lean/Small/Defs.lean', DEFS), ('lean/Small/Root.lean', root),
-                       *(('records/' + key, value) for key, value in RECORDS.items())):
+                       *(('records/' + key, value) for key, value in RECORDS.items()), *dict(more).items()):
         path = Path(folder) / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding='utf-8', newline='\n')
@@ -186,7 +200,7 @@ def template(variant='default'):
         (base / 'goal.md').write_text('For every natural number n, the sum of the first n odd numbers is n * n.',
                                       encoding='utf-8')
         write_json(base / 'settings.json', fixture_settings())
-        write_canon(base / 'canon', ROOTS[variant])
+        write_canon(base / 'canon', ROOTS[variant], LAYERED if variant == 'layered' else ())
         # By the command the operator runs, so that its arguments and its exit code are part of every test's start.
         with patch('builtins.print') as shown:
             refused = main(['init', str(base / 'instance'), '--root', str(base / 'goal.md'),

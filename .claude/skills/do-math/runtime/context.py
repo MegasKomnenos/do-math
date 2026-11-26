@@ -162,9 +162,9 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
               'These are `settings` from input.json, the settings of the instance in force at your launch.', '',
               '```json', json.dumps({'settings': settings}, ensure_ascii=False, indent=2), '```',
               '', '# Executable commands', '',
-              'These are `commands` from input.json. That file also holds your session identity; its `task`, '
-              '`user_inputs` and `settings` are the assignment, the user-condition snapshot and the settings that '
-              'this pack shows.', '',
+              'These are `commands` from input.json. Its `role`, `session` and `instance` stand in the first lines '
+              'of this pack, and its `task`, `user_inputs` and `settings` are the assignment, the user-condition '
+              'snapshot and the settings that this pack shows.', '',
               '```json', json.dumps({'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     pack = '\n'.join(parts)
     write_text(session / 'pack.md', pack)

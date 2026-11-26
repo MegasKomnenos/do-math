@@ -434,6 +434,19 @@ class TakeTests(FinalizeCase):
         self.assertIn('Small.unused_two',
                       package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)['kept'])
 
+    def test_an_instance_is_kept_though_no_proof_names_it(self):
+        # Lean finds an instance by its type, so no proof names it. Here the declaration that the root does not rest
+        # on is an instance behind a modifier, and the index has the hash of that source, as an extraction gives it.
+        target = self.root / 'lean'
+        shutil.copytree(self.lean, target)
+        path = target / 'Small' / 'Helper.lean'
+        text = path.read_text(encoding='utf-8').replace('theorem unused_two', 'noncomputable instance unused_two')
+        path.write_text(text, encoding='utf-8', newline='\n')
+        entry = self.index['entries']['Small.unused_two']
+        entry['source_sha'] = canon.sha256_text(canon.declaration_text(text, entry['span']))
+        self.assertIn('Small.unused_two',
+                      package.take(self.index, target, 'Small', 'Small.root', ['Small.Defs'], self.allowed)['kept'])
+
     def test_a_command_that_ends_with_in_is_removed_with_the_element_it_stands_above(self):
         # `open Classical in` applies to the one declaration that follows it, and Lean gives that declaration a
         # span that begins below the line. Left behind, the line would apply to whatever follows the removed element.
@@ -647,6 +660,14 @@ class RecordTests(FinalizeCase):
         self.assertEqual(listed().get('Small.twice_zero'), 'claims what Lean did not confirm')
         now['pairs'] = {'same|Small.twice_zero|Small.simp_one': True}
         self.assertNotIn('Small.twice_zero', listed())
+
+    def test_what_is_due_goes_to_the_sessions_in_groups_of_one_folder_and_of_a_bounded_size(self):
+        # The groups are numbered in the order of their folders, and inside a folder in the order of the list.
+        due = ['Small/Sums/a', 'Small/p', 'Small/q', 'Small/r']
+        self.assertEqual(package.batches(due, 2, key=lambda item: item.rsplit('/', 1)[0]),
+                         [('01', ['Small/p', 'Small/q']), ('02', ['Small/r']), ('03', ['Small/Sums/a'])])
+        # Without a key, as the events of the history are divided, the list is cut in its own order.
+        self.assertEqual(package.batches(due, 3), [('01', due[:3]), ('02', due[3:])])
 
     def test_records_follow_renamed_and_removed_declarations(self):
         records = self.root / 'records'
@@ -1521,6 +1542,12 @@ class RefusalTests(FinalizeCase):
         self.configure(lean={'min_free_memory_mb': 1_000_000})
         (self.instance / 'canon' / 'lean' / 'Small' / 'Step.lean').write_text(STEP + '-- fail: changed after the commit\n',
                                                                             encoding='utf-8')
+        # The instance's compile service is still at work: two files of its store stand under the names it writes
+        # them to first, not yet moved into place. Such a file is not seeded.
+        store = self.instance / 'runner' / 'lean' / 'cache'
+        unfinished = {'.' + 'b' * 32 + '.olean.' + 'a' * 32, 'b' * 32 + '.artifacts.json.' + 'a' * 32 + '.tmp'}
+        for name in unfinished:
+            (store / name).write_bytes(b'half a file')
         self.assertEqual(self.run_command(script(review=[{}]), config=self.config(), operating=False), 2)
         settings = read_json(self.work / 'settings.json')
         self.assertEqual(set(settings['lean']), {'command', 'version_command', 'cwd', 'env', 'cache_epoch', 'allowed_axioms'})
@@ -1531,10 +1558,13 @@ class RefusalTests(FinalizeCase):
         self.assertEqual((self.work / 'first' / 'lean' / 'Small' / 'Root.lean').read_text(encoding='utf-8'), ROOT)
         self.assertEqual(read_json(self.work / 'state.json')['definitions'], ['Small.Defs'])
         self.assertIn('2.1-take', read_json(self.work / 'state.json')['steps'])  # the build ran with the reduced settings
-        # The run's compile service is its own, and began with what the instance's had compiled.
-        cached = {path.name for path in (self.instance / 'runner' / 'lean' / 'cache').iterdir()}
+        # The run's compile service is its own, and began with what the instance's had compiled: the files of its
+        # store that were in place, and not the two that were not yet moved there.
+        cached = {path.name for path in store.iterdir()} - unfinished
+        seeded = {path.name for path in (self.work / 'runner' / 'lean' / 'cache').iterdir()}
         self.assertTrue(cached)
-        self.assertLessEqual(cached, {path.name for path in (self.work / 'runner' / 'lean' / 'cache').iterdir()})
+        self.assertLessEqual(cached, seeded)
+        self.assertFalse(unfinished & seeded)
         self.assertTrue((self.work / 'runner' / 'lean' / 'broker.log').is_file())
 
     def test_the_script_refuses_a_command_line_it_cannot_read(self):
@@ -1796,7 +1826,7 @@ class RunTests(FinalizeCase):
         # Started again with the same arguments, the run continues at the review and comes to its end.
         again = script()
         again['selection'] = [{'output/decision.json': decision(main='Small.root')}]  # would be another choice, were it asked
-        self.closed = CLOSED  # the paper command of this start closes two findings without a person
+        self.closed = CLOSED  # what the paper command of this start closes without a person
         self.assertEqual(self.run_command(again, config=self.config()), 0, self.said)
         self.assertEqual(len(self.calls('selection')), 1)      # an accepted output is not made again
         self.assertEqual(len(self.calls('selection-read')), 1)

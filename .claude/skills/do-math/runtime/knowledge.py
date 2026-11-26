@@ -82,25 +82,27 @@ def add_concerns(model, values, source):
 
 
 def proof_changed(model, name, moved_from=None):
-    """Note on the concerns raised so far that an element holds another proof than the one it had.
+    """Note on the concerns and findings published so far that an element holds another proof than the one it had.
 
-    A concern is about the proof it was raised about. It keeps under `targets` the elements it named and
-    names under `earlier` those of them whose present proof came in after it: the frontier view lists it
-    against the others only, and the view of an element marks it (frontier_notes, canon_tool.view). Replay
-    applies the publications in their order, so the concerns in the model at this point are those that
-    earlier publications carried; the concerns of the publication that brings the proof are added after it.
+    A concern is about the proof it was raised about, and a finding about the proof it judged. A concern keeps
+    under `targets`, and a finding under `elements`, the elements it named, and each names under `earlier` those
+    of them whose present proof came in after it: the frontier view lists a concern against the others only,
+    and the view of an element marks such a concern and such a finding (frontier_notes, canon_tool.view). Replay
+    applies the publications in their order, so the concerns and findings in the model at this point are those
+    that earlier publications carried; those of the publication that brings the proof are added after it.
 
     With `moved_from`, the proof `name` holds now is the one that stood under that declaration until an
-    organizer retired it. A concern about that proof names `name` in its place and stays a concern about
-    the present proof, and a concern about the proof `name` had until then is about an earlier one."""
-    for concern in model['concerns'].values():
-        targets = concern['targets']
-        if name not in targets and moved_from not in targets:
+    organizer retired it. A concern or a finding about that proof names `name` in its place and stays one about
+    the present proof, and one about the proof `name` had until then is about an earlier one."""
+    for item, key in ([(concern, 'targets') for concern in model['concerns'].values()]
+                      + [(finding, 'elements') for finding in model['findings']]):
+        named = item[key]
+        if name not in named and moved_from not in named:
             continue
-        follows = moved_from in targets and moved_from not in concern['earlier']
-        concern['targets'] = list(dict.fromkeys(name if target == moved_from else target for target in targets))
-        concern['earlier'] = ([target for target in concern['earlier'] if target not in (name, moved_from)]
-                              + ([] if follows else [name]))
+        follows = moved_from in named and moved_from not in item['earlier']
+        item[key] = list(dict.fromkeys(name if target == moved_from else target for target in named))
+        item['earlier'] = ([target for target in item['earlier'] if target not in (name, moved_from)]
+                           + ([] if follows else [name]))
 
 
 def apply_findings(model, findings, source, followup=True):
@@ -110,11 +112,18 @@ def apply_findings(model, findings, source, followup=True):
     or without a judgment of whether the proof is accepted; and it can reopen a question whose
     resolution it found insufficient. A status alone changes nothing."""
     for number, finding in enumerate(findings):
-        affected = set(finding.get('invalidates', [])) | set(finding.get('validates', []))
+        # `present` holds the elements whose present proof the finding is about: those it names itself, and those
+        # a concern it names was raised about. An element it reaches only through a concern raised about a proof
+        # that has been replaced since stands under `earlier` from the start (proof_changed).
+        present = set(finding.get('invalidates', [])) | set(finding.get('validates', []))
+        affected = set(present)
         for cid in finding['concerns']:
-            affected.update(model['concerns'][cid]['targets'])
+            concern = model['concerns'][cid]
+            affected.update(concern['targets'])
+            present.update(set(concern['targets']) - set(concern['earlier']))
         model['findings'].append({'source': source, 'reason': finding['reason'], 'status': finding['status'],
-                                  'elements': sorted(affected), 'questions': list(finding.get('reopens', []))})
+                                  'elements': sorted(affected), 'earlier': sorted(affected - present),
+                                  'questions': list(finding.get('reopens', []))})
         for cid in finding['concerns']:
             item = model['concerns'][cid]
             item['status'] = finding['status']
@@ -228,8 +237,8 @@ def organization_event(model, event, folder):
             model['verdicts'][item['into']] = {**verdict, 'element': item['into']}
         else:
             model['verdicts'].pop(item['into'], None)
-        # The concerns about that proof go with it; those about the proof the statement's own declaration had
-        # were raised about an earlier proof.
+        # The concerns and the findings about that proof go with it; those about the proof the statement's own
+        # declaration had are about an earlier proof.
         proof_changed(model, item['into'], item['alternative'])
     model['organized'] = sorted(set(model['organized']) | set(data['batch']))
 
@@ -482,12 +491,15 @@ def settle_questions(model):
         question['root_settlement'] = deepcopy(settlement) if root else None
         question['state'] = 'resolved' if (settlement if root else question['resolutions']) else 'open'
         # A later review stays beside the question it reopened, under whatever name it used for it, and
-        # beside the root question when it withdrew a confirmation the root's settlement rested on.
+        # beside the root question when it withdrew a confirmation the root's settlement rested on. A finding
+        # says nothing of a proof that came in after it, so the elements under its `earlier` are left out
+        # (proof_changed).
         question['annotations'] = [
             i for i, finding in enumerate(model['findings'])
             if any(canonical_question(model, q) == representative for q in finding['questions']
                    if q in model['questions'] or q in model['question_aliases'])
-            or (root and finding['status'] != 'cleared' and withdrawn & set(finding['elements']))]
+            or (root and finding['status'] != 'cleared'
+                and withdrawn & (set(finding['elements']) - set(finding['earlier'])))]
 
 
 def root_solved(model):

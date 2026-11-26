@@ -575,6 +575,29 @@ class LaunchFailureTests(InstanceCase):
         self.assertNotIn('previous_error', job['task'])
         self.assertEqual(recovered.state['blocks'], {})
 
+    def test_a_producer_whose_host_ended_before_it_launched_a_cli_is_launched_again_and_blocks_no_model(self):
+        # A host can end before its first turn, for instance while it loads its modules. The gate was open, so
+        # the session is not cancelled, and its folder holds neither the host's record nor a stream nor an exit
+        # code. No CLI is known to have ended, so the loss says nothing about the model: the job is launched
+        # again after the delay of a failed job and no block falls on the model, as for a peer, a review or an
+        # organizer whose host ends there.
+        engine = runtime.Runner(self.instance, self.skill)
+        key = engine.producer('attempt')
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        session, folder = engine.state['sessions'][sid], engine.session_dir(sid)
+        self.assertTrue((folder / 'GO').exists())
+        session['host'] = None  # the host has ended and has written nothing
+        engine.collect()
+        job = engine.state['jobs'][key]
+        self.assertFalse((folder / 'CANCEL').exists())
+        self.assertEqual((session['status'], job['status'], job['last_error']),
+                         ('failed', 'pending', 'session ended without retained research material'))
+        self.assertEqual(session['end_check']['authorization']['basis'], 'interrupted')
+        self.assertEqual(engine.state['blocks'], {})
+
 
 class HeldCanonFileTests(InstanceCase):
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')

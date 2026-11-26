@@ -124,6 +124,27 @@ class ArchiveTests(unittest.TestCase):
             with tarfile.open(session / 'work.tar.xz', 'r:xz') as archive:
                 self.assertEqual(archive.extractfile('work/repo/.git/objects/ab/cdef').read(), b'A Git object')
 
+    def test_work_that_holds_one_file_under_two_names_is_archived_under_both(self):
+        # A hard link gives one file a second name, as Git does for the object files of a repository that it
+        # clones from a folder of the same disk. The scan of work/ reads the content under each name, so the
+        # archive has to hold a file under each name as well. The link, the archive and the read-back are real.
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            first = session / 'work/clone/table.csv'
+            first.parent.mkdir(parents=True)
+            first.write_bytes(b'n,value\n1,1\n')
+            (session / 'work/origin').mkdir()
+            try:
+                os.link(first, session / 'work/origin/table.csv')
+            except OSError:
+                self.skipTest('this file system gives a file no second name')
+            self.assertTrue(archive_work(session))
+            self.assertFalse((session / 'work').exists())
+            with tarfile.open(session / 'work.tar.xz', 'r:xz') as archive:
+                for name in ('work/clone/table.csv', 'work/origin/table.csv'):
+                    self.assertTrue(archive.getmember(name).isfile(), name)
+                    self.assertEqual(archive.extractfile(name).read(), b'n,value\n1,1\n', name)
+
     def test_linked_work_is_refused_and_left_in_place(self):
         # A link leads outside the session. Archiving through it and then removing work/ would
         # record or remove files the session does not own, so both forms of link are refused.

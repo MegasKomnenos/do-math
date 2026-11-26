@@ -1407,7 +1407,8 @@ class RunnerTests(ScenarioCase):
         self.assertEqual(record['turns'], [{'stream': 'cli.stdout.jsonl', 'report': {'usage': given}}])
         self.session(runner, 'srunning')
         self.assertEqual(status(self.instance)['usage'], {
-            'cost_usd': 3.25, 'sessions': 3, 'sessions_without_cost': 1, 'sessions_without_record': 1,
+            'cost_usd': 3.25, 'sessions': 3, 'sessions_without_cost': 1, 'sessions_with_unreported_turns': 1,
+            'sessions_without_record': 1,
             'tokens': {'claude': {'inputTokens': 30, 'outputTokens': 210, 'cacheReadInputTokens': 2300,
                                   'cacheCreationInputTokens': 15},
                        'codex': given}})
@@ -1850,6 +1851,53 @@ class RunnerTests(ScenarioCase):
         self.assertEqual(read_json(canon.root / 'records.json')['Small.root']['approaches'], [])
         self.assertEqual(recovered.model['elements']['Small.root']['approaches'], [])
         self.assertEqual([p.name for p in (canon.history / 'Small/root').glob('*-approaches/*.md')], ['induction.md'])
+
+    def test_a_review_refused_at_publication_while_another_session_is_collected_is_left_alone_in_that_pass(self):
+        # A pass collects the sessions that were active when it began (Runner.collect), and collecting a review
+        # carries the publication queue forward (Runner.finish). The publication of a review that waited in the
+        # queue can so end in the middle of a pass. Here it is refused: the candidate replaces a proof that
+        # another publication replaced, the review job is cancelled and a replacement peer receives the work.
+        # The pass then leaves that review alone. Collected as a session that has just ended, it would be
+        # queued again, under a job that is cancelled. Three sessions stand in the order of their launch: a
+        # comprehensive review that has ended and is not collected yet, the review of a note, which the pass
+        # publishes first, and the review of the candidate, which was prepared before the root's proof changed.
+        runner = self.runner()
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        key = runner.enqueue('review', task)
+        tracing = runner.session_dir('stracing')
+        (tracing / 'output').mkdir(parents=True)
+        write_json(tracing / 'input.json', {'instance': str(self.instance), 'session': 'stracing', 'role': 'review',
+                                            'pipeline': None, 'task': task})
+        write_json(tracing / 'output/assessment.json', comprehensive(concerns=[concern('gap', 'Small.root')]))
+        (tracing / 'output/feedback.md').write_text('What the tracing found.', encoding='utf-8')
+        (tracing / 'cli.stdout.jsonl').write_text(json.dumps(
+            {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Tracing done.'}}), encoding='utf-8')
+        (tracing / 'cli.stderr.log').write_text('', encoding='utf-8')
+        (tracing / 'GO').write_bytes(b'go\n')  # the gate that dispatch opened
+        runner.state['sessions']['stracing'] = session_record('stracing', 'review', key, exit_code=0)
+        runner.state['jobs'][key].update(status='running', session='stracing')
+        late = self.candidate(replace={'Small.root': self.root_text(proof='cases n <;> sorry')},
+                              records={'Small/root.md': self.root_record('By cases on $n$.')})
+        self.replace_proof('Small.root', self.root_text(), 'By induction on $n$, comparing consecutive squares.',
+                           engine=runner)
+        note = self.candidate(understanding={'q0.md': 'The sum grows by one odd number at a time.\n'})
+        with patch.object(self, 'drain'):  # the two are queued and carried no further
+            self.publish(note, role='explore', question='q0', engine=runner, expect=False)
+            self.publish(late, engine=runner, expect=False)
+        queued = runner.state['publish_queue'][-1]
+        review, job = runner.state['sessions'][queued['session']], runner.state['jobs'][queued['job']]
+        # What the runner had recorded of the review when it queued its work (Runner.finish).
+        review.update(exit_code=0, retained=True, retention={'cli_activity': True, 'native_activity': False})
+        runner.collect()
+        pipeline = runner.state['pipelines'][job['pipeline']]
+        self.assertEqual((review['status'], job['status'], pipeline['stage']), ('failed', 'cancelled', 'peer'))
+        self.assertIn('could not be published on the current canon', job['last_error'])
+        # The comprehensive review was collected in the pass and waits for its turn; nothing else is queued.
+        self.assertEqual(runner.state['publish_queue'], [{'session': 'stracing', 'job': key, 'kind': 'review'}])
+        self.drain(runner)
+        self.assertEqual((runner.state['sessions']['stracing']['status'], review['status']), ('integrated', 'failed'))
+        self.assertEqual([j['status'] for j in runner.state['jobs'].values()
+                          if j['role'] == 'peer' and j['pipeline'] == pipeline['id']], ['pending'])
 
     # -- launch spacing, exploration requests and priority ----------------------------------------------
 
@@ -2299,6 +2347,23 @@ class RunnerTests(ScenarioCase):
         self.event('v2', 'review', comprehensive([finding('The induction step holds.', validates=['Small.root'])]))
         runner.model = replay(self.instance)
         self.assertEqual(formalizable(runner.model), ['Small.root'])
+        runner.populate()
+        self.assertEqual(self.formalizers(runner), [('Small.rootAlt', 'producing')])
+        # The formalizer's conversation fills, and it hands its task over. The job is work under way and no new
+        # launch: the session that continues it is launched although rootAlt is no longer the proof a new formalizer
+        # would be given, it holds the root under the section its predecessor held, and no second formalizer is sent.
+        first = job['session']
+        held = read_json(runner.session_dir(first) / 'declaration.json')['sections']
+        write_json(runner.session_dir(first) / 'end-check.json',
+                   {'resumptions': 0, 'authorization': {'basis': 'handed_over'}})
+        runner.finish(first, runner.state['sessions'][first])
+        self.assertEqual((job['status'], job['task']['continues']), ('pending', [str(runner.session_dir(first))]))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual(job['status'], 'running')
+        self.assertNotEqual(job['session'], first)
+        self.assertEqual(read_json(runner.session_dir(job['session']) / 'declaration.json')['sections'], held)
         runner.populate()
         self.assertEqual(self.formalizers(runner), [('Small.rootAlt', 'producing')])
 

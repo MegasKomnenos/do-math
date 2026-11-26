@@ -538,6 +538,11 @@ class CanonToolTests(ScenarioCase):
         self.assertIn('concern       v1/gap (confirmed, raised about an earlier proof): ' + gap, lines)
         self.assertIn('concern       v1/order (pending, raised about an earlier proof): ' + order, lines)
         self.assertIn('concern       v1/gap (confirmed): ' + gap, self.tool('view', 'Small.diagD').splitlines())
+        # The finding of v2 was about the proofs the two elements had when it was published. Its line stays in both
+        # views, and in the view of `colA` it says that the proof it judged is an earlier one.
+        fails = 'The merged case fails at the boundary.'
+        self.assertIn(f'later review  v2 (confirmed, about an earlier proof): {fails}', lines)
+        self.assertIn(f'later review  v2 (confirmed): {fails}', self.tool('view', 'Small.diagD').splitlines())
         text = self.tool('frontier')
         self.assertIn(f'\n## Concerns\n\n- v1/gap on `Small.diagD`: {gap} (confirmed)\n\nElements of this view', text)
         self.assertNotIn('v1/order', text)
@@ -551,6 +556,25 @@ class CanonToolTests(ScenarioCase):
         runner.populate()
         [job] = [j for j in runner.state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
         self.assertEqual(job['task']['concerns'], ['v1/gap'])
+        # A review that then judges the first concern reaches `colA` only through that concern, which was raised about
+        # the proof `colA` had before: its finding is about that earlier proof as well. A finding that withdraws the
+        # confirmation of the proof `colA` has now is about the present proof, and of the three findings it alone
+        # stands beside the root question, whose settlement could rest on `colA`.
+        holds, twice = 'The boundary case holds.', 'The three is added twice.'
+        self.event('v3', 'review', comprehensive([finding(holds, status='cleared', concerns=['v1/gap'])]))
+        self.event('v4', 'review', comprehensive([finding(twice, invalidates=['Small.colA'])]))
+        lines = self.tool('view', 'Small.colA').splitlines()
+        self.assertIn(f'later review  v3 (cleared, about an earlier proof): {holds}', lines)
+        self.assertIn(f'later review  v4 (confirmed): {twice}', lines)
+        self.assertIn(f'later review  v3 (cleared): {holds}', self.tool('view', 'Small.diagD').splitlines())
+        self.assertEqual([(found['source'], found['elements'], found['earlier'])
+                          for found in knowledge.replay(self.instance)['findings']],
+                         [('v2', ['Small.colA', 'Small.diagD'], ['Small.colA']),
+                          ('v3', ['Small.colA', 'Small.diagD'], ['Small.colA']),
+                          ('v4', ['Small.colA'], [])])
+        text = self.tool('frontier')
+        self.assertIn(f'- Later review (confirmed): {twice} — v4\n', text)
+        self.assertNotIn(fails, text)
 
     def test_the_history_of_an_element_leaves_out_the_elements_whose_names_extend_the_name(self):
         # `Small.root.even` is an element of its own, and its history folder lies inside that of `Small.root`.

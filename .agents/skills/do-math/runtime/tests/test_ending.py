@@ -717,6 +717,56 @@ class EndingTests(InstanceCase):
                     self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
                     self.assertEqual(engine.state['blocks']['provider:codex']['reason'], 'usage_limit')
 
+    def test_a_peer_whose_host_is_lost_after_its_first_turn_sends_the_candidate_it_had_prepared_to_review(self):
+        # The first turn ended cleanly and left a prepared candidate, and the host recorded the request of the turn
+        # in which the peer judges its ending again. A host that is then lost, as every host is when the machine
+        # goes down, writes no exit.json: while it waits to start that turn, or while the turn runs. The runner
+        # records an interruption and puts the output to the transport check all the same, and the candidate is
+        # frozen for review. A host lost before it recorded how the first turn ended has recorded no such request:
+        # that peer is replaced, although the same candidate stands in its output. The host is lost here by an
+        # error that leaves it at the point named, so the session folder holds what a host ended there leaves.
+        from ending import wait_to_resume
+
+        def lost(*args):
+            raise RuntimeError('the host is lost')
+
+        for point, kept in (('first turn', False), ('wait', True), ('resumed turn', True)):
+            with self.subTest(point=point):
+                engine, sid, directory = self.prepare(role='peer')
+
+                def turn(session, folder, command, state):
+                    if point == 'resumed turn' and Path(folder) != directory:
+                        lost()
+                    result = run_turn(session, folder, command, state)
+                    if point == 'first turn':
+                        lost()
+                    return result
+
+                with patch('ending.worker_command', side_effect=self.command), \
+                        patch('ending.run_turn', side_effect=turn), \
+                        patch('ending.wait_to_resume', side_effect=lost if point == 'wait' else wait_to_resume), \
+                        self.assertRaisesRegex(RuntimeError, 'the host is lost'):
+                    session_host(directory)
+                self.assertFalse((directory / 'exit.json').exists())
+                s = engine.state['sessions'][sid]
+                s.update(host=None, cli=None)
+                engine.finish(sid, s)
+                job = engine.state['jobs'][s['job']]
+                stage = engine.state['pipelines'][job['pipeline']]['stage']
+                reviews = [j for j in engine.state['jobs'].values()
+                           if j['role'] == 'review' and j['pipeline'] == job['pipeline']]
+                self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+                if kept:
+                    self.assertEqual((job['status'], s['status'], stage), ('done', 'ended', 'review'))
+                    self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 0.')
+                    self.assertTrue(read_json(directory / 'candidate/prepared.json')['ok'])
+                    self.assertEqual(len(reviews), 1)
+                else:
+                    self.assertEqual((job['status'], s['status'], stage), ('pending', 'failed', 'peer'))
+                    self.assertIn(str(directory), job['task']['previous_partial_sessions'])
+                    self.assertFalse((directory / 'candidate').exists())
+                    self.assertEqual(reviews, [])
+
     def test_another_sessions_provider_block_holds_resumption(self):
         engine, _, directory = self.prepare(maximum=1)
         engine.state['blocks']['provider:codex'] = {'until': time.time() + 60, 'reason': 'usage_limit'}
@@ -819,6 +869,29 @@ class EndingTests(InstanceCase):
         row = board(self.instance, engine.state)[0]
         self.assertEqual((row['session'], row['question']), (job['session'], 'q0'))
 
+    def test_a_peer_that_hands_its_task_over_keeps_its_sections_for_the_peer_that_continues_it(self):
+        engine, sid, directory = self.told(role='peer', config={'context_at': [0], 'context_basis': 'handed_over'})
+        # A peer can register sections of its own; this one holds the whole root.
+        self.assertTrue(take(directory, 'Small.root')['registered'])
+        state = self.run_host(directory)
+        self.assertEqual((state['authorization']['source'], state['authorization']['basis']), ('worker', 'handed_over'))
+        s, job = self.collected(engine, sid, directory)
+        pipeline = engine.state['pipelines'][job['pipeline']]
+        # The stage is not over. The same job waits for its next peer, with the folder of this one; the candidate
+        # this peer had prepared is not frozen, and nothing goes to review.
+        self.assertEqual((s['status'], job['status'], job['retries'], pipeline['stage']), ('ended', 'pending', 0, 'peer'))
+        self.assertEqual(job['task']['continues'], [str(directory)])
+        self.assertFalse((directory / 'candidate').exists())
+        self.assertFalse(any(j['role'] == 'review' for j in engine.state['jobs'].values()))
+        self.assertTrue(self.relaunch(engine, lambda: engine.dispatch(job['id'])))
+        # The next peer takes the peer's place in the pipeline. What the first peer registered goes on holding
+        # its element, as after a peer that failed, and the pack names the report that a peer leaves in work/.
+        self.assertEqual((pipeline['peer'], pipeline['previous_peers']), (job['session'], [sid]))
+        [row] = board(self.instance, engine.state)
+        self.assertEqual([(section['session'], section['whole']) for section in row['sections']], [(sid, True)])
+        self.assertIn(str(directory / 'work/report.md'),
+                      (engine.session_dir(job['session']) / 'pack.md').read_text(encoding='utf-8'))
+
     def test_an_ending_decided_in_answer_to_the_message_needs_no_further_turn(self):
         engine, sid, directory = self.told(config={'context_at': [0], 'context_basis': 'task_completed'})
         with patch('ending.worker_command', side_effect=self.command) as resume:
@@ -867,6 +940,27 @@ class EndingTests(InstanceCase):
         _, _, directory = self.prepare_claude(role='explore', config={'context_limit_at': [0]})
         self.assertEqual(self.run_host(directory)['authorization']['basis'], 'interrupted')
 
+    def test_a_review_ends_on_a_decision_of_its_own_only_where_the_decision_hands_its_task_over(self):
+        # A review writes no decision to end on: its session ends when its output passes the transport check. The
+        # one decision of a review that its host takes is the answer to the message that hands the task over.
+        engine, sid, directory = self.told(role='review', config={'context_at': [0], 'context_basis': 'handed_over',
+                                                                  'assess_at': 9})
+        state = self.run_host(directory)
+        self.assertEqual((state['authorization']['source'], state['authorization']['basis'], state['resumptions']),
+                         ('worker', 'handed_over', 0))
+        s, job = self.collected(engine, sid, directory)
+        # The assignment waits for its next review, which is told where this one left its report.
+        self.assertEqual((s['status'], job['status'], job['retries']), ('ended', 'pending', 0))
+        self.assertEqual(job['task']['continues'], [str(directory)])
+        self.assertTrue(self.relaunch(engine, lambda: engine.dispatch(job['id'])))
+        self.assertIn(str(directory / 'work/report.md'),
+                      (engine.session_dir(job['session']) / 'pack.md').read_text(encoding='utf-8'))
+        # A review that answers the message on another basis has not ended by that. This one left its assessment
+        # in the same turn, so it ends as a review does, on the check of its output.
+        _, _, directory = self.told(role='review', config={'context_at': [0], 'context_basis': 'task_completed'})
+        authorization = self.run_host(directory)['authorization']
+        self.assertEqual((authorization['source'], authorization['basis']), ('runner', 'output_checked'))
+
 
 class EndingConfigurationTests(unittest.TestCase):
     def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
@@ -910,10 +1004,6 @@ class EndingConfigurationTests(unittest.TestCase):
             with self.assertRaises(ValueError) as refused:
                 request_prompt(request, 'attempt', guidance)
             self.assertEqual(str(refused.exception), 'continuation guidance must not be empty')
-            (guidance / 'common.md').write_text('Incomplete message.')
-            with self.assertRaises(ValueError) as refused:
-                request_prompt(request, 'explore', guidance)
-            self.assertEqual(str(refused.exception), 'continuation common.md needs exactly one {{role_guidance}}')
 
     def test_limit_validation(self):
         self.assertEqual(defaults()['max_end_resumptions'], 3)

@@ -593,7 +593,11 @@ def _packed(session, name, entries):
     else:
         part = session / (name + ".part")
         try:
-            with tarfile.open(part, "w:xz", preset=ARCHIVE_PRESET) as tar:
+            # dereference: a file that stands under two names among the entries, a hard link, is written under
+            # each name as a file with its content. Left to its default, tarfile writes the second name as a
+            # link to the first; the read-back below then finds no file under that name, the archive never
+            # holds exactly the entries, and the originals would stay unarchived at every pass.
+            with tarfile.open(part, "w:xz", preset=ARCHIVE_PRESET, dereference=True) as tar:
                 for entry in entries:
                     tar.add(session / entry, arcname=entry, recursive=False)
             stored = _archive_entries(part)
