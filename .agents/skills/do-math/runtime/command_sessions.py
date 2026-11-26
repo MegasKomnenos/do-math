@@ -1,4 +1,4 @@
-"""The session runner that the paper command and the finalize pipeline share: it launches one session in a folder, waits out a usage limit, reads what the session wrote, and runs sessions side by side."""
+"""The session runner that the paper command and the finalize pipeline share: it launches one session in a folder, waits for a provider that refuses it, reads what the session wrote, and runs sessions side by side."""
 from concurrent.futures import ThreadPoolExecutor, wait
 from contextlib import contextmanager
 import json
@@ -8,15 +8,15 @@ import subprocess
 import threading
 import time
 
-from cli_adapter import detect_usage_limit, provider_for_model
+from cli_adapter import provider_for_model
 from launch import worker_command, worker_environment
-from retention import events, model_refused
+from retention import events, model_refused, refusal
 from runtime_support import InstanceLock, popen_options, read_json, write_json, write_text
 from settings import load_settings
 
 SESSION_ATTEMPTS = 2   # sessions for one task before the command gives up on output it can read, unless the caller says otherwise
 PARALLEL = 4           # sessions side by side, unless the caller says otherwise; a session mostly waits on the network
-LIMIT_WAITS = 12       # times one session is started again after the account's usage limit
+LIMIT_WAITS = 12       # times one session is started again after its provider refused it (Sessions.launch)
 NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessions left, and a new session may do '
              'better. Start the same command again. If it stops in the same way, the reasons say what the task asks '
              'and the sessions could not do.')
@@ -24,6 +24,12 @@ NO_OUTPUT = ('Nothing is to be repaired by hand: the reasons are what the sessio
 STOPPED = ('Nothing is to be repaired by hand. Start the same command again: it starts the session again, with the '
            'same prompt and the same files. The folders of the stopped sessions, which are named above, hold what '
            'each session was given and what the CLI answered.')
+# What a person does when a provider refused a session through every wait (Sessions.launch).
+REFUSED = ('Nothing is to be repaired by hand, and no output of a session is in question: the provider did not take '
+           'the session. The reason named above is usage_limit for the usage limit of the account, model_capacity for '
+           'a model for which the provider has no capacity, and model_requires_usage_credits for a model that asks for '
+           'usage credits. Start the same command again when the provider takes sessions of that model again; the '
+           'paper command continues with --resume and the same --out.')
 # The tools by which a session of the Claude CLI can arrange to be called again later. Sessions.launch
 # withholds them from every session. The command reads a session's output when its process has ended, and
 # the CLI does not exit while such a call is pending: a reading session that had set itself a reminder
@@ -62,6 +68,14 @@ class Unusable(Exception):
 
 class Held(Stop):
     """Another command is at work in the folder of the run, so this one does not begin."""
+
+
+class Refused(Stop):
+    """A provider refused a session each time it was started, through every wait; no output of the task was read."""
+
+
+class Unmade(Stop):
+    """No session of a task left output that the script can use, and the script read what at least one of them left."""
 
 
 @contextmanager
@@ -124,7 +138,7 @@ class Sessions:
     the first entry of `models`, `assessor` the first entry of the role `review`, or of `models` when the
     settings name none. `parallel` bounds the sessions that side_by_side runs at a time. `gate`, when it
     is given, is a semaphore that bounds the CLI processes of every object that shares it: launch holds it
-    while the process of a session runs, and not while it waits for a usage limit to end. With `dry`
+    while the process of a session runs, and not while it waits for a provider that refused the session. With `dry`
     the log is kept in memory and not written."""
 
     def __init__(self, instance, out, parallel=PARALLEL, dry=False, gate=None):
@@ -156,7 +170,16 @@ class Sessions:
         """One session in its own folder: its prompt and its files are written, the CLI runs to its end.
 
         `files` maps a path under the folder to its content, a text or bytes. `servers` are the MCP
-        servers of the session; without them it has none. Returns the folder."""
+        servers of the session; without them it has none. Returns the folder.
+
+        A session that its provider refuses is waited for and started again, in the same folder and
+        with the same model, LIMIT_WAITS times at the most. The refusals are those that
+        retention.refusal tells, by which the research's runner knows them as well: the usage limit
+        of the account, a model for which the provider has no capacity, and a model that asks for
+        usage credits. The wait lasts until the reset that the provider named for a usage limit, and
+        for retry_max_seconds of the settings where none is named. A refusal of the model itself is
+        none of these: a safeguard stopped that session, and `session` starts it again
+        (stopped_by_safeguard). When the provider still refuses the last start, Refused is raised."""
         with self.lock:
             if self.stopping.is_set():
                 raise Stop('the command was interrupted')
@@ -172,9 +195,9 @@ class Sessions:
         write_text(folder / 'prompt.txt', prompt)
         write_json(folder / 'session.json', {'kind': kind, 'section': section, **choice})
         provider = provider_for_model(choice['model'])
-        for _ in range(LIMIT_WAITS + 1):
+        for waits in range(LIMIT_WAITS + 1):
             # The gate is held from here to the end of the process, so that the sessions of everything that shares
-            # it are bounded together. It is given back before a wait for a usage limit, which can last hours.
+            # it are bounded together. It is given back before a wait for the provider, which can last hours.
             while self.gate is not None and not self.gate.acquire(timeout=0.5):
                 if self.stopping.is_set():
                     raise Stop('the command was interrupted')
@@ -207,17 +230,25 @@ class Sessions:
                     self.gate.release()
             if self.stopping.is_set():
                 raise Stop('the command was interrupted')
-            limit = detect_usage_limit(provider, folder / 'cli.stdout.jsonl', folder / 'cli.stderr.log', now=time.time(),
-                                       fallback_seconds=self.settings['retry_max_seconds'], session_started_at=started)
+            # The refusals of the provider that are waited for. A refusal of the model itself is none of them: a
+            # safeguard stopped that session, and `session` starts it again and counts it.
+            refused = refusal(folder, provider, choice['model'], started, self.settings['retry_max_seconds'])
+            if refused is not None and refused['reason'] == 'model_refusal':
+                refused = None
+            until = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(refused['until'])) if refused else None
             self.event('session', folder=folder.relative_to(self.out).as_posix(), kind=kind, section=section, **choice,
                        exit_code=code, seconds=round(time.time() - started, 1),
-                       usage_limit_until=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(limit.retry_at)) if limit else None)
-            if limit is None:
-                break
-            # The same session is started again when the limit ends.
-            if self.stopping.wait(max(0.0, limit.retry_at - time.time())):
+                       usage_limit_until=until if refused and refused['reason'] == 'usage_limit' else None,
+                       refused=refused['reason'] if refused else None, refused_until=until)
+            if refused is None:
+                return folder
+            # The same session is started again when the wait ends. After the last start nothing is waited for.
+            if waits < LIMIT_WAITS and self.stopping.wait(max(0.0, refused['until'] - time.time())):
                 raise Stop('the command was interrupted')
-        return folder
+        raise Refused(f'the provider refused the {kind} session' + (f' of {section}' if section else '')
+                      + f" with the model {choice['model']} each of the {LIMIT_WAITS + 1} times it was started, the last "
+                      f"time for this reason: {refused['reason']} ({folder.relative_to(self.out).as_posix()} holds what "
+                      'the CLI answered)', todo=REFUSED)
 
     def session(self, kind, prompt, files, read, choice, section=None, attempts=SESSION_ATTEMPTS, servers=None,
                 check=None):
@@ -260,9 +291,9 @@ class Sessions:
                         path.read_text(encoding='utf-8', errors='replace')
                         for path in sorted((folder / 'output').rglob('*')) if path.is_file()}
         if len(stopped) < attempts:
-            raise Stop(f'no {kind} session left output the script can use, in {attempts} attempts'
-                       + (f', of which a safeguard of the AI system stopped {len(stopped)}' if stopped else '') + ': '
-                       + '; '.join(problems), todo=NO_OUTPUT)
+            raise Unmade(f'no {kind} session left output the script can use, in {attempts} attempts'
+                         + (f', of which a safeguard of the AI system stopped {len(stopped)}' if stopped else '') + ': '
+                         + '; '.join(problems), todo=NO_OUTPUT)
         if check is None:
             raise Stop(f'a safeguard of the AI system stopped every {kind} session' + (f' of {section}' if section else '')
                        + f', in {attempts} attempts, before it had finished (' + ', '.join(stopped) + '). The run needs '

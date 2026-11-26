@@ -47,6 +47,8 @@ UNDERSTANDING = ('The sum grows by one odd number at a time, and each step compl
 
 
 class ContextTests(InstanceCase):
+    changes_guides = True  # test_launch_snapshot_keeps_references_research_views_and_assignment rewrites a guide
+
     def session(self, name):
         """A session folder as the runner's dispatch leaves it before the pack is assembled."""
         folder = self.instance / 'sessions' / name
@@ -133,8 +135,8 @@ class ContextTests(InstanceCase):
     def test_instruction_links_lead_to_snapshot_and_research_text_stays_verbatim(self):
         session = self.instance / 'sessions/s1'
         context = session / 'context'
-        text = rebase_links('[Evidence](../reference/evidence.md)', context / 'roles/attempt.md', session, context)
-        self.assertEqual(text, '[Evidence](context/reference/evidence.md)')
+        text = rebase_links('[The canon](../reference/canon.md)', context / 'roles/attempt.md', session, context)
+        self.assertEqual(text, '[The canon](context/reference/canon.md)')
         # A fragment stays on the rebased target; links that are not local files are left as they are.
         self.assertEqual(rebase_links('[Lean](lean.md#builds) and [site](https://example.org/a)',
                                       context / 'reference/tools.md', session, context),

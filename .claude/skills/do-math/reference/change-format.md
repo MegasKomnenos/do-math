@@ -276,6 +276,4 @@ Review will judge two elements. For `Small.oddSum_succ` it judges the statement 
 
 ## After your session
 
-When your session has ended, the runner gives the candidate and the producing originals to a fresh reviewer. The candidate is then frozen; nothing in it changes during review. Review writes its assessment in its own folder.
-
-At publication the runner applies the candidate to the canon as it then is, leaving out the replacements that review declined, compiles the library and runs the same checks as the preparation. What happens when the candidate cannot be applied or does not build is described in the common introduction under "Turning a session's work into the canon".
+When your session has ended the candidate is frozen: nothing in it changes during review, which writes its assessment in its own folder. At publication the runner runs the same checks as the preparation, on the canon as it then is and without the replacements that review declined. What happens when the candidate cannot be applied or does not build is described in the common introduction under "Turning a session's work into the canon".

@@ -6,12 +6,15 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
+import lean_broker
 import runner as runtime
 import runtime_support as support
+from broker_fixture import BrokerFixture
 from support import InstanceCase
 
 
@@ -281,11 +284,13 @@ class RecordedFailureTests(InstanceCase):
     def test_a_failure_of_any_kind_is_recorded_before_the_runner_ends(self):
         # A failed read or write raises an OSError. A file whose content has another shape than the runner
         # reads raises a TypeError or an AttributeError. Whatever its kind, the error that ends the runner is
-        # in last_error for status, and its call stack is in the stderr log (reference/operations.md).
+        # in last_error for status, and its call stack is in the stderr log (reference/operations.md). What the
+        # runner prints on standard output is caught as a stream: traceback writes the call stack with print,
+        # so a stand-in for print would keep the stack out of the log.
         engine = runtime.Runner(self.instance, self.skill)
         stderr = io.StringIO()
         with patch.object(engine, 'tick', side_effect=TypeError('injected failure of another kind')), \
-                patch('builtins.print'), contextlib.redirect_stderr(stderr), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr), \
                 self.assertRaisesRegex(TypeError, 'injected failure of another kind'):
             engine.run()
         self.assertIn('Traceback (most recent call last)', stderr.getvalue())
@@ -490,6 +495,50 @@ class LoadedAtStartTests(unittest.TestCase):
         result = subprocess.run([sys.executable, '-B', '-c', probe, str(Path(runtime.__file__).resolve().parent)],
                                 capture_output=True, text=True, timeout=120)
         self.assertEqual((result.returncode, result.stdout.strip()), (0, ''), result.stderr)
+
+
+class BrokerRelaunchTests(BrokerFixture):
+    def test_runner_launches_adopts_and_relaunches_the_broker(self):
+        # Runner.ensure_broker alone is under test. A Runner is built around an initialized instance with
+        # its compiled canon; ensure_broker reads only the instance's path and the two fields set here.
+        def bare_runner():
+            engine = runtime.Runner.__new__(runtime.Runner)
+            engine.instance, engine.broker, engine.broker_attempt = self.instance, None, 0
+            return engine
+        engine = bare_runner()
+        before = time.monotonic()
+        engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
+        self.assertGreaterEqual(engine.broker_attempt, before)  # the launch records its moment for the ten seconds below
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
+            time.sleep(0.05)
+        first = lean_broker.broker_alive(self.paths)
+        self.assertTrue(first)
+        self.assertTrue(lean_broker.broker_status(self.paths)["broker_alive"])
+        other = bare_runner()
+        other.ensure_broker()
+        self.assertIsNone(other.broker)
+        self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
+        support.terminate_process(first["process"])
+        while support.alive(first["process"]):
+            time.sleep(0.02)
+        # Within ten seconds of the last launch no relaunch is made (runner.ensure_broker). The moment of that
+        # launch is set here, so that a machine slow enough to spend those seconds above changes nothing, and the
+        # launch itself is watched, because a relaunched broker writes its receipt only seconds later.
+        engine.broker_attempt = time.monotonic()
+        with patch.object(lean_broker, "launch_broker") as relaunch:
+            engine.ensure_broker()
+        relaunch.assert_not_called()
+        self.assertIsNone(lean_broker.broker_alive(self.paths))
+        engine.broker_attempt = float("-inf")
+        engine.ensure_broker()
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
+            time.sleep(0.05)
+        second = lean_broker.broker_alive(self.paths)
+        self.assertNotEqual(second["process"], first["process"])
+        support.terminate_process(second["process"])
+        engine.broker.wait(timeout=10)
 
 
 if __name__ == '__main__':

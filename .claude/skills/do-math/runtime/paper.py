@@ -97,7 +97,7 @@ PREFERENCES = REFERENCE / 'user-writing-preferences.md'
 READER_SECTION = 'The reader'  # the part of the method that the reading session receives, and nothing else of it
 # The part of the method that a reading beside real papers receives, and nothing else of it.
 LIKENESS_SECTION = 'Reading the manuscript beside real papers'
-# The last section of the method. A session that writes, sketches or repairs receives the method without it.
+# The last section of the method. No session receives it: one that is given the method whole has it without this section.
 CHECKS_SECTION = 'What is checked after writing'
 EXEMPLARS = Path(__file__).resolve().parents[1] / 'exemplars'  # the collection: manifest.json, <key>.tex, fetch.py
 MANIFEST_FIELDS = ('key', 'arxiv', 'title', 'authors', 'journal', 'year', 'category', 'field', 'pages', 'licence',
@@ -213,7 +213,7 @@ def method_part(title):
 
 
 def method_before_checks():
-    """The method document without its last section, for a session that writes, sketches or repairs."""
+    """The method document without its last section, for every session that is given more of it than single sections."""
     text = read_file(METHOD)
     match = re.search(r'^## ' + re.escape(CHECKS_SECTION) + r'\n', text, re.M)
     if not match:
@@ -1961,12 +1961,11 @@ called the canon, whose main statement, the root, has been settled by a formal p
 an element, and beside it is a written record. The script launches AI sessions, some of them side by side, and each does \
 one part of the work. No session can ask another what it meant, and nobody answers questions while the script runs.'''
 
-METHOD_FILE = '''- `paper-method.md` is the method that every session follows. Read it in full before anything else.'''
-# The same entry for a session that writes, sketches or repairs. The last section of the method describes what the
-# script and other sessions do after the writing. Such a session receives the method without that section
-# (method_before_checks), and its prompt carries what of the section concerns it. The section before it, now the last
-# of the file, instructs the sessions that read the manuscript beside real papers, and the prompt of a repair that
-# takes up what they found names it.
+# The entry of the method in the prompt of a session that plans, sketches, writes, repairs or resolves. The last
+# section of the method describes what the script and other sessions do after the writing. No session receives it
+# (method_before_checks), and each prompt carries what of the section concerns its session. The section before it, the
+# last of the file, instructs the sessions that read the manuscript beside real papers, and the prompts of a repair
+# and of the resolving session, which take up what they found, name it.
 METHOD_BEFORE_CHECKS = '''- `paper-method.md` is the method that every session follows, here without its last section, \
 "What is checked after writing", which other sections name. That section says what the script and other sessions do \
 with the manuscript once it is written; what of it concerns this session is in this prompt. Read the file in full \
@@ -1985,7 +1984,7 @@ This session plans the paper. The sessions after it write the sections from the 
 each other's text, and the script holds the manuscript to the plan.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 - `materials-digest.md` is a digest of everything the proof of the root rests on. With the files of the next entry it is \
 the only source of the mathematics and of the literature. Read it in full.
 - `elements/` holds the full record of every element, one file each; the digest names the file at each element. The \
@@ -2723,7 +2722,8 @@ sessions do the same for the other sections. The paper is of use only if each of
 proved, and a difference that is not found here is written into the paper.
 
 In this folder:
-- `paper-method.md` is the method the paper is written by. Its sections "What of the canon the paper leaves out" and \
+- `paper-method.md` is the method the paper is written by, here without its last section, which other sections name \
+and which says what is done once a manuscript is written. Its sections "What of the canon the paper leaves out" and \
 "Every numbered statement says what its element says" say what a statement has to say and which differences from the \
 record are permitted. Its section "The draft that comes before the paper" says what a gap is.
 - `statements.json` lists the sketched statements and formulas of this section: for each its label, whether it is a \
@@ -2792,7 +2792,7 @@ session repairs that plan. It does not plan the paper anew: the papers were chos
 drafted under the labels of this plan, and the writers will receive those drafts.
 
 In this folder:
-''' + METHOD_FILE + '''
+''' + METHOD_BEFORE_CHECKS + '''
 - `plan.json` is the plan as the script carried it over, and `carried.md` says what the script changed in it.
 - `problems.md` lists what the check of the plan found. These are the reasons the script cannot write the paper from \
 `plan.json`.
@@ -2827,10 +2827,13 @@ RESOLVE_PROMPT = CONTEXT + '''
 
 This session resolves what the readings of the manuscript left open. The manuscript was written, read and repaired by \
 sessions before this one. It was read by sessions that had nothing but the manuscript, as its reader will read it, and \
-it was read beside research articles from refereed journals. What these readers found went to repair sessions a \
+it was read beside research articles from refereed journals, as the method's section "Reading the manuscript beside \
+real papers" describes. What these readers found went to repair sessions a \
 bounded number of times. Each of those repairs kept the plan of the paper, and the last ones were narrow: they changed \
 the passages that their findings named and nothing else. `findings.json` holds the findings that are open after all of \
-that. Many of them are open because no repair of that kind could answer them: they ask for another arrangement of a \
+that. Many of them are open because no repair of that kind could answer them. A reader beside real papers finds that a \
+section gives a full proof where papers give a sentence, or that two sections do what papers do in one; a reader of the \
+manuscript finds a statement that stands before the notion it needs. Such findings ask for another arrangement of a \
 section, for a statement in another place or without a number of its own, for a passage written anew.
 
 This session can answer such a finding, because it is not bound to the plan. It is also the last that takes these \
@@ -2838,8 +2841,7 @@ findings up: each of them is closed here, by a change of the manuscript or by yo
 is. The reasons are handed over with the paper, to the person who decides whether the paper is as it should be.
 
 In this folder:
-''' + METHOD_FILE + ''' Its section "What is checked after writing" says, where it describes this session, what it may \
-change and what stays.
+''' + METHOD_BEFORE_CHECKS + '''
 - `plan.json` is the plan of the paper as the manuscript now follows it.
 ''' + RESEARCH_FILES + '''
 ''' + PREFERENCES_FILE + '''
@@ -3088,8 +3090,9 @@ nothing else than the library proves, so each of them is now restated as its ele
 this session and nothing after that: what you write is what the paper will state.
 
 In this folder:
-- `paper-method.md` is the method the manuscript was written by. It says what a numbered statement of the paper is and \
-how it stands to its element.
+- `paper-method.md` is the method the manuscript was written by, here without its last section, which other sections \
+name and which says how a manuscript is checked. It says what a numbered statement of the paper is and how it stands \
+to its element.
 - `statements.json` lists the statements. Each has its "label" and "number", the name of its "element", \
 "record_statement", the statement of the element in words, "lean_statement", the same in Lean, "paper_statement", the \
 statement as the manuscript has it, and "difference", what the comparison found.
@@ -3422,7 +3425,7 @@ class Paper(Sessions):
 
     def planning_kit(self):
         """The files of the session that plans: the digest, the record of every element, and the whole collection."""
-        return {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
+        return {'paper-method.md': method_before_checks(), 'user-writing-preferences.md': read_file(PREFERENCES),
                 'materials-digest.md': render_digest(self.materials),
                 **{name: text for name, text in self.records().items() if name.startswith('elements/')},
                 'exemplars.md': render_exemplars(self.collection),
@@ -3511,7 +3514,7 @@ class Paper(Sessions):
                     raise Unusable(found)
                 return repaired
 
-            files = {'paper-method.md': read_file(METHOD), 'materials-digest.md': render_digest(self.materials),
+            files = {'paper-method.md': method_before_checks(), 'materials-digest.md': render_digest(self.materials),
                      **{name: text for name, text in self.records().items() if name.startswith('elements/')},
                      'plan.json': json.dumps(carried, ensure_ascii=False, indent=2) + '\n', 'study.md': study,
                      'carried.md': '\n'.join(['# What the script changed in the plan of the draft', '',
@@ -3647,7 +3650,7 @@ class Paper(Sessions):
                          'record_disagreement': v['record_disagreement'] if is_text(v.get('record_disagreement')) else ''}
                         for v in found]
 
-            files = {'paper-method.md': read_file(METHOD), 'plan.json': self.plan_text(),
+            files = {'paper-method.md': method_before_checks(), 'plan.json': self.plan_text(),
                      'statements.json': json.dumps(rows, ensure_ascii=False, indent=2) + '\n',
                      'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
                      **{name: text for name, text in self.records().items() if name.startswith('elements')}}
@@ -4452,7 +4455,7 @@ class Paper(Sessions):
                                  for number, r in enumerate(response, 1)]
 
         papers = {section['id']: self.section_papers(section) for section in sections}
-        files = {'paper-method.md': read_file(METHOD), 'user-writing-preferences.md': read_file(PREFERENCES),
+        files = {'paper-method.md': method_before_checks(), 'user-writing-preferences.md': read_file(PREFERENCES),
                  'plan.json': self.plan_text(), **self.records(), 'paper.tex': tex,
                  'findings.json': json.dumps({'understanding': understanding, 'findings': findings},
                                              ensure_ascii=False, indent=2) + '\n',
@@ -4907,8 +4910,9 @@ class Paper(Sessions):
         does so again from the same texts; the passages are counted on the parts as they stand now, and a
         part that was put back counts otherwise."""
         folder = self.out / 'narrow' / 'undone'
-        shutil.rmtree(folder, ignore_errors=True)
-        folder.mkdir(parents=True, exist_ok=True)
+        if folder.exists():
+            shutil.rmtree(folder)  # a text left here would be put back: the step `undo` reads every text of this folder
+        folder.mkdir(parents=True)
         for name, text in texts.items():
             if text != self.parts[name]:
                 write_text(folder / (name + '.tex'), text)
@@ -5213,7 +5217,7 @@ class Paper(Sessions):
         entries = [{**{key: row[key] for key in ('label', 'number', 'element', 'record_statement', 'lean_statement',
                                                  'paper_statement')}, 'difference': row['comparison']['difference']}
                    for row in rows]
-        files = {'paper-method.md': read_file(METHOD), 'paper.tex': tex,
+        files = {'paper-method.md': method_before_checks(), 'paper.tex': tex,
                  'statements.json': json.dumps(entries, ensure_ascii=False, indent=2) + '\n',
                  'records.md': render_records(self.materials, self.plan, {row['element'] for row in rows}, self.layout),
                  **{name: content for name, content in self.records().items() if name.startswith('elements')},

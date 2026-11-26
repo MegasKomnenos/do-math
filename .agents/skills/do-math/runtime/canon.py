@@ -433,9 +433,11 @@ def load_change(candidate):
     for relative in data['records']:
         parse_record((candidate / 'records' / relative).read_text(encoding='utf-8-sig'), 'records/' + relative)
     for relative in data['approaches']:
-        entry = parse_approach((candidate / 'approaches' / relative).read_text(encoding='utf-8-sig'),
-                               'approaches/' + relative)
-        if REVIEW_SECTION in entry['sections']:
+        text = (candidate / 'approaches' / relative).read_text(encoding='utf-8-sig')
+        entry = parse_approach(text, 'approaches/' + relative)
+        # A line `## Review` inside a code block is no section of the entry, and publication still cuts the entry
+        # at that line (with_review), so it is refused here like the section.
+        if REVIEW_SECTION in entry['sections'] or split_review(text)[1] is not None:
             raise CanonError(f'approaches/{relative}: the "## {REVIEW_SECTION}" section is written at publication, from review')
     for relative in data['understanding']:
         text = (candidate / 'questions' / relative).read_text(encoding='utf-8-sig')

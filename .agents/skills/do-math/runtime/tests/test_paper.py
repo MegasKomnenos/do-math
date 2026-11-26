@@ -1097,10 +1097,12 @@ class RunTests(PaperCase):
         self.assertEqual((self.out / 'sessions' / '04-write-tools' / 'study.md').read_text(encoding='utf-8'), STUDY)
         self.assertIn('The papers come before the writing.', calls[3]['prompt'])
         self.assertNotIn('output/study', calls[3]['prompt'])
-        # A session that writes has the method without its last section, of which its prompt carries what concerns
-        # it; the planning session has the whole method.
-        whole, cut = ((self.folder(call) / 'paper-method.md').read_text(encoding='utf-8') for call in (calls[0], calls[3]))
-        self.assertEqual(cut, whole[:whole.index('\n## What is checked after writing\n') + 1])
+        # A session that is given the method whole has it without its last section, of which its prompt carries what
+        # concerns it: the planning session as well as a session that writes.
+        whole = paper.read_file(paper.METHOD)
+        for call in (calls[0], calls[3]):
+            self.assertEqual((self.folder(call) / 'paper-method.md').read_text(encoding='utf-8'),
+                             whole[:whole.index('\n## What is checked after writing\n') + 1])
         # Two readings beside papers the plan did not choose, each with papers of its own, found nothing.
         likeness = self.calls('likeness')
         for call, keys in zip(likeness, (FIRST_FOUR, NEXT_FOUR)):
@@ -2611,33 +2613,31 @@ class OpenFindingsTests(PaperCase):
     DIFFERENCE = 'The manuscript has k^2 + 2k = (k + 1)^2.'
     OFF = TOOLS.replace('k^2 + (2k + 1)', 'k^2 + 2k')  # the section `tools` with a statement that differs from its element
 
-    def leave_open(self, comparison=True):
-        """A run that ends with two findings of its one reading kept by the repair, and, with `comparison`, with a
-        statement that differs from its element after the bounded comparisons; the number of sessions it launched."""
+    def leave_open(self):
+        """A run that ends with two findings of its one reading kept by the repair and with a statement that differs
+        from its element after the bounded comparisons; the number of sessions it launched."""
         script = good()
         script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION, BASE]})}]
         script['repair:narrow'] = [{'output/response.json': answered('The reader is expected to expand a square.', 'kept')}]
-        if comparison:
-            differs = [dict(row) for row in SAME]
-            differs[2].update(verdict='differs', difference=self.DIFFERENCE)
-            script['write:tools'] = [{'output/tools.tex': self.OFF}]
-            script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
-            script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
+        differs = [dict(row) for row in SAME]
+        differs[2].update(verdict='differs', difference=self.DIFFERENCE)
+        script['write:tools'] = [{'output/tools.tex': self.OFF}]
+        script['compare:tools'] = [{'output/comparison.json': json.dumps(differs[1:])}]
+        script['repair:comparison'] = [{'output/response.json': answered('The statement is that of the record.', 'kept')}]
         def run():
             with patch('paper.READING_ROUNDS', 1), patch('paper.STAGES', paper.STAGES[:4]):
                 self.assertEqual(self.run_paper(script), 2)
 
-        # Three tests start from the run with the statement that differs as the class words it: it is made once.
-        if comparison and self.DIFFERENCE == type(self).DIFFERENCE:
+        # Four tests start from the run with the statement that differs as the class words it: it is made once.
+        if self.DIFFERENCE == type(self).DIFFERENCE:
             self.taken_up('findings left open', run)
         else:
             run()
         self.kept = paper.KEPT + 'The reader is expected to expand a square.'
         self.left = [{'check': paper.READING, 'after_repairs': 1,
-                      'problems': [{**EXPANSION, 'open_because': self.kept}, {**BASE, 'open_because': self.kept}]}]
-        if comparison:
-            self.left.append({'check': paper.COMPARISON, 'after_repairs': paper.COMPARISON_ROUNDS - 1,
-                              'problems': [{'label': 'lem:square', 'difference': self.DIFFERENCE}]})
+                      'problems': [{**EXPANSION, 'open_because': self.kept}, {**BASE, 'open_because': self.kept}]},
+                     {'check': paper.COMPARISON, 'after_repairs': paper.COMPARISON_ROUNDS - 1,
+                      'problems': [{'label': 'lem:square', 'difference': self.DIFFERENCE}]}]
         self.assertEqual(self.events('end')[-1]['open'], self.left)
         return len(self.calls())
 
@@ -2824,9 +2824,9 @@ class OpenFindingsTests(PaperCase):
             paper.act_on_open(self.instance, self.root / 'elsewhere', TEX)
 
     def test_the_numbers_given_are_those_of_the_list(self):
-        launched = self.leave_open(comparison=False)
-        outside = 'the run has 2 open findings, numbered from 1 to 2'
-        for wrong, reason in (('3', outside), ('0', outside),
+        launched = self.leave_open()
+        outside = 'the run has 3 open findings, numbered from 1 to 3'
+        for wrong, reason in (('4', outside), ('0', outside),
                               ('tools', 'takes the numbers of the findings as its dry run lists them')):
             with self.assertRaisesRegex(paper.Stop, reason):
                 self.run_paper(good(), open_findings=wrong)
@@ -2923,20 +2923,21 @@ class SessionsTests(PaperCase):
             return self.command(*arguments, **options)
 
         # The first run of the session ends at the account's usage limit, which is over a moment later.
-        limits = [types.SimpleNamespace(retry_at=time.time() + 0.2), None]
+        limits = [{'reason': 'usage_limit', 'until': time.time() + 0.2}, None]
 
         def limit(*arguments, **options):
             seen.append(('limit', Gate.held))
             return limits.pop(0)
 
         with patch('command_sessions.worker_command', side_effect=command), \
-                patch('command_sessions.detect_usage_limit', side_effect=limit):
+                patch('command_sessions.refusal', side_effect=limit):
             sessions = paper.Sessions(self.instance, self.root / 'work', gate=Gate())
             sessions.launch('probe', 'Wait.', {}, sessions.writer)
         # The gate was taken for each run of the CLI and given back before the wait for the limit.
         self.assertEqual(seen, [('process', 1), ('limit', 0), ('process', 1), ('limit', 0)])
         self.assertEqual(Gate.calls, ['acquire', 'release'] * 2)
-        self.assertEqual([e['usage_limit_until'] is None for e in sessions.log], [False, True])
+        self.assertEqual([(e['refused'], e['usage_limit_until'] is None) for e in sessions.log],
+                         [('usage_limit', False), (None, True)])
         self.assertEqual(len(self.calls()), 2)
         # A semaphore is free again after a session, and a run of the paper command holds the gate it is given.
         gate = threading.BoundedSemaphore(1)
@@ -2946,6 +2947,28 @@ class SessionsTests(PaperCase):
         self.assertTrue(gate.acquire(blocking=False))
         gate.release()
         self.assertIs(paper.Paper(self.instance, self.out, TEX, {}, gate=gate).gate, gate)
+
+    def test_a_session_that_its_provider_refuses_is_waited_for_and_started_again_with_the_same_model(self):
+        # The provider has no capacity for the model when the session first runs, and has it at the second run.
+        write_json(self.scenario / 'script.json', {'probe': [{'@refused': ''}, {'output/done.txt': 'done'}]})
+        self.configure(retry_max_seconds=1)  # the wait for a refusal that names no time
+        with patch('command_sessions.worker_command', side_effect=self.command):
+            sessions = paper.Sessions(self.instance, self.root / 'work')
+            folder = sessions.launch('probe', 'Wait.', {}, sessions.writer)
+        self.assertEqual((folder / 'output' / 'done.txt').read_text(encoding='utf-8'), 'done')
+        # The one session ran twice in its folder with its model, and the log says for what the command waited.
+        model = sessions.writer['model']
+        self.assertEqual([(e['folder'], e['model'], e['refused'], e['usage_limit_until']) for e in sessions.log],
+                         [('sessions/01-probe', model, 'model_capacity', None), ('sessions/01-probe', model, None, None)])
+        self.assertEqual([e['refused_until'] is None for e in sessions.log], [False, True])
+        # A provider that still refuses when the waits are used up stops the command, which names the reason.
+        write_json(self.scenario / 'script.json', {'probe': [{'@refused': ''}]})
+        said = 'the provider refused the probe session .* for this reason: model_capacity'
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('command_sessions.LIMIT_WAITS', 0), \
+                self.assertRaisesRegex(command_sessions.Refused, said) as refused:
+            sessions.launch('probe', 'Wait.', {}, sessions.writer)
+        self.assertEqual(refused.exception.todo, command_sessions.REFUSED)
+        self.assertEqual([call['folder'] for call in self.calls()], ['01-probe', '01-probe', '02-probe'])
 
     def test_a_session_that_starts_while_the_command_is_being_stopped_is_ended_at_once(self):
         write_json(self.scenario / 'script.json', {'probe': [{'output/done.txt': 'done'}]})
@@ -3098,6 +3121,8 @@ class DraftTests(PaperCase):
         comparing = calls[7]
         self.assertEqual(comparing['given'], sorted(['paper-method.md', 'plan.json', 'prompt.txt', 'records.md', 'session.json',
                                                      'statements.json', 'elements.md'] + RECORD_FILES[3:]))
+        self.assertEqual((self.folder(comparing) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         rows = read_json(self.folder(comparing) / 'statements.json')
         self.assertEqual([(r['label'], r['kind'], r['element'], r['draft_statement'], r['declared_gap']) for r in rows],
                          [('lem:increasing', 'numbered statement', 'Small.oddSum_mono', WEAK, None),
@@ -3448,6 +3473,8 @@ class FromDraftTests(PaperCase):
         self.assertEqual(repairing[0]['given'], sorted(['carried.md', 'draft.json', 'materials-digest.md', 'paper-method.md',
                                                         'plan.json', 'problems.md', 'prompt.txt', 'session.json', 'study.md',
                                                         'elements/Small.unused.md'] + RECORD_FILES[3:]))
+        self.assertEqual((self.folder(repairing[0]) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         self.assertEqual(read_json(self.folder(repairing[0]) / 'plan.json'), {**CARRIED, 'others': CARRIED['others'][1:]})
         problem = 'the plan says nothing about these elements of the materials: Small.oddSum'
         self.assertIn(problem, (self.folder(repairing[0]) / 'problems.md').read_text(encoding='utf-8'))
@@ -3843,6 +3870,8 @@ class ResolveTests(PaperCase):
                          {'understanding': CLEAN['understanding'], 'findings': [{'finding': 1, 'check': paper.READING, 'reported': left}]})
         self.assertTrue({'paper-method.md', 'plan.json', 'paper.tex', 'study.md', 'parts/abstract.tex', 'parts/intro.tex',
                          'parts/tools.tex', 'parts/proof.tex', *RECORD_FILES} <= set(first['given']))
+        self.assertEqual((self.folder(first) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         self.assertEqual(self.given(first), sorted(CHOSEN))
         self.assertEqual(read_json(self.folder(first) / 'session.json')['model'],
                          read_json(self.folder(self.calls('write')[0]) / 'session.json')['model'])
@@ -4116,6 +4145,8 @@ class CoverageTests(PaperCase):
         given = read_json(self.folder(first) / 'statements.json')
         self.assertEqual([(entry['label'], entry['difference']) for entry in given], [('lem:square', difference)])
         self.assertTrue({'records.md', 'elements.md', 'parts/tools.tex', 'paper-method.md'} <= set(first['given']))
+        self.assertEqual((self.folder(first) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         self.assertIn('has the text it had; restate it as its element says it', second['prompt'])
         self.assertEqual(self.part('tools'), TOOLS)
         end = self.events('end')[-1]

@@ -7,7 +7,9 @@ depends on names, kinds, statements and the bodies of definitions, so a changed 
 unchanged, as the real compiler does when the auxiliary declarations stay the same. The source
 `DoMathExtract.lean` is answered with the rows canon.extraction_source asks for, computed from the
 sources under the root instead of from a compiled environment. As in Lean, a pair is decided only
-between declarations of the modules that file imports, directly or through others.
+between declarations of the modules that file imports, directly or through others, and a name that a
+`have` of a proof gives is known only when the proof's file, or a module it imports in that way,
+declares it.
 
 The subset: `namespace`/`end`, an optional `/-- … -/` doc comment, then `theorem`, `def`, `axiom`,
 `structure` or `inductive` (optionally `private`) with a name, a statement up to the first `:=`
@@ -208,8 +210,10 @@ def main(argv):
     if Path(source).name == 'DoMathExtract.lean':
         code = extract(root, source)
     else:
-        declarations = parse(module_of(root, source), text)
-        known = {d['user'] for d in library(root)}
+        module = module_of(root, source)
+        declarations = parse(module, text)
+        visible = imported(root, [module])  # as for a pair in `extract`: what the file imports, and itself
+        known = {d['user'] for d in library(root) if d['module'] in visible}
         for declaration in declarations:
             if declaration['kind'] == 'theorem' and ':=' not in declaration['text']:
                 print(f"{source}:{declaration['line']}:0: error: theorem {declaration['user']} has no proof term")

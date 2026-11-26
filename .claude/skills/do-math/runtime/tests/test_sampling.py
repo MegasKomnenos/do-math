@@ -17,9 +17,9 @@ from broker_fixture import BrokerFixture
 
 
 class SamplingOfARunningCompile(BrokerFixture):
-    def running_job(self):
+    def running_job(self, sleep=4):
         self.start_broker()
-        job_id = self.submit(self.session_file("s1", sleep=4), expect_mb=40)
+        job_id = self.submit(self.session_file("s1", sleep=sleep), expect_mb=40)
         self.until(lambda: self.broker.state["jobs"][job_id].get("pid")
                    and lean_broker.alive(self.broker.state["jobs"][job_id].get("lean")))
         return job_id, self.broker.state["jobs"][job_id]
@@ -31,36 +31,35 @@ class SamplingOfARunningCompile(BrokerFixture):
             patch.object(lean_broker, "process_tree", side_effect=lambda pid: listed.append(pid) or real_tree(pid)),
             patch.object(lean_broker, "private_memory_mb", side_effect=lambda pids: read.append(list(pids)) or real_memory(pids)))
 
-    def test_the_tree_is_listed_once_and_the_memory_read_at_every_poll(self):
-        job_id, job = self.running_job()
-        listed, read, (tree, memory) = self.counted()
-        self.broker.trees.clear()
-        with patch.object(lean_broker, "TREE_SECONDS", 3600), tree, memory:
-            for _ in range(6):
+    def test_the_memory_is_read_at_every_poll_and_the_tree_is_listed_only_when_a_listing_is_due(self):
+        # One running compile serves the three cases: each sets the listing that the broker holds for the job and
+        # counts from nothing. The compile outlasts them on any machine, and the fixture ends it after the test.
+        job_id, job = self.running_job(sleep=30)
+        with self.subTest("the tree is listed once and the memory read at every poll"):
+            listed, read, (tree, memory) = self.counted()
+            self.broker.trees.clear()
+            with patch.object(lean_broker, "TREE_SECONDS", 3600), tree, memory:
+                for _ in range(6):
+                    self.broker.sample(job)
+            self.assertEqual(listed, [job["pid"]])
+            self.assertEqual(len(read), 6)
+            self.assertIn(job["pid"], read[-1])
+            self.assertGreater(job["measured"]["peak_mb"], 0)
+        with self.subTest("the listing is renewed when it is due"):
+            listed, read, (tree, memory) = self.counted()
+            self.broker.trees.clear()
+            with patch.object(lean_broker, "TREE_SECONDS", 0), tree, memory:
+                for _ in range(3):
+                    self.broker.sample(job)
+            self.assertEqual(len(listed), 3)
+            self.assertEqual(len(read), 3)
+        with self.subTest("a listing made for another process is not used"):
+            listed, read, (tree, memory) = self.counted()
+            self.broker.trees[job_id] = (job["pid"] + 1, lean_broker.time.monotonic(), [job["pid"] + 1])
+            with patch.object(lean_broker, "TREE_SECONDS", 3600), tree, memory:
                 self.broker.sample(job)
-        self.assertEqual(listed, [job["pid"]])
-        self.assertEqual(len(read), 6)
-        self.assertIn(job["pid"], read[-1])
-        self.assertGreater(job["measured"]["peak_mb"], 0)
-
-    def test_the_listing_is_renewed_when_it_is_due(self):
-        job_id, job = self.running_job()
-        listed, read, (tree, memory) = self.counted()
-        self.broker.trees.clear()
-        with patch.object(lean_broker, "TREE_SECONDS", 0), tree, memory:
-            for _ in range(3):
-                self.broker.sample(job)
-        self.assertEqual(len(listed), 3)
-        self.assertEqual(len(read), 3)
-
-    def test_a_listing_made_for_another_process_is_not_used(self):
-        job_id, job = self.running_job()
-        listed, read, (tree, memory) = self.counted()
-        self.broker.trees[job_id] = (job["pid"] + 1, lean_broker.time.monotonic(), [job["pid"] + 1])
-        with patch.object(lean_broker, "TREE_SECONDS", 3600), tree, memory:
-            self.broker.sample(job)
-        self.assertEqual(listed, [job["pid"]])
-        self.assertIn(job["pid"], read[-1])
+            self.assertEqual(listed, [job["pid"]])
+            self.assertIn(job["pid"], read[-1])
 
     def test_nothing_is_kept_for_a_job_that_has_ended(self):
         job_id, job = self.running_job()

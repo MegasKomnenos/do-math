@@ -464,14 +464,15 @@ class Runner:
                 self.retry(job, s, s.get('launch_error') or 'session ended without retained research material',
                            availability=not cancelled)
                 return
+            # Finish the reads of the producer's declaration before marking the producer complete, as for the
+            # candidate of a peer below: a failed read must remain collectable after the fatal-error save.
+            pipeline = self.state['pipelines'][job['pipeline']]
+            task = {'source': str(session), 'source_role': s['role'], 'element': pipeline['element'],
+                    'sections': self.producer_sections(sid), 'question': self.producer_question(sid)}
             s['status'] = 'ended'
             job['status'] = 'done'
-            pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
-            self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'element': pipeline['element'], 'sections': self.producer_sections(sid),
-                                  'question': self.producer_question(sid)},
-                         pipeline['id'], pipeline['id'] + ':peer')
+            self.enqueue('peer', task, pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
         # A cancellation recorded by the host, even after a clean CLI exit between turns,
@@ -585,15 +586,18 @@ class Runner:
         The cancelled review remains in history; the new peer's own review receives a distinct job."""
         task = job['task']
         peer = Path(task['peer'])
+        pipeline = self.state['pipelines'][job['pipeline']]
+        # The producer's declaration is read before anything is changed. If the read fails, the runner ends and
+        # saves its state (run), and in that state the session whose work is handed over is still collected.
+        sections = self.producer_sections(pipeline['producer'])
+        question = self.producer_question(pipeline['producer'])
         self.retry(job, session, reason, availability=False)
         job['status'] = 'cancelled'
-        pipeline = self.state['pipelines'][job['pipeline']]
         if peer.name not in pipeline['previous_peers']:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
-                             'element': pipeline['element'], 'sections': self.producer_sections(pipeline['producer']),
-                             'question': self.producer_question(pipeline['producer']),
+                             'element': pipeline['element'], 'sections': sections, 'question': question,
                              'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
                      pipeline['id'], pipeline['id'] + ':peer-recovery:' + session['id'])
@@ -608,6 +612,9 @@ class Runner:
             pipeline = self.state['pipelines'][job['pipeline']]
             event.update(producer_role=pipeline['role'], pipeline=pipeline['id'], element=pipeline['element'],
                          question=self.producer_question(pipeline['producer']))
+        # The work leaves the queue in the save that records its publication. Until then it waits there: the read
+        # of the producer's declaration above can fail, on which the runner ends and saves its state (run).
+        self.state['publish_queue'] = [queued for queued in self.state['publish_queue'] if queued.get('session') != sid]
         self.state['publication'] = {'event': event, 'job': job['id'], 'session': sid, 'stage': 'apply'}
         self.state['sessions'][sid].update(status='publishing', record=rid)
         self.save()
@@ -619,6 +626,7 @@ class Runner:
         eid = uid('q')
         event = {'id': eid, 'kind': 'questions', 'sequence': self.model['sequence'] + 1,
                  'folder': 'questions/' + eid, 'at': item['at'], 'source': 'operator'}
+        self.state['publish_queue'] = [queued for queued in self.state['publish_queue'] if queued is not item]
         self.state['publication'] = {'event': event, 'job': None, 'session': None, 'stage': 'commit',
                                      'questions': {'source': 'operator', 'reason': item['reason'],
                                                    'questions': item['questions'], 'at': item['at']}}
@@ -717,7 +725,10 @@ class Runner:
             remove_tree(stage)
         job = self.state['jobs'][publication['job']]
         session = self.state['sessions'][publication['session']]
-        session['record'] = None
+        # As where a changed candidate is found (advance_build), the session is left as running until its work has
+        # been handed over. If the handover fails, the runner ends and saves this state (run); a session left as
+        # publishing would then belong to no publication and never be collected.
+        session.update(status='running', record=None)
         self.state['publication'] = None
         if publication['event']['kind'] == 'change':
             self.replace_peer(job, session, 'the candidate could not be published on the current canon: ' + reason)
@@ -864,7 +875,9 @@ class Runner:
     def publish(self):
         """Carry the current publication forward, and start the next one in the queue when none is underway."""
         if not self.state['publication'] and self.state['publish_queue']:
-            item = self.state['publish_queue'].pop(0)
+            # The item leaves the queue in the save that records its publication (prepare_questions,
+            # prepare_publication), so it still waits there in the state the runner saves when preparing it fails.
+            item = self.state['publish_queue'][0]
             if item['kind'] == 'questions':
                 self.prepare_questions(item)
             else:

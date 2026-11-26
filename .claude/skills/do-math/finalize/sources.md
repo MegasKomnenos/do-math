@@ -4,9 +4,9 @@ Some results of the library were taken from the literature, and their records na
 
 ## Why the sources are checked here
 
-In the first packaging of this kind the citations were verified for the first time when the paper was almost finished. By then a wrong attribution of a classical result stood in four texts, and each had to be corrected. A citation is copied onward by everything written from the record that carries it, so it is checked where it first stands, before the library and its records are frozen.
+A citation is copied onward by everything written from the record that carries it, so a wrong attribution found only when the paper is almost finished stands by then in every such text, and each has to be corrected. The citations are therefore checked where they first stand, before the library and its records are frozen.
 
-The second task comes from the same paper. It gave full proofs of several classical results, and that was the objection its readers repeated most. The library proved them, their records named no source, and so the paper had nothing to cite. A result that the library proves and that a source states in the same form is cited in the paper and not proved again there. For that, the source has to be in the record before the freeze.
+The second task is there because the paper cites only what a record names: where the library proves a classical result whose record names no source, the paper proves it in full, and readers object to this more often than to anything else. A result that the library proves and that a source states in the same form is cited in the paper and not proved again there. For that, the source has to be in the record before the freeze.
 
 ## What you are given
 

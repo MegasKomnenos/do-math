@@ -152,8 +152,9 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(self.detect("claude", rows).source, "fallback")
 
     def test_multiple_refusals_and_io_errors(self):
+        # The latest deadline is kept, whether it is the first, the last or neither of the refusals read.
         rows = [refusal({"status": "rejected", "rateLimitType": "five_hour",
-                         "resetsAt": NOW + offset}) for offset in (3600, 1800)]
+                         "resetsAt": NOW + offset}) for offset in (1800, 3600, 900)]
         self.assertEqual(self.detect("claude", rows).retry_at, NOW + 3600)
         with self.assertRaises(FileNotFoundError):
             detect_usage_limit("claude", self.root / "missing", self.err,

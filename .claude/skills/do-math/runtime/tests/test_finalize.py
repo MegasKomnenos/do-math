@@ -33,7 +33,8 @@ import paper
 from cli_adapter import Command, provider_for_model
 from knowledge import replay
 from runtime_support import read_json, remove_tree, write_json
-from support import DEFS, ROOT, InstanceCase, kept_copy, module_text, record_text, stop_broker, template, theorem
+from support import (DEFS, ROOT, InstanceCase, fixture_settings, kept_copy, module_text, record_text, stop_broker,
+                     template, theorem)
 
 INSTALLED = THIS.parents[2]
 ROOT_STATEMENT = '(n : Nat) : oddSum n = n * n'
@@ -177,6 +178,8 @@ PLAN = {'title': 'Odd numbers sum to squares', 'sections': [{'id': 'intro', 'tit
 class FinalizeCase(InstanceCase):
     """An instance whose root is proved in Lean through a step, made once through the real publication path."""
 
+    changes_guides = True  # `skill` below writes the stand-in instruction files into the copy
+
     def starting_instance(self):
         """The published instance once the first test has made it; before that, the one `init` created."""
         return _SETTLED or super().starting_instance()
@@ -283,7 +286,9 @@ class FinalizeCase(InstanceCase):
         def reduced(settings):
             value = real(settings)
             if operating:
-                value['lean'].update(priority='normal', min_free_memory_mb=0, memory_budget_mb=512, calibration_expect_mb=64)
+                given = fixture_settings()['lean']
+                value['lean'].update({key: given[key] for key in ('priority', 'min_free_memory_mb', 'memory_budget_mb',
+                                                                  'calibration_expect_mb')})
             return value
 
         if plan is not None:
@@ -499,15 +504,13 @@ class RecordTests(FinalizeCase):
         self.assertIn('first two odd numbers', (records / 'Small' / 'Sums' / 'two.md').read_text(encoding='utf-8'))
         self.assertIn('`Small.Sums.two`', (records / 'Small' / 'named_four.md').read_text(encoding='utf-8'))
 
-    def test_the_cited_sources_are_listed_with_the_records_that_cite_them(self):
+    def test_the_cited_sources_are_listed_with_the_records_that_cite_them_in_the_header_or_in_the_text(self):
         index = canon.read_index(self.instance / 'canon' / 'index.json')
+        # As the research left its records, one of them cites a work, in its header.
         cited = package.cited(self.instance / 'canon' / 'records', index, package.bibliography_keys(BIBLIOGRAPHY))
         self.assertEqual([(item['key'], [row['declaration'] for row in item['records']]) for item in cited],
                          [('gauss1801', ['Small.sq_step'])])
         self.assertEqual(package.bibliography_field(BIBLIOGRAPHY, 'gauss1801', 'title'), 'Disquisitiones Arithmeticae')
-
-    def test_a_citation_in_the_text_of_a_record_is_listed_with_the_work_it_cites(self):
-        index = canon.read_index(self.instance / 'canon' / 'index.json')
         records = self.root / 'records'
         shutil.copytree(self.instance / 'canon' / 'records', records)
         # A record cites a work by its key in brackets, with or without the place. A bracket that holds no key of the
@@ -674,8 +677,6 @@ class RegistryTests(FinalizeCase):
         self.assertIn('- One (doi:10.1000/1). The library formalises the result of this work. Theorem 1.', lines)
         self.assertIn('- Three (https://example.org/three). A table of values.', lines)
         self.assertIn('- https://example.org/formal. In another prover.', lines)
-        # A decision that was made before these texts were asked for has no such part.
-        self.assertIsNone(package.provenance({'origin': 'original'}, path))
 
     def test_each_rule_of_the_registry_that_the_pipeline_controls_is_checked(self):
         lean = self.frozen()
@@ -1116,9 +1117,16 @@ class PromptTests(FinalizeCase):
 
     def test_a_name_the_command_does_not_give_stops_the_run_and_is_named(self):
         (self.skill / 'finalize' / 'review.md').write_text('Review {{library}} in {{folder}}.\n', encoding='utf-8')
+        (self.skill / 'finalize' / 'simplify.md').write_text('Simplify the part {{part}} in {{folder}}.\n', encoding='utf-8')
+        run = self.prepared()
         with patch('finalize.SKILL', self.skill), self.assertRaises(paper.Stop) as raised:
-            self.prepared().prompt('review')
+            run.prompt('review')
         self.assertIn('review.md uses {{folder}}', str(raised.exception))
+        # A part is discarded for what its sessions left. This fault of its instruction stops the run like any other.
+        with patch('finalize.SKILL', self.skill), self.assertRaises(paper.Stop) as raised:
+            run.discardable('Step 3: the simplification of the part core', lambda: run.task(
+                'simplify', 'simplify', {}, None, None, names={'part': 'core'}))
+        self.assertIn('simplify.md uses {{folder}}', str(raised.exception))
 
 
 # ----------------------------------------------------------------------------- the command
@@ -1598,15 +1606,35 @@ class RunTests(FinalizeCase):
         self.assertIn('- `sessions`: ', report)
         self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md', 'sessions'])
 
-    def test_an_end_that_is_interrupted_is_entered_again_or_refused_by_the_next_start(self):
+    def test_an_end_that_is_held_up_or_interrupted_is_entered_again_or_refused_by_the_next_start(self):
         self.from_the_records()
-        # The first start is interrupted when the package has been moved and the repository's README has no entry yet.
+        held = PermissionError(13, 'It is in use by another program')
+
+        def stopped_at_the_end():
+            report = (self.work / 'report.md').read_text(encoding='utf-8')
+            self.assertIn('The run stopped at the step `the end of the run`', report)
+            self.assertIn('It is in use by another program', report)
+
+        # The first start cannot move the package, because another program holds its folder. The run stops there as
+        # a step stops it, and the package stays whole in the work folder.
+        with patch('finalize.rename_directory', side_effect=held):
+            self.assertEqual(self.run_command(script(), config=self.config()), 2)
+        stopped_at_the_end()
+        self.assertTrue((self.work / 'package' / 'README.md').is_file())
+        self.assertFalse(self.solved.exists())
+        # The second start moves the package, and is interrupted when the repository's README has no entry yet.
         with patch('package.add_solved_entry', side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
-            self.run_command(script(), config=self.config())
+            self.run_command(config=self.config())
         self.assertTrue((self.solved / 'README.md').is_file())
         self.assertFalse((self.work / 'package').exists())
         self.assertNotIn('(solved/odd/README.md)', (self.repository / 'README.md').read_text(encoding='utf-8'))
-        # The second start enters the end again, and is interrupted while it deletes the files of the run.
+        # The third start enters the end again and cannot write the repository's README. It stops in the same way,
+        # with a report of its own and not with an error of the program.
+        (self.work / 'report.md').unlink()
+        with patch('package.add_solved_entry', side_effect=held):
+            self.assertEqual(self.run_command(config=self.config()), 2)
+        stopped_at_the_end()
+        # The fourth start enters the end again, and is interrupted while it deletes the files of the run.
         real = finalize.remove_tree
 
         def interrupted(path):
@@ -1619,7 +1647,7 @@ class RunTests(FinalizeCase):
         self.assertEqual((self.repository / 'README.md').read_text(encoding='utf-8').count('(solved/odd/README.md)'), 1)
         self.assertIn('The package is in place: `solved/odd/`', (self.work / 'report.md').read_text(encoding='utf-8'))
         self.assertTrue((self.work / 'sessions').is_dir())
-        # The run has ended. The third start refuses as after any run that ended, although files of the run are left.
+        # The run has ended. The next start refuses as after any run that ended, although files of the run are left.
         self.assertEqual(self.run_command(config=self.config()), 1)
         self.assertIn(f'{self.solved} exists', self.said)
 
@@ -1973,6 +2001,26 @@ class RunTests(FinalizeCase):
         # Started again, the command tries the same session again, and the run comes to its end.
         self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
         self.assertEqual(len(self.calls('sources')), 3)
+
+    def test_a_part_whose_session_the_provider_refuses_is_not_discarded_and_the_run_stops_until_it_is_taken(self):
+        self.configure(retry_max_seconds=1)  # the wait for a refusal that names no time
+        plan = script()
+        # The provider has no capacity for the model at the first two runs of the session, and has it at the third.
+        plan['simplify:core'] = [{'@refused': ''}, {'@refused': ''}] + plan['simplify:core']
+        with patch('command_sessions.LIMIT_WAITS', 1):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2)
+        # The session was waited for and started again once, in its folder. Then the run stopped and named the reason.
+        refused = [call for call in self.calls('simplify') if call['section'] == 'core']
+        self.assertEqual((len(refused), refused[0]['folder']), (2, refused[1]['folder']))
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.3-simplify`', report)
+        self.assertIn('the provider refused the simplify session of core', report)
+        self.assertIn('for this reason: model_capacity', report)
+        self.assertIn('## What to do\n\nNothing is to be repaired by hand, and no output of a session is in question', report)
+        # The part was not discarded for it: started again, the command launches the session and accepts the part.
+        self.assertEqual(self.run_command(config=self.config()), 0, self.said)
+        self.assertEqual(len([call for call in self.calls('simplify') if call['section'] == 'core']), 3)
+        self.assertNotIn('the simplification of the part core', self.decisions())
 
     def test_a_record_whose_statement_says_more_than_lean_is_written_again_before_the_freeze(self):
         self.from_the_records()

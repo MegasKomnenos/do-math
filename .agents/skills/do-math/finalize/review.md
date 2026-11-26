@@ -4,7 +4,7 @@ The library in your folder is what the chosen proof rests on: the root `{{root}}
 
 ## Why one reader of the whole comes first
 
-A session that simplifies one part sees that part closely and the rest hardly at all. It cannot know that another part proves the same lemma under another name, that a statement it could improve is used in a form every user has to convert, or that a general fact it is about to add is being added next door as well, which leaves the merge with one name declared in two files. What crosses parts therefore has to be seen by one reader and assigned by that reader, each item to exactly one part.
+A session that simplifies one part sees that part closely and the rest hardly at all, so it cannot see what crosses parts, and where two such sessions each add a general fact that both need, the merge finds one name declared in two files. What crosses parts therefore has to be seen by one reader and assigned by that reader, each item to exactly one part.
 
 The parts work at the same time and nobody sees another's changes until all are merged. This fixes what an assignment can be. The session of a part may change only the modules of its part, and the declarations of its part that other parts use keep their names and statements. An item that crosses parts is carried out by its owner inside the owner's modules, with the old declaration kept under its name. What then follows in the other parts, such as moving their proofs to the new form, is done after the merge by one session that reads the whole library again and arranges it.
 

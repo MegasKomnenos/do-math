@@ -31,7 +31,7 @@ import traceback
 
 import canon
 from canon import CanonError, module_file, name_path, parse_record
-from command_sessions import Held, Sessions, Stop, Unusable, alone, collapsed, is_text
+from command_sessions import Held, Sessions, Stop, Unmade, Unusable, alone, collapsed, is_text
 import knowledge
 import package
 import paper
@@ -326,13 +326,14 @@ class Run:
     def discardable(self, what, work):
         """A simplification: when its sessions leave nothing usable it is discarded and the fact recorded.
 
-        Returns what `work` returns, or None when the part was discarded. An interruption of the
-        command is not a failed simplification and goes on as it is."""
+        Returns what `work` returns, or None when the part was discarded. A part is discarded for what
+        its sessions left and for nothing else (Unmade). Whatever else stops the task stops the run: an
+        instruction file with a name the command does not give, a session that could not be started or
+        that a safeguard stopped every time, a session that its provider refused through every wait
+        (Refused), an interruption of the command. The same command, started again, tries the part again."""
         try:
             return work()
-        except Stop as error:
-            if self.sessions.stopping.is_set():
-                raise
+        except Unmade as error:
             self.decide(what, f'Discarded; that part of the library keeps the form it had. {error}')
             return None
 
@@ -2102,17 +2103,13 @@ class Run:
         fill += [f'{rule}. The registry will not accept the package as it is.' for rule in fails]
         registry = decision['registry']
         fill.append('What the result is in the literature. '
-                    + ('Under "Where the result comes from" the README says what the research\'s records hold: whose '
-                       'question the result settles, where that was posed, and on what grounds the result is recorded '
-                       'as original or as known. ' if registry.get('settles') else
-                       'The README of this package does not say whose question the result settles or on what grounds '
-                       'the result is recorded as original or as known: the selection of this run was made before '
-                       'that was asked of it. ')
-                    + "The registry's review rejects a result for which it cannot identify a research area and a "
+                    'Under "Where the result comes from" the README says what the research\'s records hold: whose '
+                    'question the result settles, where that was posed, and on what grounds the result is recorded '
+                    'as original or as known. '
+                    "The registry's review rejects a result for which it cannot identify a research area and a "
                     'reader, and it marks down a claim of novelty that has no search of the literature behind it. The '
                     'run adds no such claim of its own. '
-                    + ('Read that part, and add what you know and the records do not, each with its source.'
-                       if registry.get('settles') else 'Add it to the README, each statement with its source.'))
+                    'Read that part, and add what you know and the records do not, each with its source.')
         if registry.get('origin') == 'original':
             fill.append('`sources` in `lean/formalization.yaml`: an earlier public account of the result that the '
                         "research's records do not name belongs there, your own included, such as a preprint, a note "
@@ -2237,6 +2234,19 @@ class Run:
             f'`{halt.step}`; the steps that passed are not made again.', '',
             'The steps that passed: ' + ', '.join(f'`{sid}`' for sid in self.state['steps']) + '.', '']))
 
+    def end(self):
+        """The end of the run (finish); returns the exit code.
+
+        What keeps the end from being made, such as a file or a folder that another program holds, stops
+        the run as a failed exit check stops it: report.md says what it was, and the same command enters
+        the end again."""
+        try:
+            self.finish()
+        except OSError as error:
+            self.stopped(Halt('the end of the run', f'the run could not be brought to its end: {error}'))
+            return 2
+        return 0
+
     # -- the order --------------------------------------------------------------------------------------
 
     def run(self):
@@ -2255,8 +2265,7 @@ class Run:
         self.start()
         self.load()
         if '6-check' in self.state['steps'] and not self.package.exists():
-            self.finish()  # the run was stopped after the package had been moved
-            return 0
+            return self.end()  # the run was stopped after the package had been moved
         watcher = threading.Thread(target=self.watch_broker, daemon=True)
         watcher.start()
         lib = 'lib/'
@@ -2321,11 +2330,7 @@ class Run:
             self.step('6-check', ['freeze.json', 'package/lean', 'package/records', 'package/knowledge', 'package/history',
                                   'package/dependency-map', 'package/paper', 'package/LICENSE', 'package/README.md',
                                   'package/MANIFEST.sha256'], [], self.final_check)
-            try:
-                self.finish()
-            except OSError as error:
-                raise Halt('the end of the run', f'the package could not be put in place: {error}')
-            return 0
+            return self.end()
         except Halt as halt:
             self.stopped(halt)
             return 2

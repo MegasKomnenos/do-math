@@ -1044,8 +1044,9 @@ def guide_of(data, bare=()):
     steps = len(data.get('folded') or {})
     folded = (f' {steps} smaller step{"s have" if steps > 1 else " has"} no card and {"are" if steps > 1 else "is"} folded '
               f'into the lines that pass through {"them" if steps > 1 else "it"}.') if steps else ''
-    parts = [f'<p class="about">The root of this research is {name}: {esc(state_words(data))}. The map shows '
-             f'{esc(scope_words(data))}: {number(counts["units"], "unit")}, each a card, in '
+    scope = esc(scope_words(data))  # the page reads these words from the paragraph where a search finds nothing
+    parts = [f'<p class="about" data-scope="{scope}">The root of this research is {name}: {esc(state_words(data))}. The map '
+             f'shows {scope}: {number(counts["units"], "unit")}, each a card, in '
              f'{number(counts["groups"], "group")}, joined by {number(counts["edges"], "line")}.{folded}</p>']
     kinds, roles, standings = occurring(data, bare)
     parts.append('<div class="legend"><h3>How to read the map</h3>'

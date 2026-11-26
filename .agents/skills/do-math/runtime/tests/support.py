@@ -192,6 +192,7 @@ def template(variant='default'):
 class InstanceCase(unittest.TestCase):
     root_variant = 'default'  # 'closed' states the root without binders, so that its negation can be stated
     expect_mb, patience = 64, 120  # of a build: the memory expected for one compile in MiB, the seconds it may take
+    changes_guides = False  # set by a class whose tests write into the guides; its tests then work on a copy of them
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -203,12 +204,15 @@ class InstanceCase(unittest.TestCase):
 
     @functools.cached_property
     def skill(self):
-        """The test's own copy of the installed guides, made when the test first asks for it.
+        """The folder of guides a runner is given; a session's pack and its resume texts are read from it.
 
-        A runner is given this folder, and a session's pack and its resume texts are read from it. A test
-        that starts no runner reads none of it, so no copy is made for that test."""
-        folder = self.root / 'skill'
+        It is the installed skill, which a runner and a session host read and do not write. In a class that
+        sets `changes_guides` it is the test's own copy of the installed guides, made when the test first
+        asks for it."""
         installed = Path(__file__).resolve().parents[2]
+        if not self.changes_guides:
+            return installed
+        folder = self.root / 'skill'
         for name in ('reference', 'roles', 'resume'):
             shutil.copytree(installed / name, folder / name)
         shutil.copyfile(installed / 'SKILL.md', folder / 'SKILL.md')

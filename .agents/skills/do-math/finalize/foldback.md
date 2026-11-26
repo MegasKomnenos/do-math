@@ -6,7 +6,7 @@ The library in your folder is what the chosen proof rests on, with `{{root}}` as
 
 Three kinds of item are collected before the freeze.
 
-The first kind comes from the sessions that wrote the records. To tell a proof in words they followed it step by step in the Lean, and they noticed what the library itself gets wrong: a hypothesis stronger than the proof needs, a conclusion nothing uses, a comment that uses a symbol it does not define. In earlier packagings such findings arrived after the library had been declared finished.
+The first kind comes from the sessions that wrote the records. To tell a proof in words they followed it step by step in the Lean, and they noticed what the library itself gets wrong. In earlier packagings such findings arrived after the library had been declared finished.
 
 The second kind comes from a draft of the paper. Before any prose is written, the paper's plan and every one of its numbered statements are drafted in the form a paper would give them, together with the displayed formulas that later proofs refer to, and each is compared with the declaration it states. Where the paper wants to say something that no declaration says, that is a gap: a classical bound that the paper states in its usual strict form while the library proves a weaker one, a numbered bound that is no declaration, inequalities stated at the paper's parameter values, a lemma the paper gives in general form. A library that is extended for such a gap after the paper exists has its records, the dependency map and the README made again.
 

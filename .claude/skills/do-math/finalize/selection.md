@@ -1,6 +1,6 @@
 # Choosing the proof the package presents
 
-This session chooses which proof of the root the package presents. A finished research often holds more than one way to the result: the proof by which the root was first settled, perhaps a second proof, and sometimes a stronger theorem from which the root would follow in a few lines. You study what the research offers, compare the options, and write down the choice, the runner-up and the reasons.
+This session chooses which proof of the root the package presents. You study what the research offers, compare the options, and write down the choice, the runner-up and the reasons.
 
 Everything after this step is built from your choice. The library is cut down to what the chosen theorem and the root rest on, and it is then simplified, given records, and frozen. The paper proves the main theorem you fix, and the README states the result in your sentence. No later step returns to the question, so the choice is made once, here, on a careful reading.
 

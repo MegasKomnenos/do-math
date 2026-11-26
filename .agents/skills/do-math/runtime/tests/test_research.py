@@ -1293,6 +1293,27 @@ class RunnerTests(ScenarioCase):
         self.assertEqual(read_json(runner.session_dir(sid) / 'termination.json')['exit_code'], 42)
         self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['status'], 'pending')
 
+    def test_a_declaration_that_cannot_be_read_leaves_the_ended_producer_to_be_collected_again(self):
+        # A peer is assigned the sections and the question that the producer's declaration records. A declaration
+        # that does not parse fails that read, on which the runner ends and saves its state (Runner.run). The
+        # producer is not yet marked complete in that state, so once the file is repaired the next runner
+        # collects the session again and its work reaches a peer.
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        declaration = runner.session_dir(sid) / 'declaration.json'
+        declaration.write_text('{not json', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Expecting property name'):
+            runner.finish(sid, session)
+        self.assertEqual((session['status'], job['status']), ('running', 'running'))
+        self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'producing')
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        runner.save()
+        declaration.unlink()
+        recovered = self.runner()
+        recovered.finish(sid, recovered.state['sessions'][sid])
+        self.assertEqual(recovered.state['sessions'][sid]['status'], 'ended')
+        self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['status'], 'pending')
+
     def native_profile(self, folder, rows):
         """A Codex profile holding the native transcript of the session in folder."""
         identity = '01234567-89ab-cdef-0123-456789abcdef'

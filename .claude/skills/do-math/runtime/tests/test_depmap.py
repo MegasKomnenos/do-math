@@ -120,6 +120,9 @@ class Derivation(MapCase):
         everything = self.map(rows, everything=True)
         self.assertEqual(self.ids(everything), ['Lib.a', 'Lib.root', 'Lib.stray'])
         self.assertEqual(everything['scope'], 'all')
+        # The guide of the page carries in words which units the map shows; the page says them where a search finds nothing.
+        self.assertIn('data-scope="every unit of the library"', draw.guide_of(everything))
+        self.assertIn('data-scope="the units the proof of the root rests on"', draw.guide_of(data))
 
     def test_the_root_is_a_unit_whatever_its_record_says(self):
         data = self.map([statement('Lib.root', 'step', uses=['Lib.a']), statement('Lib.a', 'unit')])
@@ -189,6 +192,7 @@ class Derivation(MapCase):
         self.assertIn(draw.LEGEND['refutation'], texts)
         self.assertTrue(any(draw.ROOT_STATES['informal_refuted'] in line and 'the units the refutation of the root rests on' in line
                             for line in texts))
+        self.assertIn('data-scope="the units the refutation of the root rests on"', draw.guide_of(self.map(rows)))
         # The command says of this map that it shows what the refutation rests on.
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
@@ -910,6 +914,10 @@ class Page(MapCase):
                 page.goto(refuted + '#node=Lib.root')
                 page.reload()
                 self.assertIn(draw.LEGEND['refutation'], page.inner_text('#part-above + ul'))
+                # A search that finds nothing says what this map holds: what the refutation of its root rests on.
+                page.fill('#query', 'nowhere')
+                self.assertIn('The map holds the units the refutation of the root rests on and the steps folded',
+                              page.inner_text('#results'))
                 # The drawing of a map that has one card is named with one unit.
                 alone = tempfile.TemporaryDirectory()
                 self.addCleanup(alone.cleanup)

@@ -52,8 +52,6 @@ When finishing normally, write `output/outcome.json`:
 
 For a session that undertook research, this small manifest makes the endpoint easy to find. It is not a success certificate or a publication gate. The runner forwards retained producing material to a peer even if an interruption prevents the manifest or the report from being completed. Save important work throughout so that there is material to recover.
 
-An explorer registers no sections; it occupies one question. A formalizer receives its statement in its assignment, and the runner records for it a section that covers the whole of that statement.
-
 ## Continuing an attempt, exploration, formalization or peer session
 
 For an attempt or explorer that undertook research, a formalizer or a peer, ending a CLI turn does not immediately close the session. The same conversation can be resumed with common and role-specific guidance to continue its mathematical work under the role guide. The assignment, saved instructions, files, registered sections and occupied question remain those of the same session. This continuation asks you to apply the existing criteria for completing or ending your work; it does not replace those criteria.

@@ -40,15 +40,16 @@ def stand_in_session(scenario):
             break
         except (FileExistsError, PermissionError):
             time.sleep(0.01)
-    stopped = False
+    stopped = refused = False
     try:
         record = scenario / 'calls.json'
         calls = json.loads(record.read_text(encoding='utf-8')) if record.exists() else []
         if key is not None:
             entries = script[key]
             entry = entries[min(sum(c['key'] == key for c in calls), len(entries) - 1)]
-            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped.
-            stopped = '@stopped' in entry
+            # An entry `{'@stopped': ...}` stands for a session that a safeguard of the AI system stopped, and an entry
+            # `{'@refused': ...}` for one whose provider has no capacity for the model.
+            stopped, refused = '@stopped' in entry, '@refused' in entry
             for source, target in entry.get('@copy', []):
                 if (folder / source).is_dir():
                     shutil.copytree(folder / source, folder / target, dirs_exist_ok=True)
@@ -56,7 +57,7 @@ def stand_in_session(scenario):
                     (folder / target).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(folder / source, folder / target)
             for name, content in entry.items():
-                if name not in ('@copy', '@stopped'):
+                if name not in ('@copy', '@stopped', '@refused'):
                     (folder / name).parent.mkdir(parents=True, exist_ok=True)
                     (folder / name).write_text(content, encoding='utf-8', newline='\n')
         calls.append({'key': key, 'kind': task['kind'], 'section': task['section'], 'folder': folder.name,
@@ -64,6 +65,10 @@ def stand_in_session(scenario):
         record.write_text(json.dumps(calls), encoding='utf-8')
     finally:
         lock.unlink()
+    if refused:
+        # What the Codex CLI writes when the provider has no capacity for the model.
+        print(json.dumps({'type': 'error', 'message': 'Selected model is at capacity'}))
+        return 1
     if stopped:
         # What the Claude CLI writes when the model refuses a request and the CLI has no other model to give it to.
         message = "API Error: the model's safeguards flagged this message. Try rephrasing the request or change your model."

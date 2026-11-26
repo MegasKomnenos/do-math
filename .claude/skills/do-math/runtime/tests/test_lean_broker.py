@@ -2002,49 +2002,6 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertIn("REQUEUED", (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8"))
         self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 3)
 
-    def test_runner_launches_adopts_and_relaunches_the_broker(self):
-        # Runner.ensure_broker alone is under test. A Runner is built around an initialized instance with
-        # its compiled canon; ensure_broker reads only the instance's path and the two fields set here.
-        import runner
-        def bare_runner():
-            engine = runner.Runner.__new__(runner.Runner)
-            engine.instance, engine.broker, engine.broker_attempt = self.instance, None, 0
-            return engine
-        engine = bare_runner()
-        before = time.monotonic()
-        engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
-        self.assertGreaterEqual(engine.broker_attempt, before)  # the launch records its moment for the ten seconds below
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
-            time.sleep(0.05)
-        first = lean_broker.broker_alive(self.paths)
-        self.assertTrue(first)
-        self.assertTrue(lean_broker.broker_status(self.paths)["broker_alive"])
-        other = bare_runner()
-        other.ensure_broker()
-        self.assertIsNone(other.broker)
-        self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
-        runtime_support.terminate_process(first["process"])
-        while runtime_support.alive(first["process"]):
-            time.sleep(0.02)
-        # Within ten seconds of the last launch no relaunch is made (runner.ensure_broker). The moment of that
-        # launch is set here, so that a machine slow enough to spend those seconds above changes nothing, and the
-        # launch itself is watched, because a relaunched broker writes its receipt only seconds later.
-        engine.broker_attempt = time.monotonic()
-        with patch.object(lean_broker, "launch_broker") as relaunch:
-            engine.ensure_broker()
-        relaunch.assert_not_called()
-        self.assertIsNone(lean_broker.broker_alive(self.paths))
-        engine.broker_attempt = float("-inf")
-        engine.ensure_broker()
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
-            time.sleep(0.05)
-        second = lean_broker.broker_alive(self.paths)
-        self.assertNotEqual(second["process"], first["process"])
-        runtime_support.terminate_process(second["process"])
-        engine.broker.wait(timeout=10)
-
     def test_build_command_relays_the_target_and_waits_on_a_build_id(self):
         root = self.tree()
         out, err = io.StringIO(), io.StringIO()

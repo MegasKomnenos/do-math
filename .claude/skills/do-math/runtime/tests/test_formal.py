@@ -97,6 +97,16 @@ class BothCompilers:
         self.assertEqual((entry['lean_proof'], entry['axioms']), ('complete', ['_private.Small.Short.0.Small.shortcut']))
         self.assertEqual(beyond_allowed(entry, ALLOWED), ['_private.Small.Short.0.Small.shortcut'])
 
+    def test_a_proof_that_names_a_statement_its_file_does_not_import_does_not_compile(self):
+        # `fromZero` names `sumZero`, and its module imports the definitions alone. Lean reads the modules a file
+        # imports and no other, so the name is unknown there although the candidate holds the module that declares it.
+        folder = self.candidate(modules={'Small/Zero.lean': module_text(OPEN_ZERO), 'Small/Above.lean': module_text(ABOVE)},
+                                records={'Small/sumZero.md': ZERO_RECORD, 'Small/fromZero.md': ABOVE_RECORD}, prepare=False)
+        result = self.prepare(folder, expect_ok=False)
+        self.assertFalse(result['ok'])
+        self.assertTrue(any(error.startswith('Small.Above:') and 'sumZero' in error for error in result['errors']),
+                        result['errors'])
+
 
 class FormalStatusTests(BothCompilers, InstanceCase):
 

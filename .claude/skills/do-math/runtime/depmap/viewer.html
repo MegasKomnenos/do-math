@@ -868,7 +868,7 @@ __SVG__
     else if (found.length) results.appendChild(el('p', 'No name has these words. They occur in the description or the module of:'));
     if (!found.length) {
       results.appendChild(el('p', 'Nothing on this map has “' + query.value.trim() + '” in its name, its Lean name or its description. ' +
-        'The map holds ' + (data.scope === 'all' ? 'every unit of the library' : 'the units the root rests on') +
+        'The map holds ' + guide.querySelector('.about').dataset.scope +
         ' and the steps folded into their lines, not every declaration of the library.'));
       return;
     }

@@ -1379,13 +1379,11 @@ def package_facts(package, name, library, root, main, index, freeze, archive, ti
 
 
 def provenance(registry, path):
-    """What the README says of where the result comes from, or None for a decision that does not say it.
+    """What the README says of where the result comes from.
 
     The two texts are the selection's; the sources and the earlier formalisations are read from the
     frozen `formalization.yaml`, so the README lists them as the registry's file does."""
     import yaml
-    if not registry.get('settles'):
-        return None
     data = yaml.safe_load(read_text(path)) or {}
     return {'settles': registry['settles'], 'novelty': registry['novelty'], 'origin': registry['origin'],
             'sources': data.get('sources') or [], 'related': data.get('related_formalizations') or []}
@@ -1424,7 +1422,7 @@ def provenance_lines(given):
 
 
 def readme_text(facts, root_words, root_statement, main_statement, outline, obtained, check_output, config, licence,
-                fails, cited_rows, origin=None, instances=(), not_done=()):
+                fails, cited_rows, origin, instances=(), not_done=()):
     """`README.md` of a package. The two prose sections come from a session; every other sentence is written here.
 
     `origin` is what `provenance` returns; its texts are the selection's and stand under the result.
@@ -1446,8 +1444,7 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '```lean', root_statement, '```', '']
     if not same:
         lines += [f"The library proves it from its main theorem, `{facts['main']}`:", '', '```lean', main_statement, '```', '']
-    if origin:
-        lines += provenance_lines(origin)
+    lines += provenance_lines(origin)
     lines += ['## Outline of the proof', '', outline.strip(), '',
               '## How the result was obtained', '', obtained.strip(), '',
               '## What was checked, and what was not', '',

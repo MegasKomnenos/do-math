@@ -84,6 +84,11 @@ if number in config.get('output_limit_at', []):
     raise SystemExit(1)
 if config.get('no_research'):
     (session / 'output/outcome.json').write_text('{"disposition":"no_research"}')
+if config.get('decide_unasked') and not number:
+    # A decision the session wrote in its first turn, before the host had asked for one.
+    (session / 'output/end-decision.json').write_text(json.dumps({
+        'request_id': 'no request yet', 'decision': 'end', 'basis': 'task_completed',
+        'explanation': 'Decided before being asked.'}))
 if number:
     request = json.loads((session / 'end-request.json').read_text(encoding='utf-8'))
     target = session / 'output/end-decision.json'
@@ -119,6 +124,8 @@ def tearDownModule():
 
 
 class EndingTests(InstanceCase):
+    changes_guides = True  # test_guidance_edits_reach_next_turn_without_restarting_host rewrites two resume texts
+
     def prepare(self, maximum=3, role='attempt', config=None, task=None):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
@@ -338,6 +345,16 @@ class EndingTests(InstanceCase):
         self.assertIsNone(read_json(directory / 'turns/0003/request.json')['previous_error'])
         self.assertFalse((directory / 'output/end-decision.json').exists())
         self.assertEqual(read_json(directory / 'turns/0001/submitted-end-decision.json')['request_id'], 'old-request')
+
+    def test_a_decision_written_before_any_request_is_set_aside_and_the_session_is_asked(self):
+        # A decision counts only as the answer to a request (reference/retained-work.md). One written in the
+        # first turn is taken out of output/ unchecked, and the session is resumed to be asked.
+        _, _, directory = self.prepare(maximum=1, config={'decide_unasked': True, 'end_after': 1})
+        state = self.run_host(directory)
+        self.assertEqual((state['resumptions'], state['authorization']['source']), (1, 'worker'))
+        self.assertEqual(read_json(directory / 'submitted-end-decision.json')['request_id'], 'no request yet')
+        self.assertFalse((directory / 'decision-check.json').exists())
+        self.assertIsNone(read_json(directory / 'turns/0001/request.json')['previous_error'])
 
     def test_malformed_decision_still_ends_at_configured_limit(self):
         _, _, directory = self.prepare(maximum=1, config={'malformed_at': 1})
@@ -728,8 +745,10 @@ class EndingConfigurationTests(unittest.TestCase):
             session = instance / 'sessions/s1'
             for folder in (session, instance / 'control', instance / 'runner'):
                 folder.mkdir(parents=True)
-            write_json(instance / 'runner/state.json',
-                       {'blocks': {'provider:codex': {'until': time.time() + 3600, 'reason': 'usage_limit'}}})
+            # The block is on the session's model; test_another_sessions_provider_block_holds_resumption holds a
+            # host behind a block on its provider.
+            write_json(instance / 'runner/state.json', {'blocks': {
+                'model:codex/gpt-6.1-sol': {'until': time.time() + 3600, 'reason': 'model_capacity'}}})
             (instance / 'control/STOP').touch()
             policy = {'instance': str(instance), 'provider': 'codex', 'model': 'codex/gpt-6.1-sol'}
             state = {'status': 'running'}

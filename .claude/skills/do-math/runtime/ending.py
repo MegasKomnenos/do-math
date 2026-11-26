@@ -92,13 +92,6 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
     return prompt
 
 
-def output_problems(session):
-    """What the transport check finds in a session's output, as the runner will find it when it collects the
-    session, and whether that is the one finding no further turn of the session can remove."""
-    problems = check_session(session)
-    return problems, problems == [CANDIDATE_CHANGED]
-
-
 def authorize(session, state, source, basis, explanation):
     authorization = {'authorized': True, 'source': source, 'basis': basis,
                      'explanation': explanation, 'at': time.time(),
@@ -222,8 +215,8 @@ def supervise(session, launch):
         if output_role:
             # The session is done when its output passes the check the runner makes of it. What the check
             # finds is what the next turn is told; a candidate that changed is the runner's to restore.
-            problems, beyond_repair = output_problems(session)
-            if not problems or beyond_repair:
+            problems = check_session(session)
+            if not problems or problems == [CANDIDATE_CHANGED]:
                 authorize(session, state, 'runner', 'output_checked',
                           'The transport check of the output passed.' if not problems else problems[0])
                 return result

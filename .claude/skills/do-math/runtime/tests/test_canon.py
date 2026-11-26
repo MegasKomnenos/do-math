@@ -661,11 +661,16 @@ class LoadChangeTests(TempCase):
             load_change(folder)
 
     def test_an_approach_with_the_review_section_is_refused(self):
-        folder = self.candidate()
-        write(folder / 'approaches/Small/root/induction.md', with_review(APPROACH, 'It closed the step.'))
-        with self.assertRaisesRegex(CanonError, r'approaches/Small/root/induction\.md: the "## Review" section is written '
-                                                'at publication'):
-            load_change(folder)
+        # Also where the line stands in a code block, in which a heading is otherwise free: publication cuts an
+        # entry at its first line `## Review` (canon.with_review), so what follows that line would be lost.
+        fenced = APPROACH.replace('## Established', '```text\n## Review\n```\n\n## Established')
+        self.assertNotIn('Review', parse_approach(fenced)['sections'])
+        for label, text in (('as a section', with_review(APPROACH, 'It closed the step.')), ('in a code block', fenced)):
+            folder = self.candidate()
+            write(folder / 'approaches/Small/root/induction.md', text)
+            with self.subTest(label), self.assertRaisesRegex(
+                    CanonError, r'approaches/Small/root/induction\.md: the "## Review" section is written at publication'):
+                load_change(folder)
 
     def test_an_empty_understanding_text_is_refused(self):
         for text in ('', ' \n\n'):
@@ -2494,6 +2499,20 @@ class CandidateToolTests(InstanceCase):
         self.assertFalse(result['ok'])
         self.assertIn("unknown identifier 'unknown_name'", '\n'.join(result['errors']))
         self.assertIn('Small.Root', '\n'.join(result['errors']))
+
+    def test_a_build_that_fails_before_any_module_is_compiled_is_reported_with_its_reason(self):
+        # A new module imports a module of the library that has no file. The broker fails such a build as a whole
+        # before it compiles anything (lean_broker.discover_modules), so the build's record names no module that
+        # failed, and the outcome carries the status and the reason of the build itself.
+        absent = module_text(STEP, imports=('Small.Defs', 'Small.Absent'))
+        folder = self.candidate(modules={'Small/Step.lean': absent}, records={'Small/oddSum_succ.md': STEP_RECORD},
+                                prepare=False)
+        result = self.prepare(folder, expect_ok=False)
+        self.assertFalse(result['ok'])
+        self.assertTrue(result['build'])
+        self.assertEqual(len(result['errors']), 1, result['errors'])
+        self.assertRegex(result['errors'][0], r'^build: failed: .*Small\.Absent')
+        self.assertEqual((result['added'], result['replaced'], result['entries']), ([], [], {}))
 
     def test_a_candidate_with_a_check_error(self):
         session = self.session('peer')

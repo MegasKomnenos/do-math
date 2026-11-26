@@ -809,6 +809,19 @@ class ReviewedCandidateTests(PublicationCase):
         self.assertEqual((compiled['ok'], compiled['replaced']), (True, ['Small.root']))
         self.assertEqual(replay(self.instance)['root_state'], 'informal_proved')
 
+    def test_a_producers_declaration_that_cannot_be_read_leaves_the_reviewed_candidate_in_the_queue(self):
+        # Preparing the publication of a change reads the question its producer held from that session's
+        # declaration. A declaration that does not parse fails that read, on which the runner ends and saves
+        # its state (Runner.run). The reviewed candidate still waits in the queue of that state, where the
+        # next runner finds it.
+        engine, job = self.candidate_pipeline()
+        (engine.session_dir('sauthor') / 'declaration.json').write_text('{not json', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Expecting property name'):
+            engine.finish('sreview', engine.state['sessions']['sreview'])
+        self.assertIsNone(engine.state['publication'])
+        self.assertEqual(engine.state['publish_queue'], [{'session': 'sreview', 'job': job['id'], 'kind': 'change'}])
+        self.assertEqual(engine.state['sessions']['sreview']['status'], 'publishing')
+
     def test_review_finish_retries_instead_of_publishing_a_changed_candidate(self):
         engine, job = self.candidate_pipeline()
         before = self.canon_bytes()
@@ -954,6 +967,33 @@ class ReviewedCandidateTests(PublicationCase):
         self.assertEqual(self.root_declaration(), PAIRING)
         self.assertEqual(read_json(self.instance / 'knowledge' / event['folder'] / 'provenance.json')['peer_session'],
                          'snewpeer')
+
+    def test_a_producers_declaration_that_cannot_be_read_leaves_the_review_to_be_collected_again(self):
+        # A replacement peer is assigned the sections and the question that the producer's declaration records.
+        # A declaration that does not parse fails that read, on which the runner ends and saves its state
+        # (Runner.run). Nothing of the handover has been made in that state, so once the file is repaired the
+        # next runner collects the review again and hands the work to a new peer.
+        engine, job = self.candidate_pipeline()
+        candidate = Path(job['task']['candidate'])
+        for folder in (candidate, candidate.parent / 'output'):
+            (folder / 'records/Small/root.md').write_text('Changed retained bytes.', encoding='utf-8')
+        declaration = engine.session_dir('sauthor') / 'declaration.json'
+        declaration.write_text('{not json', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'Expecting property name'):
+            engine.finish('sreview', engine.state['sessions']['sreview'])
+        pipeline = engine.state['pipelines'][job['pipeline']]
+        self.assertEqual((engine.state['sessions']['sreview']['status'], job['status'], pipeline['stage']),
+                         ('running', 'running', 'review'))
+        self.assertFalse([j for j in engine.state['jobs'].values() if j['role'] == 'peer'])
+        engine.save()
+        write_json(declaration, WHOLE_ROOT)
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.finish('sreview', recovered.state['sessions']['sreview'])
+        self.assertEqual(recovered.state['jobs'][job['id']]['status'], 'cancelled')
+        [peer_job] = [j for j in recovered.state['jobs'].values() if j['role'] == 'peer']
+        self.assertEqual((peer_job['status'], peer_job['task']['sections']),
+                         ('pending', [{'id': 'sauthor-1', 'element': 'Small.root', 'whole': True, 'statement': None,
+                                       'new': None}]))
 
     def test_interrupted_review_does_not_apply_a_structurally_usable_assessment(self):
         engine, job = self.candidate_pipeline()
