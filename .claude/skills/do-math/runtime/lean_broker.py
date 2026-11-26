@@ -1035,7 +1035,13 @@ class Broker:
         self.settle_build(build)
 
     def settle_build(self, build):
-        """Close a build after its modules end, retaining an explicit build cancellation."""
+        """Close a build after its modules end, retaining an explicit build cancellation.
+
+        The result.json written here holds what is read after the build (report_build, canon.build_outcome,
+        check.audit_formal): the record without `sources`, and of each module's row its key, job, status, exit
+        code, reason and measurements. The rest of a row is read only while the build runs, from the state, and
+        a build of a canon has a row for every module of the canon. A result.json that an earlier broker wrote
+        holds the whole record; what is read of either is the same."""
         if build["status"] not in ACTIVE:
             return
         modules = build["modules"]
@@ -1054,7 +1060,10 @@ class Broker:
             build["status"] = modules[broken]["status"]
             build["reason"] = f"module {broken} {modules[broken]['status']}: {modules[broken].get('reason')}"
         build["finished_at"] = time.time()
-        write_json(self.paths.build(build["id"]) / "result.json", build)
+        rows = {name: {key: row[key] for key in ("key", "job", "status", "exit_code", "reason", "measured") if key in row}
+                for name, row in modules.items()}
+        write_json(self.paths.build(build["id"]) / "result.json",
+                   {**{key: value for key, value in build.items() if key != "sources"}, "modules": rows})
         self.dirty = True
         self.log(event="build_" + build["status"], build=build["id"], session=build["session"], reason=build["reason"])
 

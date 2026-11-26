@@ -187,13 +187,15 @@ class Sessions:
         servers of the session; without them it has none. Returns the folder.
 
         A session that its provider refuses is waited for and started again, in the same folder and
-        with the same model, LIMIT_WAITS times at the most. The refusals are those that
-        retention.refusal tells, by which the research's runner knows them as well: the usage limit
-        of the account, a model for which the provider has no capacity, and a model that asks for
-        usage credits. The wait lasts until the reset that the provider named for a usage limit, and
-        for retry_max_seconds of the settings where none is named. A refusal of the model itself is
-        none of these: a safeguard stopped that session, and `session` starts it again
-        (stopped_by_safeguard). When the provider still refuses the last start, Refused is raised."""
+        with the same model, LIMIT_WAITS times at the most. A refusal can reach a session that has
+        already written files, and such files are no finished output, so `output` is emptied before
+        each new start. The refusals are those that retention.refusal tells, by which the research's
+        runner knows them as well: the usage limit of the account, a model for which the provider has
+        no capacity, and a model that asks for usage credits. The wait lasts until the reset that the
+        provider named for a usage limit, and for retry_max_seconds of the settings where none is
+        named. A refusal of the model itself is none of these: a safeguard stopped that session, and
+        `session` starts it again (stopped_by_safeguard). When the provider still refuses the last
+        start, Refused is raised."""
         with self.lock:
             if self.stopping.is_set():
                 raise Stop('the command was interrupted')
@@ -220,6 +222,13 @@ class Sessions:
                                          servers or {}, withheld=SELF_SCHEDULING)
                 started = time.time()
                 try:
+                    # A start that the provider refused may have written into `output` before it was cut off. The
+                    # session that starts now knows nothing of those files, so it begins with an empty `output`.
+                    for path in sorted((folder / 'output').rglob('*'), reverse=True) if waits else ():
+                        if path.is_dir():
+                            path.rmdir()
+                        else:
+                            path.unlink()
                     with (folder / 'prompt.txt').open('rb') as inp, (folder / 'cli.stdout.jsonl').open('wb') as out, \
                             (folder / 'cli.stderr.log').open('wb') as err:
                         process = subprocess.Popen(command.argv, cwd=command.cwd, env=worker_environment(), stdin=inp,

@@ -1,5 +1,4 @@
 """The derived views of the research and the text views a session reads the canon through."""
-import io
 import json
 import os
 from pathlib import Path
@@ -77,10 +76,13 @@ class ViewTests(ScenarioCase):
         model = knowledge.replay(self.instance)
         knowledge.render(self.instance, model, [])
         original = Path.read_bytes
+        # A refusal that carries a Windows error code other than those of a held file is raised at once.
+        locked = PermissionError('view locked')
+        locked.winerror = 1314
 
         def unreadable(path):
             if path.name == 'frontier.md':
-                raise PermissionError('view locked')
+                raise locked
             return original(path)
 
         with patch.object(Path, 'read_bytes', unreadable), patch('knowledge.write_text') as text:
@@ -96,9 +98,8 @@ class ViewTests(ScenarioCase):
         knowledge.render(self.instance, model, [])
         before = self.stamps()
         original = Path.read_bytes
-        held = PermissionError('injected sharing violation')
-        held.winerror = 32
-        refusals = [held]
+        # As Python's open reports a file that is held without read sharing: errno 13 and no Windows error code.
+        refusals = [PermissionError(13, 'Permission denied')]
 
         def held_once(path):
             if path.name == 'frontier.md' and refusals:
@@ -294,14 +295,6 @@ class ViewTests(ScenarioCase):
 
 class CanonToolTests(ScenarioCase):
     """The text views of canon_tool, as a session runs them: `canon_tool.py <command> <session> ...`."""
-
-    def command_line(self, *argv):
-        """The exit code and the output of canon_tool for one command line."""
-        stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
-        with patch('sys.stdout', stream):
-            returned = canon_tool.main([str(argument) for argument in argv])
-        stream.flush()
-        return returned, stream.buffer.getvalue().decode('utf-8')
 
     def tool(self, command, *arguments, code=0):
         returned, text = self.command_line(command, self.reader(), *arguments)

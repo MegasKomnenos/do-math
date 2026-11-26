@@ -85,6 +85,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 from canon import BIB_ENTRY, Canon, declaration_text, read_question_account, read_record, sha256_text
 from cli_adapter import build_command, provider_for_model
@@ -521,6 +522,9 @@ def extract(instance, model, further=(), main=None):
                 'explanation': root_sections.get('Explanation')},
             'main': main, 'axioms': elements[settles]['axioms'], 'allowed_axioms': model['allowed_axioms'],
             'understanding': understanding.strip(), 'understanding_review': review,
+            # The Literature part of the root's record says where the problem comes from. Where another declaration
+            # settles the root, the root is no element of the materials, and the head carries that part (head_lines).
+            'root_literature': root_sections.get('Literature'),
             'elements': [entry(name) for name in order],
             'bibliography': bibliography, 'bibliography_keys': BIB_ENTRY.findall(bibliography),
             'identifiers': sorted(set(elements) | {e['module'] for e in elements.values()}),
@@ -578,9 +582,12 @@ def head_lines(materials):
              'Axioms that formal proof depends on: ' + (', '.join(materials['axioms']) or 'none')
              + '. Axioms the instance allows: ' + ', '.join(materials['allowed_axioms']) + '.', '']
     if settling(materials) != root['name']:
-        for title, key in (("The statement in the root's record", 'statement'), ("The explanation in the root's record", 'explanation')):
-            if root[key]:
-                lines += [f'**{title}.**', '', root[key], '']
+        # materials.json of a run that an earlier version of the command began has no "root_literature".
+        for title, text in (("The statement in the root's record", root['statement']),
+                            ("The explanation in the root's record", root['explanation']),
+                            ("The literature part of the root's record", materials.get('root_literature'))):
+            if text:
+                lines += [f'**{title}.**', '', text, '']
     lines += main_lines(materials)
     lines += ['## The understanding so far of the problem as a whole', '',
               materials['understanding'] or 'No account of the problem as a whole has been written.', '']
@@ -1889,17 +1896,23 @@ def typeset(folder, recipe):
         bibtex = Path(command[0]).stem.lower() == 'bibtex'
         if bibtex and not cites:
             continue  # BibTeX fails on a paper that cites nothing
-        try:
-            done = subprocess.run(command, cwd=folder, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, timeout=TEX_SECONDS, **popen_options())
-        except subprocess.TimeoutExpired:
-            raise Stop(f'{command[0]} did not finish within {TEX_SECONDS} seconds. No part of the manuscript is known '
-                       'to cause that, so it goes to no repair session. See why the TeX command takes this long, as '
-                       'it can when it fetches its files at its first run, and give the command again: --resume '
-                       'continues a run that was stopped, and --typeset-only typesets a finished manuscript')
-        except OSError as exc:
-            raise Stop(f'{command[0]} could not be started: {exc}')
-        output = done.stdout.decode('utf-8', errors='replace').replace('\r\n', '\n')
+        # What the command prints goes into a file and not into a pipe. When the time is up, subprocess.run can end
+        # the command alone, and on Windows it then reads a pipe to its end, which comes when the last program that
+        # holds the pipe has ended: a program the command started, as latexmk starts pdflatex, would keep the run
+        # where it is for as long as that program goes on.
+        with tempfile.TemporaryFile() as printed:
+            try:
+                done = subprocess.run(command, cwd=folder, stdin=subprocess.DEVNULL, stdout=printed,
+                                      stderr=subprocess.STDOUT, timeout=TEX_SECONDS, **popen_options())
+            except subprocess.TimeoutExpired:
+                raise Stop(f'{command[0]} did not finish within {TEX_SECONDS} seconds. No part of the manuscript is known '
+                           'to cause that, so it goes to no repair session. See why the TeX command takes this long, as '
+                           'it can when it fetches its files at its first run, and give the command again: --resume '
+                           'continues a run that was stopped, and --typeset-only typesets a finished manuscript')
+            except OSError as exc:
+                raise Stop(f'{command[0]} could not be started: {exc}')
+            printed.seek(0)
+            output = printed.read().decode('utf-8', errors='replace').replace('\r\n', '\n')
         with (folder / 'typeset.log').open('a', encoding='utf-8', newline='\n') as stream:
             stream.write('$ ' + ' '.join(command) + '\n' + output + '\n')
         if done.returncode and not (bibtex and done.returncode == 1):  # BibTeX returns 1 for warnings
@@ -2274,7 +2287,7 @@ the method permits, keep the statement and say why. The proof of a statement, or
 section, which this session does not change. The writer of that section worked from the statement of the element, as \
 your brief gives it, and not from the wording that you now correct; where the correction nevertheless requires a change \
 there, say in the note which section and what.'''
-LIKE_FOUND = '''A session that had the manuscript and four research articles from refereed journals, and nothing \
+LIKE_FOUND = '''A session that had the manuscript and ''' + str(LIKENESS_PAPERS) + ''' research articles from refereed journals, and nothing \
 else, read the manuscript beside those papers, as the method's section "Reading the manuscript beside real papers" \
 describes. `findings.json` holds what it found{scope}: places where the manuscript is written otherwise than real \
 papers are written. Each finding gives the place ("where"), the passage of the manuscript ("quote", empty when the \
@@ -2524,7 +2537,7 @@ the paper or its proofs were produced.
 '''
 
 LIKENESS_PROMPT = '''This folder holds the manuscript of a mathematical paper, `paper.tex`, its LaTeX source, with its \
-bibliography `references.bib`, and in the folder `exemplars` four research articles from refereed journals, each as the \
+bibliography `references.bib`, and in the folder `exemplars` ''' + str(LIKENESS_PAPERS) + ''' research articles from refereed journals, each as the \
 LaTeX source that its authors wrote: {papers}. Read the papers and the manuscript as the text below describes, and report \
 whether the manuscript is written as these papers are written. The report is used to revise the manuscript where it is \
 written otherwise.
@@ -2858,7 +2871,7 @@ for the draft where the proof of the root does not use them. `elements/` holds t
 file each; the digest names the file at each element.
 - `study.md` is the account that the planning session wrote of how the papers it chose are written. The papers \
 themselves are not in this folder and are not read again. The plan keeps its "exemplars" as they are, and so does every \
-section; a section that you add names two of the plan's papers.
+section; a section that you add names ''' + str(SECTION_PAPERS) + ''' of the plan's papers.
 
 Change in the plan what the problems require, and leave the rest as it is. The labels, the kinds, the sections and the \
 elements of the numbered statements in particular stay wherever no problem requires otherwise, because the drafted \
@@ -2942,7 +2955,7 @@ title or the notation changes. It is the complete plan in the form of `plan.json
 manuscript now is, because the script holds the manuscript to the plan: every numbered statement of the plan in its \
 section, in the plan's order, with its kind and label, and no other. A statement that loses its number moves from \
 "statements" to "others", with the treatment "absorbed" and the place into which it is now written. A section that is \
-gone is left out, and its part with it. The plan keeps its "exemplars"; a section that you create names two of them. \
+gone is left out, and its part with it. The plan keeps its "exemplars"; a section that you create names ''' + str(SECTION_PAPERS) + ''' of them. \
 When the structure stays as it is, write no plan.
 - `output/response.json`: an array with one object for each finding of `findings.json`, in their order, {{"finding": \
 <its number>, "action": "revised" or "kept", "note": "..."}}. For a finding that you revise, the note says what you \
@@ -3177,7 +3190,8 @@ def changed_materials(stored, fresh):
     Compared are the root, the main result with the declaration that settles the root and the declarations of a
     draft ("main", "settles", "further"), the axioms, and the elements with their records. Nothing else is. The
     revision counts the publications of the instance, "identifiers" names every declaration and module of the
-    instance, and the bibliography and the account of the problem as a whole belong to the whole research. A
+    instance, and the bibliography, the account of the problem as a whole and what the root's record says of the
+    literature of the problem ("root_literature") belong to the whole research. A
     publication that changes nothing the proof of the root rests on can change each of these, and the run goes on
     with them as materials.json holds them, which is what a run that was not stopped does."""
     fresh = json.loads(json.dumps(fresh))
@@ -3939,8 +3953,13 @@ class Paper(Sessions):
         """Assemble, check by machine and typeset, with repair sessions for what fails; True when nothing fails.
 
         `rounds` is the number of repairs at the most. With 0 the manuscript is assembled, checked and
-        typeset once, and what fails is reported and not repaired."""
-        for round_number in range(rounds + 1):
+        typeset once, and what fails is reported and not repaired. A repair of lines that are too wide
+        is made on a manuscript that was typeset. When the repairs are used up and the manuscript
+        fails after such a repair, the parts are put back as they were typeset and the lines are
+        reported: a line that is too wide stops nothing, and neither does its repair."""
+        # `typeset_parts`: the parts as they were typeset, before the last repair of lines that are too wide.
+        repairs, typeset_parts = 0, None
+        while True:
             tex, spans, _ = self.assemble()
             remove_pdf(self.out)  # a PDF beside the manuscript is always a PDF of it
             found = machine_findings(self.materials, self.plan, self.parts,
@@ -3974,15 +3993,27 @@ class Paper(Sessions):
                 # plan, the author lines, the bibliography. A repair changes the parts and keeps all of these, so
                 # such a line goes to no session and is reported with the lines that the repairs leave.
                 held = [(problem, part) for problem, part in zip(problems, where) if part is not None]
-                if not held:
+                if not held or repairs == rounds:
                     break
-                if round_number < rounds:
-                    self.repair(kind, [problem for problem, _ in held], [part for _, part in held], tex, spans)
-            elif round_number < rounds:
+                typeset_parts = dict(self.parts)
+                self.repair(kind, [problem for problem, _ in held], [part for _, part in held], tex, spans)
+            elif repairs < rounds:
                 self.repair(kind, problems, where, tex, spans)
+            elif typeset_parts is not None:
+                # The repairs are used up, and the manuscript fails after a repair of wide lines. It was typeset
+                # before that repair, so the parts are put back as they were then, and the manuscript is checked
+                # and typeset once more, without a repair: the paper carries the wide lines.
+                back = {name: text for name, text in typeset_parts.items() if text != self.parts[name]}
+                self.event('repair undone', of='wide', parts=sorted(back))
+                self.keep(back)
+                typeset_parts = None
+                continue
+            else:
+                break
+            repairs += 1
         if kind == 'wide':
             # The paper is typeset. A line that still stands out into the margin is reported and stops nothing.
-            self.open.append({'check': WIDE, 'after_repairs': round_number, 'problems': problems})
+            self.open.append({'check': WIDE, 'after_repairs': repairs, 'problems': problems})
             self.save()
             return True
         self.open.append({'check': TYPESETTING if kind == 'typeset' else MACHINE, 'after_repairs': rounds,

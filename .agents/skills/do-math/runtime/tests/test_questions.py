@@ -441,15 +441,6 @@ class UnderstandingTests(QuestionCase):
         self.assertEqual(text.count(self.HEADING), 1)
         return text.split(self.HEADING, 1)[1].split('\n# Board at launch\n', 1)[0]
 
-    def tool(self, *argv):
-        """Run a canon_tool command and return its exit code with what it wrote to standard output."""
-        buffer = io.BytesIO()
-        stream = io.TextIOWrapper(buffer, encoding='utf-8')
-        with patch('sys.stdout', stream):
-            code = canon_main(list(argv))
-            stream.flush()
-        return code, buffer.getvalue().decode('utf-8')
-
     def test_a_later_account_replaces_the_text_and_leaves_the_difference_in_the_history(self):
         first = self.account('q0')
         # An account without a resolution leaves q0 open; only the root's formal settlement resolves it.
@@ -499,18 +490,18 @@ class UnderstandingTests(QuestionCase):
         self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
         # The question command shows the surviving text, and the absorbed one when asked for the history.
         reader = self.reader()
-        code, shown = self.tool('question', str(reader), 'op-d')
+        code, shown = self.command_line('question', str(reader), 'op-d')
         self.assertEqual((code, shown.splitlines()[0]), (0, 'op-d · open'))
         self.assertIn(LATER_ACCOUNT.strip(), shown)
         self.assertNotIn(ACCOUNT.strip(), shown)
         self.assertIn('1 earlier text of this understanding can be read with --history.', shown)
-        code, shown = self.tool('question', str(reader), 'op-d', '--history')
+        code, shown = self.command_line('question', str(reader), 'op-d', '--history')
         self.assertEqual(code, 0)
         self.assertIn('## Earlier texts\n\n' + texts['op-c'], shown)
         # The question that had no text of its own reads the absorbed one, under either name.
         for qid in ('op-b', 'op-a'):
             with self.subTest(question=qid):
-                code, shown = self.tool('question', str(reader), qid)
+                code, shown = self.command_line('question', str(reader), qid)
                 self.assertEqual((code, shown.splitlines()[0]), (0, 'op-b · open'))
                 self.assertIn(ACCOUNT.strip(), shown)
                 self.assertNotIn('earlier text', shown)
@@ -518,7 +509,7 @@ class UnderstandingTests(QuestionCase):
     def test_the_question_command_prints_the_question_its_state_and_the_understanding_with_reviews_assessment(self):
         self.questions('qops', [question('op-scale')])
         reader = self.reader()
-        code, shown = self.tool('question', str(reader), 'op-scale')
+        code, shown = self.command_line('question', str(reader), 'op-scale')
         self.assertEqual(code, 0)
         self.assertEqual(shown.splitlines()[0], 'op-scale · open')
         self.assertIn('What op-scale asks.', shown)
@@ -526,7 +517,7 @@ class UnderstandingTests(QuestionCase):
         self.assertIn('No understanding has been written for this question yet.', shown)
         self.assertNotIn('## Understanding so far', shown)
         cid = self.account('op-scale', resolution_id='res')
-        code, shown = self.tool('question', str(reader), 'op-scale')
+        code, shown = self.command_line('question', str(reader), 'op-scale')
         self.assertEqual(code, 0)
         self.assertEqual(shown.splitlines()[0], 'op-scale · resolved')
         self.assertNotIn('No understanding has been written', shown)
@@ -536,11 +527,11 @@ class UnderstandingTests(QuestionCase):
         self.assertEqual(places, sorted(places))
         self.assertEqual(shown, question_view(self.instance, replay(self.instance), 'op-scale') + '\n')
         # The root question is read the same way; nothing has been written for it here.
-        code, shown = self.tool('question', str(reader), 'q0')
+        code, shown = self.command_line('question', str(reader), 'q0')
         self.assertEqual((code, shown.splitlines()[0]), (0, 'q0 · open'))
         self.assertIn('The root problem itself, taken as a whole.', shown)
         self.assertIn('No understanding has been written for this question yet.', shown)
-        code, shown = self.tool('question', str(reader), 'nope')
+        code, shown = self.command_line('question', str(reader), 'nope')
         self.assertEqual((code, json.loads(shown)), (1, {'error': 'no such question: nope'}))
 
 
@@ -548,20 +539,20 @@ class UnderstandingTests(QuestionCase):
         self.questions('qops', [question('op-scale'), question('op-open')])
         reader = self.reader()
         # Nothing is resolved and review has returned nothing: each selection says so.
-        self.assertEqual(self.tool('questions', str(reader), '--resolved'),
+        self.assertEqual(self.command_line('questions', str(reader), '--resolved'),
                          (0, '# Resolved questions\n\nNo question is resolved.\n\n'))
-        self.assertEqual(self.tool('questions', str(reader), '--proposals'),
+        self.assertEqual(self.command_line('questions', str(reader), '--proposals'),
                          (0, '# Question proposals review did not admit\n\nReview has returned or declined no proposal.\n\n'))
         folder = self.candidate(understanding={'op-scale.md': ACCOUNT}, resolutions=[resolution('res', 'op-scale')],
                                 questions=[question('speer-vague')])
         review = self.verdicts(folder)
         review['questions'] = [{'proposal': 'speer-vague', 'verdict': 'revise', 'reason': 'Name the regime.'}]
         cid, _ = self.publish(folder, review, role='explore', question='op-scale')
-        code, shown = self.tool('questions', str(reader), '--resolved')
+        code, shown = self.command_line('questions', str(reader), '--resolved')
         self.assertEqual(code, 0)
         self.assertEqual(shown, '# Resolved questions\n\n## op-scale\n\nWhat op-scale asks.\n\nState: resolved\n'
                                 f'Source: operator publication qops\n- Resolved by {cid}/res\n\n')
-        code, shown = self.tool('questions', str(reader), '--proposals')
+        code, shown = self.command_line('questions', str(reader), '--proposals')
         self.assertEqual(code, 0)
         self.assertTrue(shown.startswith('# Question proposals review did not admit\n\nA proposal marked revise'))
         self.assertTrue(shown.endswith(f'\n\n- revise: What speer-vague asks. — review: Name the regime. — change {cid}\n\n'))
@@ -1319,7 +1310,7 @@ class QuestionDispatchTests(QuestionCase):
             write_json(folder / 'declaration.json', {'question': {'id': held, 'at': 1, 'by': 'runner'}, 'at': 1})
             (folder / 'work/notes.md').write_text('An unfinished observation.', encoding='utf-8')
         session = runner.state['sessions'][sid]
-        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=1, exit_code=0)
+        session.update(started_at=1, exit_code=0)
         runner.save()
         return sid, session, runner.state['jobs'][session['job']], folder
 

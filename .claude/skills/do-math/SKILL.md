@@ -27,7 +27,7 @@ Recover the user's mathematical statement, assumptions and intended objects from
 
 Then write the same proposition in Lean, together with the user: the Lean definitions of the objects the proposition speaks of, and the Lean statement of the root as a theorem whose proof is left open. [Operations](reference/operations.md) gives this work step by step under "Fix the root in words and in Lean".
 
-When `init` has succeeded, have the user read and confirm what was fixed, with your explanation of how the Lean form reads; Operations lists, under "Compile, and have the user confirm", exactly what the user reads. Start the runner only after that confirmation.
+When `init` has succeeded, have a sub-agent that is given only the Lean files say in words what the root states, and then have the user read and confirm what was fixed, with that reading and with your explanation of how the Lean form reads; Operations describes the reading and lists exactly what the user reads, under "Compile, and have the user confirm". Start the runner only after that confirmation.
 
 A changed mathematical proposition requires a new instance, and a Lean statement later found not to say what was meant is a changed proposition.
 

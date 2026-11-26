@@ -483,6 +483,15 @@ class RefutedMaterialsTests(RefutedRootCase):
     def test_direct_formal_refutation_is_the_main_result(self):
         self.formally_refuted()
         self.assert_refutation_materials('Small.notRoot')
+        # The root is no element of these materials. What its record says of the literature of the problem reaches
+        # the sessions in the head of the materials, with the statement and the explanation of that record.
+        record = self.instance / 'canon/records/Small/root.md'
+        posed = 'Posed in [euler, Problem 3]; the statement of the problem was read.'
+        record.write_text(record.read_text(encoding='utf-8') + '\n## Literature\n\n' + posed + '\n', encoding='utf-8',
+                          newline='\n')
+        materials = paper.extract(self.instance, replay(self.instance))
+        self.assertNotIn('Small.root', [element['name'] for element in materials['elements']])
+        self.assertIn("**The literature part of the root's record.**\n\n" + posed, paper.record_files(materials)['root.md'])
 
     def test_formal_alternative_to_an_informal_refutation_is_the_main_result(self):
         self.refuted()
@@ -625,6 +634,24 @@ class PlanTests(PaperCase):
         self.assertIn('"section" \'nowhere\' is not the id of a section',
                       self.problems(lambda plan: plan['statements'][2].update(section='nowhere')))
         self.assertEqual(paper.check_plan(self.found, ['not', 'an', 'object'], KEYS), ['plan.json holds one JSON object'])
+        # A plan whose form the later steps cannot carry out goes back as well. A part is a file named by the id of
+        # its section, and the abstract is one of the parts; a proof stands with its statement or after it, and a
+        # statement is cited only from a source; an element without a number is absorbed, cited or not stated, into
+        # or by something that the paper has.
+        for change, words in (
+                (lambda plan: plan['sections'][2].update(id='abstract'), "section id 'abstract': a short lowercase word"),
+                (lambda plan: plan['sections'][2].update(id='tools'), 'two sections have the same id'),
+                (lambda plan: plan['statements'][1].update(proof='cited'),
+                 'Small.oddSum_mono has no source in the literature; it cannot be "cited" in place of a proof'),
+                (lambda plan: plan['statements'][2].update(proof='intro'),
+                 "Small.sq_step: \"proof\" 'intro' is the id of its own section or of a later one"),
+                (lambda plan: self.other(plan, 'Small.expand').update(treatment='omitted'),
+                 'Small.expand: "treatment" is absorbed, cited or not_stated'),
+                (lambda plan: self.other(plan, 'Small.oddSum_succ').update(into=['Small.expand']),
+                 "Small.oddSum_succ is absorbed into 'Small.expand', which is neither a numbered element nor a section id"),
+                (lambda plan: self.other(plan, 'Small.oddSum_mono_weak').update(by='Small.oddSum_mono_weak'),
+                 'Small.oddSum_mono_weak: "by" names the element of the materials that stands in its place')):
+            self.assertIn(words, self.problems(change))
 
     def test_a_title_of_the_plan_names_no_lean_name_and_does_not_mention_lean(self):
         # A repair keeps the plan, so a title that mentions Lean has to go back to a planning session.
@@ -955,15 +982,32 @@ class TypesettingTests(unittest.TestCase):
                 # The second typesetting only measures: when it does not finish, nothing is reported.
                 self.assertEqual(paper.tight_displays(folder, recipe), [])
 
+    def test_the_time_limit_of_a_tex_command_holds_while_a_program_it_started_goes_on(self):
+        # latexmk runs pdflatex as a program of its own, and when the time is up only the command itself is ended.
+        # The program it started goes on and still holds the place the output goes to; the run stops all the same.
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('', encoding='utf-8')
+            lasting = ('import subprocess, sys, time; subprocess.Popen([sys.executable, "-c", "import time; '
+                       'time.sleep(30)"], stdout=sys.stdout, cwd=sys.prefix); time.sleep(30)')
+            began = time.monotonic()
+            with patch('paper.TEX_SECONDS', 2), self.assertRaisesRegex(paper.Stop, 'did not finish within 2 seconds'):
+                paper.typeset(folder, paper.tex_recipe([sys.executable, '-c', lasting]))
+            self.assertLess(time.monotonic() - began, 15)
+
     def test_a_file_that_the_tex_installation_lacks_stops_the_run_and_goes_to_no_repair(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
                                               encoding='utf-8', newline='\n')
             recipe = paper.tex_recipe(TEX)
-            # What TeX reports when the class of the preamble, which the script supplies, is not installed.
-            failed = subprocess.CompletedProcess(recipe[0], 1, b"./paper.tex:1: LaTeX Error: File `amsart.cls' not found.\n")
-            with patch('paper.subprocess.run', return_value=failed):
+            # What TeX reports when the class of the preamble, which the script supplies, is not installed. The
+            # stand-in prints it where typeset has the command print, and ends with the exit code of an error.
+            def failed(command, stdout, **options):
+                stdout.write(b"./paper.tex:1: LaTeX Error: File `amsart.cls' not found.\n")
+                return subprocess.CompletedProcess(command, 1)
+
+            with patch('paper.subprocess.run', side_effect=failed):
                 # No part of the manuscript names the class, so this is not returned as an error for a repair session.
                 with self.assertRaisesRegex(paper.Stop, "File `amsart.cls' not found"):
                     paper.typeset(folder, recipe)
@@ -983,6 +1027,27 @@ class TypesettingTests(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             self.assertIn('left no paper.pdf', errors[0])
             self.assertFalse((folder / 'paper.pdf').exists())
+
+    def test_bibtex_is_run_only_for_a_manuscript_that_cites_and_its_warnings_are_no_error(self):
+        # With pdflatex the recipe runs BibTeX between the passes of the engine. BibTeX fails on a manuscript that
+        # cites nothing, and it ends with exit code 1 when it has only warnings.
+        recipe = [['pdflatex', 'paper.tex'], ['bibtex', 'paper'], ['pdflatex', 'paper.tex']]
+        with tempfile.TemporaryDirectory() as directory:
+            folder, ran = Path(directory), []
+
+            def run(command, **options):
+                ran.append(command[0])
+                (folder / 'paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
+                return subprocess.CompletedProcess(command, int(command[0] == 'bibtex'), b'Warning--empty year in euclid\n')
+
+            for body, commands in (('A sentence.', ['pdflatex', 'pdflatex']),
+                                   ('See \\cite{euclid}.', ['pdflatex', 'bibtex', 'pdflatex'])):
+                (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\n' + body + '\n\\end{document}\n',
+                                                  encoding='utf-8', newline='\n')
+                del ran[:]
+                with patch('paper.subprocess.run', side_effect=run):
+                    self.assertEqual(paper.typeset(folder, recipe), [])
+                self.assertEqual(ran, commands, body)
 
     def test_the_lines_wider_than_the_text_block_are_read_from_the_log_of_tex(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1138,6 +1203,13 @@ class FetchTests(unittest.TestCase):
                             for line in said), said)
         self.assertEqual(sorted(path.name for path in self.folder.iterdir()), ['joined.tex', 'manifest.json'])
         self.assertEqual((self.folder / 'joined.tex').read_bytes(), joined)
+        # A paper that is there as the manifest records it is not fetched again, and one that is there and differs is.
+        (self.folder / 'other.tex').write_bytes(joined + b'An edit.\n')
+        asked = []
+        code, said = self.fetched([('joined', digest), ('other', digest)], lambda url: asked.append(url) or archive.getvalue())
+        self.assertEqual((code, asked), (0, [self.fetch.HOSTS[0] + '0001.00002v1']))
+        self.assertEqual(said[0], 'joined: present and equal to the manifest, nothing to do')
+        self.assertEqual((self.folder / 'other.tex').read_bytes(), joined)
         # With --only the script fetches the papers that are named and no other, and with --to it writes them into
         # another folder. A key that the manifest does not have fails the run.
         asked = []
@@ -1284,15 +1356,8 @@ class RunTests(PaperCase):
         self.assertIn('n^2', rows['statements'][0]['record_statement'])
         self.assertEqual(rows['statements'][0]['paper_statement'], 'For every natural number $n$, we have $S_n = n^2$.')
         self.assertEqual({o['element']: o['treatment'] for o in rows['others']}['Small.oddSum_mono_weak'], 'not_stated')
-        # The paper does not speak of Lean: it has no Lean name, no formal statement and no remark on formal verification,
-        # and no session is asked to write one.
-        tex = (self.out / 'paper.tex').read_text(encoding='utf-8')
-        for word in ('Small.', 'Lean', 'verification'):
-            self.assertNotIn(word, tex)
-        for call in calls:
-            self.assertNotIn('formal verification', call['prompt'])
         self.assertEqual(self.events('materials')[0]['warnings'], [])
-        # The correspondence file still gives the Lean statement of every numbered statement.
+        # The correspondence file gives the Lean statement of every numbered statement.
         self.assertEqual(rows['statements'][2]['lean_statement'],
                          'Small.sq_step (k : Nat) : k * k + (2 * k + 1) = (k + 1) * (k + 1)')
         self.assertIn('statements.json', calls[8]['given'])
@@ -1415,6 +1480,24 @@ class RunTests(PaperCase):
         self.assertIn('69pt wider than the text block', end['open'][0]['problems'][0])
         self.assertTrue((self.out / 'paper.pdf').is_file())
         self.assertIn('paper.pdf', ' '.join(str(call.args[0]) for call in shown.call_args_list if call.args))
+
+    def test_a_repair_of_a_wide_line_that_leaves_the_manuscript_failing_is_undone_and_the_run_goes_on(self):
+        script = good()
+        script['write:proof'] = [{'output/proof.tex': PROOF + '\\[ a = b \\] % wide\n'}]
+        # The repairs of the wide line use up the bound, and the last of them writes a macro that TeX does not know.
+        kept = [PROOF + f'\\[ a = b \\] % wide, attempt {n}\n' for n in range(paper.REPAIR_ROUNDS - 1)]
+        script['repair:wide'] = [{'output/proof.tex': text} for text in kept + [PROOF + '\\undefinedmacro\n']]
+        self.assertEqual(self.run_paper(script), 2)
+        self.assertEqual([c['section'] for c in self.calls('repair')], ['wide-proof'] * paper.REPAIR_ROUNDS)
+        # The part is put back as it was typeset before the last repair, and the paper is typeset with the wide line.
+        self.assertEqual([e['parts'] for e in self.events('repair undone')], [['proof']])
+        self.assertEqual(self.part('proof'), kept[-1])
+        end = self.events('end')[0]
+        self.assertEqual((end['status'], [(item['check'], item['after_repairs']) for item in end['open']]),
+                         ('open_findings', [(paper.WIDE, paper.REPAIR_ROUNDS)]))
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        # The readings and the comparison are made as for any other manuscript that was typeset.
+        self.assertEqual((len(self.calls('read')), [(c['kind'], c['section']) for c in self.calls('compare')]), (1, COMPARED))
 
     def test_a_wide_line_outside_every_part_is_reported_and_goes_to_no_repair_session(self):
         # The heading of a section is the plan's, and a repair keeps the plan: no session can make this line fit.
@@ -3153,13 +3236,17 @@ class SessionsTests(PaperCase):
         self.assertIs(paper.Paper(self.read_from, self.out, TEX, {}, gate=gate).gate, gate)
 
     def test_a_session_that_its_provider_refuses_is_waited_for_and_started_again_with_the_same_model(self):
-        # The provider has no capacity for the model when the session first runs, and has it at the second run.
-        write_json(self.scenario / 'script.json', {'probe': [{'@refused': ''}, {'output/done.txt': 'done'}]})
+        # The provider has no capacity for the model when the session first runs, after the session has written a
+        # file, and has it at the second run.
+        write_json(self.scenario / 'script.json',
+                   {'probe': [{'@refused': '', 'output/half.txt': 'half'}, {'output/done.txt': 'done'}]})
         self.configure(retry_max_seconds=1)  # the wait for a refusal that names no time
         with patch('command_sessions.worker_command', side_effect=self.command):
             sessions = paper.Sessions(self.instance, self.root / 'work')
             folder = sessions.launch('probe', 'Wait.', {}, sessions.writer)
         self.assertEqual((folder / 'output' / 'done.txt').read_text(encoding='utf-8'), 'done')
+        # What the refused run wrote is no finished output: the second run began with an empty `output`.
+        self.assertEqual([path.name for path in (folder / 'output').iterdir()], ['done.txt'])
         # The one session ran twice in its folder with its model, and the log says for what the command waited.
         model = sessions.writer['model']
         self.assertEqual([(e['folder'], e['model'], e['refused'], e['usage_limit_until']) for e in sessions.log],

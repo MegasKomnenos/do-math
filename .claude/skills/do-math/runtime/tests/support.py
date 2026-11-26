@@ -8,6 +8,7 @@ helpers below; nothing here writes the index or the model by hand.
 """
 import atexit
 import functools
+import io
 from pathlib import Path
 import shutil
 import subprocess
@@ -20,7 +21,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from canon import beyond_allowed
-from canon_tool import build_candidate, verify
+from canon_tool import build_candidate, main as canon_tool_main, verify
 from check import check_session, tree_hashes
 from lean_broker import Paths, broker_alive, terminate_tree
 from runner import Runner, main, uid
@@ -468,6 +469,14 @@ class InstanceCase(unittest.TestCase):
                                            'pipeline': None, 'task': {}, 'user_inputs': []})
         return folder
 
+    def command_line(self, *argv):
+        """The exit code and the output of canon_tool for one command line."""
+        stream = io.TextIOWrapper(io.BytesIO(), encoding='utf-8', newline='\n')
+        with patch('sys.stdout', stream):
+            returned = canon_tool_main([str(argument) for argument in argv])
+        stream.flush()
+        return returned, stream.buffer.getvalue().decode('utf-8')
+
     def session(self, engine, sid, role='attempt'):
         """A producing session as dispatch leaves it: its pipeline on the board and its input.json in place."""
         key = engine.producer(role)
@@ -479,7 +488,8 @@ class InstanceCase(unittest.TestCase):
                                            'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
         engine.state['pipelines'][job['pipeline']]['producer'] = sid
         engine.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running',
-                                         'host': None, 'cli': None}
+                                         'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh', 'provider': 'codex',
+                                         'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
         job.update(status='running', session=sid)
         engine.save()
         return folder

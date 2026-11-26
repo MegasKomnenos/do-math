@@ -558,6 +558,10 @@ class Run:
                               + '; continue it with its own arguments, or remove the folder to begin anew')
             if self.solved.exists() and not ('6-check' in self.state['steps'] and not self.package.exists()):
                 raise Refusal(f'{self.solved} exists')
+            # Without a TeX command the paper command writes the whole paper and ends it untypeset, and no later
+            # start takes that paper up. So a run whose paper is still to be written is not continued without one.
+            if '4-paper' not in self.state['steps']:
+                self.tex_found()
             self.settings = validate(read_json(self.work / 'settings.json'))
             self.sessions = Sessions(self.work, self.work, self.config['parallel'], gate=self.gate)
             self.sessions.event('resume', steps=list(self.state['steps']))
@@ -570,10 +574,8 @@ class Run:
             raise Refusal(f"the settings of the instance are not valid: {error}")
         reduced = package.reduced_settings(settings)
         self.settings = validate(reduced)
+        self.tex_found()
         try:
-            if paper.tex_recipe(self.config['tex']) is None:
-                raise Refusal('no TeX command is available: none of ' + ', '.join(paper.ENGINES)
-                              + ' is on PATH, and the configuration names none')
             paper.load_collection()
         except Stop as error:
             raise Refusal(str(error))
@@ -617,6 +619,14 @@ class Run:
         package.export_commit(instance, first, ['canon/lean'], self.work / 'first', strip='canon/')
         root_module = canon.read_index(source / 'canon' / 'index.json')['entries'][meta['root']]['module']
         definitions = package.definition_modules(self.work / 'first' / 'lean', meta['library'], root_module)
+        # Every step that writes Lean requires each definition module to be the file of the first commit
+        # (library_ok). A research that changed one would stop the run at the take, after the sessions of the
+        # selection, and no new start would get past it.
+        changed = package.definition_problems(source / 'canon' / 'lean', self.work / 'first' / 'lean', definitions)
+        if changed:
+            raise Refusal("the package keeps the modules that the root's module imported in the first commit as they "
+                          'were posed, and the research at the commit ' + commit[:12] + ' does not have them so: '
+                          + '; '.join(changed))
         cache = instance / 'runner' / 'lean' / 'cache'
         if cache.is_dir():
             shutil.copytree(cache, self.work / 'runner' / 'lean' / 'cache', dirs_exist_ok=True)
@@ -633,6 +643,15 @@ class Run:
                             version=version, measured=measured)
         self.decide('Stage 0: start', f'The research is read at the commit `{commit}`, the head of the instance\'s '
                     f'repository when the run began. The definition modules are: ' + ', '.join(definitions) + '.')
+
+    def tex_found(self):
+        """Refuse a start when no TeX command is found, or when the one that the configuration names is not."""
+        try:
+            if paper.tex_recipe(self.config['tex']) is None:
+                raise Refusal('no TeX command is available: none of ' + ', '.join(paper.ENGINES)
+                              + ' is on PATH, and the configuration names none')
+        except Stop as error:
+            raise Refusal(str(error))
 
     def load(self):
         """The values every stage uses, from the pinned research and the state."""

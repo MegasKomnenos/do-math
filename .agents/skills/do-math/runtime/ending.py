@@ -3,6 +3,7 @@
 The host stays alive across turns, preserving the logical session's capacity and
 coordination identity. The runner collects only after this host has finished.
 """
+import json
 from pathlib import Path
 import subprocess
 import time
@@ -10,7 +11,8 @@ import uuid
 
 from availability import no_research_outcome
 from check import CANDIDATE_CHANGED, check_session
-from launch import worker_command, worker_environment
+from launch import (AUTO_COMPACT_TOKENS, CONTEXT_MESSAGE_TOKENS, receives_messages, send_message,
+                    worker_command, worker_environment)
 from retention import conversation_identity, events, model_blocked, output_limit, refusal
 from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
                              terminate_process, write_json, write_text)
@@ -25,6 +27,19 @@ OUTPUT_LIMIT_NOTICE = (
     '(CLI message: "{message}"). That response was discarded: its reasoning and anything it was '
     'producing are not in this conversation and were not saved. Your files, your earlier messages '
     'and the results of your earlier tool calls remain; continue your work from them.')
+# What the host sends a session, once in its life, when the context of the session's own requests reaches
+# launch.CONTEXT_MESSAGE_TOKENS (run_turn). The text stands here and nowhere else.
+CONTEXT_MESSAGE = (
+    'Your conversation now holds about {size:,} tokens of context. When it nears {window:,} tokens, the CLI '
+    'replaces the conversation up to that point with a summary; "What a compaction of your context leaves" '
+    'in context/reference/retained-work.md says what comes through a summary and what does not. Your files '
+    'come through as you wrote them, so this is the time to wrap up: bring your files to the state from '
+    'which your work can be taken over, and then end this turn in the way the guides of your role describe. '
+    'What the files need for that is what your work has produced and no file holds yet, such as a statement '
+    'you settled on, a proof that closed, the result of a computation, or a line of attack that failed and '
+    'where it stopped. Ending the turn does not end the research: the work goes on from your files.')
+# The sessions that have been sent CONTEXT_MESSAGE. One host supervises one session through all of its turns.
+TOLD = set()
 
 
 def turn_directory(session, number):
@@ -128,14 +143,57 @@ def wait_to_resume(session, policy, state):
         time.sleep(.25)
 
 
+def request_context(line):
+    """The tokens of context that one request of the session itself held, read from one line of the stream
+    of a Claude turn; None for any other line.
+
+    An `assistant` event carries the usage of the request that produced it. What that request sent
+    uncached, wrote to the cache and read from the cache is together the conversation it held. An event of
+    a sub-agent names the tool call that started the agent, and its context is not the session's."""
+    if b'"usage"' not in line:
+        return None
+    try:
+        event = json.loads(line)
+        if event['type'] != 'assistant' or event.get('parent_tool_use_id'):
+            return None
+        usage = event['message']['usage']
+        return sum(usage.get(key) or 0
+                   for key in ('input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens'))
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return None  # the stream is the CLI's: a line of another form is not one of these
+
+
+def send_context_message(session, stream, rest):
+    """Read what the stream of a running turn has gained since the last look, and send the session
+    CONTEXT_MESSAGE if a request of its own held launch.CONTEXT_MESSAGE_TOKENS or more.
+
+    `rest` is the beginning of a line that was not complete at the last look. Returns whether the message
+    was sent, and the new `rest`."""
+    data = stream.read()
+    if not data:
+        return False, rest
+    *lines, rest = (rest + data).split(b'\n')
+    for line in lines:
+        size = request_context(line)
+        if size is not None and size >= CONTEXT_MESSAGE_TOKENS:
+            send_message(session, 'runner', CONTEXT_MESSAGE.format(size=size, window=AUTO_COMPACT_TOKENS))
+            return True, b''
+    return False, rest
+
+
 def run_turn(session, folder, command):
-    """Retain one invocation's receipts; publish the current CLI identity for the runner."""
+    """Retain one invocation's receipts; publish the current CLI identity for the runner.
+
+    While the turn runs, a session that receives messages and has not yet been sent CONTEXT_MESSAGE has
+    the turn's stream followed for the size of its context (send_context_message)."""
     started = time.time()
     result = {'exit_code': None, 'invocation_started_at': started}
     child = None
+    follow, rest = receives_messages(session) and session not in TOLD, b''
     with (folder / 'prompt.txt').open('rb') as inp, \
             (folder / 'cli.stdout.jsonl').open('wb') as out, \
-            (folder / 'cli.stderr.log').open('wb') as err:
+            (folder / 'cli.stderr.log').open('wb') as err, \
+            (folder / 'cli.stdout.jsonl').open('rb') as seen:
         try:
             child = subprocess.Popen(command['argv'], cwd=command['cwd'], env=worker_environment(),
                                      stdin=inp, stdout=out, stderr=err, shell=False, **popen_options())
@@ -151,6 +209,16 @@ def run_turn(session, folder, command):
                     except RuntimeError:
                         if alive(identity):
                             raise
+                if follow:
+                    try:
+                        told, rest = send_context_message(session, seen, rest)
+                    except OSError:
+                        # The stream could not be read, or the message not written, at this look. The turn
+                        # goes on, and a later request of the session is looked at again.
+                        told, rest = False, b''
+                    if told:
+                        TOLD.add(session)
+                        follow = False
                 time.sleep(.1)
             result['exit_code'] = child.wait()
         except OSError as exc:

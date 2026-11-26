@@ -453,6 +453,26 @@ class KnowledgeTests(ScenarioCase):
         self.assertEqual((verdict['correct'], verdict['accepted'], verdict['change'], verdict['later_review']),
                          ('confirmed', True, None, 'v2'))
 
+    def test_a_finding_that_confirms_a_proof_says_whether_the_proof_is_accepted(self):
+        # The review of its change did not confirm diagD, so no review asked of it the two questions that decide
+        # acceptance. A later review that confirms it answers them in the same finding, as the review of a
+        # candidate does, and its reason becomes the reason of the verdict.
+        self.ways()
+
+        def verdict(name):
+            element = replay(self.instance)['elements'][name]
+            return element['standing'], element['verdict']['reason'], element['verdict'].get('later_review')
+
+        self.assertEqual(verdict('Small.diagD'), ('not_confirmed', GAP_REASON, None))
+        accepts = 'The addition is carried out in full, and no step of it can be dropped.'
+        self.event('v1', 'review', comprehensive([finding(accepts, status='cleared', validates=['Small.diagD'],
+                                                          accepted=True)]))
+        self.assertEqual(verdict('Small.diagD'), ('accepted', accepts, 'v1'))
+        # The judgment is taken whichever way it goes: said of a proof that stood accepted, it holds that proof back.
+        holds = 'Correct; the step for four terms repeats the step for three.'
+        self.event('v2', 'review', comprehensive([finding(holds, validates=['Small.stepE'], accepted=False)]))
+        self.assertEqual(verdict('Small.stepE'), ('held', holds, 'v2'))
+
     def test_a_status_alone_changes_no_standing(self):
         self.half()
         self.event('v1', 'review', comprehensive(concerns=[concern('boundary', 'Small.sumZero')]))
@@ -1210,7 +1230,7 @@ class RunnerTests(ScenarioCase):
         (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
         (folder / 'work/notes.md').write_text('An unfinished mathematical argument.', encoding='utf-8')
         session = runner.state['sessions'][sid]
-        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=1, exit_code=exit_code)
+        session.update(started_at=1, exit_code=exit_code)
         runner.save()
         return sid, session, runner.state['jobs'][session['job']]
 
@@ -1336,6 +1356,62 @@ class RunnerTests(ScenarioCase):
         runner.collect()
         self.assertEqual((session['status'], session['cli']), ('ended', gone))
         self.assertEqual(runner.state['jobs'][job['pipeline'] + ':peer']['task']['source'], str(folder))
+
+    def test_what_each_session_used_is_recorded_when_it_is_collected_and_status_gives_the_total_of_the_run(self):
+        # A call of the CLI ends with a report of what it used. Claude's `result` event gives the cost and, for
+        # each model, the token counts of the whole conversation so far, the turns before it included; Codex's
+        # `turn.completed` event gives token counts and no cost. When the runner collects a session it writes
+        # the last report of each turn into the session's usage.json and keeps the session's totals, those of
+        # the last turn that has a report, in its state, where status adds them up. The attempt has a first and
+        # a resumed turn, whose stream holds two reports; the resumed turn of the explorer was ended from
+        # outside and reports nothing; the formalizer ran on Codex; one more session is still running.
+        runner = self.runner()
+
+        def counts(read, written):
+            return {'inputTokens': 10, 'outputTokens': written, 'cacheReadInputTokens': read,
+                    'cacheCreationInputTokens': 5, 'thinkingTokens': 3, 'maxOutputTokens': 128000}
+
+        def report(cost, **models):
+            return {'type': 'result', 'is_error': False, 'total_cost_usd': cost, 'usage': {'output_tokens': 1},
+                    'modelUsage': models}
+
+        def collected(role, provider, *turns):
+            sid, session, _ = self.ended(runner, role)
+            session.update(model=provider + '/model', provider=provider)
+            folder = runner.session_dir(sid)
+            (folder / 'GO').write_bytes(b'go\n')  # the gate that dispatch opened
+            for number, rows in enumerate(turns):
+                stream = (folder if number == 0 else folder / 'turns' / f'{number:04d}') / 'cli.stdout.jsonl'
+                stream.parent.mkdir(parents=True, exist_ok=True)
+                stream.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+            runner.collect()
+            return session['usage'], read_json(folder / 'usage.json')
+
+        said = {'type': 'assistant', 'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': 'At work.'}]}}
+        first = report(1.5, main=counts(1000, 100), helper=counts(200, 20))
+        last = report(2.75, main=counts(1800, 160), helper=counts(200, 20))
+        used, record = collected('attempt', 'claude', [said, first], [report(2.0, main=counts(1500, 140)), last])
+        tokens = {'inputTokens': 20, 'outputTokens': 180, 'cacheReadInputTokens': 2000, 'cacheCreationInputTokens': 10}
+        self.assertEqual(used, {'tokens': tokens, 'cost_usd': 2.75, 'turns': 2, 'turns_without_report': 0})
+        self.assertEqual(record, {'provider': 'claude', 'totals': used, 'turns': [
+            {'stream': 'cli.stdout.jsonl', 'report': {'total_cost_usd': 1.5, 'modelUsage': first['modelUsage']}},
+            {'stream': 'turns/0001/cli.stdout.jsonl',
+             'report': {'total_cost_usd': 2.75, 'modelUsage': last['modelUsage']}}]})
+        used, record = collected('explore', 'claude', [report(0.5, main=counts(300, 30))], [said])
+        self.assertEqual(used, {'tokens': {'inputTokens': 10, 'outputTokens': 30, 'cacheReadInputTokens': 300,
+                                           'cacheCreationInputTokens': 5},
+                                'cost_usd': 0.5, 'turns': 2, 'turns_without_report': 1})
+        self.assertIsNone(record['turns'][1]['report'])
+        given = {'input_tokens': 700, 'cached_input_tokens': 600, 'output_tokens': 50, 'reasoning_output_tokens': 9}
+        used, record = collected('formalizer', 'codex', [{'type': 'turn.completed', 'usage': given}])
+        self.assertEqual(used, {'tokens': given, 'cost_usd': None, 'turns': 1, 'turns_without_report': 0})
+        self.assertEqual(record['turns'], [{'stream': 'cli.stdout.jsonl', 'report': {'usage': given}}])
+        self.session(runner, 'srunning')
+        self.assertEqual(status(self.instance)['usage'], {
+            'cost_usd': 3.25, 'sessions': 3, 'sessions_without_cost': 1, 'sessions_without_record': 1,
+            'tokens': {'claude': {'inputTokens': 30, 'outputTokens': 210, 'cacheReadInputTokens': 2300,
+                                  'cacheCreationInputTokens': 15},
+                       'codex': given}})
 
     def test_retention_file_error_retries_preservation_after_restart(self):
         runner = self.runner()

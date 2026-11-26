@@ -36,7 +36,7 @@ shows what the refutation rests on.
 Edges. An edge runs from what is used to what uses it, and there is at most one for a pair.
     direct       the proof of the target names the source (for a definition: its body does)
     contracted   the proof reaches the source only through folded items; `via` lists every folded
-                 item on some such path, and the drawing writes them on the line
+                 item on some such path, and the drawing names or counts them on the line
     mention      the statement of the target mentions the source, itself or through folded definitions
     alternative  the source is another proof of the target statement; the two proofs are separate arguments, not joint inputs
     refutation   the source is a statement whose record says that it refutes the root and that Lean

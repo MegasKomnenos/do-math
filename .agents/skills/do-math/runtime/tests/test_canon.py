@@ -6,10 +6,8 @@ the present behaviour of the code. Pure functions are tested on hand-written inp
 folder. What needs a compiled canon runs on the shared small instance, through a real broker with the
 stand-in compiler of tests/canon_lean.py.
 """
-from contextlib import redirect_stdout
 import copy
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
@@ -2392,10 +2390,9 @@ class CandidateToolTests(InstanceCase):
         shutil.copytree(self.candidate(prepare=False, **parts), target, dirs_exist_ok=True)
 
     def tool(self, *arguments):
-        stream = io.StringIO()
-        with redirect_stdout(stream):
-            code = canon_tool.main([str(a) for a in arguments])
-        return code, json.loads(stream.getvalue())
+        """The exit code of a canon_tool command that answers in JSON, and its answer."""
+        code, text = self.command_line(*arguments)
+        return code, json.loads(text)
 
     def induction(self):
         return dict(modules={'Small/Step.lean': module_text(STEP)}, replace={'Small.root': INFORMAL},

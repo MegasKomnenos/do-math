@@ -1399,7 +1399,12 @@ class BuildTests(BrokerFixture):
         self.assertEqual((result['status'], result['session']), ('finished', 'sreview'))
         basis, target = result['modules']['Basis'], result['modules']['Target']
         self.assertEqual((basis['status'], basis['job']), ('cached', None))
-        restored = Path(basis['olean'])
+        # The record written when a build ends holds what is read after the build. Where a module's output
+        # lies is read while the build runs, from the record in the broker's state.
+        self.assertEqual(set(basis), {'key', 'job', 'status', 'exit_code'})
+        self.assertEqual(set(target), {'key', 'job', 'status', 'exit_code', 'reason', 'measured'})
+        self.assertNotIn('sources', result)
+        restored = Path(self.build_record(fresh)['modules']['Basis']['olean'])
         self.assertEqual({p.name: p.read_bytes()
                           for p in restored.parent.glob(restored.stem + '.*')},
                          original_files['Basis'])

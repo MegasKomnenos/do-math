@@ -815,10 +815,15 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
     raw = {row['name']: row for row in rows}
     candidates = [row for row in rows if row['span'] and not row['private'] and not row['internal']
                   and row['kind'] in ENTRY_KINDS]
+    # A declaration stands inside another only within one module, so a row is held against the rows of its
+    # own module and not against every row of the extraction, whose number grows with the library.
+    by_module = {}
+    for row in candidates:
+        by_module.setdefault(row['module'], []).append(row)
     new = {}
     for row in candidates:
-        inside = any(other['module'] == row['module'] and is_prefix(other['name'], row['name'])
-                     and contains(other['span'], row['span']) for other in candidates if other is not row)
+        inside = any(is_prefix(other['name'], row['name']) and contains(other['span'], row['span'])
+                     for other in by_module[row['module']] if other is not row)
         if not inside:
             new[row['name']] = row
     known = set(entries) | set(new)
@@ -868,6 +873,13 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
         for used in row['type_uses'] + row['value_uses']:
             resolve(used, owner, seen, into, folded)
 
+    # The auxiliaries that belong to each entry, in the order of the rows. They are gathered once, so that an
+    # extraction of the whole library does not go through every row again for every entry.
+    owned = {}
+    for child in rows:
+        owner = aux.get(child['name'])
+        if owner is not None:
+            owned.setdefault(owner, []).append(child['name'])
     for name, row in new.items():
         statement_uses, uses = set(), set()
         folded = {'library': set(row['library']), 'sorry': row['sorry']}
@@ -876,9 +888,9 @@ def update_index(index, rows, pairs, lean_root, revision, modules=()):
             resolve(used, name, seen, statement_uses, folded)
         for used in row['value_uses']:
             resolve(used, name, seen, uses, folded)
-        for child in rows:
-            if aux.get(child['name']) == name and child['name'] not in seen:
-                resolve(child['name'], name, seen, uses, folded)
+        for child in owned.get(name, ()):
+            if child not in seen:
+                resolve(child, name, seen, uses, folded)
         relative = module_file(row['module'])
         text = (lean_root / relative).read_text(encoding='utf-8').replace('\r\n', '\n')
         entries[name] = {

@@ -19,19 +19,19 @@ from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, ap
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import CANDIDATE_CHANGED, IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
-from launch import worker_command
+from launch import open_messages, receives_messages, send_message, worker_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
                           question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
 from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance_metadata, record_summary,
                        refuting_proofs, render, replay, root_settlement, root_solved)
-from retention import capture, model_blocked, refusal
+from retention import capture, model_blocked, refusal, usage
 from ending import authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp,
                              first_commit, git,
-                             popen_options, process_identity, read_json, read_json_cached, remove_tree, rename_directory,
-                             replace_file, session_host,
+                             popen_options, process_identity, read_json, read_json_cached, remove_tree,
+                             remove_unfinished_writes, rename_directory, replace_file, session_host,
                              terminate_process, write_json, write_json_compact, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
 # The functions that use context and lean_broker, here and in canon, import them at that point.
@@ -314,6 +314,10 @@ class Runner:
                 return False
         self.make_pack(sid, job)
         provider = provider_for_model(selected['model'])
+        if provider == 'claude':
+            # A Claude worker runs the hook that hands it messages while a turn runs (launch.py). A Codex
+            # worker is launched with its hooks disabled, so nothing could hand it one.
+            open_messages(session)
         s = {'id': sid, 'role': job['role'], 'job': key, 'status': 'starting',
              'model': selected['model'], 'effort': selected['effort'], 'provider': provider,
              'started_at': time.time(), 'host': None, 'cli': None, 'record': None}
@@ -506,14 +510,22 @@ class Runner:
         # or an organizer's output, and for all three the resumption limit or an unavailable resumption.
         # The output then goes to the transport check.
         failed = s.get('exit_code') != 0 and not (authorization and not interrupted)
-        if failed or s.get('refusal') or s.get('launch_error') or interrupted:
+        stopped = bool(failed or s.get('refusal') or s.get('launch_error') or interrupted)
+        # A peer's resumed turn is one in which it judges its ending again: an earlier turn of it had ended. When
+        # the host records that such a turn failed, by a refusal, a failed invocation or a CLI that did not start,
+        # the candidate that the earlier turn prepared is not discarded. The output goes to the transport check, as
+        # after a resumption that could not be made, and the stage is unfinished only when the check refuses it.
+        # A cancellation by the operator and the loss of the host, which leaves no exit.json, stay interruptions.
+        kept = (stopped and s['role'] == 'peer' and s.get('end_check', {}).get('resumptions', 0) > 0
+                and (session / 'exit.json').is_file() and not (session / 'CANCEL').exists())
+        errors = check_session(session) if kept or not stopped else []
+        if stopped and (errors or not kept):
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
                       (f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})"
                        if failed else authorization['explanation']))
             self.retry(job, s, reason,
                        availability=bool(s.get('refusal') or s.get('launch_error')))
             return
-        errors = check_session(session)
         if errors:
             if (s['role'] == 'review' and job['task']['kind'] == 'candidate'
                     and errors == [CANDIDATE_CHANGED]):
@@ -547,7 +559,7 @@ class Runner:
             assessment = read_json(session / 'output/assessment.json')
             if not assessment['publish']:
                 s.update(status='integrated', rejected=True)
-                job['status'] = 'done'
+                self.close(job, 'done')
                 self.state['pipelines'][job['pipeline']].update(stage='done', rejection_session=sid)
                 self.archive_due = True
                 self.save()
@@ -572,6 +584,17 @@ class Runner:
         """The question an explorer occupies, or None for other producers."""
         held = question_entry(self.instance, sid, self.model)
         return held['id'] if held else None
+
+    def close(self, job, status):
+        """Mark a job as done or cancelled; the hashes of the candidate a review job assessed leave its task.
+
+        The runner reads them from the task where it applies the candidate and where it restores one that
+        changed (advance_build, recover_candidate), both while the job is alive, and a job that is tried again
+        keeps them. The check of a review's output reads the copy in the session's input.json. The state holds
+        every job the instance has had and is written whole at each step, so a closed job does not go on
+        carrying a hash for every file of its candidate. A job of another kind has none."""
+        job['status'] = status
+        job['task'].pop('candidate_hashes', None)
 
     def recover_candidate(self, job, session, reason):
         """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
@@ -614,7 +637,7 @@ class Runner:
         sections = self.producer_sections(pipeline['producer'])
         question = self.producer_question(pipeline['producer'])
         self.retry(job, session, reason, availability=False)
-        job['status'] = 'cancelled'
+        self.close(job, 'cancelled')
         if peer.name not in pipeline['previous_peers']:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
@@ -1033,12 +1056,17 @@ class Runner:
         render(self.instance, self.model, board(self.instance, self.state, self.model),
                lease_table(self.instance, self.state, self.model))
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
+            # The commit takes in whatever stands under the two folders. A runner that ended inside a write left
+            # there the file it was writing beside its destination, and that file is no part of the research.
+            for tree in ('knowledge', 'canon'):
+                remove_unfinished_writes(self.instance / tree)
             git(self.instance, 'add', '-A', '--', 'knowledge', 'canon')
             git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge', 'canon')
         if sid:
             self.state['sessions'][sid]['status'] = 'integrated'
         if job:
-            job.update(status='done', record=event['id'])
+            self.close(job, 'done')
+            job['record'] = event['id']
             if job['pipeline']:
                 self.state['pipelines'][job['pipeline']].update(stage='done', record=event['id'])
         if event['kind'] == 'review':
@@ -1087,6 +1115,9 @@ class Runner:
             exit_file = session / 'exit.json'
             if exit_file.exists():
                 s.update(read_json(exit_file))
+            # Every session comes here once its host has ended, also one whose host died. What its CLI reported
+            # of its use is written into its folder, and its totals are kept for the total of the run (run_usage).
+            s['usage'] = usage(session, s['provider'])
             self.finish(sid, s)
 
     def ensure_broker(self):
@@ -1539,6 +1570,29 @@ def start(instance):
     raise RuntimeError('readiness unconfirmed; inspect ' + str(stdout) + ' and ' + str(stderr) + ' before retrying')
 
 
+def run_usage(sessions):
+    """What the sessions of an instance used in all, added up from the totals kept for each when it was collected.
+
+    The cost is the sum over the sessions whose CLI reported one. The token counts are added up for each
+    provider apart, because the kinds a provider counts are its own. A session without a record is still
+    running, or a runner that kept no such record collected it."""
+    total = {'cost_usd': 0, 'sessions': 0, 'sessions_without_cost': 0, 'sessions_without_record': 0, 'tokens': {}}
+    for session in sessions.values():
+        used = session.get('usage')
+        if used is None:
+            total['sessions_without_record'] += 1
+            continue
+        total['sessions'] += 1
+        if used['cost_usd'] is None:
+            total['sessions_without_cost'] += 1
+        else:
+            total['cost_usd'] += used['cost_usd']
+        counts = total['tokens'].setdefault(session['provider'], {})
+        for kind, count in used['tokens'].items():
+            counts[kind] = counts.get(kind, 0) + count
+    return total
+
+
 def status(instance):
     instance = Path(instance).resolve()
     state = read_json(instance / 'runner/state.json')
@@ -1556,7 +1610,8 @@ def status(instance):
             'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),
                           'explore_requested': state['explore_requested']},
-            'blocks': state['blocks'], 'lean': broker_status(Paths(instance)), 'state': state}
+            'blocks': state['blocks'], 'lean': broker_status(Paths(instance)),
+            'usage': run_usage(state['sessions']), 'state': state}
 
 
 def archive_finished(instance):
@@ -1582,7 +1637,7 @@ def archive_finished(instance):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'kill-session', '_session', '_archive'):
+    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'message', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'kill-session', '_session', '_archive'):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
@@ -1593,9 +1648,9 @@ def main(argv=None):
             p.add_argument('--settings', type=Path)
         if name == 'run':
             p.add_argument('--token')
-        if name in ('input', 'questions'):
+        if name in ('input', 'questions', 'message'):
             p.add_argument('--file', required=True, type=Path)
-        if name == 'kill-session':
+        if name in ('kill-session', 'message'):
             p.add_argument('session')
         if name == 'review':
             p.add_argument('--element', action='append', default=[])
@@ -1647,6 +1702,20 @@ def main(argv=None):
             elif not alive(state['sessions'][args.session].get('host')):
                 raise ValueError('session is no longer running')
             result['terminated'] = args.session
+        elif args.command == 'message':
+            state = read_json(instance / 'runner/state.json')
+            if args.session not in state['sessions']:
+                raise ValueError('unknown session')
+            directory = instance / 'sessions' / args.session
+            if not alive(state['sessions'][args.session].get('host')):
+                raise ValueError('session is no longer running')
+            if not receives_messages(directory):
+                raise ValueError('session receives no messages: it has no messages/ folder, which the runner '
+                                 'makes for a session it launches on Claude')
+            content = args.file.read_text(encoding='utf-8-sig')
+            if not content.strip():
+                raise ValueError('empty message')
+            result['message'] = str(send_message(directory, 'operator', content))
         elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}
             if args.command == 'review':
@@ -1707,6 +1776,11 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=True))
         return 0
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        if args.command in ('_session', '_archive') and isinstance(exc, KeyError):
+            # A session host and the archiver are detached, and host.log and runner/archive.log are all that says
+            # why one ended. A missing key inside them is a defect of the program, and its name alone does not say
+            # where, so it is raised on and Python writes the call stack there, as for the broker (lean_broker.main).
+            raise
         print(json.dumps({'error': str(exc)}), file=sys.stderr)
         return 1
 

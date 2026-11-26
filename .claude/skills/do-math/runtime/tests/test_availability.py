@@ -31,8 +31,7 @@ class AvailabilityTests(ScenarioCase):
         sid = 'stest' + str(self.serial)
         self.session(runner, sid, role)  # as dispatch leaves it; the rest is what the CLI that ended left
         session = runner.state['sessions'][sid]
-        session.update(model='codex/gpt-6.1-sol', provider='codex', started_at=time.time(), exit_code=0,
-                       retained=True, retention={'cli_activity': True})
+        session.update(exit_code=0, retained=True, retention={'cli_activity': True})
         runner.save()
         return sid, session, runner.state['jobs'][session['job']]
 

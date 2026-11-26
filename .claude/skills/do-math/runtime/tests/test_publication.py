@@ -891,6 +891,19 @@ class InterruptedPublicationTests(PublicationCase):
         # follows finds the commit of this publication and makes no second one.
         self.interrupt('runner.Runner.notify', 'commit', installed=True, event_written=True, committed=True)
 
+    def test_what_a_write_that_did_not_finish_left_is_not_published(self):
+        # A file is written beside its name and then moved onto it (runtime_support._write_chunks). A runner that
+        # ended between the two left the first file where it wrote it, here beside the index and beside a view.
+        # The publication that follows takes such files away before its commit, which takes in whatever stands
+        # under knowledge/ and canon/.
+        left = [self.canon().index.with_name('index.json.' + 'a' * 32 + '.tmp'),
+                self.instance / 'knowledge' / ('frontier.md.' + 'b' * 32 + '.tmp')]
+        for path in left:
+            path.write_bytes(b'{"revision"')
+        self.questions('qleft', [{'id': 'op-a', 'statement': 'What does op-a ask?', 'grounds': 'Unexplained.'}])
+        self.assertEqual([path.exists() for path in left], [False, False])
+        self.assertNotIn('.tmp', git(self.instance, 'ls-files', '--', 'knowledge', 'canon'))
+
     def test_a_question_text_that_a_merge_moved_is_not_moved_again(self):
         # An organizer merges op-a, which has an understanding text, into op-b, which has none, so the text
         # becomes op-b's before the event is written (Runner.join_question_texts). The runner ends after that
@@ -981,6 +994,8 @@ class ReviewedCandidateTests(PublicationCase):
         [event] = self.events()
         self.assertEqual((event['kind'], event['session'], event['producer_role']), ('change', 'sreview', 'attempt'))
         self.assertEqual((job['status'], job['record']), ('done', event['id']))
+        # A closed job no longer carries the hash of each file of its candidate (Runner.close).
+        self.assertNotIn('candidate_hashes', job['task'])
         self.assertEqual(engine.state['sessions']['sreview']['status'], 'integrated')
         self.assertEqual(engine.state['pipelines'][job['pipeline']]['stage'], 'done')
         self.assertEqual(self.root_declaration(), SKETCH)
@@ -1119,6 +1134,7 @@ class ReviewedCandidateTests(PublicationCase):
         engine.finish('sreview', engine.state['sessions']['sreview'])
         pipeline = engine.state['pipelines'][job['pipeline']]
         self.assertEqual((job['status'], pipeline['stage']), ('cancelled', 'peer'))
+        self.assertNotIn('candidate_hashes', job['task'])
         peer_job = next(j for j in engine.state['jobs'].values() if j['role'] == 'peer')
         self.assertEqual(peer_job['status'], 'pending')
         self.assertEqual(peer_job['task']['previous_error'], 'candidate changed after review assignment')
@@ -1223,6 +1239,7 @@ class ReviewedCandidateTests(PublicationCase):
         engine.finish('sreview', reviewer)
         self.assertEqual((reviewer['status'], job['status'], pipeline['stage']),
                          ('integrated', 'done', 'done'))
+        self.assertNotIn('candidate_hashes', job['task'])
         self.assertTrue(reviewer['rejected'])
         self.assertEqual(pipeline['rejection_session'], 'sreview')
         self.assertIsNone(pipeline['record'])
@@ -1502,17 +1519,27 @@ theorem twice (n : Nat) : oddSum n + oddSum n = 2 * (n * n) := by
             self.assert_sent_to_a_replacement_peer(engine, waiting, 'Small.Alt', before, events)
 
     def test_a_retired_record_that_went_to_the_history_is_not_moved_again(self):
-        # The record of a retired alternative goes to the history before the publication is saved as installed.
-        # The runner ends between the two, and the one that follows repeats the installation with that record
-        # in the history already.
+        # The retirement is interrupted twice while it is installed. The first runner ends once the event is
+        # written and before the index is in place. Of what its publication applied, a retirement lists nothing
+        # as added and nothing as replaced, so only its `retired` list tells a reader that this event is ahead
+        # of the index (knowledge.in_canon). The reader has the canon from before the retirement: the alternative
+        # with its verdict, and the root without a proof of its own.
+        # The second runner moves the record of the retired alternative to the history, which is done before the
+        # publication is saved as installed, and ends between the two. The one that follows repeats the
+        # installation with that record in the history already.
         cid, engine = self.alternative_proof()
         canon = self.canon()
         alt_record = (canon.records / 'Small/root_alt.md').read_text(encoding='utf-8')
         sid, output = self.retirement(engine, cid)
         self.prepare(output, role='organizer')
-        with patch('runner.record_summary', side_effect=RuntimeError('simulated end of the runner')), \
-                self.assertRaisesRegex(RuntimeError, 'simulated'):
+        ended = RuntimeError('simulated end of the runner')
+        with patch('runner.Runner.install_canon', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
             self.finish(engine, sid)
+        before = replay(self.instance)
+        self.assertEqual((before['sequence'], before['elements']['Small.root_alt']['standing'],
+                          before['elements']['Small.root']['standing']), (1, 'accepted', 'no_proof'))
+        with patch('runner.record_summary', side_effect=ended), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            self.drain(runtime.Runner(self.instance, self.skill))
         self.assertFalse(read_json(self.instance / 'runner/state.json')['publication'].get('installed'))
         self.assertFalse((canon.records / 'Small/root_alt.md').exists())
         recovered = runtime.Runner(self.instance, self.skill)
@@ -1770,6 +1797,21 @@ class TransportCheckTests(PublicationCase):
         for message, options in cases:
             with self.subTest(message=message):
                 self.assert_refused(self.peer_errors(**options), message)
+        with self.subTest('a named proof that is complete in Lean from the allowed axioms and is not settled'):
+            # `lowHeld` is another proof of `low`, complete in Lean and held back by review, so `low` has no settled
+            # formal proof. Lean reports no axiom beyond the allowed ones for a proof of `base` that names `lowHeld`,
+            # and that report decides whether the new proof is formal: the statement stays formal under it.
+            evaluated = 'The first odd number is one, by evaluation.'
+            held = self.candidate(
+                modules={'Small/LowHeld.lean': module_text(theorem('lowHeld', SETTLED['low'][0], proof='rfl',
+                                                                   doc=evaluated))},
+                records={'Small/lowHeld.md': record_text(evaluated, weight='unit', proves='Small.low')})
+            self.publish(held, self.verdicts(held, **{'Small.lowHeld': {'accepted': False}}), engine=self.engine)
+            elements = replay(self.instance)['elements']
+            self.assertEqual((elements['Small.lowHeld']['formal'], elements['Small.lowHeld']['settled'],
+                              elements['Small.low']['statement_formal']), (True, False, False))
+            self.assertEqual(self.peer_errors(replace={'Small.base': settled_text('base', ['lowHeld'])},
+                                              imports={'Small.base': ['Small.LowHeld']}), [])
         with self.subTest('a statement that is formal through another declaration while its own Lean proof is open'):
             # `low` gains a second proof that is complete in Lean: the statement is formal, and the proof under its
             # own name still ends in sorry. A proof of `base` that names `low` then names a formal statement, and
@@ -2026,6 +2068,8 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
             ('finding targets an unknown element: Small.ghost', {'findings': [{**finding, 'invalidates': ['Small.ghost']}]}),
             ('finding targets an unknown element: Small.ghost', {'findings': [{**finding, 'validates': ['Small.ghost']}]}),
             ('finding reopens an unknown question', {'findings': [{**finding, 'reopens': ['nope']}]}),
+            ('finding.accepted is Boolean', {'findings': [{**finding, 'accepted': 'yes'}]}),
+            ('finding.accepted is Boolean', {'findings': [{**finding, 'accepted': True, 'validates': []}]}),
         )
         for message, changes in cases:
             with self.subTest(message=message):

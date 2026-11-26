@@ -28,7 +28,9 @@ def conversation(source, destination, native, *, append=False, label=None, note=
 
     A note, when given, follows the heading: where content the source holds only by reference is kept."""
     written = 0
-    with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', newline='\n') as out:
+    # A line of the source can hold half of a surrogate pair as an escape, which UTF-8 does not encode. It is
+    # written as that escape (backslashreplace), so that one such character does not keep the rest from being retained.
+    with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', errors='backslashreplace', newline='\n') as out:
         if not append:
             out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport remains in the named source files.\n\n')
             if note:
@@ -103,11 +105,62 @@ def model_refused(event):
     return event.get('type') == 'result' and event.get('is_error') is True and event.get('stop_reason') == 'refusal'
 
 
+# What a CLI reports of its use when a call ends: the stream event that carries the report, the keys kept
+# from that event, and the kinds of tokens that a session's totals count.
+USAGE_REPORTS = {
+    'claude': ('result', ('total_cost_usd', 'modelUsage'),
+               ('inputTokens', 'outputTokens', 'cacheReadInputTokens', 'cacheCreationInputTokens')),
+    'codex': ('turn.completed', ('usage',),
+              ('input_tokens', 'cached_input_tokens', 'output_tokens', 'reasoning_output_tokens')),
+}
+
+
+def turn_streams(session):
+    """The CLI stream of each turn of a session: that of the first turn, then those of the resumed turns in order."""
+    return [session / 'cli.stdout.jsonl', *sorted((session / 'turns').glob('*/cli.stdout.jsonl'))]
+
+
+def usage(session, provider):
+    """Write usage.json, what the session's CLI reported of its use, and return the session's totals.
+
+    A call of the CLI ends with a report, and the file keeps the last report of each turn as the stream
+    gave it. Claude reports the cost and, for each model, the token counts of the whole conversation up
+    to that point: the turns before it are in them, and so are the agents the session delegated to,
+    which the `usage` of the same event leaves out. The totals are therefore those of the last turn
+    that has a report, and no sum over the turns. The cost is the CLI's own estimate: do-math holds no
+    prices, and a report without a cost, as every report of Codex is, leaves the cost None. The reports
+    of Codex are taken as Claude's are; whether the report of a resumed call includes the calls before
+    it has not been observed. A turn that its CLI did not end itself, as when its host was ended, has
+    no report."""
+    session = Path(session)
+    kind, kept, counted = USAGE_REPORTS[provider]
+    turns = []
+    for stream in turn_streams(session):
+        report = None
+        for event in events(stream):
+            if event.get('type') == kind:
+                report = {key: event[key] for key in kept if key in event}
+        turns.append({'stream': stream.relative_to(session).as_posix(), 'report': report})
+    last = next((turn['report'] for turn in reversed(turns) if turn['report'] is not None), {})
+    by_model = last.get('modelUsage')
+    tables = list(by_model.values()) if isinstance(by_model, dict) else [last.get('usage')]
+    tokens = {}
+    for table in tables:
+        for key in counted:
+            if isinstance(table, dict) and type(table.get(key)) is int:
+                tokens[key] = tokens.get(key, 0) + table[key]
+    cost = last.get('total_cost_usd')
+    totals = {'tokens': tokens, 'cost_usd': cost if type(cost) in (int, float) else None, 'turns': len(turns),
+              'turns_without_report': sum(turn['report'] is None for turn in turns)}
+    write_json(session / 'usage.json', {'provider': provider, 'turns': turns, 'totals': totals})
+    return totals
+
+
 def capture(session, provider):
     session = Path(session)
     ids = set()
     activity = False
-    streams = [session / 'cli.stdout.jsonl', *sorted((session / 'turns').glob('*/cli.stdout.jsonl'))]
+    streams = turn_streams(session)
     for event in (event for stream in streams for event in events(stream)):
         identity = conversation_identity(event, provider)
         if isinstance(identity, str):

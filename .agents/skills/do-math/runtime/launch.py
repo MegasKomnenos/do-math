@@ -1,14 +1,21 @@
-"""Worker CLI configuration, separate from the operator's instructions and hooks."""
+"""Worker CLI configuration, separate from the operator's instructions and hooks, and the messages sent
+into a worker while one of its turns runs."""
 import json
 import os
 import re
+import sys
+import time
 from pathlib import Path
 from cli_adapter import Command, build_command
+from message_hook import DELIVERED, WAITING
 from runtime_support import write_json
 
 
 CONTEXT_WINDOW = 1_000_000
 AUTO_COMPACT_TOKENS = 950_000
+# The size of a session's context, in tokens, at which its host sends it the message that asks it to wrap
+# up before the CLI compacts the conversation (ending.run_turn).
+CONTEXT_MESSAGE_TOKENS = 800_000
 # Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
 MAX_OUTPUT_TOKENS = 128_000
 # Milliseconds the Claude CLI waits for an MCP server to start before beginning the turn without it.
@@ -34,6 +41,40 @@ def toml(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+HOOK = Path(__file__).with_name('message_hook.py')
+# What the interpreter is given to run in place of HOOK itself. The CLI ends a turn, and reports the turn
+# as a success, when a hook of this event exits with code 2, and that is the code the interpreter gives
+# when it cannot open the script it is told to run. Given this text, it opens the script itself, and a
+# script that is missing or that fails ends it with code 1, which the CLI passes over.
+HOOK_STARTER = "import sys;exec(open(sys.argv[1],encoding='utf-8').read())"
+_last_sent = 0
+
+
+def open_messages(session):
+    """Make the folders of a session that is to receive messages while one of its turns runs. The runner
+    does this at dispatch for a session it launches on Claude. No other session has them, and no other
+    session is sent a message."""
+    (Path(session) / WAITING / DELIVERED).mkdir(parents=True)
+
+
+def receives_messages(session):
+    return (Path(session) / WAITING).is_dir()
+
+
+def send_message(session, sender, text):
+    """Leave a message for a session that receives messages, from 'runner' or from 'operator'; returns its file.
+
+    The session's hook (message_hook.py) hands it over after the session's next batch of tool calls. The
+    file appears whole, so the hook never reads half a message, and its name sorts by the time of sending,
+    so messages are handed over in the order in which they were sent."""
+    global _last_sent
+    # Later than every message this process has sent, also where the clock has not moved between two.
+    _last_sent = max(time.time_ns(), _last_sent + 1)
+    path = Path(session) / WAITING / f'{_last_sent:020d}-{os.urandom(4).hex()}.json'
+    write_json(path, {'from': sender, 'at': time.time(), 'text': text})
+    return path
+
+
 def worker_command(executable, model, effort, session, servers=None, *, resume_id=None, withheld=()):
     """The command of one worker session. `withheld` names tools of the Claude CLI that the session is
     launched without; the research roles are launched with none withheld."""
@@ -56,8 +97,17 @@ def worker_command(executable, model, effort, session, servers=None, *, resume_i
         model_index = argv.index('--model') + 1
         argv[model_index] = re.sub(r'\[(?:1m|200k)\]$', '', argv[model_index], flags=re.IGNORECASE) + '[1m]'
         config = Path(session) / 'worker-settings.json'
-        write_json(config, {'disableAllHooks': True, 'autoMemoryEnabled': False,
-                            'claudeMdExcludes': ['**'], 'enabledPlugins': {}})
+        settings = {'autoMemoryEnabled': False, 'claudeMdExcludes': ['**'], 'enabledPlugins': {}}
+        if receives_messages(session):
+            # The worker's one hook. With hooks on, --setting-sources '' below is what keeps the hooks of the
+            # operator's project and account out. -I keeps the folder in which the hook is started off the
+            # interpreter's module path, so that no file of the session is loaded in place of a library module.
+            settings['hooks'] = {'PostToolBatch': [{'hooks': [{
+                'type': 'command', 'command': sys.executable,
+                'args': ['-I', '-c', HOOK_STARTER, str(HOOK), str(base.cwd)]}]}]}
+        else:
+            settings['disableAllHooks'] = True
+        write_json(config, settings)
         mcp = Path(session) / 'worker-mcp.json'
         write_json(mcp, {'mcpServers': servers})
         argv += ['--setting-sources', '', '--settings', str(config), '--disable-slash-commands',

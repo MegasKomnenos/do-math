@@ -58,21 +58,26 @@ class EmergencyMemory:
 
 
 
-def read_json(path):
-    """The parsed content of a JSON file; on Windows a refused read is made again for up to two seconds.
+def _read(read, path, seconds):
+    """What `read` returns for the file; on Windows a refused read is made again for up to `seconds`.
 
     A read is refused while another process holds the file without read sharing or is replacing it.
     Python's open reports that as errno 13 with no Windows error code, so winerror is None here. The
     operations of _retried call Windows directly and receive the code itself, which is why the two
     lists of codes differ."""
-    deadline = time.monotonic() + 2.0
+    deadline = time.monotonic() + seconds
     while True:
         try:
-            return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+            return read(Path(path))
         except PermissionError as exc:
             if os.name != 'nt' or getattr(exc, 'winerror', None) not in (None, 5, 32, 33) or time.monotonic() >= deadline:
                 raise
             time.sleep(.02)
+
+
+def read_json(path):
+    """The parsed content of a JSON file; on Windows a refused read is made again for up to two seconds (_read)."""
+    return json.loads(_read(lambda file: file.read_text(encoding='utf-8-sig'), path, 2.0))
 
 
 def _stamp(info):
@@ -156,6 +161,18 @@ def _write_chunks(path, chunks):
         temp.unlink(missing_ok=True)
 
 
+def remove_unfinished_writes(folder):
+    """Remove, anywhere under a folder, the files that writes which did not finish left there.
+
+    _write_chunks removes the file it writes beside a destination, unless its process ends first: a process that
+    is ended, or a machine that goes down, inside a write leaves `<name>.<32 hexadecimal digits>.tmp`. The caller
+    is the one process that writes under the folder and has no write of its own under way."""
+    for path in Path(folder).rglob('*.tmp'):
+        mark = path.name[:-len('.tmp')].rpartition('.')[2]
+        if len(mark) == 32 and not mark.strip('0123456789abcdef'):
+            remove_file(path)
+
+
 
 def _retried(operation, *paths):
     """Carry out a file operation, repeating it for up to a minute while Windows refuses it for access or sharing."""
@@ -185,9 +202,9 @@ def remove_file(path):
 
 
 def read_bytes(path):
-    """The bytes of a file that a Windows process may briefly hold without read sharing, read with the retry
-    of _retried."""
-    return _retried(Path.read_bytes, Path(path))
+    """The bytes of a file that a Windows process may briefly hold without read sharing; a refused read is made
+    again for up to a minute (_read), as long as a replacement waits (_retried)."""
+    return _read(lambda file: file.read_bytes(), path, 60.0)
 
 
 def rename_directory(source, destination):
@@ -388,9 +405,14 @@ def git(instance, *args):
     # core.fsync=all: left to its default, Git does not send to the disk the loose objects, the index and the
     # reference that a commit writes. The runner saves, through to the disk, that a publication is done once
     # its commit is made, so after a loss of power the repository has to hold that commit whole.
+    # commit.gpgsign=false: the commits here are the runtime's own, made under the name given below by a runner
+    # that nobody attends, and the person who runs the instance has no key for that name. Where that person's
+    # Git configuration signs every commit, Git would start the signing program for these commits as well,
+    # which finds no key for that name and refuses the commit, or waits for a passphrase that nobody gives.
     result = subprocess.run(
         ["git", "-C", str(instance), "-c", "user.name=do-math",
-         "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "--literal-pathspecs", *args],
+         "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "-c", "commit.gpgsign=false",
+         "--literal-pathspecs", *args],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         encoding="utf-8", errors="replace", **popen_options())
     if result.returncode:

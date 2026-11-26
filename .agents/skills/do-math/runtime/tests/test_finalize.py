@@ -91,7 +91,10 @@ CLOSED = [{'kind': 'removed', 'where': 'the abstract', 'section': 'abstract',
            'after': 'For every $n$ the step holds.', 'verdict': 'differs', 'difference_after': 'The range of n.'},
           {'kind': 'uncovered', 'where': 'the running text of the section "The step"', 'section': 'sec:step',
            'quote': 'Hence every block sum is positive.', 'asserts': 'The block sums are positive.',
-           'nearest': 'Small.sq_step', 'difference': 'No declaration bounds a block sum.'}]
+           'nearest': 'Small.sq_step', 'difference': 'No declaration bounds a block sum.'},
+          {'kind': 'differs', 'label': 'thm:main', 'number': 'Theorem 1.2', 'element': 'Small.root',
+           'difference': 'The sum starts at 1.'},
+          {'kind': 'wide', 'problem': 'paper.tex, line 40: TeX set a line 12pt wider than the text block'}]
 
 
 def decision(main='Small.sq_step', options=None, choice='a', runner_up=None, **more):
@@ -878,6 +881,7 @@ class RegistryTests(FinalizeCase):
                  (edit_yaml(['project', 'description'], ''), 'project.description'),
                  (edit_yaml(['project', 'license'], 'MIT'), 'project.license'),
                  (edit_yaml(['classification', 'arxiv'], []), 'classification.arxiv'),
+                 (edit_yaml(['classification', 'arxiv'], ['math.CO', 'math.NT', 'math.PR']), 'classification.arxiv'),
                  (edit_yaml(['classification', 'msc2020'], ['5A15']), 'classification.msc2020'),
                  (edit_yaml(['sources'], [{'title': 'T', 'relationship': 'inspired'}]), 'each entry of sources'),
                  (edit_yaml(['automation', 'methods'], []), 'automation.methods'),
@@ -987,12 +991,36 @@ class ArchiveTests(FinalizeCase):
             'knowledge/changes/c1/change.json': {'resolutions': [{'id': 'r1', 'question': 'q1'},
                                                                  {'id': 'r2', 'question': 'q2'}]},
             'knowledge/changes/c1/assessment.json': {'resolutions': [{'proposal': 'r1', 'resolved': True},
-                                                                     {'proposal': 'r2', 'resolved': False}]}}.items()})
+                                                                     {'proposal': 'r2', 'resolved': False}]},
+            # The other three kinds of publication: a comprehensive review, an organization, questions of the operator.
+            'knowledge/events/2.json': {'sequence': 2, 'kind': 'review', 'folder': 'reviews/v1'},
+            'knowledge/reviews/v1/assessment.json': {'findings': [
+                {'reason': 'The induction skips a case.', 'invalidates': ['Small.b'], 'validates': ['Small.a'],
+                 'reopens': ['q1']}]},
+            'knowledge/events/3.json': {'sequence': 3, 'kind': 'organization', 'folder': 'organizations/o1'},
+            'knowledge/organizations/o1/organization.json': {'merge_questions': [{'from': 'q2', 'into': 'q1'}]},
+            'knowledge/organizations/o1/applied.json': {'added': ['Small.joined']},
+            'knowledge/events/4.json': {'sequence': 4, 'kind': 'questions', 'folder': 'questions/e1'},
+            'knowledge/questions/e1/questions.json': {'reason': 'The user asked.',
+                                                      'questions': [{'id': 'q3', 'statement': 'Is it sharp?'}]},
+        }.items()})
         self.assertEqual(judged[0]['questions'], ['resolves q1'])
+        # Each is a line with the kind of session it comes from, its elements, its questions and its record.
+        self.assertEqual([(row['kind'], row['by'], row['title'], row['elements'], row['questions'], row['record'])
+                          for row in judged[1:]],
+                         [('review', 'review', 'A comprehensive review', ['Small.a', 'Small.b'], ['reopens q1'],
+                           'knowledge/reviews/v1/assessment.json'),
+                          ('organization', 'organizer', 'An organization of the canon', ['Small.joined'],
+                           ['merges q2 into q1'], 'knowledge/organizations/o1/organization.json'),
+                          ('questions', 'operator', 'Questions placed by the operator', [], ['q3: Is it sharp?'],
+                           'knowledge/questions/e1/questions.json')])
+        self.assertEqual((judged[1]['review'], judged[3]['description']),
+                         ('The induction skips a case.', 'The user asked.'))
         listed = [{'group': 'Steps', 'items': ['`Small.sq_step`:  the step of the square']},
                   {'group': '', 'items': ['`Small.twice`: doubling']}]
         text = package.timeline([{**rows[0], 'text': 'A change   gave the root its proof.', 'list': listed},
-                                 {**rows[1], 'text': 'The question was understood.'}], 'Small.root')
+                                 {**rows[1], 'text': 'The question was understood.'},
+                                 {**tried[0], 'text': 'Induction was tried first.'}], 'Small.root')
         # One heading for each entry: a publication by its number, date and kind; then the text, the list, the record.
         head = ' \u00b7 '.join(part for part in (str(rows[0]['event']), rows[0]['date'], 'change') if part)
         self.assertIn('### ' + head + '\n\nA change gave the root its proof.\n\n'
@@ -1004,7 +1032,13 @@ class ArchiveTests(FinalizeCase):
         self.assertIn('121 words', package.entry_problems(1, 'word ' * 121, [])[0])
         self.assertIn('more than 30 words', package.entry_problems(1, 'Short.', [{'group': '', 'items': ['w ' * 31]}])[0])
         self.assertIn('array of groups', package.entry_problems(1, 'Short.', ['an item'])[0])
-        self.assertLess(text.index('Publications'), text.index('What was understood of each question'))
+        # What was tried on a statement stands under the statement and the title of the approach, between the
+        # publications and the questions.
+        self.assertIn('### `Small.root`: Induction on n\n\nInduction was tried first.\n\n'
+                      'Record: `canon/history/Small/root/000001-approaches/by-induction.md`\n', text)
+        self.assertLess(text.index('## Publications'), text.index('## What was tried on each statement'))
+        self.assertLess(text.index('## What was tried on each statement'),
+                        text.index('## What was understood of each question'))
 
     def test_a_working_tree_that_differs_from_the_commit_does_not_reach_the_archive(self):
         commit = package.head_commit(self.instance)
@@ -1427,6 +1461,30 @@ class RefusalTests(FinalizeCase):
         self.configure(lean={'cwd': str(project)})
         self.refused('declares its dependencies in lakefile.lean', config=self.config())
 
+    def test_a_research_that_changed_a_definition_module_is_refused(self):
+        # Every step that writes Lean requires the definition modules as the first commit has them. A run on a
+        # research that changed one would stop at the take, after the sessions of the selection, and no new start
+        # would get past it.
+        with (self.instance / 'canon' / 'lean' / 'Small' / 'Defs.lean').open('ab') as module:
+            module.write(b'-- a line that a publication added\n')
+        git(self.instance, 'commit', '-m', 'a changed definition module', '--', 'canon/lean/Small/Defs.lean')
+        self.refused('the definition module Small.Defs is not the file of the first commit', config=self.config())
+
+    def test_a_run_whose_paper_is_still_to_be_written_is_not_continued_without_a_tex_command(self):
+        # Where the configuration names no TeX command, the command is the first engine on PATH. When a run is
+        # continued and none is found, the paper command would write the whole paper and end it untypeset, and no
+        # later start of this command takes such a paper up. So the start refuses, as the start of a new run does.
+        self.from_the_records()
+        events = lambda: [event['event'] for event in read_json(self.work / 'log.json')]
+        with patch('paper.tex_recipe', return_value=None):
+            self.assertEqual(self.run_command(config=self.config()), 1, self.said)
+        self.assertIn('no TeX command is available', self.said)
+        self.assertEqual((self.produced, events().count('resume')), ([], 0))  # nothing was launched or entered
+        # With a TeX command the same command continues the run where it had stopped.
+        with patch('finalize.Run.draft', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(config=self.config()), 2, self.said)
+        self.assertEqual(events().count('resume'), 1)
+
     def test_a_command_given_while_another_is_at_work_for_the_name_is_refused(self):
         # A command that is at work holds the lock beside its work folder. It is held here as that command holds it.
         lock = self.work.with_name('finalize-odd.lock')
@@ -1621,6 +1679,10 @@ class RunTests(FinalizeCase):
         self.assertIn('Lean is installed through elan', readme)
         self.assertIn('The warnings concern that one file; no declaration of the library uses `sorry`.', readme)
         self.assertIn('do-math is a program that conducts mathematical research in Lean', readme)
+        # A record names a file of the research by its path under `evidence/`. The package has that file inside the
+        # archive alone, so the README says where the path leads.
+        self.assertIn('Where a record names a file under `evidence/`, that file is in the knowledge archive, under '
+                      '`canon/evidence/`.', readme)
         # The models are those of the sessions that made the package; nothing is said of the models of the research.
         self.assertIn('The sessions that made this package from the research ran on ', readme)
         self.assertIn('It compares: Small.root, Small.sq_step.', readme)
@@ -1759,6 +1821,15 @@ class RunTests(FinalizeCase):
         self.assertIn('the running text compared with the declarations, which cover it except for the passages listed '
                       'under what was not verified.', report)
         self.assertIn('- In the paper, 1 passages of the running text assert what no declaration states', report)
+        # A statement that a repair of the typesetting changed and that then differs stays as it is, and so does a
+        # line that is still too wide. The decisions have each, and the report lists both as not verified.
+        self.assertIn('- Theorem 1.2 (`thm:main`) differs from its declaration `Small.root` after a repair of the '
+                      'typesetting changed its text, and stays as it is: The sum starts at 1.', decisions)
+        self.assertIn('- A line of the typeset paper is wider than the text block: paper.tex, line 40: TeX set a line '
+                      '12pt wider than the text block', decisions)
+        self.assertIn('- In the paper, Theorem 1.2 still differs from the declaration `Small.root` that it states: The '
+                      'sum starts at 1.', report)
+        self.assertIn('- 1 lines of the typeset paper are wider than the text block; `decisions.md` names them.', report)
         self.assertIn("The library is built with Lean 4.99.0. Lean is installed through elan, its toolchain manager, as "
                       "Lean's own installation instructions describe.",
                       (self.solved / 'README.md').read_text(encoding='utf-8'))

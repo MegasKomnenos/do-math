@@ -148,6 +148,9 @@ def stays_settled(model, receipt, declaration):
          'complete in Lean and names settled statements, so that the statement stays settled. A further proof of '
          'another kind enters as a declaration of its own with "proves"')
     apart = settled_apart(model, declaration)
+    # Whether the new proof is formal is what Lean reported for it and nothing else (canon.beyond_allowed). Where it
+    # is not, a statement it names that has no formal proof is named in the refusal as the cause.
+    foreign = 'formal' in carried and beyond_allowed(entry, model['allowed_axioms'])
     for used in entry['uses']:
         if used in elements:
             if elements[used]['kind'] != 'theorem':
@@ -162,7 +165,7 @@ def stays_settled(model, receipt, declaration):
                  f'{statement} is settled, and the new proof of {declaration} names {used}, which is settled only '
                  f'through the proof of {declaration} that this candidate replaces; the statement would rest on '
                  'itself and would no longer be settled')
-            need('formal' not in carried or target['statement_formal'],
+            need(not foreign or target['statement_formal'],
                  f'{statement} has a formal proof, and the new proof of {declaration} names {used}, which has none; '
                  'the statement would no longer be formal')
         else:
@@ -171,7 +174,7 @@ def stays_settled(model, receipt, declaration):
                  f'{statement} is settled, and the new proof of {declaration} names {used}, which this candidate adds '
                  'and which is not settled yet. Publish the new statement first; the derivation of the old statement '
                  'from it replaces the old proof once the new statement is settled')
-    need('formal' not in carried or not beyond_allowed(entry, model['allowed_axioms']),
+    need(not foreign,
          f'{statement} has a formal proof, and the new proof of {declaration} is not formal; the statement would no '
          'longer be formal')
 
@@ -250,6 +253,9 @@ def findings_check(values, model, known):
         for key in ('invalidates', 'validates'):
             for name in array(finding.get(key, []), key):
                 need(name in known, 'finding targets an unknown element: ' + str(name))
+        # Review's second judgment of the proofs whose confirmation the finding establishes (knowledge.apply_findings).
+        need('accepted' not in finding or (type(finding['accepted']) is bool and bool(finding.get('validates'))),
+             'finding.accepted is Boolean and says whether the proofs the finding names in "validates" are accepted')
         for qid in array(finding.get('reopens', []), 'reopens'):
             need(qid in model['questions'] or qid in model['question_aliases'], 'finding reopens an unknown question')
 

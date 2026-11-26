@@ -10,7 +10,7 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 from cli_adapter import Command
 from coordination import board, session_live
 from ending import request_prompt, run_turn
-from launch import worker_command
+from launch import open_messages, worker_command
 from runner import Runner, main
 from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
@@ -369,13 +369,18 @@ class EndingTests(InstanceCase):
 
     def test_a_rejected_no_research_outcome_is_reported_to_the_next_turn(self):
         # An attempt that registered a section cannot close through no_research (reference/retained-work.md).
-        # The host resumes it and names the reason, as the transport check would.
-        _, _, directory = self.prepare(maximum=1, config={'no_research': True})
+        # The host resumes it and names the reason, as the transport check would. The second turn leaves the
+        # same outcome and a decision that answers another request, and the third turn is told both problems.
+        _, _, directory = self.prepare(maximum=2, config={'no_research': True, 'stale_at': 1})
         self.assertTrue(take(directory, 'Small.root')['registered'])
         state = self.run_host(directory)
         self.assertEqual(state['authorization']['basis'], 'resumption_limit')
         self.assertIn('no_research is incompatible with registered sections',
                       read_json(directory / 'turns/0001/request.json')['previous_error'])
+        told = read_json(directory / 'turns/0002/request.json')['previous_error']
+        self.assertIn('no_research is incompatible with registered sections', told)
+        self.assertIn('Ending decision check: ', told)
+        self.assertIn('another reconsideration', told)
 
     def test_a_defect_of_the_program_met_while_an_opt_out_is_read_ends_the_host_and_is_not_told_to_the_session(self):
         # What a session wrote wrongly in outcome.json fails with a ValueError, and a file that cannot be read
@@ -431,11 +436,23 @@ class EndingTests(InstanceCase):
 
     def test_output_limit_during_reconsideration_keeps_decision_error_and_counts_resumption(self):
         _, _, directory = self.prepare_claude(config={'output_limit_at': [1], 'end_after': 2})
-        state = self.run_host(directory)
+
+        def decided_before_the_limit(session, folder, command):
+            result = run_turn(session, folder, command)
+            if Path(folder).name == '0001':
+                # What the session had written in the turn that then reached the limit: a decision nobody can read.
+                (directory / 'output/end-decision.json').write_text('{broken', encoding='utf-8')
+            return result
+
+        with patch('ending.run_turn', side_effect=decided_before_the_limit):
+            state = self.run_host(directory)
         self.assertEqual(state['resumptions'], 2)
         self.assertEqual(state['authorization']['basis'], 'no_way_forward')
         self.assertIsNone(read_json(directory / 'turns/0001/request.json')['previous_error'])
-        self.assertIn('output-token limit', read_json(directory / 'turns/0002/request.json')['previous_error'])
+        told = read_json(directory / 'turns/0002/request.json')['previous_error']
+        self.assertIn('output-token limit', told)
+        self.assertIn('Ending decision check: ', told)
+        self.assertIn('not valid JSON', told)
 
     def test_output_limit_at_the_last_allowed_turn_hands_off_with_the_reason(self):
         engine, sid, directory = self.prepare_claude(maximum=1, config={'output_limit_at': [0, 1]})
@@ -628,6 +645,44 @@ class EndingTests(InstanceCase):
         self.assertIn(str(directory), job['task']['previous_partial_sessions'])
         self.assertFalse(any(j['role'] == 'review' for j in engine.state['jobs'].values()))
 
+    def test_a_peer_whose_resumed_turn_failed_sends_the_candidate_it_had_prepared_to_review(self):
+        # The first turn ended cleanly and left a prepared candidate; the turn in which the peer was to judge its
+        # ending again failed, or the provider refused it. The host records an interruption, and the runner puts
+        # the output to the transport check all the same. A candidate changed after it was prepared is refused,
+        # and a replacement peer takes the stage with the error of the failed turn; a prepared one is frozen for
+        # review. The refused turn comes last: the block it leaves on the provider holds back a later dispatch.
+        for config, changed in (({'fail_at': 1}, True), ({'refuse_at': 1}, False)):
+            with self.subTest(config=config):
+                engine, sid, directory = self.prepare(role='peer', config=config)
+                state = self.run_host(directory)
+                self.assertEqual((state['authorization']['basis'], state['resumptions']), ('interrupted', 1))
+                self.assertEqual(read_json(directory / 'turn-termination.json')['result']['exit_code'], 0)
+                if changed:
+                    (directory / 'output/report.md').write_text('Rewritten after the candidate was prepared.',
+                                                                encoding='utf-8')
+                s = engine.state['sessions'][sid]
+                s.update(read_json(directory / 'exit.json'))
+                s.update(host=None, cli=None)
+                engine.finish(sid, s)
+                job = engine.state['jobs'][s['job']]
+                stage = engine.state['pipelines'][job['pipeline']]['stage']
+                reviews = [j for j in engine.state['jobs'].values()
+                           if j['role'] == 'review' and j['pipeline'] == job['pipeline']]
+                if changed:
+                    self.assertEqual((job['status'], s['status'], stage), ('pending', 'failed', 'peer'))
+                    self.assertIn('exit_code=2', job['last_error'])
+                    self.assertIn(str(directory), job['task']['previous_partial_sessions'])
+                    self.assertFalse((directory / 'candidate').exists())
+                    self.assertEqual(reviews, [])
+                else:
+                    self.assertEqual((job['status'], s['status'], stage), ('done', 'ended', 'review'))
+                    self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 1.')
+                    self.assertTrue(read_json(directory / 'candidate/prepared.json')['ok'])
+                    self.assertEqual(len(reviews), 1)
+                    # The record still says what the host saw, and the refusal keeps its block on the provider.
+                    self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+                    self.assertEqual(engine.state['blocks']['provider:codex']['reason'], 'usage_limit')
+
     def test_another_sessions_provider_block_holds_resumption(self):
         engine, _, directory = self.prepare(maximum=1)
         engine.state['blocks']['provider:codex'] = {'until': time.time() + 60, 'reason': 'usage_limit'}
@@ -790,6 +845,61 @@ class EndingConfigurationTests(unittest.TestCase):
             self.assertEqual(parsed.call_count, 2)
 
 
+class ContextMessageTests(unittest.TestCase):
+    # A stand-in for the Claude CLI during one turn. For each request it is given it writes one `assistant`
+    # event, with the context that request held and, for a request of a sub-agent, the tool call that
+    # started the agent. Then it stays, as a turn stays at work, until a message waits for the session or
+    # the seconds it was given have passed.
+    CLI = r'''
+import json
+from pathlib import Path
+import sys
+import time
+
+for size, parent in json.loads(sys.argv[1]):
+    print(json.dumps({'type': 'assistant', 'parent_tool_use_id': parent, 'message': {
+        'role': 'assistant', 'content': [], 'usage': {
+            'input_tokens': 5, 'cache_creation_input_tokens': 1000, 'cache_read_input_tokens': size - 1005,
+            'output_tokens': 900}}}), flush=True)
+deadline = time.monotonic() + float(sys.argv[2])
+while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
+    time.sleep(.02)
+'''
+
+    def turn(self, session, folder, requests, seconds):
+        """Run one turn under the host; returns the messages that wait for the session when it has ended."""
+        import json
+        (folder / 'prompt.txt').write_bytes(b'')
+        command = {'argv': [sys.executable, '-c', self.CLI, json.dumps(requests), str(seconds)],
+                   'cwd': str(session)}
+        self.assertEqual(run_turn(session, folder, command)['exit_code'], 0)
+        return sorted((session / 'messages').glob('*.json'))
+
+    def test_the_host_sends_the_message_once_when_a_request_of_the_session_itself_reaches_the_size(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp) / 'session'
+            (session / 'turns/0001').mkdir(parents=True)
+            open_messages(session)
+            # A request of a sub-agent above the size and a request of the session just below it send
+            # nothing. The message is sent for the session's own request and states the size of that one.
+            waiting = self.turn(session, session, [[900_000, 'toolu_1'], [799_999, None], [812_345, None]], 30)
+            self.assertEqual(len(waiting), 1)
+            message = read_json(waiting[0])
+            self.assertEqual(message['from'], 'runner')
+            self.assertIn('about 812,345 tokens', message['text'])
+            self.assertIn('nears 950,000 tokens', message['text'])
+            # The message names a section of a guide, and the guide has a section of that title.
+            self.assertIn('"What a compaction of your context leaves" in context/reference/retained-work.md',
+                          message['text'])
+            guide = Path(__file__).resolve().parents[2] / 'reference/retained-work.md'
+            self.assertIn('\n## What a compaction of your context leaves\n', guide.read_text(encoding='utf-8'))
+            # Once in the life of the session. The hook has handed the message over, and a later turn with
+            # a larger context stays a second for a message that must not come.
+            waiting[0].rename(session / 'messages/delivered' / waiting[0].name)
+            self.assertEqual(self.turn(session, session / 'turns/0001', [[850_000, None]], 1), [])
+
+
 class CancellationTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'the refusal is what Windows answers to a second TerminateProcess')
     def test_a_cli_that_another_caller_is_already_ending_is_not_recorded_as_a_failed_launch(self):
@@ -847,6 +957,29 @@ class SessionGateTests(unittest.TestCase):
                 self.assertEqual(session_host(folder), 1)
                 self.assertFalse((folder / 'started').exists())
                 self.assertFalse((folder / 'exit.json').exists())
+
+    def test_a_missing_key_inside_a_host_or_the_archiver_leaves_the_command_as_it_was_raised(self):
+        # A session host and the archiver are detached, and host.log and runner/archive.log are all that says why
+        # one ended. The failures the command expects, such as a continuation file the host cannot use, it turns
+        # into one line of JSON (reference/operations.md). A missing key is a defect of the program, and its name
+        # alone would not say where, so it leaves `main` as it was raised and Python writes the call stack to the
+        # log, as for the broker's job host (test_lean_broker). The host is given a launch file without the
+        # runner's identity, as a runner that loaded other code than the host can write one, and the archiver a
+        # runner's state without its jobs.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            self.launch(folder, process_identity(os.getpid()))
+            launch = read_json(folder / 'launch.json')
+            del launch['runner']
+            write_json(folder / 'launch.json', launch)
+            with self.assertRaisesRegex(KeyError, 'runner'):
+                main(['_session', str(folder)])
+            self.assertFalse((folder / 'exit.json').exists())
+            (folder / 'runner').mkdir()
+            write_json(folder / 'runner/state.json', {'sessions': {'s1': {'job': 'j1', 'status': 'ended'}}})
+            with self.assertRaisesRegex(KeyError, 'jobs'):
+                main(['_archive', str(folder)])
 
     def test_go_written_as_the_runner_dies_still_starts_the_session(self):
         # The runner can die right after writing GO, between the host's look for GO and its look at the

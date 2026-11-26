@@ -296,6 +296,30 @@ class GitEnvironmentTests(unittest.TestCase):
             self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
             self.assertEqual(support.git(other, 'count-objects'), '0 objects, 0 kilobytes')
 
+    def test_a_callers_setting_that_signs_every_commit_does_not_stop_the_instances_commits(self):
+        # The repository of an instance is the runtime's own record: init makes its first commit, and the runner,
+        # which nobody attends, one for every publication (Runner.publish), all under the runtime's name. A
+        # user's Git configuration can ask for every commit to be signed. Git would then start the signing
+        # program for these commits as well, which finds no key for that name or waits for a passphrase. Git
+        # reads that configuration from the home folder, which is given here with the setting and with a signing
+        # program that does not exist, so a commit that Git tried to sign fails. The repository and every Git
+        # call are real.
+        with tempfile.TemporaryDirectory() as temp:
+            home, instance = Path(temp) / 'home', Path(temp) / 'instance'
+            for folder in (home, instance):
+                folder.mkdir()
+            (home / '.gitconfig').write_text(
+                '[commit]\n\tgpgsign = true\n[gpg]\n\tprogram = no-such-signing-program\n', encoding='utf-8')
+            (instance / 'root.md').write_text('The root.\n', encoding='utf-8')
+            with patch.dict(os.environ, {'HOME': str(home), 'USERPROFILE': str(home),
+                                         'XDG_CONFIG_HOME': str(home / 'xdg')}):
+                # Git reads the file as the user's configuration; without that the commit below would show nothing.
+                self.assertEqual(support.git(instance, 'config', '--global', 'commit.gpgsign'), 'true')
+                support.git(instance, 'init')
+                support.git(instance, 'add', '--', 'root.md')
+                support.git(instance, 'commit', '-m', 'In the instance')
+            self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
+
 
 class PeerRecoveryTests(InstanceCase):
     def peer(self):

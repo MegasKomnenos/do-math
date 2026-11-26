@@ -465,8 +465,7 @@ def make_view(view, lean_root, records_root, bibliography, index, source, settin
     (view / 'canon' / 'questions').mkdir(parents=True)
     shutil.copytree(lean_root, view / 'canon' / 'lean')
     shutil.copytree(records_root, view / 'canon' / 'records')
-    if Path(bibliography).is_file():
-        shutil.copyfile(bibliography, view / 'canon' / 'bibliography.bib')
+    shutil.copyfile(bibliography, view / 'canon' / 'bibliography.bib')
     write_json(view / 'canon' / 'index.json', index)
     shutil.copyfile(source / 'root.md', view / 'root.md')
     write_json(view / 'instance.json', read_json(source / 'instance.json'))
@@ -761,11 +760,11 @@ def selection_digest(model, index):
     return '\n'.join(lines)
 
 
-def rests_on_text(index, kept=None):
-    """`rests-on.md`: for each element, what its statement names and what its proof names."""
+def rests_on_text(index, kept):
+    """`rests-on.md`: for each element of `kept`, what its statement names and what its proof names."""
     lines = ['# What rests on what', '']
     for name, entry in sorted(index['entries'].items()):
-        if kept is not None and name not in kept:
+        if name not in kept:
             continue
         lines.append(f"- `{name}` ({entry['kind']}, `{entry['module']}`): statement names "
                      + (', '.join(f'`{used}`' for used in entry['statement_uses']) or 'nothing') + '; proof names '
@@ -1106,8 +1105,8 @@ def registry_problems(lean_folder, licence):
             problems.append(f'formalization.yaml: project.license is not {licence}, the licence of the package')
         arxiv = data.get('classification', {}).get('arxiv', [])
         msc = data.get('classification', {}).get('msc2020', [])
-        if not 1 <= len(arxiv) <= 8 or not all(text(code) and ARXIV.fullmatch(code) for code in arxiv):
-            problems.append('formalization.yaml: classification.arxiv holds one to eight arXiv categories')
+        if not 1 <= len(arxiv) <= 2 or not all(text(code) and ARXIV.fullmatch(code) for code in arxiv):
+            problems.append('formalization.yaml: classification.arxiv holds one or two arXiv categories')
         if not 1 <= len(msc) <= 8 or not all(text(code) and MSC.fullmatch(code) for code in msc):
             problems.append('formalization.yaml: classification.msc2020 holds one to eight MSC2020 codes')
         # The list may be empty: for a result that is recorded as known and whose research names no source, the
@@ -1424,15 +1423,13 @@ def package_facts(package, name, library, root, main, index, freeze, archive, ti
             'declarations': len(entries), 'theorems': sum(e['kind'] == 'theorem' for e in entries.values()),
             'definitions': sum(e['kind'] != 'theorem' for e in entries.values()),
             'records': sum(relative.endswith('.md') for relative in files_under(package / 'records')),
-            'sources': len(bibliography_keys(read_text(package / 'records' / 'bibliography.bib')))
-            if (package / 'records' / 'bibliography.bib').is_file() else 0,
+            'sources': len(bibliography_keys(read_text(package / 'records' / 'bibliography.bib'))),
             'registry_sources': registry_sources(package / 'lean' / 'formalization.yaml'),
             'compared': ', '.join(freeze['compared']),
             'axioms_root': ', '.join(freeze['axioms'].get(root, [])) or 'none',
             'axioms_main': ', '.join(freeze['axioms'].get(main, [])) or 'none',
             'timeline_entries': len(timeline_entries),
-            'publications': sum(entry['kind'] in ('change', 'review', 'organization', 'questions')
-                                for entry in timeline_entries),
+            'publications': sum(entry['kind'] in PUBLICATION for entry in timeline_entries),
             'archive': archive['archive'], 'archive_files': archive['files'], 'archive_bytes': archive['archive_bytes'],
             'archive_sha256': archive['sha256'],
             'statements': len(statements), 'cited_proved': len(cited),
@@ -1558,7 +1555,8 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '## What is in this folder', '',
               f"- `lean/`: the library `{facts['library']}`, its build files, and the files a formal-proof registry "
               'compares (`Challenge.lean`, `Solution.lean`, `comparator.json`, `formalization.yaml`).',
-              '- `records/`: one record for each public declaration, and `bibliography.bib`.',
+              '- `records/`: one record for each public declaration, and `bibliography.bib`. Where a record names a '
+              'file under `evidence/`, that file is in the knowledge archive, under `canon/evidence/`.',
               '- `dependency-map/`: [the map of what the proof rests on](dependency-map/dependency_map.html).',
               '- `paper/`: [the paper](paper/paper.pdf), its source, and `correspondence.json`, which names the '
               'declaration behind each numbered statement.',

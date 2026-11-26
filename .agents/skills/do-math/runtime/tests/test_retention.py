@@ -215,6 +215,10 @@ class RetentionTests(unittest.TestCase):
             rows = [{'type': 'response_item', 'payload': value}
                     for value in (None, [], 'invalid', 42)]
             rows += [
+                # Half of a surrogate pair, as a text cut between the two halves leaves it. json.dumps writes it as
+                # the escape \ud835, and the line parses to a character that UTF-8 does not encode.
+                {'type': 'response_item', 'payload': {'type': 'custom_tool_call_output',
+                 'output': 'A goal cut after half of a character: \ud835'}},
                 {'type': 'response_item', 'payload': {'type': 'message', 'role': 'assistant',
                  'content': [{'type': 'output_text', 'text': 'A recoverable mathematical result.'}]}},
                 {'type': 'response_item', 'payload': {'type': 'custom_tool_call_output',
@@ -224,8 +228,10 @@ class RetentionTests(unittest.TestCase):
             raw = ('\n'.join(json.dumps(row) for row in rows) + '\n').encode('utf-8')
             source.write_bytes(raw)
             target = root / 'conversation.md'
-            self.assertEqual(conversation(source, target, True), 2)
+            self.assertEqual(conversation(source, target, True), 3)
             body = target.read_text(encoding='utf-8')
+            # The half is retained as the escape it arrived as, and what follows it is retained whole.
+            self.assertIn('A goal cut after half of a character: \\ud835', body)
             self.assertIn('A recoverable mathematical result.', body)
             self.assertIn('The calculation supporting the result.', body)
             self.assertEqual(source.read_bytes(), raw)

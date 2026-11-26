@@ -84,8 +84,9 @@ def add_concerns(model, values, source):
 def apply_findings(model, findings, source, followup=True):
     """A finding is the only thing that changes a judgment already published.
 
-    It can withdraw the confirmation of an element's proof or restore it, and it can reopen a
-    question whose resolution it found insufficient. A status alone changes nothing."""
+    It can withdraw the confirmation of an element's proof, and it can establish or restore it, with
+    or without a judgment of whether the proof is accepted; and it can reopen a question whose
+    resolution it found insufficient. A status alone changes nothing."""
     for number, finding in enumerate(findings):
         affected = set(finding.get('invalidates', [])) | set(finding.get('validates', []))
         for cid in finding['concerns']:
@@ -115,6 +116,12 @@ def apply_findings(model, findings, source, followup=True):
                 # A restored confirmation brings back the reason the proof was confirmed with. A proof that
                 # was not confirmed before takes the reason of the finding that confirms it.
                 verdict['reason'] = verdict.pop('confirmed_reason', None) or finding['reason']
+            if 'accepted' in finding:
+                # The review that establishes the confirmation has made the second judgment as well, as the
+                # review of a candidate does. Its reason is then the reason of the verdict, which for a proof
+                # it holds back says where work on the proof begins. Without the key the acceptance stays as
+                # it was.
+                verdict.update(accepted=finding['accepted'], reason=finding['reason'])
             verdict.update(correct='confirmed', later_review=source)
         for qid in finding.get('reopens', []):
             question = model['questions'].get(canonical_question(model, qid))

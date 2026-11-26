@@ -13,9 +13,9 @@ from canon_tool import view
 from context import assemble, rebase_links
 from coordination import updates
 from knowledge import render, replay
-from launch import worker_command, worker_environment
+from launch import open_messages, send_message, worker_command, worker_environment
 from runner import Runner, main
-from runtime_support import read_json, write_json
+from runtime_support import process_identity, read_json, write_json
 from support import InstanceCase, module_text, record_text, take
 
 INSTALLED = Path(__file__).resolve().parents[2]
@@ -459,6 +459,107 @@ class ContextTests(InstanceCase):
         expected = worker_command(engine.settings['cli'][session['provider']], session['model'],
                                   session['effort'], engine.session_dir(sid), engine.settings['mcp_servers'])
         self.assertEqual(launched, expected.argv)
+
+    def test_a_worker_that_receives_messages_runs_the_one_hook_that_hands_them_over(self):
+        folder = self.root / 'a session'  # a space in the path, as a folder of the operator's can have
+        folder.mkdir()
+        open_messages(folder)
+        # The command of the first turn and the command of a resumed turn each write the worker's settings.
+        for resume_id in (None, '01234567-89ab-cdef-0123-456789abcdef'):
+            command = worker_command('claude', 'claude/opus', 'xhigh', folder, {}, resume_id=resume_id)
+            config = read_json(folder / 'worker-settings.json')
+            # The hook stands in place of the key that switches hooks off. --setting-sources '' is then all
+            # that keeps the hooks of the operator's project and account out of the worker.
+            self.assertNotIn('disableAllHooks', config)
+            self.assertEqual(command.argv[command.argv.index('--setting-sources') + 1], '')
+            self.assertEqual(list(config['hooks']), ['PostToolBatch'])
+            (group,) = config['hooks']['PostToolBatch']
+            (entry,) = group['hooks']
+            self.assertEqual(entry['type'], 'command')
+        hook = [entry['command'], *entry['args']]
+
+        def after_a_batch(event, argv=hook):
+            """What the hook's command, started as the CLI starts it, exits with and prints for one event."""
+            done = subprocess.run(argv, input=json.dumps(event).encode(), capture_output=True, cwd=folder)
+            return done.returncode, done.stdout.decode()
+
+        own = {'hook_event_name': 'PostToolBatch', 'cwd': str(folder), 'tool_calls': []}
+        self.assertEqual(after_a_batch(own), (0, ''))  # nothing waits
+        first = send_message(folder, 'runner', 'The context is filling.')
+        second = send_message(folder, 'operator', 'The user asks whether the bound is sharp.')
+        # Inside a sub-agent the event names the agent. The messages are the session's, and go on waiting.
+        self.assertEqual(after_a_batch({**own, 'agent_id': 'a1', 'agent_type': 'general-purpose'}), (0, ''))
+        self.assertTrue(first.is_file() and second.is_file())
+        # With the program file missing, the hook's command ends with 1, which the CLI passes over. An
+        # interpreter told to run the missing file itself would end with 2, which ends the session's turn.
+        missing = [str(folder / 'no-such-hook.py') if part == entry['args'][-2] else part for part in hook]
+        self.assertEqual(after_a_batch(own, missing)[0], 1)
+        self.assertTrue(first.is_file() and second.is_file())
+        # The session itself is handed both, in the order in which they were sent, each under its sender.
+        code, printed = after_a_batch(own)
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(printed), {'hookSpecificOutput': {
+            'hookEventName': 'PostToolBatch',
+            'additionalContext': 'Message from the runner of this research:\nThe context is filling.\n\n'
+                                 'Message from the operator of this research:\n'
+                                 'The user asks whether the bound is sharp.'}})
+        # Each is handed over once, and what was handed over is kept.
+        self.assertEqual(after_a_batch(own), (0, ''))
+        self.assertEqual(sorted(path.name for path in (folder / 'messages/delivered').iterdir()),
+                         [first.name, second.name])
+
+    def test_dispatch_makes_the_messages_folder_for_a_claude_session_and_for_no_other(self):
+        engine = Runner(self.instance, self.skill)
+        # The settings of the fixture give every role the first entry of `models`, a Codex model. The review
+        # is given a Claude model here.
+        engine.settings['roles'] = {'review': [{'model': 'claude/opus', 'effort': 'xhigh'}]}
+        keys = {'codex': engine.producer('attempt'),
+                'claude': engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': [],
+                                                    'purpose': 'Examine the questioned proof.'})}
+        for provider, key in keys.items():
+            with self.subTest(provider=provider), patch('runner.subprocess.Popen') as host:
+                host.return_value.pid = engine.identity['pid']
+                self.assertTrue(engine.dispatch(key))
+                sid = engine.state['jobs'][key]['session']
+                self.assertEqual(engine.state['sessions'][sid]['provider'], provider)
+                folder = engine.session_dir(sid)
+                self.assertEqual((folder / 'messages/delivered').is_dir(), provider == 'claude')
+                if provider == 'claude':
+                    # The command the host runs was built after the folder was made, so its settings hold the hook.
+                    self.assertIn('hooks', read_json(folder / 'worker-settings.json'))
+
+    def test_the_operators_message_waits_for_a_running_session_that_receives_messages(self):
+        engine = Runner(self.instance, self.skill)
+        folder = self.running(engine, 'smessage')
+        engine.state['sessions']['smessage']['host'] = process_identity(os.getpid())
+        engine.save()
+        note = self.root / 'note.txt'
+        note.write_text('The user asks whether the bound is sharp.', encoding='utf-8')
+
+        def send():
+            with patch('builtins.print') as shown:
+                code = main(['message', str(self.instance), 'smessage', '--file', str(note)])
+            return code, json.loads(shown.call_args.args[0])
+
+        # A session without the folder runs no hook. The command refuses it, so that no message waits unread.
+        code, answer = send()
+        self.assertEqual(code, 1)
+        self.assertIn('receives no messages', answer['error'])
+        open_messages(folder)
+        code, answer = send()
+        self.assertEqual(code, 0)
+        waiting = Path(answer['message'])
+        self.assertEqual(waiting.parent, (folder / 'messages').resolve())
+        message = read_json(waiting)
+        self.assertEqual((message['from'], message['text']),
+                         ('operator', 'The user asks whether the bound is sharp.'))
+        # A session whose host has ended would never be handed the message.
+        engine.state['sessions']['smessage']['host'] = None
+        engine.save()
+        code, answer = send()
+        self.assertEqual(code, 1)
+        self.assertEqual(answer['error'], 'session is no longer running')
+        self.assertEqual(len(list((folder / 'messages').glob('*.json'))), 1)
 
     def test_context_request_applies_to_every_worker_model(self):
         folder = self.root / 'long-context'
