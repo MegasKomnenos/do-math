@@ -3,8 +3,9 @@
 A session that receives messages has the folder WAITING in its session folder. launch.py makes that folder,
 names this file in the worker's settings and writes the messages. A message waits as one JSON file with
 the keys `from` and `text`, under a name that sorts by the time it was sent, and is moved to DELIVERED
-when it is handed over. The CLI's stream does not show what a hook returned, so that folder is the only
-record of what a session was told.
+when it is handed over. The CLI's stream does not show what a hook returned, so while a session runs that
+folder is the record of what it was told. The CLI's own transcript holds the text as well, and from there it
+enters the readable conversation of a session that has ended (retention.conversation).
 
 The CLI starts this file after every batch of tool calls of every such session, so it imports nothing of
 the runtime. It ends with exit code 2 on no path: at this event the CLI takes that code as an order to end

@@ -700,6 +700,10 @@ class RecordTests(FinalizeCase):
         self.assertEqual([(item['key'], [row['declaration'] for row in item['records']]) for item in cited],
                          [('gauss1801', ['Small.sq_step'])])
         self.assertEqual(package.bibliography_field(BIBLIOGRAPHY, 'gauss1801', 'title'), 'Disquisitiones Arithmeticae')
+        # A field can stand between quotation marks, and a quotation mark between braces is then part of the field.
+        quoted = '@article{g1931,\n  author = "G{\\"o}del, Kurt",\n  title = "{\\"U}ber formal unentscheidbare S{\\"a}tze"\n}\n'
+        self.assertEqual([package.bibliography_field(quoted, 'g1931', field) for field in ('author', 'title')],
+                         ['G\u00f6del, Kurt', '\u00dcber formal unentscheidbare S\u00e4tze'])
         records = self.root / 'records'
         shutil.copytree(self.instance / 'canon' / 'records', records)
         # A record cites a work by its key in brackets, with or without the place. A bracket that holds no key of the
@@ -910,6 +914,10 @@ class RegistryTests(FinalizeCase):
         data = package.formalization('Sums after Erd\\H{o}s and Szemer\\\'edi', json.loads(decision()), BIBLIOGRAPHY,
                                      finalize.default_config(), 'CC-BY-4.0', [], 'Small', [], None, {}, 't')
         self.assertEqual(data['project']['name'], 'Sums after Erd\u0151s and Szemer\u00e9di')
+        # TeX prints two hyphens as the dash between two names and three as the dash of a sentence. A formula keeps
+        # the hyphens it has.
+        self.assertEqual(package.plain('The {E}rd{\\H{o}}s--{R}ado problem---a survey for $a--b$'),
+                         'The Erd\u0151s\u2013Rado problem\u2014a survey for $a--b$')
 
     def test_each_rule_of_the_registry_that_the_pipeline_controls_is_checked(self):
         lean = self.frozen()
@@ -1113,6 +1121,22 @@ class ArchiveTests(FinalizeCase):
         package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'nobody-of-this-name')
         members = package.archive_members(self.root / 'knowledge' / 'odd-knowledge.tar.xz')
         self.assertEqual(members['canon/questions/q0.md'], committed)
+
+    def test_a_text_file_that_git_holds_with_windows_line_endings_is_read_with_line_feeds_alone(self):
+        # `init` copies the operator's files into the instance as they are, and where Git converts no line ending the
+        # first commit holds them so: here a definition module with Windows line endings. The run writes every file
+        # with line feeds alone and compares a definition module with the file of the first commit by its bytes, so
+        # it reads such a file without its carriage returns. The archive is the research's own bytes and keeps them.
+        stored = DEFS.replace('\n', '\r\n').encode('utf-8')
+        (self.instance / 'canon' / 'lean' / 'Small' / 'Defs.lean').write_bytes(stored)
+        git(self.instance, '-c', 'core.autocrlf=false', 'commit', '-m', 'Windows line endings', '--',
+            'canon/lean/Small/Defs.lean')
+        commit = package.head_commit(self.instance)
+        package.export_commit(self.instance, commit, ['canon/lean'], self.root / 'read', 'canon/')
+        self.assertEqual((self.root / 'read' / 'lean' / 'Small' / 'Defs.lean').read_bytes(), DEFS.encode('utf-8'))
+        package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'nobody-of-this-name')
+        members = package.archive_members(self.root / 'knowledge' / 'odd-knowledge.tar.xz')
+        self.assertEqual(members['canon/lean/Small/Defs.lean'], stored)
 
 
 class DocumentTests(FinalizeCase):
@@ -1456,6 +1480,7 @@ class PromptTests(FinalizeCase):
     def prepared(self):
         run = finalize.Run(self.instance, 'odd', finalize.default_config())
         run.settings, run.library, run.root, run.expect_mb = {'lean': {'cwd': None}}, 'Small', 'Small.root', 64
+        run.allowed = ['propext', 'Lean.ofReduceBool']
         run.state = {'main': 'Small.sq_step'}
         return run
 
@@ -1478,6 +1503,8 @@ class PromptTests(FinalizeCase):
             if compiles:
                 self.assertIn(Path(sys.executable).as_posix(), text, name)
         self.assertIn('There is none', run.prompt('review'))
+        # The axioms a theorem may rest on are those the research allows, as the run read them from its settings.
+        self.assertIn('`propext`, `Lean.ofReduceBool`', run.prompt('review'))
         run.settings = {'lean': {'cwd': 'C:/toolchains/mathlib'}}
         self.assertIn('C:/toolchains/mathlib', run.prompt('review'))
 
@@ -2005,10 +2032,10 @@ class RunTests(FinalizeCase):
             'history-write': {'output/entries.json': json.dumps([{'event': 1, 'date': '', 'text': 'A change.'}])},
             'history-read': {'output/verdicts.json': json.dumps([{'event': 1, 'verdict': 'stands', 'text': ''},
                                                                  {'event': 2, 'verdict': 'corrected', 'text': ''}])},
-            # The first file uses a figure that facts.json does not have, and the second links to a file that the
-            # package does not have.
+            # The first file uses a figure that facts.json does not have. The second links to a file that the package
+            # does not have, and holds a placeholder whose key has a form that the program does not fill.
             'readme-write': {'output/outline.md': 'The paper has {{facts.pages}} pages.\n',
-                             'output/obtained.md': 'See [the notes](notes/absent.md).\n'},
+                             'output/obtained.md': 'See [the notes](notes/absent.md), of {{facts.days-of-work}} days.\n'},
             'package-read': {'output/findings.json': json.dumps([{'file': 'README.md', 'quote': 'by induction'}])},
         }
         plan = {key: ([faulty[key]] if key in faulty else []) + entries for key, entries in good.items()}
@@ -2040,6 +2067,7 @@ class RunTests(FinalizeCase):
                 ('history-read:01', 'the entry of the event 2 is corrected and no text is given'),
                 ('readme-write:None', 'outline.md uses {{facts.pages}}, and facts.json has no such key'),
                 ('readme-write:None', 'obtained.md links to notes/absent.md, which the package does not have'),
+                ('readme-write:None', 'obtained.md holds a placeholder that is not filled'),
                 ('package-read:None', 'every finding has "file", "quote" and "problem"')):
             self.assertEqual(len(told[key]), 2, key)
             self.assertNotIn(wanted, told[key][0])

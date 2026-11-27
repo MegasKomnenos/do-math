@@ -392,6 +392,32 @@ class GitEnvironmentTests(unittest.TestCase):
                 support.git(instance, 'commit', '-m', 'In the instance')
             self.assertEqual(support.git(instance, 'log', '--format=%s'), 'In the instance')
 
+    @unittest.skipUnless(os.name == 'nt', 'the limit on the length of a path is that of Git for Windows')
+    def test_a_path_longer_than_the_windows_limit_does_not_stop_the_instances_commits(self):
+        # The files of the canon stand at paths that follow the names of declarations (canon.name_path), and a
+        # name that says what a statement states is long. Left to its default, Git for Windows takes no path of
+        # more than 260 characters (core.longpaths), also where Windows itself allows one and the runtime has
+        # written the file, so the `git add` of a publication would fail on such a file, which ends the runner
+        # there and at every start after it, or would leave the file out of the commit. The repository, the
+        # file and every Git call are real. Where Windows does not allow such a path the file cannot be
+        # written, and there is nothing to commit.
+        with tempfile.TemporaryDirectory() as temp:
+            instance = Path(temp) / 'instance'
+            relative = 'canon/records/' + 'n' * 120 + '/' + 'm' * 200 + '.md'
+            try:
+                (instance / relative).parent.mkdir(parents=True)
+                (instance / relative).write_text('A record.\n', encoding='utf-8')
+            except OSError:
+                self.skipTest('Windows is not set to allow a path of more than 260 characters')
+            support.git(instance, 'init')
+            # Git does not take the file with the setting off; without that the commit below would show nothing.
+            subprocess.run(['git', '-C', str(instance), '-c', 'core.longpaths=false', 'add', '-A', '--', 'canon'],
+                           capture_output=True)
+            self.assertEqual(support.git(instance, 'ls-files'), '')
+            support.git(instance, 'add', '-A', '--', 'canon')
+            support.git(instance, 'commit', '-m', 'In the instance')
+            self.assertEqual(support.git(instance, 'ls-files'), relative)
+
 
 class PeerRecoveryTests(InstanceCase):
     def peer(self):

@@ -402,6 +402,31 @@ class PaperCase(InstanceCase):
             shutil.copytree(_RUNS[name] / 'paper', self.out)
             shutil.copytree(_RUNS[name] / 'scenario', self.scenario, dirs_exist_ok=True)
 
+    def changed_while_typesetting_later(self):
+        """Start the test from a run that was made without TeX and typeset later, where the repair of the LaTeX
+        changed a lemma: the run leaves open that the present text of that lemma was not compared.
+
+        Two tests start from this run, so it is made once (taken_up). Returns the script of its sessions."""
+        script = good()
+        broken = TOOLS.replace('For every natural number $k$, we have', 'For every natural number $k$, \\undefinedmacro we have')
+        self.assertNotEqual(broken, TOOLS)
+        script['write:tools'] = [{'output/tools.tex': broken}]
+        script['repair:typeset'] = [{'output/tools.tex': TOOLS}]
+
+        def run():
+            # Without TeX the macro goes unnoticed: the manuscript is read and compared, and the lemma is judged as written.
+            with patch('paper.shutil.which', return_value=None):
+                self.assertEqual(self.run_paper(script, tex=None), 3)
+            rows = read_json(self.out / 'correspondence.json')['statements']
+            self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
+            compared = len(self.calls('compare'))
+            # Typesetting later repairs the lemma and does not compare again, so its present text has no verdict.
+            self.assertEqual(self.run_paper(script, only=True), 2)
+            self.assertEqual(len(self.calls('compare')), compared)
+
+        self.taken_up('a lemma changed while typesetting later', run)
+        return script
+
     def said(self, arguments):
         """What the command prints last when it is run with these arguments after the instance, and its exit code."""
         with patch('command_sessions.worker_command', side_effect=self.command), patch('builtins.print') as shown:
@@ -1752,22 +1777,28 @@ class RunTests(PaperCase):
         with self.assertRaisesRegex(paper.Stop, 'ended before its readings and its comparison were made'):
             self.run_paper(script, open_findings='all')
 
-    def test_a_statement_that_a_repair_changes_while_typesetting_later_is_reported_as_not_compared(self):
+    def test_a_finished_manuscript_that_a_later_typesetting_leaves_failing_is_typeset_again(self):
+        self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))
+        # A TeX command that fails for a reason which lies in no part, so that no repair of the manuscript removes it.
+        failing = [sys.executable, '-c', 'print("! Emergency stop."); raise SystemExit(1)']
         script = good()
-        broken = TOOLS.replace('For every natural number $k$, we have', 'For every natural number $k$, \\undefinedmacro we have')
-        self.assertNotEqual(broken, TOOLS)
-        script['write:tools'] = [{'output/tools.tex': broken}]
-        script['repair:typeset'] = [{'output/tools.tex': TOOLS}]
-        # Without TeX the macro goes unnoticed: the manuscript is read and compared, and the lemma is judged as written.
-        with patch('paper.shutil.which', return_value=None):
-            self.assertEqual(self.run_paper(script, tex=None), 3)
-        rows = read_json(self.out / 'correspondence.json')['statements']
-        self.assertEqual([r['comparison']['verdict'] for r in rows], ['same'] * 3)
-        compared = len(self.calls('compare'))
-        # Typesetting later repairs the lemma and does not compare again, so its present text has no verdict.
-        self.assertEqual(self.run_paper(script, only=True), 2)
+        script['repair:typeset'] = [{'output/tools.tex': TOOLS + f'% {n}\n'} for n in range(paper.REPAIR_ROUNDS)]
+        self.assertEqual(self.run_paper(script, tex=failing, only=True), 2)
+        self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.TYPESETTING])
+        # The run that wrote the manuscript had finished its readings and its comparisons, so the manuscript is kept:
+        # --resume and --open-findings refuse the folder and name --typeset-only, which typesets it again.
+        with self.assertRaisesRegex(paper.Stop, 'A pass over its finished manuscript left .*--typeset-only makes them again'):
+            self.run_paper(script, resume=True)
+        with self.assertRaisesRegex(paper.Stop, 'a pass over the finished manuscript in .*--typeset-only makes them again'):
+            self.run_paper(script, open_findings='all')
+        self.assertEqual(self.run_paper(script, only=True), 0)
+        self.assertEqual(self.events('end')[-1]['status'], 'complete')
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+
+    def test_a_statement_that_a_repair_changes_while_typesetting_later_is_reported_as_not_compared(self):
+        # The run was made without TeX and typeset later, and the repair of the LaTeX changed the second lemma.
+        script = self.changed_while_typesetting_later()
         self.assertEqual([c['section'] for c in self.calls('repair')], ['typeset'])
-        self.assertEqual(len(self.calls('compare')), compared)
         self.assertTrue((self.out / 'paper.pdf').is_file())
         rows = read_json(self.out / 'correspondence.json')['statements']
         self.assertEqual([r['comparison']['verdict'] for r in rows], ['same', 'same', 'not compared'])
@@ -1850,8 +1881,9 @@ class RunTests(PaperCase):
 
     def test_readings_without_two_clean_ones_in_succession_leave_the_last_departures_to_the_resolving_session(self):
         # Every odd reading has a departure and every even one has none, so no two clean readings follow each other.
-        rounds = paper.LIKENESS_ROUNDS
-        self.assertEqual(rounds % 2, 0)
+        # The bound is eight, which the user set and which the method and the operator's manual state. It is named here
+        # as a number, so that a command whose bound is another number fails this test.
+        rounds = 8
         script = good()
         script['likeness'] = [{'output/likeness.json': json.dumps(departed(f'reading {n}') if n % 2 else LIKE)}
                               for n in range(1, rounds + 1)]
@@ -3062,13 +3094,7 @@ class OpenFindingsTests(PaperCase):
     def test_a_statement_without_a_verdict_is_compared_and_one_that_differs_then_says_that_no_repair_followed(self):
         # A run without TeX, and a typesetting later whose repair of the LaTeX changes a lemma: the run then leaves
         # open that the present text of the lemma was not compared.
-        script = good()
-        script['write:tools'] = [{'output/tools.tex': TOOLS.replace('For every natural number $k$, we have',
-                                                                    'For every natural number $k$, \\undefinedmacro we have')}]
-        script['repair:typeset'] = [{'output/tools.tex': TOOLS}]
-        with patch('paper.shutil.which', return_value=None):
-            self.assertEqual(self.run_paper(script, tex=None), 3)
-        self.assertEqual(self.run_paper(script, only=True), 2)
+        script = self.changed_while_typesetting_later()
         self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.UNCOMPARED])
         launched = len(self.calls())
         # Acting on it compares the statement, once. It differs, and it is open as a statement that was changed after
@@ -3129,6 +3155,20 @@ class OpenFindingsTests(PaperCase):
         shown.flush()
         self.assertEqual(code, 0)
         self.assertIn(b'       problem: The base case is not named: the sum is 0\\xb2 there.', shown.buffer.getvalue())
+
+    def test_the_end_of_a_run_is_printed_where_the_output_cannot_encode_a_character_of_the_folder(self):
+        # The command names the folder of the run when it ends, and the name of a folder can hold a character that
+        # the encoding of redirected output lacks. The name is printed with an escape, and the exit code is that of
+        # the run and not that of a command that failed.
+        import io
+        self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))
+        folder = self.out.rename(self.out.with_name('paper²'))
+        shown = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='\n')
+        with patch('command_sessions.worker_command', side_effect=self.command), patch('sys.stdout', shown):
+            code = paper.main([str(self.read_from), '--out', str(folder), '--typeset-only', '--tex', *TEX])
+        shown.flush()
+        self.assertEqual(code, 0)
+        self.assertIn(b'paper\\xb2', shown.buffer.getvalue())
 
     def test_a_run_without_open_findings_and_a_run_that_has_not_ended_are_refused(self):
         self.taken_up('complete', lambda: self.assertEqual(self.run_paper(good()), 0))

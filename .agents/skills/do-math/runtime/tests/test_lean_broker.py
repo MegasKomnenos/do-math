@@ -107,6 +107,13 @@ class ProcessTreeTests(unittest.TestCase):
                 patch.object(Path, "read_bytes", lambda path: stats[path.parent.name]):
             self.assertEqual(lean_broker.process_tree(10), [10, 20, 30])
 
+    def test_a_process_that_ended_before_its_memory_was_read_counts_as_nothing(self):
+        # A process of a compile's tree can end between the look that found it alive and the reading of its memory,
+        # at the end of any compile. It then counts as nothing and the processes after it are still read; an error
+        # raised here would leave the broker's poll and end the broker.
+        ended = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)
+        self.assertGreater(lean_broker.private_memory_mb([int(ended.stdout), os.getpid()]), 0)
+
 
 class AdmissionRuleTests(unittest.TestCase):
     def test_estimate_is_read_as_a_probable_peak_above_the_baseline(self):
@@ -624,6 +631,10 @@ class BrokerTests(BrokerFixture):
         second = self.submit(self.session_file("s1", "B.lean"), expect_mb=40)
         self.until(lambda: self.finished(second))
         self.assertEqual(sum(j["kind"] == "calibration" for j in self.broker.state["jobs"].values()), 1)
+        # The broker is the parent of every job host and takes the exit of each one that has ended. A host left
+        # untaken stays a zombie on POSIX, and an open handle on Windows, for as long as the broker lives. Three
+        # hosts have run here; the last ends just after it has written its exit, so a later poll takes it.
+        self.until(lambda: not self.broker.hosts)
 
     def test_memory_budget_pools_spreads_and_queues_the_rest(self):
         self.start_broker()
@@ -660,6 +671,14 @@ class BrokerTests(BrokerFixture):
         reserves_with(default)
         calibration.record_job("closure", 200, 1)
         reserves_with(2 ** 0.5 / 4)  # excesses 100, 100 and 200: a deviation of 47.1 over a mean of 133.3
+        # The table keeps the last HISTORY samples of a closure, and the spread is theirs: the table is written
+        # whole after each compile and does not grow with every one. Once that many equal excesses have pushed
+        # the differing ones out, nothing differs, and default_spread stands in again.
+        for _ in range(lean_broker.HISTORY):
+            calibration.record_job("closure", 300, 1)
+        kept = calibration.entry("closure")
+        self.assertEqual((len(kept["excess_mb"]), len(kept["seconds"])), (lean_broker.HISTORY, lean_broker.HISTORY))
+        reserves_with(default)
 
     def serial(self, jobs):
         """Tick through the jobs and confirm that no two of them ever run at once."""

@@ -21,7 +21,7 @@ from coordination import (board, claims_lock, lease, lease_table, main as coordi
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
 from lean_broker import Paths, broker_status, ensure_broker
 from runner import Runner, archive_finished, initialize, main, start, status
-from runtime_support import InstanceLock, alive, git, read_json, remove_tree, write_json
+from runtime_support import InstanceLock, alive, git, read_json, remove_tree, terminate_process, write_json
 from settings import defaults, validate
 from support import (GAP_REASON, HELD_REASON, RECORDS, ROOT, ROOT_STATEMENTS, SUM_SUCC, SUM_ZERO, RefutedRootCase,
                      ScenarioCase, comprehensive, finding, fixture_settings, module_text, record_text, session_record,
@@ -2608,6 +2608,21 @@ class RunnerTests(ScenarioCase):
         write_json(self.instance / 'runner/process.json', {**record, 'process': {'pid': 2 ** 22, 'birth': 'gone'}})
         self.assertFalse(status(self.instance)['runner_alive'])
 
+    def test_a_runner_does_not_start_in_a_folder_whose_init_ended_before_its_first_commit(self):
+        # init makes the first commit as its last step (runner.initialize). The lock on the definition modules, the
+        # check of a settled root and the commit of every publication read from it, so a runner without it ends
+        # at its first publication. An init that is ended inside its Git commands leaves instance.json and a
+        # repository without a commit. That folder is made here by the real Git: the repository of the instance
+        # is removed and made again, which is how init leaves it between `git init` and `git commit`. `run` is
+        # the command that start launches. A pass of the runner would mean that it had started.
+        remove_tree(self.instance / '.git')
+        git(self.instance, 'init')
+        with patch.object(Runner, 'tick', side_effect=AssertionError('the runner began its passes')), \
+                patch('builtins.print') as shown:
+            self.assertEqual(main(['run', str(self.instance)]), 1)
+        self.assertIn('the first commit of this instance cannot be read', json.loads(shown.call_args.args[0])['error'])
+        self.assertFalse((self.instance / 'runner/process.json').exists())
+
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.event('v1', 'review', comprehensive(concerns=[concern('gap', 'Small.root')]))
         with patch('builtins.print') as shown:
@@ -2722,6 +2737,78 @@ class RunnerTests(ScenarioCase):
         [log] = (self.instance / 'runner').glob('start-*.stderr.log')
         self.assertIn('already has a running runner', log.read_text(encoding='utf-8'))
 
+    def test_start_waits_for_a_runner_that_is_slow_to_write_its_start_record(self):
+        # A runner reads the whole research before it writes its start record (Runner.__init__, Runner.run), so
+        # on a large research the record comes seconds after the launch, and start waits up to a minute for it
+        # while the process it launched lives. That process and the clock are stood in for: the process stays
+        # alive, each pause of the wait moves the clock on by a second, and at the fifteenth second the start
+        # record and the line on standard output appear as Runner.run writes them. The test waits for nothing.
+        runner = self.runner()
+        clock = [0.0]
+
+        def pause(seconds):
+            clock[0] += 1.0
+            if clock[0] == 15.0:
+                argv = launch.call_args.args[0]
+                token = argv[argv.index('--token') + 1]
+                write_json(self.instance / 'runner/process.json',
+                           {'process': runner.identity, 'token': token, 'at': time.time()})
+                (self.instance / 'runner' / ('start-' + token + '.stdout.log')).write_text(
+                    json.dumps({'started': runner.identity, 'token': token, 'instance': str(self.instance)}),
+                    encoding='utf-8')
+
+        with patch('runner.subprocess.Popen') as launch, patch('runner.time.sleep', side_effect=pause), \
+                patch('runner.time.monotonic', side_effect=lambda: clock[0]):
+            launch.return_value.poll.return_value = None
+            started = start(self.instance)
+        # The record came at the fifteenth second, and start returned with the process that the record names.
+        self.assertEqual(clock[0], 15.0)
+        self.assertEqual(started['pid'], runner.identity['pid'])
+
+    def test_start_launches_the_runner_and_returns_once_its_start_record_names_this_launch(self):
+        # start launches the detached runner through the run command. It returns that runner's PID and the two log
+        # files of this launch once the runner has written its start record with the token start gave it and has
+        # printed that token (reference/operations.md). Dispatch is stopped first, so the runner launches no
+        # session. The runner is the real process, as are the archiver and the broker that its first pass starts.
+        receipt = self.instance / 'runner/process.json'
+
+        def end_runner():
+            # As the operator ends a runner: the one process that runner/process.json names.
+            if receipt.exists():
+                process = read_json(receipt)['process']
+                if alive(process):
+                    terminate_process(process)
+                deadline = time.monotonic() + 10
+                while alive(process) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            self.addCleanup(end_runner)
+            self.assertEqual(main(['start', str(self.instance)]), 0, shown.call_args)
+        started, record = json.loads(shown.call_args.args[0]), read_json(receipt)
+        self.assertEqual((started['pid'], Path(started['stdout']).name, Path(started['stderr']).name),
+                         (record['process']['pid'], f"start-{record['token']}.stdout.log",
+                          f"start-{record['token']}.stderr.log"))
+        # The runner's own start record is the first line of the returned stdout log.
+        printed = json.loads(Path(started['stdout']).read_text(encoding='utf-8').splitlines()[0])
+        self.assertEqual((printed['started'], printed['token']), (record['process'], record['token']))
+        # The root is open, so this runner goes on; under the stop it has launched no session.
+        self.assertTrue(alive(record['process']))
+        self.assertEqual(read_json(self.instance / 'runner/state.json')['sessions'], {})
+        # The archiver and the broker write into the instance from processes of their own. Before the fixture
+        # removes the folder, the archiver has held and freed its lock, and the broker has recorded itself, so
+        # that the fixture finds it and stops it.
+        lock = self.instance / 'runner/archive-lock'
+        deadline = time.monotonic() + 30
+        while not lock.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        with InstanceLock(lock, 'archiver', wait=30):
+            pass
+        ensure_broker(Paths(self.instance))
+        end_runner()
+        self.assertFalse(alive(record['process']))
+
 
 class ContestedReviewTests(RefutedRootCase):
     """The runner's assignment of comprehensive review for a contested statement."""
@@ -2830,6 +2917,24 @@ class InitializeTests(unittest.TestCase):
         self.addCleanup(stop_broker, instance)
         self.assertEqual(git(instance, 'ls-tree', '-r', '--name-only', 'HEAD', '--', 'canon/records').splitlines(),
                          ['canon/records/.gitignore', 'canon/records/Small/oddSum.md', 'canon/records/Small/root.md'])
+
+    def test_a_read_only_file_of_the_canon_folder_is_writable_in_the_instance(self):
+        # A file of the canon folder that init is given can carry the read-only flag, as a file does that was
+        # protected against change or taken from an archive. Windows refuses to replace or to remove a file with
+        # that flag, and a publication replaces the root's module and its record when the root receives its proof
+        # (canon.sync_tree, canon.apply_written). So init copies the files without the flag. The flag is set on
+        # real files, and the instance is created by runner.initialize.
+        canon, goal, settings = (self.root / name for name in ('canon', 'goal.md', 'settings.json'))
+        write_canon(canon)
+        protected = ('lean/Small/Root.lean', 'records/Small/root.md')
+        for name in protected:
+            os.chmod(canon / name, 0o444)
+        goal.write_text('For every natural number n, the sum of the first n odd numbers is n * n.', encoding='utf-8')
+        write_json(settings, fixture_settings())
+        initialize(self.root / 'instance', goal, canon, 'Small.root', settings)
+        self.addCleanup(stop_broker, self.root / 'instance')
+        for name in protected:
+            self.assertTrue(os.access(self.root / 'instance/canon' / name, os.W_OK), name)
 
 
 class SettingsTests(unittest.TestCase):

@@ -33,8 +33,8 @@ OUTPUT_LIMIT_NOTICE = (
 # only the request of CONTEXT_MESSAGE.
 ENDING_BASES = ('task_completed', 'no_way_forward')
 HANDED_OVER = 'handed_over'
-# The basis of the host's own authorization when a turn ended at the limit of the context window before the
-# session had handed its task over (retention.context_limit). The runner continues the task all the same.
+# The basis of the host's own authorization when a turn ended at the limit of the context window and the session
+# had written no valid decision in it (retention.context_limit). The runner continues the task all the same.
 CONTEXT_LIMIT = 'context_limit'
 # What the host sends a session, once in its life, when the context of the session's own requests reaches
 # launch.CONTEXT_MESSAGE_TOKENS (run_turn). It is a request to decide the ending and carries the ID of that
@@ -317,11 +317,22 @@ def supervise(session, launch):
         limit = output_limit(folder, policy['provider']) if failed else None
         if failed and limit is None and receives_messages(session) and context_limit(folder, policy['provider']):
             # The conversation is full. With compaction off the CLI shortens nothing, so no further turn of
-            # this conversation can do anything. The files are as the session left them, and the runner
-            # starts a new session of the role from them. A session that is sent no message has its
-            # compaction and does not end in this way; for it the turn failed as any other.
-            authorize(session, state, 'runner', CONTEXT_LIMIT,
-                      'The conversation reached the limit of its context window; the CLI refused its next request.')
+            # this conversation can do anything. A producing session or a peer may have written its decision
+            # before the request that was refused, and the decision is then its answer all the same: the
+            # refused request took nothing from its files. A review and an organizer end on a decision only
+            # where it hands the task over, which is what follows here in any case. Without a valid decision
+            # the files are as the session left them, and the runner starts a new session of the role from
+            # them. A session that is sent no message has its compaction and does not end in this way; for it
+            # the turn failed as any other.
+            decision = None
+            if state['request'] is not None and policy['role'] not in OUTPUT_ROLES:
+                decision, problem = end_decision(submitted, state['request'])
+                write_json(folder / 'decision-check.json', {'decision': decision, 'error': problem})
+            if decision is not None:
+                authorize(session, state, 'worker', decision['basis'], decision['explanation'])
+            else:
+                authorize(session, state, 'runner', CONTEXT_LIMIT,
+                          'The conversation reached the limit of its context window; the CLI refused its next request.')
             return result
         if cancelled or signal or (result['exit_code'] != 0 and limit is None):
             authorize(session, state, 'runner', 'interrupted',

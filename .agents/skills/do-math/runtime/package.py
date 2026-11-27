@@ -125,14 +125,32 @@ def git_members(repository, commit, paths):
             raise CanonError('Git: ' + message)
 
 
+def is_text_file(data):
+    """Whether the bytes of a file are a text: UTF-8, and no NUL byte among them."""
+    if b'\0' in data:
+        return False
+    try:
+        data.decode('utf-8')
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
 def export_commit(repository, commit, paths, target, strip=''):
-    """Write the files of a commit under the given paths into a folder; `strip` is a path prefix to leave out."""
+    """Write the files of a commit under the given paths into a folder; `strip` is a path prefix to leave out.
+
+    A text file (is_text_file) is written with line feeds alone, whatever line endings Git holds it with. `init`
+    copies the operator's files into an instance as they are, so where Git converts nothing the first commit
+    holds a definition module or a record with Windows line endings. The run writes every file with line feeds
+    alone (write_text), compares each definition module with what this function wrote of the first commit, byte
+    for byte (definition_problems), and passes no text file of the package with another line ending
+    (standalone_problems). So it reads the research as it writes it."""
     target = Path(target)
     for name, data in git_members(repository, commit, paths):
         relative = name[len(strip):] if strip and name.startswith(strip) else name
         path = target / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        path.write_bytes(data.replace(b'\r\n', b'\n') if is_text_file(data) else data)
 
 
 def reduced_settings(settings):
@@ -557,10 +575,10 @@ def follow_renames(records_root, renames, removed):
     for old, new in renames.items():
         path = records_root / (name_path(old) + '.md')
         if path.is_file():
-            moved[new] = path.read_text(encoding='utf-8-sig')
+            moved[new] = read_text(path)
             path.unlink()
     for new, text in moved.items():
-        write_text(records_root / (name_path(new) + '.md'), text.replace('\r\n', '\n'))
+        write_text(records_root / (name_path(new) + '.md'), text)
     if renames:
         header = lambda match: match[1] + renames.get(match[2], match[2])
         for path in files_under(records_root).values():
@@ -647,13 +665,15 @@ def plain(text):
     r"""A title or a name written in TeX, as a file that is no TeX gives it.
 
     An accent command with its letter, such as `\H{o}` or `{\'a}`, and a command for a letter, such as `\o` or
-    `\ss`, become the letter that TeX prints for them, and the braces go. A formula between dollar signs stays as
-    it is written, braces included, since its commands stand for no letters. Any other command stays as well,
-    without its braces. Spaces and line ends become single spaces."""
+    `\ss`, become the letter that TeX prints for them, and the braces go. Two hyphens and three become the dashes
+    that TeX prints for them, as between the two names of `Erd\H{o}s--Rado`. A formula between dollar signs stays
+    as it is written, braces and hyphens included, since its commands stand for no letters. Any other command
+    stays as well, without its braces. Spaces and line ends become single spaces."""
     def words(part):
         part = TEX_ACCENT.sub(lambda found: unicodedata.normalize(
             'NFC', (found[3] or found[4])[-1] + TEX_MARKS[found[1] or found[2]]), part)
-        return TEX_LETTER.sub(lambda found: TEX_LETTERS[found[1]], part).replace('{', '').replace('}', '')
+        part = TEX_LETTER.sub(lambda found: TEX_LETTERS[found[1]], part)
+        return part.replace('---', '\u2014').replace('--', '\u2013').replace('{', '').replace('}', '')
 
     parts = re.split(r'(\$[^$]*\$)', text)
     return ' '.join(''.join(part if number % 2 else words(part) for number, part in enumerate(parts)).split())
@@ -670,15 +690,18 @@ def bibliography_field(text, key, field):
     found = re.search(r'\b' + field + r'\s*=\s*(\{|")', entry[1], re.I)
     if not found:
         return ''
-    start, depth, out = found.end(), 1, []
-    closing = '}' if found[1] == '{' else '"'
+    # A brace closes a value that a brace opened, and a quotation mark one that a quotation mark opened. Between
+    # braces a quotation mark is part of the value: "G{\"o}del" is how such a field writes an umlaut.
+    start, depth, out = found.end(), 0, []
     for char in entry[1][start:]:
-        if found[1] == '{' and char == '{':
+        if char == '{':
             depth += 1
-        elif char == closing:
-            depth -= 1
-            if depth == 0:
+        elif char == '}':
+            if depth == 0 and found[1] == '{':
                 break
+            depth -= 1
+        elif char == '"' and depth == 0 and found[1] == '"':
+            break
         out.append(char)
     value = ''.join(out)
     return plain(value) if field in ('title', 'author') else ' '.join(value.replace('{', '').replace('}', '').split())
@@ -1548,8 +1571,8 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               f"- Lean reports for `{facts['root']}` the axioms: {facts['axioms_root']}."
               + ('' if same else f" For `{facts['main']}`: {facts['axioms_main']}."),
               '- A script compared the definitions and the statement of the proposition with their first form, which '
-              'was fixed before the research began: the definition files byte for byte, the statement by the term that '
-              'Lean elaborates. They are the same.',
+              'was fixed before the research began: the definition files byte for byte apart from the form of their '
+              'line endings, the statement by the term that Lean elaborates. They are the same.',
               f"- Every public declaration has a record under `records/` ({facts['records']} records). An AI session "
               'wrote each record from the Lean text, and an AI session that did not write it compared it with that text.',
               f"- The paper states {facts['statements']} numbered statements. An AI session compared each with the "
@@ -1729,11 +1752,7 @@ def standalone_problems(package, work, account, freeze):
                 problems.append(f'{relative} holds the account name inside a path of a home folder')
     for relative, path in files.items():
         data = path.read_bytes()
-        if b'\r' in data and b'\0' not in data:
-            try:
-                data.decode('utf-8')
-            except UnicodeDecodeError:
-                continue
+        if b'\r' in data and is_text_file(data):
             problems.append(f'{relative} has line endings other than LF')
     places = [str(Path(work).resolve()), Path(work).resolve().as_posix()]
     for relative in WRITTEN:

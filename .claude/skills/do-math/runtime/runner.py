@@ -126,9 +126,13 @@ def initialize(instance, root_file, canon_folder, root_declaration, settings_fil
                  'sessions', 'runner', 'control/inputs', 'control/requests', 'canon'):
         (instance / name).mkdir(parents=True)
     canon = Canon(instance)
-    shutil.copytree(source / 'lean', canon.lean)
+    # Copied without the read-only flag that a file of the canon folder can carry (shutil.copyfile), as the
+    # bibliography is below. Windows refuses to replace or to remove a file with that flag: a publication could
+    # not put the root's proof into its module and its record (canon.sync_tree, canon.apply_written), and a
+    # command of a session could not remove its copy of the module root to make the next one (canon.copy_tree).
+    shutil.copytree(source / 'lean', canon.lean, copy_function=shutil.copyfile)
     if (source / 'records').is_dir():
-        shutil.copytree(source / 'records', canon.records)
+        shutil.copytree(source / 'records', canon.records, copy_function=shutil.copyfile)
     if (source / 'bibliography.bib').is_file():
         shutil.copyfile(source / 'bibliography.bib', canon.bibliography)
     (instance / 'root.md').write_bytes(root)
@@ -927,7 +931,8 @@ class Runner:
             if changed or removed:
                 publication.update(stage='build', build=start_build(
                     self.instance, stage / 'lean', self.model['library'], 'runner',
-                    self.settings['lean']['calibration_expect_mb'], extracted, required_pairs(records)))
+                    self.settings['lean']['calibration_expect_mb'], extracted, required_pairs(records),
+                    index=index))
             else:
                 publication['stage'] = 'check'
             self.save()
@@ -1672,7 +1677,9 @@ def start(instance):
         child = subprocess.Popen([sys.executable, '-B', str(SCRIPT), 'run', str(instance), '--token', token],
                                  cwd=instance, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
                                  **popen_options(detached=True))
-    deadline = time.monotonic() + 10
+    # A runner reads the whole research before it writes its start record (Runner.__init__, Runner.run), so
+    # the record comes later as the research grows. A runner that has exited ends this wait at once, below.
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         path = instance / 'runner/process.json'
         if path.exists():
@@ -1797,7 +1804,22 @@ def main(argv=None):
         if args.command == 'init':
             initialize(instance, args.root, args.canon, args.root_declaration, args.settings)
         elif args.command == 'run':
-            Runner(instance).run(args.token)
+            runner = Runner(instance)
+            try:
+                # init makes the instance's first commit as its last step (initialize). The lock on the
+                # definition modules and the check of a settled root read from that commit, and the commit of
+                # a publication asks Git for the history (canon.definition_modules, Runner.check_root,
+                # Runner.publish). When init is ended inside its Git commands, or one of them fails, the folder
+                # has instance.json and a repository without a commit. A runner that began there would launch
+                # sessions and end at its first publication, and at every start after it. start launches the
+                # runner through this command, so a runner started in either way has passed here.
+                first_commit(instance)
+            except RuntimeError as exc:
+                raise ValueError('the first commit of this instance cannot be read. init makes it as its last '
+                                 'step, so a folder in which init did not run to its end has none: such a folder '
+                                 'is not an instance, and init creates the instance at a new path. '
+                                 + str(exc)) from None
+            runner.run(args.token)
         elif args.command == 'start':
             result = start(instance)
         elif args.command == 'status':

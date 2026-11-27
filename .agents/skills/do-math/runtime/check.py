@@ -229,7 +229,6 @@ def change_check(root, model, owner, held=()):
                  for relative in change['understanding']),
              f'a resolution of {target} comes with the text that settles it, as questions/{target}.md')
     need(not change['retire'], 'only the organizer retires an alternative proof')
-    regular_tree(root)
     return change, receipt
 
 
@@ -368,14 +367,12 @@ def assessment_check(data, root, candidate, model, instance, sid):
         need(path.name.casefold() not in ('change.json', 'applied.json', 'provenance.json', 'verify.json'),
              'review output top-level names change.json, applied.json, provenance.json and verify.json are '
              'reserved for publication attachments')
-    regular_tree(root)
 
 
 def comprehensive_check(data, root, model):
     file(root, data.get('feedback'))
     findings_check(data.get('findings'), model, set(model['elements']))
     concerns_check(data.get('concerns', []), set(model['elements']))
-    regular_tree(root)
 
 
 def organization_check(data, root, model, batch):
@@ -415,7 +412,6 @@ def organization_check(data, root, model, batch):
                  f"{item['alternative']} would take the place of a proof of {item['into']} that stands higher; "
                  'a retirement keeps the proof with the higher standing, and of two proofs with the same standing '
                  'the one that is complete in Lean')
-    regular_tree(root)
 
 
 def pipeline_sections(instance, state, pipeline, model, session):
@@ -434,8 +430,9 @@ def check_session(session):
         inp = read_json(session / 'input.json')
         instance, role, task = Path(inp['instance']), inp['role'], inp['task']
         output = session / 'output'
+        # Made here for every role, before the roles part: no output folder holds a filesystem link.
+        regular_tree(output)
         if role in PRODUCERS:
-            regular_tree(output)
             outcome = no_research_outcome(session, role)
             if outcome is not None:
                 reported_availability(session, outcome)

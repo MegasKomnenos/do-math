@@ -3824,10 +3824,11 @@ class Paper(Sessions):
                    citations=[entry['element'] for entry in draft['citations']], slips=slips, gaps_dropped=dropped,
                    partial=trimmed, record_disagreements=disagreements)
         self.event('end', status='draft', open=[], kept=[], **({'not_done': list(self.undone)} if self.undone else {}))
-        print(f'The draft is {self.out / "draft.json"}, beside the plan and the account of the papers (plan.json, '
-              f'study.md); the log is {self.out / "log.json"}.')
+        # As in Paper.finish: the folder and the name of an element are printed with depmap.say.
+        depmap.say(f'The draft is {self.out / "draft.json"}, beside the plan and the account of the papers (plan.json, '
+                   f'study.md); the log is {self.out / "log.json"}.')
         for line in not_done_lines(self.undone):
-            print(line)
+            depmap.say(line)
         print(f"{len(draft['statements'])} statements and {len(draft['formulas'])} formulas were drafted; "
               f"{len(draft['gaps'])} gaps and {len(draft['citations'])} results to cite are listed.")
         return 0
@@ -4892,9 +4893,11 @@ class Paper(Sessions):
         self.event('end', status=status, open=list(self.open), kept=list(self.kept),
                    **({'closed': list(self.closed)} if self.closed else {}),
                    **({'not_done': list(self.undone)} if self.undone else {}))
-        print(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
+        # The folder of the run and the name of an element can hold a character that the encoding of redirected
+        # output lacks. It is printed as an escape (depmap.say), so that it does not end a finished run with an error.
+        depmap.say(f'The manuscript is {self.out / "paper.tex"}; the log is {self.out / "log.json"}.')
         for line in not_done_lines(self.undone):
-            print(line)
+            depmap.say(line)
         if self.closed:
             count = lambda kind: sum(entry['kind'] == kind for entry in self.closed)
             differing = sum(entry['kind'] == 'differs' or (entry['kind'] == 'restated' and entry['verdict'] != 'same')
@@ -4924,7 +4927,7 @@ class Paper(Sessions):
                   'so paper.pdf was not typeset. Everything else is done. When a TeX command is available, run this '
                   'command again with --typeset-only and the same --out.')
         elif (self.out / 'paper.pdf').is_file():
-            print(f'The paper is {self.out / "paper.pdf"}.')
+            depmap.say(f'The paper is {self.out / "paper.pdf"}.')
         return {'complete': 0, 'open_findings': 2, 'no_tex': 3}[status]
 
     # -- the last repair of findings, and the reading of what it changed ------------------------------------
@@ -5522,10 +5525,9 @@ class Paper(Sessions):
             self.place_resolution()
         held = sorted(path.stem for path in (out / 'parts').glob('*.tex')) if (out / 'parts').is_dir() else []
         study = read_file(out / 'study.md') if (out / 'study.md').is_file() else ''
-        self.sketched = self.sketched or self.recorded_draft()
         if (out / 'plan.json').is_file() and study.strip():
             plan = read_json(out / 'plan.json')
-            problems = check_plan(self.materials, plan, [entry['key'] for entry in self.collection])
+            problems = check_plan(self.materials, plan, self.keys())
             if not problems:
                 self.take_plan(plan, study)
             elif held:
@@ -5680,6 +5682,9 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                        + ('Its draft is draft.json, beside plan.json and study.md' if ended['status'] == 'draft'
                           else 'Its manuscript failed the machine checks or the typesetting after their repairs, and '
                                'no option takes such a manuscript up; a run into a new folder writes the paper anew'
+                          if left_failing(written_end(run.log))
+                          else 'A pass over its finished manuscript left the machine checks or the typesetting open '
+                               'after their repairs; --typeset-only makes them again, with their repairs'
                           if left_failing(ended)
                           else '--open-findings acts on what it left open, and --typeset-only typesets the manuscript '
                                'it holds' if ended['status'] == 'open_findings'
@@ -5732,7 +5737,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
             said.append(f'The paper is written from the draft in {from_draft}: its plan is brought to these materials '
                         'by script, and a planning session is launched only when the check of the plan then finds '
                         'problems. What follows describes a planning session of a run without a draft.')
-        print('\n'.join(run.preview(said)))
+        depmap.say('\n'.join(run.preview(said)))  # names of elements and the folder of a draft, as in Paper.finish
         return 0
     with stops_recorded(run):
         if run.narrow is not None and run.narrow.get('pass'):
@@ -5772,10 +5777,14 @@ def ended_run(instance, out, tex, choice, parallel, dry, gate):
                    'event of its log.json is not the end of a run. A run that is going comes to its end by itself; '
                    'a run that was stopped is continued with --resume')
     left = json.loads(json.dumps(ended['open']))
-    if any(item['check'] in (MACHINE, TYPESETTING) for item in left):
+    if left_failing(ended) and left_failing(written_end(run.log)):
         raise Stop(f'the run in {out} ended before its readings and its comparison were made, because the machine checks '
                    'or the typesetting stayed open; --open-findings acts on what the comparisons of a run that came to '
                    'its end left open')
+    if left_failing(ended):
+        raise Stop(f'a pass over the finished manuscript in {out} left the machine checks or the typesetting open after '
+                   'their repairs; --typeset-only makes them again, with their repairs, and --open-findings then acts '
+                   'on what the comparisons left open')
     if not left:
         raise Stop(f"the run in {out} came to its end with no finding left open ({ended['status']}); there is nothing "
                    'to act on')
@@ -5839,10 +5848,22 @@ def last_end(log):
     return log[-1] if log and log[-1].get('event') == 'end' and log[-1].get('status') != 'failed' else None
 
 
-def left_failing(ended):
-    """Whether a run ended with its manuscript failing the machine checks or the typesetting after their repairs.
+def written_end(log):
+    """The `end` event of the run that wrote the manuscript of a log: the first that is not a failure, or None.
 
-    Such a run ended before its readings and its comparisons were complete, and nothing takes it up."""
+    A run that was stopped and continued has its failures before that event. A pass over the finished
+    manuscript (--open-findings, --typeset-only, the closing pass) ends the run anew after it, with an
+    `end` event of its own."""
+    return next((event for event in log if event.get('event') == 'end' and event.get('status') != 'failed'), None)
+
+
+def left_failing(ended):
+    """Whether an `end` event lists the machine checks or the typesetting as open after their repairs.
+
+    When the event is that of the run that wrote the manuscript (written_end), that run ended before its
+    readings and its comparisons were complete, and no option takes the manuscript up. When it is that of a
+    later pass over a finished manuscript, the readings and the comparisons stand, and --typeset-only makes
+    the machine checks and the typesetting again (typeset_only)."""
     return any(item['check'] in (MACHINE, TYPESETTING) for item in ended.get('open') or [])
 
 
@@ -5884,7 +5905,7 @@ def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_
     # The first end in the log that is not a failure is that of the run that wrote the manuscript; a run that was
     # stopped and continued has its failures before it. The machine checks and the typesetting are made again
     # here, and nothing else is.
-    produced = next((event for event in run.log if event['event'] == 'end' and event.get('status') != 'failed'), {})
+    produced = written_end(run.log) or {}
     left = produced.get('open', [])
     if produced.get('status') not in ('complete', 'no_tex', 'open_findings') \
             or any(item['check'] in (MACHINE, TYPESETTING) for item in left):

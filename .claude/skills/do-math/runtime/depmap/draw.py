@@ -620,7 +620,7 @@ def overlap(first, second):
 def stretches(routes):
     """The straight parts of the lines of one net, each once: parts that lie on one another or touch are joined.
 
-    A part that is neither level nor upright is kept as it is."""
+    A line runs at right angles (layered), so each of its parts is level or upright."""
     level, upright, found = {}, {}, []
     for points in routes:
         for (x1, y1), (x2, y2) in zip(points, points[1:]):
@@ -628,8 +628,6 @@ def stretches(routes):
                 level.setdefault(round(y1, 2), []).append((min(x1, x2), max(x1, x2)))
             elif abs(x1 - x2) < 0.01 and abs(y1 - y2) >= 0.01:
                 upright.setdefault(round(x1, 2), []).append((min(y1, y2), max(y1, y2)))
-            elif abs(x1 - x2) >= 0.01:
-                found.append(((x1, y1), (x2, y2)))
     for spans, flat in ((level, True), (upright, False)):
         for at, parts in spans.items():
             parts.sort()

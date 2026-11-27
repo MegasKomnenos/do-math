@@ -1071,14 +1071,21 @@ def statement_differences(first, now, name):
 
 # ----------------------------------------------------------------------------- building through the broker
 
-def start_build(instance, lean_root, library, session, expect_mb, extract, pairs, fresh=False, targets=None):
+def start_build(instance, lean_root, library, session, expect_mb, extract, pairs, fresh=False, targets=None,
+                index=None):
     """Queue one broker build of the library under lean_root, with an extraction of the named modules.
 
     The extraction file is one more target of the same build, so it is compiled after the modules it
     imports and its output is kept with the build like any target's. A pair can name a declaration in a
     module that no extracted module imports: a new proof in a new module need not import the module of
     the statement its record says it proves or refutes. An extraction asked about pairs therefore imports
-    every module of the library. Returns the build ID."""
+    the modules of the declarations its pairs name as well. `index` is the index of the canon that the
+    tree under lean_root was copied from, and it gives the module of each declaration that canon has. A
+    module the change left as it was still holds its declarations. A declaration the change brought or
+    moved stands in a module the change wrote, and such a module is among the extracted ones
+    (with_importers). The compile of the extraction loads every module the file imports, with its
+    proofs, so the file imports these modules and no others. Without `index` it imports every module of
+    the library. Returns the build ID."""
     from lean_broker import Paths, build
     lean_root = Path(lean_root)
     names = [module for module, _ in library_modules(lean_root, library)]
@@ -1086,8 +1093,14 @@ def start_build(instance, lean_root, library, session, expect_mb, extract, pairs
         raise CanonError(f'no module of the library {library} under {lean_root}')
     files = [str(lean_root / module_file(m)) for m in (targets if targets is not None else names)]
     if extract or pairs:
-        write_text(lean_root / (EXTRACT_MODULE + '.lean'),
-                   extraction_source(library, extract, pairs, names if pairs else None))
+        imports = None
+        if pairs and index is None:
+            imports = names
+        elif pairs:
+            named = {index['entries'][name]['module'] for _, declaration, target in pairs
+                     for name in (declaration, target) if name in index['entries']}
+            imports = sorted(set(extract) | (named & set(names)))
+        write_text(lean_root / (EXTRACT_MODULE + '.lean'), extraction_source(library, extract, pairs, imports))
         files.append(str(lean_root / (EXTRACT_MODULE + '.lean')))
     return build(Paths(instance), lean_root, files, expect_mb, session, fresh_targets=fresh)['build']
 

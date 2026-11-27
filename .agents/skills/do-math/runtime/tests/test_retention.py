@@ -270,6 +270,28 @@ class RetentionTests(unittest.TestCase):
             self.assertNotIn('Duplicated transport event', result)
             self.assertNotIn('OPAQUE_TRANSPORT', result)
 
+    def test_what_a_claude_session_read_of_its_own_pack_is_left_out_of_the_readable_conversation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+
+            def read(call, path, returned):
+                return [{'type': 'assistant', 'message': {'role': 'assistant', 'content': [
+                            {'type': 'tool_use', 'id': call, 'name': 'Read',
+                             'input': {'file_path': str(path), 'offset': 501}}]}},
+                        {'type': 'user', 'message': {'role': 'user', 'content': [
+                            {'type': 'tool_result', 'tool_use_id': call, 'content': returned}]}}]
+            rows = (read('call1', session / 'pack.md', '501\tTHE GUIDES OF THE PACK')
+                    + read('call2', session / 'output/report.md', '501\tThe bound holds for every n up to 7.'))
+            source = session / 'transcript.jsonl'
+            source.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+            self.assertEqual(conversation(source, session / 'conversation.md', True), 4)
+            body = (session / 'conversation.md').read_text(encoding='utf-8')
+            # The call stays, with the file and the range it read; what it returned of the pack stands beside
+            # the conversation as pack.md. What a call returned of any other file is retained.
+            self.assertIn('file_path:\n' + str(session / 'pack.md') + '\noffset:\n501', body)
+            self.assertNotIn('THE GUIDES OF THE PACK', body)
+            self.assertIn('The bound holds for every n up to 7.', body)
+
     def test_malformed_native_payload_does_not_hide_later_messages_and_tool_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -321,10 +343,12 @@ class RetentionTests(unittest.TestCase):
                     else:
                         native = storage / 'projects/project' / (identity + '.jsonl')
                         announcement = {'type': 'system', 'session_id': identity}
-                        # The report of a delegated agent that finished while the session was at work in a turn. The
-                        # CLI records it as an attachment and as no message; an attachment of another type is a
-                        # record of the CLI's own.
+                        # The report of a delegated agent that finished while the session was at work in a turn, and
+                        # a message that the session's hook handed it. The CLI records each as an attachment and as
+                        # no message. Beside the message it records what the hook printed, which holds the same text
+                        # once more; that and an attachment of any other type are records of the CLI's own.
                         report = 'The delegated check found no counterexample for n up to 9.'
+                        handed = 'Message from the operator of this research:\nThe bound is wanted for odd n as well.'
                         rows = [
                             {'type': 'assistant', 'message': {'model': 'claude-model', 'role': 'assistant',
                              'content': [{'type': 'text', 'text': message}], 'stop_reason': 'end_turn',
@@ -334,6 +358,10 @@ class RetentionTests(unittest.TestCase):
                             {'type': 'attachment', 'attachment': {
                                 'type': 'queued_command', 'commandMode': 'task-notification',
                                 'prompt': '<task-notification>\n<result>' + report + '</result>\n</task-notification>'}},
+                            {'type': 'attachment', 'attachment': {
+                                'type': 'hook_success', 'hookEvent': 'PostToolBatch', 'stdout': 'HOOK_OUTPUT_ONLY'}},
+                            {'type': 'attachment', 'attachment': {
+                                'type': 'hook_additional_context', 'hookEvent': 'PostToolBatch', 'content': [handed]}},
                             {'type': 'attachment', 'attachment': {'type': 'deferred_tools_record',
                                                                   'entries': ['CLI_RECORD_ONLY']}},
                         ]
@@ -352,7 +380,7 @@ class RetentionTests(unittest.TestCase):
                     self.assertEqual((session / copied).read_bytes(), raw)
                     self.assertTrue(receipt['cli_activity'])
                     self.assertIsNone(receipt['limitation'])
-                    self.assertEqual(receipt['conversation_items'], 3 if provider == 'claude' else 2)
+                    self.assertEqual(receipt['conversation_items'], 4 if provider == 'claude' else 2)
                     body = (session / receipt['conversation']).read_text(encoding='utf-8')
                     self.assertIn(message, body)
                     self.assertIn(tool_output, body)
@@ -362,6 +390,8 @@ class RetentionTests(unittest.TestCase):
                         self.assertNotIn('cache_read_input_tokens', body)
                         # What reached the session in the middle of a turn is part of what it was told.
                         self.assertIn(report, body)
+                        self.assertIn(handed, body)
+                        self.assertNotIn('HOOK_OUTPUT_ONLY', body)
                         self.assertNotIn('CLI_RECORD_ONLY', body)
 
     def test_output_limit_is_read_from_the_claude_stream_only(self):

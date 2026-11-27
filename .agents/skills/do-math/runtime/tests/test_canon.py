@@ -2709,6 +2709,12 @@ class CandidateToolTests(InstanceCase):
         self.assertEqual(len(result['errors']), 1, result['errors'])
         self.assertRegex(result['errors'][0],
                          'Small.other: Lean did not confirm that its statement is the statement of Small.root')
+        # `Small.Again` does not import the module of `Small.root`. The extraction that is asked about the two
+        # claims imports that module, which the index names, beside the changed one, and no other module of
+        # the canon: its compile loads every module it imports.
+        (extraction,) = self.root.glob('prepare-*/lean/DoMathExtract.lean')
+        self.assertEqual(re.findall(r'^import (\S+)$', extraction.read_text(encoding='utf-8'), re.MULTILINE),
+                         ['Lean', 'Small.Again', 'Small.Root'])
 
     def test_prepare_is_for_a_peer_or_an_organizer(self):
         for role in ('attempt', 'explore', 'formalizer', 'review'):
@@ -2767,6 +2773,8 @@ class CandidateToolTests(InstanceCase):
             self.assertEqual(record['modules'][name]['status'], 'finished', name)
             self.assertEqual(record['modules'][name]['exit_code'], 0, name)
             self.assertTrue(record['modules'][name].get('job'), name)
+        # A module the candidate leaves as it is, is not compiled again: the review takes it from the cache.
+        self.assertEqual(record['modules']['Small.Defs']['status'], 'cached')
         # The frozen candidate and the reviewing session's output are left as they were.
         self.assertEqual(tree_hash(folder), frozen)
         self.assertEqual(list((session / 'output').iterdir()), [])
@@ -2863,6 +2871,11 @@ class CandidateToolTests(InstanceCase):
                 raise
             # Without the symlink privilege, a junction is the directory link Windows allows.
             subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(outside)], check=True, capture_output=True)
+        self.assertEqual(check_session(session), ['filesystem links cannot be published: ' + str(link)])
+        # The refusal is made before the roles part, so the output of every role is held to it: the same folder,
+        # read as the output of a comprehensive review, is refused for the link before anything else of it is read.
+        write_json(session / 'input.json', {**read_json(session / 'input.json'), 'role': 'review',
+                                            'task': {'kind': 'comprehensive'}})
         self.assertEqual(check_session(session), ['filesystem links cannot be published: ' + str(link)])
 
 

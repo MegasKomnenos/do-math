@@ -434,11 +434,17 @@ def git(instance, *args):
     # The runtime writes its files with line feeds alone, so Git would then refuse them at `git add`, which
     # would end init, or the runner at a publication and at every start after it. Only that refusal is switched
     # off here: the conversion stays as that person set it, so what a commit stores is the same as before.
+    # core.longpaths=true: the files of an instance stand at paths that follow the names of declarations
+    # (canon.name_path), and a name that says what a statement states is long. Left to its default, Git for
+    # Windows takes no path of more than 260 characters, also where Windows itself allows one and the runtime
+    # has written the file, so the `git add` of a publication would fail on such a file, which would end the
+    # runner at that publication and at every start after it, or would leave the file out of the commit.
+    # Only Git for Windows reads the setting.
     result = subprocess.run(
         ["git", "-C", str(instance), "-c", "user.name=do-math",
          "-c", "user.email=do-math@localhost", "-c", "core.fsync=all", "-c", "commit.gpgsign=false",
          "-c", "core.hooksPath=" + (Path(instance) / ".git" / "hooks-not-used").as_posix(),
-         "-c", "core.safecrlf=false",
+         "-c", "core.safecrlf=false", "-c", "core.longpaths=true",
          "--literal-pathspecs", *args],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         encoding="utf-8", errors="replace", **popen_options())

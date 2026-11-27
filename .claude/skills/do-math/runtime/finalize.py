@@ -290,7 +290,8 @@ class Run:
                   'library': self.library, 'root': self.root, 'main': self.state.get('main') or '',
                   'imported_source': source if source else
                   'There is none: the library imports nothing beyond what Lean itself brings.',
-                  'expect_mb': str(self.expect_mb), **(names or {})}
+                  'expect_mb': str(self.expect_mb),
+                  'allowed_axioms': ', '.join(f'`{axiom}`' for axiom in self.allowed) or 'none', **(names or {})}
 
         def value(match):
             if match[1] not in values:
@@ -680,7 +681,7 @@ class Run:
         self.sessions.event('start', instance=str(instance), commit=commit, first=first, definitions=definitions,
                             version=version, measured=measured)
         self.decide('Stage 0: start', f'The research is read at the commit `{commit}`, the head of the instance\'s '
-                    f'repository when the run began. The definition modules are: ' + ', '.join(definitions) + '.')
+                    f'repository when the run began. The definition modules are: ' + (', '.join(definitions) or 'none') + '.')
 
     def tex_found(self):
         """Refuse a start when no TeX command is found, or when the one that the configuration names is not."""
@@ -702,7 +703,8 @@ class Run:
 
     def posed(self):
         """The first line of a file that a session reads the library by: which modules stay as they were posed."""
-        return ('The definition modules are ' + ', '.join(f'`{module}`' for module in self.definitions)
+        named = ', '.join(f'`{module}`' for module in self.definitions)
+        return (('The definition modules are ' + named if named else 'There is no definition module')
                 + f"; the root's module is `{self.state['root_module']}`.\n\n")
 
     # -- stage 1: selection -----------------------------------------------------------------------------
@@ -1825,9 +1827,8 @@ class Run:
         for name, text in build.items():
             write_text(lean / name, text)
         toolchain = build['lean-toolchain'].strip()
-        # Challenge.lean holds the root as it was posed: in the module of the first commit that held it (start). A run
-        # that an earlier version of this code began kept no `posed_module` and goes by the root's module as before.
-        first, root_module = self.work / 'first' / 'lean', self.state.get('posed_module', self.state['root_module'])
+        # Challenge.lean holds the root as it was posed: in the module of the first commit that held it (start).
+        first, root_module = self.work / 'first' / 'lean', self.state['posed_module']
         decision = read_json(self.work / 'lib' / '0-selected' / 'decision.json')
         title = read_json(self.work / 'lib' / '6-draft' / 'plan.json')['title']
         records = package.read_records(self.package / 'records')
@@ -2145,6 +2146,11 @@ class Run:
                     continue
                 texts[name], missing = package.fill(package.read_text(output / name), facts)
                 problems += [f'{name} uses {{{{facts.{key}}}}}, and facts.json has no such key' for key in missing]
+                # A placeholder in another form, such as one whose key holds a hyphen, is not filled and names no key.
+                # It is refused here, where the session can still be told of it.
+                if not missing and '{{facts.' in texts[name]:
+                    problems.append(f'{name} holds a placeholder that is not filled: its form is {{{{facts.<key>}}}}, '
+                                    'with a key of facts.json and nothing else between the full stop and the braces')
                 # A link is read here, where the session can still be told of it. The final check reads every link
                 # as well, and no step before it is made again. README.md and MANIFEST.sha256 are written after the
                 # prose, so a link to one of them is left to that check.
@@ -2212,8 +2218,6 @@ class Run:
             self.decide('Stage 5: what the reader of the package found and the run did not correct', '\n'.join([
                 'These passages stand in the package as they are. The program writes them, or an earlier stage fixed '
                 'them, and no session of this stage may rewrite them.', '', *package.finding_lines(outside)]))
-        if '{{facts.' in package.read_text(self.package / 'README.md'):
-            raise Stop('README.md holds a placeholder that was not filled')
         write_text(self.package / 'MANIFEST.sha256', package.manifest_text(self.package))
 
     # -- stage 6: the final check, and the end ----------------------------------------------------------
@@ -2316,7 +2320,8 @@ class Run:
             '## The checks, and what each established', '',
             f"- The research was read at the commit `{self.state['run']['commit']}`; its root was formally proved there.",
             '- Every step that wrote Lean: each file a module of at most 10,000 lines; the definition modules byte for '
-            'byte those of the first commit; the build of all modules through the run\'s compile service.',
+            'byte those of the first commit, apart from the form of their line endings; the build of all modules '
+            'through the run\'s compile service.',
             f"- The freeze: `lake build` ended with exit code 0; Lean reports for `{self.root}`: {facts['axioms_root']}; "
             f"for `{self.state['main']}`: {facts['axioms_main']}; the root has the statement the instance fixed, by the "
             f"term Lean elaborates; Challenge.lean states the compared theorems ({facts['compared']}) as the library does.",

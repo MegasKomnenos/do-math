@@ -23,16 +23,41 @@ def readable(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+PACK_READ = 'Left out here: what this call read of pack.md, which stands in this folder.'
+
+
+def shown(block, pack, pack_reads):
+    """One block of a Claude message as the readable conversation shows it.
+
+    A session begins by reading its pack, and what its Read tool returned of it is a quarter to a half of
+    what a conversation holds, while the pack itself stands in the session folder. The result of a call
+    that read `pack` therefore shows PACK_READ in place of that text. The call, with the range it read,
+    and every other block are shown as they are. `pack_reads` collects the IDs of the calls that read `pack`."""
+    if not isinstance(block, dict):
+        return block
+    if block.get('type') == 'tool_use' and block.get('name') == 'Read' and isinstance(block.get('input'), dict):
+        path = block['input'].get('file_path')
+        if isinstance(path, str) and isinstance(block.get('id'), str) and Path(os.path.abspath(path)) == pack:
+            pack_reads.add(block['id'])
+    elif (block.get('type') == 'tool_result' and isinstance(block.get('tool_use_id'), str)
+          and block['tool_use_id'] in pack_reads):
+        return {**block, 'content': PACK_READ}
+    return block
+
+
 def conversation(source, destination, native, *, append=False, label=None, note=None):
-    """Retain all canonical messages and tool contents without truncating their middles.
+    """Retain all canonical messages and tool contents without truncating their middles, except what a Claude
+    session read of the pack.md that stands beside the destination (shown).
 
     A note, when given, follows the heading: where content the source holds only by reference is kept."""
     written = 0
+    pack, pack_reads = Path(os.path.abspath(destination)).with_name('pack.md'), set()
     # A line of the source can hold half of a surrogate pair as an escape, which UTF-8 does not encode. It is
     # written as that escape (backslashreplace), so that one such character does not keep the rest from being retained.
     with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', errors='backslashreplace', newline='\n') as out:
         if not append:
-            out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport is in the '
+            out.write('# Retained conversation\n\nFull readable message and tool content follows, except what the Read '
+                      'tool returned of pack.md: that file stands in this folder. Raw transport is in the '
                       'named source files. They stand in this folder until the work of the session has finished '
                       'processing, and from then on inside raw.tar.xz in this folder, under the same paths.\n\n')
             if note:
@@ -60,12 +85,16 @@ def conversation(source, destination, native, *, append=False, label=None, note=
             elif native and kind in ('assistant', 'user'):
                 payload = event.get('message', event)
             elif native and kind == 'attachment':
-                # A notification that reaches a Claude session while it is at work in a turn is recorded by the
-                # CLI as an attachment of the type queued_command, and as no message: the report of a delegated
-                # agent that finished meanwhile, and the notice that a command left in the background has ended.
+                # What reaches a Claude session while it is at work in a turn is recorded by the CLI as an
+                # attachment, and as no message. A notification is one of the type queued_command: the report
+                # of a delegated agent that finished meanwhile, and the notice that a command left in the
+                # background has ended. A message of the runner or of the operator, which the session's hook
+                # hands it (message_hook.py), is one of the type hook_additional_context, with the text in a list.
                 item = event.get('attachment')
                 if isinstance(item, dict) and item.get('type') == 'queued_command':
                     payload = item.get('prompt')
+                elif isinstance(item, dict) and item.get('type') == 'hook_additional_context':
+                    payload = item.get('content') or None
             elif not native and kind in ('item.completed', 'assistant', 'user', 'error', 'turn.failed'):
                 payload = event.get('item', event.get('message', event))
             if payload is None:
@@ -74,6 +103,8 @@ def conversation(source, destination, native, *, append=False, label=None, note=
                 # A Claude message arrives inside the API's account of the call (model, stop reason, token
                 # counts). The role and the content are what was said; the rest stays in the raw source.
                 payload = {key: payload[key] for key in ('role', 'content') if key in payload}
+                if isinstance(payload['content'], list):
+                    payload['content'] = [shown(block, pack, pack_reads) for block in payload['content']]
             body = readable(payload)
             fence = '`' * max(3, 1 + max((len(x) for x in re.findall(r'`+', body)), default=0))
             out.write(f'## {label or Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')

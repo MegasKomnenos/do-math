@@ -331,7 +331,8 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
             # A module that imports a changed one is compiled in a new environment, so its index is taken again too.
             extracted = with_importers(lean_root, meta['library'], changed)
             build = start_build(instance, lean_root, meta['library'], session_id, expect_mb, extracted,
-                                required_pairs(records), fresh=fresh, targets=changed if fresh else None)
+                                required_pairs(records), fresh=fresh, targets=changed if fresh else None,
+                                index=index)
             state = {'tree': tree, 'revision': index['revision'], 'fresh': fresh, 'build': build,
                      'changed': changed, 'extracted': extracted, 'removed': removed, 'extraction': EXTRACTION}
             write_json(state_path, state)

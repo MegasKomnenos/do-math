@@ -940,6 +940,19 @@ class EndingTests(InstanceCase):
         _, _, directory = self.prepare_claude(role='explore', config={'context_limit_at': [0]})
         self.assertEqual(self.run_host(directory)['authorization']['basis'], 'interrupted')
 
+    def test_a_decision_written_before_the_turn_met_the_limit_of_the_window_ends_the_session(self):
+        # The session answered the message with an ending, and the request after its answer no longer fitted.
+        engine, sid, directory = self.told(config={'context_at': [0], 'context_basis': 'task_completed',
+                                                   'context_limit_at': [0]})
+        authorization = self.run_host(directory)['authorization']
+        self.assertEqual((authorization['source'], authorization['basis']), ('worker', 'task_completed'))
+        self.assertEqual(read_json(directory / 'decision-check.json')['decision']['basis'], 'task_completed')
+        # The work is done: it goes to a peer, and no session of the role is launched to continue it.
+        s, job = self.collected(engine, sid, directory)
+        self.assertEqual((s['exit_code'], s['status'], job['status']), (1, 'ended', 'done'))
+        self.assertNotIn('continues', job['task'])
+        self.assertEqual(engine.state['pipelines'][job['pipeline']]['stage'], 'peer')
+
     def test_a_review_ends_on_a_decision_of_its_own_only_where_the_decision_hands_its_task_over(self):
         # A review writes no decision to end on: its session ends when its output passes the transport check. The
         # one decision of a review that its host takes is the answer to the message that hands the task over.
@@ -1166,6 +1179,29 @@ while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
             self.assertIn('Its request ID is asked-at-the-resumption.', read_json(waiting)['text'])
             self.assertEqual(state['request'], {'id': 'asked-at-the-resumption', 'round': 1,
                                                 'previous_error': None, 'context': 805_000})
+
+    def test_a_message_that_cannot_be_written_leaves_the_turn_running_and_its_request_open(self):
+        # The host looks at the stream inside the loop that keeps the turn. When the message cannot be written
+        # at such a look, as on a full disk, the error is not the turn's: the CLI works on to its own end. The
+        # request that was opened carries the size, so the prompt of the next turn ends with the text of the
+        # message, which EndingTests asserts of such a request. Only the file system's answer to the write of
+        # the message is stood in for. The stand-in leaves a file that is no message where the message would
+        # wait, so that the stand-in CLI ends its wait.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp) / 'session'
+            open_messages(session)
+            state = {'request': None, 'resumptions': 0}
+
+            def not_written(folder, sender, text):
+                (folder / 'messages/not-written.json').write_bytes(b'')
+                raise OSError('the message could not be written')
+
+            with patch('ending.send_message', side_effect=not_written):
+                waiting = self.turn(session, session, [[812_345, None]], 30, state)
+            self.assertEqual([path.name for path in waiting], ['not-written.json'])
+            self.assertEqual(state['request']['context'], 812_345)
+            self.assertEqual(read_json(session / 'end-request.json'), state['request'])
 
 
 class CancellationTests(unittest.TestCase):
