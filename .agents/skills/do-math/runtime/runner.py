@@ -30,7 +30,8 @@ from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance
                        refuting_proofs, render, replay, root_settlement, root_solved)
 from retention import capture, model_blocked, refusal, usage
 from ending import CONTEXT_LIMIT, HANDED_OVER, authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_raw, archive_work, available_memory,
+from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_raw, archive_subagents, archive_work,
+                             available_memory,
                              copy_to_disk, file_stamp, first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree,
                              remove_unfinished_writes, rename_directory, replace_file, session_host,
@@ -1809,11 +1810,13 @@ def archive_finished(instance):
             finished = cleanup.finished_sessions(state)
             for sid in state['sessions']:
                 if sid in finished:
-                    # The work folder and the raw conversation are packed apart, so that a failure of the one does
-                    # not keep the other in place. Nothing reads a stream after the runner has collected its
-                    # session: the readable conversation and the record of what the session used are written then
-                    # (Runner.finish, Runner.collect), and a session comes here only after that.
-                    for pack in (archive_work, archive_raw):
+                    # The work folder, the raw conversation and the conversations of the delegated agents are packed
+                    # apart, so that a failure of one does not keep the others in place. Nothing reads a stream
+                    # after the runner has collected its session: the readable conversation and the record of what
+                    # the session used are written then (Runner.finish, Runner.collect), and a session comes here
+                    # only after that. The conversations of the delegated agents are copied into the session
+                    # folder in that same collection (retention.capture), and no program reads the copy.
+                    for pack in (archive_work, archive_raw, archive_subagents):
                         try:
                             pack(Path(instance) / 'sessions' / sid)
                         except (OSError, ValueError, RuntimeError, tarfile.TarError, lzma.LZMAError, EOFError) as exc:

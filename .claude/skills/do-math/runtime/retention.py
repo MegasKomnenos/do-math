@@ -269,11 +269,14 @@ def capture(session, provider):
                'limitation': None if copied else 'No native transcript was located; retained CLI streams and artifacts are the available source.'}
     sources = [session / name for name in sorted(copied)] if copied else [p for p in streams if p.exists()]
     # A Claude transcript keeps only a preview of a large tool result and names the file in the operator's
-    # profile that holds the rest; the readable conversation says where this session keeps its copy.
+    # profile that holds the rest; the readable conversation says where this session keeps its copy. The
+    # subagents/ of that copy is the one part of it that the archiver packs (runtime_support.archive_subagents).
     note = ("Where a tool result below shows only a preview, the full output is in the file it names, in the "
             "Claude CLI's folder for this conversation. This session keeps a copy of that folder, with those "
-            "output files and any subagent conversations, as " + ', '.join(name + '/' for name in companions)
-            + '.') if companions else None
+            "output files, as " + ', '.join(name + '/' for name in companions)
+            + '. The conversations of any agents that the session delegated to are under subagents/ in that '
+            'copy until the work of the session has finished processing, and from then on inside '
+            'subagents.tar.xz in this folder, under the same paths.') if companions else None
     if sources:
         receipt['conversation_items'] = sum(conversation(source, session / 'conversation.md', bool(copied),
                                                         append=i > 0, label=source.relative_to(session).as_posix(),

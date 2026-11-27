@@ -571,17 +571,18 @@ def _digest(stream):
 
 
 
-def _work_entries(session):
-    """Archive name -> SHA-256 of each file, None for each directory. Links are refused."""
+def _tree_entries(session, folder):
+    """The folder `folder` of a session, a path below the session folder, and everything in it: archive name ->
+    SHA-256 of each file, None for each directory. Links are refused."""
     def scan_error(error):
         raise error
-    entries = {"work": None}
-    for top, dirs, files in os.walk(session / "work", onerror=scan_error):
+    entries = {folder: None}
+    for top, dirs, files in os.walk(session / folder, onerror=scan_error):
         dirs.sort()
         for name in dirs + sorted(files):
             path = os.path.join(top, name)
             if os.path.islink(path) or os.path.isjunction(path):
-                raise ValueError(f"work/ contains a link; left unarchived: {path}")
+                raise ValueError(f"{folder}/ contains a link; left unarchived: {path}")
             arcname = Path(path).relative_to(session).as_posix()
             if name in files:
                 with open(path, "rb") as stream:
@@ -606,8 +607,8 @@ def remove_tree(path):
     """Remove a directory tree that its caller has finished with.
 
     Windows refuses to remove a read-only file or directory. Git creates its object files read-only,
-    and shutil.copytree keeps the flag in its copy. No caller needs the tree it removes: a finished
-    work/ whose files are in its verified archive, a staging copy of files that remain where they were
+    and shutil.copytree keeps the flag in its copy. No caller needs the tree it removes: a folder of a finished
+    session whose files are in its verified archive, a staging copy of files that remain where they were
     copied from, a folder that the finalize command made and makes again or has finished with, the
     fixture of a test. The flag protects nothing there, so it is cleared where Windows refuses. Windows refuses
     in the same way a file or directory that another process holds for a moment, and the removal then waits
@@ -664,7 +665,7 @@ def archive_work(session):
         return False
     if work.is_symlink() or work.is_junction() or work.resolve().parent != session.resolve():
         raise ValueError('work archive must remain inside its session directory')
-    if not _packed(session, "work.tar.xz", _work_entries(session)):
+    if not _packed(session, "work.tar.xz", _tree_entries(session, "work")):
         raise RuntimeError(f"work/ does not match work.tar.xz; work/ kept: {session}")
     remove_tree(work)
     return True
@@ -681,9 +682,9 @@ def archive_raw(session):
 
     The raw conversation is the CLI stream of each turn (turn_streams) and each copy of the CLI's own
     transcript, transcript-<id>.jsonl (retention.capture). The archive holds them under the paths they had
-    in the session folder, which are the paths retention.json gives. Everything else stays where it is:
-    conversation.md, the readable text drawn from them, retention.json, and the folder transcript-<id>/
-    that conversation.md points into.
+    in the session folder, which are the paths retention.json gives. This function leaves everything else
+    where it is: conversation.md, the readable text drawn from them, retention.json, and the folder
+    transcript-<id>/ that conversation.md points into, whose subagents/ archive_subagents packs.
     A file is removed only after it is found intact in the archive. An existing archive is never
     overwritten: a raw file left by an interrupted removal must already be inside it, otherwise both are
     kept and the mismatch is raised."""
@@ -699,4 +700,34 @@ def archive_raw(session):
         raise RuntimeError(f"raw conversation does not match raw.tar.xz; its files kept: {session}")
     for path in files:
         remove_file(path)
+    return True
+
+
+def archive_subagents(session):
+    """Replace the conversations of the agents that a finished session delegated to with subagents.tar.xz,
+    verified as archive_work verifies work/.
+
+    The Claude CLI writes the conversation of each such agent under subagents/ in the folder it keeps beside
+    the session's transcript, and retention.capture copies that folder as transcript-<id>/. The archive holds
+    each transcript-<id>/subagents/ under the path it had in the session folder. The rest of transcript-<id>/
+    stays where it is: it holds the tool outputs that conversation.md points to.
+    These folders go into an archive of their own, so that a failure here does not keep the raw conversation
+    in place, nor a failure there these folders. And an existing archive is never overwritten: a session's
+    raw.tar.xz that was written while its subagents/ stayed in place takes nothing more.
+    A folder is removed only after everything in it is found intact in the archive. A subagents/ left by an
+    interrupted removal must already be inside the existing archive, otherwise both are kept and the mismatch
+    is raised. A subagents/ that is reached through a link, or that contains one, could lie outside the
+    session and is refused."""
+    folders = [path / "subagents" for path in sorted(session.glob("transcript-*")) if (path / "subagents").is_dir()]
+    if not folders:
+        return False
+    entries = {}
+    for folder in folders:
+        if any(path.is_symlink() or path.is_junction() for path in (folder, folder.parent)):
+            raise ValueError(f"subagents/ is reached through a link; left unarchived: {folder}")
+        entries.update(_tree_entries(session, folder.relative_to(session).as_posix()))
+    if not _packed(session, "subagents.tar.xz", entries):
+        raise RuntimeError(f"subagents/ does not match subagents.tar.xz; subagents/ kept: {session}")
+    for folder in folders:
+        remove_tree(folder)
     return True

@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from retention import capture, conversation, output_limit, refusal
-from runtime_support import archive_raw, archive_work
+from runtime_support import archive_raw, archive_subagents, archive_work
 
 
 class ArchiveTests(unittest.TestCase):
@@ -145,7 +145,7 @@ class ArchiveTests(unittest.TestCase):
                     self.assertTrue(archive.getmember(name).isfile(), name)
                     self.assertEqual(archive.extractfile(name).read(), b'n,value\n1,1\n', name)
 
-    def test_linked_work_is_refused_and_left_in_place(self):
+    def test_linked_work_and_linked_conversations_of_delegated_agents_are_refused_and_left_in_place(self):
         # A link leads outside the session. Archiving through it and then removing work/ would
         # record or remove files the session does not own, so both forms of link are refused.
         def link(path, target):
@@ -176,6 +176,28 @@ class ArchiveTests(unittest.TestCase):
                     self.assertFalse((session / 'work.tar.xz.part').exists())
             self.assertEqual((inner / 'work/notes.md').read_bytes(), b'Original mathematics')
             self.assertEqual((outside / 'shared.md').read_bytes(), b'Mathematics outside the session')
+            # The conversations of delegated agents are refused in the same way: where a link stands in the
+            # place of subagents/, in the place of the folder above it, and inside subagents/.
+            agents = Path(tmp) / 'agents'
+            (agents / 'subagents').mkdir(parents=True)
+            (agents / 'subagents/agent-a1.jsonl').write_bytes(b'A conversation outside the session')
+            below, above, within = (Path(tmp) / name for name in ('below', 'above', 'within'))
+            (below / 'transcript-0a').mkdir(parents=True)
+            link(below / 'transcript-0a/subagents', agents / 'subagents')
+            above.mkdir()
+            link(above / 'transcript-0a', agents)
+            (within / 'transcript-0a/subagents').mkdir(parents=True)
+            (within / 'transcript-0a/subagents/agent-b2.jsonl').write_bytes(b'A conversation of the session')
+            link(within / 'transcript-0a/subagents/linked', outside)
+            for session, message in ((below, 'through a link'), (above, 'through a link'), (within, 'contains a link')):
+                with self.subTest(session=session.name):
+                    with self.assertRaisesRegex(ValueError, message):
+                        archive_subagents(session)
+                    self.assertFalse((session / 'subagents.tar.xz').exists())
+                    self.assertFalse((session / 'subagents.tar.xz.part').exists())
+            self.assertEqual((within / 'transcript-0a/subagents/agent-b2.jsonl').read_bytes(),
+                             b'A conversation of the session')
+            self.assertEqual((agents / 'subagents/agent-a1.jsonl').read_bytes(), b'A conversation outside the session')
 
     def test_the_raw_conversation_is_replaced_by_its_archive_and_everything_else_stays(self):
         # The raw conversation is the CLI stream of each turn and the copied transcript file. What a reader
@@ -216,6 +238,55 @@ class ArchiveTests(unittest.TestCase):
                 archive_raw(session)
             self.assertEqual((session / 'cli.stdout.jsonl').read_bytes(), b'A stream that the archive does not hold')
             self.assertEqual((session / 'raw.tar.xz').read_bytes(), saved)
+
+    def test_the_conversations_of_delegated_agents_are_replaced_by_their_archive_and_the_tool_outputs_stay(self):
+        # The Claude CLI keeps the conversation of each agent that a session delegated to under subagents/, in
+        # the folder that capture copies as transcript-<id>/. That subagents/ goes into subagents.tar.xz with
+        # the directories in it. The tool outputs beside it, which the readable conversation points to, stay.
+        # The session here already has its raw.tar.xz, as one whose raw conversation an earlier pass packed:
+        # an existing archive is never overwritten, so the conversations go into an archive of their own.
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        folder = 'transcript-' + identity + '/subagents'
+        raw = {'cli.stdout.jsonl': b'{"type": "assistant"}\n', 'transcript-' + identity + '.jsonl': b'{"type": "user"}\n'}
+        packed = {folder + '/agent-a1.jsonl': b'{"type": "assistant"}\n' * 400,
+                  folder + '/agent-a1.meta.json': b'{"agentType": "general-purpose"}',
+                  folder + '/자료/agent-b2.jsonl': 'A delegated check about ℕ.\n'.encode('utf-8')}
+        kept = {'transcript-' + identity + '/tool-results/call1.txt': b'The full output.',
+                'conversation.md': b'# Retained conversation\n', 'retention.json': b'{}'}
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            for name, content in {**raw, **packed, **kept}.items():
+                (session / name).parent.mkdir(parents=True, exist_ok=True)
+                (session / name).write_bytes(content)
+            (session / folder / 'empty').mkdir()
+            self.assertTrue(archive_raw(session))
+            earlier = (session / 'raw.tar.xz').read_bytes()
+            self.assertTrue(archive_subagents(session))
+            self.assertFalse((session / folder).exists())
+            for name, content in kept.items():
+                self.assertEqual((session / name).read_bytes(), content, name)
+            self.assertEqual((session / 'raw.tar.xz').read_bytes(), earlier)
+            with tarfile.open(session / 'subagents.tar.xz', 'r:xz') as archive:
+                self.assertEqual(sorted(archive.getnames()), sorted([folder, folder + '/empty', folder + '/자료', *packed]))
+                self.assertTrue(archive.getmember(folder + '/empty').isdir())
+                for name, content in packed.items():
+                    self.assertEqual(archive.extractfile(name).read(), content, name)
+            self.assertFalse((session / 'subagents.tar.xz.part').exists())
+            saved = (session / 'subagents.tar.xz').read_bytes()
+            self.assertFalse(archive_subagents(session))
+            # A removal interrupted partway leaves part of subagents/, all of it already in the archive.
+            (session / folder).mkdir()
+            (session / folder / 'agent-a1.jsonl').write_bytes(packed[folder + '/agent-a1.jsonl'])
+            self.assertTrue(archive_subagents(session))
+            self.assertFalse((session / folder).exists())
+            # A conversation that the archive does not hold as it stands is kept, and so is the archive.
+            (session / folder).mkdir()
+            (session / folder / 'agent-a1.jsonl').write_bytes(b'A conversation that the archive does not hold')
+            with self.assertRaisesRegex(RuntimeError, 'does not match'):
+                archive_subagents(session)
+            self.assertEqual((session / folder / 'agent-a1.jsonl').read_bytes(),
+                             b'A conversation that the archive does not hold')
+            self.assertEqual((session / 'subagents.tar.xz').read_bytes(), saved)
 
 
 class RetentionTests(unittest.TestCase):
@@ -565,6 +636,9 @@ class RetentionTests(unittest.TestCase):
             self.assertTrue((copy / 'subagents/agent-a1.jsonl').is_file())
             # The readable conversation holds the preview and names the copy that holds the full output.
             self.assertIn(copy.name + '/', (session / 'conversation.md').read_text(encoding='utf-8'))
+            # It also names the archive that the conversations of the delegated agents go into once the work of
+            # the session has finished processing (runtime_support.archive_subagents).
+            self.assertIn('subagents.tar.xz', (session / 'conversation.md').read_text(encoding='utf-8'))
 
     @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
     def test_capture_waits_for_a_file_of_the_cli_folder_that_another_process_holds(self):

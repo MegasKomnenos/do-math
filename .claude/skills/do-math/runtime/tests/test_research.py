@@ -1723,10 +1723,16 @@ class RunnerTests(ScenarioCase):
         runner.finish(sid, session)
         folder = runner.session_dir(sid)
         work, stream = folder / 'work', folder / 'cli.stdout.jsonl'
+        # The conversation of an agent the producer delegated to, where the collection of a Claude session
+        # leaves it (retention.capture).
+        delegated = folder / 'transcript-0a/subagents/agent-a1.jsonl'
+        delegated.parent.mkdir(parents=True)
+        delegated.write_text('{"type": "assistant"}\n', encoding='utf-8')
         # The producer has ended, but its peer still has to read the retained work and can open the raw conversation.
         archive_finished(self.instance)
         self.assertTrue((work / 'notes.md').is_file())
         self.assertTrue(stream.is_file())
+        self.assertTrue(delegated.is_file())
         runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
         runner.save()
         archive_finished(self.instance)
@@ -1736,6 +1742,9 @@ class RunnerTests(ScenarioCase):
         # receipt, which names the stream by the path it has inside raw.tar.xz.
         self.assertFalse(stream.exists())
         self.assertTrue((folder / 'raw.tar.xz').is_file())
+        # So are the conversations of the delegated agents, into an archive of their own.
+        self.assertFalse(delegated.parent.exists())
+        self.assertTrue((folder / 'subagents.tar.xz').is_file())
         self.assertIn('A retained observation.', (folder / 'conversation.md').read_text(encoding='utf-8'))
         self.assertEqual(read_json(folder / 'retention.json')['streams'], ['cli.stdout.jsonl', 'cli.stderr.log'])
 
