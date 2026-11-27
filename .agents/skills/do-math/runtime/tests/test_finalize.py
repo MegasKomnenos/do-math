@@ -2157,8 +2157,16 @@ class RunTests(FinalizeCase):
         # So is what the comparer of a record says of its correction, where it also says what it could not compare.
         self.assertIn('## Step 6: what the comparison of the records corrected\n\n- `Small.sq_step_strict`: A word.\n',
                       decisions)
+        # The record of the step names a work in its header, and the session that checked the sources opened parts of
+        # that work. sources.json goes with the work folder, so the decisions name the work with the record.
+        self.assertIn('\n- gauss1801 (opened: parts of it): `Small.sq_step`\n', decisions)
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('The package is in place: `solved/odd/`', report)
+        # The report lists the work under what was not verified, since the paper cites it in the place of a proof.
+        self.assertIn('\n- No session that checked the sources reported that it opened the full text of these works: '
+                      'gauss1801 (opened: parts of it). A record names each as the source of its result, and where the '
+                      'paper states such a result it cites the work in the place of a proof; `decisions.md` names the '
+                      'records.\n', report)
         self.assertNotIn('`project.authors`', report)
         # What only the user can add before a submission, and the release the registry's tools depend on.
         self.assertIn("- The Lean release. The library is on leanprover/lean4:v4.99.0. The registry takes the tools", report)
@@ -2216,6 +2224,10 @@ class RunTests(FinalizeCase):
         # Started again with the same arguments, the run continues at the review and comes to its end.
         again = script()
         again['selection'] = [{'output/decision.json': decision(main='Small.root')}]  # would be another choice, were it asked
+        # The session that checks the sources of this start opens in full the work that the header of a record names.
+        again['sources'] = [{**again['sources'][0], 'output/sources.json': json.dumps([
+            {'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1', 'opened': 'full', 'note': '',
+             'attributions': [QUOTED]}])}]
         self.closed = CLOSED  # what the paper command of this start closes without a person
         self.assertEqual(self.run_command(again, config=self.config()), 0, self.said)
         self.assertEqual(len(self.calls('selection')), 1)      # an accepted output is not made again
@@ -2274,6 +2286,9 @@ class RunTests(FinalizeCase):
         self.assertIn('- In the paper, Theorem 1.2 still differs from the declaration `Small.root` that it states: The '
                       'sum starts at 1.', report)
         self.assertIn('- 1 lines of the typeset paper are wider than the text block; `decisions.md` names them.', report)
+        # Every work that a header names was opened in full, so neither file says of a work that it was not.
+        self.assertNotIn('opened the full text', report)
+        self.assertNotIn('not opened in full', decisions)
         self.assertIn("The library is built with Lean 4.99.0. Lean is installed through elan, its toolchain manager, as "
                       "Lean's own installation instructions describe.",
                       (self.solved / 'README.md').read_text(encoding='utf-8'))
@@ -2927,6 +2942,11 @@ class RunTests(FinalizeCase):
                       'library proves the result by an argument of its own. No work has the empty sum alone.', self.decisions())
         self.assertIn('Each statement that the paper proves by specialising a general theorem of the literature, which it '
                       'cites, is named here: `Small.helper_zero`.', (self.solved / 'README.md').read_text(encoding='utf-8'))
+        # The session opened parts of that work, and no header names it: the paper proves the result and cites the
+        # work for the theorem. So the work is not among those that the report lists as not opened in full.
+        self.assertIn('the full text of these works: gauss1801 (opened: parts of it). A record names each',
+                      (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertNotIn('euler1748 (opened', self.decisions())
 
     def test_a_record_that_loses_its_source_is_written_from_the_lean_and_compared_after_the_check_of_the_sources(self):
         # The research's record of the step names a work in its header and has no proof in words. The record that is
@@ -2987,6 +3007,57 @@ class RunTests(FinalizeCase):
         self.assertIn('\n- `Small.sq_step`: written again and compared\n- `Small.sq_step_strict`\n', self.decisions())
         # Where the session searched for a work that it removed stands in the decisions: its file goes with the work folder.
         self.assertIn('\n- lost1850: Searched zbMATH and Crossref by title and author; no entry.\n', self.decisions())
+        # The work was opened in parts, and no header names it any more, so the paper cites it for no result.
+        self.assertNotIn('not opened in full', self.decisions())
+        self.assertEqual(read_json(self.work / 'state.json')['partly_opened'], [])
+
+    def test_a_source_that_a_header_names_and_that_no_session_opened_in_full_is_named_with_its_records(self):
+        # How much of a work was opened stands in sources.json, which goes with the work folder. The paper cites a
+        # work in the place of a proof where the header of a record names it, so the works that headers name and that
+        # were not opened in full are named in the decisions, each with those records, and kept for the report. Here
+        # the record that is written after the fold-back names in its header the work that the record of the step
+        # names, so the work is checked once more, and the entry of that check does not say how much was opened. The
+        # same session enters two works into the headers of other records: of one it opened the abstract, and the
+        # other it opened in full.
+        self.from_the_records()
+        plan = script()
+        strict = 'The sums increase strictly.'
+        plan['records-write:6-01'][0]['output/records/Small/sq_step_strict.md'] = record_text(strict, source='gauss1801')
+        plan['records-compare:6-01'] = [{'output/verdicts.json': json.dumps([
+            {'declaration': 'Small.sq_step_strict', 'verdict': 'agrees', 'difference': ''}])}]
+        words = {'place': 'Section 1', 'quote': 'The stand-in words of the work at that place.'}
+        plan['sources:6'] = [{
+            'output/bibliography.bib': self.EULER + '@book{hardy1908,\n  author = {Hardy, G. H.},\n  title = {A Course '
+                                                    'of Pure Mathematics},\n  year = {1908}\n}\n',
+            'output/requests.json': '[]',
+            'output/records/Small/helper_zero.md': record_text('The empty sum is zero.', source='euler1748'),
+            'output/records/Small/twice_zero.md': record_text('Twice the empty sum is zero.', weight='unit',
+                                                              source='hardy1908'),
+            'output/sources.json': json.dumps([
+                {'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1', 'note': '',
+                 'attributions': [QUOTED, {'declaration': 'Small.sq_step_strict', 'sentence': strict, **words}]},
+                {'key': 'euler1748', 'status': 'verified', 'identifier': 'isbn:2', 'opened': 'abstract', 'note': '',
+                 'attributions': [{'declaration': 'Small.helper_zero', 'sentence': 'The empty sum is zero.', **words}]},
+                {'key': 'hardy1908', 'status': 'verified', 'identifier': 'isbn:3', 'opened': 'full', 'note': '',
+                 'attributions': [{'declaration': 'Small.twice_zero', 'sentence': 'Twice the empty sum is zero.',
+                                   **words}]}])}]
+        with patch('finalize.Run.compare_draft', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.6-compare`',
+                      (self.work / 'report.md').read_text(encoding='utf-8'))
+        self.assertEqual(len([call for call in self.calls('sources') if call['section'] == '6']), 1)
+        decisions = self.decisions()
+        self.assertIn('## Step 6: sources that were not opened in full\n\nThe header of each of these records names a work '
+                      'as the source of its result, and where the paper states such a result it cites the work in the '
+                      'place of a proof. No session that checked the sources reported that it opened the full text of '
+                      'these works, so what the records say of a work was held against no more than what was opened '
+                      'of it.\n\n'
+                      '- euler1748 (opened: the abstract only): `Small.helper_zero`\n'
+                      '- gauss1801 (opened: not recorded): `Small.sq_step`, `Small.sq_step_strict`\n', decisions)
+        self.assertNotIn('hardy1908', decisions)
+        # The step keeps for the report the works and how much of each was opened, as the decisions give them.
+        self.assertEqual(read_json(self.work / 'state.json')['partly_opened'],
+                         ['euler1748 (opened: the abstract only)', 'gauss1801 (opened: not recorded)'])
 
     def test_a_check_that_a_safeguard_stops_every_time_is_recorded_as_not_done_and_the_run_goes_on(self):
         # The sign of such a stop is known for the Claude CLI, so the sessions that check are given a Claude model.

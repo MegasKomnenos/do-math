@@ -62,6 +62,9 @@ FINDING_KINDS = ('hypothesis', 'conclusion', 'comment', 'other')
 # What the entry of a cited work holds for each sentence of a record that cites it (bring_records): the record, the
 # sentence, the place in the work, and the words of the work at that place as they were read.
 ATTRIBUTION = ('declaration', 'sentence', 'place', 'quote')
+# How much of a cited work was opened where that was less than the full text, as decisions.md and report.md say it
+# (records_again). The entry of the work gives it under "opened": `parts` or `abstract`.
+PARTLY_OPENED = {'parts': 'parts of it', 'abstract': 'the abstract only'}
 KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
 # Why a record is written again although its declaration did not change (records_again).
 DISAGREES = 'its statement in words says something that its Lean statement does not'
@@ -209,8 +212,8 @@ class Run:
 
         A step that has an entry in state.json has passed its exit check and is not made again. `work`
         returns when the exit check has passed and raises otherwise. Where it returns values of the
-        state (the main theorem, after the selection and after the arrangement, and what the final check
-        collected for the report), they are entered
+        state (the main theorem, after the selection and after the arrangement, and what the records of
+        step 6 and the final check collected for the report), they are entered
         together with the step: a state that another thread saves while the step is under way does not
         hold them, so a step that is entered again starts from the state it started from. `keep` names
         the products that are not cleared when the step is entered again, for a step that continues
@@ -1769,6 +1772,26 @@ class Run:
                                    'the answer.')
         if lines:
             self.decide('Step 6: the sources the draft asked for', '\n'.join(lines))
+        # The paper cites a work in the place of a proof where it states a result whose record names the work in its
+        # header. How much of a work was opened stands in sources.json alone, which goes with the work folder. So the
+        # works that such a header names and of which no entry says that the full text was opened are named in the
+        # decisions with those records, and the state keeps them for the report.
+        rows = [row for row in read_json(folded / 'sources.json') if row.get('status') == 'verified']
+        in_full = {row['key'] for row in rows if row.get('opened') == 'full'}
+        opened = {row['key']: row.get('opened') for row in rows}
+        partly = []
+        for item in package.cited(folded / 'records', index, set(opened)):
+            names = [f"`{record['declaration']}`" for record in item['records'] if record['header']]
+            if names and item['key'] not in in_full:
+                how = PARTLY_OPENED.get(opened.get(item['key']), 'not recorded')
+                partly.append((f"{item['key']} (opened: {how})", names))
+        if partly:
+            self.decide('Step 6: sources that were not opened in full', '\n'.join([
+                'The header of each of these records names a work as the source of its result, and where the paper '
+                'states such a result it cites the work in the place of a proof. No session that checked the sources '
+                'reported that it opened the full text of these works, so what the records say of a work was held '
+                'against no more than what was opened of it.', '',
+                *[f'- {work}: ' + ', '.join(names) for work, names in partly]]))
         if disagreeing:
             self.decide('Step 6: records whose statement said more than the Lean statement', '\n'.join([
                 'The comparison of the draft found that the statement in words of these records asserts something that '
@@ -1780,6 +1803,7 @@ class Run:
                 f'The writers of the records of what the fold-back changed reported {len(late)} further findings. The '
                 'fold-back is one pass, so the library was not changed for them:', '',
                 *[f"- `{finding['declaration']}` ({finding['kind']}): {collapsed(finding['detail'])}" for finding in late]]))
+        return {'partly_opened': [work for work, _ in partly]}
 
     def compare_draft(self):
         folded, target = self.work / 'lib' / '6-folded', self.work / 'lib' / '6-draft'
@@ -2391,6 +2415,7 @@ class Run:
         uncorrected = [f for f in (read_json(found) if found.is_file() else []) if not f.get('in_prose')]
         words, names = self.state.get('account_words', []), self.account_names
         which = 'either name' if names[1:] else 'that name'
+        partly = self.state.get('partly_opened', [])
         self.stop_broker()
         write_text(self.work / 'report.md', '\n'.join([
             f'# Report of the run: {self.name}', '',
@@ -2435,6 +2460,10 @@ class Run:
             "- The registry's verifier and Lean's comparator were not run on the package.",
             '- No second complete check of the frozen library was made beyond the Lake build and the axioms Lean reports.',
             '- No person read the Lean statement against the proposition, unless the configuration says so.',
+            *(['- No session that checked the sources reported that it opened the full text of these works: '
+               + ', '.join(partly) + '. A record names each as the source of its result, and where the paper states '
+               'such a result it cites the work in the place of a proof; `decisions.md` names the records.']
+              if partly else []),
             *[f"- In the paper, {entry['number']} was restated as the declaration `{entry['element']}` says it, and the "
               'restated text was not compared with the declaration.'
               if entry['kind'] == 'restated' and entry['verdict'] == 'not compared' else
