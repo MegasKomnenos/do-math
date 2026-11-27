@@ -164,7 +164,7 @@ The main defaults are these.
 - `launch_interval`: attempts and explorers are launched at least 180 seconds apart.
 - `explore_every`: 1, meaning that the runner requests an exploration each time the count of attempt launches reaches a multiple of this number. The runner also requests one when it has spare capacity and no statement is available to a new attempt. A request is served when a question is open and no session has it or is waiting for it.
 - `organizer_every_records`: an organizer is launched once four published changes have not yet been examined by an organizer.
-- `max_end_resumptions`: a session is resumed up to three times, either to reconsider ending or, for a review or an organizer, because its output is not yet complete.
+- `max_end_resumptions`: a session is resumed up to 1000 times, either to reconsider ending or, for a review or an organizer, because its output is not yet complete. The number is meant not to be reached, so that a session ends by its own decision, by a complete output or by handing its task over.
 - `acceptance.decline_reducible_proofs` and `acceptance.decline_uncomprehended_computation`: both true. With the first, a review does not yet accept a correct proof that can still clearly be made simpler; with the second, it does not yet accept a correct proof that settles part of its statement by a large computation carried out without understanding. Such a proof is still published, with the standing "correct, held back".
 - `lean.command` and `lean.version_command`: `lean` and `lean --version`, as found on your PATH.
 - `lean.allowed_axioms`: `propext`, `Classical.choice` and `Quot.sound`. The list can be extended, and `sorryAx` is never allowed.

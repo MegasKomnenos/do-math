@@ -17,7 +17,7 @@ That work enters the canon through a **peer**, which takes one producing session
 
 Review judges and does not gate: useful imperfect work is published with review's judgments, an element whose proof was not confirmed enters the canon in that state with review's reason, and a later session does the repair. A **concern** is a reported challenge to an element's proof. A pending concern does not change the standing of that proof; only a review finding can withdraw its confirmation. A **comprehensive review** is an assignment of the review role to examine questioned proofs and their actual uses in later proofs. A concern, an operator `review --element` request or a **contested** statement, one for which both it and its negation carry settled proofs, triggers it; it is not a routine stage for each new candidate.
 
-Each session runs under a **session host**, the process through which the runner launched its CLI; the host stays alive for the whole session, across the CLI turns, and survives a runner restart. Before a session is closed, the host can resume the same conversation, at most `max_end_resumptions` times (default 3).
+Each session runs under a **session host**, the process through which the runner launched its CLI; the host stays alive for the whole session, across the CLI turns, and survives a runner restart. Before a session is closed, the host can resume the same conversation, at most `max_end_resumptions` times (default 1000).
 
 All Lean compilation in an instance goes through that instance's own compilation service, the **Lean broker**, which schedules compiles under its own memory and thread budgets.
 

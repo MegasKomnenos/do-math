@@ -1019,8 +1019,8 @@ class EndingConfigurationTests(unittest.TestCase):
             self.assertEqual(str(refused.exception), 'continuation guidance must not be empty')
 
     def test_limit_validation(self):
-        self.assertEqual(defaults()['max_end_resumptions'], 3)
-        for value in (0, 1, 8):
+        self.assertEqual(defaults()['max_end_resumptions'], 1000)
+        for value in (0, 1, 8, 1000):
             self.assertEqual(validate({'max_end_resumptions': value})['max_end_resumptions'], value)
         for value in (-1, True, 1.5, '3', None):
             with self.assertRaises(ValueError):

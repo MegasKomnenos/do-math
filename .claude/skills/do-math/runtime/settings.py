@@ -35,7 +35,9 @@ def defaults():
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800,
             'mcp_servers': {'scholarly': literature_server()},
-            'max_end_resumptions': 3,
+            # Meant not to be reached: a session ends by its own decision, by output that passes its check or
+            # by handing its task over, and a lower value ends it at that number of resumed turns (ending.supervise).
+            'max_end_resumptions': 1000,
             # Two considerations review weighs before accepting a correct proof (roles/review.md).
             'acceptance': {'decline_reducible_proofs': True,
                            'decline_uncomprehended_computation': True},
