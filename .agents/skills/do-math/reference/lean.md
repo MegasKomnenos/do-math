@@ -30,7 +30,7 @@ Two things follow for a session. Lean cannot be kept loaded to answer quick ques
 
 Each instance runs a single process called the Lean broker, and every compile in the instance goes through it. A session does not run Lean itself, not even to ask for its version. It asks the broker to compile a file, and the broker takes that compile as a job, decides when to start it, runs it, and hands the result back.
 
-Because the broker sees every compile of the instance, it can do what no session could do on its own. It schedules compiles against a shared memory budget: it uses the estimate of private memory that a session gives with each submission, together with what it has measured itself, to decide whether the compile can start now or must wait for others to finish. It measures the peak private memory and the duration of every compile and returns them to the session, so the cost of every proof becomes visible.
+The broker schedules compiles against a shared memory budget: it uses the estimate of private memory that a session gives with each submission, together with what it has measured itself, to decide whether the compile can start now or must wait for others to finish. It measures the peak private memory and the duration of every compile and returns them to the session, so the cost of every proof becomes visible.
 
 It also cancels the compiles of a session that has finished, failed or been killed: no one is left to read their results, and they only take memory. Apart from a cancellation that a session asks for itself, this is the only situation in which the broker stops a compile: it never stops one for using more memory than was estimated, and it sets no limit on how long a compile may run.
 

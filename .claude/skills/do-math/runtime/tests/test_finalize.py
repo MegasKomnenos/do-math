@@ -1057,6 +1057,12 @@ class ArchiveTests(FinalizeCase):
         self.assertEqual([(row['kind'], row['title'], row['elements'], row['record']) for row in tried],
                          [('approach', 'Induction on n', ['Small.root'],
                            'canon/history/Small/root/000001-approaches/by-induction.md')])
+        # While the proof of a statement is not accepted, what was tried on it stands under the canon's approaches, in
+        # the folder that follows the statement's name. Such an entry is a line with its title and that statement.
+        open_ = package.ledger({'canon/approaches/Small/sq_step/by-cases.md':
+                                b'---\ntitle: Cases on n\n---\n## Idea\n\nSplit.\n'})
+        self.assertEqual([(row['kind'], row['title'], row['elements'], row['record']) for row in open_],
+                         [('approach', 'Cases on n', ['Small.sq_step'], 'canon/approaches/Small/sq_step/by-cases.md')])
         # A change says which questions it resolves, and review judges each resolution. One that review did not
         # accept resolved nothing, so the line of the change does not name its question.
         judged = package.ledger({name: json.dumps(value).encode('utf-8') for name, value in {
@@ -1227,6 +1233,10 @@ class DocumentTests(FinalizeCase):
             json.dumps({'paper_statement': 'In case A:\nthe sum is even.'}), encoding='utf-8', newline='\n')
         (folder / 'lean' / 'formalization.yaml').write_text(
             'scope: ' + json.dumps('In case A:\nthe sum is even.') + '\n', encoding='utf-8', newline='\n')
+        # Challenge.lean holds the definition modules as the research posed them, with their doc comments, and such a
+        # comment can hold the same formula.
+        (folder / 'lean' / 'Challenge.lean').write_text('module\n\n/-- ' + formula.strip() + ' -/\ndef f : Nat := 0\n',
+                                                         encoding='utf-8', newline='\n')
         freeze = package.freeze_hashes(folder)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(check(), [])

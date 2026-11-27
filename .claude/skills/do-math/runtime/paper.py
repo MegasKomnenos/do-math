@@ -1891,6 +1891,16 @@ def typeset(folder, recipe):
     of a part would answer, so it is not handed to a repair session."""
     folder = Path(folder)
     remove_pdf(folder)
+    # What an earlier typesetting left beside the manuscript goes as well, so that this one starts from paper.tex
+    # alone. A TeX command that was ended in the middle of a run, at its time limit, with the script or with the
+    # machine, can leave paper.aux or paper.bbl cut off inside a line, and the next run stops at such a file with
+    # an error that no part of the manuscript causes.
+    for path in folder.glob('paper.*'):
+        if path.name != 'paper.tex' and path.is_file():
+            try:
+                path.unlink()
+            except OSError:
+                pass  # a file that another program holds stays, and TeX meets it as it would have before
     cites = bool(CITE.search(uncommented(read_file(folder / 'paper.tex'))))
     for command in recipe:
         bibtex = Path(command[0]).stem.lower() == 'bibtex'
@@ -5144,12 +5154,13 @@ class Paper(Sessions):
                  'changes.json': json.dumps({'findings': findings, 'changes': changes}, ensure_ascii=False, indent=2) + '\n'}
         # Each reading of changes is a check of its own: a later one reads other changes and does not stand for it.
         about = 'changes ' + str(1 + sum(event['event'] in ('changes', 'not done') for event in self.log))
-        checks = ' and of the '.join(sorted({entry['check'] for entry in findings}))
+        # A pass that only corrects the LaTeX, as one over lines that are too wide, changes passages for no finding.
+        made_for = ('for findings of the ' + ' and of the '.join(sorted({entry['check'] for entry in findings}))
+                    if findings else 'to correct the LaTeX, for no finding')
         verdicts = self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read,
                                 self.assessor,
                                 check={about: f'the reading of the passages ({len(changes)}) that the last repair changed '
-                                              f'for findings of the {checks}; the changes stay in the paper as the '
-                                              'repair left them'})
+                                              f'{made_for}; the changes stay in the paper as the repair left them'})
         if verdicts is None:
             # Not made (session). The changes stay in the paper, and the record says that nobody read them.
             return {'changes': [{'change': change['change'], 'sound': True, 'findings': change['findings'], 'reason': ''}

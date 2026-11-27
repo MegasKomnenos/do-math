@@ -1615,6 +1615,30 @@ class RunnerTests(ScenarioCase):
         runner = self.runner()
         self.assertEqual([runner.backoff(attempts) for attempts in (1, 2, 3, 5, 6, 30)], [60, 120, 240, 960, 1800, 1800])
 
+    def test_a_failure_after_a_hand_over_waits_as_a_first_failure_does(self):
+        # The wait of a retry doubles with each failure in a row (Runner.backoff). A session that hands its task
+        # over worked until its conversation was nearly full, so the failures of the job before it are no longer
+        # counted: the session that continues the task and ends without having left anything is launched again
+        # after the first delay. The first session here is cancelled, which delays its job and blocks no model.
+        runner = self.runner()
+        sid, session, job = self.without_material(runner)
+        (runner.session_dir(sid) / 'CANCEL').touch()
+        runner.finish(sid, session)
+        self.assertEqual((job['status'], job['retries']), ('pending', 1))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(job['id']))
+            second = job['session']
+            write_json(runner.session_dir(second) / 'end-check.json',
+                       {'resumptions': 0, 'authorization': {'basis': 'handed_over'}})
+            runner.finish(second, runner.state['sessions'][second])
+            self.assertEqual((job['status'], job['retries']), ('pending', 0))
+            self.assertTrue(runner.dispatch(job['id']))
+            third = job['session']
+            with patch('runner.time.time', return_value=1000):
+                runner.finish(third, runner.state['sessions'][third])
+        self.assertEqual((job['status'], job['retries'], job['not_before']), ('pending', 1, 1060))
+
     def test_standalone_processing_retry_receives_its_partial_work(self):
         runner = self.runner()
         for role, task in [('organizer', {'batch': []}), ('review', {'kind': 'comprehensive', 'concerns': []})]:
@@ -2834,6 +2858,32 @@ class RunnerTests(ScenarioCase):
         # The record came at the fifteenth second, and start returned with the process that the record names.
         self.assertEqual(clock[0], 15.0)
         self.assertEqual(started['pid'], runner.identity['pid'])
+
+    def test_start_returns_a_runner_that_ended_at_once_only_on_an_instance_that_is_finished(self):
+        # On an instance that is finished, the runner writes its start record, makes one pass and ends
+        # (Runner.run, Runner.tick), which can be before start reads the record. start then finds the recorded
+        # process gone and returns it all the same, because the saved state says that the instance is finished.
+        # While the state does not say so, the same record is that of a runner that ended on a failure, and
+        # start reports the exit. The process is stood in for: it has ended when start first asks, and it has
+        # written what Runner.run writes, the start record and the line on its standard output.
+        runner = self.runner()
+        gone = {'pid': 2 ** 22, 'birth': 'gone'}
+
+        def ended_at_once(argv, **options):
+            token = argv[argv.index('--token') + 1]
+            write_json(self.instance / 'runner/process.json', {'process': gone, 'token': token, 'at': time.time()})
+            options['stdout'].write(json.dumps({'started': gone, 'token': token,
+                                                'instance': str(self.instance)}).encode('utf-8'))
+            options['stdout'].flush()
+            return launch.return_value
+
+        with patch('runner.subprocess.Popen', side_effect=ended_at_once) as launch:
+            launch.return_value.poll.return_value = 0
+            with self.assertRaisesRegex(RuntimeError, 'exited before readiness'):
+                start(self.instance)
+            runner.state['finished'] = True  # as the last pass of a runner saves it (Runner.tick)
+            runner.save()
+            self.assertEqual(start(self.instance)['pid'], gone['pid'])
 
     def test_start_launches_the_runner_and_returns_once_its_start_record_names_this_launch(self):
         # start launches the detached runner through the run command. It returns that runner's PID and the two log

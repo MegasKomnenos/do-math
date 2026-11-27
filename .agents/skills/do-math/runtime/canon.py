@@ -228,7 +228,10 @@ def parse_record(text, what='record'):
         raise CanonError(f'{what}: the record needs a nonempty "## Description"')
     for key in ('proves', 'refutes'):
         if key in meta:
-            name_parts(meta[key])
+            try:
+                name_parts(meta[key])
+            except CanonError as error:
+                raise CanonError(f'{what}: header key {key}: {error}') from None
     if 'proves' in meta and 'refutes' in meta:
         raise CanonError(f'{what}: a declaration is another proof of a statement or a refutation of one, not both')
     return record
@@ -270,13 +273,19 @@ def read_question_account(canon, question):
 
 # ----------------------------------------------------------------------------- Lean sources
 
+# One item of a Lean header: `module`, `prelude`, or an import with its modifiers and its module.
+HEADER_ITEM = re.compile(r'(?:module|prelude)(?=\s|$)|(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?\S+')
+
+
 def header_code(lines):
-    """The lines of a Lean file with their comments left out: (index, code) for each line that holds anything else.
+    """The code of a Lean file with its comments left out: (index of the line, code), one item of a header at a time.
 
     Ordinary and nested comments are skipped, and a comment inside a line separates what stands on its two
-    sides, as it does for Lean. Every reader of a header reads through this, so that the commands, the runner
-    and the Lean broker take the same lines for the header of one file; a reader stops at the first line that
-    is no line of a header."""
+    sides, as it does for Lean. Lean reads a header word by word and not line by line, so one line can hold
+    several of its items, as in `import A import B`. Each item is given by itself, and what follows the last
+    item of a line as one more piece. Every reader of a header reads through this, so that the commands, the
+    runner and the Lean broker take the same items for the header of one file; a reader stops at the first
+    piece that is no item of a header."""
     depth = 0
     for number, line in enumerate(lines):
         code, index = [], 0
@@ -296,9 +305,12 @@ def header_code(lines):
             else:
                 code.append(line[index])
                 index += 1
-        stripped = ''.join(code).strip()
-        if stripped:
-            yield number, stripped
+        rest = ''.join(code).strip()
+        while rest:
+            found = HEADER_ITEM.match(rest)
+            piece = found[0] if found else rest
+            yield number, piece
+            rest = rest[len(piece):].lstrip()
 
 
 def header_scan(lines):
@@ -1306,8 +1318,6 @@ def check_applied(old, new, change, records_by_path, existing_record, allowed_ax
             elif not new.get('pairs', {}).get(f'{kind}|{name}|{target}'):
                 errors.append(f'{name}: Lean did not confirm that its statement is '
                               + ('the statement of ' if kind == 'same' else 'the negation of the statement of ') + target)
-        if entry['kind'] in STATEMENT_KINDS and entry['lean_proof'] == 'sorry' and not entry['prop']:
-            errors.append(f'{name} is a theorem whose statement is not a proposition')
         current = existing_record(name) if name in old['entries'] and name not in replaced else None
         if current and name not in moved.values():
             # Whether an element has a written proof, and what it proves or refutes, decide its standing.

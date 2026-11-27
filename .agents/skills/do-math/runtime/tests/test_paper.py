@@ -675,7 +675,22 @@ class PlanTests(PaperCase):
                 (lambda plan: self.other(plan, 'Small.oddSum_succ').update(into=['Small.expand']),
                  "Small.oddSum_succ is absorbed into 'Small.expand', which is neither a numbered element nor a section id"),
                 (lambda plan: self.other(plan, 'Small.oddSum_mono_weak').update(by='Small.oddSum_mono_weak'),
-                 'Small.oddSum_mono_weak: "by" names the element of the materials that stands in its place')):
+                 'Small.oddSum_mono_weak: "by" names the element of the materials that stands in its place'),
+                # A key that is missing or of another form, and numbered statements that "statements" does not list in
+                # the order of the sections: the checks of dependence go by the place of a statement in that list.
+                (lambda plan: plan.update(title=' '), '"title" is a nonempty text'),
+                (lambda plan: plan.update(others='none'), '"others" is an array of objects'),
+                (lambda plan: plan.update(sections=[]), '"sections" names at least the introduction'),
+                (lambda plan: plan['sections'][1].pop('content'), "section 'tools' needs a \"title\" and a \"content\""),
+                (lambda plan: plan['statements'][1].update(kind='remark'), 'Small.oddSum_mono: "kind" is one of theorem'),
+                (lambda plan: plan['statements'][1].update(section='proof'),
+                 'Small.sq_step: "statements" lists the numbered statements in the order of the paper'),
+                (lambda plan: (define_late(plan), plan['statements'][1].update(section='intro', proof='intro')),
+                 'Small.oddSum is a definition and has no "proof"'),
+                (lambda plan: self.other(plan, 'Small.oddSum_succ').pop('into'),
+                 'Small.oddSum_succ: "into" lists the numbered elements or the section ids it is written into'),
+                (lambda plan: self.other(plan, 'Small.expand').pop('section'),
+                 'Small.expand: "section" is the id of the section that cites it')):
             self.assertIn(words, self.problems(change))
 
     def test_a_title_of_the_plan_names_no_lean_name_and_does_not_mention_lean(self):
@@ -902,6 +917,9 @@ class ManuscriptTests(PaperCase):
                                     + PROOF))
         self.assertIn('written in ASCII', self.problems(proof=PROOF + 'Erdős.\n'))
         self.assertIn('the abstract stands by itself', self.problems(abstract='As in \\cite{euclid}, squares appear.\n'))
+        self.assertIn('the abstract stands by itself', self.problems(abstract=ABSTRACT + 'See Theorem~\\ref{thm:main}.\n'))
+        # The label of a section is the script's: a part that defines one is told so, the part of that section included.
+        self.assertIn('proof: \\label{sec:proof} is defined more than once', self.problems(proof=PROOF + '\\label{sec:proof}\n'))
 
     def test_a_numbered_result_from_the_literature_carries_its_citation_and_no_proof(self):
         plan = copy.deepcopy(PLAN)
@@ -998,6 +1016,20 @@ class TypesettingTests(unittest.TestCase):
                 with self.assertRaisesRegex(paper.Stop, 'Close the file there and give the command again'):
                     paper.typeset(folder, recipe)
             self.assertEqual(paper.typeset(folder, recipe), [])
+
+    def test_a_typesetting_starts_without_what_an_earlier_one_left_beside_the_manuscript(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'paper.tex').write_text('\\documentclass{amsart}\n\\begin{document}\nA sentence.\n\\end{document}\n',
+                                              encoding='utf-8', newline='\n')
+            (folder / 'references.bib').write_text('', encoding='utf-8')
+            # What a TeX command leaves when it is ended in the middle of a run: a file that is cut off inside a line.
+            for name in ('paper.aux', 'paper.bbl'):
+                (folder / name).write_text('\\newlabel{thm:main}{{1.1}{1', encoding='utf-8')
+            self.assertEqual(paper.typeset(folder, paper.tex_recipe(TEX)), [])
+            # The stand-in for TeX writes neither file, so one that is there now is the one that was left.
+            self.assertEqual([name for name in ('paper.aux', 'paper.bbl') if (folder / name).exists()], [])
+            self.assertTrue((folder / 'references.bib').is_file())
 
     def test_a_tex_command_that_does_not_finish_stops_the_run_and_goes_to_no_repair(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -2181,12 +2213,14 @@ class RunTests(PaperCase):
 
     def test_the_known_engines_are_run_in_the_way_each_needs(self):
         found = {'latexmk': 'C:/tex/latexmk.exe', 'pdflatex': 'C:/tex/pdflatex.exe', 'C:/tex/pdflatex.exe': 'C:/tex/pdflatex.exe',
-                 'tectonic-0.15': 'tectonic-0.15'}
+                 'C:/tex/tectonic.exe': 'C:/tex/tectonic.exe', 'tectonic-0.15': 'tectonic-0.15'}
         with patch('paper.shutil.which', side_effect=found.get):
             # Without --tex: the first of tectonic, latexmk and pdflatex that is on PATH.
             self.assertEqual(paper.tex_recipe(None)[0][:2], ['C:/tex/latexmk.exe', '-pdf'])
             recipe = paper.tex_recipe(['C:/tex/pdflatex.exe'])
             self.assertEqual([Path(command[0]).stem for command in recipe], ['pdflatex', 'bibtex', 'pdflatex', 'pdflatex'])
+            # tectonic is run once and is told to keep the log of TeX, in which the lines wider than the text block are found.
+            self.assertEqual(paper.tex_recipe(['C:/tex/tectonic.exe']), [['C:/tex/tectonic.exe', '--keep-logs', 'paper.tex']])
             # Any other command is run once, with the manuscript as its last argument.
             self.assertEqual(paper.tex_recipe(['tectonic-0.15', '-X', 'compile']), [['tectonic-0.15', '-X', 'compile', 'paper.tex']])
             with self.assertRaisesRegex(paper.Stop, 'the TeX command tectonic was not found'):

@@ -299,9 +299,9 @@ class RecordFormatTests(unittest.TestCase):
             'proves together with refutes': (RECORD.replace('weight: unit', 'weight: unit\nproves: Small.a\nrefutes: Small.b'),
                                              'not both'),
             'invalid name in proves': (RECORD.replace('weight: unit', 'weight: unit\nproves: Small..root'),
-                                       'not a declaration name'),
+                                       'record: header key proves: not a declaration name'),
             'invalid name in refutes': (RECORD.replace('weight: unit', 'weight: unit\nrefutes: .root'),
-                                        'not a declaration name'),
+                                        'record: header key refutes: not a declaration name'),
         }
         for label, (text, message) in cases.items():
             with self.subTest(label), self.assertRaisesRegex(CanonError, message):
@@ -416,6 +416,9 @@ class LeanSourceTests(TempCase):
     def test_the_header_scan_knows_the_forms_of_an_import(self):
         lines = ['module', 'public meta import Small.A', 'import all Small.B', 'meta import Small.C', 'def x := 1']
         self.assertEqual(header_scan(lines), (4, True, ['Small.A', 'Small.B', 'Small.C']))
+        # Lean reads a header word by word, so one line can hold several of its items; what follows them is no header.
+        self.assertEqual(header_scan(['module public import Small.A import all Small.B', 'meta import Small.C open Small',
+                                      'import Small.Late']), (2, True, ['Small.A', 'Small.B', 'Small.C']))
 
     def test_the_modules_that_import_a_changed_module_are_named_with_it(self):
         # Lean compiles a module in the environment of what it imports, so a module that imports a changed one,
@@ -1519,11 +1522,11 @@ class UpdateIndexTests(TempCase):
         self.assertEqual(drop_modules(self.both, []), self.both)
 
 
-def entry(name, kind='theorem', uses=(), statement_uses=(), axioms=(), proof='complete', source=None, prop=None):
+def entry(name, kind='theorem', uses=(), statement_uses=(), axioms=(), proof='complete', source=None):
     """An entry of the structural index, written by hand."""
     return {'name': name, 'kind': kind, 'module': 'Small.M', 'file': 'Small/M.lean', 'span': [1, 0, 2, 0],
             'source_sha': source or 'source-of-' + name, 'statement': name + ' : statement',
-            'statement_hash': 'statement-of-' + name, 'prop': kind == 'theorem' if prop is None else prop,
+            'statement_hash': 'statement-of-' + name, 'prop': kind == 'theorem',
             'statement_uses': list(statement_uses), 'uses': list(uses), 'library': [], 'axioms': list(axioms),
             'lean_proof': proof if kind in ('theorem', 'def', 'opaque') else None}
 
@@ -1926,10 +1929,6 @@ class CheckAppliedTests(unittest.TestCase):
         del self.records['Small/root']
         result = self.check()
         self.assertEqual((result['errors'], result['replaced'], result['records']), ([], ['Small.root'], ['Small.step']))
-
-    def test_a_theorem_with_sorry_whose_statement_is_no_proposition(self):
-        self.add(entry('Small.step', proof='sorry', axioms=['sorryAx'], prop=False))
-        self.refused('Small.step is a theorem whose statement is not a proposition')
 
     def test_a_peer_may_add_a_statement_without_a_lean_proof(self):
         self.add(entry('Small.step', proof='sorry', axioms=['sorryAx']))

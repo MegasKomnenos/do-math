@@ -573,8 +573,24 @@ class LeanItselfTests(BothCompilers, ScenarioCase):
                    'Small/notRoot.md': record_text('The negation of the root.', refutes='Small.root'),
                    'Small/other.md': record_text('Not the root.', proves='Small.root'),
                    'Small/viaAgain.md': record_text('One odd number sums to one.')}
-        folder = self.candidate(modules={'Small/Pairs.lean': module_text(statements)}, records=records, prepare=False)
-        result = self.prepare(folder, expect_ok=False)
+        # The module imports the root's module alone and reaches the definitions through it. Both of those modules
+        # come from the cache, and the compile of this module is the first of the build, so their files are in the
+        # build's lib only because the broker put them there for this compile (lean_broker.Broker.advance_build).
+        # The stand-in compilers look for the files of the modules a source imports itself and not for those
+        # behind them, so it is here that Lean is seen to find a module it reads through another.
+        folder = self.candidate(modules={'Small/Pairs.lean': module_text(statements, imports=('Small.Root',))},
+                                records=records, prepare=False)
+        builds = []
+
+        def started(*arguments, **options):
+            builds.append(start_build(*arguments, **options))
+            return builds[-1]
+
+        with patch.object(canon_tool, 'start_build', started):
+            result = self.prepare(folder, expect_ok=False)
+        modules = job_record(Paths(self.instance), builds[0])['modules']
+        self.assertEqual({name: modules[name]['status'] for name in ('Small.Defs', 'Small.Root', 'Small.Pairs')},
+                         {'Small.Defs': 'cached', 'Small.Root': 'cached', 'Small.Pairs': 'finished'})
         # The two claims that hold are confirmed, and the one that does not is the only thing refused.
         self.assertEqual(len(result['errors']), 1, result['errors'])
         self.assertIn('Small.other: Lean did not confirm that its statement is the statement of Small.root',

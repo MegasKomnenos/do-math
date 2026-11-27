@@ -662,19 +662,25 @@ def archive_work(session):
     return True
 
 
+def turn_streams(session):
+    """The CLI stream of each turn of a session: that of the first turn, cli.stdout.jsonl in the session folder,
+    then those of the resumed turns in order, each in its turn's folder under turns/ (ending.turn_directory)."""
+    return [session / "cli.stdout.jsonl", *sorted((session / "turns").glob("*/cli.stdout.jsonl"))]
+
+
 def archive_raw(session):
     """Replace a finished session's raw conversation with raw.tar.xz, verified as archive_work verifies work/.
 
-    The raw conversation is the CLI stream of each turn, cli.stdout.jsonl in the session folder and in
-    each folder under turns/, and each copy of the CLI's own transcript, transcript-<id>.jsonl
-    (retention.capture). The archive holds them under the paths they had in the session folder, which are
-    the paths retention.json gives. Everything else stays where it is: conversation.md, the readable text
-    drawn from them, retention.json, and the folder transcript-<id>/ that conversation.md points into.
+    The raw conversation is the CLI stream of each turn (turn_streams) and each copy of the CLI's own
+    transcript, transcript-<id>.jsonl (retention.capture). The archive holds them under the paths they had
+    in the session folder, which are the paths retention.json gives. Everything else stays where it is:
+    conversation.md, the readable text drawn from them, retention.json, and the folder transcript-<id>/
+    that conversation.md points into.
     A file is removed only after it is found intact in the archive. An existing archive is never
     overwritten: a raw file left by an interrupted removal must already be inside it, otherwise both are
     kept and the mismatch is raised."""
-    files = [path for pattern in ("cli.stdout.jsonl", "turns/*/cli.stdout.jsonl", "transcript-*.jsonl")
-             for path in sorted(session.glob(pattern)) if path.is_file()]
+    files = [path for path in (*turn_streams(session), *sorted(session.glob("transcript-*.jsonl")))
+             if path.is_file()]
     if not files:
         return False
     entries = {}

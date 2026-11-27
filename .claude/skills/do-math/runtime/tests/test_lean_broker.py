@@ -234,6 +234,10 @@ class ImportClosureTests(unittest.TestCase):
                          {"imports": ["A"], "module": False, "all": False})
         self.assertEqual(header(b"-- note\n\ntheorem t : True := trivial\n"),
                          {"imports": [], "module": False, "all": False})
+        # Lean reads a header word by word: the items that share a line are all read, and with them the local
+        # modules that a compile reads, from whose output its cache key is made.
+        self.assertEqual(header(b"module import A import all B\nimport C open D\nimport E\n"),
+                         {"imports": ["A", "B", "C"], "module": True, "all": True})
 
     def test_imports_are_read_from_the_header_only_and_key_the_version(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1572,7 +1576,7 @@ class BuildTests(BrokerFixture):
 
         # The entry of Side loses a file after the build found it in the cache and before the compile of
         # Target, which waits for Middle to compile, is created.
-        source(middle, imports=("Basis",), sleep=2)
+        source(middle, imports=("Basis",), marker="MIDDLE-AGAIN")
         lost = self.build(root, [target])
         self.until(lambda: self.build_record(lost)["modules"]["Middle"]["status"] == "running")
         side = self.build_record(lost)["modules"]["Side"]
@@ -1611,7 +1615,7 @@ class BuildTests(BrokerFixture):
         for number, registered_by in enumerate(("this broker", "an earlier broker")):
             with self.subTest(registered_by=registered_by):
                 # Middle is compiled again, which changes its output, so Target is compiled after it. Basis is cached.
-                source(middle, imports=("Basis",), sleep=1, marker=f"MIDDLE-{number}")
+                source(middle, imports=("Basis",), marker=f"MIDDLE-{number}")
                 build_id = self.build(root, [target])
                 self.broker.ingest()  # registered: Middle has its job, and Basis was put into the lib for it
                 basis = self.build_record(build_id)["modules"]["Basis"]

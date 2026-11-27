@@ -43,7 +43,8 @@ MODIFIERS = ('private', 'protected', 'public', 'noncomputable', 'unsafe', 'parti
 ATTRIBUTE_COMMAND = re.compile(r'^\s*attribute\s*\[[^\]]*\]\s+([^\n]*)$', re.M)
 BACKTICKED = re.compile(r'`([^`\n]+)`')
 DRIVE_PATH = re.compile(r'(?<![A-Za-z])[A-Za-z]:[\\/](?![\\/])')
-# In Markdown, TeX and BibTeX a backslash after a colon begins a command of a formula, as in $f:\mathbb{N}\to X$.
+# In Markdown, TeX and BibTeX a backslash after a colon begins a command of a formula, as in $f:\mathbb{N}\to X$,
+# and a doc comment of a Lean file can hold such a formula: Challenge.lean holds the modules of the first commit.
 # In JSON, and in the YAML that yaml_text writes with JSON's strings, it begins an escape: a text with a line that
 # ends in "case A:" stands there as `A:\n`, and the backslash of a path stands there twice. So a drive path is
 # looked for in these files in its form with a slash, which is the form a session is given paths in.
@@ -1251,13 +1252,14 @@ def knowledge_archive(repository, commit, folder, name, account):
         f'- Commit: `{commit}`', f'- Date of the commit: {date}', f'- Files: {count}',
         f'- Size unpacked: {size} bytes', f'- Size of the archive: {archive.stat().st_size} bytes',
         f'- SHA-256 of the archive: `{digest}`', '',
-        (f'One change was made to the files. Where a file gave a path of a home folder with the account name of the '
-         f'machine on which the research ran, that name is replaced by `{ACCOUNT}`. {touched} files were touched '
-         'by this. Other paths of that machine in the research\'s own records stand as they were written.' if touched
-         else 'No file of the archive gives a path of a home folder with the account name of the machine on which the '
-              'research ran, so the files are in the archive as the commit has them. Where a record in the archive '
-              'mentions a file path of that machine, the path is kept as it was written; it is not a path of this '
-              'package.'), '',
+        (f'One change was made to the files. Where a file gave a path of a home folder with the name of the account '
+         f'under which this package was made, that name is replaced by `{ACCOUNT}`. {touched} files were touched '
+         'by this. Other paths of the machine on which the research ran stand in its own records as they were written.'
+         if touched
+         else 'No file of the archive gives a path of a home folder with the name of the account under which this '
+              'package was made, so the files are in the archive as the commit has them. Where a record in the archive '
+              'mentions a file path of the machine on which the research ran, the path is kept as it was written; it '
+              'is not a path of this package.'), '',
         '## Verifying and unpacking', '',
         '```text', f'sha256sum {archive.name}', f'tar -xJf {archive.name}', '```', '',
         'The first command prints the SHA-256 above. The second writes `canon/` and `knowledge/` into the current folder.',
@@ -1759,7 +1761,7 @@ def standalone_problems(package, work, account, freeze):
         if relative not in files:
             continue
         text = files[relative].read_text(encoding='utf-8', errors='replace')
-        escaping = relative.endswith(('.md', '.tex', '.bib', '.json', '.yaml'))
+        escaping = relative.endswith(('.md', '.tex', '.bib', '.json', '.yaml', '.lean'))
         found = (DRIVE_PATH_IN_MARKUP if escaping else DRIVE_PATH).search(text)
         if found:
             problems.append(f'{relative} holds a drive path: {text[found.start():found.start() + 40]!r}')

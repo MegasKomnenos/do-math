@@ -431,11 +431,13 @@ class Runner:
         """The task of a session that handed it over, or whose conversation reached the limit of its context
         window, goes on in a new session of the same role.
 
-        Nothing failed: the job counts no retry, waits for no delay and blocks no model. It keeps its
-        pipeline, so the sections and the question of the task stay held (coordination.board). Its next
-        session is given the folders of the sessions before it on this task, oldest first, as `continues`
-        in its assignment, and its pack says what they are (dispatch, context.assemble). The job is
-        offered a free slot before every other waiting job (dispatch_pending)."""
+        Nothing failed: the job waits for no delay and blocks no model, and its count of retries starts again
+        at zero. The session worked until its conversation was nearly full, so a failure of a later session
+        of the task is not one more failure in a row and waits as a first failure does (backoff). The job
+        keeps its pipeline, so the sections and the question of the task stay held (coordination.board). Its
+        next session is given the folders of the sessions before it on this task, oldest first, as
+        `continues` in its assignment, and its pack says what they are (dispatch, context.assemble). The job
+        is offered a free slot before every other waiting job (dispatch_pending)."""
         earlier = job['task'].setdefault('continues', [])
         path = str(self.session_dir(session['id']))
         if path not in earlier:
@@ -446,7 +448,7 @@ class Runner:
             if session['id'] not in previous:
                 previous.append(session['id'])
         session['status'] = 'ended'
-        job.update(status='pending', session=None, not_before=0)
+        job.update(status='pending', session=None, not_before=0, retries=0)
         self.save()
 
     def finish(self, sid, s):

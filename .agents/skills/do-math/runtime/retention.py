@@ -6,7 +6,7 @@ import re
 import shutil
 import time
 from cli_adapter import codex_error_message, detect_usage_limit
-from runtime_support import copy_to_disk, write_json
+from runtime_support import copy_to_disk, turn_streams, write_json
 
 
 def readable(value):
@@ -157,11 +157,6 @@ USAGE_REPORTS = {
     'codex': ('turn.completed', ('usage',),
               ('input_tokens', 'cached_input_tokens', 'output_tokens', 'reasoning_output_tokens')),
 }
-
-
-def turn_streams(session):
-    """The CLI stream of each turn of a session: that of the first turn, then those of the resumed turns in order."""
-    return [session / 'cli.stdout.jsonl', *sorted((session / 'turns').glob('*/cli.stdout.jsonl'))]
 
 
 def usage(session, provider):
