@@ -1,0 +1,26 @@
+{
+  "verdict": "revise",
+  "alignment": "The reader reconstructed items 1, 6, 7, 8, 10 and 11 of the agreement and the gist of item 9: being stuck on an important obstacle is valued work (understanding 5); the new session judges for itself how far it goes and when it ends (11); an earlier report's instructions on that do not bind the continuing session (12); the continuing session carries over what still stands before new research, relative work paths point to the earlier folder, and the report states the whole task as it now stands (13). No difficulty concerns a changed passage. Item 2, which the agreement declares heavy, is absent from the understanding: nothing in the fourteen statements says that the session is not pressed for time, that it should not waste time, or that it can take the time hard work needs. Item 3 (the results the user does not want) is absent as well, and is light. In the manuscript item 2 is one sentence in the middle of a long paragraph. By the table of weights this is a revision of position and development, not of wording: the time point gets a paragraph of its own that opens with it.",
+  "findings": [
+    {
+      "index": 1,
+      "action": "keep",
+      "reason": "The sentence is existing guide text that points to a section of the common introduction which this excerpt leaves out. A session receives that section. It is no part of the proposed edits."
+    },
+    {
+      "index": 2,
+      "action": "keep",
+      "reason": "The root is defined at the start of the common introduction, which a session reads before this part and which this excerpt leaves out. Existing text, not a proposed edit."
+    },
+    {
+      "index": 3,
+      "action": "keep",
+      "reason": "The section the sentence refers to follows in the full guide and is left out of the excerpt, as the manuscript marks. Existing text, not a proposed edit."
+    },
+    {
+      "index": 4,
+      "action": "keep",
+      "reason": "The paragraph on compaction is existing text outside the proposed edits. The observation on its scope is handed to the user as a remark and changes nothing in this manuscript."
+    }
+  ]
+}
