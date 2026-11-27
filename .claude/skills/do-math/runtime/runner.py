@@ -434,7 +434,8 @@ class Runner:
         Nothing failed: the job counts no retry, waits for no delay and blocks no model. It keeps its
         pipeline, so the sections and the question of the task stay held (coordination.board). Its next
         session is given the folders of the sessions before it on this task, oldest first, as `continues`
-        in its assignment, and its pack says what they are (dispatch, context.assemble)."""
+        in its assignment, and its pack says what they are (dispatch, context.assemble). The job is
+        offered a free slot before every other waiting job (dispatch_pending)."""
         earlier = job['task'].setdefault('continues', [])
         path = str(self.session_dir(session['id']))
         if path not in earlier:
@@ -1443,8 +1444,23 @@ class Runner:
         return len(view['free']) > len(view['choosing'])
 
     def dispatch_pending(self):
+        """Launch the waiting jobs that can launch now, in the order in which a free slot is offered.
+
+        A job whose task was handed over (hand_over) comes before every other, whatever its role. The
+        sessions that hand a task on are one stage, as one long session would be, and one long session would
+        not have given up its slot. While such a job waits, the sections or the question of its task stay
+        held, and a wait behind the work of the other roles would have no bound, since that work keeps
+        arriving. A chain of sessions has at most one such job, so these jobs do not pile up ahead of review.
+        After them, and among them, the roles come in the order of PRIORITY, and the jobs of one role in the
+        order in which they were created. A task keeps `continues` once a session has taken it on, so its
+        job stands in the same place when that session fails and the job waits again (retry).
+
+        The order says who is offered a slot first and reserves nothing. A job that cannot launch now, for
+        want of a model, before its `not_before` or behind another of its kind, is passed by, and the slot
+        goes to the next job that can."""
         changed = False
-        for job in sorted(self.state['jobs'].values(), key=lambda j: PRIORITY[j['role']]):
+        for job in sorted(self.state['jobs'].values(),
+                          key=lambda j: (not j['task'].get('continues'), PRIORITY[j['role']])):
             if job['status'] != 'pending' or len(self.active()) >= self.settings['max_sessions']:
                 continue
             # A job whose last session handed its task over continues work that is under way (hand_over).
@@ -1507,9 +1523,10 @@ class Runner:
                     # The queued exploration launches from dispatch_pending() on a later pass.
                     break
                 continue
-            # dispatch_pending() above has already filled free capacity in priority order, so a slot that
-            # opened went to waiting review or peer work before any attempt. Work still pending waits for
-            # its retry time, a model or another of its kind, not for capacity, and holds no attempt back.
+            # dispatch_pending() above has already filled free capacity in its order, so a slot that opened
+            # went to a task that was handed over, or to waiting review or peer work, before any new attempt.
+            # Work still pending waits for its retry time, a model or another of its kind, not for capacity,
+            # and holds no attempt back.
             if (not available or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break

@@ -2042,8 +2042,8 @@ class RunnerTests(ScenarioCase):
             self.assertIs(runner.state['explore_requested'], False)
 
     def test_review_waiting_for_a_model_does_not_hold_attempts_while_slots_are_free(self):
-        # A freed slot goes to waiting review work first through the priority order, which the
-        # priority test below checks; a review that waits for a model rather than for capacity
+        # A freed slot goes to waiting review work before any new attempt through the priority order,
+        # which the priority test below checks; a review that waits for a model rather than for capacity
         # leaves the free slots to attempts.
         runner = self.runner()
         runner.settings['launch_interval'] = 0  # launch spacing has its own test
@@ -2072,7 +2072,7 @@ class RunnerTests(ScenarioCase):
         self.assertCountEqual([s['role'] for _, s in runner.active()], ['organizer', 'explore', 'attempt'])
 
     def test_waiting_comprehensive_review_does_not_block_attempt_while_another_runs(self):
-        # As for organizers: the waiting review takes the slot the running one frees, ahead of any
+        # As for organizers: the waiting review takes the slot the running one frees, ahead of any new
         # attempt, so holding attempts back for it would leave capacity idle without serving it sooner.
         runner = self.runner()
         runner.settings['max_sessions'] = 3
@@ -2129,17 +2129,87 @@ class RunnerTests(ScenarioCase):
                     count = len(runner.state['sessions'])
                     runner.dispatch_pending()
                     self.assertEqual(len(runner.state['sessions']), count)
-                    # Release this test slot; lifecycle handoffs have their own tests.
-                    job = runner.state['jobs'][session['job']]
-                    session['status'] = 'integrated'
-                    job['status'] = 'done'
-                    if job['pipeline']:
-                        runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
-                    runner.save()
+                    self.release_slot(runner, runner.state['jobs'][session['job']])
         self.assertEqual(len(runner.state['sessions']) - before, 6)
         self.assertTrue(all(j['status'] == 'done' for j in runner.state['jobs'].values()))
         # The last launch, the attempt, requests the next exploration (explore_every 1).
         self.assertTrue(runner.state['explore_requested'])
+
+    def release_slot(self, runner, job):
+        """Close a running job and its session, so that the slot they held is free; lifecycle handoffs have
+        their own tests."""
+        runner.state['sessions'][job['session']]['status'] = 'integrated'
+        job['status'] = 'done'
+        if job['pipeline']:
+            runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
+        runner.save()
+
+    def handed_over(self, runner):
+        """An attempt that held the one slot of the runner and handed its task over while a comprehensive
+        review waited for a slot: the job of the attempt, which waits for the session that continues it, and
+        the job of the review. Called while the launch of a host is replaced."""
+        runner.settings['max_sessions'] = 1
+        job = runner.state['jobs'][runner.producer('attempt')]
+        self.assertTrue(runner.dispatch(job['id']))
+        review = runner.state['jobs'][runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [],
+                                                                'conflicts': []})]
+        runner.schedule()
+        self.assertEqual(review['status'], 'pending')
+        # The attempt's conversation fills, and its host authorizes the end on the basis of a hand-over, which
+        # test_ending follows through a host. The runner collects the session.
+        first = job['session']
+        write_json(runner.session_dir(first) / 'end-check.json',
+                   {'resumptions': 0, 'authorization': {'basis': 'handed_over'}})
+        runner.finish(first, runner.state['sessions'][first])
+        self.assertEqual((job['status'], job['task']['continues']), ('pending', [str(runner.session_dir(first))]))
+        self.assertEqual(runner.active(), [])
+        return job, review
+
+    def test_a_task_that_was_handed_over_takes_the_freed_slot_ahead_of_a_waiting_review(self):
+        # The sessions that hand a task on are one stage, and one long session would have kept its slot. So
+        # the job that waits for the next of them is offered a slot before every role, here an attempt, the
+        # last of the roles, before a review, the first of them. The pass is the one the runner makes after
+        # it has collected the session (tick): what is due is queued and what waits is launched.
+        runner = self.runner()
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            job, review = self.handed_over(runner)
+            runner.schedule()
+            self.assertEqual((job['status'], review['status']), ('running', 'pending'))
+            self.assertEqual([s['job'] for _, s in runner.active()], [job['id']])
+            # The review has lost nothing but that one slot: the next slot that opens is its own.
+            self.release_slot(runner, job)
+            runner.schedule()
+            self.assertEqual(review['status'], 'running')
+            self.assertEqual([s['job'] for _, s in runner.active()], [review['id']])
+
+    def test_a_task_that_was_handed_over_and_cannot_launch_leaves_the_slot_to_the_work_after_it(self):
+        # Being first in the order reserves nothing: a job that cannot launch when a slot is free is passed
+        # by, as a job of any role is, and the slot goes to the next job that can launch.
+        runner = self.runner()
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            job, review = self.handed_over(runner)
+            # No model of the attempt's role is available, and a review has another.
+            runner.settings['roles']['attempt'] = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
+            runner.state['blocks']['provider:codex'] = {'until': 10**12}
+            runner.schedule()
+            self.assertEqual((job['status'], review['status']), ('pending', 'running'))
+            # With a model and a slot the task goes on. The session that continues it then ends without having
+            # left anything, so its job waits out a delay (retry). The task still names the session that handed
+            # it over, and the job is passed by until that delay is over, with its count of retries as it was set.
+            runner.state['blocks'].clear()
+            self.release_slot(runner, review)
+            runner.schedule()
+            self.assertEqual(job['status'], 'running')
+            second = job['session']
+            runner.finish(second, runner.state['sessions'][second])
+            self.assertEqual((job['status'], job['retries'], len(job['task']['continues'])), ('pending', 1, 1))
+            self.assertGreater(job['not_before'], time.time())
+            other = runner.state['jobs'][runner.enqueue('review', dict(task))]
+            runner.schedule()
+            self.assertEqual((job['status'], job['retries'], other['status']), ('pending', 1, 'running'))
 
     def test_eligible_exploration_precedes_a_pending_attempt_retry(self):
         runner = self.runner()
