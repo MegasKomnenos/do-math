@@ -3995,10 +3995,12 @@ class FromDraftTests(PaperCase):
         self.assertFalse((self.out / 'plan.json').exists())
         self.assertEqual(self.events('check')[0]['check'], 'the plan of the draft, brought to the materials')
         # The run is continued without the folder of the draft being named again. A plan with other papers is not
-        # accepted, since no session reads the collection for it; the plan that passes is written from.
+        # accepted, since no session reads the collection for it; the plan that passes is written from. That plan
+        # has another title than the draft's: this run was not told to keep its title (`keep_title`), so it takes it.
+        retitled = {**CARRIED, 'title': 'Odd numbers and squares'}
         again = written_from_draft()
         again['plan:from-draft'] = [{}, {}, {}, {'output/plan.json': json.dumps({**CARRIED, 'exemplars': CHOSEN[::-1]})},
-                                    {'output/plan.json': json.dumps(CARRIED)}]
+                                    {'output/plan.json': json.dumps(retitled)}]
         # The run ends with one finding open, so that it can be taken up afterwards.
         again['cover:intro'] = [{'output/coverage.json': json.dumps([{
             'entry': 2, 'quote': 'Which number is $S_n$?', 'asserts': 'Nothing.', 'nearest': 'Small.root',
@@ -4014,7 +4016,8 @@ class FromDraftTests(PaperCase):
         self.assertEqual([(c['kind'], c['section']) for c in calls][:3],
                          [('plan', 'from-draft'), ('plan', 'from-draft'), ('write', 'intro')])
         self.assertIn('"exemplars" stays as plan.json has it', calls[1]['prompt'])
-        self.assertEqual(read_json(self.out / 'plan.json'), CARRIED)
+        self.assertEqual(read_json(self.out / 'plan.json'), retitled)
+        self.assertNotIn('keep_title', self.events('materials')[0])
         planned = self.events('plan')[0]
         self.assertEqual((planned['from_draft'], planned['repaired']), (True, True))
         self.assertIn(STRICT, (self.folder(calls[3]) / 'brief.md').read_text(encoding='utf-8'))
@@ -4022,6 +4025,58 @@ class FromDraftTests(PaperCase):
         code, said = self.said(['--open-findings', '--dry-run', '--tex', *TEX])
         self.assertEqual(code, 0)
         self.assertIn('came to its end (open_findings) with 1 findings left open', said)
+
+    def test_a_run_that_keeps_its_title_sends_back_a_plan_with_another_title_and_keeps_a_finding_about_the_title(self):
+        # As the finalize pipeline has the paper written: from its draft, whose title it has already written into a
+        # file of the frozen library. The plan of the draft fails the check as in the test above, so a session
+        # repairs it, and every plan that this session returns has another title than the draft's.
+        folder = self.draft_folder(plan={**DRAFT_PLAN, 'others': DRAFT_PLAN['others'][1:]})
+        renamed = {'output/plan.json': json.dumps({**CARRIED, 'title': 'Odd numbers and squares'})}
+        script = written_from_draft()
+        script['plan:from-draft'] = [renamed]
+        with self.assertRaises(paper.Stop) as stopped:
+            self.run_paper(script, from_draft=folder, keep_title=True)
+        self.assertIn(f'no plan session left output the script can use, in {paper.PLAN_ATTEMPTS} attempts: '
+                      + paper.TITLE_KEPT, str(stopped.exception))
+        self.assertIn(paper.TITLE_KEPT, self.calls()[1]['prompt'])
+        self.assertFalse((self.out / 'plan.json').exists())
+        self.assertIs(self.events('materials')[0]['keep_title'], True)
+        # The run is continued without being told again that it keeps its title, which its first event says. The
+        # first plan it is given has the other title again and goes back; the plan with the title of the draft is
+        # taken. The one reader then finds the title wanting, and the narrow repair, which keeps the plan, keeps it.
+        wanting = {'where': 'the title', 'section': '', 'quote': PLAN['title'],
+                   'problem': 'The title does not say what the sum is.'}
+        fixed = 'The title was fixed before the paper was written, and files published with the paper carry it.'
+        again = written_from_draft()
+        again['plan:from-draft'] = [renamed] * (paper.PLAN_ATTEMPTS + 1) + [{'output/plan.json': json.dumps(CARRIED)}]
+        again['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [wanting]})}]
+        again['repair:narrow'] = [{'output/response.json': answered('The title stands in the plan.', 'kept')}]
+        # The first resolving session answers the finding by a plan with another title, the second with the reason.
+        again['resolve'] = [{**renamed, 'output/response.json': answered('The title names the squares now.')},
+                            {'output/response.json': answered(fixed, 'kept')}]
+        launched = len(self.calls())
+        with patch('paper.READING_ROUNDS', 1):
+            self.assertEqual(self.run_paper(again, resume=True), 0)
+        self.assertEqual(self.kinds(launched), [
+            ('plan', 'from-draft'), ('plan', 'from-draft'), ('write', 'intro'), ('write', 'tools'), ('write', 'proof'),
+            ('read', None), ('repair', 'narrow-reading'), ('likeness', None), ('likeness', None), *COMPARED,
+            ('resolve', None), ('resolve', None), ('cover', 'intro')])
+        self.assertIn(paper.TITLE_KEPT, self.calls()[launched + 1]['prompt'])
+        # The resolving session is told that it may change the titles of the sections, that the title of the paper
+        # stays and why, and how a finding about it is answered. Its plan with another title goes back with the reason.
+        first, second = self.calls('resolve')
+        self.assertIn('change the title of a section;', first['prompt'])
+        self.assertNotIn('the title of the paper or of a section', first['prompt'])
+        self.assertIn(paper.RESOLVE_TITLE_KEPT.strip(), first['prompt'])
+        self.assertIn('output/plan.json: ' + paper.TITLE_KEPT, second['prompt'])
+        # The paper has the title of the draft, and the run ends with nothing open: the finding about the title is
+        # listed among those that were answered with a reason, with the reason of the resolving session.
+        self.assertEqual(read_json(self.out / 'plan.json'), CARRIED)
+        self.assertIn('\\title{' + PLAN['title'] + '}', (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        end = self.events('end')[-1]
+        left = {**wanting, 'open_because': paper.KEPT + 'The title stands in the plan.'}
+        self.assertEqual((end['status'], end['open'], end['kept']),
+                         ('complete', [], [{'check': paper.READING, 'finding': left, 'reason': fixed}]))
 
     def test_the_materials_hold_further_declarations_with_what_they_rest_on_and_are_as_before_without_them(self):
         model = replay(self.read_from)
@@ -4418,6 +4473,9 @@ class ResolveTests(PaperCase):
         self.assertEqual(self.given(first), sorted(CHOSEN))
         self.assertEqual(read_json(self.folder(first) / 'session.json')['model'],
                          read_json(self.folder(self.calls('write')[0]) / 'session.json')['model'])
+        # This run was not told to keep its title (`keep_title`): the session may change the title of the paper too.
+        self.assertIn('change the title of the paper or of a section;', first['prompt'])
+        self.assertNotIn(paper.RESOLVE_TITLE_KEPT.strip(), first['prompt'])
         # A plan that does not pass the check of the plan goes back with the reasons, as the first plan does.
         self.assertIn('output/plan.json: the plan says nothing about these elements of the materials: Small.oddSum_mono',
                       second['prompt'])

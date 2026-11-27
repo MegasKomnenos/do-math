@@ -2148,8 +2148,11 @@ class Run:
         codes = read_json(self.work / 'lib' / '0-selected' / 'decision.json')['registry']['msc2020']
         write_json(page, {'authors': [{key: author[key] for key in ('name', 'address', 'email') if key in author}
                                       for author in self.config['authors']], 'msc2020': list(codes)})
+        # The freeze wrote the title of the draft into lean/formalization.yaml, and the README and the entry in the
+        # repository's README.md take the title of the paper. So the paper keeps the title of the draft: a session
+        # of the paper command that returns a plan with another title is sent back (paper.produce, `keep_title`).
         code = self.paper_run(self.work / 'view' / 'frozen', out, from_draft=self.work / 'lib' / '6-draft', title_page=page,
-                              main=self.paper_main())
+                              main=self.paper_main(), keep_title=True)
         log = read_json(out / 'log.json') if (out / 'log.json').is_file() else []
         end = next((event for event in reversed(log) if event['event'] == 'end'), {})
         if code != 0:

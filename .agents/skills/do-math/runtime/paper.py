@@ -141,6 +141,9 @@ RESOLVE_UNDONE = ('The session that resolves what the readings left open changed
                   'the changes of that session the manuscript did not pass its machine checks or could not be typeset, '
                   'also after the repairs that follow such a failure, so every change of the session was put back, and '
                   'the text is as the readings left it.')
+# Why a plan with another title is sent back in a run that keeps the title of its paper (produce, `keep_title`).
+TITLE_KEPT = ('"title" stays as plan.json has it: the title of the paper was fixed before this run, and files that are '
+              'published with the paper already carry it and can no longer be changed')
 # Why a finding is open after the last repair it received, as the open list says it under "open_because".
 KEPT = 'the repair session kept the text: '
 UNDONE = 'changed, and the change was undone, because the reading of the changed passages found it unsound: '
@@ -2911,6 +2914,16 @@ have cited; leave out of it every element whose record now names a source, and e
 Use no source other than the files in this folder. Write no part of the paper itself.
 '''
 
+# What the resolving session is told of the title of the paper. In a run by itself it may change the title, as it
+# may change the title of a section. In a run that keeps its title (produce, `keep_title`) the prompt names the
+# titles of the sections alone among what the session may change, and says among what stays that the title of the
+# paper does, why, and how a finding about it is answered.
+RESOLVE_TITLES = {False: 'the title of the paper or of a section', True: 'the title of a section'}
+RESOLVE_TITLE_KEPT = ''' The title of the paper stays too: it was fixed before the manuscript was written, and files \
+that are published with the paper already carry it and can no longer be changed. A plan that you write therefore has \
+the "title" of `plan.json`, and a finding that asks for another title is one at which you keep the text, with this as \
+your reason.'''
+
 RESOLVE_PROMPT = CONTEXT + '''
 
 This session resolves what the readings of the manuscript left open. The manuscript was written, read and repaired by \
@@ -2948,7 +2961,7 @@ last reader of the manuscript took the paper to prove and how, or null.{papers}
 What you may change. You may rewrite a passage, a proof or a whole part. You may also change the structure of the \
 paper: move a numbered statement to another place or another section; change its kind; take away its number and write \
 its content into the running text or into the proof that uses it; give a number to an element that the plan absorbed; \
-join two sections or divide one; change the title of the paper or of a section; change an entry of the notation. Which of these a finding calls for is \
+join two sections or divide one; change {titles}; change an entry of the notation. Which of these a finding calls for is \
 yours to judge, by the method and by what the papers in `exemplars/` do.
 
 What stays, and why. Every numbered statement states one element of the materials and says exactly what that element \
@@ -2957,7 +2970,7 @@ it says or add a numbered statement that states no element. The paper asserts no
 state (method, section "What the running text asserts"): nothing can be added to the library now, and after this \
 session the running text is compared with the records, where a sentence that no element covers is cut. The paper cites only works that are \
 in `references.bib`, and it does not mention Lean, a proof assistant or a formal proof. The other decisions of the \
-method stand as well, also where the papers do otherwise.
+method stand as well, also where the papers do otherwise.{title_kept}
 
 Decide for each finding whether the manuscript has to change. A reader can misread, and a finding can ask for \
 something that the method excludes or that would change the mathematics; in that case keep the text and say why, in \
@@ -3503,6 +3516,9 @@ class Paper(Sessions):
         self.resolving = None
         # The draft that the paper is written from (--from-draft): its statements, formulas and gaps. None otherwise.
         self.sketched = None
+        # Whether the title of the paper stays as the first plan of the run has it (produce, `keep_title`). A plan
+        # that a later session returns with another title is then sent back (plan_from_draft, resolve_session).
+        self.keep_title = False
         # A narrow repair that is under way, with the reading of what it changed: its step, the findings it takes
         # up, and what its later steps need of the earlier ones (narrow_begin). None when none is under way.
         self.narrow = None
@@ -3614,7 +3630,9 @@ class Paper(Sessions):
         The script carries the plan over (carried_plan) and the check of the plan decides. When the check
         finds problems, a planning session receives the plan, what the script changed, the problems, the
         account of the papers and the drafted statements, and returns a plan, within the bound of the
-        planning sessions. It is given no paper of the collection: the papers were read for the draft."""
+        planning sessions. It is given no paper of the collection: the papers were read for the draft.
+        In a run that keeps its title (produce), a plan that the session returns with another title
+        than the draft's is sent back with the reason."""
         plan, study, draft = read_draft(folder)
         draft = self.sketched or draft  # the draft as the run recorded it when it began, from which its materials are
         carried, notes = carried_plan(self.materials, plan, draft)
@@ -3627,6 +3645,8 @@ class Paper(Sessions):
                 if not found and (repaired.get('exemplars') != carried['exemplars']):
                     found.append('"exemplars" stays as plan.json has it: the papers were chosen and read for the draft, '
                                  'and study.md is the account of those papers')
+                if self.keep_title and repaired.get('title') != carried.get('title'):
+                    found.append(TITLE_KEPT)
                 if found:
                     raise Unusable(found)
                 return repaired
@@ -4452,8 +4472,10 @@ class Paper(Sessions):
 
         The session may change wording and structure, so it can return a plan with other sections and
         other numbered statements. What it returns is accepted when the plan passes the check of the
-        plan and every section of the plan has a part. The steps, each recorded in the state when it is
-        complete, so that a run that is stopped is continued at the step it was in:
+        plan and every section of the plan has a part. In a run that keeps its title (produce) the
+        plan also has to have the title that the manuscript has: the prompt says that the title stays
+        and why, and a plan with another title is sent back. The steps, each recorded in the state
+        when it is complete, so that a run that is stopped is continued at the step it was in:
 
           session  the session is launched, and what it returned is kept in <out>/resolve: the plan and
                    every part of the manuscript as it now is. The plan and the parts that the
@@ -4618,6 +4640,8 @@ class Paper(Sessions):
                 if not problems and plan.get('exemplars') != self.plan['exemplars']:
                     problems = ['"exemplars" stays as plan.json has it: the papers were chosen and read when the paper '
                                 'was planned, and study.md is the account of those papers']
+                if self.keep_title and plan.get('title') != self.plan['title']:
+                    problems.append(TITLE_KEPT)
                 if problems:
                     raise Unusable(['output/plan.json: ' + problem for problem in problems])
             parts = {}
@@ -4653,6 +4677,7 @@ class Paper(Sessions):
             papers=REPAIR_PAPERS.format(papers='; '.join(
                 f"section `{sid}`, " + ' and '.join(f'`exemplars/{key}.tex`' for key in keys)
                 for sid, keys in papers.items())) if self.collection is not None else '',
+            titles=RESOLVE_TITLES[self.keep_title], title_kept=RESOLVE_TITLE_KEPT if self.keep_title else '',
             plan_keys=PLAN_KEYS + PLAN_ACCEPTS + main_note(self.materials), **self.research_note())
         return self.session('resolve', prompt, files, read, self.writer)
 
@@ -5694,7 +5719,7 @@ def stops_recorded(run):
 
 
 def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=False, dry=False,
-            draft=False, from_draft=None, title_page=None, gate=None, main=None):
+            draft=False, from_draft=None, title_page=None, gate=None, main=None, keep_title=False):
     """The whole command for a new paper, or with `resume` for one whose run was stopped; returns the exit code.
 
     With `dry` it makes every check that comes before the first session, launches nothing and writes
@@ -5710,7 +5735,18 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
     is continued, and a paper that is written from a draft, take the main result from that record;
     when `main` is given to them as well it has to name the same element, and the command refuses
     another. Without `main`, and when it names the settling declaration, a new run is what it is
-    without this parameter."""
+    without this parameter.
+
+    `keep_title` is given by a caller that has fixed the title of the paper outside the run. The
+    finalize pipeline is such a caller when it has the paper written from its draft: its freeze wrote
+    the title of the draft into lean/formalization.yaml, which no later step changes. The title then
+    stays as it is in the plan with which the run begins, that of the draft or that of the planning
+    session. Two sessions return a plan after that: the one that repairs the plan of a draft, and the
+    resolving session. A plan that either returns with another title is sent back with the reason
+    (TITLE_KEPT), and the resolving session is told that the title stays and why (RESOLVE_TITLE_KEPT).
+    The `materials` event records that the run keeps its title, so a run that is continued keeps it
+    whether or not this is given again. No option of the command line sets it: in a run that the
+    command line starts, those sessions may change the title."""
     out = Path(out)
     if draft and from_draft:
         raise Stop('--draft makes the draft of a paper and --from-draft writes the paper from one; a run is one of the two')
@@ -5773,6 +5809,7 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
             raise Stop(f'the run in {out} was not begun with ' + ('--draft' if draft else '--from-draft')
                        + '; continue it with --resume alone')
         draft, from_draft = bool(begun.get('draft')), from_draft or begun.get('from_draft')
+        keep_title = keep_title or bool(begun.get('keep_title'))
         run.materials = read_json(out / 'materials.json')
         same_canon(out, run.materials, materials, 'the run cannot be continued')
         run.take_up()
@@ -5795,9 +5832,11 @@ def produce(instance, out, tex=None, choice=None, parallel=PARALLEL, resume=Fals
                   tex=run.recipe[0] if run.recipe else None, parallel=run.parallel,
                   warnings=[f'the source {key} of an element is not in bibliography.bib' for key in lost],
                   **({'draft': True} if draft else {}),
+                  **({'keep_title': True} if keep_title else {}),
                   **({'from_draft': str(Path(from_draft).resolve()), 'further': run.materials.get('further', [])}
                      if from_draft else {}))
         run.event('collection', folder=str(EXEMPLARS), papers=[entry['key'] for entry in manifest], fetched=fetched)
+    run.keep_title = bool(keep_title)
     if authors is not None:
         run.authors, run.codes = authors, codes
         if not dry:

@@ -250,11 +250,11 @@ class FinalizeCase(InstanceCase):
         return Command(provider_for_model(model), [sys.executable, '-B', str(CLI), 'session', str(self.scenario)], Path(cwd))
 
     def produce(self, instance, out, tex=None, choice=None, parallel=4, resume=False, dry=False, draft=False,
-                from_draft=None, title_page=None, gate=None, main=None):
+                from_draft=None, title_page=None, gate=None, main=None, keep_title=False):
         """Stands in for paper.produce: writes the files that the pipeline reads of a run of the paper command."""
         out = Path(out)
         self.produced.append({'instance': Path(instance).name, 'out': out.name, 'resume': resume, 'draft': draft,
-                              'gate': gate, 'parallel': parallel, 'main': main,
+                              'gate': gate, 'parallel': parallel, 'main': main, 'keep_title': keep_title,
                               'title_page': read_json(title_page) if title_page else None,
                               'root_state': replay(instance)['root_state'],
                               'drafted': read_json(Path(from_draft) / 'draft.json') if from_draft else None})
@@ -2043,6 +2043,8 @@ class RunTests(FinalizeCase):
         self.assertEqual((draft['parallel'], written['parallel']), (2, 2))
         # Both are given the main theorem that the selection chose, which is not the root here.
         self.assertEqual((draft['main'], written['main']), ('Small.sq_step', 'Small.sq_step'))
+        # The freeze wrote the title of the draft into lean/formalization.yaml, so the paper is told to keep it.
+        self.assertEqual((draft['keep_title'], written['keep_title']), (False, True))
         # The title page names the authors, and the subject classification that the selection chose for the registry.
         self.assertEqual(written['title_page'], {'authors': [{'name': 'A. Author', 'email': 'a@example.org'}],
                                                  'msc2020': ['05A15']})
