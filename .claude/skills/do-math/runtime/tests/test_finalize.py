@@ -240,7 +240,9 @@ class FinalizeCase(InstanceCase):
         self.scenario.mkdir()
         self.produced, self.paper_code, self.draft = [], 0, DRAFT
         self.closed = []  # what the stand-in for the paper command says it closed without a person
-        self.failing = False  # whether the stand-in leaves a manuscript that fails its typesetting
+        # Whether the stand-in leaves a manuscript that fails its typesetting: True when the run that writes it does,
+        # 'closing' when that run finishes the manuscript and the pass that closes what it left open does.
+        self.failing = False
         self.disagreements = []  # what the stand-in's comparison of the draft reports of the records
         self.addCleanup(stop_broker, self.work)
 
@@ -266,21 +268,29 @@ class FinalizeCase(InstanceCase):
             write_json(out / 'log.json', [session] + ([{'event': 'draft', 'record_disagreements': self.disagreements}]
                                                       if self.disagreements else []))
             return self.paper_code
-        if self.failing:
-            write_json(out / 'log.json', [session, {'event': 'end', 'status': 'open_findings', 'kept': [], 'open': [
-                {'check': paper.TYPESETTING, 'after_repairs': 3, 'problems': ['TeX stopped at line 12.']}]}])
+        failed = {'event': 'end', 'status': 'open_findings', 'kept': [], 'open': [
+            {'check': paper.TYPESETTING, 'after_repairs': 3, 'problems': ['TeX stopped at line 12.']}]}
+        if self.failing is True:
+            write_json(out / 'log.json', [session, failed])
             return 2
         (out / 'parts').mkdir(exist_ok=True)
         (out / 'parts' / 'intro.tex').write_text('We prove that the odd numbers sum to squares.\n', encoding='utf-8')
         # As the paper command writes them: with LF line endings on every platform.
         (out / 'paper.tex').write_text('\\documentclass{amsart}\n', encoding='utf-8', newline='\n')
-        (out / 'paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
         (out / 'references.bib').write_text(BIBLIOGRAPHY, encoding='utf-8', newline='\n')
         instances = (read_json(Path(from_draft) / 'draft.json').get('instances') or []) if from_draft else []
         write_json(out / 'correspondence.json', {'root': 'Small.root', 'statements': [
             {'label': 'thm:main', 'element': 'Small.root', 'cited': None},
             {'label': 'lem:step', 'element': 'Small.sq_step', 'cited': 'gauss1801'}],
             'instances': [{key: entry[key] for key in ('element', 'key', 'where')} for entry in instances]})
+        if self.failing == 'closing':
+            # The log of a folder in which the run came to its end with a finding left open and the closing pass
+            # (paper.close_open) then left the typesetting failing. The manuscript is there, and no PDF of it.
+            write_json(out / 'log.json', [session, {'event': 'end', 'status': 'open_findings', 'kept': [], 'open': [
+                {'check': paper.COVERAGE, 'after_repairs': 1, 'problems': [{'quote': 'This bound is sharp.'}]}]},
+                {'event': 'closing'}, failed])
+            return 2
+        (out / 'paper.pdf').write_bytes(b'%PDF-1.4 stand-in\n')
         write_json(out / 'log.json', [session, {'event': 'end', 'status': 'complete', 'open': [],
                                                 'kept': [{'check': 'reading', 'finding': 'The title is long.',
                                                           'reason': 'It names the result.'}],
@@ -1318,7 +1328,8 @@ class PaperRunTests(FinalizeCase):
         code, made, acted = called([session, {'event': 'end', 'status': 'open_findings', 'open': [{'check': 'c'}]}])
         self.assertEqual((code, made), (9, None))
         self.assertEqual(acted.args, (self.root / 'view', out, ['tex'], None, 3))
-        # Ended with its manuscript failing the typesetting: nothing takes that run up, and the paper is written anew.
+        # The run that wrote the manuscript ended with it failing the typesetting: nothing takes that manuscript up,
+        # and the paper is written anew.
         code, made, acted = called([session, {'event': 'end', 'status': 'open_findings',
                                               'open': [{'check': paper.TYPESETTING, 'problems': ['x']}]}])
         self.assertEqual((code, acted, made.kwargs['resume'], out.exists()), (7, None, False, False))
@@ -1340,6 +1351,60 @@ class PaperRunTests(FinalizeCase):
         # A folder that holds something else is cleared and the run begins anew.
         code, made, acted = called([], materials=False)
         self.assertEqual((code, made.kwargs['resume'], out.exists()), (7, False, False))
+
+    def test_a_finished_manuscript_that_a_later_pass_left_failing_is_typeset_once_before_the_paper_is_written_anew(self):
+        run = finalize.Run(self.instance, 'odd', {**finalize.default_config(), 'parallel': 3, 'tex': ['tex']})
+        out = self.root / 'paper'
+
+        def end(*checks):
+            """The `end` event of a run or a pass that left these checks open; of a complete one without them."""
+            return {'event': 'end', 'status': 'open_findings' if checks else 'complete',
+                    'open': [{'check': check, 'problems': ['x']} for check in checks]}
+
+        # The run wrote its manuscript and left a finding open, and the pass that closes it left the typesetting failing.
+        left = [{'event': 'session', 'kind': 'write'}, end('c'), {'event': 'closing'}, end('c', paper.TYPESETTING)]
+
+        def started(log, *ending):
+            """One start on a folder with this log, where a pass of paper.typeset_only would leave `ending` open.
+
+            Returns the exit code and the calls of paper.typeset_only, of the paper command and of the closing pass."""
+            shutil.rmtree(out, ignore_errors=True)
+            out.mkdir()
+            write_json(out / 'log.json', log)
+            write_json(out / 'materials.json', {})
+
+            def typeset_only(view, folder, *given, **options):
+                write_json(folder / 'log.json', log + [{'event': 'typeset only'}, end(*ending)])
+                return 2 if ending else 0
+
+            with patch('paper.typeset_only', side_effect=typeset_only) as typeset, \
+                    patch('finalize.produce', return_value=7) as made, patch('paper.close_open', return_value=9) as acted:
+                code = run.paper_run(self.root / 'view', out, from_draft=self.root / 'draft')
+            return code, typeset.call_args, made.call_args, acted.call_args
+
+        # The manuscript is kept, and its machine checks and its typesetting are made once more, under the run's bound
+        # on sessions. Nothing is open after that pass: the paper is done.
+        code, typeset, made, acted = started(left)
+        self.assertEqual((code, made, acted, out.exists()), (0, None, None, True))
+        self.assertEqual((typeset.args, typeset.kwargs), ((self.root / 'view', out, ['tex'], None, 3), {'gate': run.gate}))
+        # A closing pass that was stopped and continued before it failed is such a pass as well.
+        code, typeset, made, acted = started(left[:3] + [{'event': 'resume'}, left[3]])
+        self.assertEqual((code, typeset is None, made, acted), (0, False, None, None))
+        # What the pass of the typesetting leaves open is closed as after any run.
+        code, typeset, made, acted = started(left, 'c')
+        self.assertEqual((code, typeset is None, made), (9, False, None))
+        self.assertEqual(acted.args, (self.root / 'view', out, ['tex'], None, 3))
+        # The pass of the typesetting fails as well: stage 4 is judged by its exit code, and the manuscript is still there.
+        code, typeset, made, acted = started(left, paper.TYPESETTING)
+        self.assertEqual((code, typeset is None, made, acted, out.exists()), (2, False, None, None, True))
+        # The start after that takes the manuscript up no more: it is deleted, and the paper is written anew. So it is
+        # when the pass of the typesetting was stopped and continued before it failed.
+        twice = read_json(out / 'log.json')  # the log as the start above left it
+        continued = left + [{'event': 'typeset only'}, {'event': 'end', 'status': 'failed', 'error': 'x'},
+                            {'event': 'resume'}, end(paper.TYPESETTING)]
+        for log in (twice, continued):
+            code, typeset, made, acted = started(log)
+            self.assertEqual((code, typeset, acted, made.kwargs['resume'], out.exists()), (7, None, None, False, False))
 
 
 class BuildTests(FinalizeCase):
@@ -2123,7 +2188,7 @@ class RunTests(FinalizeCase):
         self.assertFalse((merged / 'Helper.lean').exists())
         self.assertEqual((merged / 'Root.lean').read_text(encoding='utf-8'), joined)
 
-    def test_a_manuscript_that_fails_its_typesetting_stops_the_run_and_the_next_start_writes_the_paper_anew(self):
+    def test_a_manuscript_that_fails_its_typesetting_as_it_is_written_stops_the_run_and_the_next_start_writes_it_anew(self):
         self.from_the_records()
         self.failing = True
         self.assertEqual(self.run_command(script(), config=self.config()), 2)
@@ -2134,7 +2199,8 @@ class RunTests(FinalizeCase):
         self.assertIn('## What to do\n\nRead the problems.', report)
         self.assertIn('Started again, the command writes the paper anew from the draft', report)
         self.assertNotIn('{"', report)
-        # Nothing takes up a run whose manuscript failed: started again, the command deletes it and writes the paper anew.
+        # Nothing takes up a manuscript that failed in the run that wrote it: started again, the command deletes it and
+        # writes the paper anew.
         self.failing = False
         # At the end of this start another program holds the folder of the sessions, which Windows then refuses to delete.
         real = finalize.remove_tree
@@ -2153,6 +2219,58 @@ class RunTests(FinalizeCase):
         self.assertIn('## What could not be deleted', report)
         self.assertIn('- `sessions`: ', report)
         self.assertEqual(sorted(path.name for path in self.work.iterdir()), ['decisions.md', 'log.json', 'report.md', 'sessions'])
+
+    def test_a_finished_manuscript_that_its_closing_pass_leaves_failing_is_typeset_once_and_only_then_written_anew(self):
+        self.from_the_records()
+        folder = self.work / 'paper'
+        kept = 'Started again, the command keeps the manuscript and makes its machine checks and its typesetting once more'
+        anew = 'Started again, the command writes the paper anew from the draft'
+        written = lambda: [call['resume'] for call in self.produced if call['out'] == 'paper']
+
+        def typeset_pass(complete):
+            """Stands in for paper.typeset_only: the pass adds its events to the log, and the PDF when it is complete."""
+            def made(view, out, *given, **options):
+                log = read_json(out / 'log.json')
+                if complete:
+                    (out / 'paper.pdf').write_bytes(b'%PDF-1.4 typeset later\n')
+                write_json(out / 'log.json', log + [{'event': 'typeset only'}, {
+                    'event': 'end', 'status': 'complete', 'open': [], 'kept': []} if complete else log[-1]])
+                return 0 if complete else 2
+            return made
+
+        def stopped():
+            """A start that the manuscript stops at the paper: what its report tells the user to do."""
+            self.assertEqual(self.run_command(script(), config=self.config()), 2, self.said)
+            report = (self.work / 'report.md').read_text(encoding='utf-8')
+            self.assertIn('The run stopped at the step `4-paper`', report)
+            self.assertIn('- typesetting, after 3 repairs: TeX stopped at line 12.\n', report)
+            return report.split('## What to do\n\n')[1]
+
+        # The paper command finishes the manuscript, and the pass that closes what it left open leaves the typesetting
+        # failing. The readings and the comparisons of that manuscript stand, so the next start keeps it.
+        self.failing = 'closing'
+        todo = stopped()
+        self.assertIn(kept, todo)
+        self.assertNotIn(anew, todo)
+        # That start makes the machine checks and the typesetting once more, on the manuscript that is there. They
+        # fail again, and the report now says that the next start writes the paper anew.
+        with patch('paper.typeset_only', side_effect=typeset_pass(False)) as typeset:
+            todo = stopped()
+        self.assertEqual((typeset.call_count, written()), (1, [False]))
+        self.assertIn(anew, todo)
+        self.assertNotIn(kept, todo)
+        # The start after that deletes the manuscript and has the paper written anew. This paper fails in its closing
+        # pass as well; were paper.typeset_only called in this start, it would refuse the stand-in's folder.
+        todo = stopped()
+        self.assertEqual(written(), [False, False])
+        self.assertIn(kept, todo)
+        self.assertFalse((folder / 'paper.pdf').exists())
+        # This time the typesetting passes: the paper is the manuscript that was kept, and the run comes to its end.
+        self.failing = False
+        with patch('paper.typeset_only', side_effect=typeset_pass(True)) as typeset:
+            self.assertEqual(self.run_command(script(), config=self.config()), 0, self.said)
+        self.assertEqual((typeset.call_count, written()), (1, [False, False]))
+        self.assertEqual((self.solved / 'paper' / 'paper.pdf').read_bytes(), b'%PDF-1.4 typeset later\n')
 
     def test_an_end_that_is_held_up_or_interrupted_is_entered_again_or_refused_by_the_next_start(self):
         self.from_the_records()

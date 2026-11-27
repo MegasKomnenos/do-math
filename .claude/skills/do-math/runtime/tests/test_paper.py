@@ -18,7 +18,7 @@ import threading
 import time
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 THIS = Path(__file__).resolve()
 STAND_IN = THIS.parent / 'paper_cli.py'  # what the tests launch in place of the CLI of a session and of TeX
@@ -1815,8 +1815,13 @@ class RunTests(PaperCase):
         failing = [sys.executable, '-c', 'print("! Emergency stop."); raise SystemExit(1)']
         script = good()
         script['repair:typeset'] = [{'output/tools.tex': TOOLS + f'% {n}\n'} for n in range(paper.REPAIR_ROUNDS)]
-        self.assertEqual(self.run_paper(script, tex=failing, only=True), 2)
+        # A caller that bounds its sessions gives the pass its gate, and the repair sessions are launched under it.
+        gate = Mock(wraps=threading.BoundedSemaphore(1))
+        self.assertEqual(self.run_paper(script, tex=failing, only=True, gate=gate), 2)
         self.assertEqual([item['check'] for item in self.events('end')[-1]['open']], [paper.TYPESETTING])
+        self.assertTrue(gate.acquire.called)
+        # The pass that left the manuscript failing only typeset it, and the log says so: typeset_only was tried.
+        self.assertFalse(paper.typeset_untried(read_json(self.out / 'log.json')))
         # The run that wrote the manuscript had finished its readings and its comparisons, so the manuscript is kept:
         # --resume and --open-findings refuse the folder and name --typeset-only, which typesets it again.
         with self.assertRaisesRegex(paper.Stop, 'A pass over its finished manuscript left .*--typeset-only makes them again'):

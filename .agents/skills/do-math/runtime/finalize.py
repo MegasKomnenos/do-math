@@ -406,18 +406,27 @@ class Run:
         A run that comes to its end with findings left open, now or before this command was started
         again, is not left to a person: `paper.close_open` restates the statements that still differ
         from their elements and takes out the passages that no element covers, and the run ends anew.
-        The one run that nothing takes up is a run whose manuscript failed its machine checks or its
-        typesetting after their repairs. Its exit code 2 is returned. When the command is started
-        again it is deleted, and the paper is written anew."""
+
+        A manuscript that fails its machine checks or its typesetting after their repairs ends this
+        call with the exit code 2, and the next start reads from the log where it failed
+        (`paper.typeset_untried`). Where a pass over the finished manuscript left it failing, as the
+        closing pass can, its readings and its comparisons stand: the manuscript is kept,
+        `paper.typeset_only` makes the machine checks and the typesetting once more, and what that
+        pass leaves open is closed as above. Where that pass failed as well, and where the run that
+        wrote the manuscript failed, nothing takes the manuscript up: the folder is deleted, and the
+        paper is written anew."""
         out = Path(out)
 
-        def last_end():
-            return paper.last_end(read_json(out / 'log.json') if (out / 'log.json').is_file() else [])
+        def log():
+            return read_json(out / 'log.json') if (out / 'log.json').is_file() else []
 
-        ended = last_end()
+        found = log()
+        ended, code = paper.last_end(found), None
         if ended is not None and ended['status'] != 'open_findings':
             return 0 if ended['status'] in ('complete', 'draft') else 3
-        if ended is not None and paper.left_failing(ended):
+        if paper.typeset_untried(found):
+            code = paper.typeset_only(view, out, self.config['tex'], None, self.config['parallel'], gate=self.gate)
+        elif ended is not None and paper.left_failing(ended):
             remove_tree(out)
             ended = None
         if ended is None:
@@ -426,7 +435,9 @@ class Run:
                 remove_tree(out)
             code = produce(view, out, tex=self.config['tex'], parallel=self.config['parallel'], resume=resume,
                            gate=self.gate, **options)
-            ended = last_end()
+        if code is not None:
+            # A pass was made now. Unless it left findings open that the closing pass acts on, its exit code stands.
+            ended = paper.last_end(log())
             if code != 2 or ended is None or ended['status'] != 'open_findings' or paper.left_failing(ended):
                 return code
         return paper.close_open(view, out, self.config['tex'], None, self.config['parallel'], gate=self.gate)
@@ -2057,15 +2068,21 @@ class Run:
             if not failing:
                 raise Stop(f"the paper command ended with exit code {code}; the last `end` event of {out / 'log.json'} "
                            f"has the status {end.get('status', 'of no run that ended')}")
+            # What the next start does with this manuscript, as paper_run decides it then from the same log.
+            again = ('Started again, the command keeps the manuscript and makes its machine checks and its typesetting '
+                     'once more, with their repair sessions. If the manuscript fails them again, the start after that '
+                     'writes the paper anew from the draft and deletes the manuscript that failed.'
+                     if paper.typeset_untried(log)
+                     else 'Started again, the command writes the paper anew from the draft, with new sessions, and '
+                          'deletes the manuscript that failed; copy the folder `paper` of the work folder first if you '
+                          'want to keep it.')
             raise Stop('the manuscript of the paper does not pass, after the repairs that the paper command makes:\n'
                        + '\n'.join(f"- {item['check']}, after {item['after_repairs']} repairs: "
                                    + paper.shortened(collapsed(str(problem)), 600)
                                    for item in failing for problem in item['problems'])
                        + f"\nThe last `end` event of {out / 'log.json'} has these problems in full.",
                        todo='Read the problems. Where they name the TeX command, or something it lacks, put that right '
-                            'first. Otherwise nothing is to be repaired by hand. Started again, the command writes the '
-                            'paper anew from the draft, with new sessions, and deletes the manuscript that failed; copy '
-                            'the folder `paper` of the work folder first if you want to keep it.')
+                            'first. Otherwise nothing is to be repaired by hand. ' + again)
         target = self.package / 'paper'
         target.mkdir(parents=True, exist_ok=True)
         for name in ('paper.tex', 'paper.pdf', 'references.bib', 'correspondence.json'):

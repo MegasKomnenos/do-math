@@ -5878,6 +5878,30 @@ def left_failing(ended):
     return any(item['check'] in (MACHINE, TYPESETTING) for item in ended.get('open') or [])
 
 
+def typeset_untried(log):
+    """Whether a pass over a finished manuscript left it failing and typeset_only has not been tried on it since.
+
+    The machine checks or the typesetting can stay open (left_failing) in three places: in the run that
+    wrote the manuscript, in a pass over the finished manuscript that changed it for what was open
+    (--open-findings, the closing pass), and in a pass that only made them again (typeset_only). This
+    is true in the second. The readings and the comparisons stand there, and typeset_only takes the
+    manuscript up. A caller that conducts a run with nobody to ask (finalize.Run.paper_run) then calls
+    typeset_only, once: after a pass of typeset_only that failed as well, this is false, as it is for a
+    manuscript that failed in the run that wrote it.
+
+    The log says which pass ended the run last. A pass begins after an `end` event that is not a
+    failure and ends the run anew with one of its own (written_end), and typeset_only begins its pass
+    with a `typeset only` event. A pass that was stopped and continued with --resume has that event
+    before its `resume`, between the same two ends."""
+    ended = last_end(log)
+    if ended is None or not left_failing(ended) or left_failing(written_end(log)):
+        return False
+    # The run that wrote the manuscript did not leave it failing, so its `end` stands before the last one.
+    before = max(number for number, event in enumerate(log[:-1])
+                 if event.get('event') == 'end' and event.get('status') != 'failed')
+    return not any(event.get('event') == 'typeset only' for event in log[before:])
+
+
 def close_open(instance, out, tex=None, choice=None, parallel=PARALLEL, gate=None):
     """Take up a run that came to its end with findings left open, and close them without a person; the exit code.
 
@@ -5896,21 +5920,22 @@ def close_open(instance, out, tex=None, choice=None, parallel=PARALLEL, gate=Non
     return run.finish()
 
 
-def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_page=None):
+def typeset_only(instance, out, tex=None, choice=None, parallel=PARALLEL, title_page=None, gate=None):
     """Typeset the manuscript a previous run left in `out`, with the same checks and repairs.
 
     The run that wrote the manuscript has to have carried its reading and its comparison to their end,
     since typesetting does not repeat them, and what that comparison left open stays open. A numbered
     statement that a repair made here changes is not compared again, and `finish` reports it as open.
     `title_page` is a file that names the authors; the manuscript is then typeset with that author
-    line, and without it with the one the folder already holds."""
+    line, and without it with the one the folder already holds. `gate` is a semaphore that bounds the
+    repair sessions of this pass together with the sessions of whoever shares it, as for `produce`."""
     out = Path(out)
     needed = [out / 'materials.json', out / 'plan.json', out / 'parts' / 'abstract.tex']
     if not all(path.is_file() for path in needed):
         raise Stop(f'{out} does not hold a manuscript of this command (materials.json, plan.json, parts/)')
     authors = read_title_page(title_page) if title_page else None
     codes = read_classification(title_page) if title_page else []
-    run = Paper(instance, out, tex, choice or {}, parallel)
+    run = Paper(instance, out, tex, choice or {}, parallel, gate=gate)
     if run.recipe is None:
         raise Stop('no TeX command is available: none of ' + ', '.join(ENGINES) + ' is on PATH, and --tex was not given')
     # The first end in the log that is not a failure is that of the run that wrote the manuscript; a run that was
