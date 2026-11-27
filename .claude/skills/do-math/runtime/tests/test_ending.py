@@ -10,8 +10,9 @@ from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
 from cli_adapter import Command
 from coordination import board, session_live
-from ending import request_prompt, run_turn
-from launch import open_messages, worker_command
+from ending import context_message, request_prompt, run_turn
+from launch import CONTEXT_WINDOW, MAX_OUTPUT_TOKENS, open_messages, send_message, worker_command
+from message_hook import WHOLE, deliver
 from runner import Runner, main
 from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
@@ -1194,6 +1195,9 @@ while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
             self.assertEqual(message['from'], 'runner')
             self.assertIn('about 812,345 tokens', message['text'])
             self.assertIn('holds 1,000,000', message['text'])
+            # The session measures what it still does against the room that is left, so the message states
+            # how much one response can add to the conversation: the cap its CLI is launched with.
+            self.assertIn(f'one response can hold up to {MAX_OUTPUT_TOKENS:,} tokens', message['text'])
             # The message is a request to decide the ending. The host has opened one, the session finds its ID
             # in the message and in end-request.json, and the request allows the basis that hands the task over.
             request = read_json(session / 'end-request.json')
@@ -1222,6 +1226,20 @@ while time.monotonic() < deadline and not list(Path('messages').glob('*.json')):
             self.assertIn('Its request ID is asked-at-the-resumption.', read_json(waiting)['text'])
             self.assertEqual(state['request'], {'id': 'asked-at-the-resumption', 'round': 1,
                                                 'previous_error': None, 'context': 805_000})
+
+    def test_the_message_reaches_the_session_whole(self):
+        # The CLI passes on what the hook returns whole only up to message_hook.WHOLE characters; of a longer
+        # text the session receives the beginning. This message is the text by which a session closes its work,
+        # so at its longest, under the line that names its sender, it stays within that size.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp) / 'session'
+            open_messages(session)
+            text = context_message({'id': 'f' * 32, 'context': CONTEXT_WINDOW})
+            send_message(session, 'runner', text)
+            handed = deliver(str(session))
+            self.assertTrue(handed.endswith(text))
+            self.assertLessEqual(len(handed), WHOLE)
 
     def test_a_message_that_cannot_be_written_leaves_the_turn_running_and_its_request_open(self):
         # The host looks at the stream inside the loop that keeps the turn. When the message cannot be written

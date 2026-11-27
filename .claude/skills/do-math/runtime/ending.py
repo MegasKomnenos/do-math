@@ -11,8 +11,8 @@ import uuid
 
 from availability import no_research_outcome
 from check import CANDIDATE_CHANGED, check_session
-from launch import (CONTEXT_MESSAGE_TOKENS, CONTEXT_WINDOW, receives_messages, send_message, worker_command,
-                    worker_environment)
+from launch import (CONTEXT_MESSAGE_TOKENS, CONTEXT_WINDOW, MAX_OUTPUT_TOKENS, receives_messages, send_message,
+                    worker_command, worker_environment)
 from retention import context_limit, conversation_identity, events, model_blocked, output_limit, refusal
 from runtime_support import (alive, file_stamp, popen_options, process_identity, read_json, replace_file,
                              terminate_process, write_json, write_text)
@@ -40,13 +40,46 @@ CONTEXT_LIMIT = 'context_limit'
 # launch.CONTEXT_MESSAGE_TOKENS (run_turn). It is a request to decide the ending and carries the ID of that
 # request; a resumed turn that follows it unanswered is given the same text (request_prompt). The text stands
 # here and nowhere else.
+# The session reads it in the middle of its work, and what it does next follows from this text. The text
+# therefore states the room that is left, what fills it and what happens at the limit, and what the room is for:
+# closing the work in the way that hands it over best, judged without haste. The answers come after that. Under
+# the line that names its sender the text has to stay within message_hook.WHOLE, the size up to which the CLI
+# hands a message over whole.
 CONTEXT_MESSAGE = (
-    'Your conversation now holds about {size:,} tokens of context, and the window of your model holds '
-    '{window:,}. The conversation is not shortened on the way there: at the limit the CLI refuses the next '
-    'request and the turn ends at that point, and what no file of yours holds by then is lost. This session '
-    'is therefore near its end, and this message is the request to decide how it ends. Its request ID is '
-    '{request}. "Handing a task over to a new session" in context/reference/retained-work.md describes what '
-    'follows, and this message holds what you need.\n\n'
+    'When this message was sent, your conversation held about {size:,} tokens of context, and the window of your '
+    'model holds {window:,}. The conversation is not shortened on the way there, so this session ends within the '
+    'room that is left, and this message is the request to decide how it ends. Its request ID is {request}. The '
+    'message is sent at this size, and not closer to the limit, so that the session can close its work with care, '
+    'and nothing in it presses you for time. What it asks for first is that you close the work in the way that '
+    'hands it over best, and that you think through and judge what to do and how, calmly and with patience. '
+    '"Handing a task over to a new session" in context/reference/retained-work.md describes what follows, and '
+    'this message holds what you need.\n\n'
+    'The room you have is the difference between those two figures, less what the conversation has gained since '
+    'the message was sent. Each response of yours adds what it holds, its reasoning as well as the text and the '
+    'files it writes, and one response can hold up to {response:,} tokens. Each tool call adds what it returns. '
+    'Waiting for something that is running adds only the calls that wait. That room is the one bound on this '
+    'turn. No clock runs on the turn, and the answer to this request is the last thing you write in it, after the '
+    'work is closed. At the limit the CLI refuses the next request and the turn ends at that point. Where that '
+    'happens before you have answered, the task goes on in a new session of your role from your files as they '
+    'stand at that moment, so what the limit takes is what no file of yours holds by then.\n\n'
+    'So begin by taking stock of what you have in hand, and judge of each part of it which leaves the session '
+    'that takes the work up after you better placed: that you finish it here, where the reasoning behind it is '
+    'present, or that you hand it on as it stands and say exactly how it stands. Measure each against the room '
+    'you have. What can be brought to its end within it is worth finishing here, such as a check that takes a '
+    'few calls, a wait, or the last pieces of work that is nearly complete. A line of work whose end you cannot '
+    'see from here, or one that you have not started, belongs to the session after you.\n\n'
+    'What exists only in this conversation, such as an argument you worked out, a statement you settled on or the '
+    'reason an approach failed, is what the limit would take, and it is safe once a file holds it; that is the '
+    'reason to write it down before the rest. A result that you have reached and not checked, such as a proof you '
+    'have not read a second time, a Lean proof that has not been compiled or a bound you quote from memory, can '
+    'be checked here by the session that knows how it was found. The session after you has what you wrote and not '
+    'the reasoning behind it, and has to establish the result again before it builds on it. What you hand on '
+    'unchecked is still worth having when the report says that it is unchecked and what the check would be. A '
+    'computation, a compile or a delegated agent that is still at work ends with this session: the broker '
+    'cancels a compile that is under way, and on Windows every process this session started ends with it. Its '
+    'result can still be had by waiting for it, which is worth the wait where the result bears on what is done '
+    'next and its end is in sight. One that you stop, or that ends with the session, can be repeated only from '
+    'what the report says of it: the command, its input and how far it got.\n\n'
     'If the work you took on is complete, or you judge under your role guide that you cannot carry it '
     'further, end as your role ends. An attempt, an explorer, a formalizer and a peer write '
     'output/end-decision.json in this turn, with this request ID and the basis task_completed or '
@@ -62,17 +95,20 @@ CONTEXT_MESSAGE = (
     'the same assignment once you hand the task over. Your registered sections or your question stay held '
     'for it, nothing is published in between, and its assignment names your session folder. It has your '
     'files and not your conversation, and the record of a conversation holds little or none of the '
-    'reasoning in it. Nor does it have what you left running: the broker cancels a compile that is still '
-    'under way when this session ends, and on Windows every process this session started ends with it, so '
-    'what a computation has not written to a file by then is lost. '
+    'reasoning in it. '
     'So bring your report to the state from which the work can go on without you. What it '
     'needs for that is what your work has produced and no file holds yet, such as the statements you settled '
     'on, the proofs that closed and how far each is checked, the results of computations, the lines of attack '
     'that failed and where each stopped, the argument in hand as far as it goes and the point at which it is '
-    'still open, and what you would do next and why. The new session has a whole conversation of its own '
-    'ahead of it and is not pressed for time, so leave to it how far it pursues a direction and when it ends. '
+    'still open, and what you would do next and why. The new session is likely to begin with what you would do '
+    'next, so that judgment is worth the same thought as any other in the work, and the report says what it '
+    'rests on and how far that has been examined. The new session has a whole conversation of its own ahead of '
+    'it and is no more pressed for time than you are, so leave to it how far it pursues a direction and when it '
+    'ends. '
     'A peer, a review and '
-    'an organizer, whose output is not a report, write this to work/report.md. Then write '
+    'an organizer, whose output is not a report, write this to work/report.md. When the report stands, read what '
+    'you wrote for the hand-over once as the new session will read it, with your files and without this '
+    'conversation. Then write '
     'output/end-decision.json as {{"request_id": "{request}", "decision": "end", "basis": "handed_over", '
     '"explanation": "<what is done and what remains>"}} and end the turn. Handing the task over ends this '
     'conversation and not the research.')
@@ -80,7 +116,8 @@ CONTEXT_MESSAGE = (
 
 def context_message(request):
     """CONTEXT_MESSAGE for a request that carries, as `context`, the size at which the message was sent."""
-    return CONTEXT_MESSAGE.format(size=request['context'], window=CONTEXT_WINDOW, request=request['id'])
+    return CONTEXT_MESSAGE.format(size=request['context'], window=CONTEXT_WINDOW, response=MAX_OUTPUT_TOKENS,
+                                  request=request['id'])
 
 
 def turn_directory(session, number):
