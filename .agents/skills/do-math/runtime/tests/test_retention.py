@@ -292,6 +292,32 @@ class RetentionTests(unittest.TestCase):
             self.assertNotIn('THE GUIDES OF THE PACK', body)
             self.assertIn('The bound holds for every n up to 7.', body)
 
+    def test_the_pack_that_a_first_prompt_carries_is_left_out_of_the_readable_conversation(self):
+        # The first prompt of a session carries its pack below a few opening lines (context.assemble), and pack.md
+        # beside the conversation holds the same text. The first form is the one in which the Claude CLI records
+        # a prompt, a string with every character it was given. The second is a list of text blocks, from a CLI
+        # that drops the newline at the end of a prompt.
+        pack = '# Your do-math session\n\nTHE GUIDES OF THE PACK\n\n# Executable commands\n'
+        opening = 'You are a do-math attempt session.\n\n'
+        prompts = {'string': {'type': 'user', 'message': {'role': 'user', 'content': opening + pack}},
+                   'blocks': {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': [
+                       {'type': 'input_text', 'text': opening + pack.rstrip('\n')}]}}}
+        # A message that quotes a part of the pack is retained as it is.
+        quoting = {'type': 'assistant', 'message': {'role': 'assistant', 'content': [
+            {'type': 'text', 'text': 'My pack ends with the heading "# Executable commands".'}]}}
+        for form, prompt in prompts.items():
+            with self.subTest(form=form), tempfile.TemporaryDirectory() as tmp:
+                session = Path(tmp)
+                (session / 'pack.md').write_bytes(pack.encode('utf-8'))
+                source = session / 'transcript.jsonl'
+                source.write_text('\n'.join(json.dumps(row) for row in (prompt, quoting)), encoding='utf-8')
+                self.assertEqual(conversation(source, session / 'conversation.md', True), 2)
+                body = (session / 'conversation.md').read_text(encoding='utf-8')
+                # The opening lines stay, and a line that names pack.md stands where the pack stood.
+                self.assertIn(opening + 'Left out here: the whole text of pack.md, which stands in this folder.', body)
+                self.assertNotIn('THE GUIDES OF THE PACK', body)
+                self.assertIn('My pack ends with the heading "# Executable commands".', body)
+
     def test_malformed_native_payload_does_not_hide_later_messages_and_tool_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

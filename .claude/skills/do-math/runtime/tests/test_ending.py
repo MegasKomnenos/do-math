@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 import sys
@@ -223,6 +224,10 @@ class EndingTests(InstanceCase):
                 self.assertEqual(state['authorization']['basis'], 'no_way_forward')
                 self.assertEqual(state['resumptions'], 1)
                 self.assertEqual(pack, (directory / 'pack.md').read_bytes())
+                # The CLI of the first turn had the pack itself on its standard input, below the opening lines of
+                # the first prompt (context.assemble): the host hands over the prompt as the runner wrote it.
+                first = json.loads((directory / 'work/turns.jsonl').read_text().splitlines()[0])
+                self.assertTrue(first['prompt'].endswith('\n\n' + pack.decode('utf-8')))
                 self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
                 self.assertIn('directives supplied for this session',
                               (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8'))

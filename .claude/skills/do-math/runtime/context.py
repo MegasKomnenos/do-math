@@ -168,14 +168,17 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
               '```json', json.dumps({'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     pack = '\n'.join(parts)
     write_text(session / 'pack.md', pack)
-    # A pack holds hundreds of thousands of bytes, more than the reading tool of a CLI returns in one call.
-    # The prompt gives the size, so that a session reads the pack in ranges from its first call.
-    lines, size = pack.count('\n'), len(pack.encode('utf-8'))
+    # The first prompt carries the pack itself, and the session host gives the prompt to the CLI on its standard
+    # input (ending.run_turn). A pack holds hundreds of thousands of bytes: read from pack.md, it takes a dozen
+    # calls of a reading tool, and each of them is a request that reads again from the cache what the calls
+    # before it returned. pack.md holds the same text for those who read it later: a peer and a review that
+    # examine this session, and the session itself once a compaction has replaced its first prompt.
     write_text(session / 'prompt.txt',
                f'You are a do-math {role} session. Your working directory is {session}.\n'
-               f'Read {session / "pack.md"} in full, then carry out the role it describes. The file has {lines} '
-               f'lines in {size} bytes, more than a reading tool returns in one call, so read it in consecutive '
-               'ranges of lines until its last line.\n'
+               'Your pack stands below, after the blank line, and runs to the end of this message: it is your '
+               f'whole starting context, and it describes the role you are to carry out. {session / "pack.md"} '
+               'holds the same text, so you have no need to read that file now.\n'
                'The pack shows your assignment, the user conditions, the settings and the commands. '
-               f'{session / "input.json"} holds these four as data for the programs you call.\n')
+               f'{session / "input.json"} holds these four as data for the programs you call.\n'
+               '\n' + pack)
     return inp

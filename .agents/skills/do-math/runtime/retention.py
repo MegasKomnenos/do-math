@@ -24,15 +24,17 @@ def readable(value):
 
 
 PACK_READ = 'Left out here: what this call read of pack.md, which stands in this folder.'
+PACK_WHOLE = 'Left out here: the whole text of pack.md, which stands in this folder.'
 
 
 def shown(block, pack, pack_reads):
     """One block of a Claude message as the readable conversation shows it.
 
-    A session begins by reading its pack, and what its Read tool returned of it is a quarter to a half of
-    what a conversation holds, while the pack itself stands in the session folder. The result of a call
-    that read `pack` therefore shows PACK_READ in place of that text. The call, with the range it read,
-    and every other block are shown as they are. `pack_reads` collects the IDs of the calls that read `pack`."""
+    A session has its pack from its first prompt (context.assemble), and it reads pack.md with its Read tool
+    where its conversation no longer holds that prompt, as after a compaction. What the tool returns of the
+    pack stands in the session folder already, so the result of a call that read `pack` shows PACK_READ in
+    place of that text. The call, with the range it read, and every other block are shown as they are.
+    `pack_reads` collects the IDs of the calls that read `pack`."""
     if not isinstance(block, dict):
         return block
     if block.get('type') == 'tool_use' and block.get('name') == 'Read' and isinstance(block.get('input'), dict):
@@ -46,18 +48,25 @@ def shown(block, pack, pack_reads):
 
 
 def conversation(source, destination, native, *, append=False, label=None, note=None):
-    """Retain all canonical messages and tool contents without truncating their middles, except what a Claude
-    session read of the pack.md that stands beside the destination (shown).
+    """Retain all canonical messages and tool contents without truncating their middles, except the text of the
+    pack.md that stands beside the destination. The first prompt of a session carries that text whole
+    (context.assemble): hundreds of thousands of bytes, which a peer or a review that reads this conversation
+    from beginning to end finds in pack.md. A message or a tool result that carries the whole pack therefore
+    shows PACK_WHOLE in its place. What a Claude session read of the file is left out as `shown` describes.
 
     A note, when given, follows the heading: where content the source holds only by reference is kept."""
     written = 0
     pack, pack_reads = Path(os.path.abspath(destination)).with_name('pack.md'), set()
+    # The pack as a message carries it. Whether a CLI records a prompt with the white space at its end is the
+    # CLI's affair, so the pack is looked for without its own.
+    whole = pack.read_bytes().decode('utf-8', errors='replace').strip() if pack.is_file() else ''
     # A line of the source can hold half of a surrogate pair as an escape, which UTF-8 does not encode. It is
     # written as that escape (backslashreplace), so that one such character does not keep the rest from being retained.
     with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', errors='backslashreplace', newline='\n') as out:
         if not append:
-            out.write('# Retained conversation\n\nFull readable message and tool content follows, except what the Read '
-                      'tool returned of pack.md: that file stands in this folder. Raw transport is in the '
+            out.write('# Retained conversation\n\nFull readable message and tool content follows, except the text of '
+                      'pack.md, which stands in this folder: it is left out where a message carried the whole of '
+                      'it and where the Read tool returned it. Raw transport is in the '
                       'named source files. They stand in this folder until the work of the session has finished '
                       'processing, and from then on inside raw.tar.xz in this folder, under the same paths.\n\n')
             if note:
@@ -106,6 +115,8 @@ def conversation(source, destination, native, *, append=False, label=None, note=
                 if isinstance(payload['content'], list):
                     payload['content'] = [shown(block, pack, pack_reads) for block in payload['content']]
             body = readable(payload)
+            if whole:
+                body = body.replace(whole, PACK_WHOLE)
             fence = '`' * max(3, 1 + max((len(x) for x in re.findall(r'`+', body)), default=0))
             out.write(f'## {label or Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')
             written += 1

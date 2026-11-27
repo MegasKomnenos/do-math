@@ -304,13 +304,14 @@ class ContextTests(InstanceCase):
         self.assertEqual(shown('# Executable commands'), {'commands': inp['commands']})
         self.assertLess(pack.index('\n# Your assignment\n'), pack.index('<!-- begin '))
         self.assertLess(pack.rindex('<!-- end '), pack.index('\n# Executable commands\n'))
-        prompt = (folder / 'prompt.txt').read_text(encoding='utf-8')
-        self.assertIn(str(folder / 'pack.md'), prompt)
-        self.assertIn(str(folder / 'input.json'), prompt)
-        # The prompt gives the size of the pack as the file on disk has it, for reading the pack in ranges.
-        written = (folder / 'pack.md').read_bytes()
-        lines, size = written.count(b'\n'), len(written)
-        self.assertIn(f'The file has {lines} lines in {size} bytes', prompt)
+        # The first prompt carries the pack itself, byte for byte as pack.md holds it, so the session has its pack
+        # without reading a file. The lines above it say where the session works and name pack.md and input.json.
+        opening, _, carried = (folder / 'prompt.txt').read_bytes().partition(b'\n\n')
+        self.assertEqual(carried, (folder / 'pack.md').read_bytes())
+        opening = opening.decode('utf-8')
+        self.assertTrue(opening.startswith(f'You are a do-math peer session. Your working directory is {folder}.\n'))
+        self.assertIn(str(folder / 'pack.md'), opening)
+        self.assertIn(str(folder / 'input.json'), opening)
 
     def test_a_candidate_review_reads_its_assignment_without_the_hashes_of_the_candidate(self):
         # The transport check compares the hashes and reads them from input.json. A session cannot act on
