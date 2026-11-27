@@ -822,6 +822,14 @@ def stands_in(element, other, elements):
             or (other['kind'] == 'definition' and other['name'] in element['mentions']))  # two definitions agree
 
 
+def proof_place(item, element):
+    """Where the proof of a numbered statement of a plan is written: a section id, 'cited', or None for a definition.
+
+    `item` is the statement in the plan and `element` the element it states. Without "proof" the proof follows
+    the statement, in the section that states it."""
+    return item.get('proof', item.get('section')) if element['kind'] == 'statement' else None
+
+
 def choice_problems(plan, keys):
     """The reasons the papers a plan chooses are not CHOSEN_PAPERS different keys of the collection."""
     chosen = plan.get('exemplars')
@@ -978,11 +986,6 @@ def check_plan(materials, plan, keys):
     if problems:
         return problems
     numbered = {item['element']: number for number, item in enumerate(statements)}
-
-    def proof_of(item):
-        """Where the proof of a numbered statement is written: a section id, 'cited', or None for a definition."""
-        return item.get('proof', item.get('section')) if elements[item['element']]['kind'] == 'statement' else None
-
     labels = set()
     for number, item in enumerate(statements):
         name, element = item['element'], elements[item['element']]
@@ -1001,7 +1004,7 @@ def check_plan(materials, plan, keys):
             continue
         if number and order.get(statements[number - 1].get('section'), 0) > order[section]:
             bad(f'{name}: "statements" lists the numbered statements in the order of the paper, section by section')
-        proof = proof_of(item)
+        proof = proof_place(item, element)
         if element['kind'] == 'definition' and 'proof' in item:
             bad(f'{name} is a definition and has no "proof"')
         if element['source'] and element['kind'] == 'statement' and proof != 'cited':
@@ -1056,7 +1059,7 @@ def check_plan(materials, plan, keys):
         return problems
     passes = lambda name: name not in numbered
     for number, item in enumerate(statements):
-        name, proof = item['element'], proof_of(item)
+        name, proof = item['element'], proof_place(item, elements[item['element']])
         for needed in sorted(reached(elements, name, ('mentions',), passes) & set(numbered)):
             if numbered[needed] > number:
                 bad(f'{name} is stated before {needed}, which its statement mentions')
@@ -1142,8 +1145,8 @@ class Layout:
         return 'numbered' if name in self.numbered else self.others[name]['treatment']
 
     def proof_of(self, item):
-        """Where the proof of a numbered statement is written: a section id, 'cited', or None for a definition."""
-        return item.get('proof', item['section']) if self.elements[item['element']]['kind'] == 'statement' else None
+        """Where the proof of a numbered statement of this plan is written (proof_place)."""
+        return proof_place(item, self.elements[item['element']])
 
     def hosts(self, name, target):
         """The sections in which an element absorbed into `target` is written: the section itself, or those of a numbered element.
@@ -1776,7 +1779,7 @@ def machine_findings(materials, plan, parts, instances=()):
     for item in plan['statements']:
         # A statement is followed by its proof, or proved in the section the plan names, or cited and not proved.
         element, label, here = elements[item['element']], item['label'], by_label.get(item['label'])
-        proof = item.get('proof', item['section']) if element['kind'] == 'statement' else None
+        proof = proof_place(item, element)
         if here is None or proof is None:
             continue
         if proof == 'cited':
@@ -5098,8 +5101,10 @@ class Paper(Sessions):
             tex, spans, _ = self.assemble()
             changes = self.changes(before, spans)
             left, undone = list(kept), {}
-            if changes:
-                verdicts = self.read_changes(tex, changes)
+            # None without a change, and when the reading of the changes was not made (session): the changes then
+            # stay in the paper as the repair left them, and the log carries no verdict on them.
+            verdicts = self.read_changes(tex, changes) if changes else None
+            if verdicts is not None:
                 made_for = {change['change']: set(verdict['findings']) for change, verdict in zip(changes, verdicts['changes'])}
                 unsound = {verdict['change']: verdict['reason'] for verdict in verdicts['changes'] if not verdict['sound']}
                 # The changes made for one finding are one answer to it: they are undone together.
@@ -5125,7 +5130,7 @@ class Paper(Sessions):
                                      **{key: verdict[key] for key in ('sound', 'findings', 'reason')}}
                                     for change, verdict in zip(changes, verdicts['changes'])],
                            answered=verdicts['findings'], undone=sorted(gone))
-            else:
+            elif not changes:
                 left += [{'number': number, 'because': NO_CHANGE} for number in revised]
             self.narrow_undo(undone, left)
         if narrow['step'] == 'undo':
@@ -5182,7 +5187,10 @@ class Paper(Sessions):
         return changes
 
     def read_changes(self, tex, changes):
-        """The session that reads the changed passages; its verdicts on the changes and on the findings."""
+        """The session that reads the changed passages; its verdicts on the changes and on the findings.
+
+        None when the reading was not made (session): the changes stay in the paper, and the record says that
+        nobody read them."""
         notes = {answer['finding']: answer['note'] for answer in self.narrow['response'] if answer['action'] == 'revised'}
         findings = [{'finding': entry['number'], 'check': entry['check'], 'reported': entry['finding'],
                      'repair': notes[entry['number']]} for entry in self.narrow['findings'] if entry['number'] in notes]
@@ -5220,16 +5228,10 @@ class Paper(Sessions):
         # A pass that only corrects the LaTeX, as one over lines that are too wide, changes passages for no finding.
         made_for = ('for findings of the ' + ' and of the '.join(sorted({entry['check'] for entry in findings}))
                     if findings else 'to correct the LaTeX, for no finding')
-        verdicts = self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read,
-                                self.assessor,
-                                check={about: f'the reading of the passages ({len(changes)}) that the last repair changed '
-                                              f'{made_for}; the changes stay in the paper as the repair left them'})
-        if verdicts is None:
-            # Not made (session). The changes stay in the paper, and the record says that nobody read them.
-            return {'changes': [{'change': change['change'], 'sound': True, 'findings': change['findings'], 'reason': ''}
-                                for change in changes],
-                    'findings': [{'finding': number, 'answered': True, 'reason': ''} for number in numbers]}
-        return verdicts
+        return self.session('changes', CHANGES_PROMPT.format(reader=method_part(READER_SECTION)), files, read,
+                            self.assessor,
+                            check={about: f'the reading of the passages ({len(changes)}) that the last repair changed '
+                                          f'{made_for}; the changes stay in the paper as the repair left them'})
 
     def narrow_end(self, covered=None):
         """Leave in the open list, of the findings that the repair took up, those that stay open, each with the reason.

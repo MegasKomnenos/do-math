@@ -13,7 +13,8 @@ from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, ap
                    build_outcome, candidate_records, check_applied, check_definition_modules, copy_canon,
                    declaration_text, drop_modules,
                    load_change, name_path, read_approaches, read_question_account, read_record, remove_derived,
-                   required_pairs, start_build, tree_hash, update_index, wait_build, with_importers, written_base)
+                   required_pairs, sha256_text, start_build, tree_hash, update_index, wait_build, with_importers,
+                   written_base)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, question_proposal_lines, replay, resolved_question_lines)
 from runtime_support import read_json, write_json
@@ -65,6 +66,25 @@ def with_standing(model, names):
     return ', '.join(f"{n} ({standing(model['elements'][n])})" if n in model['elements'] else n for n in names) or '(none)'
 
 
+def lean_text(canon, entry):
+    """The Lean text of a declaration, cut from the file of its module at the place its index entry gives.
+
+    The runner puts the modules of a publication into the canon before its index (Runner.install_canon). A
+    command that comes between the two holds the index from before the publication, and the places of that
+    index are places in the earlier files: what stands there now is another text. The entry carries the
+    identity of the text it was taken from, so a text that is not that one is refused and not printed."""
+    text = (canon.lean / entry['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
+    try:
+        found = declaration_text(text, entry['span'])
+    except IndexError:  # the file ends before the place
+        found = None
+    if found is None or sha256_text(found) != entry['source_sha']:
+        raise CanonError(f"the Lean text of {entry['name']} is not where the index places it in "
+                         f"canon/lean/{entry['file']}: the modules of a publication are in the canon and its "
+                         'index is not yet; run the command again')
+    return found
+
+
 def view(instance, model, name, part=None, full=False, canon_index=None):
     """One element as one view: the structure Lean gave, joined by name with what its record says."""
     canon = Canon(instance)
@@ -77,8 +97,7 @@ def view(instance, model, name, part=None, full=False, canon_index=None):
         canon_index = canon.load_index()
     index = canon_index['entries'][name]
     if part == 'source':
-        text = (canon.lean / index['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
-        return declaration_text(text, index['span'])
+        return lean_text(canon, index)
     if part == 'history':
         folder = canon.history / name_path(name)
         # The folder also holds the folders of the elements whose names extend this name; those are not read.
@@ -119,8 +138,7 @@ def view(instance, model, name, part=None, full=False, canon_index=None):
             lines.append(f"proofs        {with_standing(model, element['proofs'])}")
     else:
         # The body of a definition is what the definition says, so its view carries the Lean text.
-        text = (canon.lean / index['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
-        lines += ['', '```lean', declaration_text(text, span), '```', '']
+        lines += ['', '```lean', lean_text(canon, index), '```', '']
     lines.append(f"objects       {', '.join(objects) or '(none)'}")
     # The first forty, and the number of the rest with the command that lists them. A definition that much of
     # the library speaks of is named by hundreds of proofs, and their names would be most of what the view prints.

@@ -1193,6 +1193,15 @@ class ArchiveTests(FinalizeCase):
                 ('$HOME/quill and /Home/quill, run by quill on QUILLE~1',
                  '$HOME/quill and /Home/quill, run by quill on QUILLE~1')):
             self.assertEqual(replaced(text, named), wanted)
+        # A home folder that lies neither under `Users` nor under `home` is known by its own path. A folder on the
+        # way to it can have a short name as well, and the path counts under either name of that folder. The short
+        # name of another folder in the same place is another path.
+        afar = {'name': 'quill', 'home': 'D:\\Home Folders\\quill', 'short': 'D:\\HOMEFO~1\\quill', 'encodings': []}
+        with patch('package.machine_account', return_value=afar):
+            apart = package.account_pattern(package.account_names())
+        self.assertEqual(
+            package.without_account(b'D:\\Home Folders\\quill\\a, d:/homefo~1/quill/b, D:\\HOMEFO~2\\quill\\c', apart)[0],
+            b'D:\\Home Folders\\<account>\\a, d:/homefo~1/<account>/b, D:\\HOMEFO~2\\quill\\c')
         # A name outside ASCII. A JSON file that is written in ASCII gives each character as an escape, with digits
         # in either case, and so does what Python prints where its output cannot hold the name. The backslash of
         # the escape follows those of the separator, and the file must still be JSON when the name is gone.
@@ -1260,6 +1269,22 @@ class ArchiveTests(FinalizeCase):
         self.assertEqual(package.account_place(wide, named), 'in line 2')
         self.assertEqual(package.account_place(pickled, named), 'at byte offset ' + str(pickled.index(b'C:')))
 
+    def test_the_system_is_asked_for_the_home_folder_and_for_the_short_name_that_windows_keeps_for_it(self):
+        # Every other test of the names of an account gives the program an account in the place of the system's
+        # answer, or asserts nothing of that answer. This one asks the system, as a run does. On Windows the short
+        # form of the home folder is a path of that folder: with its short names where Windows keeps some, and the
+        # path itself where it keeps none. Each encoding is one that Python knows, since a name is not looked for
+        # in an encoding that Python does not know (package.written).
+        account = package.machine_account()
+        home = Path.home()
+        self.assertEqual(account['home'], str(home))
+        if sys.platform == 'win32' and home.is_dir():
+            self.assertTrue(Path(account['short']).samefile(home), account['short'])
+        else:
+            self.assertIsNone(account['short'])
+        self.assertTrue(account['encodings'])
+        self.assertEqual(['a'.encode(encoding) for encoding in account['encodings']], [b'a'] * len(account['encodings']))
+
     def test_a_working_tree_that_differs_from_the_commit_does_not_reach_the_archive(self):
         commit = package.head_commit(self.instance)
         path = self.instance / 'canon' / 'questions' / 'q0.md'
@@ -1311,7 +1336,14 @@ class DocumentTests(FinalizeCase):
     def test_a_package_that_stands_alone_passes_and_each_fault_is_found(self):
         folder, freeze = self.packed()
         work = self.root / 'work-folder'
-        check = lambda *names: package.standalone_problems(folder, work, list(names) or ['no-such-account'], freeze)
+        # The check is given an account whose home folder is no path of this test. Asked of the machine, the account
+        # of a user `pat` would make `C:\Users\pat` below the home folder itself, which is found from the drive on.
+        nobody = {'name': 'nobody', 'home': '/srv/nobody', 'short': None, 'encodings': []}
+
+        def check(*names):
+            with patch('package.machine_account', return_value=nobody):
+                return package.standalone_problems(folder, work, list(names) or ['no-such-account'], freeze)
+
         self.assertEqual(check(), [])
 
         def faulty(relative, text, wanted, names=(), manifest=True):
@@ -3295,9 +3327,11 @@ class SelectionTests(FinalizeCase):
 
 
 class TakeStepTests(FinalizeCase):
-    def test_a_take_that_does_not_build_is_repaired_by_putting_elements_back_and_by_nothing_else(self):
-        # Lean uses a lemma that the index does not show under the root, as `simp` uses a lemma without a trace in the
-        # term: here the index is made blind to one use, so the take removes a lemma the root's proof needs.
+    def blind_take(self):
+        """A patch of `package.take` under which the take removes a lemma that the root's proof needs.
+
+        Lean uses a lemma that the index does not show under the root, as `simp` uses a lemma without a trace in the
+        term: here the index is made blind to one use."""
         real = package.take
 
         def blind(index, *rest):
@@ -3305,10 +3339,13 @@ class TakeStepTests(FinalizeCase):
             index['entries']['Small.root']['uses'].remove('Small.helper_zero')
             return real(index, *rest)
 
+        return patch('package.take', side_effect=blind)
+
+    def test_a_take_that_does_not_build_is_repaired_by_putting_elements_back_and_by_nothing_else(self):
         helper = (self.instance / 'canon' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8')
         plan = script(restore=[{'output/lean/Small/Helper.lean': helper.replace('oddSum 4 = 16', 'oddSum 4 = 61')},
                                {'output/lean/Small/Helper.lean': helper}])
-        with patch('finalize.Run.review', side_effect=paper.Stop('halted for the test')), patch('package.take', side_effect=blind):
+        with patch('finalize.Run.review', side_effect=paper.Stop('halted for the test')), self.blind_take():
             self.assertEqual(self.run_command(plan, config=self.config()), 2)
         self.assertIn('The run stopped at the step `2.2-review`', (self.work / 'report.md').read_text(encoding='utf-8'))
         first, second = self.calls('restore')
@@ -3326,6 +3363,17 @@ class TakeStepTests(FinalizeCase):
         self.assertEqual((self.work / 'lib' / '1-taken' / 'lean' / 'Small' / 'Helper.lean').read_text(encoding='utf-8'), helper)
         self.assertTrue((self.work / 'lib' / '1-taken' / 'records' / 'Small' / 'helper_zero.md').is_file())
         self.assertIn('these removed elements were put back: `Small.helper_zero`, `Small.unused_two`', self.decisions())
+
+    def test_a_restore_that_returns_no_file_stops_the_run_with_the_modules_that_still_fail(self):
+        # Two sessions find nothing to put back and return no file, as the instruction has them do. The program builds
+        # the library as the take left it, so the report and the second session's prompt name what fails.
+        with self.blind_take():
+            self.assertEqual(self.run_command(script(restore=[{}]), config=self.config()), 2)
+        report = (self.work / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('The run stopped at the step `2.1-take`', report)
+        self.assertIn("unknown identifier 'helper_zero'", report)
+        _, second = self.calls('restore')  # two sessions for the task, and no third
+        self.assertIn("unknown identifier 'helper_zero'", second['prompt'])
 
     def test_a_theorem_without_a_proof_is_not_put_back_and_the_private_declaration_that_names_it_is_deleted(self):
         # The research left `named_four` without a proof, which its index says, and a private declaration of a module

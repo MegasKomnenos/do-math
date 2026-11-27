@@ -89,7 +89,7 @@ A provider refusal, an execution failure or an operator's cancellation ends the 
 
 ## Ending before research starts
 
-An attempt may read the research context and check the frontier and the board, yet find nothing it can take on. An explorer launched without an assigned question may find, after reading the questions and the board, that every open question is already held. That assessment does not itself begin research. To end a session in which you have only assessed availability, have registered no section and occupy no question, write this to `output/outcome.json`:
+An attempt may read the research context and check the frontier and the board, yet find nothing it can take on. An explorer launched without an assigned question may find, after reading the questions and the board, that every open question is already held, or that it leaves every free one because, of each, its answer is not yes to the question the common introduction asks under "Working directly on the central difficulty". That assessment does not itself begin research. To end a session in which you have made only that assessment, have registered no section and occupy no question, write this to `output/outcome.json`:
 
 ```json
 {"disposition": "no_research"}

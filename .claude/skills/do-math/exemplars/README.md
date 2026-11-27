@@ -4,7 +4,7 @@ This folder holds published research papers in mathematics, each as one LaTeX fi
 
 `manifest.json` lists the papers: the key that names the paper's file, arXiv identifier with version, title, authors, journal reference, year, arXiv category, field, pages, licence, abstract, the SHA-256 of the `.tex` file, and one sentence on what in the writing makes the paper a good model. `pages` is the number of pages that arXiv's listing gives for that version, which is the text kept here; the page range in the journal reference is that of the published version and can differ from it. `field` is the collection's own grouping by subject, and papers of one arXiv category can stand in different fields.
 
-Each `.tex` file is the authors' LaTeX source as fetched from arXiv, joined into one file, with what the authors commented out left out: the lines that begin with `%` and the `comment` environments. The files stay on this machine and are not committed (`.gitignore` excludes them). To fetch them on another machine, run
+Each `.tex` file is the authors' LaTeX source as fetched from arXiv, joined into one file, with what the authors commented out left out: the lines that begin with `%` and the `comment` environments. The files stay on this machine and are not committed (`.gitignore` excludes them), since most of them may not be passed on; `licence` in the manifest gives the licence of each. To fetch them on another machine, run
 
 ```
 python fetch.py

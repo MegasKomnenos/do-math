@@ -1283,7 +1283,7 @@ class FetchTests(unittest.TestCase):
                                                '1 paper(s) could not be rebuilt as recorded: absent'))
         self.assertEqual((self.folder / 'elsewhere' / 'joined.tex').read_bytes(), joined)
 
-    def test_a_body_that_ends_before_the_length_its_server_gave_is_asked_for_again(self):
+    def test_a_body_that_ends_before_the_length_its_server_gave_is_asked_for_again_after_the_wait_between_requests(self):
         source = b'\\documentclass{amsart}\n\\begin{document}\n\\maketitle\nA paper.\n\\end{document}\n'
         asked = []
 
@@ -1309,10 +1309,20 @@ class FetchTests(unittest.TestCase):
             asked.append(request.full_url)
             return Answer(source[:20] if len(asked) == 1 else source)
 
-        with patch.object(self.fetch, 'WAIT_SECONDS', 0), \
+        # The clock stands still unless the script sleeps, so the second request comes when no time has passed
+        # since the first, and the script waits the whole interval that it keeps between two requests to arXiv.
+        clock, slept = [1000.0], []
+
+        def sleep(seconds):
+            slept.append(seconds)
+            clock[0] += seconds
+
+        with patch.object(self.fetch.time, 'time', side_effect=lambda: clock[0]), \
+                patch.object(self.fetch.time, 'sleep', side_effect=sleep), \
                 patch.object(self.fetch.urllib.request, 'urlopen', side_effect=urlopen):
             self.assertEqual(self.fetch.download('0001.00001v1'), source)
         self.assertEqual(asked, [self.fetch.HOSTS[0] + '0001.00001v1'] * 2)
+        self.assertEqual(slept, [self.fetch.WAIT_SECONDS])
 
 
 class LikenessShapeTests(unittest.TestCase):
@@ -5220,7 +5230,9 @@ class SafeguardTests(PaperCase):
         script['read'] = self.STOPPED
         script['changes'] = self.STOPPED
         self.assertEqual(self.run_paper(script, choice=self.CLAUDE), 0)
-        self.assertEqual((len(self.calls('read')), len(self.calls('changes')), self.events('reading')), (2, 2, []))
+        # Neither reading was made, so the log has no reading and no verdict on a change.
+        self.assertEqual((len(self.calls('read')), len(self.calls('changes')), self.events('reading'), self.events('changes')),
+                         (2, 2, [], []))
         # The change of the repair stays, and the record says that nobody read it.
         self.assertEqual(self.part('tools'), TOOLS)
         whats = [entry['what'] for entry in self.events('end')[-1]['not_done']]

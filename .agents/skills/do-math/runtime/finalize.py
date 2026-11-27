@@ -944,8 +944,8 @@ class Run:
             def read(output):
                 returned = {relative: package.read_text(path)
                             for relative, path in package.files_under(output / 'lean').items()}
-                if not returned:
-                    raise Unusable(['no file was written under output/lean'])
+                # A session that found nothing to put back or to delete returns no file, as its instruction says. The
+                # library is then built as the take left it, so that the reasons name the modules that still fail.
                 again, texts, deleted, bad = package.restored_files(plan['spans'], plan['held'], before, returned)
                 if bad:
                     raise Unusable(bad)

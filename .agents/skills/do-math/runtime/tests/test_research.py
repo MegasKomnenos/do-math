@@ -19,7 +19,7 @@ from canon import Canon
 from coordination import (board, claims_lock, lease, lease_table, main as coordination_main, message, release,
                           section, updates, wait)
 from knowledge import STANDINGS, canonical_question, formalizable, render, replay, rests_on, root_settlement, root_solved
-from lean_broker import Paths, broker_status, ensure_broker
+from lean_broker import Paths, broker_status, cached_entry, ensure_broker, job_record
 from runner import Runner, archive_finished, initialize, main, start, status
 from runtime_support import InstanceLock, alive, git, read_json, remove_tree, terminate_process, write_json
 from settings import defaults, validate
@@ -2628,6 +2628,35 @@ class RunnerTests(ScenarioCase):
         self.assertNotEqual(second, first)
         # The instance is then served by that broker: asked for its state, the live broker is the new process.
         self.assertEqual(broker_status(paths)['broker']['process'], second)
+
+    def test_cleanup_keeps_the_entries_of_a_published_canon_and_gives_up_the_module_the_publication_replaced(self):
+        # The cache of this instance was made as the cache of a research is made: init compiled the canon, a
+        # session's `prepare` compiled a candidate that replaces the root's module and adds one, and the runner
+        # published it (ScenarioCase.split). cleanup tells the entries the canon uses from the others by making
+        # the keys of the canon's files again (cleanup.canon_keys), so it rests on the canon holding the bytes
+        # that the publication's build compiled. The tests of test_cleanup.py show the sweep on a library that
+        # the test builds in the canon folder itself; here the canon and its cache come from init and a publication.
+        self.split()
+        paths = Paths(self.instance)
+        [first] = [record for record in map(read_json, paths.builds.glob('*/result.json'))
+                   if record.get('session') == 'operator']  # the build of init
+        posed = first['modules']['Small.Root']['key']
+        self.assertIsNotNone(cached_entry(paths.cache, posed))
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            self.assertEqual(main(['cleanup', str(self.instance)]), 0, shown.call_args)
+        done = json.loads(shown.call_args.args[0])
+        # Every module of the canon was found in the cache under the key made from its file, and those entries stay.
+        self.assertIsNone(done['cache_skipped'], done)
+        self.assertEqual(done['kept']['cache']['canon'], 3)
+        # The root's module as init compiled it is a module of no canon and of no build that stays.
+        self.assertIsNone(cached_entry(paths.cache, posed))
+        # The next build of the canon compiles the module it adds and takes the canon's own from the cache.
+        folder = self.candidate(modules={'Small/More.lean': module_text(theorem('sumThree', ': oddSum 3 = 9'))},
+                                records={'Small/sumThree.md': record_text('The first three odd numbers sum to nine.')})
+        modules = job_record(paths, read_json(folder / 'prepared.json')['build'])['modules']
+        self.assertEqual({name: modules[name]['status'] for name in ('Small.Defs', 'Small.Parts', 'Small.Root')},
+                         dict.fromkeys(('Small.Defs', 'Small.Parts', 'Small.Root'), 'cached'))
 
     def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
         # stop and resume write and remove control/STOP. The runner's own pass reads it: while it

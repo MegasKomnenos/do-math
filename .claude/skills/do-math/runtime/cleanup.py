@@ -418,10 +418,14 @@ def end_broker(paths):
     entries in it and writes the results of jobs and builds, and it does all of that under runner/lean/lock
     (lean_broker.Broker.serve). So for as long as the caller holds the lock, no build is registered or carried
     forward and no compile is started or collected, whatever a session, the runner or an operator asks for
-    meanwhile: the request waits in the queue for the broker that follows. A runner that is alive starts a
-    broker when it finds none (Runner.ensure_broker). Such a broker ends at the lock, or, where it took the
-    lock first, is ended here like the one before it. The lock is the system's and is released when the
-    process that holds it ends."""
+    meanwhile. A request that stands in the queue waits there for the broker that follows. A new request is
+    written only when a broker is alive within lean_broker.READY_SECONDS of the call, because a client asks
+    for a live broker before it writes its request (lean_broker.ensure_broker). After that time the command of
+    a session or of an operator fails, and a runner that asks for the build of a publication ends on the
+    failure (Runner.advance_build). While the conditions hold, no such request is made (unmet_conditions). A
+    runner that is alive starts a broker when it finds none (Runner.ensure_broker). Such a broker ends at the
+    lock, or, where it took the lock first, is ended here like the one before it. The lock is the system's and
+    is released when the process that holds it ends."""
     was_alive = False
     deadline = time.monotonic() + 60
     while True:

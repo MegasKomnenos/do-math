@@ -317,8 +317,8 @@ class EndingTests(InstanceCase):
         self.assertIn('assessment.json', job['last_error'])
 
     def test_a_review_whose_candidate_changed_is_left_to_the_runner_without_a_further_turn(self):
-        # No turn of the review can put back a candidate that changed after the review was assigned, so the
-        # host resumes nothing for that one finding of the transport check and names it in the authorization.
+        # Restoring a candidate that changed after the review was assigned is the runner's work, so the host
+        # resumes nothing for that one finding of the transport check and names it in the authorization.
         # What the runner then does with the candidate is tested in test_publication.
         candidate = self.root / 'candidate'
         candidate.mkdir()
@@ -874,6 +874,24 @@ class EndingTests(InstanceCase):
         self.assertEqual(read_json(successor / 'input.json')['task']['continues'], [str(directory)])
         # The pack tells the new session where the report of the session before it is.
         self.assertIn(str(directory / 'output/report.md'), (successor / 'pack.md').read_text(encoding='utf-8'))
+        # The task is handed over a second time. It then lists both folders, oldest first, and the session
+        # that follows is pointed at the report of the second session and not at that of the first.
+        second = job['session']
+        launch = read_json(successor / 'launch.json')
+        launch['command']['cwd'] = str(successor)
+        launch['end_check']['provider'] = 'claude'
+        write_json(successor / 'launch.json', launch)
+        write_json(successor / 'work/ending-test.json',
+                   {'claude_stream': True, 'context_at': [0], 'context_basis': 'handed_over'})
+        open_messages(successor)
+        self.assertEqual(self.run_host(successor)['authorization']['basis'], 'handed_over')
+        s, job = self.collected(engine, second, successor)
+        self.assertEqual(job['task']['continues'], [str(directory), str(successor)])
+        self.relaunch(engine, engine.dispatch_pending)
+        self.assertNotIn(job['session'], (None, sid, second))
+        pack = (engine.session_dir(job['session']) / 'pack.md').read_text(encoding='utf-8')
+        self.assertIn(str(successor / 'output/report.md'), pack)
+        self.assertNotIn(str(directory / 'output/report.md'), pack)
 
     def test_a_handed_over_exploration_keeps_its_question_for_the_session_that_continues_it(self):
         engine, sid, directory = self.told(role='explore', config={'context_at': [0],

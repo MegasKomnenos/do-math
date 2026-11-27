@@ -463,6 +463,20 @@ class CanonToolTests(ScenarioCase):
         self.assertFalse([line for line in lines if line.startswith(('proof ', 'rests on', 'settled', 'verdict'))])
         self.assertIn('stated with   11 statements mention it (list --about Small.oddSum)', lines)
 
+    def test_lean_text_is_not_cut_from_a_file_that_is_ahead_of_the_index(self):
+        # The runner puts the modules of a publication into the canon before its index (Runner.install_canon). A
+        # command that comes between the two has the index from before the publication, and the place that index
+        # gives for a declaration is a place in the earlier file. Here the file of the definition has gained a
+        # line, as the file of a module does when a publication adds an import to it.
+        self.ways()
+        source = Canon(self.instance).lean / 'Small/Defs.lean'
+        source.write_bytes(b'-- A line that the index was not taken from.\n' + source.read_bytes())
+        for arguments in (('Small.oddSum', '--part', 'source'), ('Small.oddSum',)):
+            with self.subTest(arguments=arguments):
+                error = json.loads(self.tool('view', *arguments, code=1))['error']
+                self.assertIn('Small.oddSum', error)
+                self.assertIn('run the command again', error)
+
     def test_view_lists_the_library_theorems_a_declaration_uses(self):
         # The stand-in compiler reports no theorem of an imported library, so the index is given what Lean reports.
         self.ways()

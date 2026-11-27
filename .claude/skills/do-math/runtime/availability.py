@@ -48,7 +48,7 @@ def opening_since(observed, current):
 
 
 def no_research_outcome(session, role):
-    """An attempt that found no section, or an explorer that found no free question, ends here.
+    """An attempt that found no section, or an explorer that took no question, ends here.
 
     Either session registered nothing and did nothing beyond assessing availability. Only an
     attempt judges whether all the work that remains is occupied, so only its outcome may report it."""

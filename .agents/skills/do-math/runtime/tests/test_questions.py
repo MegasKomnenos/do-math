@@ -305,8 +305,6 @@ class QuestionKnowledgeTests(QuestionCase):
         merge = {'from': 'op-a', 'into': 'op-b', 'reason': 'Both ask about the same scale.'}
         organization_check({'batch': [], 'merge_questions': [merge]}, output, model, [])
         cases = (
-            ('root question', {'batch': [], 'merge_questions': [{**merge, 'from': 'q0'}]}),
-            ('root question', {'batch': [], 'merge_questions': [{**merge, 'into': 'q0'}]}),
             ('existing questions', {'batch': [], 'merge_questions': [{**merge, 'into': 'missing'}]}),
             ('existing questions', {'batch': [], 'merge_questions': [{**merge, 'from': 'missing'}]}),
             ('existing questions', {'batch': [], 'merge_questions': [{'into': 'op-b', 'reason': 'No source.'}]}),
@@ -842,7 +840,6 @@ class QuestionCheckTests(QuestionCase):
             ('comes with the text that settles it, as questions/op-scale.md', {'resolutions': [resolution('r', 'op-scale')]}),
             ('comes with the text that settles it', {'understanding': {'speer-taken.md': ACCOUNT},
                                                      'resolutions': [resolution('r', 'op-scale')]}),
-            ('root question', {'understanding': {'q0.md': ACCOUNT}, 'resolutions': [resolution('r', 'q0')]}),
             ('names no question of the frontier', {'understanding': {'speer-new.md': ACCOUNT}}),
             ('names no question of the frontier', {'questions': [question('speer-new')],
                                                    'understanding': {'speer-new.md': ACCOUNT}}),
@@ -1517,6 +1514,72 @@ class QuestionDispatchTests(QuestionCase):
         # Only an attempt judges whether the remaining work is occupied; an explorer's exit sets no gate.
         self.assertNotIn('availability_report', session)
         self.assertIsNone(runner.state['attempt_dispatch_gate'])
+
+    def test_no_explorer_is_launched_for_questions_that_an_explorer_left_until_something_has_changed(self):
+        # An explorer leaves a question of which it cannot say that answering it would contribute to settling
+        # the root, and one that leaves every free question ends without research (roles/explore.md). It does
+        # not say which questions it left, and they stay free. The next explorer would be asked the same of the
+        # same questions, so the runner launches none until something has changed that the answer can depend
+        # on: a publication since that explorer was launched, or another set of free questions. q0 is held by
+        # an exploration whose candidate is under review, two further questions are free, and the root is held
+        # whole, so the free slots go to exploration alone.
+        self.questions('qops', [question('op-scale'), question('op-block')])
+        self.configure(max_sessions=8)
+        runner = self.runner()
+        self.occupy_root(runner)
+        previous = runner.producer('explore')
+        runner.state['jobs'][previous]['status'] = 'done'
+        pipeline = runner.state['pipelines'][runner.state['jobs'][previous]['pipeline']]
+        pipeline.update(stage='review', producer='sprevious')
+        runner.session_dir('sprevious').mkdir()
+        write_json(runner.session_dir('sprevious') / 'declaration.json',
+                   {'question': {'id': 'q0', 'at': 1, 'by': 'runner'}, 'at': 1})
+        runner.save()
+
+        def explorers():
+            """The explorers at work after one pass of the scheduling."""
+            with patch('runner.subprocess.Popen') as host:
+                host.return_value.pid = runner.identity['pid']
+                runner.schedule()
+            return [sid for sid, s in runner.active() if s['role'] == 'explore']
+
+        def leave(sessions):
+            # Each took no question and wrote that it undertook no research; its host authorized the ending on
+            # that outcome (ending.py), and the runner collects the session.
+            for sid in sessions:
+                folder, session = runner.session_dir(sid), runner.state['sessions'][sid]
+                write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
+                write_json(folder / 'end-check.json', {'resumptions': 0, 'authorization': {'basis': 'no_research'}})
+                session['exit_code'] = 0
+                runner.finish(sid, session)
+                self.assertEqual((session['status'], session.get('disposition')), ('ended', 'no_research'))
+
+        first = explorers()
+        self.assertEqual(len(first), 2)  # one for each free question
+        # A change is published while the two are at work, perhaps after they read the questions. They leave
+        # both questions, and since something was published after their launch, the questions are put to
+        # explorers again.
+        self.note('The sum grows by one odd number at a time.', engine=runner)
+        leave(first)
+        second = explorers()
+        self.assertEqual(len(second), 2)
+        # While these are at work, review decides that nothing of the exploration that held q0 is published, so
+        # q0 is free. It was not when they were launched, and they left the other two. One explorer is
+        # launched, to which the runner assigns q0, and none for the two questions that were left, although
+        # both are free, exploration is requested and slots are free.
+        pipeline['stage'] = 'done'
+        runner.save()
+        leave(second)
+        [taker] = explorers()
+        self.assertEqual(read_json(runner.session_dir(taker) / 'declaration.json')['question']['id'], 'q0')
+        self.assertEqual(sorted(question_availability(self.instance, runner.state, runner.model)['free']),
+                         ['op-block', 'op-scale'])
+        self.assertTrue(runner.state['explore_requested'])
+        self.assertEqual(explorers(), [taker])
+        # What the explorers left is part of the saved state: a runner that is started afterwards launches no
+        # explorer for those questions either.
+        runner = self.runner()
+        self.assertEqual(explorers(), [taker])
 
     def test_an_exploration_that_reached_peer_without_a_question_is_not_choosing(self):
         runner = self.runner()

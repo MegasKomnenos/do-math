@@ -1,5 +1,6 @@
-"""The fixture that runs a Lean broker inside the test process, shared by the test modules of the broker and by
-test_resilience, whose test of the runner's broker start stands on the same bare instance."""
+"""The fixture that runs a Lean broker inside the test process, shared by the test modules of the broker, by
+test_cleanup, whose instance holds what such a broker compiled, and by test_resilience, whose test of the
+runner's broker start stands on the same bare instance."""
 import json
 import os
 from pathlib import Path

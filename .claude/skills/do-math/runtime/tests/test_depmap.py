@@ -12,9 +12,11 @@ import io
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from xml.etree import ElementTree
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
@@ -831,6 +833,19 @@ class Drawing(MapCase):
             self.assertEqual(depmap.main([str(first / 'dependency_map.json'), '--out', str(blocked)]), 2)
         self.assertRegex(errors.getvalue(), r'^depmap: .*blocked')
         self.assertTrue(blocked.is_file())
+
+    def test_a_process_holds_the_drawing_code_and_the_page_from_the_import(self):
+        # A command can draw the map hours after it began, as the finalize pipeline does, and the files of the skill
+        # can change under it. So a fresh process that has imported depmap.py already holds the drawing code, and the
+        # page is made from viewer.html as it was read then: a drawing does not read the file again.
+        probe = 'import sys; sys.path.insert(0, sys.argv[1]); import depmap; print("depmap_draw" in sys.modules)'
+        result = subprocess.run([sys.executable, '-B', '-c', probe, str(Path(__file__).resolve().parents[1])],
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual((result.returncode, result.stdout.strip()), (0, 'True'), result.stderr)
+        data = self.map([statement('Lib.root', 'unit')])
+        with patch.object(Path, 'read_text', side_effect=OSError('viewer.html is read when the drawing code is loaded')):
+            page = draw.render(data)[1]
+        self.assertIn('<title>Dependency map of Lib.root</title>', page)
 
     def test_an_instance_of_the_earlier_runtime_is_refused(self):
         # Such an instance has an instance.json of another schema and no canon. The command names the reason and

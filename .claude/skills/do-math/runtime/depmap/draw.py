@@ -38,6 +38,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 HERE = Path(__file__).resolve().parent
+# The page a drawing is put into (page_of). It is read here, when this module is loaded, and not at each drawing:
+# a process that draws long after it began then puts the drawing into the page that this code was written for.
+TEMPLATE = (HERE / 'viewer.html').read_text(encoding='utf-8')
 
 # ----------------------------------------------------------------------------- the visual grammar
 
@@ -1104,8 +1107,7 @@ def guide_of(data, bare=()):
 
 def page_of(svg, data, bare=()):
     """The viewer page: the same SVG inline, the guide to this map, and the map's data for the panel beside it."""
-    template = (HERE / 'viewer.html').read_text(encoding='utf-8')
-    head, rest = template.split('__GUIDE__', 1)
+    head, rest = TEMPLATE.split('__GUIDE__', 1)
     middle, rest = rest.split('__SVG__', 1)
     between, tail = rest.split('__DATA__', 1)
     # In a script element </script ends the data, and <!-- followed by <script keeps the element open past its

@@ -310,6 +310,10 @@ class Runner:
                     # replaces it. Decide afresh without them (question_view).
                     job['task'].pop('question', None)
                     free = self.question_view(launching=True)['free']
+                    # The research as this explorer is launched into it, kept with the job until the explorer
+                    # ends: should it take none of these questions, they are the ones it can have left
+                    # (finish_no_research).
+                    job['questions_met'] = {'sequence': self.model['sequence'], 'free': free}
                     if ROOT_QUESTION in free:
                         job['task']['question'] = ROOT_QUESTION
                         now = time.time()
@@ -541,6 +545,8 @@ class Runner:
                     'sections': self.producer_sections(sid), 'question': self.producer_question(sid)}
             s['status'] = 'ended'
             job['status'] = 'done'
+            # An explorer that undertook research left no question in the sense of finish_no_research.
+            job.pop('questions_met', None)
             pipeline['stage'] = 'peer'
             self.enqueue('peer', task, pipeline['id'], pipeline['id'] + ':peer')
             self.save()
@@ -1335,7 +1341,8 @@ class Runner:
     def finish_no_research(self, sid, session, job, outcome):
         """Terminal for this session even when its separate availability report is stale.
 
-        An explorer that found no free question closes the same way; only attempts report occupancy."""
+        An explorer that took no question closes the same way, and the questions it can have left are
+        recorded below; only attempts report occupancy."""
         observed = None
         if session['role'] == 'attempt':
             try:
@@ -1357,6 +1364,17 @@ class Runner:
         session.update(status='ended', disposition='no_research')
         job['status'] = 'done'
         self.state['pipelines'][job['pipeline']].update(stage='done', disposition='no_research')
+        met = job.pop('questions_met', None)
+        if met:
+            # An explorer ends here when it found no free question, and also when it left every free one
+            # (roles/explore.md). It does not say which, and a question it left stays free. The questions
+            # that were free both when it was launched and now are the ones it can have left. The next
+            # explorer would be asked the same of the same questions, so none is launched while exactly
+            # these are free and nothing has been published since this one was launched (question_slot).
+            # The sequence is that of the launch: a publication made while the explorer ran can have come
+            # after it read the questions.
+            self.state['questions_left'] = {'session': sid, 'sequence': met['sequence'],
+                                            'free': sorted(set(met['free']) & set(self.question_view()['free']))}
         self.archive_due = True
         self.save()
 
@@ -1448,8 +1466,18 @@ class Runner:
         session that continues it (question_view): each waiting job is decided on its own
         pass, against the questions the launches before it leave free, and the one launched becomes
         a producing row that the next pass counts. Without a job to dispatch, waiting jobs count, so
-        that schedule() does not create another exploration for a question a waiting one will take."""
+        that schedule() does not create another exploration for a question a waiting one will take.
+
+        There is no such question while the free questions are the ones that the last explorer to end
+        without research can have left (finish_no_research) and nothing has been published since that
+        explorer was launched: the next explorer would be asked the same of the same questions. A
+        publication ends that, and so does any change of the free questions, when another becomes free
+        or one of them is taken or leased. The record is part of the saved state, so a runner that is
+        started again holds explorers back in the same way."""
         view = self.question_view(launching=launching)
+        left = self.state.get('questions_left')
+        if left and left['sequence'] == self.model['sequence'] and set(left['free']) == set(view['free']):
+            return False
         return len(view['free']) > len(view['choosing'])
 
     def dispatch_pending(self):
@@ -1524,9 +1552,9 @@ class Runner:
                     self.save()
             if (self.state['explore_requested'] and self.launch_due()
                     and self.selection('explore') and self.question_slot()):
-                # The request is consumed by the launch; without a free question it stays
-                # in force until one opens, and attempts are not held for it. Before the launch
-                # interval has passed the request waits; the attempt below waits for the same interval.
+                # The request is consumed by the launch; while no explorer can be launched for want of a
+                # question (question_slot) it stays in force, and attempts are not held for it. Before the
+                # launch interval has passed the request waits; the attempt below waits for the same interval.
                 key = self.producer('explore')
                 if not self.dispatch(key):
                     # The queued exploration launches from dispatch_pending() on a later pass.

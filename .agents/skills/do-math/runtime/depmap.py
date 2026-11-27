@@ -85,6 +85,11 @@ def drawing():
     return sys.modules[name]
 
 
+# Loaded with this module and not at the first drawing. A command that draws the map hours after it began, as the
+# finalize pipeline does, then draws with the code it has held from its start, like its other modules (finalize.py).
+drawing()
+
+
 def folder_of(module):
     """The folder of a module: its name without the last component. A top-level module is its own folder."""
     return module.rsplit('.', 1)[0] if '.' in module else module
