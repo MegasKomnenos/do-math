@@ -1048,7 +1048,12 @@ class ArchiveTests(FinalizeCase):
         self.assertEqual((info['files'], info['touched']), (len(tree), 1))
         manifest = (self.root / 'knowledge' / 'MANIFEST.md').read_text(encoding='utf-8')
         self.assertEqual(package.manifest_sha(self.root / 'knowledge' / 'MANIFEST.md'), package.sha256_file(archive))
-        self.assertIn('This changed 1 file. Other paths', manifest)
+        self.assertIn('This changed 1 file, which the last section of this document names. Other paths', manifest)
+        # That section says which hashes of the research no longer hold, and for which file.
+        self.assertTrue(manifest.endswith('## The changed files\n\nA file of the archive can state a hash of another: '
+                                          '`canon/index.json` states the SHA-256 of each Lean file and of the text of '
+                                          'each declaration. Such a hash is of the file as the commit has it, so it does '
+                                          'not hold for a file that was changed:\n\n- `canon/questions/q0.md`\n'))
         self.assertIn(commit, manifest)
         # The same commit gives the same archive.
         again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', ['pat'])
@@ -1156,6 +1161,100 @@ class ArchiveTests(FinalizeCase):
         self.assertLess(text.index('## What was tried on each statement'),
                         text.index('## What was understood of each question'))
 
+    def test_a_name_is_replaced_in_each_way_a_file_writes_it_and_a_file_that_is_no_text_keeps_its_length(self):
+        import pickle
+        # The account `quill` has a home folder with a long name, for which Windows keeps a short one. A program of
+        # the machine that names no encoding writes a text in the code page 949.
+        quill = {'name': 'quill', 'home': 'C:\\Users\\Quill Example', 'short': 'C:\\Users\\QUILLE~1',
+                 'encodings': ['cp949']}
+        with patch('package.machine_account', return_value=quill):
+            names = package.account_names()
+            named = package.account_pattern(names)
+        self.assertEqual(names, ['quill', 'Quill Example'])
+        replaced = lambda text, pattern: package.without_account(text.encode('utf-8'), pattern)[0].decode('utf-8')
+        for text, wanted in (
+                # Windows reads a path in any case of its letters.
+                ('c:\\users\\QUILL EXAMPLE\\work', 'c:\\users\\<account>\\work'),
+                ('C:/USERS/Quill/work', 'C:/USERS/<account>/work'),
+                # The short name that Windows keeps for the folder, as the variable TEMP gives it. The short name of
+                # another folder is another name.
+                ('C:\\Users\\QUILLE~1\\AppData\\Local\\Temp', 'C:\\Users\\<account>\\AppData\\Local\\Temp'),
+                ('c:\\users\\quille~1\\x and C:\\Users\\QUILLE~2\\x', 'c:\\users\\<account>\\x and C:\\Users\\QUILLE~2\\x'),
+                # A `file:` URL writes the space of the name as `%20`.
+                ('file:///C:/Users/Quill%20Example/notes.txt', 'file:///C:/Users/<account>/notes.txt'),
+                # A JSON string that holds a JSON string has each backslash of the path four times.
+                (json.dumps(json.dumps('C:\\Users\\quill\\a')), json.dumps(json.dumps('C:\\Users\\<account>\\a'))),
+                # `home` holds home folders in lower case alone, and a name is no name as a word by itself.
+                ('$HOME/quill and /Home/quill, run by quill on QUILLE~1',
+                 '$HOME/quill and /Home/quill, run by quill on QUILLE~1')):
+            self.assertEqual(replaced(text, named), wanted)
+        # A name outside ASCII. A JSON file that is written in ASCII gives each character as an escape, with digits
+        # in either case, and so does what Python prints where its output cannot hold the name. The backslash of
+        # the escape follows those of the separator, and the file must still be JSON when the name is gone.
+        name = '\ud64d\uae38\ub3d9'
+        with patch('package.machine_account', return_value={'name': name, 'home': 'C:\\Users\\' + name, 'short': None,
+                                                              'encodings': ['cp949']}):
+            escaped = package.account_pattern(package.account_names())
+        path, gone = 'C:\\Users\\' + name + '\\a.txt', 'C:\\Users\\<account>\\a.txt'
+        printed = path.encode('ascii', 'backslashreplace').decode('ascii')
+        self.assertEqual(json.dumps(path), '"C:\\\\Users\\\\\\ud64d\\uae38\\ub3d9\\\\a.txt"')
+        self.assertEqual(printed, 'C:\\Users\\\\ud64d\\uae38\\ub3d9\\a.txt')
+        self.assertEqual(json.loads(replaced(json.dumps(path), escaped)), gone)
+        self.assertEqual(json.loads(replaced(json.dumps(path).replace('\\ud64d', '\\uD64D'), escaped)), gone)
+        self.assertEqual(json.loads(json.loads(replaced(json.dumps(json.dumps(path)), escaped))), gone)
+        self.assertEqual(replaced(printed, escaped), gone)
+        self.assertEqual(json.loads(replaced(json.dumps(printed), escaped)), gone)
+        self.assertEqual(replaced('file:///C:/Users/%ED%99%8D%ea%b8%b8%EB%8F%99/a.txt', escaped),
+                         'file:///C:/Users/<account>/a.txt')
+        # The same path in the code page of the machine is no UTF-8 text, and such a file keeps its length.
+        changed, as_text = package.without_account(('Result in ' + path + '\n').encode('cp949'), escaped)
+        self.assertEqual((as_text, changed.decode('cp949')), (False, 'Result in C:\\Users\\******\\a.txt\n'))
+        # A bytes pattern ignores the case of ASCII letters alone, so a letter outside ASCII is looked for in both
+        # cases. A name comes composed or decomposed, and Python prints a character below U+0100 as `\xXX`.
+        with patch('package.machine_account', return_value={'name': 'Zo\u00eb', 'home': '/home/Zo\u00eb', 'short': None,
+                                                              'encodings': []}):
+            accented = package.account_pattern(package.account_names())
+        self.assertEqual(replaced('/home/ZO\u00cb/x, /home/zoe\u0308/x, /home/Zo\\xeb/x, /home/Zoey/x', accented),
+                         '/home/<account>/x, /home/<account>/x, /home/<account>/x, /home/Zoey/x')
+        # One commit of the research with such paths in a JSON file, in a text that Windows PowerShell wrote, which
+        # is UTF-16, and in a pickle, which states the length of each text it holds.
+        folder = self.instance / 'canon' / 'evidence' / 'run'
+        folder.mkdir(parents=True)
+        pickled = pickle.dumps({'script': 'C:\\Users\\Quill Example\\run.py', 'temp': 'C:\\Users\\QUILLE~1\\AppData'},
+                               protocol=4)
+        wide = b'\xff\xfe' + 'Line one.\nRan in c:\\users\\quill\\work.\n'.encode('utf-16-le')
+        (folder / 'state.pkl').write_bytes(pickled)
+        (folder / 'log.txt').write_bytes(wide)
+        (folder / 'notes.md').write_bytes(b'Nothing of the machine.\n')
+        (folder / 'paths.json').write_bytes(json.dumps({'cwd': 'C:\\Users\\Quill Example'}).encode('utf-8'))
+        git(self.instance, '-c', 'core.autocrlf=false', 'add', '-f', '--', 'canon/evidence/run')
+        git(self.instance, '-c', 'core.autocrlf=false', 'commit', '-m', 'the evidence of a run', '--', 'canon/evidence/run')
+        with patch('package.machine_account', return_value=quill):
+            info = package.knowledge_archive(self.instance, package.head_commit(self.instance), self.root / 'forms',
+                                             'odd', names)
+        members = package.archive_members(self.root / 'forms' / 'odd-knowledge.tar.xz')
+        kept = members['canon/evidence/run/state.pkl']
+        self.assertEqual(len(kept), len(pickled))
+        self.assertEqual(pickle.loads(kept), {'script': 'C:\\Users\\*************\\run.py',
+                                              'temp': 'C:\\Users\\********\\AppData'})
+        self.assertEqual(members['canon/evidence/run/log.txt'],
+                         b'\xff\xfe' + 'Line one.\nRan in c:\\users\\<account>\\work.\n'.encode('utf-16-le'))
+        self.assertEqual(json.loads(members['canon/evidence/run/paths.json']), {'cwd': 'C:\\Users\\<account>'})
+        self.assertEqual(members['canon/evidence/run/notes.md'], b'Nothing of the machine.\n')
+        self.assertEqual(info['touched'], 3)
+        manifest = (self.root / 'forms' / 'MANIFEST.md').read_text(encoding='utf-8')
+        self.assertIn('In a file that is not a text in UTF-8 or UTF-16, an asterisk stands for each byte of the name '
+                      'instead, so that the file keeps its length. This changed 3 files, which the last section of this '
+                      'document lists.', manifest)
+        self.assertTrue(manifest.endswith(
+            'for a file that was changed:\n\n- `canon/evidence/run/log.txt`\n- `canon/evidence/run/paths.json`\n'
+            '- `canon/evidence/run/state.pkl` (not a text; asterisks stand for the name)\n'))
+        # The final check looks for the names as the archive does. It finds none in a member of this archive, and in
+        # the bytes of the commit it says where: the line of a text, the offset of the byte in any other file.
+        self.assertEqual({package.account_place(data, named) for data in members.values()}, {None})
+        self.assertEqual(package.account_place(wide, named), 'in line 2')
+        self.assertEqual(package.account_place(pickled, named), 'at byte offset ' + str(pickled.index(b'C:')))
+
     def test_a_working_tree_that_differs_from_the_commit_does_not_reach_the_archive(self):
         commit = package.head_commit(self.instance)
         path = self.instance / 'canon' / 'questions' / 'q0.md'
@@ -1236,6 +1335,11 @@ class DocumentTests(FinalizeCase):
         faulty('history/timeline.md', 'Computed in C:\\Users\\quill\\work.\n',
                'history/timeline.md holds the name of the account or of its home folder inside a path of a home folder',
                names=['pat', 'quill'])
+        # The path is found in another case of its letters, as the archive finds it, and the problem says in which
+        # line it stands.
+        faulty('history/timeline.md', '# History\n\nComputed in c:\\users\\PAT\\work.\n',
+               'history/timeline.md holds the name of the account or of its home folder inside a path of a home folder, '
+               'in line 3', names=['pat'])
         # The name as a word by itself is no fault: `oddSum` is a definition of the library. The files that hold it so
         # are found for the report of the run, a member of the archive after the archive.
         self.assertEqual(check('oddSum'), [])
@@ -1259,9 +1363,11 @@ class DocumentTests(FinalizeCase):
         faulty('history/timeline.md', '# Another history\n', 'MANIFEST.sha256 does not hold for history/timeline.md', manifest=False)
         faulty('history/unlisted.md', 'x\n', 'MANIFEST.sha256 has no line for history/unlisted.md', manifest=False)
         faulty('history/timeline.md', '# The history\r\n\r\nOne entry.\r\n', 'history/timeline.md has line endings other than LF')
-        # A file that is no text, as the typeset paper is, is not read for its line endings.
+        # A file that is no text, as the typeset paper is, is not read for its line endings. It is read for the names
+        # of an account, and this one holds a path of the home folder of the account `pat`.
+        pdf = b'%PDF-1.5\r\n%\xd0\xd4\xc5\xd8\r\n/Source (C:\\Users\\pat\\paper.tex)\r\n'
         (folder / 'paper').mkdir(exist_ok=True)
-        (folder / 'paper' / 'paper.pdf').write_bytes(b'%PDF-1.5\r\n%\xd0\xd4\xc5\xd8\r\n')
+        (folder / 'paper' / 'paper.pdf').write_bytes(pdf)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         self.assertEqual(check(), [])
         # A formula with a colon before a command is no drive path, in a document and in the source of the paper.
@@ -1286,9 +1392,15 @@ class DocumentTests(FinalizeCase):
         self.assertEqual(check(), [])
         faulty('paper/correspondence.json', json.dumps({'paper_statement': 'Built in D:/lean-work.'}),
                'paper/correspondence.json holds a drive path')
-        # A member of the archive that holds the account name inside a path of a home folder is found inside the archive.
-        self.assertEqual(check('pat'), ['knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md holds the name '
-                                        'of the account or of its home folder inside a path of a home folder'])
+        # A member of the archive that holds the account name inside a path of a home folder is found inside the archive,
+        # with the line: the note is the last line of the member. A file that is no text is found with the offset of
+        # the byte at which the path begins.
+        note = package.archive_members(folder / 'knowledge' / 'odd-knowledge.tar.xz')['canon/questions/q0.md']
+        line = note.count(b'\n')
+        held = 'holds the name of the account or of its home folder inside a path of a home folder'
+        self.assertEqual(check('pat'), [
+            f'knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md {held}, in line {line}',
+            f"paper/paper.pdf {held}, at byte offset {pdf.index(b'Users')}"])
         # A drive path in a file the pipeline did not write, such as a record of the research, is not its concern.
         (folder / 'records' / 'Small' / 'root.md').write_text('Computed in D:\\data.\n', encoding='utf-8', newline='\n')
         freeze = package.freeze_hashes(folder)

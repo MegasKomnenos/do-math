@@ -1203,14 +1203,76 @@ def freeze_hashes(package):
 
 # ----------------------------------------------------------------------------- stage 3: archive and ledger
 
+def machine_account():
+    """What the operating system says of the account under which this program runs.
+
+    `name` is the account name and `home` the path of the account's home folder. `short` is that path as
+    Windows gives it in the short names it keeps beside long ones, as in `C:\\Users\\PATRIC~1`. It is the
+    same path where no folder of the path has a short name, and None on another system and for a folder
+    that does not exist. `encodings` are the encodings in which a program of this machine writes a text
+    when it is told none: the two code pages of Windows, and elsewhere the encoding of the locale.
+
+    The operating system is asked about the account here and nowhere else in this module, so a test
+    gives the functions below an account by replacing this function."""
+    import getpass
+    import locale
+    home, short = str(Path.home()), None
+    if os.name == 'nt':
+        import ctypes
+        ask = ctypes.windll.kernel32.GetShortPathNameW
+        size = ask(home, None, 0)  # the length the short path needs, and 0 for a path that does not exist
+        buffer = ctypes.create_unicode_buffer(size or 1)
+        if size and ask(home, buffer, size):
+            short = buffer.value
+    return {'name': getpass.getuser(), 'home': home, 'short': short,
+            'encodings': ['mbcs', 'oem'] if os.name == 'nt' else [locale.getpreferredencoding(False)]}
+
+
 def account_names():
     """The account name of the machine's user and the name of that account's home folder, the same name once.
 
     No file of a package may hold either inside a path of a home folder. The two differ on some machines.
     Windows, for one, keeps the name of the folder when the account is renamed, and adds a suffix to the
     folder's name when a folder of the account's name exists already."""
-    import getpass
-    return [name for name in dict.fromkeys((getpass.getuser(), Path.home().name)) if name]
+    account = machine_account()
+    return [name for name in dict.fromkeys((account['name'], re.split(r'[\\/]', account['home'])[-1])) if name]
+
+
+def written(part, encodings=()):
+    """A bytes pattern, without a group that captures, for one component of a path in each way a file writes it.
+
+    The case of a letter is free, since Windows reads `C:\\Users\\Pat` and `c:\\users\\pat` as one folder. A
+    bytes pattern ignores the case of ASCII letters alone, so a letter outside ASCII is looked for in its
+    lower-case and in its upper-case form. A character stands as itself, in UTF-8 or in one of `encodings`.
+    One that is no ASCII letter and no digit can stand percent-encoded as well, as in a `file:` URL. One
+    outside ASCII can also stand as an escape: `\\uXXXX` for each of its UTF-16 code units, which is how JSON
+    writes it, or `\\xXX` or `\\UXXXXXXXX`, which with `\\uXXXX` is how Python writes a character that its
+    output cannot hold. The digits of an escape have either case, and its backslash can be doubled, as the
+    backslash of a path is inside a JSON string."""
+    pattern = b''
+    for char in part:
+        ways = []
+        for case in (char,) if char.isascii() else dict.fromkeys((char, char.lower(), char.upper())):
+            if len(case) != 1:
+                continue  # a letter whose other case is more than one character has no other case in a file name
+            raw = case.encode('utf-8')
+            ways.append(re.escape(raw))
+            if not (case.isascii() and case.isalnum()):
+                ways.append(b''.join(b'%%%02X' % byte for byte in raw))
+            if not case.isascii():
+                units = case.encode('utf-16-be')
+                ways.append(b''.join(rb'\\+u%04X' % int.from_bytes(units[at:at + 2], 'big')
+                                     for at in range(0, len(units), 2)))
+                if ord(case) < 0x100 or ord(case) > 0xFFFF:
+                    ways.append((rb'\\+x%02X' if ord(case) < 0x100 else rb'\\+U%08X') % ord(case))
+                for encoding in encodings:
+                    try:
+                        ways.append(re.escape(case.encode(encoding)))
+                    except (LookupError, UnicodeError):
+                        pass  # the encoding does not have the character
+        ways = list(dict.fromkeys(ways))
+        pattern += ways[0] if len(ways) == 1 else b'(?:' + b'|'.join(ways) + b')'
+    return b'(?i:' + pattern + b')'
 
 
 def account_pattern(names):
@@ -1218,40 +1280,115 @@ def account_pattern(names):
 
     The names are those of an account (account_names). A name counts in two places: as the path component
     that follows `Users` or `home`, and as a component of the path of this account's home folder, wherever
-    that folder lies. The components are parted by a slash or by a backslash, which a JSON string doubles.
+    that folder lies. The components are parted by a slash or by backslashes: a JSON string doubles a
+    backslash, and a JSON string that holds another doubles it again.
+
+    A name counts in each way a file writes it (written), and so does each folder on the way to the home
+    folder. Where Windows keeps a short name for the home folder, such as `PATRIC~1`, that name counts as
+    the folder's own name does, and a folder on the way counts under either of its names (machine_account).
+
     A longer name is tried before a shorter one, so that a folder `pat.OFFICE` of the account `pat` is found
     whole. As a word by itself a name does not count. An account can be named `root`, `lean` or `main`, and
     such a word is a declaration, a folder of the package or a word of a sentence (account_words lists
-    where it stands)."""
-    parted = rb'(?:/|\\{1,2})'
-    before = [rb'(?:[Uu]sers|home)' + parted]
-    parts = re.split(r'[\\/]', str(Path.home()))
+    where it stands). `Users` counts in any case of its letters, as Windows reads it. `home` counts in lower
+    case alone, as the systems that have `/home` write it: `$HOME/lean` names a folder inside a home folder."""
+    account, names = machine_account(), list(names)
+    form = lambda part: written(part, account['encodings'])
+    # Where a name begins with an escape, the backslashes of the separator run into those of the escape. The
+    # separator is then as long as the escape or twice as long: `\\ud64d` in what Python prints, `\\\ud64d` in a
+    # JSON string, and each doubled once more in a JSON string that holds either. Another share would leave an
+    # odd number of backslashes before `<account>`, and a reader of JSON refuses the file.
+    parted = rb'(?:\\*/|\\(?=\\[uUxX])|\\\\(?=\\{1,2}[uUxX])|\\{4}(?=(?:\\{2}|\\{4})[uUxX])|\\+)'
+    parts = re.split(r'[\\/]', account['home'])
+    brief = re.split(r'[\\/]', account['short'] or '')
+    if len(brief) != len(parts):
+        brief = parts
+    if parts[-1] in names and brief[-1].lower() != parts[-1].lower():
+        names.append(brief[-1])
+    before = [rb'(?:(?i:users)|home)' + parted]
     for name in names:
-        if name in parts:
-            # The home folder's own path counts where it begins a path, and not where it ends a longer one.
-            before.append(rb'(?<![\\/])' + parted.join(re.escape(part.encode('utf-8'))
-                                                        for part in parts[:parts.index(name)]) + parted)
-    named = b'|'.join(re.escape(name.encode('utf-8')) for name in sorted(names, key=len, reverse=True))
-    return re.compile(rb'(?<![A-Za-z0-9_.-])(' + b'|'.join(before) + rb')(?:' + named + rb')(?![A-Za-z0-9])')
+        for path in (parts, brief):
+            if name in path:
+                # The home folder's own path counts where it begins a path, and not where it ends a longer one.
+                before.append(rb'(?<![\\/])' + parted.join(
+                    form(long) if long == short else b'(?:' + form(long) + b'|' + form(short) + b')'
+                    for long, short in zip(parts[:path.index(name)], brief)) + parted)
+    # A name can come composed or decomposed: a file system of macOS hands out names with their accents apart.
+    spelled = sorted(dict.fromkeys(unicodedata.normalize(kind, name) if kind else name for name in names
+                                   for kind in ('', 'NFC', 'NFD')), key=len, reverse=True)
+    return re.compile(rb'(?<![A-Za-z0-9_.-])(' + b'|'.join(dict.fromkeys(before)) + rb')(?:'
+                      + b'|'.join(form(name) for name in spelled) + rb')(?![A-Za-z0-9])')
+
+
+UTF16 = {b'\xff\xfe': 'utf-16-le', b'\xfe\xff': 'utf-16-be'}
+
+
+def utf16_text(data):
+    """The text of a file in UTF-8 where the file is UTF-16 behind its byte order mark; None for any other file.
+
+    Windows PowerShell writes an output that it redirects into a file so. A name of the account is looked
+    for in this text, since the bytes of the file hold a NUL after every ASCII character."""
+    try:
+        return data[2:].decode(UTF16[data[:2]]).encode('utf-8')
+    except (KeyError, UnicodeError):
+        return None
+
+
+def without_account(data, named):
+    """A file's bytes with each name of the account replaced where `named` finds it, and whether as a text.
+
+    In a text, which is a file in UTF-8 (is_text_file) or in UTF-16 (utf16_text), the name becomes
+    `<account>`. Any other file keeps its length: each byte of the name becomes `*`. Such a file can state
+    the length of what follows, as a pickle and a compiled Python file state the length of each text they
+    hold, and a name of another length would leave a file that its reader refuses. A text in another
+    encoding than those two is such a file here, and reads the same with the asterisks."""
+    if is_text_file(data):
+        return named.sub(rb'\g<1>' + ACCOUNT.encode(), data), True
+    wide = utf16_text(data)
+    if wide is None:
+        return named.sub(lambda found: found[1] + b'*' * (found.end() - found.end(1)), data), False
+    changed = named.sub(rb'\g<1>' + ACCOUNT.encode(), wide)
+    return (data if changed == wide else data[:2] + changed.decode('utf-8').encode(UTF16[data[:2]])), True
+
+
+def account_place(data, named):
+    """Where a file holds a name of the account inside a path of a home folder (`named`), in words; None if nowhere.
+
+    The place is the line in a text, UTF-8 or UTF-16 (utf16_text), and the offset of the byte in any other
+    file. The words do not repeat the name: the name can stand there in a form in which its owner does not
+    know it at once, as a short name of Windows or as escapes, and the place leads to it."""
+    wide = utf16_text(data)
+    read = data if wide is None else wide
+    found = named.search(read)
+    if not found:
+        return None
+    if wide is None and not is_text_file(data):
+        return f'at byte offset {found.start()}'
+    return 'in line ' + str(read.count(b'\n', 0, found.start()) + 1)
 
 
 def knowledge_archive(repository, commit, folder, name, names):
     """`<name>-knowledge.tar.xz` and `MANIFEST.md`: `canon/` and `knowledge/` of a commit, as Git stores them.
 
     One change is made to the members: in a member's bytes each of `names`, the account name and the name
-    of the account's home folder, is replaced by `<account>` wherever it stands inside a path of a home
-    folder (account_pattern). A member's own path is a path inside the research's repository and is kept.
+    of the account's home folder, is replaced wherever it stands inside a path of a home folder
+    (account_pattern), by `<account>` in a text and by asterisks of its length in any other file
+    (without_account). MANIFEST.md lists the members that were changed, since a hash that the research
+    stated of such a member no longer holds for it. A member's own path is a path inside the research's
+    repository and is kept.
     The archive is the same for the same commit: members in Git's order, the commit's time on each, no owner."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     archive = folder / f'{name}-knowledge.tar.xz'
     stamp = commit_time(repository, commit)
     named = account_pattern(names) if names else None
-    count = size = touched = 0
+    count = size = 0
+    touched = []  # the members that were changed, each with whether it was changed as a text
     with lzma.open(archive, 'wb', preset=6) as packed, tarfile.open(fileobj=packed, mode='w|', format=tarfile.PAX_FORMAT) as out:
         for path, data in git_members(repository, commit, ['canon', 'knowledge']):
-            changed = named.sub(rb'\g<1>' + ACCOUNT.encode(), data) if named else data
-            touched += changed != data
+            changed, as_text = without_account(data, named) if named else (data, True)
+            if changed != data:
+                touched.append((path, as_text))
             info = tarfile.TarInfo(path)
             info.size, info.mtime, info.mode = len(changed), stamp, 0o644
             out.addfile(info, io.BytesIO(changed))
@@ -1270,8 +1407,11 @@ def knowledge_archive(repository, commit, folder, name, names):
         f'- SHA-256 of the archive: `{digest}`', '',
         (f'One change was made to the files. Where a file gave a path of a home folder with the name of the account '
          f"under which this package was made, or of that account's home folder, that name is replaced by `{ACCOUNT}`. "
-         f"This changed {counted(touched, 'file')}. Other paths of the machine on which the research ran stand in its "
-         'own records as they were written.'
+         + ('In a file that is not a text in UTF-8 or UTF-16, an asterisk stands for each byte of the name instead, so '
+            'that the file keeps its length. ' if not all(as_text for _, as_text in touched) else '')
+         + f"This changed {counted(len(touched), 'file')}, which the last section of this document "
+         f"{'names' if len(touched) == 1 else 'lists'}. Other paths of the machine on which the research ran stand in "
+         'its own records as they were written.'
          if touched
          else 'No file of the archive gives a path of a home folder with the name of the account under which this '
               "package was made, or of that account's home folder, so the files are in the archive as the commit has "
@@ -1280,9 +1420,15 @@ def knowledge_archive(repository, commit, folder, name, names):
         '## Verifying and unpacking', '',
         '```text', f'sha256sum {archive.name}', f'tar -xJf {archive.name}', '```', '',
         'The first command prints the SHA-256 above. The second writes `canon/` and `knowledge/` into the current folder.',
+        *(['', '## The changed files', '',
+           'A file of the archive can state a hash of another: `canon/index.json` states the SHA-256 of each Lean file '
+           'and of the text of each declaration. Such a hash is of the file as the commit has it, so it does not hold '
+           'for a file that was changed:', '',
+           *(f'- `{path}`' + ('' if as_text else ' (not a text; asterisks stand for the name)')
+             for path, as_text in touched)] if touched else []),
         '']))
     return {'archive': archive.name, 'commit': commit, 'date': date, 'files': count, 'bytes': size,
-            'archive_bytes': archive.stat().st_size, 'sha256': digest, 'touched': touched}
+            'archive_bytes': archive.stat().st_size, 'sha256': digest, 'touched': len(touched)}
 
 
 def archive_members(archive, wanted=lambda name: True):
@@ -1749,9 +1895,10 @@ def standalone_problems(package, work, names, freeze):
 
     Every relative link of its Markdown and HTML resolves inside it; no file and no member of the
     archive holds one of `names`, the account name and the name of the account's home folder, inside a
-    path of a home folder (account_pattern); no document the pipeline wrote holds a drive path or the
-    work folder's path; every text file ends its lines with LF; `lean/` and `records/` have the hashes
-    of the freeze; every line of `MANIFEST.sha256` holds and every other file has a line.
+    path of a home folder (account_pattern), and a problem of this kind says where (account_place); no
+    document the pipeline wrote holds a drive path or the work folder's path; every text file ends its
+    lines with LF; `lean/` and `records/` have the hashes of the freeze; every line of `MANIFEST.sha256`
+    holds and every other file has a line.
 
     A text file is a file that is UTF-8 and holds no NUL byte. The archive and the typeset paper are
     not, so the members of the archive, which are the research's own bytes, are not read for this."""
@@ -1769,10 +1916,13 @@ def standalone_problems(package, work, names, freeze):
         for relative, path in files.items():
             # The archive is read by its members. In its packed bytes a name can stand only by chance.
             if relative.endswith('-knowledge.tar.xz'):
-                problems += [f'{relative}: the member {name} holds {held}'
-                             for name, data in archive_members(path).items() if named.search(data)]
-            elif named.search(path.read_bytes()):
-                problems.append(f'{relative} holds {held}')
+                where = {name: account_place(data, named) for name, data in archive_members(path).items()}
+                problems += [f'{relative}: the member {name} holds {held}, {place}'
+                             for name, place in where.items() if place]
+            else:
+                place = account_place(path.read_bytes(), named)
+                if place:
+                    problems.append(f'{relative} holds {held}, {place}')
     for relative, path in files.items():
         data = path.read_bytes()
         if b'\r' in data and is_text_file(data):
