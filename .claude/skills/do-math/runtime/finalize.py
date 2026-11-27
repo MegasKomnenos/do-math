@@ -1151,14 +1151,25 @@ class Run:
                     for pid in read_json(merged / 'merge.json')['merged']},
                  'declarations.md': self.posed() + package.declarations_text(index)}
 
+        def named(value):
+            """Whether a value of the session's output is the name of a declaration, from which the path of a record is made."""
+            try:
+                return isinstance(value, str) and bool(name_path(value))
+            except CanonError:
+                return False
+
         def read(output):
             texts = {relative: package.read_text(path) for relative, path in package.files_under(output / 'lean').items()}
             renames = Sessions.load(output / 'renames.json')
             removed = [item['declaration'] for item in Sessions.load(output / 'removed.json', list)]
             if not texts:
                 raise Unusable(['output/lean holds no file; it holds every file of the library'])
-            if not all(isinstance(old, str) and isinstance(new, str) for old, new in renames.items()):
-                raise Unusable(['renames.json maps old names to new names'])
+            # Once the output is accepted, the records are moved and deleted by these names (package.follow_renames).
+            strange = [value for value in (*renames, *renames.values(), *removed) if not named(value)]
+            if strange:
+                raise Unusable(['renames.json maps the full old name of each renamed declaration to its full new name, and '
+                                'removed.json gives the full name of each removed one under "declaration"; these are not '
+                                'names of declarations: ' + ', '.join(json.dumps(value, ensure_ascii=False) for value in strange)])
             problems, arranged = self.library_ok('arrange-' + output.parent.name, files=texts, extract=True, records=records)
             if not problems:
                 now = arranged['entries']

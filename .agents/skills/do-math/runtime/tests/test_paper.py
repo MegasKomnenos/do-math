@@ -4311,6 +4311,35 @@ def restructuring():
     return script
 
 
+# The plan of JOINED_PLAN with one section more, which states nothing, and the text of that section.
+REMARKED_PLAN = {**JOINED_PLAN, 'sections': JOINED_PLAN['sections'] + [
+    {'id': 'remarks', 'title': 'Remarks', 'content': 'How the identity of the step is used.', 'exemplars': ['alpha', 'beta']}]}
+REMARKS = 'The identity of the step is used for one value of $k$ at a time.\n'
+
+
+def unsettled():
+    """A scenario in which the manuscript that the resolving session returns cannot be typeset, whatever is repaired.
+
+    The one reading leaves two findings, and the narrow repair keeps the text at both. The resolving session
+    answers the first by the structure of `restructuring` and by a section of its own, in which a macro stands
+    that TeX does not know, and keeps the text at the second. Every repair of the typesetting leaves the macro."""
+    script = good()
+    script['read'] = [{'output/reading.json': json.dumps({**CLEAN, 'findings': [EXPANSION, GAIN]})}]
+    script['repair:narrow'] = [{'output/response.json': answers('kept', 'kept')}]
+    script['resolve'] = [{'output/proof.tex': JOINED_PROOF, 'output/remarks.tex': REMARKS + '\\undefinedmacro\n',
+                          'output/plan.json': json.dumps(REMARKED_PLAN), 'output/response.json': answers('revised', 'kept')}]
+    script['repair:typeset'] = [{'output/remarks.tex': REMARKS + f'\\undefinedmacro % attempt {n}\n'} for n in range(9)]
+    return script
+
+
+def kept_when_put_back():
+    """The list `kept` at the end of a run of that scenario in which the manuscript of the resolving session was put
+    back: the finding that the session answered by a change, and the one at which it kept the text."""
+    return [{'check': paper.READING, 'finding': {**EXPANSION, 'open_because': paper.KEPT + 'kept 1'},
+             'reason': paper.RESOLVE_UNDONE},
+            {'check': paper.READING, 'finding': {**GAIN, 'open_because': paper.KEPT + 'kept 2'}, 'reason': 'kept 2'}]
+
+
 class ResolveTests(PaperCase):
     """The session that closes what the readings left open, and may change the structure of the paper for it."""
 
@@ -4422,6 +4451,114 @@ class ResolveTests(PaperCase):
         end = self.events('end')[-1]
         self.assertEqual((end['status'], end['open']), ('open_findings', [{'check': paper.COMPARISON, 'after_repairs': 0, 'problems': [
             {'label': 'lem:square', 'difference': late, 'open_because': paper.DIFFERS_LATE}]}]))
+
+    def test_a_resolving_session_that_changes_the_notation_has_every_numbered_statement_compared_again(self):
+        late = 'With the sum counted from zero, the manuscript states the identity for $k + 1$.'
+        script = restructuring()
+        # The resolving session changes what a symbol of the plan means, and no part.
+        counted = {**PLAN, 'notation': [{**PLAN['notation'][0], 'meaning': 'the sum of the odd numbers up to $2n + 1$'}]}
+        script['resolve'] = [{'output/plan.json': json.dumps(counted),
+                              'output/response.json': answered('The sum is counted from zero.')}]
+        # The comparison that follows finds that the second lemma, read with that notation, says something else.
+        script['compare:tools'] = [{'output/comparison.json': json.dumps(SAME[1:])},
+                                   {'output/comparison.json': json.dumps([SAME[1], {**SAME[2], 'verdict': 'differs',
+                                                                                    'difference': late}])}]
+        with patch('paper.READING_ROUNDS', 1):
+            self.assertEqual(self.run_paper(script), 2)
+        # No statement has another text, and each had its verdict. All are compared once more, before the running
+        # text, by sessions that are told why; no part changed, so the manuscript is not read again.
+        self.assertEqual(self.kinds(4), [('read', None), ('repair', 'narrow-reading-tools'), ('likeness', None),
+                                         ('likeness', None), *COMPARED, ('resolve', None), *COMPARED, *COVERED])
+        again = self.calls('compare')[-2:]
+        self.assertEqual([[s['label'] for s in read_json(self.folder(call) / 'statements.json')] for call in again],
+                         [['thm:main'], ['lem:increasing', 'lem:square']])
+        for call in again:
+            self.assertIn('because the notation in which it is read was changed', call['prompt'])
+        self.assertEqual(read_json(self.out / 'plan.json'), counted)
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['kept'], end['open']), ('open_findings', [], [
+            {'check': paper.COMPARISON, 'after_repairs': 0, 'problems': [
+                {'label': 'lem:square', 'difference': late, 'open_because': paper.DIFFERS_LATE}]}]))
+
+    def test_a_manuscript_that_fails_as_the_resolving_session_leaves_it_is_put_back_and_the_run_goes_on(self):
+        with patch('paper.READING_ROUNDS', 1):
+            self.assertEqual(self.run_paper(unsettled()), 0)
+        # The repairs of the typesetting did not help. The resolving session is not launched again and nothing is read
+        # again: the run goes on with the comparison of the running text, of the sections of the plan that is back.
+        self.assertEqual(self.kinds(4), [('read', None), ('repair', 'narrow-reading-tools'), ('likeness', None),
+                                         ('likeness', None), *COMPARED, ('resolve', None)]
+                         + [('repair', 'typeset')] * paper.REPAIR_ROUNDS + COVERED)
+        undone = self.events('resolve undone')
+        self.assertEqual([event['check'] for event in undone], [paper.TYPESETTING])
+        self.assertIn('Undefined control sequence', ' '.join(undone[0]['problems']))
+        # The plan and the parts are those that the readings left: the section that the session had taken out is
+        # back, and the section that it had made is gone.
+        self.assertEqual(read_json(self.out / 'plan.json'), PLAN)
+        self.assertEqual(sorted(path.name for path in (self.out / 'parts').iterdir()),
+                         ['abstract.tex', 'intro.tex', 'proof.tex', 'tools.tex'])
+        self.assertEqual((self.part('tools'), self.part('proof')), (TOOLS, PROOF))
+        self.assertNotIn('undefinedmacro', (self.out / 'paper.tex').read_text(encoding='utf-8'))
+        self.assertTrue((self.out / 'paper.pdf').is_file())
+        # So are the verdicts: the lemma that had lost its number has the verdict it had, and nothing is compared again.
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([(row['label'], row['comparison']['verdict']) for row in rows], [(label, 'same') for label in LABELS])
+        # Both findings are closed with a reason: the one that the session had answered by a change with the reason
+        # that the change was put back, the other with the reason of the session.
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open'], end['kept']), ('complete', [], kept_when_put_back()))
+        state = read_json(self.out / 'state.json')
+        self.assertEqual((state['resolve'], state['done']['resolve'], state['done']['placement']), (None, True, True))
+        self.assertFalse((self.out / 'resolve').exists())
+
+    def test_a_run_stopped_while_such_a_manuscript_is_settled_or_put_back_is_continued_there(self):
+        late = 'The manuscript states the inequality without its range.'
+        script = unsettled()
+        # The one comparison finds that the first lemma differs. No repair follows it, so the difference is open.
+        script['compare:tools'] = [{'output/comparison.json': json.dumps([{**SAME[1], 'verdict': 'differs', 'difference': late},
+                                                                          SAME[2]])}]
+        differing = [{'check': paper.COMPARISON, 'after_repairs': 0, 'problems': [{'label': 'lem:increasing', 'difference': late}]}]
+        real = paper.Paper.settle
+
+        def halted(run, rounds=paper.REPAIR_ROUNDS):
+            """The settling of a run, which is stopped where the manuscript is checked without repairs."""
+            if rounds == 0:
+                raise paper.Stop('halted for the test')
+            return real(run, rounds)
+
+        with patch('paper.READING_ROUNDS', 1), patch('paper.COMPARISON_ROUNDS', 1):
+            # The first repair of the typesetting leaves nothing, so the run stops while the manuscript of the
+            # resolving session is settled. That session took the number from the lemma that differs.
+            with self.assertRaises(paper.Stop):
+                self.run_paper({**script, 'repair:typeset': [{}]})
+            state = read_json(self.out / 'state.json')
+            self.assertEqual((state['resolve']['step'], [item['check'] for item in state['open']], sorted(state['compared'])),
+                             ('settle', [paper.READING], ['lem:square', 'thm:main']))
+            # Continued, the run settles that manuscript once, with the repairs of one settling, and then puts back the
+            # manuscript before it. There the run is stopped again.
+            launched = len(self.calls())
+            with patch.object(paper.Paper, 'settle', halted), self.assertRaises(paper.Stop):
+                self.run_paper(script, resume=True)
+            self.assertEqual(self.kinds(launched), [('repair', 'typeset')] * paper.REPAIR_ROUNDS)
+            self.assertEqual(read_json(self.out / 'state.json')['resolve']['step'], 'undo')
+            self.assertEqual((read_json(self.out / 'plan.json'), (self.out / 'parts' / 'remarks.tex').exists()), (PLAN, False))
+            # As a run would be that was stopped while it put the manuscript back, after the parts and before the
+            # plan: the state says that this is to be done, and the folder has the plan of the session, of which the
+            # section that the session made has no part any more.
+            write_json(self.out / 'plan.json', REMARKED_PLAN)
+            launched = len(self.calls())
+            self.assertEqual(self.run_paper(script, resume=True), 2)
+        # No session is launched for the manuscript again: it is put back, and the run goes on with the running text.
+        self.assertEqual(self.kinds(launched), COVERED)
+        self.assertEqual(len(self.events('resolve undone')), 1)
+        self.assertEqual(read_json(self.out / 'plan.json'), PLAN)
+        self.assertEqual((self.part('tools'), self.part('proof')), (TOOLS, PROOF))
+        # The difference of the lemma is open again, with its verdict, and the findings of the readings are closed.
+        rows = read_json(self.out / 'correspondence.json')['statements']
+        self.assertEqual([row['comparison']['verdict'] for row in rows], ['same', 'differs', 'same'])
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open'], end['kept']), ('open_findings', differing, kept_when_put_back()))
+        self.assertEqual(read_json(self.out / 'state.json')['resolve'], None)
+        self.assertFalse((self.out / 'resolve').exists())
 
 
 # ----------------------------------------------------------------------------- the running text

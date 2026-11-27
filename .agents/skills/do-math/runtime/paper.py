@@ -40,8 +40,8 @@ launched and what each check found). The work stays beside them: materials.json,
 planning session's account of how the chosen papers are written), parts/ (the abstract and the
 sections as they stand), state.json, sessions/ and typeset/, narrow/ while a narrow repair is under
 way (the parts as they were read, and the texts that are put back), and resolve/ while the stage
-`resolve` is under way (the plan and the parts that its session returned). --typeset-only does not
-use the collection.
+`resolve` is under way (the plan and the parts that its session returned, and under before/ those
+that the manuscript had until then). --typeset-only does not use the collection.
 
 --draft makes the draft of a paper and no paper (Paper.draft). --from-draft <folder> writes the
 paper from a draft (read_draft, extract, carried_plan, Paper.plan_from_draft).
@@ -72,8 +72,8 @@ with findings left open (the last `end` event of log.json names them under "open
 statement that differs from its element or whose present text was not compared, a sentence of
 running text that no element covers, a line wider than the text block, a machine check or a
 typesetting that failed; 3 the manuscript is complete and no TeX command was available. What the
-readings found and the resolving session or the last narrow repair answered with a reason is under
-"kept" in that event and does not make the exit code 2.
+readings found and the stage `resolve` closed with a reason, the text being left as it was, is
+under "kept" in that event and does not make the exit code 2.
 """
 import argparse
 from contextlib import contextmanager, nullcontext
@@ -135,6 +135,12 @@ NARROW_KINDS = {READING: 'reading', LIKENESS: 'likeness', COMPARISON: 'compariso
 # The checks whose findings the stage `resolve` closes: each is answered by a change or by a reason, and one that is
 # answered by a reason is listed under "kept" at the end of the run and is not open.
 READINGS = (READING, LIKENESS)
+# The reason with which such a finding is listed under "kept" when the session of the stage `resolve` answered it by
+# a change, and the manuscript with the changes of that session failed and was put back (Paper.resolve, step `undo`).
+RESOLVE_UNDONE = ('The session that resolves what the readings left open changed the manuscript for this finding. With '
+                  'the changes of that session the manuscript did not pass its machine checks or could not be typeset, '
+                  'also after the repairs that follow such a failure, so every change of the session was put back, and '
+                  'the text is as the readings left it.')
 # Why a finding is open after the last repair it received, as the open list says it under "open_because".
 KEPT = 'the repair session kept the text: '
 UNDONE = 'changed, and the change was undone, because the reading of the changed passages found it unsound: '
@@ -148,8 +154,9 @@ NOT_CONFIRMED = ('repaired after the reading that reported it; the readings ende
                  'confirmed the repair, because the reading that was to follow was not made')
 DIFFERS_NOW = ('the statement was changed by a repair of open findings, and the comparison that followed found this '
                'difference')
-DIFFERS_LATE = ('the statement was changed after the comparisons of the statements had ended, and the one comparison '
-                'of its present text found this difference; no repair follows that comparison')
+DIFFERS_LATE = ('the statement, or the notation in which it is read, was changed after the comparisons of the statements '
+                'had ended, and the one comparison of its present text found this difference; no repair follows that '
+                'comparison')
 COVERED_AGAIN = ('reported when the running text of the section was compared with the elements again, after the repair '
                  'of what the first comparison had reported; no repair follows that comparison')
 CLOSING_ATTEMPTS = 3   # sessions that restate statements or take passages out, before the run gives up (Paper.close)
@@ -408,16 +415,20 @@ def settling(materials):
     return materials.get('settles', materials['main'])
 
 
-def rests_on(elements, name, used):
-    """Whether an element of the materials rests on another, through what the proofs name and the statements mention."""
-    found, pending = {name}, [name]
+def reached(elements, name, first=('uses', 'mentions'), through=lambda n: True):
+    """What an element of the materials rests on, through what the proofs name and the statements mention.
+
+    The edges `first` of the element are followed, and then every edge of the elements that `through`
+    lets pass. The element itself is not among what is returned."""
+    found, pending = set(), [u for key in first for u in elements[name][key]]
     while pending:
-        element = elements[pending.pop()]
-        for below in element['uses'] + element['mentions']:
-            if below in elements and below not in found:
-                found.add(below)
-                pending.append(below)
-    return used != name and used in found
+        used = pending.pop()
+        if used in found or used == name:
+            continue
+        found.add(used)
+        if through(used):
+            pending += elements[used]['uses'] + elements[used]['mentions']
+    return found
 
 
 def extract(instance, model, further=(), main=None):
@@ -543,7 +554,7 @@ def main_lines(materials):
     main, settles = materials['main'], materials['settles']
     elements = {element['name']: element for element in materials['elements']}
     follows = (f'The proof of `{settles}` rests on it, so the root follows from the main result.'
-               if rests_on(elements, settles, main) else
+               if main in reached(elements, settles) else
                f'The proof of `{settles}` does not rest on it: the two stand beside each other.')
     return ['## The main result of the paper', '',
             f'The main result of this paper is `{main}`, and not the declaration that settles the root. This theorem '
@@ -972,18 +983,6 @@ def check_plan(materials, plan, keys):
         """Where the proof of a numbered statement is written: a section id, 'cited', or None for a definition."""
         return item.get('proof', item.get('section')) if elements[item['element']]['kind'] == 'statement' else None
 
-    def reach(name, first=('uses', 'mentions'), through=lambda n: True):
-        """What an element rests on, following its `first` edges and then every edge of the elements `through` lets pass."""
-        found, pending = set(), [u for key in first for u in elements[name][key]]
-        while pending:
-            used = pending.pop()
-            if used in found or used == name:
-                continue
-            found.add(used)
-            if through(used):
-                pending += elements[used]['uses'] + elements[used]['mentions']
-        return found
-
     labels = set()
     for number, item in enumerate(statements):
         name, element = item['element'], elements[item['element']]
@@ -1024,7 +1023,7 @@ def check_plan(materials, plan, keys):
                     continue
                 if target not in numbered:
                     bad(f'{name} is absorbed into {target!r}, which is neither a numbered element nor a section id')
-                elif name not in reach(target):
+                elif name not in reached(elements, target):
                     bad(f'{name} is absorbed into {target}, which does not rest on it')
         elif treatment == 'cited':
             if not element['source']:
@@ -1058,12 +1057,12 @@ def check_plan(materials, plan, keys):
     passes = lambda name: name not in numbered
     for number, item in enumerate(statements):
         name, proof = item['element'], proof_of(item)
-        for needed in sorted(reach(name, ('mentions',), passes) & set(numbered)):
+        for needed in sorted(reached(elements, name, ('mentions',), passes) & set(numbered)):
             if numbered[needed] > number:
                 bad(f'{name} is stated before {needed}, which its statement mentions')
         if proof in (None, 'cited'):
             continue
-        for needed in sorted(reach(name, through=passes) & set(numbered)):
+        for needed in sorted(reached(elements, name, through=passes) & set(numbered)):
             where = statements[numbered[needed]]
             late = order[where['section']] > order[proof] if proof != item['section'] else numbered[needed] > number
             if late:
@@ -2986,8 +2985,9 @@ The keys of a plan, as the session that planned the paper was told them:
 {plan_keys} A plan that the script cannot accept comes back to a new session with the reasons.
 
 After this session the script assembles the manuscript and repeats its machine checks and the typesetting. A session \
-that has nothing but the manuscript then reads it from beginning to end, the numbered statements whose text changed are \
-compared with their elements, and the running text is compared with the records. Nobody else reads what you rewrite \
+that has nothing but the manuscript then reads it from beginning to end, the numbered statements whose text changed, \
+or all of them when the notation of the plan changed, are compared with their elements, and the running text is \
+compared with the records. Nobody else reads what you rewrite \
 with the research beside it. So a proof that you rewrite is rewritten from the proof in the record of its element, step \
 by step, and not from the proof in the manuscript alone. Use no source other than the files in this folder.
 '''
@@ -3434,7 +3434,7 @@ def carried_plan(materials, plan, draft):
         # Into the statement in whose proof the gap stood, when its element rests on the declaration, so that
         # the check of the plan accepts it; otherwise into the running text of the section of the gap.
         host = hosts.get(gap.get('host'))
-        target = host if host and rests_on(elements, host, name) else gap.get('section') if gap.get('section') in ids else None
+        target = host if host and name in reached(elements, host) else gap.get('section') if gap.get('section') in ids else None
         if target is None:
             notes.append(f"`{name}`, which closed the gap {gap.get('id')}, has no place in the plan: the section of the "
                          'gap is gone')
@@ -4399,7 +4399,8 @@ class Paper(Sessions):
         home = {item['label']: item['section'] for item in self.plan['statements']}
         groups = [(section, [row for row in rows if home[row['label']] == section['id']]) for section in self.plan['sections']]
         listed = ('those numbered statements of this section whose present text has not been compared with '
-                  'their elements, because a repair changed it or because the comparison did not reach it')
+                  'their elements, because a repair changed it, because the notation in which it is read was changed, '
+                  'or because the comparison did not reach it')
         results = self.side_by_side([lambda section=section, stated=stated:
                                      self.compare_section(section, stated, tex, spans, listed)
                                      for section, stated in groups if stated])
@@ -4452,23 +4453,39 @@ class Paper(Sessions):
         complete, so that a run that is stopped is continued at the step it was in:
 
           session  the session is launched, and what it returned is kept in <out>/resolve: the plan and
-                   every part of the manuscript as it now is. In the same record of the state the
-                   verdicts of the comparison are reduced to those whose label still states the same
-                   element, and a difference of a statement that has no number any more is dropped. A
-                   verdict holds for the text it was given for, so a statement that was only moved
-                   keeps its verdict and one that was reworded is compared in the stage `coverage`.
+                   every part of the manuscript as it now is. The plan and the parts that the
+                   manuscript has until then are kept in <out>/resolve/before, and the record of the
+                   state keeps under `before` the verdicts of the comparison, the open list and
+                   whether the manuscript is to be read again, as they are then. In the same record of
+                   the state the verdicts of the comparison are reduced to those whose label still
+                   states the same element, and a difference of a statement that has no number any
+                   more is dropped. A verdict holds for the text it was given for, so a statement that
+                   was only moved keeps its verdict and one that was reworded is compared in the stage
+                   `coverage`. A verdict also holds for the notation in which the statement was read:
+                   when the returned plan has another notation, no verdict is kept, and that stage
+                   compares every numbered statement.
           place    the parts and the plan of <out>/resolve take the place of those in <out>: the parts
                    of sections that are gone are removed, and the layout is made from the new plan. The
                    correspondence file follows by itself, since it is made from the plan and the parts.
           settle   the manuscript is assembled, checked by machine and typeset, with the repairs that
                    this needs, as after any repair. The findings of the readings are then closed: one
-                   that the session answered with a reason goes to the list `kept`.
+                   that the session answered with a reason goes to the list `kept`. When the
+                   manuscript still fails after those repairs, the step `undo` follows in the place of
+                   this closing and of `read`.
           read     when a part changed, the manuscript is read by itself again (read_again), which
                    ends in a narrow repair. What that repair leaves is answered with the reason it
                    gives, and goes to `kept` as well.
+          undo     the plan and the parts of <out>/resolve/before take their place in <out> again, and
+                   the verdicts, the open list and the record of the reading are those kept under
+                   `before`. The manuscript is checked and typeset once more, without repairs. The
+                   findings of the readings are closed as in `settle`, and one that the session
+                   answered by a change goes to `kept` too, with RESOLVE_UNDONE as its reason. The
+                   manuscript is then the text that the readings left, so it is not read again.
 
         The stage `coverage` follows. False only when the manuscript is left failing its machine checks
-        or its typesetting; the findings of the readings then stay open with that."""
+        or its typesetting: by a repair that follows the reading of the step `read`, or in the step
+        `undo`, by the manuscript that passed both before the session. The findings of the readings
+        then stay open with that."""
         state = self.resolving
         if state is None:
             taken = [(item['check'], problem) for item in self.open if item['check'] in READINGS
@@ -4484,12 +4501,23 @@ class Paper(Sessions):
             write_json(folder / 'plan.json', plan)
             for name, text in parts.items():
                 write_text(folder / 'parts' / (name + '.tex'), text)
+            # The manuscript as it stands, in the form of what the session returned (place_resolution): the step
+            # `undo` puts it back when the manuscript of the session fails.
+            (folder / 'before' / 'parts').mkdir(parents=True)
+            write_json(folder / 'before' / 'plan.json', self.plan)
+            for name, text in self.parts.items():
+                write_text(folder / 'before' / 'parts' / (name + '.tex'), text)
             old, new = ({item['label']: item['element'] for item in each['statements']} for each in (self.plan, plan))
             state = {'step': 'place', 'findings': findings, 'response': response, 'plan': plan != self.plan,
                      'changed': sorted(name for name in parts if self.parts.get(name) != parts[name]),
-                     'removed': sorted(name for name in self.parts if name not in parts)}
+                     'removed': sorted(name for name in self.parts if name not in parts),
+                     'before': {'compared': self.compared, 'open': json.loads(json.dumps(self.open)),
+                                'rewritten': self.rewritten}}
             with self.lock:
-                self.compared = {label: judged for label, judged in self.compared.items() if new.get(label) == old.get(label)}
+                # A statement is compared as it reads with the notation of the manuscript (COMPARE_PROMPT). With
+                # another notation a statement can say something else in the same words, so no verdict stands.
+                self.compared = {} if plan['notation'] != self.plan['notation'] else {
+                    label: judged for label, judged in self.compared.items() if new.get(label) == old.get(label)}
                 for item in self.open:
                     if item['check'] == COMPARISON:
                         item['problems'] = [problem for problem in item['problems'] if problem['label'] in new]
@@ -4506,16 +4534,38 @@ class Paper(Sessions):
                        response=state['response'])
             state['step'] = 'settle'
             self.save()
+        answers = {answer['finding']: answer for answer in state['response']}
         if state['step'] == 'settle':
             # A session that kept every passage left the manuscript as it was settled before.
             if (state['changed'] or state['removed'] or state['plan']) and not self.settle():
-                return False
-            answers = {answer['finding']: answer for answer in state['response']}
-            self.kept += [{'check': entry['check'], 'finding': entry['reported'], 'reason': answers[entry['finding']]['note']}
-                          for entry in state['findings'] if answers[entry['finding']]['action'] == 'kept']
-            self.open = [item for item in self.open if item['check'] not in READINGS]
-            state['step'] = 'read'
+                if 'before' not in state:
+                    return False  # a record that the step `session` wrote before it kept the manuscript has none to put back
+                # The manuscript before the session passed these checks. The changes of the session are given up.
+                failed = next(item for item in self.open if item['check'] in (MACHINE, TYPESETTING))
+                self.event('resolve undone', check=failed['check'], problems=failed['problems'])
+                state['step'] = 'undo'
+            else:
+                self.kept += [{'check': entry['check'], 'finding': entry['reported'],
+                               'reason': answers[entry['finding']]['note']}
+                              for entry in state['findings'] if answers[entry['finding']]['action'] == 'kept']
+                self.open = [item for item in self.open if item['check'] not in READINGS]
+                state['step'] = 'read'
             self.save()
+        if state['step'] == 'undo':
+            before = state['before']
+            plan, names = self.place_resolution(self.out / 'resolve' / 'before')
+            self.take_plan(plan, self.study)
+            self.parts = {name: read_file(self.out / 'parts' / (name + '.tex')) for name in names}
+            self.compared, self.open, self.rewritten = before['compared'], before['open'], before['rewritten']
+            if not self.settle(0):
+                return False
+            self.kept += [{'check': entry['check'], 'finding': entry['reported'],
+                           'reason': answers[entry['finding']]['note'] if answers[entry['finding']]['action'] == 'kept'
+                           else RESOLVE_UNDONE} for entry in state['findings']]
+            self.open = [item for item in self.open if item['check'] not in READINGS]
+            self.resolving = None
+            self.save()
+            shutil.rmtree(self.out / 'resolve', ignore_errors=True)
         if state['step'] == 'read':
             if not self.read_again():
                 return False
@@ -4528,13 +4578,14 @@ class Paper(Sessions):
             shutil.rmtree(self.out / 'resolve', ignore_errors=True)
         return True
 
-    def place_resolution(self):
+    def place_resolution(self, folder=None):
         """Put the parts and the plan that <out>/resolve holds in the place of those in <out>; the plan and its part names.
 
-        Every part of the new manuscript is written, the parts of sections that the plan no longer has
-        are removed, and the plan is written last. Doing it again changes nothing, so a run that was
-        stopped while it did this does it again (take_up)."""
-        folder = self.out / 'resolve'
+        `folder` is <out>/resolve/before when the manuscript that the session replaced is put back
+        (resolve, step `undo`). Every part of the manuscript of the folder is written, the parts of
+        sections that its plan does not have are removed, and the plan is written last. Doing it again
+        changes nothing, so a run that was stopped while it did this does it again (take_up)."""
+        folder = folder or self.out / 'resolve'
         plan = read_json(folder / 'plan.json')
         names = ['abstract'] + [section['id'] for section in plan['sections']]
         (self.out / 'parts').mkdir(exist_ok=True)
@@ -4609,7 +4660,8 @@ class Paper(Sessions):
 
         First the numbered statements whose present text has no verdict are compared, once: a repair
         after the comparison of the statements, or the session of the stage `resolve`, may have changed
-        them. One that differs then is open, and is not repaired here. Then, for each section, a
+        them, and after that session changed the notation none has a verdict (resolve). One that
+        differs then is open, and is not repaired here. Then, for each section, a
         session reports the sentences of the running text, and the formulas of a proof that are
         referred to from outside it, that assert mathematics which no element states. When the paper
         is written from a draft that carries the words of the cited works, the session also reports
@@ -4878,8 +4930,10 @@ class Paper(Sessions):
         if self.placed is None and not self.done:
             self.placed = {'digest': self.text_digest(), 'found': None}
             self.save()
-        # A narrow repair that is under way settles the manuscript itself, from the text that was read.
-        if False in self.done.values() or (self.narrow is None and not self.settle()):
+        # A narrow repair that is under way settles the manuscript itself, from the text that was read. So does the
+        # stage `resolve` up to its reading, which puts the manuscript back when it fails with what the session returned.
+        settles = self.narrow is not None or (self.resolving or {}).get('step') in ('place', 'settle', 'undo')
+        if False in self.done.values() or not (settles or self.settle()):
             return
         for name, method in STAGES:
             if name not in self.done:
@@ -5540,9 +5594,11 @@ class Paper(Sessions):
         """What <out> holds of a run that was stopped: the plan with its account, the parts, the state of the stages."""
         out = self.out
         state = read_json(out / 'state.json') if (out / 'state.json').is_file() else {}
-        if (state.get('resolve') or {}).get('step') == 'place' and not self.dry:
-            # The run was stopped while the parts and the plan of the stage `resolve` were put in place.
-            self.place_resolution()
+        step = (state.get('resolve') or {}).get('step')
+        if step in ('place', 'undo') and not self.dry:
+            # The run was stopped while the parts and the plan of the stage `resolve` were put in place, or while
+            # those that they had replaced were put back.
+            self.place_resolution(self.out / 'resolve' / 'before' if step == 'undo' else None)
         held = sorted(path.stem for path in (out / 'parts').glob('*.tex')) if (out / 'parts').is_dir() else []
         study = read_file(out / 'study.md') if (out / 'study.md').is_file() else ''
         if (out / 'plan.json').is_file() and study.strip():

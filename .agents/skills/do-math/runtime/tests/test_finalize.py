@@ -2479,11 +2479,16 @@ class RunTests(FinalizeCase):
         # The account of this selection names three declarations. The arrangement renames one of them, and the take
         # removes another, as a later step can remove a declaration or rename it without a table.
         account = 'The proof goes through `Small.simp_one` and `Small.twice_zero`, and it leaves `Small.unused_two` aside.'
+        arrangement = {'@copy': [['lean', 'output/lean']],
+                       'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED.replace('simp_one', 'first_odd'),
+                       'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd'}),
+                       'output/removed.json': '[]'}
+        # The first arranging session returns that library with three values that are no names of declarations: an
+        # old name that is empty, a new name with an empty component, and a removed declaration without a name.
+        unnamed = {**arrangement, 'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd', '': 'Small..odd'}),
+                   'output/removed.json': json.dumps([{'declaration': None, 'reason': 'Nothing uses it.'}])}
         plan = script(selection=[{'output/decision.json': decision(main='Small.twice_zero', account=account)}],
-                      arrange=[{'@copy': [['lean', 'output/lean']],
-                                'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED.replace('simp_one', 'first_odd'),
-                                'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd'}),
-                                'output/removed.json': '[]'}])
+                      arrange=[unnamed, arrangement])
         plan['records-write:5-01'][0]['output/findings.json'] = '[]'  # the writers found nothing, and the draft has no gap
         # The record of the renamed declaration is due: the research's index has no declaration of that name.
         plan['records-write:5-01'][0]['output/records/Small/first_odd.md'] = record_text('The first odd number is one.')
@@ -2515,6 +2520,11 @@ class RunTests(FinalizeCase):
                                            'Classical.choice only'])
         self.assertEqual(freeze['folders']['lean'], canon.tree_hash(lean))
         self.assertEqual(replay(self.work / 'view' / 'frozen')['root_state'], 'formal_proved')
+        # The output with the values that are no names was not accepted: the records are moved and deleted by these
+        # names after that. It went back to a second session, which was told the values as the first wrote them.
+        first, second = self.calls('arrange')
+        told = 'these are not names of declarations: "", "Small..odd", null'
+        self.assertTrue(told not in first['prompt'] and told in second['prompt'], second['prompt'])
         # The renamed declaration has its record under the new name, and the account of the selection goes to both
         # runs of the paper command with that name.
         self.assertIn('Renamed: `Small.simp_one` to `Small.first_odd`', self.decisions())
