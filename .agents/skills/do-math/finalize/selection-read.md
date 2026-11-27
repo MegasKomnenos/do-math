@@ -35,7 +35,7 @@ A claim holds when the canon bears it out. When the canon shows something else, 
 
 For each claim that does not hold, decide whether the correction changes a ground of the comparison. It does when a reason the decision gives for ranking one option above another no longer stands with the corrected fact, or stands the other way round, or when the correction means that an option is not what the decision took it to be. It does not when the corrected fact leaves every such reason as it was: a count that is off by a little, a name misspelt, a detail of a proof that no reason mentions. This judgment matters, because one `true` sends the decision back to be made once more with your corrections, and nothing reads the selection after that. Mark as `true` what a careful decider would want to reconsider, and not every slip.
 
-Of each claim that does not hold, a second thing is recorded: whether it stands in a text that the package prints. `sentence` and the texts under `registry` go into the package as the decision has them, into the README and into the file the registry reads, and no later step rewrites them. A wrong statement there is therefore sent back to be corrected whether or not it touches the comparison, and you mark it `printed`.
+Of each claim that does not hold, a second thing is recorded: whether it stands in a text that later steps take as the decision has it. `sentence` and the texts under `registry` go into the package as they are, into the README and into the file the registry reads. `account` is read by the sessions that plan the paper and write the README, as their description of the proof as a whole. No later step rewrites any of them. A wrong statement there is therefore sent back to be corrected whether or not it touches the comparison, and you mark it `printed`.
 
 ## What you write
 
@@ -51,6 +51,6 @@ Of each claim that does not hold, a second thing is recorded: whether it stands 
 - `holds`: `true` or `false`.
 - `correction`: empty when the claim holds; otherwise what the canon shows in its place, with the element or file where you saw it, or that the claim was not checked and why.
 - `changes_comparison`: `false` when the claim holds; otherwise as decided above.
-- `printed`: `false` when the claim holds; otherwise `true` when the claim stands in `sentence` or under `registry`, and `false` when it stands in another field.
+- `printed`: `false` when the claim holds; otherwise `true` when the claim stands in `sentence`, in `account` or under `registry`, and `false` when it stands in another field.
 
 The program accepts the reading when every claim it lists has a verdict. That check cannot see a claim you did not list, so the completeness of the list rests on you: every option contributes at least what its `proves`, `rests_on`, `size` and `against` state. Go through all options and all claims, also after you have found one that fails.

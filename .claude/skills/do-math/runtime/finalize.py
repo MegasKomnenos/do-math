@@ -65,6 +65,8 @@ ATTRIBUTION = ('declaration', 'sentence', 'place', 'quote')
 KEPT_AT_END = ('report.md', 'decisions.md', 'log.json')
 # Why a record is written again although its declaration did not change (records_again).
 DISAGREES = 'its statement in words says something that its Lean statement does not'
+# Why a record is written again after the check of the sources (bring_records).
+UNSOURCED = 'the source that its header named was taken out'
 BUILD_SECONDS = 10      # one wait for a build before the broker is looked at again
 BROKER_SECONDS = 5      # how often the run looks whether its broker is alive
 BUILD_AGAIN = 2         # how often a library is built again after a compile of its build did not run to its end
@@ -750,7 +752,8 @@ class Run:
                                              or type(claim.get('printed')) is not bool):
                     problems.append(f'claim {number} does not hold and gives no correction, or does not say whether the '
                                     'correction changes a ground of the comparison ("changes_comparison"), or whether '
-                                    'the claim stands in a text that the package prints ("printed")')
+                                    'the claim stands in a text that later steps take as the decision has it '
+                                    '("printed")')
             if problems:
                 raise Unusable(problems)
             return data
@@ -762,8 +765,10 @@ class Run:
         if reading is None:
             reading = {'claims': []}  # not made: the decision stands as the selection made it, and the report says so
         wrong = [claim for claim in reading['claims'] if not claim['holds']]
-        # The sentence and the registry's texts go into the package as the decision has them, and no later step
-        # rewrites them: a corrected claim there is acted on by a decision made once more, as a changed ground is.
+        # The sentence and the registry's texts go into the package as the decision has them, the account goes to the
+        # sessions that plan the paper and write the README, and no later step rewrites any of them. The reading marks
+        # a corrected claim in one of them "printed", and it is acted on by a decision made once more, as a changed
+        # ground is.
         if any(claim['changes_comparison'] or claim.get('printed') for claim in wrong):
             again = {**files, 'reading.json': as_json(reading), 'previous/decision.json': as_json(chosen['decision']),
                      **{f'previous/derivations/{oid}.lean': text for oid, text in chosen['derivations'].items()}}
@@ -792,7 +797,8 @@ class Run:
         lines += [f"- The independent reading corrected a claim about option {c['option']}: {c['correction'].strip()}"
                   + (' This changed a ground of the comparison, and the selection decided once more.'
                      if c['changes_comparison'] else
-                     ' The claim stood in a text that the package prints, and the selection decided once more.'
+                     ' The claim stood in a text that later steps take as the decision has it, and the selection '
+                     'decided once more.'
                      if c.get('printed') else '') for c in wrong]
         registry = decision['registry']
         lines += ['', f"For the registry the result is recorded as {registry['origin']}. "
@@ -1196,7 +1202,13 @@ class Run:
         `earlier` the sources an earlier step verified. `disagreeing` gives, for elements whose record
         says in its statement something the Lean statement does not, what was reported: such a record
         is due as well, and its writer is told what was reported. The records go to <target>/records,
-        with bibliography.bib, findings.json, sources.json, verdicts.json and requests.json beside them."""
+        with bibliography.bib, findings.json, sources.json, verdicts.json and requests.json beside them.
+
+        The session that checks the sources writes no mathematics. Where it takes the header key
+        `source` out of a record, the paper no longer cites the work in the place of a proof and proves
+        the result from the record's proof in words, for which a record of the research can have the
+        reference alone. So a record that loses the key is written from the Lean and compared after
+        the check of the sources (UNSOURCED), unless it was written in this call and has such a proof."""
         records, bibliography = target / 'records', target / 'bibliography.bib'
         canon.copy_tree(records_in, records)
         shutil.copyfile(bibliography_in, bibliography)
@@ -1255,13 +1267,6 @@ class Run:
 
             return self.task('records-write', 'records-write', given, read, self.sessions.writer, label=f'{tag}-{number}')
 
-        written = self.sessions.side_by_side([lambda n=n, g=g: write(n, g) for n, g in groups])
-        findings = []
-        for texts, found in written:
-            findings += found
-            for name, text in texts.items():
-                write_text(records / (name_path(name) + '.md'), text)
-
         def compare(number, group):
             given = {**library, 'todo.json': as_json([{**item, 'record': 'records/' + name_path(item['declaration']) + '.md'}
                                                       for item in group]),
@@ -1290,12 +1295,29 @@ class Run:
             return found if found is not None else (
                 [{'declaration': item['declaration'], 'verdict': 'not compared'} for item in group], {})
 
-        compared = self.sessions.side_by_side([lambda n=n, g=g: compare(n, g) for n, g in groups])
-        verdicts = []
-        for found, texts in compared:
-            verdicts += found
-            for name, text in texts.items():
-                write_text(records / (name_path(name) + '.md'), text)
+        findings, verdicts = [], []
+
+        def written_and_compared(groups):
+            """The records of these groups written, and then each compared by a session that did not write it."""
+            written = self.sessions.side_by_side([lambda n=n, g=g: write(n, g) for n, g in groups])
+            for texts, found in written:
+                findings.extend(found)
+                for name, text in texts.items():
+                    write_text(records / (name_path(name) + '.md'), text)
+            compared = self.sessions.side_by_side([lambda n=n, g=g: compare(n, g) for n, g in groups])
+            for found, texts in compared:
+                verdicts.extend(found)
+                for name, text in texts.items():
+                    write_text(records / (name_path(name) + '.md'), text)
+
+        written_and_compared(groups)
+
+        def source_of(text):
+            """The key that the header of a record names as the source of its result, or None."""
+            try:
+                return parse_record(text, 'record')['meta'].get('source')
+            except CanonError:
+                return None
 
         # A source that an earlier step verified is not verified again, unless a record that cites it is listed now.
         listed = {item['declaration'] for item in todo}
@@ -1416,8 +1438,26 @@ class Run:
                                                       label=tag, servers=self.settings['mcp_servers'])
             sources += found
             write_text(bibliography, text)
+            lost = [name for name in sorted(index['entries'])
+                    if (relative := name_path(name) + '.md') in changed and (records / relative).is_file()
+                    and source_of(package.read_text(records / relative)) and not source_of(changed[relative])]
             for relative, content in changed.items():
                 write_text(records / relative, content)
+            again = [{'declaration': name, 'file': index['entries'][name]['file'], 'why': UNSOURCED,
+                      'record': 'records/' + name_path(name) + '.md'} for name in lost if name not in listed]
+            if again:
+                todo += again
+                written_and_compared([('unsourced-' + number, group)
+                                      for number, group in package.batches(again, package.WRITER_BATCH)])
+            if lost:
+                rewritten = {item['declaration'] for item in again}
+                self.decide(f'Step {tag}: records that no longer name a source', '\n'.join([
+                    'The session that checked the sources took the header key `source` out of these records: the work '
+                    'that the key named was not found, could not be opened, or does not state the result in the form '
+                    'the library has. The paper does not cite a work in the place of a proof of these results. It '
+                    'proves them from the proof in words of the record, so a record among them that was not written in '
+                    'this step was written again from the Lean and compared by a session that did not write it.', '',
+                    *[f'- `{name}`' + (': written again and compared' if name in rewritten else '') for name in lost]]))
             gone = [row['key'] for row in sources if row.get('status') == 'removed']
             if gone:
                 self.decide(f'Step {tag}: the sources', 'Removed from the bibliography, because the source could not be '

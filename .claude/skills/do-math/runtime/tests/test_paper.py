@@ -2302,6 +2302,21 @@ class BriefTests(PaperCase):
         self.assertEqual(paper.element_files(twins), {'A.b': 'elements/A.b.md', 'a.B': 'elements/a.B-2.md',
                                                       'A/b': 'elements/A_b.md', 'A.b-2': 'elements/A.b-2-2.md'})
 
+    def test_the_digest_names_an_element_whose_proof_is_not_settled_by_a_formal_proof(self):
+        # The digest leaves the standing out where it is the same for all. A proof can name a declaration whose own
+        # proof review held back while another declaration settles its statement, and the materials have the
+        # declaration that is named: the digest then names it, and its file gives its standing.
+        same = 'which is the same for all: everything here is settled by a formal proof.'
+        self.assertIn(same, paper.render_digest(self.found))
+        lemma = next(element for element in self.found['elements'] if element['name'] == 'Small.sq_step')
+        lemma.update(standing='held', settled=False)
+        digest = paper.render_digest(self.found)
+        self.assertNotIn(same, digest)
+        self.assertIn('which the file of each element gives: every proof here is settled and formal except that of '
+                      '`Small.sq_step`.', digest)
+        self.assertIn('At this revision this proof is correct, held back, unsettled, and formal.',
+                      paper.record_files(self.found)['elements/Small.sq_step.md'])
+
     def test_a_section_has_its_own_elements_in_full_and_the_others_by_their_statements(self):
         layout = self.layout
         # The elements the plan puts into each section. The step absorbed into the main theorem is written where

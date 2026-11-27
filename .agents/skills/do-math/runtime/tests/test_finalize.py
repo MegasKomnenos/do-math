@@ -2124,7 +2124,8 @@ class RunTests(FinalizeCase):
             told.setdefault(call['kind'] + ':' + str(call['section']), []).append(call['prompt'])
         for key, wanted in (
                 ('selection-read:None', 'claim 1 has no verdict'),
-                ('selection-read:None', 'whether the claim stands in a text that the package prints ("printed")'),
+                ('selection-read:None', 'whether the claim stands in a text that later steps take as the decision has '
+                                        'it ("printed")'),
                 ('review:None', 'modules in no part: Small.Step'),
                 ('review:None', 'the cross-part item x1 has no owner that is a part'),
                 ('simplify:core', 'Small.Step is not a module of this part'),
@@ -2706,6 +2707,61 @@ class RunTests(FinalizeCase):
         self.assertIn('These statements it proves from a general theorem of the literature, which it cites, by specialising '
                       'that theorem: `Small.helper_zero`.', (self.solved / 'README.md').read_text(encoding='utf-8'))
 
+    def test_a_record_that_loses_its_source_is_written_from_the_lean_and_compared_after_the_check_of_the_sources(self):
+        # The research's record of the step names a work in its header and has no proof in words. The record that is
+        # written after the fold-back names the work as well, so the work is checked once more, and this time the
+        # session finds another form in the work and takes the header key out of both records.
+        self.from_the_records()
+        plan = script()
+        cites = 'The sums increase strictly, as the step shows [gauss1801, Section 1].'
+        plan['records-write:6-01'][0]['output/records/Small/sq_step_strict.md'] = record_text(cites, source='gauss1801')
+        plan['records-compare:6-01'] = [{'output/verdicts.json': json.dumps([
+            {'declaration': 'Small.sq_step_strict', 'verdict': 'agrees', 'difference': ''}])}]
+        said = 'The work has the step for $n \\ge 1$ only [gauss1801, Section 1].'
+        unsourced = (record_text('Passing from n to n + 1 adds the odd number 2n + 1.', weight='unit',
+                                 statement='For every $n$, $s(n+1) = s(n) + 2n + 1$.')
+                     + '## Literature\n\n' + said + '\n')
+        words = {'place': 'Section 1', 'quote': 'The stand-in words of the work at that place.'}
+        plan['sources:6'] = [{
+            '@copy': [['bibliography.bib', 'output/bibliography.bib']], 'output/requests.json': '[]',
+            'output/records/Small/sq_step.md': unsourced, 'output/records/Small/sq_step_strict.md': record_text(cites),
+            'output/sources.json': json.dumps([{
+                'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1', 'opened': 'parts', 'note': '',
+                'attributions': [{'declaration': 'Small.sq_step', 'sentence': said, **words},
+                                 {'declaration': 'Small.sq_step_strict', 'sentence': cites, **words}]}])}]
+        proved = unsourced.replace('## Literature', '## Proof\n\nBoth sides unfold to the same sum.\n\n## Literature')
+        plan['records-write:6-unsourced-01'] = [{'output/records/Small/sq_step.md': proved,
+                                                 'output/findings.json': '[]'}]
+        plan['records-compare:6-unsourced-01'] = [{'output/verdicts.json': json.dumps([
+            {'declaration': 'Small.sq_step', 'verdict': 'agrees', 'difference': ''}])}]
+        with patch('finalize.Run.compare_draft', side_effect=paper.Stop('halted for the test')):
+            self.assertEqual(self.run_command(plan, config=self.config()), 2, self.said)
+        self.assertIn('The run stopped at the step `2.6-compare`',
+                      (self.work / 'report.md').read_text(encoding='utf-8'))
+        # The record of the step was not written in this step, so it is written and compared after the sources. The
+        # other record was, and has its proof from the Lean: no session is launched for it.
+        sections = ('6-01', '6', '6-unsourced-01')
+        self.assertEqual([(call['kind'], call['section']) for call in self.calls() if call['section'] in sections],
+                         [('records-write', '6-01'), ('records-compare', '6-01'), ('sources', '6'),
+                          ('records-write', '6-unsourced-01'), ('records-compare', '6-unsourced-01')])
+        write, compare = (next(call for call in self.calls(kind) if call['section'] == '6-unsourced-01')
+                          for kind in ('records-write', 'records-compare'))
+        entry = {'declaration': 'Small.sq_step', 'file': 'Small/Step.lean', 'why': finalize.UNSOURCED,
+                 'record': 'records/Small/sq_step.md'}
+        self.assertEqual(self.session_file(write, 'todo.json'), [entry])
+        self.assertEqual(self.session_file(compare, 'todo.json'), [entry])
+        # The writer has the record as the check of the sources left it, and the comparer has it as the writer left it.
+        given = lambda call: (self.work / 'sessions' / call['folder'] / 'records' / 'Small' / 'sq_step.md').read_text(
+            encoding='utf-8')
+        self.assertEqual((given(write), given(compare)), (unsourced, proved))
+        folded = self.work / 'lib' / '6-folded'
+        self.assertEqual((folded / 'records' / 'Small' / 'sq_step.md').read_text(encoding='utf-8'), proved)
+        self.assertNotIn('source:', (folded / 'records' / 'Small' / 'sq_step_strict.md').read_text(encoding='utf-8'))
+        self.assertEqual([verdict['declaration'] for verdict in read_json(folded / 'verdicts.json')],
+                         ['Small.sq_step_strict', 'Small.sq_step'])
+        self.assertIn('## Step 6: records that no longer name a source', self.decisions())
+        self.assertIn('\n- `Small.sq_step`: written again and compared\n- `Small.sq_step_strict`\n', self.decisions())
+
     def test_a_check_that_a_safeguard_stops_every_time_is_recorded_as_not_done_and_the_run_goes_on(self):
         # The sign of such a stop is known for the Claude CLI, so the sessions that check are given a Claude model.
         self.configure(roles={'review': [{'model': 'claude/opus', 'effort': 'high'}]})
@@ -2962,8 +3018,8 @@ class SelectionTests(FinalizeCase):
         calls = [call for call in self.calls() if not call['kind'].startswith('history')]  # stage 3 runs beside
         self.assertEqual([(call['kind'], call['section']) for call in calls],
                          [('selection', None), ('selection-read', None), ('selection', 'again')])
-        self.assertIn('root.md names no conjecture. The claim stood in a text that the package prints, and the selection '
-                      'decided once more.', self.decisions())
+        self.assertIn('root.md names no conjecture. The claim stood in a text that later steps take as the decision has '
+                      'it, and the selection decided once more.', self.decisions())
 
     def test_a_corrected_claim_that_is_not_printed_and_changes_no_ground_is_recorded_and_no_more(self):
         reading = {'claims': [{'option': 'a', 'claim': 'It has four modules.', 'holds': False, 'correction': 'It has three.',

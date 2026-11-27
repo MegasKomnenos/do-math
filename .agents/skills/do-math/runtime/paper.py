@@ -759,17 +759,26 @@ def render_digest(materials):
     materials; they are left to the files of the elements, and their lengths are given here. Two
     records are given in full, because the account of the whole proof is in them: the root's, and that
     of the declaration that settles the root. When the main result of the paper is another element,
-    its record is given in full as well, before that of the settling declaration."""
+    its record is given in full as well, before that of the settling declaration.
+
+    The standing of the proofs is left out where it is the same for all. It need not be: the materials
+    follow what the proofs name (extract), and a statement counts as settled when one of its proofs is
+    (knowledge.settle), so a proof can name a declaration whose own proof is not settled while another
+    declaration settles that statement. The digest names such an element."""
     files = element_files(materials)
     by_name = {element['name']: element for element in materials['elements']}
     main, chosen = by_name[settling(materials)], 'settles' in materials
+    apart = [f"`{element['name']}`" for element in materials['elements']
+             if element['kind'] == 'statement' and not (element['settled'] and element['formal'])]
     lines = ['# Digest of the materials for the paper', '', lean_names_note(materials), '',
              'This digest gives every element that the proof of the root rests on by what it says: its name, its kind '
              'and its weight, its short name, its Lean form, what it names and what names it, its description and its '
              'statement in words. It leaves out the explanation and the proof in words of each element and gives their '
-             'lengths in characters instead, and it leaves out the standing of each proof, which is the same for all: '
-             'everything here is settled by a formal proof. The full record of every element is in a file of its own, which the digest '
-             'names at the element. '
+             'lengths in characters instead, and it leaves out the standing of each proof, '
+             + ('which is the same for all: everything here is settled by a formal proof. ' if not apart else
+                'which the file of each element gives: every proof here is settled and formal except '
+                + ('that of ' if len(apart) == 1 else 'those of ') + ', '.join(apart) + '. ')
+             + 'The full record of every element is in a file of its own, which the digest names at the element. '
              + ('The records of the main result of the paper and of the declaration that settles the root are given '
                 if chosen else 'The record of the declaration that settles the root is given ')
              + 'in full, before the list of the elements: the account of the whole proof is there.', '',

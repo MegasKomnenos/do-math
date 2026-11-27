@@ -106,6 +106,6 @@ Before you end, check your output against what the program checks: every derivat
 
 ## When this is the second decision
 
-After a first decision, a session that did not write it reads every statement of fact in it against the canon. If one of its corrections changes a ground of the comparison, or concerns `sentence` or a text under `registry`, which go into the package as you wrote them, the decision is made once more, and that is this session: your folder then holds `reading.json`, the reader's verdict on each claim, and `previous/`, the first output.
+After a first decision, a session that did not write it reads every statement of fact in it against the canon. If one of its corrections changes a ground of the comparison, or concerns `sentence`, `account` or a text under `registry`, which later steps take as you wrote them, the decision is made once more, and that is this session: your folder then holds `reading.json`, the reader's verdict on each claim, and `previous/`, the first output.
 
 Take each entry of `reading.json` whose `holds` is false and verify the correction against the canon yourself. Then compare the options again with the corrected facts and write the whole output anew, as described above. The choice may stay or change; what matters is that the reasons hold with the facts as they now stand. A derivation of `previous/derivations/` that is still right can be returned unchanged. No further reading follows this decision.
