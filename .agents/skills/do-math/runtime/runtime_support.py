@@ -168,11 +168,19 @@ def copy_to_disk(source, target):
     publication's event is made once: a runner that finds it under its name does not make it again, and every
     command replays its files (knowledge.replay). What the runner retains of a session is captured once
     (retention.capture). After a loss of power such a copy must not stand there without its content. The copy
-    takes no read-only flag from its source."""
-    with open(source, 'rb') as inp, open(target, 'wb') as out:
-        shutil.copyfileobj(inp, out)
-        out.flush()
-        os.fsync(out.fileno())
+    takes no read-only flag from its source.
+
+    On Windows a file that another process holds for a moment refuses to be opened or read. Every caller is the
+    runner, which ends at an error (Runner.run), and one of the sources lies outside the instance, where other
+    programs open files as well: the transcript of a session, in the CLI's own folder (retention.capture). So a
+    refused copy is made again from its beginning for up to a minute (_read), as long as the replacement of a
+    file waits (replace_file)."""
+    def copy(source):
+        with open(source, 'rb') as inp, open(target, 'wb') as out:
+            shutil.copyfileobj(inp, out)
+            out.flush()
+            os.fsync(out.fileno())
+    _read(copy, source, 60.0)
     return target
 
 

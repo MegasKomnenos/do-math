@@ -23,15 +23,16 @@ proof names it. An item is therefore a statement (a theorem that is not another 
 or a declaration that is not a theorem (a definition, an inductive type, an opaque constant).
 
 Units. An item is a unit when its record gives `weight: unit`; the root is always one. By default
-the map shows the units the proof of the root rests on: starting at the root, everything that any
-proof of a reached statement names, everything a reached statement or definition mentions, and so
-on. With `--all` it shows every unit of the canon. Every other item is folded.
+the map shows the units reached from the root: starting at the root, everything that any proof of a
+reached statement names, whatever the standing of that proof, everything a reached statement or
+definition mentions, and so on. With `--all` it shows every unit of the canon. Every other item is
+folded.
 
 A refuted root. A research can end with the root refuted: a statement that Lean confirmed as the
 negation of the root is settled. The result of that research is the refutation, so the map shows
 it. The root's card says that the root is refuted, each settled refutation is a unit whatever its
 weight, the default scope starts from the refutations as well as from the root, and so the map
-shows what the refutation rests on.
+shows what is reached from the refutation as well.
 
 Edges. An edge runs from what is used to what uses it, and there is at most one for a pair.
     direct       the proof of the target names the source (for a definition: its body does)
@@ -294,7 +295,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Draw the dependency map of a research instance from its canon.')
     parser.add_argument('source', help='an instance folder, or a dependency_map.json to draw again')
     parser.add_argument('--out', required=True, help='the folder the map is written into')
-    parser.add_argument('--all', action='store_true', help='every unit of the canon, not only what the proof of the root rests on')
+    parser.add_argument('--all', action='store_true',
+                        help='every unit of the canon, not only the units reached from the root through what proofs '
+                             'name and statements mention')
     args = parser.parse_args(argv)
     source = Path(args.source)
     try:

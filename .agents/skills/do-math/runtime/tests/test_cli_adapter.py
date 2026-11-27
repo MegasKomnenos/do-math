@@ -159,6 +159,35 @@ class AdapterTests(unittest.TestCase):
         rows.append(refusal())
         self.assertEqual(self.detect("claude", rows).source, "fallback")
 
+    def test_a_claude_refusal_that_a_response_to_the_session_follows_did_not_end_the_turn(self):
+        # The CLI writes an error of the API into the stream where it occurs, that of a delegated agent included,
+        # and the turn can go on after it. The forms below are those of such a turn's stream: a response of a model
+        # names that model, a message of the CLI's own names `<synthetic>`, and an event of a delegated agent names
+        # the tool call that started the agent.
+        def response(model="claude-model", parent=None, **extra):
+            return {"type": "assistant", "parent_tool_use_id": parent,
+                    "message": {"model": model, "role": "assistant", "content": [{"type": "text", "text": "A step."}]},
+                    **extra}
+        early = refusal({"status": "rejected", "rateLimitType": "seven_day_sonnet", "resetsAt": NOW + 86400})
+        late = refusal({"status": "rejected", "rateLimitType": "five_hour", "resetsAt": NOW + 1800})
+        result = {"type": "result", "subtype": "success", "is_error": False}
+        # The session was answered after the refusal, so the turn went on and nothing is to be waited for.
+        self.assertIsNone(self.detect("claude", [early, response(), result]))
+        # A refusal after the last response to the session is the one that counts, with its own deadline.
+        self.assertEqual(self.detect("claude", [early, response(), late]).retry_at, NOW + 1800)
+        self.assertEqual(self.detect("claude", [response(), early]).retry_at, NOW + 86400)
+        # What follows the refusal without being a response of a model to the session leaves it in force: the
+        # response to a delegated agent, a message of the CLI's own, an error of the API, and the result of the turn.
+        for later in (response(parent="toolu_1"), response(model="<synthetic>"),
+                      response(model="<synthetic>", is_api_error_message=True, api_error="stream_idle_timeout"),
+                      {"type": "assistant", "message": {"content": "A step."}}, result):
+            with self.subTest(later=later):
+                self.assertEqual(self.detect("claude", [early, later]).retry_at, NOW + 86400)
+        # Codex has no such rule: its refusal counts wherever it stands in the stream.
+        rows = [{"type": "error", "message": "You've hit your usage limit. Try again later."},
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "A step."}}]
+        self.assertEqual(self.detect("codex", rows).source, "fallback")
+
     def test_multiple_refusals_and_io_errors(self):
         # The latest deadline is kept, whether it is the first, the last or neither of the refusals read.
         rows = [refusal({"status": "rejected", "rateLimitType": "five_hour",

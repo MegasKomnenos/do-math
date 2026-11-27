@@ -537,6 +537,64 @@ class RetentionTests(unittest.TestCase):
             # The readable conversation holds the preview and names the copy that holds the full output.
             self.assertIn(copy.name + '/', (session / 'conversation.md').read_text(encoding='utf-8'))
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_capture_waits_for_a_file_of_the_cli_folder_that_another_process_holds(self):
+        # The transcript and the folder beside it stand in the CLI's own folder, in the profile of the person who
+        # runs the instance, where other programs open files as well. Windows refuses to open a file that another
+        # process holds without read sharing. The runner calls capture and ends at any error (Runner.finish,
+        # Runner.run), so a refused copy is made again until the file is let go (runtime_support.copy_to_disk).
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                      ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            session = root / 'session'
+            session.mkdir()
+            project = root / 'profile/.claude/projects/project'
+            stored = project / identity / 'tool-results/call1.txt'
+            stored.parent.mkdir(parents=True)
+            stored.write_text('The full output.', encoding='utf-8')
+            native = project / (identity + '.jsonl')
+            raw = (json.dumps({'type': 'assistant', 'message': {'role': 'assistant', 'content': [
+                {'type': 'text', 'text': 'A first lemma about the root.'}]}}) + '\n').encode('utf-8')
+            native.write_bytes(raw)
+            (session / 'cli.stdout.jsonl').write_text(
+                json.dumps({'type': 'system', 'session_id': identity}), encoding='utf-8')
+            (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+            # Real handles that share their file with no reader: one on the transcript, one on a file of the folder.
+            held = []
+            for path in (native, stored):
+                handle = kernel.CreateFileW(str(path), 0x80000000, 0, None, 3, 0, None)
+                if handle == ctypes.c_void_p(-1).value:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                held.append(handle)
+            pauses = []
+
+            def let_go(seconds):
+                # Each pause of the wait lets one file go, the transcript first.
+                pauses.append(seconds)
+                if held:
+                    kernel.CloseHandle(held.pop(0))
+
+            try:
+                with patch.dict(os.environ, {}, clear=True), patch('retention.Path.home', return_value=root / 'profile'), \
+                        patch('runtime_support.time.sleep', side_effect=let_go):
+                    receipt = capture(session, 'claude')
+            finally:
+                for handle in held:
+                    kernel.CloseHandle(handle)
+            # Both files were let go by a pause of the wait, and both copies hold what their sources hold.
+            self.assertEqual(held, [])
+            self.assertGreaterEqual(len(pauses), 2)
+            self.assertEqual((session / receipt['native_transcripts'][0]).read_bytes(), raw)
+            self.assertEqual((session / receipt['native_companions'][0] / 'tool-results/call1.txt').read_text(encoding='utf-8'),
+                             'The full output.')
+
     def test_what_capture_retains_is_on_the_disk_when_it_returns(self):
         # The runner saves, through to the disk, that a session is retained once capture has returned
         # (Runner.finish), and nothing captures that session again. A copy that the system still held in memory

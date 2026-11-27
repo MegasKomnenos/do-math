@@ -122,7 +122,7 @@ class Derivation(MapCase):
         self.assertEqual(everything['scope'], 'all')
         # The guide of the page carries in words which units the map shows; the page says them where a search finds nothing.
         self.assertIn('data-scope="every unit of the library"', draw.guide_of(everything))
-        self.assertIn('data-scope="the units the proof of the root rests on"', draw.guide_of(data))
+        self.assertIn('data-scope="the units reached from the root"', draw.guide_of(data))
 
     def test_the_root_is_a_unit_whatever_its_record_says(self):
         data = self.map([statement('Lib.root', 'step', uses=['Lib.a']), statement('Lib.a', 'unit')])
@@ -185,22 +185,22 @@ class Derivation(MapCase):
         data = self.map(open_rows, everything=True)
         self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
         # The drawing shows the refutation: its heavy line in the colour of its kind, the entry of the legend for
-        # that line, and under the title how the root stands and that the map shows what the refutation rests on.
+        # that line, and under the title how the root stands and that the map starts from the refutation as well.
         tree = ElementTree.fromstring(draw.render(self.map(rows))[0])
         heavy = [edge.get('stroke') for edge in tree.findall(f".//{SVG}g[@class='edge']") if edge.get('data-kind') == 'refutation']
         self.assertEqual(heavy, [draw.REFUTATION_COLOUR])
         texts = [''.join(element.itertext()) for element in tree.iter(f'{SVG}text')]
         self.assertIn(draw.LEGEND['refutation'], texts)
-        self.assertTrue(any(draw.ROOT_STATES['informal_refuted'] in line and 'the units the refutation of the root rests on' in line
-                            for line in texts))
-        self.assertIn('data-scope="the units the refutation of the root rests on"', draw.guide_of(self.map(rows)))
-        # The command says of this map that it shows what the refutation rests on.
+        self.assertTrue(any(draw.ROOT_STATES['informal_refuted'] in line
+                            and 'the units reached from the root and from its refutation' in line for line in texts))
+        self.assertIn('data-scope="the units reached from the root and from its refutation"', draw.guide_of(self.map(rows)))
+        # The command says the same of this map.
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         write_json(Path(folder.name) / 'dependency_map.json', self.map(rows))
         with contextlib.redirect_stdout(io.StringIO()) as shown:
             self.assertEqual(depmap.main([str(Path(folder.name) / 'dependency_map.json'), '--out', folder.name]), 0)
-        self.assertIn('scope: the units the refutation of the root rests on', shown.getvalue())
+        self.assertIn('scope: the units reached from the root and from its refutation', shown.getvalue())
 
     def test_a_contested_root_is_shown_with_what_its_proof_and_its_refutation_rest_on(self):
         # The root and a statement that Lean confirmed as its negation both carry settled proofs, so neither stands.
@@ -212,8 +212,8 @@ class Derivation(MapCase):
         self.assertEqual(data['root_state'], 'contested')
         self.assertEqual(self.ids(data), ['Lib.notRoot', 'Lib.lemma', 'Lib.other', 'Lib.root'])
         self.assertEqual(self.edge(data, 'Lib.notRoot', 'Lib.root')['kind'], 'refutation')
-        self.assertEqual(draw.scope_words(data), 'the units the proof of the root and its refutation rest on')
-        self.assertIn('data-scope="the units the proof of the root and its refutation rest on"', draw.guide_of(data))
+        self.assertEqual(draw.scope_words(data), 'the units reached from the root and from its refutation')
+        self.assertIn('data-scope="the units reached from the root and from its refutation"', draw.guide_of(data))
 
     def test_a_card_carries_the_statement_in_words_that_its_record_gives(self):
         # The refutation is a step by its record and has a card all the same, so its card carries the statement
@@ -1000,9 +1000,9 @@ class Page(MapCase):
                 page.goto(refuted + '#node=Lib.root')
                 page.reload()
                 self.assertIn(draw.LEGEND['refutation'], page.inner_text('#part-above + ul'))
-                # A search that finds nothing says what this map holds: what the refutation of its root rests on.
+                # A search that finds nothing says what this map holds: what is reached from its root and from the refutation.
                 page.fill('#query', 'nowhere')
-                self.assertIn('The map holds the units the refutation of the root rests on and the steps folded',
+                self.assertIn('The map holds the units reached from the root and from its refutation and the steps folded',
                               page.inner_text('#results'))
                 # The drawing of a map that has one card is named with one unit.
                 alone = tempfile.TemporaryDirectory()

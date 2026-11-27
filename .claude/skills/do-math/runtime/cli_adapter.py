@@ -173,6 +173,18 @@ def codex_error_message(event: dict) -> object:
     return None
 
 
+def _claude_answer(event: dict) -> bool:
+    """Whether a Claude stream event is a response that a model gave to the session itself.
+
+    A message that the CLI writes itself, as it does to report an error of the API, names the
+    model `<synthetic>`. An event of an agent the session delegated to names the tool call that
+    started the agent."""
+    message = event.get("message")
+    return (event.get("type") == "assistant" and not event.get("is_api_error_message")
+            and not event.get("parent_tool_use_id") and isinstance(message, dict)
+            and isinstance(message.get("model"), str) and message["model"] != "<synthetic>")
+
+
 def detect_usage_limit(
     provider: Provider,
     stdout_path: PathLike,
@@ -189,6 +201,15 @@ def detect_usage_limit(
     local timezone. session_started_at permits same-date Codex time inference.
     File errors propagate as OSError. Malformed log records are ignored.
     See the operating guide for provider waits and model fallback.
+
+    A Claude refusal counts when no response of a model to the session itself follows it in
+    the stream. The CLI writes an error of the API into the stream where it occurs, that of a
+    delegated agent included, and the turn can go on after it: in the streams of one research a
+    turn of a session went on to its end after such an error of its own, and another after a
+    refusal that a delegated agent met. A response that follows shows that the turn went on, so
+    the refusal before it did not end the turn and keeps no session from the provider. A
+    provider that is at its limit refuses the session's next request as well, and that refusal
+    is then the last.
     """
     if session_started_at is not None and session_started_at > now:
         # The clock moved back during the session, so no date is inferred.
@@ -213,6 +234,9 @@ def detect_usage_limit(
                         continue
                     reset = _codex_reset(message, now, session_started_at, local_timezone)
                 else:
+                    if _claude_answer(event):
+                        result = None
+                        continue
                     if not (event.get("type") == "assistant"
                             and event.get("is_api_error_message") is True
                             and event.get("api_error") == "usage_limit_reached"):

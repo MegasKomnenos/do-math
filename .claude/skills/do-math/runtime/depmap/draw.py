@@ -884,9 +884,12 @@ def scope_words(data):
     if data.get('scope') == 'all':
         return 'every unit of the library'
     state = str(data.get('root_state') or '')
-    if state == 'contested':  # the map starts from the root and from its settled refutation alike (depmap.derive)
-        return 'the units the proof of the root and its refutation rest on'
-    return 'the units the refutation of the root rests on' if state.endswith('refuted') else 'the units the proof of the root rests on'
+    # The map starts from the root, and from a settled refutation of it as well. From each statement it reaches it
+    # goes on to what every proof of the statement names, whatever the standing of that proof, and to what the
+    # statement mentions (depmap.derive).
+    if state == 'contested' or state.endswith('refuted'):
+        return 'the units reached from the root and from its refutation'
+    return 'the units reached from the root'
 
 
 def state_words(data):
