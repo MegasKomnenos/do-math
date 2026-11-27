@@ -48,7 +48,7 @@ Your instruction says when to compile.
 
 No session runs `lean` or `lake` itself. Every compile of the run goes through one service, which starts a compile when the machine has memory for it and keeps what it compiled. Several Lean processes started at once instead exhaust the machine's memory, and a compile that dies that way reads as Lean rejecting a proof.
 
-You build with this command. `<module root>` is the absolute path of a module root inside your folder, which is your `lean/` unless your instruction names another; the files after it are the modules whose result you want, given as paths under that root; and the name after `--session` is the name of your own folder, the last component of its path.
+You build with this command. `<module root>` is the absolute path of a module root inside your folder, which is your `lean/` unless your instruction names another; the files after it are the modules whose result you want, given as paths relative to that root; and the name after `--session` is the name of your own folder, the last component of its path.
 
 ```text
 "{{python}}" "{{skill}}/runtime/lean_broker.py" build "{{work}}" "<module root>" <file.lean>... --session <name of your folder> --expect-mb {{expect_mb}}

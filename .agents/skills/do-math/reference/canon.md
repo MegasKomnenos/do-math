@@ -161,7 +161,7 @@ record parts  statement, explanation, proof, approaches (read one with --part, a
 | `approach` | One line for each approach tried: its identifier, its title, and the beginning of where it stops. | The approach entries. |
 | `record parts` | Which parts the record has, and how to read them. | The record. |
 
-In the `verdict` line the first word is review's judgment of correctness: `confirmed`, `not_confirmed`, `undetermined` when review could not complete the judgment, or `not_applicable` for a definition or a statement without a proof, where the reason carries what review judged of the definition or of the statement itself.
+In the `verdict` line the first word after the colon is review's judgment of correctness: `confirmed`, `not_confirmed`, `undetermined` when review could not complete the judgment, or `not_applicable` for a definition or a statement without a proof, where the reason carries what review judged of the definition or of the statement itself.
 
 The view of a definition has no `proof`, `rests on` or `settled` line. It shows the Lean text of the definition instead, since the body of a definition is what the definition says.
 
