@@ -16,7 +16,7 @@ from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, ap
                    copy_tree, declaration_text, definition_modules, drop_modules,
                    empty_index, history_entry, library_modules, load_change, module_file, name_path, parse_record,
                    read_index,
-                   read_record, record_file, required_pairs, retire_approaches, sha256_text, start_build,
+                   read_record, record_file, remove_derived, required_pairs, retire_approaches, sha256_text, start_build,
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import CANDIDATE_CHANGED, IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
@@ -1145,8 +1145,14 @@ class Runner:
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
             # The commit takes in whatever stands under the two folders. A runner that ended inside a write left
             # there the file it was writing beside its destination, and that file is no part of the research.
+            # Nor is what Python left beside a script (canon.DERIVED): a script of the canon's evidence or of a
+            # published review's output that was run where it stands leaves it there, and so does the output of
+            # a review that comes into knowledge/ whole. A package takes its knowledge archive from the commit
+            # (package.knowledge_archive), and that file names the path of its source on this machine. Where an
+            # earlier commit holds such a file, this commit takes it out.
             for tree in ('knowledge', 'canon'):
                 remove_unfinished_writes(self.instance / tree)
+                remove_derived(self.instance / tree)
             # Git writes the index under .git/index.lock and, while that file stands, refuses every command that
             # writes the index. A Git command that was ended inside its work, as when the machine goes down, leaves
             # the file behind. Only the runner writes the index of this repository, one runner at a time (run) and

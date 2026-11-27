@@ -463,6 +463,35 @@ class RetentionTests(unittest.TestCase):
             stream.write_text('\n'.join(map(json.dumps, spoken)), encoding='utf-8')
             self.assertIsNone(refusal(folder, 'claude', 'claude/opus', None, 60))
 
+    def test_a_notice_of_usage_credits_that_a_response_to_the_session_follows_did_not_end_the_turn(self):
+        # The CLI writes the notice into the stream where it occurs, also when an agent the session delegated to met
+        # it under another model, and the turn can go on after it. The forms are those of the usage limit in
+        # test_cli_adapter: a response of a model names that model, a message of the CLI's own names `<synthetic>`,
+        # and an event of a delegated agent names the tool call that started the agent.
+        notice = {'type': 'assistant', 'is_api_error_message': True, 'api_error': 'model_requires_usage_credits',
+                  'message': {'model': '<synthetic>', 'role': 'assistant', 'content': [{'type': 'text', 'text': 'Credits.'}]}}
+
+        def response(parent=None):
+            return {'type': 'assistant', 'parent_tool_use_id': parent,
+                    'message': {'model': 'claude-model', 'role': 'assistant', 'content': [{'type': 'text', 'text': 'A step.'}]}}
+        result = {'type': 'result', 'subtype': 'success', 'is_error': False}
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+
+            def found(*rows):
+                (folder / 'cli.stdout.jsonl').write_text('\n'.join(map(json.dumps, rows)), encoding='utf-8')
+                signal = refusal(folder, 'claude', 'claude/opus', None, 60)
+                return signal and (signal['key'], signal['reason'], signal['source'])
+            blocked = ('model:claude/opus', 'model_requires_usage_credits', 'backoff')
+            # The session was answered after the notice, so the turn went on and its model is not kept from sessions.
+            self.assertIsNone(found(notice, response(), result))
+            # A notice after the last response to the session counts, and so does one that only the response to a
+            # delegated agent or the result of the turn follows.
+            self.assertEqual(found(response(), notice), blocked)
+            self.assertEqual(found(notice, response(), notice, result), blocked)
+            self.assertEqual(found(notice, response(parent='toolu_1'), result), blocked)
+
     def test_claude_native_api_error_is_not_research_activity(self):
         # A refused Claude launch leaves only a synthetic error message in its native transcript.
         identity = '01234567-89ab-cdef-0123-456789abcdef'

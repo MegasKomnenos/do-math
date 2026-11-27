@@ -208,6 +208,13 @@ class EndingTests(InstanceCase):
         self.assertEqual(record['status'], status)
         return record
 
+    def resume_text(self, role):
+        """The text of a role for a resumed turn, as the host puts it into the prompt of such a turn.
+
+        Read as the tests read a prompt, with the line endings of the file turned into `\\n`, so that the
+        two compare in a tree that is checked out with either line ending."""
+        return (self.skill / 'resume' / (role + '.md')).read_text(encoding='utf-8-sig').strip()
+
     def test_worker_end_resumes_exact_conversation_and_preserves_context(self):
         for role in ('attempt', 'formalizer', 'explore', 'peer'):
             with self.subTest(role=role):
@@ -229,8 +236,11 @@ class EndingTests(InstanceCase):
                 first = json.loads((directory / 'work/turns.jsonl').read_text().splitlines()[0])
                 self.assertTrue(first['prompt'].endswith('\n\n' + pack.decode('utf-8')))
                 self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
-                self.assertIn('directives supplied for this session',
-                              (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8'))
+                # The resumed turn was given the text of its role for a resumed turn and, as a role that ends on
+                # a decision is, the ID of the request that its decision answers.
+                prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
+                self.assertIn(self.resume_text(role), prompt)
+                self.assertIn(read_json(directory / 'turns/0001/request.json')['id'], prompt)
                 self.assertTrue((directory / 'turns/0001/turn-termination.json').is_file())
                 # The resumed turn put the receipt of its own CLI in the place of the first turn's: the runner
                 # and kill-session find the running CLI through the session's process.json.
@@ -274,12 +284,14 @@ class EndingTests(InstanceCase):
         state = read_json(directory / 'end-check.json')
         self.assertEqual((state['resumptions'], state['authorization']['source'], state['authorization']['basis']),
                          (1, 'runner', 'output_checked'))
-        # The next turn was told what the transport check found, and was asked for no end decision.
+        # The next turn was given the text of a review for a resumed turn and what the transport check found,
+        # the missing assessment. It was asked for no end decision: its prompt carries no ID of a request.
         prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
-        self.assertIn('the transport check of your session does not yet accept your output', prompt)
-        self.assertIn('assessment.json', prompt)
-        self.assertIn('Resume the review you were assigned', prompt)
-        self.assertNotIn('end-decision', prompt)
+        request = read_json(directory / 'turns/0001/request.json')
+        self.assertIn('assessment.json', request['previous_error'])
+        self.assertIn(request['previous_error'], prompt)
+        self.assertIn(self.resume_text('review'), prompt)
+        self.assertNotIn(request['id'], prompt)
         # The runner collects that same session with its assessment; no second review takes the assignment.
         engine = Runner(self.instance, self.skill)
         s = engine.state['sessions'][sid]
@@ -466,8 +478,7 @@ class EndingTests(InstanceCase):
         request = read_json(directory / 'turns/0001/request.json')
         self.assertIn('exceeded the output-token limit', request['previous_error'])
         self.assertIn('exceeded the 64000 output token maximum', request['previous_error'])
-        prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
-        self.assertIn('Problem in the previous turn: Your previous turn ended', prompt)
+        self.assertIn(request['previous_error'], (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8'))
         # The resumption continues the conversation the failed turn announced.
         self.assertEqual(state['conversation_id'], '01234567-89ab-cdef-0123-456789abcdef')
 
@@ -920,11 +931,15 @@ class EndingTests(InstanceCase):
         # Sent once: the resumed turn holds the same request, under the ID the waiting message names.
         (message,) = (directory / 'messages').glob('*.json')
         text = read_json(message)['text']
-        self.assertIn('Its request ID is ' + read_json(directory / 'turns/0001/request.json')['id'], text)
-        # The resumed turn is asked as every resumed turn is, and its prompt ends with the text of the message.
+        request_id = read_json(directory / 'turns/0001/request.json')['id']
+        self.assertIn('Its request ID is ' + request_id, text)
+        # The prompt of the resumed turn ends with the text of the message. What stands before it is what every
+        # resumed turn of the role is asked: the text of the role, and the ID of the request to answer.
         prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
-        self.assertIn('directives supplied for this session', prompt)
         self.assertTrue(prompt.endswith(text + '\n'))
+        asked = prompt[:-len(text + '\n')]
+        self.assertIn(self.resume_text('attempt'), asked)
+        self.assertIn(request_id, asked)
 
     def test_a_turn_that_ends_at_the_limit_of_the_context_window_is_continued_from_the_files(self):
         for role in ('attempt', 'review'):

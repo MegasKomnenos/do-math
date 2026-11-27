@@ -17,7 +17,7 @@ sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).res
 import runner as runtime
 from canon import Canon, declaration_text, parse_approach, tree_hash
 from canon_tool import build_candidate, verify
-from check import carried_by, change_check, check_session
+from check import carried_by, change_check, check_report, check_session
 from knowledge import replay
 from runtime_support import git, read_json, write_json
 from support import InstanceCase, ROOT, SUM_ZERO, module_text, record_text, session_record, theorem
@@ -737,17 +737,26 @@ class PublicationTests(PublicationCase):
         self.assertEqual(replay(self.instance)['sequence'], 2)
         self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
 
-    def test_a_file_that_an_ignore_rule_names_is_committed_with_the_rest_of_the_canon(self):
+    def test_the_commit_takes_in_a_file_that_an_ignore_rule_names_and_leaves_out_what_python_left(self):
         # The commit of a publication takes in whatever stands under knowledge/ and canon/, and a package takes its
         # knowledge archive from that commit (package.knowledge_archive). Git leaves out of `git add` what an
         # ignore rule names. Such a rule can stand in a folder of evidence that a candidate brought, as here, or
         # in the Git configuration of whoever runs the instance. The repository and every Git call are real.
         folder = self.canon().evidence / 'Small/root'
+        # What Python left beside a script that was run where it stands is the one thing under the two folders
+        # that the commit does not take in: the runner removes it first. An instance whose earlier commits were
+        # made before it did has such a file committed, as here, and the next commit takes the file out.
+        cache = folder / '__pycache__/sums.cpython-312.pyc'
+        write(cache, 'The compiled form of a module.')
+        git(self.instance, 'add', '-f', '--', 'canon/evidence')
+        git(self.instance, 'commit', '-m', 'A commit that holds the compiled form', '--', 'canon/evidence')
         write(folder / '.gitignore', '*.log\n')
         write(folder / 'search.log', 'n = 1: 1\n')
         self.questions('qlog', [{'id': 'op-a', 'statement': 'What does op-a ask?', 'grounds': 'Unexplained.'}])
         self.assertEqual(git(self.instance, 'ls-files', '--', 'canon/evidence').splitlines(),
                          ['canon/evidence/Small/root/.gitignore', 'canon/evidence/Small/root/search.log'])
+        self.assertFalse(cache.parent.exists())
+        self.assertEqual(git(self.instance, 'status', '--porcelain', '--', 'knowledge', 'canon'), '')
 
 
 class InterruptedPublicationTests(PublicationCase):
@@ -1080,6 +1089,10 @@ class ReviewedCandidateTests(PublicationCase):
         # is no change to the candidate: the transport check removes the cache, and the review is published.
         cache = Path(job['task']['candidate']) / 'evidence/Small/root/__pycache__/sums.cpython-312.pyc'
         write(cache, 'The compiled form of a module.')
+        # A script that the review ran in its own output left the same there. The output is published whole,
+        # and the runner removes the cache from the published folder before the commit: the list of that folder
+        # below holds no such entry.
+        write(engine.session_dir('sreview') / 'output/__pycache__/tally.cpython-312.pyc', 'The compiled form of a module.')
         engine.finish('sreview', engine.state['sessions']['sreview'])
         self.drain(engine)
         self.assertFalse(cache.parent.exists())
@@ -2236,6 +2249,18 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         # The candidate is the one that was assigned, byte for byte.
         write(folder / 'records/Small/lead.md', record_text('Another description.'))
         self.assertEqual(self.review_errors(session, good), ['candidate changed after review assignment'])
+        # What commands.check prints for that fault names the files that differ, by their paths from the candidate
+        # folder: here two files that a run wrote beside its script, the record changed above and a record that is
+        # gone. A kind with more paths than are listed gives the number of the others.
+        write(folder / 'evidence/Small/lead/run/sums.csv', 'What a run wrote.')
+        write(folder / 'evidence/Small/lead/run/sums.log', 'What a run wrote.')
+        (folder / 'records/Small/evenSum.md').unlink()
+        with patch('check.LISTED_PATHS', 1):
+            self.assertEqual(check_report(session),
+                             {'ok': False, 'errors': ['candidate changed after review assignment'],
+                              'candidate': {'added': ['evidence/Small/lead/run/sums.csv', 'and 1 more'],
+                                            'changed': ['records/Small/lead.md'],
+                                            'missing': ['records/Small/evenSum.md']}})
 
     def test_confirming_a_proof_that_is_complete_in_lean_needs_the_review_s_own_compile(self):
         folder, session = self.reviewed()

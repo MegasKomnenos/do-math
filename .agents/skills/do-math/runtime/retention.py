@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import shutil
 import time
-from cli_adapter import codex_error_message, detect_usage_limit
+from cli_adapter import claude_answer, codex_error_message, detect_usage_limit
 from runtime_support import copy_to_disk, turn_streams, write_json
 
 
@@ -325,7 +325,13 @@ def refusal(folder, provider, model, started, retry_seconds):
     """The refusal of a provider or of a model that the streams of one turn show, or None.
 
     `folder` is the folder of that turn, which holds its cli.stdout.jsonl and cli.stderr.log: the session
-    folder for a first turn and the turn's own folder for a resumed one (ending.turn_directory)."""
+    folder for a first turn and the turn's own folder for a resumed one (ending.turn_directory).
+
+    Claude's notice that a model requires usage credits counts on the condition on which a refusal of the
+    provider counts (cli_adapter.detect_usage_limit): no response of a model to the session itself follows it
+    in the stream. The CLI writes the notice into the stream where it occurs, also when an agent the session
+    delegated to met it under another model, and a response that follows shows that the turn went on under the
+    session's model."""
     folder = Path(folder)
     try:
         limit = detect_usage_limit(provider, folder / 'cli.stdout.jsonl', folder / 'cli.stderr.log',
@@ -335,11 +341,14 @@ def refusal(folder, provider, model, started, retry_seconds):
     if limit:
         return {'key': 'provider:' + provider, 'until': limit.retry_at,
                 'reason': 'usage_limit', 'source': limit.source}
+    notice = None
     for event in events(folder / 'cli.stdout.jsonl'):
+        if provider == 'claude' and claude_answer(event):
+            notice = None
         if provider == 'claude' and event.get('type') == 'assistant' and event.get('is_api_error_message') is True:
             if event.get('api_error') == 'model_requires_usage_credits':
-                return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
-                        'reason': 'model_requires_usage_credits', 'source': 'backoff'}
+                notice = {'key': 'model:' + model, 'until': time.time() + retry_seconds,
+                          'reason': 'model_requires_usage_credits', 'source': 'backoff'}
         if provider == 'claude' and model_refused(event):
             return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                     'reason': 'model_refusal', 'source': 'backoff'}
@@ -348,7 +357,7 @@ def refusal(folder, provider, model, started, retry_seconds):
             if isinstance(message, str) and message.startswith('Selected model is at capacity'):
                 return {'key': 'model:' + model, 'until': time.time() + retry_seconds,
                         'reason': 'model_capacity', 'source': 'backoff'}
-    return None
+    return notice
 
 
 def model_blocked(blocks, provider, model, now):

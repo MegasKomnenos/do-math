@@ -174,7 +174,8 @@ def tree_hash(root, skip=()):
 # that was run where it stands leaves one, and Python makes it again from the source when it is missing, so it
 # is no part of a candidate. `prepare` removes it before it takes the identity of the candidate's files
 # (canon_tool.prepare), the transport check removes what a run has left since (check.prepared_candidate,
-# check.check_session), and a publication leaves it out of the canon (apply_written). The folder is removed,
+# check.check_session), a publication leaves it out of the canon (apply_written), and the runner removes it from
+# canon/ and knowledge/ before it commits the two folders (Runner.publish). The folder is removed,
 # and the identities (tree_hash, check.tree_hashes) go on counting every file that is there. The runner takes
 # them again on the same folder, and a runner that loaded an earlier version of this code would refuse a
 # folder that a command or a host of this version had passed with such files in it.

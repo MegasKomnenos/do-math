@@ -173,12 +173,13 @@ def codex_error_message(event: dict) -> object:
     return None
 
 
-def _claude_answer(event: dict) -> bool:
+def claude_answer(event: dict) -> bool:
     """Whether a Claude stream event is a response that a model gave to the session itself.
 
     A message that the CLI writes itself, as it does to report an error of the API, names the
     model `<synthetic>`. An event of an agent the session delegated to names the tool call that
-    started the agent."""
+    started the agent. The usage-limit detection below and retention.refusal both read this
+    rule here."""
     message = event.get("message")
     return (event.get("type") == "assistant" and not event.get("is_api_error_message")
             and not event.get("parent_tool_use_id") and isinstance(message, dict)
@@ -234,7 +235,7 @@ def detect_usage_limit(
                         continue
                     reset = _codex_reset(message, now, session_started_at, local_timezone)
                 else:
-                    if _claude_answer(event):
+                    if claude_answer(event):
                         result = None
                         continue
                     if not (event.get("type") == "assistant"

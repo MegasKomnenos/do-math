@@ -23,6 +23,9 @@ VERDICTS = ('confirmed', 'not_confirmed', 'undetermined', 'not_applicable')
 # under review changed after the review was assigned. The host of that review resumes nothing for it
 # (ending.supervise), and the runner restores the candidate or has a new one made (Runner.recover_candidate).
 CANDIDATE_CHANGED = 'candidate changed after review assignment'
+# The paths of one kind that `commands.check` lists for a candidate that changed (candidate_differences). A run
+# in the candidate folder can leave thousands of files there, and the list is read by a session.
+LISTED_PATHS = 20
 
 
 class Invalid(ValueError):
@@ -77,6 +80,23 @@ def tree_hashes(root):
     """The file identities under which the runner freezes a candidate and review checks it."""
     return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in Path(root).rglob('*') if p.is_file()}
+
+
+def candidate_differences(candidate, assigned):
+    """The files in which a candidate differs from the identities it was assigned to its review with.
+
+    Paths from the candidate folder, in order: under `added` the files that the assignment does not have, under
+    `changed` those whose content is another, and under `missing` those that are no longer there. A kind with
+    more than LISTED_PATHS paths gives the first of them and, as its last entry, the number of the others."""
+    found = tree_hashes(candidate)
+
+    def listed(paths):
+        paths = sorted(paths)
+        return paths[:LISTED_PATHS] + ([f'and {len(paths) - LISTED_PATHS} more'] if len(paths) > LISTED_PATHS else [])
+
+    return {'added': listed(set(found) - set(assigned)),
+            'changed': listed(p for p in set(found) & set(assigned) if found[p] != assigned[p]),
+            'missing': listed(set(assigned) - set(found))}
 
 
 def unique(rows):
@@ -471,13 +491,29 @@ def check_session(session):
     return []
 
 
+def check_report(session):
+    """What `commands.check` prints for a session: whether its output passed, and the faults that were found.
+
+    Where the one fault is that the candidate under review changed, `candidate` names the files that differ
+    (candidate_differences), so that the review which runs the command need not compare the folder with the
+    identities in its input.json itself. The fault stays the one message by which the session host and the
+    runner know it (CANDIDATE_CHANGED), and the files are compared for the list after check_session has
+    returned, a second time."""
+    errors = check_session(session)
+    report = {'ok': not errors, 'errors': errors}
+    if errors == [CANDIDATE_CHANGED]:
+        task = read_json(Path(session) / 'input.json')['task']
+        report['candidate'] = candidate_differences(task['candidate'], task['candidate_hashes'])
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('session', type=Path)
     args = parser.parse_args()
-    errors = check_session(args.session)
-    print(json.dumps({'ok': not errors, 'errors': errors}))
-    return int(bool(errors))
+    report = check_report(args.session)
+    print(json.dumps(report))
+    return int(not report['ok'])
 
 
 if __name__ == '__main__':
