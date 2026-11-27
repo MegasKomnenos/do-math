@@ -19,9 +19,11 @@ from runtime_support import read_json
 from settings import PRODUCERS
 
 VERDICTS = ('confirmed', 'not_confirmed', 'undetermined', 'not_applicable')
-# The one finding of check_session that no further turn of the session can remove: the files of the candidate
-# under review changed after the review was assigned. The host of that review resumes nothing for it
-# (ending.supervise), and the runner restores the candidate or has a new one made (Runner.recover_candidate).
+# The one finding of check_session for which the host of a review resumes no turn (ending.supervise), since a
+# candidate that changed is the runner's to restore: the files of the candidate under review changed after the
+# review was assigned. Before it ends, the review can remove the files that were added to the folder, which
+# `commands.check` names for it (check_report); after that the runner restores the candidate or has a new one
+# made (Runner.recover_candidate).
 CANDIDATE_CHANGED = 'candidate changed after review assignment'
 # The paths of one kind that `commands.check` lists for a candidate that changed (candidate_differences). A run
 # in the candidate folder can leave thousands of files there, and the list is read by a session.

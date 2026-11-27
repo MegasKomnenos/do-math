@@ -32,7 +32,7 @@ from canon import (Canon, CanonError, add_imports, apply_lean, apply_rearrangeme
                    with_review)
 from check import Invalid, check_session, prepared_candidate
 from lean_broker import Paths, job_record
-from runtime_support import process_identity, read_json, write_json
+from runtime_support import process_identity, read_json, remove_file, remove_tree, write_json
 from support import InstanceCase, earlier_form, module_text, record_text
 
 
@@ -966,6 +966,31 @@ class TreeTests(TempCase):
         remove_derived(folder)
         self.assertEqual(list(folder.rglob('__pycache__')), [])
         self.assertEqual(tree_hash(folder), tree_hash(self.tree('c', own)))
+
+    def test_remove_derived_passes_over_what_another_process_moved_or_removed_meanwhile(self):
+        # A script that a session runs where it stands has Python write the compiled form of a module under a
+        # temporary name in `__pycache__` and move it onto the module's own. Here that move is made at the moment
+        # the temporary file is to be removed: the file is gone, and the folder holds a file again and stays.
+        folder = self.tree('a', {'evidence/Small/root/sums.py': 'print(1)\n',
+                                 'evidence/Small/root/__pycache__/sums.cpython-312.pyc.1234': 'being written'})
+        cache = folder / 'evidence/Small/root/__pycache__'
+
+        def moved_first(path):
+            os.replace(path, cache / 'sums.cpython-312.pyc')
+            remove_file(path)
+
+        with patch('canon.remove_file', side_effect=moved_first):
+            remove_derived(folder)
+        self.assertEqual([p.name for p in cache.iterdir()], ['sums.cpython-312.pyc'])
+
+        # A second check of the same candidate removes the same folder. Here it is gone when it is to be removed.
+        def removed_first(path):
+            shutil.rmtree(path)
+            remove_tree(path)
+
+        with patch('canon.remove_tree', side_effect=removed_first):
+            remove_derived(folder)
+        self.assertEqual(list(folder.rglob('__pycache__')), [])
 
     def test_sync_tree_makes_the_target_hold_the_files_of_the_source(self):
         source = self.tree('source', {'Small/Defs.lean': 'defs', 'Small/Root.lean': 'new root', 'Small/Sub/New.lean': 'new'})
@@ -2317,6 +2342,29 @@ class WrittenPartTests(TempCase):
         self.assertEqual(seen, ['n,sum\n1,1\n'])
         self.assertEqual(target.read_text(encoding='utf-8'), 'n,sum\n1,1\n2,4\n')
         self.assertEqual(self.files(self.canon.evidence), ['Small/root/table.csv'])
+
+    def test_a_declined_replacement_leaves_the_evidence_the_canon_holds_for_its_declaration(self):
+        # Review declined the candidate's new proof of `Small.root`: the record the canon has for it stays and goes on
+        # referring to the files the canon holds under `evidence/Small/root/`. A file of the candidate does not take
+        # the place of one of them, and a file the canon does not have there enters, for the approach entry that
+        # tells what was tried. `Small.root.even` is a declaration of its own whose record the change puts in place;
+        # its folder lies inside the root's, and its file is replaced like any other.
+        held = {'Small/root/table.csv': 'n,sum\n1,1\n', 'Small/root/even/table.csv': 'n,sum\n2,4\n'}
+        brought = {'Small/root/table.csv': 'n,sum\n1,1\n2,4\n', 'Small/root/pairs.csv': 'k,gnomon\n1,3\n',
+                   'Small/root/even/table.csv': 'n,sum\n2,4\n4,16\n'}
+        for name, text in held.items():
+            write(self.canon.evidence / name, text)
+        for name, text in brought.items():
+            write(self.candidate / 'evidence' / name, text)
+        write(self.candidate / 'replace/root.lean', 'theorem root (n : Nat) : oddSum n = n * n := by\n  sorry')
+        write(self.candidate / 'records/Small/root/even.md', STEP_RECORD)
+        write_json(self.candidate / 'change.json', {'title': 'A change', 'description': 'What it does.',
+                                                    'replace': [{'declaration': 'Small.root', 'file': 'replace/root.lean'}]})
+        apply_written(self.canon, self.candidate, load_change(self.candidate),
+                      {'records': ['Small.root.even'], 'replaced': []}, 12, 'c-new', 'Closed the step it took on.')
+        self.assertEqual({name: (self.canon.evidence / name).read_text(encoding='utf-8')
+                          for name in self.files(self.canon.evidence)},
+                         {**brought, 'Small/root/table.csv': held['Small/root/table.csv']})
 
     def test_an_evidence_file_is_on_the_disk_before_it_takes_its_name(self):
         # As a module of the library is (TreeTests): the publication is saved as installed after this copy, and no

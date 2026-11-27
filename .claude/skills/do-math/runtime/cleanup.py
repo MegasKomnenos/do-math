@@ -122,15 +122,22 @@ def finished_sessions(state):
 # ----------------------------------------------------------------------------- what stands there
 
 def tree_size(folder):
-    """(number of files, their bytes) under a folder; a file that cannot be read off counts as nothing."""
+    """(number of files, the bytes that removing them gives back) under a folder; a file that cannot be read off
+    counts as nothing.
+
+    A file that has another name gives back nothing when this one goes. A build's lib holds such files: for a
+    cached module that one of its compiles read, it names the cache's own file (lean_broker.restore_module),
+    whose room goes with the entry of the cache and is counted there."""
     files = size = 0
     for top, _, names in os.walk(folder):
         for name in names:
             try:
-                size += os.lstat(os.path.join(top, name)).st_size
-                files += 1
+                found = os.lstat(os.path.join(top, name))
             except OSError:
-                pass
+                continue
+            files += 1
+            if found.st_nlink <= 1:
+                size += found.st_size
     return files, size
 
 

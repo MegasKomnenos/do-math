@@ -473,8 +473,11 @@ class PublicationTests(PublicationCase):
     def test_a_replacement_that_review_declined_leaves_declaration_and_record_while_the_rest_is_published(self):
         # The root has a proof already, correct and held back; review is asked whether a new one takes its place.
         held, engine = self.held_sketch(), runtime.Runner(self.instance, self.skill)
+        # The canon holds a file of evidence for that proof, and the candidate brings one of the same name for its own.
+        write(self.canon().evidence / 'Small/root/squares.csv', 'n,sum\n1,1\n')
         before = self.canon_bytes()
-        folder = self.induction(records={'Small/root.md': ROOT_RECORD.replace('By induction on $n$', 'By induction on $n$ again'),
+        folder = self.induction(extras=True,
+                                records={'Small/root.md': ROOT_RECORD.replace('By induction on $n$', 'By induction on $n$ again'),
                                          'Small/oddSum_succ.md': STEP_RECORD})
         declined = {'Small.root': {'correct': 'not_confirmed', 'accepted': False, 'replaces': False,
                                    'reason': 'The inductive step is asserted and not derived.'}}
@@ -482,7 +485,7 @@ class PublicationTests(PublicationCase):
         after, canon = self.canon_bytes(), self.canon()
         # The candidate carries its own approach entry for the statement, so no entry is made from the declined proof.
         self.assertEqual(sorted(p.name for p in (canon.approaches / 'Small/root').iterdir()), ['induction.md'])
-        for name in sorted(name for name in before if name.startswith(('lean/', 'records/', 'history/'))):
+        for name in sorted(name for name in before if name.startswith(('lean/', 'records/', 'history/', 'evidence/'))):
             with self.subTest(unchanged=name):
                 self.assertEqual(after[name], before[name])
         self.assertEqual(self.root_declaration(), SKETCH)

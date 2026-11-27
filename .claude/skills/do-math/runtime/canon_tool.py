@@ -122,7 +122,11 @@ def view(instance, model, name, part=None, full=False, canon_index=None):
         text = (canon.lean / index['file']).read_text(encoding='utf-8').replace('\r\n', '\n')
         lines += ['', '```lean', declaration_text(text, span), '```', '']
     lines.append(f"objects       {', '.join(objects) or '(none)'}")
-    lines.append(f"used by       {with_standing(model, element['used_by'])}")
+    # The first forty, and the number of the rest with the command that lists them. A definition that much of
+    # the library speaks of is named by hundreds of proofs, and their names would be most of what the view prints.
+    users = element['used_by']
+    rest = f" and {len(users) - 40} more (list --used-by {name})" if len(users) > 40 else ''
+    lines.append(f"used by       {with_standing(model, users[:40])}{rest}")
     if element['mentioned_by']:
         lines.append(f"stated with   {len(element['mentioned_by'])} statements mention it (list --about {name})")
     if element['library']:

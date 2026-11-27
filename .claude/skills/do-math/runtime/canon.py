@@ -186,15 +186,28 @@ def remove_derived(root, keep=()):
     """Remove the files under every `__pycache__` folder of a folder, and each such folder that then holds none.
 
     `keep` names, by their paths from `root`, files that stay: those that a candidate held when it was frozen
-    for review, which the review's check compares like every other file of it."""
+    for review, which the review's check compares like every other file of it.
+
+    Another process can be at work in such a folder meanwhile. A script that a session runs where it stands has
+    Python write the compiled form of a module there under a temporary name and move it onto the module's own,
+    and a second check of the same candidate removes the same files. So a file or a folder that is gone when it
+    is to be removed counts as removed, and a folder into which a file came meanwhile stays, for the next call."""
     root = Path(root)
     # The deepest first, so that no folder is visited after the folder it lies in was removed.
     for folder in sorted((p for p in root.rglob(DERIVED) if p.is_dir()), reverse=True):
         for path in [p for p in folder.rglob('*') if p.is_file()]:
             if path.relative_to(root).as_posix() not in keep:
-                remove_file(path)
+                try:
+                    remove_file(path)
+                except FileNotFoundError:
+                    pass
         if not any(p.is_file() for p in folder.rglob('*')):
-            remove_tree(folder)
+            try:
+                remove_tree(folder)
+            except OSError:
+                # Raised on only where the folder stands and holds no file: the removal itself was refused.
+                if folder.is_dir() and not any(p.is_file() for p in folder.rglob('*')):
+                    raise
 
 
 # ----------------------------------------------------------------------------- written files
@@ -1427,11 +1440,25 @@ def apply_written(canon, candidate, change, applied, revision, change_id, contri
         target.parent.mkdir(parents=True, exist_ok=True)
         write_text(target, text)
     if (candidate / 'evidence').is_dir():
+        # The folder of evidence of each declaration whose record this change puts in place, and of each whose
+        # replacement review declined, with which of the two it is. A declined replacement leaves the declaration
+        # and its record as the canon has them (Runner.effective_change), and that record refers to the files the
+        # canon holds in the folder, so no file of the candidate takes the place of one of them. A file the canon
+        # does not have there enters like any other: the approach entry that tells what was tried can refer to it.
+        # The folder of a declaration whose name extends another's lies inside that one's, and a file belongs to
+        # the innermost of the folders it lies in.
+        folders = {name_path(name) + '/': False for name in applied['records']}
+        folders.update({name_path(item['declaration']) + '/': True for item in change['replace']
+                        if item['declaration'] not in applied['replaced']})
         # Without what Python left beside a script (DERIVED). A candidate holds such a folder when it was frozen
         # with one, as a candidate is whose receipt an earlier version of `prepare` wrote with the folder in place.
         for path in sorted(p for p in (candidate / 'evidence').rglob('*')
                            if p.is_file() and DERIVED not in p.relative_to(candidate).parts):
-            target = canon.evidence / path.relative_to(candidate / 'evidence')
+            relative = path.relative_to(candidate / 'evidence').as_posix()
+            target = canon.evidence / relative
+            owner = max((folder for folder in folders if relative.startswith(folder)), key=len, default=None)
+            if owner is not None and folders[owner] and target.exists():
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
             # Written beside the file, sent to the disk and moved onto it, as a module is installed (sync_tree): a
             # session that reads the evidence a record refers to has the earlier file or the new one, each of them

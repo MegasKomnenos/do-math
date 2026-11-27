@@ -787,7 +787,8 @@ class BrokerRelaunchTests(BrokerFixture):
         self.assertIsNone(other.broker)
         self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
         support.terminate_process(first["process"])
-        while support.alive(first["process"]):
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and support.alive(first["process"]):
             time.sleep(0.02)
         # Within ten seconds of the last launch no relaunch is made (runner.ensure_broker). The moment of that
         # launch is set here, so that a machine slow enough to spend those seconds above changes nothing, and the

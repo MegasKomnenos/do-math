@@ -70,7 +70,13 @@ def _request(url):
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
-            return resp.read(MAX_BYTES + 1)
+            data = resp.read(MAX_BYTES + 1)
+            # When the connection ends inside a body whose length the server gave, read() returns what arrived and
+            # raises nothing. That is a download cut short, and it is raised as one, so that download() asks again.
+            length = resp.headers.get("Content-Length", "")
+            if length.isdigit() and len(data) < min(int(length), MAX_BYTES + 1):
+                raise http.client.IncompleteRead(data, int(length) - len(data))
+            return data
     finally:
         _last_request[0] = time.time()
 

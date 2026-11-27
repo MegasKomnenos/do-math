@@ -615,6 +615,11 @@ class EndingTests(InstanceCase):
                 restarted = Runner(self.instance, self.skill)
                 restarted.collect()
                 self.assertEqual(len(restarted.active()), 1)
+                # The runner's state carries the record of a host that still holds its session, and `status`
+                # returns that state: the wait behind the stop and the count of resumed turns show there
+                # (reference/operations.md, Session hosts and continuation turns).
+                self.assertEqual(read_json(restarted.state_path)['sessions'][sid]['end_check']['status'],
+                                 'waiting_dispatch')
                 self.assertFalse(any(j['role'] == 'peer' for j in restarted.state['jobs'].values()))
                 stop.unlink()
                 thread.join(10)

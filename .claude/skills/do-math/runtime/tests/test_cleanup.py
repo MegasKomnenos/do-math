@@ -1,13 +1,11 @@
 """The operator's `cleanup` on an instance whose compiles a fake lean made: what goes, what stays, and when
 nothing goes; no Lean is run."""
 
-import atexit
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
-import tempfile
 import time
 import unittest
 from unittest.mock import patch
@@ -18,6 +16,7 @@ import lean_broker
 import runtime_support
 from runner import main
 from broker_fixture import BrokerFixture, source
+from support import kept_copy
 
 # The instance that `CleanupTests.research` builds and the IDs it returns, made once for the test process; every
 # test that asks for it works on a copy of its own.
@@ -136,10 +135,7 @@ class CleanupTests(BrokerFixture):
             self.write_runner_state(self.ENDS)
             runtime_support.write_json(self.instance / 'sessions/sheld/end-check.json', {'status': 'waiting_dispatch'})
             self.settle()
-            kept = Path(tempfile.mkdtemp(prefix='do-math-cleanup-'))
-            atexit.register(shutil.rmtree, kept, True)
-            shutil.copytree(self.instance, kept / 'instance')
-            RESEARCH.update(instance=kept / 'instance', ids=ids)
+            RESEARCH.update(instance=kept_copy(self.instance, 'do-math-cleanup-'), ids=ids)
         else:
             shutil.rmtree(self.instance)
             shutil.copytree(RESEARCH['instance'], self.instance)
@@ -227,7 +223,7 @@ class CleanupTests(BrokerFixture):
         # that compile's output. The compile of the finished session that waited for it is gone, and what Lean
         # said of the import is still to be read where the table says.
         verdict = runtime_support.read_json(self.paths.calibration)['entries'][ids['closure rejected']]['failed']
-        self.assertIn('see its stdout.log', verdict['reason'])
+        self.assertIn('see its stdout.log in runner/lean/jobs/' + ids['calibration rejected'], verdict['reason'])
         self.assertIn('unknown module', (self.paths.jobs / ids['calibration rejected'] / 'stdout.log')
                       .read_text(encoding='utf-8'))
 
@@ -431,6 +427,22 @@ class CleanupTests(BrokerFixture):
         self.assertEqual((code, done['left']['count']), (0, 0), done)
         self.assertEqual(list(self.paths.cache.glob(ids['B first'] + '*')), [])
         self.assertFalse(folder.exists())
+
+    def test_a_name_that_a_build_shares_with_the_cache_is_counted_without_its_bytes(self):
+        # For a cached module that one of its compiles read, a build's lib names the cache's own file
+        # (lean_broker.restore_module). Removing that name gives back no room: the room goes with the entry of
+        # the cache and is counted there. So a cleaning counts such a file and none of its bytes.
+        ids = self.research()
+        _, before = self.command('--dry-run')
+        lib = self.paths.builds / ids['build sdone'] / 'lib'
+        lib.mkdir(exist_ok=True)
+        try:
+            os.link(self.paths.cache / (ids['A'] + '.olean'), lib / 'Shared.olean')
+        except OSError:
+            self.skipTest('the file system of the temporary folder makes no hard links')
+        _, after = self.command('--dry-run')
+        builds = before['removable']['builds']
+        self.assertEqual(after['removable']['builds'], {**builds, 'files': builds['files'] + 1})
 
     # -- work that begins while the command runs -----------------------------------------------------------
 

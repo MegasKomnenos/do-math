@@ -1328,7 +1328,8 @@ class Broker:
             elif job["exit_code"] is not None and 0 < job["exit_code"] < 2 ** 31 and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
                 self.calibration.record_failure(job["closure"], identity, job["exit_code"],
-                                                "the calibration compile failed; see its stdout.log")
+                                                "the calibration compile failed; see its stdout.log in "
+                                                f"runner/lean/jobs/{job['id']}/")
             else:
                 # A launch error, a cancellation or a crash records nothing, so the next compile calibrates
                 # again. A crash is a negative code (a POSIX signal) or a Windows code of 2**31 and above

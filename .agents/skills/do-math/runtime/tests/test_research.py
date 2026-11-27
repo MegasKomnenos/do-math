@@ -2842,6 +2842,8 @@ class RunnerTests(ScenarioCase):
 
         def pause(seconds):
             clock[0] += 1.0
+            # A wait that went on past its minute would never end before these stand-ins; it fails here.
+            self.assertLess(clock[0], 300.0, 'start went on waiting after its minute had passed')
             if clock[0] == 15.0:
                 argv = launch.call_args.args[0]
                 token = argv[argv.index('--token') + 1]
@@ -2858,6 +2860,17 @@ class RunnerTests(ScenarioCase):
         # The record came at the fifteenth second, and start returned with the process that the record names.
         self.assertEqual(clock[0], 15.0)
         self.assertEqual(started['pid'], runner.identity['pid'])
+        # A process that lives and writes no start record is waited for until sixty seconds have passed. start
+        # then says that readiness was not confirmed and names the two logs of that launch
+        # (reference/operations.md, Create and start). The record that stands here is that of the launch above,
+        # under another token, and the clock goes on from the hundredth second.
+        clock[0] = 100.0
+        with patch('runner.subprocess.Popen') as launch, patch('runner.time.sleep', side_effect=pause), \
+                patch('runner.time.monotonic', side_effect=lambda: clock[0]), \
+                self.assertRaisesRegex(RuntimeError, r'readiness unconfirmed.*stdout\.log.*stderr\.log'):
+            launch.return_value.poll.return_value = None
+            start(self.instance)
+        self.assertEqual(clock[0], 160.0)
 
     def test_start_returns_a_runner_that_ended_at_once_only_on_an_instance_that_is_finished(self):
         # On an instance that is finished, the runner writes its start record, makes one pass and ends

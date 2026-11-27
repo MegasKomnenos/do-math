@@ -1776,11 +1776,11 @@ def archive_finished(instance):
     try:
         with InstanceLock(Path(instance) / 'runner/archive-lock', 'archiver'):
             state = read_json(Path(instance) / 'runner/state.json')
-            for sid, session in state['sessions'].items():
-                job = state['jobs'][session['job']]
-                pipeline = state['pipelines'].get(job['pipeline'])
-                finished = pipeline['stage'] == 'done' if pipeline else job['status'] in ('done', 'cancelled')
-                if finished and session['status'] not in ACTIVE_STATUSES:
+            # One function says which sessions have finished processing, for this archiver and for `cleanup`, which
+            # removes the folders of their compiles by the same answer (cleanup.finished_sessions).
+            finished = cleanup.finished_sessions(state)
+            for sid in state['sessions']:
+                if sid in finished:
                     # The work folder and the raw conversation are packed apart, so that a failure of the one does
                     # not keep the other in place. Nothing reads a stream after the runner has collected its
                     # session: the readable conversation and the record of what the session used are written then

@@ -476,6 +476,23 @@ class CanonToolTests(ScenarioCase):
         # The first twelve, and the number of the rest.
         self.assertIn('library       ' + ', '.join(names[:12]) + ' and 2 more', self.tool('view', 'Small.colA').splitlines())
 
+    def test_view_names_the_first_forty_users_of_an_element_and_counts_the_rest(self):
+        # The scenario has no element that many proofs name, so the index is given further declarations that name one.
+        self.ways()
+        canon = Canon(self.instance)
+        index = canon.load_index()
+        for number in range(45):
+            index['entries'][f'Small.user{number:02d}'] = {**index['entries']['Small.unitG'], 'uses': ['Small.leafH']}
+        write_json(canon.index, index)
+        model = knowledge.replay(self.instance)
+        users = model['elements']['Small.leafH']['used_by']
+        self.assertGreater(len(users), 45)
+        line = next(line for line in self.tool('view', 'Small.leafH').splitlines() if line.startswith('used by'))
+        self.assertEqual(line, 'used by       ' + canon_tool.with_standing(model, users[:40])
+                         + f' and {len(users) - 40} more (list --used-by Small.leafH)')
+        # The command the line names returns every one of them.
+        self.assertIn(f'{len(users)} elements.', self.tool('list', '--used-by', 'Small.leafH').splitlines())
+
     def test_view_shows_concerns_later_reviews_approaches_and_history(self):
         self.ways()
         first = self.changes()[0]

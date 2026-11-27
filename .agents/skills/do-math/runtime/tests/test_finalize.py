@@ -901,6 +901,11 @@ class RegistryTests(FinalizeCase):
         self.assertEqual([(s['id'], s['note']) for s in data['sources']],
                          [('doi:10.1000/1', 'Theorem 1.'), ('arXiv:2501.00002', 'It poses the question.'),
                           ('https://example.org/three', 'A table of values.')])
+        # A work that the check of the sources did not find has left the bibliography by the freeze, and the file
+        # names no work that the bibliography of the package lacks.
+        left = package.formalization('T', chosen, bibliography[:bibliography.index('@misc{a3')],
+                                     finalize.default_config(), 'CC-BY-4.0', [], 'Small', [], None, {}, 't')
+        self.assertEqual([s['id'] for s in left['sources']], ['doi:10.1000/1', 'arXiv:2501.00002'])
         self.assertEqual(yaml.safe_load(package.yaml_text(data))['related_formalizations'], earlier)
         # The README lists the works and the earlier formal proofs as the registry's file does, under the result.
         path = self.root / 'formalization.yaml'
@@ -1260,7 +1265,7 @@ class ArchiveTests(FinalizeCase):
         path = self.instance / 'canon' / 'questions' / 'q0.md'
         committed = path.read_bytes()
         path.write_bytes(b'Changed after the commit.\r\n')
-        package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'nobody-of-this-name')
+        package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', ['nobody-of-this-name'])
         members = package.archive_members(self.root / 'knowledge' / 'odd-knowledge.tar.xz')
         self.assertEqual(members['canon/questions/q0.md'], committed)
 
@@ -1276,7 +1281,7 @@ class ArchiveTests(FinalizeCase):
         commit = package.head_commit(self.instance)
         package.export_commit(self.instance, commit, ['canon/lean'], self.root / 'read', 'canon/')
         self.assertEqual((self.root / 'read' / 'lean' / 'Small' / 'Defs.lean').read_bytes(), DEFS.encode('utf-8'))
-        package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'nobody-of-this-name')
+        package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', ['nobody-of-this-name'])
         members = package.archive_members(self.root / 'knowledge' / 'odd-knowledge.tar.xz')
         self.assertEqual(members['canon/lean/Small/Defs.lean'], stored)
 
@@ -2093,7 +2098,7 @@ class RunTests(FinalizeCase):
                       'the result. It has the step in its first section.\n', readme)
         self.assertIn('The records of the research name no earlier formal proof of this result.\n\n## Outline of the proof',
                       readme)
-        self.assertIn('and the library proves each of them formally: `Small.sq_step`.', readme)
+        self.assertIn('names for it, the library proves formally: `Small.sq_step`.', readme)
         self.assertNotIn('names no author', readme)
         timeline = (self.solved / 'history' / 'timeline.md').read_text(encoding='utf-8')
         self.assertIn('The account of the root question was written.\n\nRecord: `canon/questions/q0.md`', timeline)  # the reader's text
@@ -2594,7 +2599,8 @@ class RunTests(FinalizeCase):
         arrangement = {'@copy': [['lean', 'output/lean']],
                        'output/lean/Small/Helper.lean': HELPER_SIMPLIFIED.replace('simp_one', 'first_odd'),
                        'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd'}),
-                       'output/removed.json': '[]'}
+                       'output/removed.json': json.dumps([{'declaration': 'Small.unused_two',
+                                                           'reason': 'A check of one value\nthat no proof uses.'}])}
         # The first arranging session returns that library with three values that are no names of declarations: an
         # old name that is empty, a new name with an empty component, and a removed declaration without a name.
         unnamed = {**arrangement, 'output/renames.json': json.dumps({'Small.simp_one': 'Small.first_odd', '': 'Small..odd'}),
@@ -2640,6 +2646,8 @@ class RunTests(FinalizeCase):
         # The renamed declaration has its record under the new name, and the account of the selection goes to both
         # runs of the paper command with that name.
         self.assertIn('Renamed: `Small.simp_one` to `Small.first_odd`', self.decisions())
+        # The reason that the session gave for a removal stands with the name: removed.json goes with the work folder.
+        self.assertIn('\n- `Small.unused_two`: A check of one value that no proof uses.\n', self.decisions())
         arranged = set(package.files_under(self.work / 'lib' / '4-arranged' / 'records'))
         self.assertTrue('Small/first_odd.md' in arranged and 'Small/simp_one.md' not in arranged, arranged)
         todo = self.session_file(self.calls('records-write')[0], 'todo.json')
@@ -2885,8 +2893,8 @@ class RunTests(FinalizeCase):
                       'general theorem of which the result is an instance (Chapter 1, section 2). The paper states the '
                       "result in the library's form, cites that theorem and gives the specialisation as its proof; the "
                       'library proves the result by an argument of its own. No work has the empty sum alone.', self.decisions())
-        self.assertIn('These statements it proves from a general theorem of the literature, which it cites, by specialising '
-                      'that theorem: `Small.helper_zero`.', (self.solved / 'README.md').read_text(encoding='utf-8'))
+        self.assertIn('Each statement that the paper proves by specialising a general theorem of the literature, which it '
+                      'cites, is named here: `Small.helper_zero`.', (self.solved / 'README.md').read_text(encoding='utf-8'))
 
     def test_a_record_that_loses_its_source_is_written_from_the_lean_and_compared_after_the_check_of_the_sources(self):
         # The research's record of the step names a work in its header and has no proof in words. The record that is
@@ -2909,7 +2917,10 @@ class RunTests(FinalizeCase):
             'output/sources.json': json.dumps([{
                 'key': 'gauss1801', 'status': 'verified', 'identifier': 'isbn:1', 'opened': 'parts', 'note': '',
                 'attributions': [{'declaration': 'Small.sq_step', 'sentence': said, **words},
-                                 {'declaration': 'Small.sq_step_strict', 'sentence': cites, **words}]}])}]
+                                 {'declaration': 'Small.sq_step_strict', 'sentence': cites, **words}]},
+                # A work that the session did not find in any registry: it says where it searched.
+                {'key': 'lost1850', 'status': 'removed', 'identifier': '', 'opened': 'none',
+                 'note': 'Searched zbMATH and Crossref by title and author; no entry.', 'attributions': []}])}]
         proved = unsourced.replace('## Literature', '## Proof\n\nBoth sides unfold to the same sum.\n\n## Literature')
         plan['records-write:6-unsourced-01'] = [{'output/records/Small/sq_step.md': proved,
                                                  'output/findings.json': '[]'}]
@@ -2942,6 +2953,8 @@ class RunTests(FinalizeCase):
                          ['Small.sq_step_strict', 'Small.sq_step'])
         self.assertIn('## Step 6: records that no longer name a source', self.decisions())
         self.assertIn('\n- `Small.sq_step`: written again and compared\n- `Small.sq_step_strict`\n', self.decisions())
+        # Where the session searched for a work that it removed stands in the decisions: its file goes with the work folder.
+        self.assertIn('\n- lost1850: Searched zbMATH and Crossref by title and author; no entry.\n', self.decisions())
 
     def test_a_check_that_a_safeguard_stops_every_time_is_recorded_as_not_done_and_the_run_goes_on(self):
         # The sign of such a stop is known for the Claude CLI, so the sessions that check are given a Claude model.

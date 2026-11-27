@@ -1075,6 +1075,9 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     with the name and what is given of the two, the form in which the registry reads them; every other
     author, and every responsible maintainer, is entered by name.
     The entry that records a result as original carries the selection's grounds for that as its note.
+    A source of the selection whose entry `bibliography` no longer has is left out: the session that
+    checks the sources takes the entry of a work it could not find out of the bibliography, and the
+    file names no work that the bibliography of the package lacks.
 
     One source can come from the library stage instead of the selection: when the result is recorded as
     known and the root's record names a source, which the sources session entered after it had found a
@@ -1091,8 +1094,9 @@ def formalization(title, decision, bibliography, config, licence, models, librar
     if registry.get('origin') == 'original':
         sources.append({'title': decision['sentence'], 'type': 'original-proof', 'relationship': 'other',
                         **({'note': registry['novelty']} if registry.get('novelty') else {})})
+    entered = bibliography_keys(bibliography)
     sources += [source_entry(bibliography, source['key'], source['relationship'], source.get('note', ''))
-                for source in registry.get('sources', [])]
+                for source in registry.get('sources', []) if source['key'] in entered]
     key = ((root_record or {}).get('meta') or {}).get('source')
     if registry.get('origin') != 'original' and key and key not in [s['key'] for s in registry.get('sources', [])]:
         sources.append(source_entry(bibliography, key, 'independently-proves',
@@ -1792,13 +1796,13 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '- `MANIFEST.sha256`: the SHA-256 of every other file of this folder.', '',
               '## The paper', '',
               'The paper proves the result for a mathematical reader and mentions no formal proof.'
-              + (' It attributes these statements to the literature, each to the source that '
-                 '`paper/correspondence.json` names for it, and the library proves each of them formally: '
+              + (' Each statement that it attributes to the literature, to the source that '
+                 '`paper/correspondence.json` names for it, the library proves formally: '
                  + ', '.join(f'`{name}`' for name in cited_rows) + '.' if cited_rows else '')
-              + (' These statements it proves from a general theorem of the literature, which it cites, by '
-                 'specialising that theorem: ' + ', '.join(f"`{entry['element']}`" for entry in instances)
-                 + '. `paper/correspondence.json` names the theorem for each. The library does not rest on the cited '
-                   'theorems; it proves each of these statements by an argument of its own.' if instances else ''), '',
+              + (' Each statement that the paper proves by specialising a general theorem of the literature, which it '
+                 'cites, is named here: ' + ', '.join(f"`{entry['element']}`" for entry in instances)
+                 + '. `paper/correspondence.json` names the theorem for each. The library does not rest on a cited '
+                   'theorem; it proves each such statement by an argument of its own.' if instances else ''), '',
               '## The licence', '',
               f'Everything in this folder is under {licence}; the text is in [LICENSE](LICENSE).', '',
               '## The registry', '',

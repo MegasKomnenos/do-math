@@ -1161,7 +1161,8 @@ class Run:
         def read(output):
             texts = {relative: package.read_text(path) for relative, path in package.files_under(output / 'lean').items()}
             renames = Sessions.load(output / 'renames.json')
-            removed = [item['declaration'] for item in Sessions.load(output / 'removed.json', list)]
+            gone = Sessions.load(output / 'removed.json', list)
+            removed = [item['declaration'] for item in gone]
             if not texts:
                 raise Unusable(['output/lean holds no file; it holds every file of the library'])
             # Once the output is accepted, the records are moved and deleted by these names (package.follow_renames).
@@ -1181,7 +1182,11 @@ class Run:
                     problems.append(f"the main theorem {self.state['main']} is not in the arranged library")
             if problems:
                 raise Unusable(problems)
-            return {'files': texts, 'index': arranged, 'renames': renames, 'removed': removed}
+            # The session gives in removed.json the reason for each removal. The work folder goes at the end, so the
+            # reasons are returned with the names and kept in the decisions.
+            return {'files': texts, 'index': arranged, 'renames': renames, 'removed': removed,
+                    'reasons': {item['declaration']: collapsed(item['reason']) for item in gone
+                                if is_text(item.get('reason'))}}
 
         result = self.discardable('Step 4: the arrangement', lambda: self.task(
             'arrange', 'arrange', files, read, self.sessions.writer))
@@ -1192,9 +1197,13 @@ class Run:
             for relative, text in result['files'].items():
                 write_text(target / 'lean' / relative, text)
             if result['renames'] or result['removed']:
-                self.decide('Step 4: the arrangement', 'Renamed: ' + (', '.join(
-                    f'`{old}` to `{new}`' for old, new in sorted(result['renames'].items())) or 'nothing')
-                    + '. Removed: ' + (', '.join(f'`{name}`' for name in result['removed']) or 'nothing') + '.')
+                self.decide('Step 4: the arrangement', '\n'.join([
+                    'Renamed: ' + (', '.join(f'`{old}` to `{new}`' for old, new in sorted(result['renames'].items()))
+                                   or 'nothing') + '.', '',
+                    'Removed' + (', each with the reason that the arranging session gave:' if result['removed']
+                                 else ': nothing.'), '',
+                    *[f'- `{name}`' + (f": {result['reasons'][name]}" if name in result['reasons'] else '')
+                      for name in result['removed']]]))
         shutil.copytree(taken / 'records', target / 'records')
         package.follow_renames(target / 'records', result['renames'], result['removed'])
         package.drop_orphans(target / 'records', result['index'])
@@ -1469,10 +1478,15 @@ class Run:
                     'proves them from the proof in words of the record, so a record among them that was not written in '
                     'this step was written again from the Lean and compared by a session that did not write it.', '',
                     *[f'- `{name}`' + (': written again and compared' if name in rewritten else '') for name in lost]]))
-            gone = [row['key'] for row in sources if row.get('status') == 'removed']
+            gone = [row for row in sources if row.get('status') == 'removed']
             if gone:
-                self.decide(f'Step {tag}: the sources', 'Removed from the bibliography, because the source could not be '
-                            'found or does not state what the records said of it: ' + ', '.join(gone) + '.')
+                # The session says in `note` where it searched for a work that it did not find. The work folder goes at
+                # the end, so its words are kept here.
+                self.decide(f'Step {tag}: the sources', '\n'.join([
+                    'Removed from the bibliography, because the session that checks the sources did not find the work '
+                    'in a registry of publications. Where it searched, in its own words:', '',
+                    *[f"- {row['key']}" + (f": {collapsed(row['note'])}" if is_text(row.get('note')) else '')
+                      for row in gone]]))
         write_json(target / 'findings.json', findings)
         write_json(target / 'sources.json', sources)
         write_json(target / 'verdicts.json', verdicts)

@@ -1283,6 +1283,37 @@ class FetchTests(unittest.TestCase):
                                                '1 paper(s) could not be rebuilt as recorded: absent'))
         self.assertEqual((self.folder / 'elsewhere' / 'joined.tex').read_bytes(), joined)
 
+    def test_a_body_that_ends_before_the_length_its_server_gave_is_asked_for_again(self):
+        source = b'\\documentclass{amsart}\n\\begin{document}\n\\maketitle\nA paper.\n\\end{document}\n'
+        asked = []
+
+        class Answer:
+            """What urlopen returns: the bytes that arrived, and the length that the server gave for the whole body."""
+            headers = {'Content-Length': str(len(source))}
+
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *raised):
+                return False
+
+            def read(self, amount):
+                return self.body[:amount]
+
+        def urlopen(request, timeout):
+            # The connection of the first request ends inside the body. urllib hands over what arrived and raises
+            # nothing, so the script sees by the length that the body is not whole. The second request brings all of it.
+            asked.append(request.full_url)
+            return Answer(source[:20] if len(asked) == 1 else source)
+
+        with patch.object(self.fetch, 'WAIT_SECONDS', 0), \
+                patch.object(self.fetch.urllib.request, 'urlopen', side_effect=urlopen):
+            self.assertEqual(self.fetch.download('0001.00001v1'), source)
+        self.assertEqual(asked, [self.fetch.HOSTS[0] + '0001.00001v1'] * 2)
+
 
 class LikenessShapeTests(unittest.TestCase):
     """A report of a reading beside papers is checked for its shape, and for nothing that carries meaning."""
@@ -1546,6 +1577,20 @@ class RunTests(PaperCase):
         self.assertIn('69pt wider than the text block', end['open'][0]['problems'][0])
         self.assertTrue((self.out / 'paper.pdf').is_file())
         self.assertIn('paper.pdf', ' '.join(str(call.args[0]) for call in shown.call_args_list if call.args))
+        # A person takes the line up with --open-findings. It is no finding of a comparison, so no narrow repair is
+        # made: the manuscript is typeset again, the line goes to the session of its section as in the run, a session
+        # reads the passage that this repair changed, for no finding, and the running text of the section that
+        # changed is compared with the elements once more.
+        launched = len(self.calls())
+        script['repair:wide'] = [{'output/proof.tex': PROOF + '\\[ a = b \\]\n'}]
+        script['changes'] = [{'output/verdicts.json': verdicts([(True, [], 'Read with the proof before it.')], [])}]
+        self.assertEqual(self.run_paper(script, open_findings='1'), 0)
+        self.assertEqual(self.kinds(launched), [('repair', 'wide-proof'), ('changes', None), ('cover', 'proof'), *PLACED])
+        given = read_json(self.folder(self.calls('changes')[0]) / 'changes.json')
+        self.assertEqual((given['findings'], [(c['part'], c['before'], c['after'], c['findings']) for c in given['changes']]),
+                         ([], [('proof', f'\\[ a = b \\] % wide, attempt {paper.REPAIR_ROUNDS - 1}', '\\[ a = b \\]', [])]))
+        end = self.events('end')[-1]
+        self.assertEqual((end['status'], end['open']), ('complete', []))
 
     def test_a_repair_of_a_wide_line_that_leaves_the_manuscript_failing_is_undone_and_the_run_goes_on(self):
         script = good()
