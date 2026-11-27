@@ -12,8 +12,8 @@ import sys
 from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
                    build_outcome, candidate_records, check_applied, check_definition_modules, copy_canon,
                    declaration_text, drop_modules,
-                   load_change, name_path, read_approaches, read_question_account, read_record, required_pairs,
-                   start_build, tree_hash, update_index, wait_build, with_importers, written_base)
+                   load_change, name_path, read_approaches, read_question_account, read_record, remove_derived,
+                   required_pairs, start_build, tree_hash, update_index, wait_build, with_importers, written_base)
 from knowledge import (REMAINING, STANDINGS, canonical_question, frontier_lines, frontier_notes, has_proof,
                        is_statement, question_lines, question_proposal_lines, replay, resolved_question_lines)
 from runtime_support import read_json, write_json
@@ -378,11 +378,15 @@ def report(result):
 
 
 def prepare(session, expect_mb, timeout):
-    """A peer's or organizer's own check of its candidate before it ends: output/prepared.json."""
+    """A peer's or organizer's own check of its candidate before it ends: output/prepared.json.
+
+    What Python left in the output folder is removed first (canon.DERIVED), so that the receipt is for the
+    candidate's own files and the candidate is frozen without it."""
     session, inp, instance = context(session)
     if inp['role'] not in ('peer', 'organizer'):
         raise CanonError('prepare is for the session that writes a change: a peer or an organizer; '
                          'a producing session builds its working Lean files through commands.lean')
+    remove_derived(session / 'output')
     result = build_candidate(instance, inp['session'], session / 'output', session / 'work/prepare',
                              expect_mb, timeout, inp['role'])
     if result is not None:

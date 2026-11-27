@@ -2481,6 +2481,9 @@ class CandidateToolTests(InstanceCase):
         session = self.session('peer')
         output = session / 'output'
         self.fill(output, **self.induction())
+        # A script under evidence/ was run where it stands, and Python left the compiled form of a module beside it.
+        write(output / 'evidence/Small/root/sums.py', 'print(sum(range(1, 8, 2)))\n')
+        cache = write(output / 'evidence/Small/root/__pycache__/sums.cpython-312.pyc', 'The compiled form of a module.')
         before = Canon(self.instance).load_index()
         self.configure(lean={'calibration_expect_mb': 72})  # the estimate where the command line gives none
         # With no time to wait, the command returns while the build runs: exit code 124, and no receipt yet.
@@ -2488,10 +2491,15 @@ class CandidateToolTests(InstanceCase):
         self.assertEqual((code, answer['waiting']), (124, True))
         self.assertFalse((output / 'prepared.json').exists())
         started = read_json(session / 'work/prepare/state.json')['build']
+        # The command removed what Python had left before it took the identity of the candidate's files. A run
+        # of the script while the build goes on leaves it again, and the next call removes it again.
+        self.assertFalse(cache.parent.exists())
+        write(cache, 'The compiled form of the module, made again.')
         # The same command comes back for that build and starts no other.
         code, summary = self.tool('prepare', session, '--timeout', 120)
         self.assertEqual(code, 0, summary)
         self.assertEqual(summary['build'], started)
+        self.assertEqual([p.name for p in (output / 'evidence/Small/root').iterdir()], ['sums.py'])
         receipt = read_json(output / 'prepared.json')
         self.assertTrue(receipt['ok'])
         self.assertEqual(receipt['errors'], [])
