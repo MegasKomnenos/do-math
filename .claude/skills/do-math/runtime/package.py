@@ -91,6 +91,11 @@ def files_under(root):
         if root.is_dir() else {}
 
 
+def counted(count, noun, plural=None):
+    """A count with its noun in the number the count asks for: `1 file`, `3 files`; `1 entry`, `2 entries`."""
+    return f'{count} {noun if count == 1 else plural or noun + "s"}'
+
+
 # ----------------------------------------------------------------------------- the research as Git has it
 
 def head_commit(repository):
@@ -876,9 +881,11 @@ def build_files(library, name, project, version, top_module):
     """`lean-toolchain`, `lakefile.toml` and `lake-manifest.json` of the published layout.
 
     The toolchain, the `[[require]]` blocks and the packages are those of the Lake project the Lean
-    environment runs in; without one, the toolchain is the version Lean reports and nothing is required."""
+    environment runs in, and the manifest states the version of the format that the project's manifest
+    states, since that version says which form the entries of the packages have. Without such a project
+    the toolchain is the version Lean reports and nothing is required."""
     package = re.sub(r'[^a-z0-9_]', '_', name.lower())
-    requires, packages = [], []
+    requires, packages, form = [], [], '1.3.0'
     if project is not None:
         toolchain = read_text(project / 'lean-toolchain').strip()
         lakefile = project / 'lakefile.toml'
@@ -886,14 +893,15 @@ def build_files(library, name, project, version, top_module):
             raise CanonError(f'{project} declares its dependencies in lakefile.lean; the build files of the package are '
                              'taken from a lakefile.toml')
         requires = re.findall(r'^\[\[require\]\]\n(?:(?!\[).*\n?)*', read_text(lakefile), re.M)
-        packages = read_json(project / 'lake-manifest.json')['packages']
+        environment = read_json(project / 'lake-manifest.json')
+        packages, form = environment['packages'], environment['version']
     else:
         toolchain = toolchain_of(version)
     blocks = [f'name = "{package}"\ndefaultTargets = ["{library}", "Challenge", "Solution"]\n']
     blocks += [block.strip() + '\n' for block in requires]
     blocks.append(f'[[lean_lib]]\nname = "{library}"\nglobs = ["{library}.{"*" if top_module else "+"}"]\n')
     blocks += [f'[[lean_lib]]\nname = "{target}"\nroots = ["{target}"]\n' for target in ('Challenge', 'Solution')]
-    manifest = {'version': '1.3.0', 'packagesDir': '.lake/packages', 'packages': packages, 'name': package,
+    manifest = {'version': form, 'packagesDir': '.lake/packages', 'packages': packages, 'name': package,
                 'lakeDir': '.lake'}
     return {'lean-toolchain': toolchain + '\n', 'lakefile.toml': '\n'.join(blocks),
             'lake-manifest.json': json.dumps(manifest, indent=1) + '\n'}
@@ -950,10 +958,10 @@ def challenge_text(first_lean, definitions, root_module, main_statement=None):
     for module in [*definitions, root_module]:
         lines = read_text(Path(first_lean) / module_file(module)).split('\n')
         end = header_scan(lines)[0]
-        for line in lines[:end]:
-            found = IMPORT_LINE.match(line.strip())
-            if found and found[2] not in local and line.strip() not in externals:
-                externals.append(line.strip())
+        for _, item in canon.header_code(lines[:end]):  # one item at a time: a line can hold several imports
+            found = IMPORT_LINE.match(item)
+            if found and found[2] not in local and item not in externals:
+                externals.append(item)
         bodies.append('\n'.join(lines[end:]).strip('\n'))
     text = 'module\n\n' + ('\n'.join(externals) + '\n\n' if externals else '') + '\n\n'.join(bodies) + '\n'
     if main_statement:
@@ -1195,42 +1203,50 @@ def freeze_hashes(package):
 
 # ----------------------------------------------------------------------------- stage 3: archive and ledger
 
-def account_name():
-    """The account name of the machine's user, which no file of a package may hold inside a path of a home folder."""
+def account_names():
+    """The account name of the machine's user and the name of that account's home folder, the same name once.
+
+    No file of a package may hold either inside a path of a home folder. The two differ on some machines.
+    Windows, for one, keeps the name of the folder when the account is renamed, and adds a suffix to the
+    folder's name when a folder of the account's name exists already."""
     import getpass
-    return getpass.getuser()
+    return [name for name in dict.fromkeys((getpass.getuser(), Path.home().name)) if name]
 
 
-def account_pattern(account):
-    """Where a text holds the account name inside a path of a home folder; group 1 is the path before the name.
+def account_pattern(names):
+    """Where a text holds one of these names inside a path of a home folder; group 1 is the path before the name.
 
-    The name counts as the account name in two places: as the path component that follows `Users` or
-    `home`, and as a component of the path of this account's home folder, wherever that folder lies. The
-    components are parted by a slash or by a backslash, which a JSON string doubles. As a word by itself
-    the name does not count. An account can be named `root`, `lean` or `main`, and such a word is a
-    declaration, a folder of the package or a word of a sentence (account_words lists where it stands)."""
-    name, parted = re.escape(account.encode('utf-8')), rb'(?:/|\\{1,2})'
+    The names are those of an account (account_names). A name counts in two places: as the path component
+    that follows `Users` or `home`, and as a component of the path of this account's home folder, wherever
+    that folder lies. The components are parted by a slash or by a backslash, which a JSON string doubles.
+    A longer name is tried before a shorter one, so that a folder `pat.OFFICE` of the account `pat` is found
+    whole. As a word by itself a name does not count. An account can be named `root`, `lean` or `main`, and
+    such a word is a declaration, a folder of the package or a word of a sentence (account_words lists
+    where it stands)."""
+    parted = rb'(?:/|\\{1,2})'
     before = [rb'(?:[Uu]sers|home)' + parted]
     parts = re.split(r'[\\/]', str(Path.home()))
-    if account in parts:
-        # The home folder's own path counts where it begins a path, and not where it ends a longer one.
-        before.append(rb'(?<![\\/])' + parted.join(re.escape(part.encode('utf-8'))
-                                                    for part in parts[:parts.index(account)]) + parted)
-    return re.compile(rb'(?<![A-Za-z0-9_.-])(' + b'|'.join(before) + rb')' + name + rb'(?![A-Za-z0-9])')
+    for name in names:
+        if name in parts:
+            # The home folder's own path counts where it begins a path, and not where it ends a longer one.
+            before.append(rb'(?<![\\/])' + parted.join(re.escape(part.encode('utf-8'))
+                                                        for part in parts[:parts.index(name)]) + parted)
+    named = b'|'.join(re.escape(name.encode('utf-8')) for name in sorted(names, key=len, reverse=True))
+    return re.compile(rb'(?<![A-Za-z0-9_.-])(' + b'|'.join(before) + rb')(?:' + named + rb')(?![A-Za-z0-9])')
 
 
-def knowledge_archive(repository, commit, folder, name, account):
+def knowledge_archive(repository, commit, folder, name, names):
     """`<name>-knowledge.tar.xz` and `MANIFEST.md`: `canon/` and `knowledge/` of a commit, as Git stores them.
 
-    One change is made to the members: in a member's bytes the account name is replaced by `<account>`
-    wherever it stands inside a path of a home folder (account_pattern). A member's own path is a path
-    inside the research's repository and is kept. The archive is the same for the same commit: members
-    in Git's order, the commit's time on each, no owner."""
+    One change is made to the members: in a member's bytes each of `names`, the account name and the name
+    of the account's home folder, is replaced by `<account>` wherever it stands inside a path of a home
+    folder (account_pattern). A member's own path is a path inside the research's repository and is kept.
+    The archive is the same for the same commit: members in Git's order, the commit's time on each, no owner."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     archive = folder / f'{name}-knowledge.tar.xz'
     stamp = commit_time(repository, commit)
-    named = account_pattern(account) if account else None
+    named = account_pattern(names) if names else None
     count = size = touched = 0
     with lzma.open(archive, 'wb', preset=6) as packed, tarfile.open(fileobj=packed, mode='w|', format=tarfile.PAX_FORMAT) as out:
         for path, data in git_members(repository, commit, ['canon', 'knowledge']):
@@ -1253,13 +1269,14 @@ def knowledge_archive(repository, commit, folder, name, account):
         f'- Size unpacked: {size} bytes', f'- Size of the archive: {archive.stat().st_size} bytes',
         f'- SHA-256 of the archive: `{digest}`', '',
         (f'One change was made to the files. Where a file gave a path of a home folder with the name of the account '
-         f'under which this package was made, that name is replaced by `{ACCOUNT}`. {touched} files were touched '
-         'by this. Other paths of the machine on which the research ran stand in its own records as they were written.'
+         f"under which this package was made, or of that account's home folder, that name is replaced by `{ACCOUNT}`. "
+         f"This changed {counted(touched, 'file')}. Other paths of the machine on which the research ran stand in its "
+         'own records as they were written.'
          if touched
          else 'No file of the archive gives a path of a home folder with the name of the account under which this '
-              'package was made, so the files are in the archive as the commit has them. Where a record in the archive '
-              'mentions a file path of the machine on which the research ran, the path is kept as it was written; it '
-              'is not a path of this package.'), '',
+              "package was made, or of that account's home folder, so the files are in the archive as the commit has "
+              'them. Where a record in the archive mentions a file path of the machine on which the research ran, the '
+              'path is kept as it was written; it is not a path of this package.'), '',
         '## Verifying and unpacking', '',
         '```text', f'sha256sum {archive.name}', f'tar -xJf {archive.name}', '```', '',
         'The first command prints the SHA-256 above. The second writes `canon/` and `knowledge/` into the current folder.',
@@ -1569,18 +1586,20 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '## What was checked, and what was not', '',
               f"- Lean compiled the library with `lake build` on {release_of(facts['toolchain'])}"
               + (f" with {facts['requires']}" if facts['requires'] else '') + ': '
-              f"{facts['modules']} modules, {facts['lines']} lines, {facts['declarations']} public declarations.",
+              f"{counted(facts['modules'], 'module')}, {counted(facts['lines'], 'line')}, "
+              f"{counted(facts['declarations'], 'public declaration')}.",
               f"- Lean reports for `{facts['root']}` the axioms: {facts['axioms_root']}."
               + ('' if same else f" For `{facts['main']}`: {facts['axioms_main']}."),
               '- A script compared the definitions and the statement of the proposition with their first form, which '
               'was fixed before the research began: the definition files byte for byte apart from the form of their '
               'line endings, the statement by the term that Lean elaborates. They are the same.',
-              f"- Every public declaration has a record under `records/` ({facts['records']} records). An AI session "
-              'wrote each record from the Lean text, and an AI session that did not write it compared it with that text.',
-              f"- The paper states {facts['statements']} numbered statements. An AI session compared each with the "
-              'declaration it states, and `paper/correspondence.json` has its verdict for each.'
-              + (f" {facts['statements_differing']} of them still differ from their declarations."
-                 if facts.get('statements_differing') else ''),
+              f"- Every public declaration has a record under `records/` ({counted(facts['records'], 'record')}). An AI "
+              'session wrote each record from the Lean text, and an AI session that did not write it compared it with '
+              'that text.',
+              f"- The paper states {counted(facts['statements'], 'numbered statement')}. An AI session compared each "
+              'with the declaration it states, and `paper/correspondence.json` has its verdict for each.'
+              + (f" For {facts['statements_differing']} of them the verdict is `differs`: what the paper states is "
+                 'still not what the declaration states.' if facts.get('statements_differing') else ''),
               "- The library is not the library of the research as the research's own reviews judged it. AI sessions cut "
               'that library down to the proof presented here and, where it served the presentation, simplified proofs, '
               'derived the proposition from the main theorem, or added declarations that the paper states. Lean compiled '
@@ -1620,9 +1639,10 @@ def readme_text(facts, root_words, root_statement, main_statement, outline, obta
               '- `dependency-map/`: [the map of what the proof rests on](dependency-map/dependency_map.html).',
               '- `paper/`: [the paper](paper/paper.pdf), its source, and `correspondence.json`, which names the '
               'declaration behind each numbered statement.',
-              f"- `history/`: [the timeline of the research](history/timeline.md), {facts['timeline_entries']} entries.",
-              f"- `knowledge/`: `{facts['archive']}`, the research's own record ({facts['archive_files']} files), with "
-              '[its manifest](knowledge/MANIFEST.md).',
+              '- `history/`: [the timeline of the research](history/timeline.md), '
+              f"{counted(facts['timeline_entries'], 'entry', 'entries')}.",
+              f"- `knowledge/`: `{facts['archive']}`, the research's own record "
+              f"({counted(facts['archive_files'], 'file')}), with [its manifest](knowledge/MANIFEST.md).",
               '- `MANIFEST.sha256`: the SHA-256 of every other file of this folder.', '',
               '## The paper', '',
               'The paper proves the result for a mathematical reader and mentions no formal proof.'
@@ -1724,14 +1744,14 @@ def unresolved_links(text, folder, package):
     return broken
 
 
-def standalone_problems(package, work, account, freeze):
+def standalone_problems(package, work, names, freeze):
     """The final check of a package, made once: it stands alone and is what the freeze hashed.
 
     Every relative link of its Markdown and HTML resolves inside it; no file and no member of the
-    archive holds the account name inside a path of a home folder (account_pattern); no document the
-    pipeline wrote holds a drive path or the work folder's path; every text file ends its lines with
-    LF; `lean/` and `records/` have the hashes of the freeze; every line of `MANIFEST.sha256` holds and
-    every other file has a line.
+    archive holds one of `names`, the account name and the name of the account's home folder, inside a
+    path of a home folder (account_pattern); no document the pipeline wrote holds a drive path or the
+    work folder's path; every text file ends its lines with LF; `lean/` and `records/` have the hashes
+    of the freeze; every line of `MANIFEST.sha256` holds and every other file has a line.
 
     A text file is a file that is UTF-8 and holds no NUL byte. The archive and the typeset paper are
     not, so the members of the archive, which are the research's own bytes, are not read for this."""
@@ -1743,15 +1763,16 @@ def standalone_problems(package, work, account, freeze):
             text = path.read_text(encoding='utf-8', errors='replace')
             problems += [f'{relative}: the link {target} does not resolve inside the package'
                          for target in unresolved_links(text, path.parent, package)]
-    if account:
-        named = account_pattern(account)
+    if names:
+        named = account_pattern(names)
+        held = 'the name of the account or of its home folder inside a path of a home folder'
         for relative, path in files.items():
-            # The archive is read by its members. In its packed bytes the name can stand only by chance.
+            # The archive is read by its members. In its packed bytes a name can stand only by chance.
             if relative.endswith('-knowledge.tar.xz'):
-                problems += [f'{relative}: the member {name} holds the account name inside a path of a home folder'
+                problems += [f'{relative}: the member {name} holds {held}'
                              for name, data in archive_members(path).items() if named.search(data)]
             elif named.search(path.read_bytes()):
-                problems.append(f'{relative} holds the account name inside a path of a home folder')
+                problems.append(f'{relative} holds {held}')
     for relative, path in files.items():
         data = path.read_bytes()
         if b'\r' in data and is_text_file(data):
@@ -1790,13 +1811,15 @@ def standalone_problems(package, work, account, freeze):
     return problems
 
 
-def account_words(package, account):
-    """The files of a package that hold the account name as a word by itself, for the report of the run.
+def account_words(package, names):
+    """The files of a package that hold one of `names` as a word by itself, for the report of the run.
 
-    The final check does not stop for them, because such a word need not be the name (account_pattern);
-    the user judges each. The word is the name with no letter and no digit beside it, so `pat` is not
-    found in "path". The archive is read by its members, and a member is given after the archive."""
-    word = re.compile(rb'(?<![A-Za-z0-9])' + re.escape(account.encode('utf-8')) + rb'(?![A-Za-z0-9])')
+    The names are the account name and the name of the account's home folder (account_names). The final
+    check does not stop for these files, because such a word need not be the name (account_pattern); the
+    user judges each. The word is a name with no letter and no digit beside it, so `pat` is not found in
+    "path". The archive is read by its members, and a member is given after the archive."""
+    word = re.compile(rb'(?<![A-Za-z0-9])(?:' + b'|'.join(re.escape(name.encode('utf-8')) for name in names)
+                      + rb')(?![A-Za-z0-9])')
     found = []
     for relative, path in files_under(package).items():
         if relative.endswith('-knowledge.tar.xz'):

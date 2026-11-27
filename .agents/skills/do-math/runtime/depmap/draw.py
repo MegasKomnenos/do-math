@@ -1066,11 +1066,12 @@ def guide_of(data, bare=()):
              f'shows {scope}: {number(counts["units"], "unit")}, each a card, in '
              f'{number(counts["groups"], "group")}, joined by {number(counts["edges"], "line")}.{folded}</p>']
     kinds, roles, standings = occurring(data, bare)
+    # The paragraph explains the lines, so a map that has no line is given the heading and the list alone.
     parts.append('<div class="legend"><h3>How to read the map</h3>'
-                 '<p>An arrow runs from what is used to what uses it, so the map is read from the left, where the '
-                 f'definitions and the first results stand, towards the root. {esc(colour_words(kinds).capitalize())}; '
-                 'where they run as one line, a dot marks each point at which one of them leaves it. Lines that cross '
-                 'without a dot are not connected.</p><ul>')
+                 + ('<p>An arrow runs from what is used to what uses it, so the map is read from the left, where the '
+                    f'definitions and the first results stand, towards the root. {esc(colour_words(kinds).capitalize())}; '
+                    'where they run as one line, a dot marks each point at which one of them leaves it. Lines that cross '
+                    'without a dot are not connected.</p>' if kinds else '') + '<ul>')
 
     def line(colour, words, dash='', width=LINES['direct'][1]):
         parts.append(f'<li><svg class="sample" width="56" height="12" viewBox="0 0 56 12" aria-hidden="true">'

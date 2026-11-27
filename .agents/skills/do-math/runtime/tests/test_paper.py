@@ -1472,6 +1472,9 @@ class RunTests(PaperCase):
         self.assertTrue({'paper.tex', 'parts/abstract.tex', 'parts/intro.tex', 'parts/tools.tex', 'parts/proof.tex',
                          'findings.json', 'plan.json', *RECORD_FILES} <= set(repair[0]['given']))
         self.assertFalse({'materials.md', 'brief.md', 'exemplars.md'} & set(repair[0]['given']))
+        # Its copy of the method is the document without the last two sections, which its prompt says are not there.
+        self.assertEqual((self.folder(repair[0]) / 'paper-method.md').read_text(encoding='utf-8'),
+                         paper.method_before_checks())
         # It has the planning session's account of the chosen papers and the papers the plan names for the sections.
         self.assertEqual(self.given(repair[0]), sorted(CHOSEN))
         self.assertIn('study.md', repair[0]['given'])

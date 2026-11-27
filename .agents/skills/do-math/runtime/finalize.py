@@ -712,7 +712,7 @@ class Run:
         self.allowed = self.settings['lean']['allowed_axioms']
         self.expect_mb = self.settings['lean']['calibration_expect_mb']
         self.definitions = self.state['definitions']
-        self.account = package.account_name()
+        self.account_names = package.account_names()
 
     def posed(self):
         """The first line of a file that a session reads the library by: which modules stay as they were posed."""
@@ -1997,7 +1997,7 @@ class Run:
 
     def archive(self):
         info = package.knowledge_archive(self.instance, self.state['run']['commit'], self.package / 'knowledge',
-                                         self.name, self.account)
+                                         self.name, self.account_names)
         wanted = lambda name: name.startswith(('knowledge/', 'canon/approaches/', 'canon/questions/', 'canon/history/'))
         members = package.archive_members(self.package / 'knowledge' / info['archive'], wanted)
         write_json(self.work / 'history' / 'ledger.json', package.ledger(members))
@@ -2280,7 +2280,8 @@ class Run:
     # -- stage 6: the final check, and the end ----------------------------------------------------------
 
     def final_check(self):
-        problems = package.standalone_problems(self.package, self.work, self.account, read_json(self.work / 'freeze.json'))
+        problems = package.standalone_problems(self.package, self.work, self.account_names,
+                                               read_json(self.work / 'freeze.json'))
         if problems:
             # No step before this one is made again, so a new start meets the same package and stops here again.
             raise Stop('the package does not pass its final check: ' + '; '.join(problems), todo=(
@@ -2290,8 +2291,9 @@ class Run:
                 'repaired in the work folder: the run is abandoned by removing its work folder, and the command then '
                 'starts anew. A fault of the program is repaired in the program, after which the same command '
                 'continues here.'))
-        # The files that hold the account name as a word by itself stop nothing. They are kept for the report.
-        return {'account_words': package.account_words(self.package, self.account) if self.account else []}
+        # The files that hold the account name or the name of its home folder as a word by itself stop nothing. They
+        # are kept for the report.
+        return {'account_words': package.account_words(self.package, self.account_names) if self.account_names else []}
 
     def finish(self):
         """Move the package into solved/, list it in the repository's README, write the report, delete the rest."""
@@ -2362,7 +2364,8 @@ class Run:
         unmade = self.not_done()
         found = self.work / 'findings.json'
         uncorrected = [f for f in (read_json(found) if found.is_file() else []) if not f.get('in_prose')]
-        words = self.state.get('account_words', [])
+        words, names = self.state.get('account_words', []), self.account_names
+        which = 'either name' if names[1:] else 'that name'
         self.stop_broker()
         write_text(self.work / 'report.md', '\n'.join([
             f'# Report of the run: {self.name}', '',
@@ -2399,9 +2402,9 @@ class Run:
             '- The history: every entry points to a member of the archive and was read by a session that had only the '
             'entries and those records; the archive has the SHA-256 its manifest states.',
             '- The final check: every relative link resolves inside the package; no file and no member of the archive '
-            'holds the account name inside a path of a home folder; no document the pipeline wrote holds a drive '
-            'path; every text file ends its lines with LF; `lean/` and `records/` have the hashes of the freeze; '
-            'every line of `MANIFEST.sha256` holds.', '',
+            'holds the name of the account or of its home folder inside a path of a home folder; no document the '
+            'pipeline wrote holds a drive path; every text file ends its lines with LF; `lean/` and `records/` have '
+            'the hashes of the freeze; every line of `MANIFEST.sha256` holds.', '',
             '## What was not verified', '',
             "- The classification codes were checked for their form, not against the registry's lists.",
             "- The registry's verifier and Lean's comparator were not run on the package.",
@@ -2432,11 +2435,13 @@ class Run:
                'change to what was built and compared.', '', *package.finding_lines(uncorrected), '']
               if uncorrected else []),
             *(['## Where the account name stands as a word by itself', '',
-               f'The account of this run is named `{self.account}`. The final check stops a run when a file holds that '
-               'name inside a path of a home folder, and it found no such file. These files hold the name as a word by '
-               'itself, where it can be a declaration, a folder or a word of a sentence, and the run did not stop for '
-               'them. Judge each: where the word is your name, the file gives it to every reader of the package. A file '
-               'of the package that you then change needs its line in `MANIFEST.sha256` written again.', '',
+               f'The account of this run is named `{names[0]}`'
+               + (f', and its home folder `{names[1]}`' if names[1:] else '')
+               + f'. The final check stops a run when a file holds {which} inside a path of a home folder, and it found '
+               f'no such file. These files hold {which} as a word by itself, where it can be a declaration, a folder or '
+               'a word of a sentence, and the run did not stop for them. Judge each: where the word is your name, the '
+               'file gives it to every reader of the package. A file of the package that you then change needs its '
+               'line in `MANIFEST.sha256` written again.', '',
                *['- ' + place for place in words], ''] if words else []),
             '## What you fill in before a submission to the registry', '', *['- ' + item for item in fill], '',
             '## The choices', '', 'Every choice the run made, with its reason, is in `decisions.md` beside this file.', '']))

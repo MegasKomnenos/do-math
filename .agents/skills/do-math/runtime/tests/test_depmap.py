@@ -485,6 +485,15 @@ class Drawing(MapCase):
         self.assertIn(draw.LEGEND['direct'], texts)
         for absent in (draw.LEGEND['mention'], draw.LEGEND['alternative'], draw.CARD_WORDS['definition'], 'no proof'):
             self.assertNotIn(absent, texts)
+        # The page explains arrows, the colours of lines and dots on a map that has lines. A map of one card has
+        # none, and its page keeps the heading and the entry of the card.
+        self.assertIn('An arrow runs', draw.guide_of(plain))
+        alone = self.map([statement('Lib.root', 'unit')])
+        self.assertEqual(alone['edges'], [])
+        guide = draw.guide_of(alone)
+        self.assertNotIn('An arrow runs', guide)
+        self.assertIn('<h3>How to read the map</h3><ul>', guide)
+        self.assertIn(f"</span>{draw.CARD_WORDS['root']}</li>", guide)
 
     def test_the_lines_of_a_card_have_one_colour_and_those_of_a_definition_are_lighter(self):
         # In hub_canon the definition Lib.object is mentioned in thirteen statements and named in the proof of the

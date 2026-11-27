@@ -776,6 +776,14 @@ class RegistryTests(FinalizeCase):
                                'namespace Lib\n\ntheorem root : twice = 0 := by\n  sorry\n\nend Lib\n')
         measure = package.challenge_measure(text)
         self.assertEqual((measure['imports'], measure['fails']), (['Mathlib.Data.Finset.Card', 'Mathlib.Tactic'], []))
+        # Lean reads a header word by word, so one line can hold several imports and a comment after them. Each
+        # import is kept or left by itself: the first line begins with the import of a module that is now inside and
+        # goes on with one from outside, and the second line has them the other way round.
+        package.write_text(first / 'Lib' / 'Defs.lean',
+                           'module\n\npublic import Lib.Kernel import Mathlib.Tactic  -- both in one line\n'
+                           f'{outside} public import Lib.Kernel\n\n'
+                           'namespace Lib\n\ndef twice : Nat := kernel + kernel\n\nend Lib\n')
+        self.assertEqual(package.challenge_text(first, definitions, 'Lib.Root'), text)
 
     def frozen(self, compared=('Small.root',), authors=()):
         lean = self.root / 'package' / 'lean'
@@ -992,6 +1000,12 @@ class RegistryTests(FinalizeCase):
         self.assertEqual(len(problems), 2)
         self.assertIn('mathlib is not at ffffffffffff', problems[0])
         self.assertIn('found: nothing', problems[1])
+        # The version of a manifest says which form its entries have, so the package states the version of the
+        # manifest its entries come from, whichever that is.
+        self.assertEqual(manifest['version'], '1.3.0')
+        write_json(project / 'lake-manifest.json', {'version': '1.1.0', 'packagesDir': '.lake/packages', 'packages': [entry]})
+        earlier = json.loads(package.build_files('Small', 'odd', project, None, True)['lake-manifest.json'])
+        self.assertEqual((earlier['version'], earlier['packages']), ('1.1.0', [entry]))
 
     def test_the_lake_program_is_the_one_of_the_lean_command(self):
         self.assertEqual(package.lake_command({'lean': {'command': ['C:/t/bin/lake.exe', 'env', 'lean']}}), ['C:/t/bin/lake.exe'])
@@ -1019,7 +1033,7 @@ class ArchiveTests(FinalizeCase):
                  'and on the server in /home/{0}/work. Checked in /home/patricia/work. The data is in D:\\srv\\pat\\data. '
                  'Run by pat along the path above.\n')
         commit = self.noted(paths.format('pat'))
-        info = package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', 'pat')
+        info = package.knowledge_archive(self.instance, commit, self.root / 'knowledge', 'odd', ['pat'])
         archive = self.root / 'knowledge' / 'odd-knowledge.tar.xz'
         members = package.archive_members(archive)
         tree = {}
@@ -1034,18 +1048,31 @@ class ArchiveTests(FinalizeCase):
         self.assertEqual((info['files'], info['touched']), (len(tree), 1))
         manifest = (self.root / 'knowledge' / 'MANIFEST.md').read_text(encoding='utf-8')
         self.assertEqual(package.manifest_sha(self.root / 'knowledge' / 'MANIFEST.md'), package.sha256_file(archive))
-        self.assertIn('1 files were touched', manifest)
+        self.assertIn('This changed 1 file. Other paths', manifest)
         self.assertIn(commit, manifest)
         # The same commit gives the same archive.
-        again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', 'pat')
+        again = package.knowledge_archive(self.instance, commit, self.root / 'again', 'odd', ['pat'])
         self.assertEqual(again['sha256'], info['sha256'])
         # A name that stands in the research only as a word by itself is replaced nowhere: `Small` is the library.
-        self.assertEqual(package.knowledge_archive(self.instance, commit, self.root / 'word', 'odd', 'Small')['touched'], 0)
+        self.assertEqual(package.knowledge_archive(self.instance, commit, self.root / 'word', 'odd', ['Small'])['touched'], 0)
         # A home folder that lies neither under `Users` nor under `home` is known by its own path.
         with patch.object(Path, 'home', return_value=Path('D:/srv/pat')):
-            package.knowledge_archive(self.instance, commit, self.root / 'elsewhere', 'odd', 'pat')
+            package.knowledge_archive(self.instance, commit, self.root / 'elsewhere', 'odd', ['pat'])
         elsewhere = package.archive_members(self.root / 'elsewhere' / 'odd-knowledge.tar.xz')['canon/questions/q0.md']
         self.assertIn(b'The data is in D:\\srv\\<account>\\data.', elsewhere)
+        # The home folder of an account can have another name than the account: Windows adds a suffix to the name of
+        # the folder when a folder of the account's name exists already. Both are the names of the account, the same
+        # name once, and the folder's name is replaced whole, with nothing of it left after `<account>`.
+        with patch('getpass.getuser', return_value='pat'), patch.object(Path, 'home', return_value=Path('C:/Users/pat')):
+            self.assertEqual(package.account_names(), ['pat'])
+        renamed = self.noted('Kept in C:\\Users\\pat.STUDY\\notes, and before that in C:/Users/pat/notes.\n')
+        with patch('getpass.getuser', return_value='pat'), \
+                patch.object(Path, 'home', return_value=Path('C:/Users/pat.STUDY')):
+            names = package.account_names()
+            package.knowledge_archive(self.instance, renamed, self.root / 'renamed', 'odd', names)
+        self.assertEqual(names, ['pat', 'pat.STUDY'])
+        kept = package.archive_members(self.root / 'renamed' / 'odd-knowledge.tar.xz')['canon/questions/q0.md']
+        self.assertTrue(kept.endswith(b'Kept in C:\\Users\\<account>\\notes, and before that in C:/Users/<account>/notes.\n'))
         rows = package.ledger({path: data for path, data in members.items()
                                if path.startswith(('knowledge/', 'canon/approaches/', 'canon/questions/'))})
         self.assertEqual([(row['event'], row['kind']) for row in rows], [(1, 'change'), (2, 'question')])
@@ -1172,7 +1199,7 @@ class DocumentTests(FinalizeCase):
             (folder / relative).write_text(text, encoding='utf-8', newline='\n')
         # The research wrote a path of a home folder into a text of its canon, and the archive is made under another account.
         package.knowledge_archive(self.instance, self.noted('Computed in /home/pat/work.\n'), folder / 'knowledge', 'odd',
-                                  'no-such-account')
+                                  ['no-such-account'])
         freeze = package.freeze_hashes(folder)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
         return folder, freeze
@@ -1180,17 +1207,17 @@ class DocumentTests(FinalizeCase):
     def test_a_package_that_stands_alone_passes_and_each_fault_is_found(self):
         folder, freeze = self.packed()
         work = self.root / 'work-folder'
-        check = lambda account='no-such-account': package.standalone_problems(folder, work, account, freeze)
+        check = lambda *names: package.standalone_problems(folder, work, list(names) or ['no-such-account'], freeze)
         self.assertEqual(check(), [])
 
-        def faulty(relative, text, wanted, account='no-such-account', manifest=True):
+        def faulty(relative, text, wanted, names=(), manifest=True):
             path = folder / relative
             before = path.read_bytes() if path.exists() else None
             path.write_text(text, encoding='utf-8', newline='\n')
             listing = (folder / 'MANIFEST.sha256').read_bytes()
             if manifest:
                 (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
-            problems = check(account)
+            problems = check(*names)
             self.assertTrue(any(wanted in problem for problem in problems), (wanted, problems))
             path.write_bytes(before) if before is not None else path.unlink()
             (folder / 'MANIFEST.sha256').write_bytes(listing)
@@ -1203,19 +1230,26 @@ class DocumentTests(FinalizeCase):
         faulty('README.md', '[out](../outside.md)\n', 'the link ../outside.md does not resolve inside the package')
         faulty('dependency-map/dependency_map.html', '<img src="missing.svg">\n', 'the link missing.svg')
         faulty('history/timeline.md', 'Computed in C:\\Users\\pat\\work.\n',
-               'history/timeline.md holds the account name inside a path of a home folder', account='pat')
+               'history/timeline.md holds the name of the account or of its home folder inside a path of a home folder',
+               names=['pat'])
+        # The name of the home folder is looked for as the account name is, where the two differ.
+        faulty('history/timeline.md', 'Computed in C:\\Users\\quill\\work.\n',
+               'history/timeline.md holds the name of the account or of its home folder inside a path of a home folder',
+               names=['pat', 'quill'])
         # The name as a word by itself is no fault: `oddSum` is a definition of the library. The files that hold it so
         # are found for the report of the run, a member of the archive after the archive.
         self.assertEqual(check('oddSum'), [])
-        words = package.account_words(folder, 'oddSum')
+        words = package.account_words(folder, ['oddSum'])
         self.assertLessEqual({'lean/Small/Defs.lean', 'knowledge/odd-knowledge.tar.xz, member canon/lean/Small/Defs.lean'},
                              set(words))
         self.assertNotIn('README.md', words)
         # A word of which the name is only a part is not the name: the manifest of the archive says "machine".
-        self.assertEqual(package.account_words(folder, 'achin'), [])
+        self.assertEqual(package.account_words(folder, ['achin']), [])
+        # Each of the names is looked for: the second one here is the word that the files above hold.
+        self.assertEqual(package.account_words(folder, ['achin', 'oddSum']), words)
         # The archive is read by its members and not by its packed bytes, in which a name can stand only by chance.
         # Those bytes begin with the signature of the format, which holds `7zXZ`, and no member has that word.
-        self.assertEqual(package.account_words(folder, '7zXZ'), [])
+        self.assertEqual(package.account_words(folder, ['7zXZ']), [])
         # In a document a colon before a backslash is a formula, so a drive path is found there by its form with a slash.
         faulty('README.md', 'Built in C:/Users/someone/lean.\n', 'README.md holds a drive path')
         faulty('lean/lakefile.toml', "path = 'C:\\Users\\someone\\lean'\n", 'lean/lakefile.toml holds a drive path')
@@ -1253,13 +1287,13 @@ class DocumentTests(FinalizeCase):
         faulty('paper/correspondence.json', json.dumps({'paper_statement': 'Built in D:/lean-work.'}),
                'paper/correspondence.json holds a drive path')
         # A member of the archive that holds the account name inside a path of a home folder is found inside the archive.
-        self.assertEqual(check('pat'), ['knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md holds the account '
-                                        'name inside a path of a home folder'])
+        self.assertEqual(check('pat'), ['knowledge/odd-knowledge.tar.xz: the member canon/questions/q0.md holds the name '
+                                        'of the account or of its home folder inside a path of a home folder'])
         # A drive path in a file the pipeline did not write, such as a record of the research, is not its concern.
         (folder / 'records' / 'Small' / 'root.md').write_text('Computed in D:\\data.\n', encoding='utf-8', newline='\n')
         freeze = package.freeze_hashes(folder)
         (folder / 'MANIFEST.sha256').write_text(package.manifest_text(folder), encoding='utf-8', newline='\n')
-        self.assertEqual(package.standalone_problems(folder, work, 'no-such-account', freeze), [])
+        self.assertEqual(package.standalone_problems(folder, work, ['no-such-account'], freeze), [])
 
     def test_a_file_the_pipeline_writes_ends_its_lines_with_a_line_feed(self):
         path = self.root / 'written.md'
@@ -1270,6 +1304,31 @@ class DocumentTests(FinalizeCase):
         self.assertEqual(package.fill('In {{facts.modules}} modules and {{facts.lines}} lines.', {'modules': 4, 'lines': 90}),
                          ('In 4 modules and 90 lines.', []))
         self.assertEqual(package.fill('In {{facts.pages}} pages.', {'modules': 4}), ('In {{facts.pages}} pages.', ['pages']))
+
+    def test_the_readme_gives_each_count_with_its_noun_in_the_number_of_the_count(self):
+        # A package can have one of a kind: one numbered statement in its paper, one entry in its timeline.
+        facts = {'title': 'Odd numbers sum to squares', 'library': 'Small', 'root': 'Small.root', 'main': 'Small.root',
+                 'toolchain': 'leanprover/lean4:v4.99.0', 'requires': '', 'axioms_root': 'none', 'axioms_main': 'none',
+                 'models': 'codex/m', 'archive': 'odd-knowledge.tar.xz', 'compared': 'Small.root'}
+        counts = ('modules', 'lines', 'declarations', 'records', 'statements', 'statements_differing',
+                  'timeline_entries', 'archive_files')
+        origin = {'settles': 'It settles a question.', 'novelty': 'It is new.', 'origin': 'original', 'sources': [],
+                  'related': []}
+        readme = lambda count: package.readme_text(
+            {**facts, **dict.fromkeys(counts, count)}, 'The result in words.', ROOT_STATEMENT, ROOT_STATEMENT,
+            'An outline.', 'How it was obtained.', 'What the check printed.', finalize.default_config(), 'CC-BY-4.0',
+            [], [], origin)
+        for count, sentences in (
+                (1, ('1 module, 1 line, 1 public declaration.', '(1 record)', 'The paper states 1 numbered statement.',
+                     'For 1 of them the verdict is `differs`: what the paper states is still not what the declaration states.',
+                     '(history/timeline.md), 1 entry.', '(1 file), with')),
+                (2, ('2 modules, 2 lines, 2 public declarations.', '(2 records)', 'The paper states 2 numbered statements.',
+                     'For 2 of them the verdict is `differs`:', '(history/timeline.md), 2 entries.', '(2 files), with'))):
+            text = readme(count)
+            for sentence in sentences:
+                self.assertIn(sentence, text)
+        # Where no statement differs, the item ends with the sentence on the verdicts.
+        self.assertIn('has its verdict for each.\n', readme(0))
 
     def test_the_entry_goes_under_solved_problems_once(self):
         readme = self.root / 'README.md'
@@ -1928,7 +1987,7 @@ class RunTests(FinalizeCase):
         self.assertIn('The account of the root question was written.\n\nRecord: `canon/questions/q0.md`', timeline)  # the reader's text
         self.assertIn('A change gave the root its proof.\n\nRecord: `knowledge/changes/', timeline)
         self.assertEqual(package.standalone_problems(
-            self.solved, self.work, package.account_name(),
+            self.solved, self.work, package.account_names(),
             {'folders': {name: canon.tree_hash(self.solved / name) for name in ('lean', 'records')}, 'files': {}}), [])
 
         # What the run leaves: the entry in the repository's README, and three files in the work folder.
@@ -2770,9 +2829,9 @@ class RunTests(FinalizeCase):
         plan['package-read'] = [{'@stopped': ''}]
         # A session that was stopped once is started again as it was, and what it then leaves is taken.
         plan['selection-read'] = [{'@stopped': ''}, plan['selection-read'][0]]
-        # The account under which this run is made has the name of the library: a word that stands in most files of the
-        # package, and in no path of a home folder.
-        with patch('package.account_name', return_value='Small'):
+        # The account under which this run is made has the name of the library, and its home folder the name of a
+        # definition: words that stand in most files of the package, and in no path of a home folder.
+        with patch('package.account_names', return_value=['Small', 'oddSum']):
             self.assertEqual(self.run_command(plan, config=self.config()), 0, self.said)
         for kind, section in (('records-compare', '5-01'), ('package-read', None), ('selection-read', None)):
             first, second = [call for call in self.calls(kind) if call['section'] == section]
@@ -2799,16 +2858,18 @@ class RunTests(FinalizeCase):
         report = (self.work / 'report.md').read_text(encoding='utf-8')
         self.assertIn('- Some of the checks that the list above describes were not made.', report)
         self.assertIn("  - the reading of the package's documents by a session that has the package and nothing else.", report)
-        # The final check did not stop for the account name as a word by itself, and the report lists the files that
-        # hold it so, a member of the archive after the archive.
-        self.assertIn('## Where the account name stands as a word by itself\n\nThe account of this run is named `Small`.',
+        # The final check did not stop for either name as a word by itself, and the report gives both names and lists
+        # the files that hold one so, a member of the archive after the archive.
+        self.assertIn('## Where the account name stands as a word by itself\n\nThe account of this run is named `Small`, '
+                      'and its home folder `oddSum`. The final check stops a run when a file holds either name inside a '
+                      'path of a home folder, and it found no such file. These files hold either name as a word by itself,',
                       report)
         self.assertIn('\n- lean/Small/Root.lean\n', report)
         self.assertIn('\n- knowledge/odd-knowledge.tar.xz, member canon/lean/Small/Root.lean\n', report)
         self.assertNotIn('\n- paper/paper.pdf\n', report)
         # The README is in the manifest as it stands, with that item.
         self.assertEqual(package.standalone_problems(
-            self.solved, self.work, package.account_name(),
+            self.solved, self.work, package.account_names(),
             {'folders': {name: canon.tree_hash(self.solved / name) for name in ('lean', 'records')}, 'files': {}}), [])
 
     def test_a_session_that_makes_what_the_run_needs_and_is_stopped_every_time_stops_the_run(self):
