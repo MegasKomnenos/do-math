@@ -138,6 +138,15 @@ def closure_key(environment, imports, direct=False):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+def environment_of(state):
+    """The Lean version and environment_key of a broker's state in one string: the environment that the
+    calibration closures and the module cache keys made under that state belong to.
+
+    The broker makes its keys from this (Broker.environment_identity), and the command that sweeps the
+    cache makes the keys of the canon's modules from the state file with it (cleanup.canon_keys)."""
+    return (state['version'] or '') + '\n' + state['environment_key']
+
+
 # ------------------------------------------------------------------- module trees
 
 def module_name(root, path):
@@ -251,6 +260,22 @@ def output_identities(files):
             digest.update(data)
         return digest.hexdigest()[:32]
     return {"public": identity([f for f in files if f[0] in PUBLIC_SUFFIXES]), "full": identity(files)}
+
+
+def cached_entry(cache, key):
+    """A complete entry's emitted suffixes and output identities in the cache folder `cache`, or None.
+
+    An entry is complete when its manifest names the files and the two identities and every
+    named file is there. One whose caching was cut short and one that lost a file are misses."""
+    cache = Path(cache)
+    try:
+        manifest = read_json(cache / (key + ".artifacts.json"))
+        suffixes, identities = manifest["artifacts"], {"public": manifest["public"], "full": manifest["full"]}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if not all((cache / (key + suffix)).is_file() for suffix in suffixes):
+        return None
+    return suffixes, identities
 
 
 def link_or_copy(source, target):
@@ -808,7 +833,7 @@ class Broker:
 
     def environment_identity(self):
         """The Lean version and environment_key in one string: the environment that calibration closures and module cache keys belong to."""
-        return (self.state['version'] or '') + '\n' + self.state['environment_key']
+        return environment_of(self.state)
 
     def runner_sessions(self):
         path = self.paths.instance / "runner/state.json"
@@ -1371,18 +1396,8 @@ class Broker:
         self.settle_build(build)
 
     def cached_module(self, key):
-        """A complete cache entry's emitted suffixes and output identities, or None.
-
-        An entry is complete when its manifest names the files and the two identities and every
-        named file is there. One whose caching was cut short and one that lost a file are misses."""
-        try:
-            manifest = read_json(self.paths.cache / (key + ".artifacts.json"))
-            suffixes, identities = manifest["artifacts"], {"public": manifest["public"], "full": manifest["full"]}
-        except (OSError, ValueError, KeyError, TypeError):
-            return None
-        if not all((self.paths.cache / (key + suffix)).is_file() for suffix in suffixes):
-            return None
-        return suffixes, identities
+        """A complete cache entry's emitted suffixes and output identities, or None (cached_entry)."""
+        return cached_entry(self.paths.cache, key)
 
     def restore_module(self, key, olean):
         """Put a cached module's emitted files into a build's lib, where a compile of that build reads them.

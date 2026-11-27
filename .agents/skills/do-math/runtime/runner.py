@@ -19,6 +19,7 @@ from canon import (EXTRACT_MODULE, EXTRACTION, Canon, CanonError, apply_lean, ap
                    read_record, record_file, remove_derived, required_pairs, retire_approaches, sha256_text, start_build,
                    statement_differences, sync_tree, update_index, wait_build, with_importers)
 from check import CANDIDATE_CHANGED, IDENTIFIER, PREPARED, check_session, regular_tree, taken_question_ids, tree_hashes
+import cleanup
 from cli_adapter import provider_for_model
 from launch import open_messages, receives_messages, send_message, worker_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
@@ -1797,7 +1798,7 @@ def archive_finished(instance):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'message', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'kill-session', '_session', '_archive'):
+    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'message', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'cleanup', 'kill-session', '_session', '_archive'):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
@@ -1816,6 +1817,9 @@ def main(argv=None):
             p.add_argument('--element', action='append', default=[])
             p.add_argument('--concern', action='append', default=[])
             p.add_argument('--reason', default='Operator requested renewed examination.')
+        if name == 'cleanup':
+            p.add_argument('--dry-run', action='store_true',
+                           help='print what would be removed and which conditions do not hold; change nothing')
     args = parser.parse_args(argv)
     instance = args.instance.resolve()
     try:
@@ -1948,6 +1952,8 @@ def main(argv=None):
                 if alive(identity):
                     raise RuntimeError('broker termination not yet confirmed')
             result['broker'] = ensure_broker(paths)
+        elif args.command == 'cleanup':
+            result.update(cleanup.clean(instance, args.dry_run))
         print(json.dumps(result, ensure_ascii=True))
         return 0
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
