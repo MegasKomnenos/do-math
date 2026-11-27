@@ -25,7 +25,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 
-from runtime_support import alive, first_commit, git, read_json, remove_file, replace_file, write_text
+from runtime_support import alive, first_commit, git, read_json, remove_file, remove_tree, replace_file, write_text
 
 EXTRACT_MODULE = 'DoMathExtract'
 ROW_MARK = '@@canon '
@@ -168,6 +168,32 @@ def tree_hash(root, skip=()):
             continue
         digest.update(relative.encode('utf-8') + b'\0' + hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
+
+
+# The folder in which Python keeps the compiled form of a module it has imported, beside the module. A script
+# that was run where it stands leaves one, and Python makes it again from the source when it is missing, so it
+# is no part of a candidate. `prepare` removes it before it takes the identity of the candidate's files
+# (canon_tool.prepare), the transport check removes what a run has left since (check.prepared_candidate,
+# check.check_session), and a publication leaves it out of the canon (apply_written). The folder is removed,
+# and the identities (tree_hash, check.tree_hashes) go on counting every file that is there. The runner takes
+# them again on the same folder, and a runner that loaded an earlier version of this code would refuse a
+# folder that a command or a host of this version had passed with such files in it.
+DERIVED = '__pycache__'
+
+
+def remove_derived(root, keep=()):
+    """Remove the files under every `__pycache__` folder of a folder, and each such folder that then holds none.
+
+    `keep` names, by their paths from `root`, files that stay: those that a candidate held when it was frozen
+    for review, which the review's check compares like every other file of it."""
+    root = Path(root)
+    # The deepest first, so that no folder is visited after the folder it lies in was removed.
+    for folder in sorted((p for p in root.rglob(DERIVED) if p.is_dir()), reverse=True):
+        for path in [p for p in folder.rglob('*') if p.is_file()]:
+            if path.relative_to(root).as_posix() not in keep:
+                remove_file(path)
+        if not any(p.is_file() for p in folder.rglob('*')):
+            remove_tree(folder)
 
 
 # ----------------------------------------------------------------------------- written files
@@ -1400,7 +1426,10 @@ def apply_written(canon, candidate, change, applied, revision, change_id, contri
         target.parent.mkdir(parents=True, exist_ok=True)
         write_text(target, text)
     if (candidate / 'evidence').is_dir():
-        for path in sorted(p for p in (candidate / 'evidence').rglob('*') if p.is_file()):
+        # Without what Python left beside a script (DERIVED). A candidate holds such a folder when it was frozen
+        # with one, as a candidate is whose receipt an earlier version of `prepare` wrote with the folder in place.
+        for path in sorted(p for p in (candidate / 'evidence').rglob('*')
+                           if p.is_file() and DERIVED not in p.relative_to(candidate).parts):
             target = canon.evidence / path.relative_to(candidate / 'evidence')
             target.parent.mkdir(parents=True, exist_ok=True)
             # Written beside the file, sent to the disk and moved onto it, as a module is installed (sync_tree): a

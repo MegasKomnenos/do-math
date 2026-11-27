@@ -27,7 +27,7 @@ from canon import (Canon, CanonError, add_imports, apply_lean, apply_rearrangeme
                    declaration_text, drop_modules, empty_index, extraction_source, header_scan, history_entry,
                    library_modules, load_change, merge_bibliography, module_file, name_parts, name_path,
                    parse_approach, parse_record, parse_rows, path_name, path_part, read_approaches, read_index,
-                   read_record, record_file, replace_span, required_pairs, retire_approaches, sha256_text,
+                   read_record, record_file, remove_derived, replace_span, required_pairs, retire_approaches, sha256_text,
                    split_review, statement_differences, sync_tree, tree_hash, update_index, with_importers,
                    with_review)
 from check import Invalid, check_session, prepared_candidate
@@ -947,6 +947,25 @@ class TreeTests(TempCase):
         receipt = self.tree('b', {**files, 'prepared.json': '{"ok": true}'})
         self.assertNotEqual(tree_hash(receipt), plain)
         self.assertEqual(tree_hash(receipt, skip=('prepared.json',)), plain)
+
+    def test_remove_derived_removes_what_python_left_apart_from_the_named_files(self):
+        # Python keeps the compiled form of an imported module in a folder `__pycache__` beside it. A candidate
+        # that was frozen with such a file is compared with it in place, so the file named in `keep` stays.
+        own = {'change.json': '{}', 'evidence/Small/root/sums.py': 'print(1)\n'}
+        kept = 'evidence/Small/root/__pycache__/sums.cpython-312.pyc'
+        folder = self.tree('a', {**own, kept: 'frozen with the candidate',
+                                 'evidence/Small/root/__pycache__/sums.cpython-313.pyc': 'left by a run',
+                                 'evidence/Small/step/__pycache__/table.cpython-312.pyc': 'left by a run',
+                                 'evidence/Small/step/__pycache__/inner/__pycache__/part.cpython-312.pyc': 'left by a run',
+                                 '__pycache__/tool.cpython-312.pyc': 'left by a run'})
+        remove_derived(folder, keep={kept: 'the hash it was frozen with'})
+        # A folder that holds no file afterwards is gone, and the one with the kept file holds that file alone.
+        self.assertEqual(sorted(p.relative_to(folder).as_posix() for p in folder.rglob('__pycache__')),
+                         ['evidence/Small/root/__pycache__'])
+        self.assertEqual(tree_hash(folder), tree_hash(self.tree('b', {**own, kept: 'frozen with the candidate'})))
+        remove_derived(folder)
+        self.assertEqual(list(folder.rglob('__pycache__')), [])
+        self.assertEqual(tree_hash(folder), tree_hash(self.tree('c', own)))
 
     def test_sync_tree_makes_the_target_hold_the_files_of_the_source(self):
         source = self.tree('source', {'Small/Defs.lean': 'defs', 'Small/Root.lean': 'new root', 'Small/Sub/New.lean': 'new'})
@@ -2268,6 +2287,8 @@ class WrittenPartTests(TempCase):
     def test_evidence_files_are_copied(self):
         write(self.candidate / 'evidence/Small/root/table.csv', 'n,sum\n1,1\n2,4\n')
         (self.candidate / 'evidence/Small/root/data.bin').write_bytes(bytes(range(256)))
+        # What Python left beside a script of the candidate that was run there is no evidence and is not copied.
+        write(self.candidate / 'evidence/Small/root/__pycache__/table.cpython-312.pyc', 'The compiled form of a module.')
         write(self.canon.evidence / 'Small/root/earlier.txt', 'kept')
         self.apply([])
         self.assertEqual(self.files(self.canon.evidence), ['Small/root/data.bin', 'Small/root/earlier.txt',

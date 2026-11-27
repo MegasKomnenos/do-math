@@ -1076,8 +1076,13 @@ class ReviewedCandidateTests(PublicationCase):
         with patch('builtins.print'):
             self.assertEqual(verify(engine.session_dir('sreview'), 64, 120), 0)
         compiled = read_json(engine.session_dir('sreview') / 'work/verify/outcome.json')
+        # A script of the candidate that the review ran where it stands left Python's cache in the candidate. That
+        # is no change to the candidate: the transport check removes the cache, and the review is published.
+        cache = Path(job['task']['candidate']) / 'evidence/Small/root/__pycache__/sums.cpython-312.pyc'
+        write(cache, 'The compiled form of a module.')
         engine.finish('sreview', engine.state['sessions']['sreview'])
         self.drain(engine)
+        self.assertFalse(cache.parent.exists())
         [event] = self.events()
         self.assertEqual((event['kind'], event['session'], event['producer_role']), ('change', 'sreview', 'attempt'))
         self.assertEqual((job['status'], job['record']), ('done', event['id']))
@@ -1807,6 +1812,18 @@ class TransportCheckTests(PublicationCase):
         self.assert_refused(check_session(session), 'the candidate changed after it was prepared')
         self.prepare(session / 'output')
         self.assertEqual(check_session(session), [])
+        # What Python leaves beside a script that is run in the folder after the receipt was written is no edit.
+        # The check removes it and asks for no new receipt.
+        cache = session / 'output/evidence/Small/root/__pycache__/squares.cpython-312.pyc'
+        write(cache, 'The compiled form of a module.')
+        self.assertEqual(check_session(session), [])
+        self.assertFalse(cache.parent.exists())
+        # A receipt that was written with such a file in place counts it, as the receipts of an earlier version
+        # of `prepare` do. The candidate is then the one of its receipt only with that file, and the check leaves it.
+        write(cache, 'The compiled form of a module.')
+        self.prepare(session / 'output')
+        self.assertEqual(check_session(session), [])
+        self.assertTrue(cache.is_file())
         # The end decision a peer writes beside its candidate is no part of it. Writing it after the preparation
         # asks for no new one, and its removal by the session's host leaves a later receipt valid.
         decision = session / 'output/end-decision.json'
@@ -2203,6 +2220,19 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         self.assert_refused(self.review_errors(session, {**excluded, 'questions': declined, 'concerns': [concern]}), message)
         self.assert_refused(self.review_errors(session, {**excluded, 'questions': declined, 'findings': [finding]}), message)
         self.assertEqual(self.review_errors(session, {**excluded, 'questions': declined}), [])
+        # What Python leaves beside a script of the candidate that the review ran where it stands is no change to
+        # the candidate: the check removes it. A file of that kind that the candidate was frozen with is among the
+        # files of the assignment, so it stays where it is and is compared like the others.
+        cache = folder / 'evidence/Small/lead/__pycache__'
+        write(cache / 'table.cpython-312.pyc', 'What a run in the peer session left.')
+        assigned = read_json(session / 'input.json')
+        assigned['task']['candidate_hashes'] = runtime.tree_hashes(folder)
+        write_json(session / 'input.json', assigned)
+        write(cache / 'table.cpython-313.pyc', 'What a run in the review left.')
+        write(folder / 'evidence/Small/root/__pycache__/sums.cpython-312.pyc', 'What a run in the review left.')
+        self.assertEqual(self.review_errors(session, good), [])
+        self.assertEqual([p.name for p in cache.iterdir()], ['table.cpython-312.pyc'])
+        self.assertFalse((folder / 'evidence/Small/root/__pycache__').exists())
         # The candidate is the one that was assigned, byte for byte.
         write(folder / 'records/Small/lead.md', record_text('Another description.'))
         self.assertEqual(self.review_errors(session, good), ['candidate changed after review assignment'])

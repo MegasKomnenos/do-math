@@ -7,7 +7,8 @@ from pathlib import Path
 import re
 
 from availability import no_research_outcome, reported_availability
-from canon import BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, tree_hash
+from canon import (BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, remove_derived,
+                   tree_hash)
 from coordination import section_entries
 from knowledge import ROOT_QUESTION, canonical_question, has_proof, is_statement, replay, settle
 # Loaded with this module and not inside audit_formal: a session host checks a review's output when the session
@@ -89,10 +90,17 @@ def prepared_candidate(root):
 
     prepare applies the candidate to a copy of the canon, builds it and extracts what it adds and
     replaces. The receipt names the files it saw, so a candidate edited afterwards has to be
-    prepared again before review can rely on the lists of elements in it."""
+    prepared again before review can rely on the lists of elements in it.
+
+    What Python left in the folder after the receipt was written is no edit (canon.DERIVED). Where the files
+    are not those of the receipt, it is removed and the files are compared again."""
     path = Path(root) / PREPARED
     need(path.is_file(), 'the candidate has not been prepared; run commands.prepare and correct what it reports')
     receipt = read_json(path)
+    if receipt.get('tree') != tree_hash(root, skip=BESIDE_CANDIDATE):
+        # Only then: a receipt that an earlier version of `prepare` wrote with such a folder in place counts
+        # its files, and the candidate is the one of that receipt for as long as they stay.
+        remove_derived(root)
     need(receipt.get('tree') == tree_hash(root, skip=BESIDE_CANDIDATE),
          'the candidate changed after it was prepared; run commands.prepare again')
     need(receipt.get('ok') is True, 'prepare reported errors: ' + '; '.join(receipt.get('errors', []))[:2000])
@@ -445,6 +453,10 @@ def check_session(session):
                          pipeline_sections(instance, state, inp.get('pipeline'), model, session.name))
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
+            # A script of the candidate that the review ran where it stands left Python's cache beside it, which
+            # is no change to the candidate (canon.DERIVED). It is removed here, apart from the files of that
+            # kind that the candidate was frozen with, and every file that is then there is compared.
+            remove_derived(candidate, task['candidate_hashes'])
             need(tree_hashes(candidate) == task['candidate_hashes'], CANDIDATE_CHANGED)
             assessment_check(read_json(output / 'assessment.json'), output, candidate, model,
                              instance, inp['session'])
