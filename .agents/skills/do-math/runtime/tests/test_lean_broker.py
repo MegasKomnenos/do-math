@@ -1202,13 +1202,13 @@ class BuildTests(BrokerFixture):
         self.start_broker()
         cases = (("build", "before_ingest"), ("job", "after_read"),
                  ("build", "after_read"), ("job", "after_expansion"),
-                 ("build", "after_expansion"), ("build", "during_restore"))
+                 ("build", "after_expansion"), ("build", "after_cache_lookup"))
         cancelled = []
         for number, (kind, timing) in enumerate(cases):
             with self.subTest(kind=kind, timing=timing):
                 root = self.instance / "sessions/s1/work" / str(number)
                 target = source(root / "Target.lean", imports=())
-                if timing == "during_restore":
+                if timing == "after_cache_lookup":
                     warm = self.build(root, [target])
                     self.until(lambda: self.build_record(warm)["status"] in lean_broker.FINISHED)
                     self.assertEqual(self.build_record(warm)["status"], "finished")
@@ -1219,7 +1219,7 @@ class BuildTests(BrokerFixture):
                 responses = []
                 original_read = lean_broker.read_json
                 original_new = self.broker.new_job
-                original_restore = self.broker.restore_module
+                original_lookup = self.broker.cached_module
 
                 def read_then_cancel(path, *args, **kwargs):
                     value = original_read(path, *args, **kwargs)
@@ -1233,8 +1233,10 @@ class BuildTests(BrokerFixture):
                         responses.append(lean_broker.cancel(self.paths, identity))
                     return value
 
-                def restore_then_cancel(*args, **kwargs):
-                    value = original_restore(*args, **kwargs)
+                def lookup_then_cancel(*args, **kwargs):
+                    # The request arrives while the build's modules are being settled: the cache has just
+                    # answered for the one module, which is cached, and the build would be complete at once.
+                    value = original_lookup(*args, **kwargs)
                     if not responses:
                         self.assertTrue(value)
                         responses.append(lean_broker.cancel(self.paths, identity))
@@ -1250,7 +1252,7 @@ class BuildTests(BrokerFixture):
                     with patch.object(self.broker, "new_job", side_effect=expand_then_cancel):
                         self.broker.ingest()
                 else:
-                    with patch.object(self.broker, "restore_module", side_effect=restore_then_cancel):
+                    with patch.object(self.broker, "cached_module", side_effect=lookup_then_cancel):
                         self.broker.ingest()
                     self.assertEqual(self.build_record(identity)["modules"]["Target"]["status"], "cached")
                     self.assertEqual(set(self.broker.state["jobs"]), previous)
@@ -1409,11 +1411,6 @@ class BuildTests(BrokerFixture):
         self.until(lambda: self.build_record(cached)['status'] in lean_broker.FINISHED)
         self.assertTrue(all(m['status'] == 'cached' and m['job'] is None
                             for m in self.build_record(cached)['modules'].values()))
-        for name, module in self.build_record(cached)['modules'].items():
-            olean = Path(module['olean'])
-            self.assertEqual({p.name: p.read_bytes()
-                              for p in olean.parent.glob(olean.stem + '.*')},
-                             original_files[name])
         with patch.object(lean_broker, 'ensure_broker', return_value={}):
             fresh = lean_broker.build(self.paths, root, [root / 'Target.lean'], 60,
                                       'sreview', fresh_targets=True)['build']
@@ -1427,6 +1424,7 @@ class BuildTests(BrokerFixture):
         self.assertEqual(set(basis), {'key', 'job', 'status', 'exit_code'})
         self.assertEqual(set(target), {'key', 'job', 'status', 'exit_code', 'reason', 'measured'})
         self.assertNotIn('sources', result)
+        # The fresh compile of Target read Basis from the build's lib, where the cache's files were put for it.
         restored = Path(self.build_record(fresh)['modules']['Basis']['olean'])
         self.assertEqual({p.name: p.read_bytes()
                           for p in restored.parent.glob(restored.stem + '.*')},
@@ -1466,67 +1464,174 @@ class BuildTests(BrokerFixture):
         except OSError:
             self.skipTest("the file system of the temporary folder makes no hard links")
 
-    def emitted(self, record):
-        """(the lib's file, the cache's file) for each emitted file of each module of a build."""
-        pairs = []
-        for module in record["modules"].values():
-            olean = Path(module["olean"])
-            for suffix in (".olean", ".olean.private", ".olean.server", ".ir"):
-                pairs.append((olean.with_name(olean.stem + suffix), self.paths.cache / (module["key"] + suffix)))
-        return pairs
+    EMITTED = (".olean", ".olean.private", ".olean.server", ".ir")  # the files the stand-in writes for a module
+
+    def emitted(self, record, name):
+        """(the lib's file, the cache's file) for each emitted file of one module of a build."""
+        module = record["modules"][name]
+        olean = Path(module["olean"])
+        return [(olean.with_name(olean.stem + suffix), self.paths.cache / (module["key"] + suffix))
+                for suffix in self.EMITTED]
+
+    @staticmethod
+    def lib_files(record):
+        """The names of the files in a build's lib; the modules of these tests have one-part names."""
+        lib = Path(record["lib"])
+        return {p.name for p in lib.iterdir()} if lib.is_dir() else set()
+
+    @staticmethod
+    def module_statuses(record):
+        return {name: (module["status"], module["exit_code"]) for name, module in record["modules"].items()}
+
+    def test_a_build_puts_into_its_lib_the_cached_modules_its_compiles_read_and_no_others(self):
+        # A build's lib is read by the compiles of that build alone, and a compile reads the modules it imports
+        # and the ones it reaches through them. So a cached module's files are put into the lib when a compile
+        # that reads them is created, and a build of a whole canon that compiles one module does not place the
+        # rest of the canon first.
+        self.start_broker()
+        root = self.tree()
+        source(root / "Side.lean", imports=("A",))  # beside D: it imports A, and D does not reach it
+        targets = [root / "D.lean", root / "Side.lean"]
+        warm = self.built(root, targets)
+        self.assertEqual(self.module_statuses(warm), dict.fromkeys(("A", "B", "C", "D", "Side"), ("finished", 0)))
+        self.assertEqual(self.lib_files(warm), {name + suffix for name in ("A", "B", "C", "D", "Side")
+                                             for suffix in self.EMITTED})
+        # The same bytes again: every module is cached, no compile reads the lib, and nothing is put there.
+        again = self.built(root, targets)
+        self.assertEqual(self.module_statuses(again), dict.fromkeys(("A", "B", "C", "D", "Side"), ("cached", 0)))
+        self.assertEqual(self.lib_files(again), set())
+        # D alone is compiled. It imports B and C and reaches A through them, and the stand-in refuses a
+        # compile that does not find what it imports: all three are there, and Side is not.
+        source(root / "D.lean", imports=("B", "C"), marker="D-AGAIN")
+        one = self.built(root, targets)
+        self.assertEqual(self.module_statuses(one), {**dict.fromkeys(("A", "B", "C", "Side"), ("cached", 0)),
+                                                     "D": ("finished", 0)})
+        self.assertEqual(self.lib_files(one), {name + suffix for name in ("A", "B", "C", "D")
+                                               for suffix in self.EMITTED})
 
     def test_a_cached_module_is_linked_into_the_lib_and_copied_where_no_link_can_be_made(self):
-        # A build's lib names the cache's own file for each module it takes from the cache, so the lib
+        # A build's lib names the cache's own file for each cached module that is put there, so the lib
         # holds no second copy of that module. Where the file system makes no link, the file is copied.
         self.need_hard_links()
         self.start_broker()
-        root = self.tree()
-        warm = self.built(root, [root / "D.lean"])
+        root = self.instance / "sessions/s1/work/lean"
+        source(root / "Basis.lean", imports=())
+        target = source(root / "Target.lean", imports=("Basis",))
+        warm = self.built(root, [target])
         self.assertEqual(warm["status"], "finished", warm)
-        linked = self.built(root, [root / "D.lean"])
-        self.assertTrue(all(m["status"] == "cached" for m in linked["modules"].values()))
-        for in_lib, in_cache in self.emitted(linked):
+        # Target is compiled again each time and reads Basis, which comes from the cache.
+        source(target, imports=("Basis",), marker="LINKED")
+        linked = self.built(root, [target])
+        self.assertEqual(self.module_statuses(linked), {"Basis": ("cached", 0), "Target": ("finished", 0)})
+        for in_lib, in_cache in self.emitted(linked, "Basis"):
             self.assertTrue(os.path.samefile(in_lib, in_cache), in_lib)
+        source(target, imports=("Basis",), marker="COPIED")
         with patch.object(lean_broker.os, "link", side_effect=OSError("no link can be made")):
-            copied = self.built(root, [root / "D.lean"])
-        self.assertTrue(all(m["status"] == "cached" for m in copied["modules"].values()))
-        for in_lib, in_cache in self.emitted(copied):
+            copied = self.built(root, [target])
+        self.assertEqual(self.module_statuses(copied), {"Basis": ("cached", 0), "Target": ("finished", 0)})
+        for in_lib, in_cache in self.emitted(copied, "Basis"):
             self.assertFalse(os.path.samefile(in_lib, in_cache), in_lib)
             self.assertEqual(in_lib.read_bytes(), in_cache.read_bytes())
 
-    def test_a_restore_cut_short_takes_back_its_files_and_the_module_is_compiled(self):
+    def restore_failures(self):
+        """(build, module) of each `restore_failed` line in the broker's log."""
+        events = [json.loads(line) for line in self.paths.log.read_text(encoding="utf-8").splitlines()]
+        return [(event["build"], event["module"]) for event in events if event.get("event") == "restore_failed"]
+
+    def test_a_module_whose_cached_import_cannot_be_put_into_the_lib_fails_with_the_reason(self):
+        # When the files of a cached module cannot be put into the lib, the module whose compile was to read them
+        # is closed as failed with the reason. No compile is created for it, since Lean would report a missing
+        # module and nothing of the cause, and nothing is compiled in the place of the cached module.
+        # Target imports Middle and Side, and Middle imports Basis.
         self.start_broker()
         root = self.instance / "sessions/s1/work/lean"
-        target = source(root / "Target.lean", imports=())
+        source(root / "Basis.lean", imports=())
+        source(root / "Side.lean", imports=())
+        middle = source(root / "Middle.lean", imports=("Basis",))
+        target = source(root / "Target.lean", imports=("Middle", "Side"))
         warm = self.built(root, [target])
         self.assertEqual(warm["status"], "finished", warm)
-        key = warm["modules"]["Target"]["key"]
-        cached = {p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}
-        original, placed = lean_broker.link_or_copy, []
 
-        def fail_on_the_third(source_file, target_file):
-            if len(placed) == 2:
-                raise OSError("the third file could not be placed")
-            original(source_file, target_file)
-            placed.append(Path(target_file))
+        # No file can be placed: a file stands where the build's lib folder would be made.
+        source(target, imports=("Middle", "Side"), marker="TARGET-AGAIN")
+        jobs_before = set(self.broker.state["jobs"])
+        refused = self.build(root, [target])
+        self.paths.build(refused).mkdir()
+        (self.paths.build(refused) / "lib").write_bytes(b"")
+        self.until(lambda: self.build_record(refused)["status"] in lean_broker.FINISHED)
+        record = self.build_record(refused)
+        self.assertEqual(self.module_statuses(record), {**dict.fromkeys(("Basis", "Middle", "Side"), ("cached", 0)),
+                                                        "Target": ("failed", None)})
+        module = record["modules"]["Target"]
+        self.assertEqual((module["job"], module["key"]), (None, None))
+        self.assertIn("the cached files of Basis could not be put into the build's lib: ", module["reason"])
+        self.assertEqual(record["status"], "failed")
+        self.assertIn("module Target failed: the cached files of Basis could not be put into", record["reason"])
+        self.assertEqual(set(self.broker.state["jobs"]), jobs_before)  # nothing was compiled, Basis least of all
+        self.assertEqual(self.restore_failures(), [(refused, "Basis")])
 
-        # The restore alone: the two files placed before the failure are gone again.
-        olean = self.root / "a lib" / "Target.olean"
-        with patch.object(lean_broker, "link_or_copy", side_effect=fail_on_the_third):
-            with self.assertRaises(OSError):
-                self.broker.restore_module(key, olean)
-        self.assertEqual(len(placed), 2)
-        self.assertEqual(list(olean.parent.iterdir()), [])
-        # In a build: the module is compiled instead, and the cache's entry is as it was.
-        placed.clear()
-        with patch.object(lean_broker, "link_or_copy", side_effect=fail_on_the_third):
-            rebuilt = self.built(root, [target])
-        module = rebuilt["modules"]["Target"]
-        self.assertEqual((rebuilt["status"], module["status"], module["exit_code"]), ("finished", "finished", 0))
-        self.assertIsNotNone(module["job"])
-        self.assertEqual({p.name: p.read_bytes() for p in self.paths.cache.glob(key + ".*")}, cached)
-        for in_lib, in_cache in self.emitted(rebuilt):
-            self.assertFalse(os.path.samefile(in_lib, in_cache), in_lib)
+        # The entry of Side loses a file after the build found it in the cache and before the compile of
+        # Target, which waits for Middle to compile, is created.
+        source(middle, imports=("Basis",), sleep=2)
+        lost = self.build(root, [target])
+        self.until(lambda: self.build_record(lost)["modules"]["Middle"]["status"] == "running")
+        side = self.build_record(lost)["modules"]["Side"]
+        self.assertEqual((side["status"], self.build_record(lost)["modules"]["Target"]["status"]), ("cached", "queued"))
+        (self.paths.cache / (side["key"] + ".olean")).unlink()
+        self.until(lambda: self.build_record(lost)["status"] in lean_broker.FINISHED)
+        record = self.build_record(lost)
+        self.assertEqual(self.module_statuses(record), {"Basis": ("cached", 0), "Middle": ("finished", 0),
+                                                        "Side": ("cached", 0), "Target": ("failed", None)})
+        module = record["modules"]["Target"]
+        self.assertEqual((module["job"], module["key"]), (None, None))
+        self.assertIn("the cached files of Side could not be put into the build's lib: "
+                      "the cache holds no complete entry under the key " + side["key"], module["reason"])
+        self.assertEqual(record["status"], "failed")
+        self.assertEqual(self.restore_failures(), [(refused, "Basis"), (lost, "Side")])
+
+    def test_a_cached_module_in_the_lib_is_not_put_there_again_while_the_build_runs(self):
+        # Putting a file into the lib removes what stands at its place first, and Windows refuses to remove a
+        # file that a process has open. A compile that is running reads its modules from those files. So a
+        # cached module whose files are in the lib is left as it is when a later compile of the same build
+        # reads it too; put there again, it would fail the module of that compile with the refusal. The test
+        # has the file open, as a reader was measured to have it. On a system that removes an open file, as
+        # Linux does, putting the files there again does no harm; there only the row of the cached module
+        # shows that it was done.
+        #   this broker:       the row of the cached module says that its files are in the lib
+        #   an earlier broker: that broker put every cached module into the lib when it registered the build
+        #                      and wrote nothing of it into the row; the next broker carries the build on
+        # Target imports Basis and Middle, and Middle imports Basis.
+        self.start_broker()
+        root = self.instance / "sessions/s1/work/lean"
+        source(root / "Basis.lean", imports=())
+        middle = source(root / "Middle.lean", imports=("Basis",))
+        target = source(root / "Target.lean", imports=("Basis", "Middle"))
+        warm = self.built(root, [target])
+        self.assertEqual(warm["status"], "finished", warm)
+        for number, registered_by in enumerate(("this broker", "an earlier broker")):
+            with self.subTest(registered_by=registered_by):
+                # Middle is compiled again, which changes its output, so Target is compiled after it. Basis is cached.
+                source(middle, imports=("Basis",), sleep=1, marker=f"MIDDLE-{number}")
+                build_id = self.build(root, [target])
+                self.broker.ingest()  # registered: Middle has its job, and Basis was put into the lib for it
+                basis = self.build_record(build_id)["modules"]["Basis"]
+                self.assertEqual((basis["status"], basis.get("in_lib")), ("cached", True))
+                if registered_by == "an earlier broker":
+                    del basis["in_lib"]
+                    self.broker.save(now=True)
+                    self.start_broker()  # no poll of the first broker from here on
+                    basis = self.build_record(build_id)["modules"]["Basis"]
+                    self.assertNotIn("in_lib", basis)
+                self.until(lambda: self.build_record(build_id)["modules"]["Middle"]["status"] == "running")
+                with open(basis["olean"], "rb"):
+                    self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+                record = self.build_record(build_id)
+                self.assertEqual(record["status"], "finished", record)
+                self.assertEqual(self.module_statuses(record), {"Basis": ("cached", 0), "Middle": ("finished", 0),
+                                                                "Target": ("finished", 0)})
+                self.assertEqual(self.restore_failures(), [])
+                if registered_by == "an earlier broker":
+                    self.assertNotIn("in_lib", record["modules"]["Basis"])
 
     def test_a_compile_does_not_write_into_a_file_left_at_its_output(self):
         # Lean writes into the file that stands at its output path. A file left there can be a link to
@@ -1823,7 +1928,7 @@ class OutputKeyTests(BrokerFixture):
             self.assertNotEqual(after[name]["key"], before[name]["key"])
         jobs_before = len(self.broker.state["jobs"])
         # A cached target reports its key and replays what its compile printed, from the cache entry
-        # under that key; its files are in the build's lib folder.
+        # under that key.
         third = self.built(root, [root / "Uses.lean"])
         self.assertEqual(self.statuses(third), {"Basis": "cached", "Uses": "cached"})
         self.assertEqual(len(self.broker.state["jobs"]), jobs_before)
@@ -1834,9 +1939,6 @@ class OutputKeyTests(BrokerFixture):
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(lean_broker.report_build(self.paths, lean_broker.job_record(self.paths, third["id"])), 0)
         self.assertIn("USES-OUTPUT", out.getvalue())
-        self.assertEqual({p.name for p in Path(third["lib"]).iterdir()},
-                         {name + suffix for name in ("Basis", "Uses")
-                          for suffix in (".olean", ".olean.private", ".olean.server", ".ir")})
         # --fresh-targets compiles the target although an entry with its key exists, and leaves that entry as it is.
         manifest = self.paths.cache / (before["Uses"]["key"] + ".artifacts.json")
         stored = manifest.read_bytes()

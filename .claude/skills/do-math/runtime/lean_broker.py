@@ -909,10 +909,10 @@ class Broker:
     def ingest_build(self, build_id, request):
         """Register a build: its modules, discovered from the targets' import headers, in dependency order.
 
-        No module is compiled or restored here by name alone. A module's cache key needs the
-        compiled output of the local modules it reads, so advance_build gives each module its key
-        once those are there, and then its cached files or a compile job; a build whose modules
-        are all cached is complete at once. Any error here fails the whole build with its reason
+        No module is compiled or taken from the cache here by name alone. A module's cache key needs
+        the compiled output of the local modules it reads, so advance_build gives each module its key
+        once those are there, and then finds it in the cache or gives it a compile job; a build whose
+        modules are all cached is complete at once. Any error here fails the whole build with its reason
         (an import cycle, a shadowing name, an unreadable file), since no module compile could
         make it right."""
         root, targets, session = request["root"], request["targets"], request.get("session") or "unknown"
@@ -966,17 +966,33 @@ class Broker:
             write_json(folder / "result.json", build)
 
     def advance_build(self, build):
-        """Give every module whose imports are settled its key, and then its cached files or a compile job.
+        """Give every module whose imports are settled its key, and then take it from the cache or give it a compile job.
 
         A module's key is made from the output of the local modules its compile reads
-        (module_key), so it can be computed only when those have been compiled or restored. Then
-        the cache is asked for that key: an entry is restored and the module is `cached`, with
-        no job; otherwise, or when the module is a target of --fresh-targets, a job compiles it.
-        So no module is compiled while an entry with its key exists, and no entry is used under
-        a key it was not stored under. Modules are kept in dependency order: one pass settles
-        everything that the modules settled before it allow, and a fully cached build reaches
-        its end in one call. A module whose import ended without usable output is closed with
-        the reason, as is every module still waiting when the build is cancelled."""
+        (module_key), so it can be computed only when those have been compiled or taken from the
+        cache. Then the cache is asked for that key: when it holds a complete entry the module is
+        `cached`, with the identities of that entry and no job; otherwise, or when the module is a
+        target of --fresh-targets, a job compiles it. So no module is compiled while an entry with
+        its key exists, and no entry is used under a key it was not stored under.
+
+        The files of a cached module stay in the cache until a compile of this build reads them.
+        A build's lib is read by the compiles of that build and by nothing else, and a compile
+        reads the local modules in its `needs` and no others (discover_modules). So when a module
+        is given its job, the cached modules among its `needs` are put into the lib
+        (restore_module), and a build that compiles nothing puts nothing there. Putting every
+        cached module there when a build was registered took about ten seconds for a build of a
+        canon of 1,100 modules, on the machine where it was measured, and the broker measured no
+        compile and started none meanwhile. `in_lib` in the row of a cached module says whether
+        its files have been put there, so each is put there once in a build. It is kept in the
+        row and not read off the lib: a file found there can be one that an earlier registration
+        of the same request left, from another source (ingest). When the files cannot be put
+        there, the module that was to read them is closed as failed with the reason; nothing is
+        compiled in the place of the cached module.
+
+        Modules are kept in dependency order: one pass settles everything that the modules settled
+        before it allow, and a fully cached build reaches its end in one call. A module whose
+        import ended without usable output is closed with the reason, as is every module still
+        waiting when the build is cancelled."""
         if build["status"] not in ACTIVE:
             return
         modules = build["modules"]
@@ -1003,25 +1019,43 @@ class Broker:
                 # The imports were compiled in the environment the build was submitted in.
                 entry.update(status="failed", reason="Lean environment changed while queued; resubmit in the current environment")
                 continue
-            entry["key"] = module_key(self.environment_identity(), name, entry["source_sha256"],
-                                      [(d, modules[d][entry["reads"]]) for d in entry["needs"]])
-            identities = None
-            if not (build["fresh_targets"] and name in build["targets"]):
-                try:
-                    identities = self.restore_module(entry["key"], Path(entry["olean"]))
-                except OSError as exc:  # the files could not be placed in the build's lib; compile the module instead
-                    self.log(event="restore_failed", build=build["id"], module=name, error=str(exc))
-            if identities:
-                entry.update(status="cached", exit_code=0, **identities)
+            key = module_key(self.environment_identity(), name, entry["source_sha256"],
+                             [(d, modules[d][entry["reads"]]) for d in entry["needs"]])
+            found = None if build["fresh_targets"] and name in build["targets"] else self.cached_module(key)
+            if found:
+                entry.update(key=key, status="cached", exit_code=0, in_lib=False, **found[1])
+                continue
+            # This module is compiled, and its compile reads the modules in its `needs`. The ones the build
+            # compiled are in the lib already. The cached ones are put there now, unless an earlier job of this
+            # build had them put there: a module is put there once, because that removes what stands at the place
+            # first (link_or_copy), and a compile of the build that is running may have that file open. A cached
+            # row without `in_lib` is that of a broker before this one, which put every cached module into the
+            # lib when it registered the build.
+            unplaced = None
+            for needed in entry["needs"]:
+                row = modules[needed]
+                if row["status"] == "cached" and not row.get("in_lib", True):
+                    try:
+                        self.restore_module(row["key"], Path(row["olean"]))
+                    except OSError as exc:
+                        self.log(event="restore_failed", build=build["id"], module=needed, error=str(exc))
+                        unplaced = f"the cached files of {needed} could not be put into the build's lib: {exc}"
+                        break
+                    row["in_lib"] = True
+            if unplaced:
+                # Closed without a key, like every module that is closed without a job: where a row has a key
+                # and no job, the key is read as the name of the cache entry that holds the module's output
+                # (canon.build_outcome).
+                entry.update(status="failed", reason=unplaced)
                 continue
             job_id = "j" + uuid.uuid4().hex
             job = self.new_job(job_id, build, entry["source"], entry["imports"],
                                [i for i in entry["imports"] if i not in entry["local"]],
                                build=build["id"], module=name, root=build["root"], lib=build["lib"],
-                               olean=entry["olean"], key=entry["key"], source_sha256=entry["source_sha256"])
+                               olean=entry["olean"], key=key, source_sha256=entry["source_sha256"])
             self.paths.job(job_id).mkdir(exist_ok=True)
             self.state["jobs"][job_id] = job
-            entry["job"] = job_id
+            entry.update(key=key, job=job_id)
 
     def cancel_build(self, build):
         """Take up a build's cancellation request: its compiles are cancelled and its waiting modules closed."""
@@ -1351,31 +1385,24 @@ class Broker:
         return suffixes, identities
 
     def restore_module(self, key, olean):
-        """Put a cached module's emitted files into a build's lib and return its output identities; None on a miss.
+        """Put a cached module's emitted files into a build's lib, where a compile of that build reads them.
 
         Each file is placed as a hard link to the cache's file where one can be made (link_or_copy),
         so a restored module takes no room in the lib beyond what the cache already holds. Sharing
         the file is safe because neither name is written through afterwards: cache_module puts a
         cache file in place by a rename and leaves a complete entry as it is, and launch() clears the
-        place of a compile's output before Lean writes there. A restore that fails part of the way
-        takes back the files it placed, so that the compile which follows finds none of them."""
+        place of a compile's output before Lean writes there.
+
+        Raises OSError when a file can be neither linked nor copied, and when the cache no longer
+        holds the complete entry that the build found there. The files placed before the failure are
+        left where they are. No compile reads the module from there until a later call has placed
+        every file (advance_build), and that call removes what stands at each place first."""
         entry = self.cached_module(key)
         if entry is None:
-            return None
-        suffixes, identities = entry
+            raise FileNotFoundError(f"the cache holds no complete entry under the key {key}")
         olean.parent.mkdir(parents=True, exist_ok=True)
-        targets = [olean.with_name(olean.stem + suffix) for suffix in suffixes]
-        try:
-            for suffix, target in zip(suffixes, targets):
-                link_or_copy(self.paths.cache / (key + suffix), target)
-        except OSError:
-            for target in targets:
-                try:
-                    target.unlink(missing_ok=True)
-                except OSError:
-                    pass  # launch() clears the place again before the module is compiled
-            raise
-        return identities
+        for suffix in entry[0]:
+            link_or_copy(self.paths.cache / (key + suffix), olean.with_name(olean.stem + suffix))
 
     def cache_module(self, key, files, identities, job_dir):
         """Preserve a module's emitted files and logs under its key; publish the manifest, with the identities, last.
@@ -1596,8 +1623,9 @@ class Broker:
             command, env = lean["command"], dict(lean["env"])
         argv = list(command) + [f"--threads={job['threads']}"]
         if job.get("olean"):
-            # A module of a build: named from its root, written as .olean into the build's lib,
-            # which goes on the search path so that the modules built before it are found.
+            # A module of a build: named from its root, written as .olean into the build's lib, which
+            # goes on the search path. The modules it reads are found there: the ones the build compiled
+            # before it, and the cached ones, which advance_build had put there when it created this job.
             argv += ["-R", job["root"], "-o", job["olean"]]
             env["LEAN_PATH"] = os.pathsep.join(
                 p for p in (job["lib"], env.get("LEAN_PATH") or os.environ.get("LEAN_PATH")) if p)
@@ -1616,10 +1644,11 @@ class Broker:
                 raise OSError('source changed after submission; submit the completed source again')
             if job.get("olean"):
                 Path(job["olean"]).parent.mkdir(parents=True, exist_ok=True)
-                # Lean writes its output into the file that stands at the path. A file left there, by a
-                # restore that was cut short or by an earlier run of this job, can be a link to the
-                # cache's file (restore_module), and output written into it would change the cache's
-                # entry for every later build. So the place is cleared before Lean starts.
+                # Lean writes its output into the file that stands at the path. A file left there can be a
+                # link to the cache's file (restore_module): a request registered a second time after a
+                # broker's death (ingest) keeps the lib of its first registration, in which this module can
+                # have been a cached one. Output written into such a file would change the cache's entry for
+                # every later build. So the place is cleared before Lean starts.
                 for _, leftover in emitted_files(job["olean"]):
                     leftover.unlink()
             argv.append(job["source"])
