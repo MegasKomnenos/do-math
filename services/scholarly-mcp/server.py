@@ -8,7 +8,14 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from pathlib import Path
+import sys
 from typing import Literal
+
+# openpyxl imports NumPy when it finds one, only to recognise NumPy scalar types in cells. Nothing
+# in this server gives it any, and loading NumPy costs about 106 MB in every server process. It is
+# visible here only through the environment's system site-packages. Making the import fail keeps
+# it out for the life of the process, which also removes the cause of the hang noted below.
+sys.modules["numpy"] = None
 
 # Initialize optional native dependencies before stdio starts its reader threads.
 # A first openpyxl import during a tool call hung in NumPy's Windows module loader.
@@ -22,30 +29,13 @@ from registry import SOURCES, source_info
 from scholarly import ArtifactStore, ServiceError, extract_artifact, failure_details
 from scholarly import Sanitizer
 from api_adapters import make_adapters
-from browser_adapters import KudosGateway, MathSciNet, WebOfScience, ECCC, ACM
-from drops import DROPS
-from scopus import Scopus
-from pqdt import PQDT
-from ieee import IEEE
 from afp import AFP
-from toc import TheoryOfComputing
 from eudml import EuDML
 from aps import APS
 from dataclasses import replace
-from publishers import PROFILES, Publisher
-from jstor import JSTOR
-from numdam import Numdam
-from fric import KNUFric
-from web_documents import WebDocuments
-from sciencedirect import ScienceDirect
 from web_search import GeneralWeb
-from ams import AMS
 from figshare import Figshare
 from dblp_kg import DBLPKG
-from native_browser import NativeChromeGateway
-from siam import SIAM
-from individual_subscription import IndividualSubscription
-from aps_institutional import APSInstitutional
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -168,6 +158,26 @@ def main():
         finally:
             WORKER.shutdown(wait=True, cancel_futures=True)
         return
+    # Imported here and not at the top: these adapters drive a browser or hold an institutional
+    # login, and --public-only returns before reaching them. Playwright and the HTML parsers they
+    # bring cost about 11 MB per process. This still runs before stdio starts its reader threads.
+    from browser_adapters import KudosGateway, MathSciNet, WebOfScience, ECCC, ACM
+    from drops import DROPS
+    from scopus import Scopus
+    from pqdt import PQDT
+    from ieee import IEEE
+    from toc import TheoryOfComputing
+    from publishers import PROFILES, Publisher
+    from jstor import JSTOR
+    from numdam import Numdam
+    from fric import KNUFric
+    from web_documents import WebDocuments
+    from sciencedirect import ScienceDirect
+    from ams import AMS
+    from native_browser import NativeChromeGateway
+    from siam import SIAM
+    from individual_subscription import IndividualSubscription
+    from aps_institutional import APSInstitutional
     gateway = KudosGateway(args.credential_root, STORE.sanitizer)
     firefox_gateway = KudosGateway(args.credential_root, STORE.sanitizer, engine="firefox")
     native_gateway = NativeChromeGateway(args.credential_root, STORE.sanitizer)
