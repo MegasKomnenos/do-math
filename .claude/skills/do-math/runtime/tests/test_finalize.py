@@ -1129,6 +1129,15 @@ class ArchiveTests(FinalizeCase):
             'knowledge/events/4.json': {'sequence': 4, 'kind': 'questions', 'folder': 'questions/e1'},
             'knowledge/questions/e1/questions.json': {'reason': 'The user asked.',
                                                       'questions': [{'id': 'q3', 'statement': 'Is it sharp?'}]},
+            # Descriptions of modules and folders that the operator published. The event has the kind of an
+            # organization and says that it comes from the operator; its own record is descriptions.json.
+            'knowledge/events/5.json': {'sequence': 5, 'kind': 'organization', 'folder': 'descriptions/d1',
+                                        'source': 'operator'},
+            'knowledge/descriptions/d1/descriptions.json': {'source': 'operator', 'reason': 'The canon as it stood.',
+                                                            'revision': 4, 'modules': ['Small.Defs'], 'folders': [],
+                                                            'skipped': []},
+            'knowledge/descriptions/d1/organization.json': {'batch': [], 'merge_questions': []},
+            'knowledge/descriptions/d1/applied.json': {'added': [], 'replaced': [], 'records': [], 'retired': []},
         }.items()})
         self.assertEqual(judged[0]['questions'], ['resolves q1'])
         # Each is a line with the kind of session it comes from, its elements, its questions and its record.
@@ -1139,9 +1148,19 @@ class ArchiveTests(FinalizeCase):
                           ('organization', 'organizer', 'An organization of the canon', ['Small.joined'],
                            ['merges q2 into q1'], 'knowledge/organizations/o1/organization.json'),
                           ('questions', 'operator', 'Questions placed by the operator', [], ['q3: Is it sharp?'],
-                           'knowledge/questions/e1/questions.json')])
-        self.assertEqual((judged[1]['review'], judged[3]['description']),
-                         ('The induction skips a case.', 'The user asked.'))
+                           'knowledge/questions/e1/questions.json'),
+                          ('descriptions', 'operator', 'Descriptions of modules and folders published by the operator',
+                           [], [], 'knowledge/descriptions/d1/descriptions.json')])
+        self.assertEqual((judged[1]['review'], judged[3]['description'], judged[4]['description']),
+                         ('The induction skips a case.', 'The user asked.', 'The canon as it stood.'))
+        # The files beside that record are the members its line points to, and the timeline names what was published.
+        self.assertEqual(package.event_members(judged[4], ['knowledge/descriptions/d1/descriptions.json',
+                                                           'knowledge/descriptions/d1/applied.json',
+                                                           'knowledge/organizations/o1/organization.json']),
+                         ['knowledge/descriptions/d1/descriptions.json', 'knowledge/descriptions/d1/applied.json'])
+        self.assertIn('### 5 \u00b7 descriptions of modules and folders published by the operator\n\nThe operator '
+                      'described the modules.\n',
+                      package.timeline([{**judged[4], 'text': 'The operator described the modules.'}], 'Small.root'))
         listed = [{'group': 'Steps', 'items': ['`Small.sq_step`:  the step of the square']},
                   {'group': '', 'items': ['`Small.twice`: doubling']}]
         text = package.timeline([{**rows[0], 'text': 'A change   gave the root its proof.', 'list': listed},

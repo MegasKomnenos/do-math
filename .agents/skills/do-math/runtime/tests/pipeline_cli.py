@@ -6,8 +6,11 @@ stand-in compiler; test_pipeline, the only test that uses it, runs it against th
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from canon_tool import prepare, verify
@@ -99,6 +102,31 @@ def write(path, text):
     path.write_text(text, encoding='utf-8', newline='\n')
 
 
+STEP_LINE = 'The passage from n terms of the sum of odd numbers to n + 1 terms, the step of an induction on it.\n'
+STEP_PURPOSE = 'how the sum of the first odd numbers changes when one more odd number is added'
+
+
+def descent_tested():
+    """Take the blind descent test on the descriptions of the output folder, by the command a session has.
+
+    The command is `commands.canon` of input.json with `descent-test` as its command. It starts the test in
+    a process of its own and says with exit code 124 that the test continues, and the same command, given
+    again, finds it; with 0 every purpose passed or its reader could not be had, and the receipt
+    descriptions/tests.json is written. The reader is a light session on the CLI that the instance's
+    settings name as the Claude CLI, which in test_pipeline is the stand-in tests/light_cli.py."""
+    command = ['descent-test' if part == '<command>' else part for part in inp['commands']['canon']]
+    # No compiled file is left beside the programs, which stand in the skill folder that the test reads.
+    environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
+    deadline = time.monotonic() + 240
+    while True:
+        done = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', env=environment)
+        if done.returncode != 124 or time.monotonic() > deadline:
+            break
+    if done.returncode:
+        raise RuntimeError(f'scripted blind descent test ended with exit code {done.returncode}: '
+                           + done.stdout + done.stderr)
+
+
 def built(command):
     """Build as a session does, by the function behind its command, which writes the receipt itself.
 
@@ -129,6 +157,10 @@ elif role == 'peer':
         write(output / 'records/Small/root.md', ROOT_RECORD)
         write(output / 'records/Small/oddSum_succ.md', STEP_RECORD)
         write(output / 'approaches/Small/root/induction.md', APPROACH.format(sessions=Path(task['source']).name))
+        # The candidate adds the module Small.Step, so it carries the line of that module, a purpose drawn
+        # from what the module holds, and, before it is prepared, the receipt of the blind descent test.
+        write(output / 'descriptions/modules/Small/Step.md', STEP_LINE)
+        write_json(output / 'descriptions/purposes.json', [{'target': 'Small.Step', 'purpose': STEP_PURPOSE}])
     elif source_role == 'formalizer':
         write(output / 'replace/root.lean', FORMAL)
         change.update(title='The root proved in Lean', description='The induction written as a Lean proof.',
@@ -146,6 +178,8 @@ elif role == 'peer':
                                     'statement': 'Why does adding consecutive odd numbers complete a square at every step?',
                                     'grounds': 'The scripted proof uses the identity without saying what it shows.'}]
     write_json(output / 'change.json', change)
+    if (output / 'descriptions').is_dir():
+        descent_tested()
     built(prepare)
 elif role == 'review':
     # The scripted reviews raise no concern and the scripted research contests nothing, so the runner assigns

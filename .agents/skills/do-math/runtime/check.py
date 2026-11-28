@@ -9,6 +9,7 @@ import re
 from availability import no_research_outcome, reported_availability
 from canon import (BESIDE_CANDIDATE, PREPARED, CanonError, beyond_allowed, load_change, name_path, remove_derived,
                    tree_hash)
+from canon_index import check_reports, folders_of
 from coordination import section_entries
 from knowledge import ROOT_QUESTION, canonical_question, has_proof, is_statement, replay, settle
 # Loaded with this module and not inside audit_formal: a session host checks a review's output when the session
@@ -389,6 +390,21 @@ def assessment_check(data, root, candidate, model, instance, sid):
     known = set(model['elements']) | set(receipt['added'])
     concerns_check(data.get('concerns', []), known)
     findings_check(data.get('findings', []), model, known)
+    # What review itself found of the index: a description that did not lead it to an element. The key is
+    # optional, and an assessment written before the index had descriptions has none.
+    try:
+        reports = check_reports(data.get('index_reports', []), '"index_reports" in assessment.json')
+    except CanonError as exc:
+        raise Invalid(str(exc)) from None
+    # A report names a description of the canon or one that the candidate brings: the line of a module the
+    # candidate adds is the one this review was asked to judge, and the folders such a module opens come
+    # with it, as the elements a report may name hold those the candidate adds.
+    modules = set(model['modules']) | {relative[:-len('.lean')].replace('/', '.') for relative in change['modules']}
+    described = modules | set(folders_of(modules))
+    for report in reports:
+        need(report['description'] in described,
+             'index_reports names no folder or module of the canon or of this candidate: ' + report['description'])
+        need(report['element'] in known, 'index_reports names an unknown element: ' + report['element'])
     if not data['publish']:
         need(not any(v == 'admitted' for v in verdicts.values()) and not any(resolved.values())
              and not data.get('concerns') and not data.get('findings'),
@@ -421,6 +437,9 @@ def organization_check(data, root, model, batch):
     if not (Path(root) / 'change.json').exists():
         need(not (Path(root) / 'rewrite').exists() and not (Path(root) / 'lean').exists() and not data.get('delete'),
              'Lean files and "delete" take effect only as part of a change; write change.json with them')
+        need(not (Path(root) / 'descriptions').exists(),
+             'descriptions take effect only as part of a change; write change.json with "title" and "description" '
+             'beside them and prepare the change')
     else:
         try:
             change = load_change(root)
@@ -429,7 +448,17 @@ def organization_check(data, root, model, batch):
         prepared_candidate(root)
         need(not change['questions'] and not change['resolutions'] and not change['approaches']
              and not change['understanding'],
-             'an organizer change holds Lean modules, replacements and records only')
+             'an organizer change holds Lean modules, replacements, records and descriptions only')
+        # The lines of modules and the descriptions of folders under descriptions/ are part of an organizer's
+        # change as well; load_change has read them. A report that a description did not lead to an element is
+        # a note for the organizers (canon_index.due_text), written by a peer in descriptions/reports.json of
+        # its candidate and by a review in its assessment. The organizer that finds such a description is the
+        # one that repairs it, so its change carries no report, and the publication of an organization reads
+        # none.
+        need(not change['index_reports'],
+             'descriptions/reports.json belongs to the candidate of a peer, and a review reports under '
+             '"index_reports" in its assessment. An organizer that finds a description which does not lead to an '
+             'element rewrites that description in its own change; remove the file and prepare the change again')
         for item in change['retire']:  # load_change has confirmed the form of each entry
             need(model['elements'].get(item['alternative'], {}).get('statement_of') == item['into'],
                  f"{item['alternative']} is not another proof of {item['into']}")

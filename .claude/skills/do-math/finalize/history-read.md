@@ -41,7 +41,7 @@ The records name the sessions of the research in the research's own words. The t
 | formalizer | A session that wrote the Lean proof of a statement that was already proved in words. |
 | peer | The second session, which prepared a change for publication from the work of the first. Every change had one. |
 | review | The reviewing session that judged a change before it was published. Also a reviewing session that examined published proofs once more, whose result is a publication of its own. |
-| organizer | A session that joins what is the same and rearranges the library. |
+| organizer | A session that joins what is the same, rearranges the library and keeps the descriptions of its modules and folders current. |
 | operator | The person or agent who runs the research. |
 
 The program lays the entries out under headings, so that a reader can find a date or a publication at a glance.

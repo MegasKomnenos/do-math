@@ -30,8 +30,8 @@ from knowledge import (ROOT_QUESTION, canonical_question, formalizable, instance
                        refuting_proofs, render, replay, root_settlement, root_solved)
 from retention import capture, model_blocked, refusal, usage
 from ending import CONTEXT_LIMIT, HANDED_OVER, authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_raw, archive_subagents, archive_work,
-                             available_memory,
+from runtime_support import (EmergencyMemory, InstanceLock, alive, append_lines, archive_raw, archive_subagents,
+                             archive_work, available_memory,
                              copy_to_disk, file_stamp, first_commit, git,
                              popen_options, process_identity, read_json, read_json_cached, remove_tree,
                              remove_unfinished_writes, rename_directory, replace_file, session_host,
@@ -42,6 +42,7 @@ from settings import PRODUCERS, defaults, load_settings, validate
 # start. The runner and a session host run for hours, and a module first loaded during that time comes from
 # the installed files as they have become: it fails where it names something that the modules loaded at the
 # start do not have.
+import canon_index
 import context
 import lean_broker
 
@@ -93,6 +94,37 @@ def operator_questions(data, model):
                 raise ValueError(f'question {qid} needs a nonempty "{key}"')
         seen.add(qid)
     return reason, [{'id': q['id'], 'statement': q['statement'], 'grounds': q['grounds']} for q in items]
+
+
+def operator_descriptions(folder):
+    """The descriptions an operator publication carries, each text checked in its form (canon_index).
+
+    `folder` holds descriptions/modules/<Module path>.md and descriptions/folders/<Folder path>.md, as a
+    candidate does. The describe command checks its folder with this, and the runner checks the copy the
+    command made when it collects the request and again when the request's turn comes (prepare_descriptions).
+    Whether each name is a module or a folder of the canon is asked by the command, of the canon as it is
+    then; at publication a description whose module or folder is gone is left out."""
+    folder = Path(folder)
+    if not (folder / 'descriptions').is_dir():
+        raise ValueError(f'{folder} holds no descriptions/ folder; the lines of modules are written as '
+                         'descriptions/modules/<Module path>.md and the descriptions of folders as '
+                         'descriptions/folders/<Folder path>.md')
+    try:
+        described = canon_index.candidate_descriptions(folder)
+    except CanonError as exc:
+        raise ValueError(str(exc)) from None
+    if not (described['modules'] or described['folders']):
+        raise ValueError(f'{folder / "descriptions"} holds no description: no file modules/<Module path>.md '
+                         'and no file folders/<Folder path>.md')
+    return described
+
+
+def in_index(index, described):
+    """The names of descriptions that are modules and folders of an index, and the names that are neither:
+    ({'modules': [...], 'folders': [...]}, [...])."""
+    existing = {'modules': set(index['modules']), 'folders': set(canon_index.folders_of(index['modules']))}
+    return ({key: sorted(name for name in described[key] if name in existing[key]) for key in existing},
+            sorted(name for key in existing for name in described[key] if name not in existing[key]))
 
 
 def initialize(instance, root_file, canon_folder, root_declaration, settings_file=None):
@@ -617,6 +649,8 @@ class Runner:
         if s['role'] == 'review' and job['task']['kind'] == 'candidate':
             assessment = read_json(session / 'output/assessment.json')
             if not assessment['publish']:
+                # Before the save that closes the pipeline: a runner that ends in between keeps them once more.
+                self.keep_reports('excluded', sid, job, assessment)
                 s.update(status='integrated', rejected=True)
                 self.close(job, 'done')
                 self.state['pipelines'][job['pipeline']].update(stage='done', rejection_session=sid)
@@ -633,6 +667,64 @@ class Runner:
         s['status'] = 'publishing'
         self.save()
         self.publish()
+
+    def keep_reports(self, origin, sid, job, assessment=None, candidate=True):
+        """Keep what a candidate that is not published, and its review, reported of the index, in
+        runner/index-reports.jsonl.
+
+        A report says that a description did not lead a session to an element, and an organizer repairs the
+        description. The reports of a published change are published with it (publish). A frozen candidate has
+        two other ends, and at neither is anything of it published. `origin` says which: `excluded`, when its
+        review decided to publish nothing (finish), and `publication_failed`, when its review accepted it and
+        it could not be published on the canon as it then was, so that its work goes to a new peer and the
+        review is cancelled (publication_failed). A session that worked out what the canon already held is a
+        session whose candidate review may exclude: its report is the one the organizers most need. So the
+        reports of the candidate (descriptions/reports.json) and of the assessment (`index_reports`) are
+        written here, one line for each, with the time, the sequence of the latest publication, whose report
+        it is, the session of the review and the origin. `index --due` lists them with those of the published
+        changes until the description named is written or confirmed against a later revision
+        (canon_index.kept_reports, canon_index.open_reports). The file is the runner's own, as the ledger of
+        the searches is; nothing in the state names it, and a candidate without a report leaves it unwritten.
+
+        `sid` is the session of the review and `job` its job, whose task names the candidate. `assessment` is
+        the review's assessment where the caller has read it, and it is read here otherwise.
+
+        A frozen candidate that is found changed is a third case (recover_candidate): its review is given to
+        nobody either, whether the candidate is restored for another review or made again by a new peer. The
+        files of the candidate are then not the ones that were frozen, so with `candidate` false the reports
+        of the assessment alone are kept. No origin is given for that case, and the origin is then the one that
+        fits the review's verdict: `publication_failed` where the assessment says to publish, and `excluded`
+        where it does not.
+
+        The lines are written before the state that closes the review is saved. A runner that ends between
+        the two writes them again when it comes to the same place again, and the reader gives the same report
+        of one review once.
+
+        Nothing the runner does next depends on this note. Whatever goes wrong here, a file that cannot be
+        read or written, is left in status for the operator, and the runner goes on as it always did."""
+        try:
+            if assessment is None:
+                assessment = read_json(self.session_dir(sid) / 'output/assessment.json')
+            if origin is None:
+                origin = 'publication_failed' if assessment.get('publish') else 'excluded'
+            reported = canon_index.candidate_reports(job['task']['candidate']) if candidate else []
+            found = ([('peer', report) for report in reported]
+                     + [('review', report) for report in canon_index.check_reports(
+                         assessment.get('index_reports', []), '"index_reports" in assessment.json')])
+            if found:
+                now = time.time()
+                lines = [json.dumps({'at': now, 'sequence': self.model['sequence'], 'by': by, 'review': sid,
+                                     'origin': origin, 'description': report['description'],
+                                     'element': report['element'], 'purpose': report['purpose']},
+                                    ensure_ascii=False) + '\n'
+                         for by, report in found]
+                # One write to a file opened for appending: the lines stand together or not at all. Where an
+                # earlier write was cut inside a line, the write begins with a line end, so that the first of
+                # these lines does not stand on the cut one (append_lines).
+                append_lines(self.instance / 'runner' / 'index-reports.jsonl', ''.join(lines).encode('utf-8'))
+        except Exception as exc:  # an optional note stops nothing
+            self.state['last_error'] = {'at': time.time(), 'error': 'the reports about the index of the candidate '
+                                        f'that the review {sid} judged were not kept: {exc}'}
 
     def producer_sections(self, sid):
         """The sections a producer registered, as a peer assignment lists them."""
@@ -656,7 +748,17 @@ class Runner:
         job['task'].pop('candidate_hashes', None)
 
     def recover_candidate(self, job, session, reason):
-        """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
+        """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate.
+
+        Either way the review that judged the candidate is given to nobody: the restored candidate goes to
+        another review, and a new peer's candidate to a review of its own. What that review reported of the
+        index in its assessment is therefore kept for the organizers first (keep_reports), and not what the
+        candidate reports, whose files are not the ones that were frozen. A review that the runner collects
+        with a changed candidate may have ended without an assessment (finish); there is then nothing to
+        keep. A runner that ends before the state below is saved comes here again and keeps the same lines
+        once more, which are read once."""
+        if (self.session_dir(session['id']) / 'output/assessment.json').is_file():
+            self.keep_reports(None, session['id'], job, candidate=False)
         task = job['task']
         peer = Path(task['peer'])
         original = peer / 'output'
@@ -754,6 +856,40 @@ class Runner:
                                                    'questions': item['questions'], 'at': item['at']}}
         self.save()
 
+    def prepare_descriptions(self, item):
+        """An operator publication of descriptions of modules and folders, which has no session or job behind it.
+
+        The texts stay in the copy that the describe command made under control/requests/, and the
+        publication is saved with the path of that copy, so a restart writes the same files. They are
+        checked once more here, as questions are (prepare_questions). A request refused here is left in
+        status for the operator, and the queue goes on with its next item.
+
+        The event is an organization of the canon that answers for no change and adds no element, with
+        `source: operator` and its folder under knowledge/descriptions/. A replay applies it as it applies
+        an organizer's output without a change: nothing in the research changes but the sequence. Its kind
+        is `organization` and no kind of its own because a session host keeps the code it loaded at its
+        start and checks the output of its review or organizer in its own process when the session ends
+        (ending.supervise). A host that was started before this code was installed has a replay that
+        refuses an event of a kind it does not know, and it would then find its session's output
+        unacceptable at every turn for as long as it lives."""
+        try:
+            operator_descriptions(item['folder'])
+        except ValueError as exc:
+            self.state['publish_queue'] = [queued for queued in self.state['publish_queue'] if queued is not item]
+            self.state['last_error'] = {'at': time.time(),
+                                        'error': f"descriptions request {item['request']} refused: {exc}"}
+            self.save()
+            return
+        eid = uid('d')
+        event = {'id': eid, 'kind': 'organization', 'sequence': self.model['sequence'] + 1,
+                 'folder': 'descriptions/' + eid, 'at': item['at'], 'source': 'operator'}
+        self.state['publish_queue'] = [queued for queued in self.state['publish_queue'] if queued is not item]
+        self.state['publication'] = {'event': event, 'job': None, 'session': None, 'stage': 'commit',
+                                     'descriptions': {'source': 'operator', 'reason': item['reason'],
+                                                      'folder': item['folder'], 'revision': item['revision'],
+                                                      'at': item['at']}}
+        self.save()
+
     def record_declined(self, publication, candidate, assessment):
         """A proof that review declined to put in place of the canon's stays among the approaches tried.
 
@@ -841,9 +977,16 @@ class Runner:
         A build that failed would break the canon for every session, and the peer could not know what
         was published after its session ended. A replacement peer therefore receives the original work,
         the earlier peer's work and the reason, and its candidate receives a new review. An organizer's
-        change is made again by a replacement organizer."""
+        change is made again by a replacement organizer. What the candidate and its review reported of the
+        index is kept for the organizers (keep_reports): the review is cancelled, and no later session is
+        sent to its assessment."""
         job = self.state['jobs'][publication['job']]
         session = self.state['sessions'][publication['session']]
+        if publication['event']['kind'] == 'change':
+            # The review accepted the candidate, and its work now goes to a new peer: what the candidate and the
+            # review reported of the index is kept for the organizers, as at an exclusion, before the save
+            # below. An organizer's change carries no report.
+            self.keep_reports('publication_failed', publication['session'], job)
         # As where a changed candidate is found (advance_build), the session is left as running until its work has
         # been handed over. If the handover fails, the runner ends and saves this state (run); a session left as
         # publishing would then belong to no publication and never be collected.
@@ -1032,6 +1175,8 @@ class Runner:
             item = self.state['publish_queue'][0]
             if item['kind'] == 'questions':
                 self.prepare_questions(item)
+            elif item['kind'] == 'descriptions':
+                self.prepare_descriptions(item)
             else:
                 self.prepare_publication(item['session'], self.state['jobs'][item['job']], item['kind'])
         publication = self.state['publication']
@@ -1046,7 +1191,10 @@ class Runner:
         canon = Canon(self.instance)
         destination = self.instance / 'knowledge' / event['folder']
         applied = publication.get('applied')
-        if kind == 'organization' and not publication.get('installed'):
+        # The descriptions of an operator publication (prepare_descriptions), whose event is an organization
+        # without a session; nothing for every other publication.
+        described = publication.get('descriptions')
+        if kind == 'organization' and not described and not publication.get('installed'):
             # Before the event is written: the merges are read against the questions as they stood before this
             # publication (self.model), and a runner that starts after the event was written has them merged.
             self.join_question_texts(publication)
@@ -1057,6 +1205,19 @@ class Runner:
             if kind == 'change':
                 shutil.copytree(self.session_dir(sid) / 'output', stage, copy_function=copy_to_disk)
                 copy_to_disk(self.publication_candidate(publication) / 'change.json', stage / 'change.json')
+                # What the peer reported of the index, from the candidate's descriptions/reports.json: a replay
+                # reads it here (knowledge.change_event). The name belongs to that file in a published change, so
+                # whatever the review's output has under it, a file or a folder, is taken out of the stage
+                # first: it does not stand where a candidate without reports left none, and a folder of that
+                # name does not make the copy of the candidate's file fail.
+                reports = self.publication_candidate(publication) / canon_index.REPORTS
+                place = stage / 'index_reports.json'
+                if place.is_dir():
+                    remove_tree(place)
+                else:
+                    place.unlink(missing_ok=True)
+                if reports.is_file():
+                    copy_to_disk(reports, place)
                 write_json(stage / 'applied.json', applied)
                 pipeline = self.state['pipelines'][job['pipeline']]
                 write_json(stage / 'provenance.json', {
@@ -1068,6 +1229,18 @@ class Runner:
             elif kind == 'questions':
                 stage.mkdir()
                 write_json(stage / 'questions.json', publication['questions'])
+            elif described:
+                stage.mkdir()
+                # The canon's index does not change while this publication runs, so a repeat names the same.
+                written, skipped = in_index(canon.load_index(), operator_descriptions(described['folder']))
+                # `revision` is the revision of the canon the texts were written against (the describe command).
+                write_json(stage / 'descriptions.json', {
+                    'source': described['source'], 'reason': described['reason'], 'revision': described['revision'],
+                    'modules': written['modules'], 'folders': written['folders'], 'skipped': skipped,
+                    'at': described['at']})
+                # What a replay reads of an organization (knowledge.organization_event, knowledge.in_canon).
+                write_json(stage / 'organization.json', {'batch': [], 'merge_questions': []})
+                write_json(stage / 'applied.json', {'added': [], 'replaced': [], 'records': [], 'retired': []})
             elif kind == 'organization':
                 stage.mkdir()
                 output = self.session_dir(sid) / 'output'
@@ -1095,9 +1268,15 @@ class Runner:
                 change = load_change(candidate)
                 self.keep_replaced_proofs(publication)
                 assessment = (read_json(self.session_dir(sid) / 'output/assessment.json') if kind == 'change' else None)
-                apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
-                              assessment['contribution'] if assessment else None,
-                              lambda qid: canonical_question(self.model, qid))
+                staged_index = self.instance / 'runner' / ('stage-' + event['id']) / 'index.json'
+                # Read as an index of any version: a publication that an earlier version of this code carried
+                # past its checks is installed by this one in the present form.
+                index = read_index(staged_index) if staged_index.exists() else None
+                # The index this publication leaves: the staged one, or the canon's own when no Lean source changed.
+                after = index if index is not None else canon.load_index()
+                carried = apply_written(canon, candidate, change, applied, event['sequence'], event['id'],
+                                        assessment['contribution'] if assessment else None,
+                                        lambda qid: canonical_question(self.model, qid), after)
                 if assessment:
                     self.record_declined(publication, candidate, assessment)
                 for item in applied['retired']:
@@ -1113,13 +1292,28 @@ class Runner:
                 # summary then take their places one directly after the other. Were the summary gathered with the new
                 # index in place, a reader would have, for as long as the gathering takes, the elements of the change
                 # without what their records declare, and a written proof that review accepted would stand as no proof.
-                staged_index = self.instance / 'runner' / ('stage-' + event['id']) / 'index.json'
-                # Read as an index of any version: a publication that an earlier version of this code carried
-                # past its checks is installed by this one in the present form.
-                index = read_index(staged_index) if staged_index.exists() else None
-                summary = record_summary(self.instance, index if index is not None else canon.load_index())
+                # The summary of the descriptions is gathered at the same point and takes its place before the
+                # index. It says when each module came (`since`), and where it has not said so yet it takes that
+                # from the research as it stood before this publication, which self.model is for as long as the
+                # index in place is the earlier one. Written first, the summary is the same when this step is
+                # done again, wherever the runner ended (canon_index.gather). A reader that comes between has
+                # the summary of this publication and the index from before it. The listings take the modules
+                # from the index, so the line of a module that the index does not have yet is not shown, and a
+                # module whose line went to the history with this publication shows as one that has none yet.
+                summary = record_summary(self.instance, after)
+                self.write_descriptions(canon_index.gather(self.instance, after, event['sequence'], carried,
+                                                           self.model['module_since']))
                 self.install_canon(publication, index)
                 write_json(canon.root / 'records.json', summary)
+            elif described:
+                # No Lean source and no element changes, so nothing is built and the index stays. The texts are
+                # read from the copy the command made, each is written with its history, and the summary is
+                # gathered from the files. A repeat finds each text in place and gathers the same summary.
+                index = canon.load_index()
+                carried = canon_index.apply_descriptions(canon, operator_descriptions(described['folder']), None,
+                                                         index, event['sequence'], event['id'], described['revision'])
+                self.write_descriptions(canon_index.gather(self.instance, index, event['sequence'], carried,
+                                                           self.model['module_since']))
             publication['installed'] = True
             self.save()
         # The stage is removed only here, after the save that marks the canon as installed. A removal can stop
@@ -1180,11 +1374,25 @@ class Runner:
         if event['kind'] == 'review':
             self.state['processed_concerns'] = sorted(set(self.state['processed_concerns']) | set(job['task']['concerns']))
             self.state['processed_conflicts'] = sorted(set(self.state['processed_conflicts']) | set(job['task']['conflicts']))
-        self.notify(event)
+        if not described:
+            # A publication of descriptions alone changes no element, so no session is told that the canon changed.
+            self.notify(event)
         self.state['publication'] = None
         self.state['complete'] = root_solved(self.model)
         self.archive_due = True
         self.save()
+
+    def write_descriptions(self, summary):
+        """Put the gathered summary of the descriptions in place, where it differs from the one that is there.
+
+        An instance without any description has no such file, and none is made for it: a summary without
+        a description is what the missing file reads as (canon_index.read_summary), and what it would say
+        of when the modules came is made again, from the research, by the first publication that leaves a
+        description (canon_index.gather)."""
+        path = Canon(self.instance).root / 'descriptions.json'
+        described = any(summary[key] for key in canon_index.KINDS.values())
+        if (described or path.exists()) and summary != canon_index.read_summary(self.instance):
+            write_json(path, summary)
 
     def notify(self, event):
         for sid, session in self.active():
@@ -1590,6 +1798,30 @@ class Runner:
             if path.name in self.state['seen_requests']:
                 continue
             request = read_json(path)
+            if request['kind'] == 'descriptions':
+                try:
+                    operator_descriptions(request['folder'])
+                    if type(request.get('revision')) is not int:
+                        # A request that the describe command wrote before it recorded the revision.
+                        raise ValueError('the request does not say against which revision of the canon the texts '
+                                         'were written; give the describe command again')
+                except ValueError as exc:
+                    # As for questions below: the refusal is left in status for the operator.
+                    self.state['last_error'] = {'at': time.time(),
+                                                'error': f'descriptions request {path.name} refused: {exc}'}
+                    self.state['seen_requests'].append(path.name)
+                    self.save()
+                    continue
+                # The descriptions take their turn in the publication queue, as questions do, and the request
+                # counts as collected in the same save. The texts stay in the copy the command made. `revision` is
+                # the revision of the canon the texts were written against, as the command recorded it.
+                self.state['publish_queue'].append({'kind': 'descriptions', 'request': path.name,
+                                                    'reason': request['reason'], 'folder': request['folder'],
+                                                    'revision': request['revision'], 'at': time.time()})
+                self.state['seen_requests'].append(path.name)
+                self.save()
+                self.publish()
+                continue
             if request['kind'] == 'questions':
                 try:
                     reason, questions = operator_questions(
@@ -1778,6 +2010,99 @@ def run_usage(sessions):
     return total
 
 
+def withdraw_descriptions(instance):
+    """Leave nothing of the operator's publications of descriptions unfinished in an instance whose runner has ended.
+
+    It is for the way back from an installation: the files of the installation before this code are put
+    back and its runner is started. That runner ends at every start on three things that only this code
+    leaves in an instance: a publication of descriptions that is under way (state `publication`), a
+    `describe` request that waits in the publication queue, and one that has not been collected. No
+    candidate is among them: what this code adds to a candidate stands under its descriptions/, which
+    the earlier code does not open, and change.json has the keys it had (canon.load_change). This command
+    takes each of the three out of the way, by the runner's own steps and under the runner's lock, so it
+    refuses while a runner is alive:
+
+    - a publication of descriptions that is under way is carried to its end (Runner.publish). It is
+      completed and never dropped: its event may be written already, and every reader counts a written
+      event. That is the one publication the call completes: it starts none from the queue, launches no
+      session and starts no broker, and a publication of descriptions builds nothing. Its event is an
+      organization of the canon, which the earlier code reads;
+    - every `describe` request that waits in the queue is taken out and is not published;
+    - every `describe` request that has not been collected is marked as collected and is not published.
+
+    A publication of another kind that is under way, and the other items of the queue, are left as they
+    are: the earlier code reads them. Returns what was done; a second call finds nothing to do."""
+    with InstanceLock(instance / 'runner/lock', refusal=(
+            'the runner of this instance is alive; describe --withdraw is for an instance whose runner has ended')):
+        runner = Runner(instance)
+        state, completed = runner.state, None
+        if state['publication'] and state['publication'].get('descriptions'):
+            completed = state['publication']['event']['id']
+            runner.publish()
+        removed = [item['request'] for item in state['publish_queue'] if item['kind'] == 'descriptions']
+        state['publish_queue'] = [item for item in state['publish_queue'] if item['kind'] != 'descriptions']
+        marked = []
+        for path in sorted((instance / 'control/requests').glob('*.json')):
+            if path.name not in state['seen_requests'] and read_json(path).get('kind') == 'descriptions':
+                state['seen_requests'].append(path.name)
+                marked.append(path.name)
+        if removed or marked:
+            runner.save()
+    return {'completed': completed, 'removed_from_queue': removed, 'marked_collected': marked}
+
+
+def search_usage(instance):
+    """What the searches and the blind descent tests of an instance used, added up from runner/search/ledger.jsonl.
+
+    A search or a test has several lines in that file (search.record). Each light session it started has
+    one, written when the session ended: its `kind`, `search` or `descent-test`, the `key` of the search or
+    test it belongs to, `light_sessions` 1, the session's tokens by kind (`tokens`), its cost as the CLI
+    reported it (`cost_usd`, null where it reported none) and its time (`seconds`). Each run of the process
+    that does the work, where a light session ran in it, has one more, which says what had been read by
+    then (`read`) and adds no use. A search whose parts were not all read is gone on with by the next
+    identical command, in another run with lines of its own. So `searches` and `descent_tests` count the
+    different keys, each search and each test once, and the other figures are sums over all lines;
+    `without_cost` is the number of lines without a reported cost, which are light sessions. A line without
+    a key counts as a search or a test of its own.
+
+    They are no sessions of the run, so they are counted here, apart from the sessions. An instance in which
+    none has run has no such file. A line that cannot be read, as one cut off when its process was ended,
+    is left out, also where the cut fell inside a character of several bytes."""
+    total = {'searches': 0, 'descent_tests': 0, 'light_sessions': 0, 'cost_usd': 0, 'without_cost': 0,
+             'seconds': 0, 'tokens': {}}
+    path = Path(instance) / 'runner/search/ledger.jsonl'
+    if not path.exists():
+        return total
+    counted = set()
+    # Read as bytes and decoded line by line: a line cut inside a character of several bytes is no UTF-8, and
+    # read as text it would make the whole file unreadable.
+    for line in path.read_bytes().splitlines():
+        try:
+            entry = json.loads(line.decode('utf-8'))
+        except ValueError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        kind, key = 'descent_tests' if entry.get('kind') == 'descent-test' else 'searches', entry.get('key')
+        if not isinstance(key, str) or (kind, key) not in counted:
+            total[kind] += 1
+        if isinstance(key, str):
+            counted.add((kind, key))
+        if type(entry.get('light_sessions')) is int:
+            total['light_sessions'] += entry['light_sessions']
+        if type(entry.get('cost_usd')) in (int, float):
+            total['cost_usd'] += entry['cost_usd']
+        else:
+            total['without_cost'] += 1
+        if type(entry.get('seconds')) in (int, float):
+            total['seconds'] += entry['seconds']
+        tokens = entry.get('tokens')
+        for kind, count in tokens.items() if isinstance(tokens, dict) else ():
+            if type(count) is int:
+                total['tokens'][kind] = total['tokens'].get(kind, 0) + count
+    return total
+
+
 def status(instance):
     instance = Path(instance).resolve()
     state = read_json(instance / 'runner/state.json')
@@ -1796,7 +2121,7 @@ def status(instance):
             'questions': {**question_availability(instance, state, model, rows),
                           'explore_requested': state['explore_requested']},
             'blocks': state['blocks'], 'lean': broker_status(Paths(instance)),
-            'usage': run_usage(state['sessions']), 'state': state}
+            'usage': {**run_usage(state['sessions']), 'search': search_usage(instance)}, 'state': state}
 
 
 def archive_finished(instance):
@@ -1829,7 +2154,7 @@ def archive_finished(instance):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'message', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'cleanup', 'kill-session', '_session', '_archive'):
+    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'message', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'describe', 'restart-broker', 'cleanup', 'kill-session', '_session', '_archive'):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
@@ -1848,6 +2173,17 @@ def main(argv=None):
             p.add_argument('--element', action='append', default=[])
             p.add_argument('--concern', action='append', default=[])
             p.add_argument('--reason', default='Operator requested renewed examination.')
+        if name == 'describe':
+            p.add_argument('--folder', type=Path,
+                           help='a folder with descriptions/modules/<Module path>.md and '
+                                'descriptions/folders/<Folder path>.md')
+            p.add_argument('--reason', help='why these descriptions are published')
+            p.add_argument('--withdraw', action='store_true',
+                           help='for an instance whose runner has ended: complete a publication of descriptions '
+                                'that is under way and take back those that have not begun; given alone')
+            p.add_argument('--revision', type=int, default=None,
+                           help='the revision of the canon the descriptions were written against; without it, '
+                                'the revision the canon has when the command is given')
         if name == 'cleanup':
             p.add_argument('--dry-run', action='store_true',
                            help='print what would be removed and which conditions do not hold; change nothing')
@@ -1944,6 +2280,47 @@ def main(argv=None):
             path = instance / 'control/requests' / (uid('request') + '.json')
             write_json(path, {'kind': 'questions', 'reason': reason, 'questions': questions})
             result['request'] = str(path)
+        elif args.command == 'describe' and args.withdraw:
+            if args.folder is not None or args.reason is not None or args.revision is not None:
+                raise ValueError('describe --withdraw is given alone, without --folder, --reason and --revision')
+            result.update(withdraw_descriptions(instance))
+        elif args.command == 'describe':
+            if args.folder is None or args.reason is None:
+                raise ValueError('describe needs --folder and --reason; describe --withdraw is given alone')
+            if not args.reason.strip():
+                raise ValueError('describe needs a nonempty --reason')
+            described = operator_descriptions(args.folder)
+            index = Canon(instance).load_index()
+            unknown = in_index(index, described)[1]
+            if unknown:
+                raise ValueError('no module or folder of the canon has the name: ' + ', '.join(unknown)
+                                 + '; a module line is filed under descriptions/modules/ and a folder '
+                                 'description under descriptions/folders/, each at the path its name gives')
+            # The revision of the canon the texts were written against becomes the revision of each description
+            # (canon_index.apply_descriptions). The texts were written outside the run, from the canon as it was
+            # at some earlier time, and a module that came to a folder since then is one its description has not
+            # seen. The revision is the number the command `index` shows: the sequence of the latest publication.
+            present = replay(instance, index)['sequence']
+            revision = present if args.revision is None else args.revision
+            if not 0 <= revision <= present:
+                raise ValueError(f'--revision takes the revision of the canon the descriptions were written against, '
+                                 f'from 0 to {present}, the revision the canon has now; got {revision}')
+            # The texts are copied, in their stored form, into a folder of the request, so that the publication
+            # does not depend on the folder given here staying as it is. The copy is complete before the
+            # request names it: the runner collects a request as soon as its file is there.
+            rid = uid('request')
+            copy = instance / 'control/requests' / (rid + '-descriptions')
+            staging = copy.with_name(copy.name + '.part')
+            for kind, key in canon_index.KINDS.items():
+                for name, text in described[key].items():
+                    target = canon_index.description_file(staging, kind, name)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    write_text(target, text)
+            rename_directory(staging, copy)
+            path = instance / 'control/requests' / (rid + '.json')
+            write_json(path, {'kind': 'descriptions', 'reason': args.reason, 'folder': str(copy), 'revision': revision})
+            result.update(request=str(path), modules=len(described['modules']), folders=len(described['folders']),
+                          revision=revision)
         elif args.command == 'restart-broker':
             from lean_broker import Paths, broker_status, ensure_broker
             state = read_json(instance / 'runner/state.json')

@@ -141,6 +141,27 @@ def write_text(path, content):
     _write_chunks(path, (content,))
 
 
+def append_lines(path, data):
+    """Append whole lines to a file that its writers only ever append to, in one write.
+
+    `data` holds the lines as bytes, each with its line end. A process that was ended inside such a write,
+    or a write that the system cut short, leaves a last line without its line end, and the first line
+    appended after it would stand on that line and be lost with it. So where the file is there and does
+    not end in a line end, the write begins with one. The cut line is then a line by itself, which the
+    readers of such a file leave out, and every line appended is whole."""
+    path = Path(path)
+    cut = False
+    try:
+        with path.open('rb') as stream:
+            if stream.seek(0, os.SEEK_END):
+                stream.seek(-1, os.SEEK_END)
+                cut = stream.read(1) != b'\n'
+    except FileNotFoundError:
+        pass
+    with path.open('ab', buffering=0) as stream:
+        stream.write((b'\n' if cut else b'') + data)
+
+
 
 def _write_chunks(path, chunks):
     """Write the chunks into a file beside `path` and replace `path` with it.

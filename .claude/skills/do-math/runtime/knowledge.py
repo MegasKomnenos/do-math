@@ -9,6 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from canon import Canon, beyond_allowed, name_path, read_approaches, read_record
+import canon_index
 from runtime_support import read_bytes, read_json, write_json, write_text
 
 ROOT_QUESTION = 'q0'
@@ -65,6 +66,11 @@ def new_model(instance, index=None):
     return {'root': meta['root'], 'library': meta['library'], 'revision': index['revision'],
             'allowed_axioms': read_json(Path(instance) / 'settings.json')['lean']['allowed_axioms'],
             'elements': elements, 'pairs': index.get('pairs', {}),
+            # For the index of the canon (canon_index): every module, also one that declares no element; for each
+            # module the publication that added its first element (modules_brought), from which the summary of the
+            # descriptions first says when each module came (canon_index.gather); and the reports that a
+            # description did not lead a session to an element, from the published changes (change_event).
+            'modules': sorted(index['modules']), 'module_since': {}, 'index_reports': [],
             'verdicts': {}, 'changes': {}, 'organized': [],
             'questions': {ROOT_QUESTION: {'id': ROOT_QUESTION, 'statement': ROOT_QUESTION_STATEMENT,
                                           'grounds': ROOT_QUESTION_GROUNDS, 'source': None, 'origin': 'root',
@@ -164,12 +170,39 @@ def apply_findings(model, findings, source, followup=True):
                                   'evidence': 'The source review explicitly withdrew these confirmations.'}], source)
 
 
+def modules_brought(model, applied, sequence):
+    """Note for each module the sequence of the publication that added its first element.
+
+    The publications are applied in their order, so the earliest stands. A module none of whose elements
+    a publication added is one the instance began with, and replay gives it 0. The module of an element is
+    the one it stands in now: a module that a rearrangement made out of elements the canon already had
+    takes the sequence at which the first of them was added, which is earlier than the rearrangement."""
+    for name in applied['added']:
+        if name in model['elements']:
+            model['module_since'].setdefault(model['elements'][name]['module'], sequence)
+
+
 def change_event(model, event, folder):
     """A reviewed change: its elements enter with the verdicts review wrote for them."""
     applied = read_json(folder / 'applied.json')
     assessment = read_json(folder / 'assessment.json')
     change = read_json(folder / 'change.json')
     cid = event['id']
+    modules_brought(model, applied, event['sequence'])
+    # What the peer and the review reported of the index: a description that did not lead a session to an
+    # element. The peer's reports are the file descriptions/reports.json of its candidate, which the runner
+    # put into the folder of the change as index_reports.json (Runner.publish), and the review's stand in its
+    # assessment. Each is kept with the sequence of the change: it is listed until the description it names
+    # is written or confirmed against a revision of the canon that held this change, which is that sequence
+    # or a later one (canon_index.open_reports). That a later publication carries the description does not
+    # take the report off: the description can have been written before the report existed.
+    reported = folder / 'index_reports.json'
+    for by, reports in (('peer', read_json(reported) if reported.is_file() else []),
+                        ('review', assessment.get('index_reports', []))):
+        for report in reports:
+            model['index_reports'].append({'change': cid, 'by': by, 'sequence': event['sequence'],
+                                           'description': report['description'], 'element': report['element'],
+                                           'purpose': report['purpose']})
     judged = {v['element']: v for v in assessment['elements']}
     # The concerns raised so far were raised about the proofs these declarations had until now.
     for name in applied['replaced']:
@@ -221,6 +254,7 @@ def organization_event(model, event, folder):
     data = read_json(folder / 'organization.json')
     applied = read_json(folder / 'applied.json')
     oid = event['id']
+    modules_brought(model, applied, event['sequence'])
     for merge in data.get('merge_questions', []):
         source, target = canonical_question(model, merge['from']), canonical_question(model, merge['into'])
         if source != target:
@@ -285,6 +319,7 @@ def replay(instance, index=None):
         {'change': change_event, 'review': assessment_event, 'organization': organization_event,
          'questions': questions_event}[event['kind']](model, event, folder)
         model['sequence'] = event['sequence']
+    model['module_since'] = {module: model['module_since'].get(module, 0) for module in model['modules']}
     settle(model)
     return model
 
@@ -775,9 +810,11 @@ def escape(text):
 def render(instance, model, board, leases=None, research=True):
     """Write the derived views of an instance.
 
-    frontier.md and board.md show who holds what, so they follow the board. index.md and state.json hold
-    the research alone. A caller whose model is the one these two were last written from passes
-    `research=False`, and they are then left as they are, neither built nor read."""
+    frontier.md and board.md show who holds what, so they follow the board. index.md, folders.md and
+    state.json hold the research alone: folders.md is the folder level of the index of the canon, made from
+    the model and the summary of the descriptions (canon_index.folder_level). A caller whose model is the one
+    these three were last written from passes `research=False`, and they are then left as they are, neither
+    built nor read."""
     instance = Path(instance)
     base = instance / 'knowledge'
 
@@ -812,14 +849,22 @@ def render(instance, model, board, leases=None, research=True):
     lines += question_lines(model)
     write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
     if research:
+        # The descriptions of the two levels above the element: the lines of the modules stand in this view
+        # under their headings, and the folder level is a view of its own, the text the command `index` prints.
+        described = canon_index.read_summary(instance)
+        write_view(base / 'folders.md', canon_index.folder_level(model, described) + '\n')
         index = ['# Index of the canon', '', f"Revision: {model['sequence']}", '',
                  'What each record says about its element, in the order of the Lean structure, with the current standing. '
-                 'This view is derived; nothing here is written by hand.', '']
+                 'Under the heading of a module stands the line that describes it, where it has one. '
+                 'The folder level of the index, each folder with its description and its counts, is '
+                 '`knowledge/folders.md`. This view is derived; nothing here is written by hand.', '']
         by_module = {}
         for name, element in elements.items():
             by_module.setdefault(element['module'], []).append(element)
         for module in sorted(by_module):
             index += [f'## {module}', '']
+            if module in described['modules']:
+                index += [escape(canon_index.one_line(described['modules'][module]['text'])), '']
             for element in sorted(by_module[module], key=lambda e: e['name']):
                 standing = STANDINGS.get(element['standing'], element['kind'])
                 index.append(f"- `{element['name']}` · {element['weight']} · {standing} — {escape(element['description'])}")

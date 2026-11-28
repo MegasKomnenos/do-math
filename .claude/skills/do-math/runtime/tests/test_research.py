@@ -1439,7 +1439,10 @@ class RunnerTests(ScenarioCase):
             'sessions_without_record': 1,
             'tokens': {'claude': {'inputTokens': 30, 'outputTokens': 210, 'cacheReadInputTokens': 2300,
                                   'cacheCreationInputTokens': 15},
-                       'codex': given}})
+                       'codex': given},
+            # No search and no blind descent test has run in this instance (runner.search_usage).
+            'search': {'searches': 0, 'descent_tests': 0, 'light_sessions': 0, 'cost_usd': 0, 'without_cost': 0,
+                       'seconds': 0, 'tokens': {}}})
 
     def test_retention_file_error_retries_preservation_after_restart(self):
         runner = self.runner()

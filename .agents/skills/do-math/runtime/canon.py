@@ -16,6 +16,7 @@ Layout under <instance>/canon/:
     history/<Name>/        what a replacement left behind: the difference and where it went
     bibliography.bib       the sources of every result taken from the literature
     index.json             the structural index, extracted by machine at each publication
+    descriptions/          the lines of the modules and the descriptions of the folders (canon_index.py)
 """
 import difflib
 import hashlib
@@ -438,14 +439,30 @@ def load_change(candidate):
     A candidate mirrors the canon: lean/ holds new modules, records/ new or replacing records,
     approaches/ entries, questions/ replacing understanding texts, evidence/ files, and
     bibliography.bib entries to add. change.json names what cannot be read from the layout:
-    which existing declarations get a new proof, and the questions proposed or resolved."""
+    which existing declarations get a new proof, and the questions proposed or resolved.
+
+    descriptions/ holds the lines of modules and the descriptions of folders (canon_index). Their names are
+    returned under `module_lines` and `folder_descriptions`. Its file reports.json says which description
+    did not lead a session to which element, and those reports are returned under `index_reports`. A
+    candidate without that folder, as every candidate was before the index had descriptions, gives two
+    empty lists and no report.
+
+    change.json has the keys it had before the index had descriptions and no other. The programs from
+    before that time refuse a manifest with a key they do not know, wherever they load a candidate, and
+    they read nothing under descriptions/: so everything this code adds to a candidate stands there, and
+    a candidate made under this code is one those programs still read."""
+    # Loaded here and not with this module: canon_index imports this module.
+    from canon_index import REPORTS, candidate_descriptions, candidate_reports
     candidate = Path(candidate)
     data = read_json(candidate / 'change.json')
     if not isinstance(data, dict):
         raise CanonError('change.json is an object')
     unknown = sorted(set(data) - CHANGE_KEYS)
     if unknown:
-        raise CanonError('unknown key in change.json: ' + ', '.join(unknown))
+        raise CanonError('unknown key in change.json: ' + ', '.join(unknown) + (
+            f'. A report that a description did not lead to an element is written in the file {REPORTS} of the '
+            'candidate, as an array of {"description", "element", "purpose"}, and in no key of change.json'
+            if 'index_reports' in unknown else ''))
     for key in ('title', 'description'):
         if not isinstance(data.get(key), str) or not data[key].strip():
             raise CanonError(f'change.json needs a nonempty "{key}"')
@@ -494,6 +511,9 @@ def load_change(candidate):
             raise CanonError(f'questions/{relative} is empty')
         if split_review(text)[1] is not None:
             raise CanonError(f'questions/{relative}: the "## {REVIEW_SECTION}" section is written at publication, from review')
+    described = candidate_descriptions(candidate)
+    data['module_lines'], data['folder_descriptions'] = sorted(described['modules']), sorted(described['folders'])
+    data['index_reports'] = candidate_reports(candidate)
     return data
 
 
@@ -1390,13 +1410,24 @@ def history_entry(canon, name, kind, revision, change_id, old, new, pointer, fol
                f'text that was replaced.\n\n```diff\n{diff}\n```\n')
 
 
-def apply_written(canon, candidate, change, applied, revision, change_id, contribution, question_id=lambda qid: qid):
-    """Put a candidate's records, approach entries, understanding texts, evidence and sources into the canon.
+def apply_written(canon, candidate, change, applied, revision, change_id, contribution, question_id=lambda qid: qid,
+                  index=None):
+    """Put a candidate's records, approach entries, understanding texts, evidence, sources and descriptions into the canon.
 
     A replaced text leaves its difference in the history. Review's assessment of what the work
     contributed is written into each approach entry and understanding text of the change, where a
     session choosing its work will read it. question_id gives the identity a question has now, so
-    that a text written under the name of a question merged since goes to the surviving one."""
+    that a text written under the name of a question merged since goes to the surviving one.
+
+    `index` is the structural index the publication leaves, the canon's own when it is not given. The line
+    of a module and the description of a folder go into the canon when that module or folder exists in it.
+    The result names the descriptions written or found in place with the same text, each with whether a
+    blind descent test of its text passed and with the revision of the canon it was written against
+    (canon_index.apply_descriptions), for the summary that is gathered after this. That revision is the one
+    the candidate's receipt of `prepare` records with its descriptions, the sequence of the latest
+    publication at that time: a candidate has to be prepared again after any edit, so it is the canon
+    against which its session last checked the descriptions. A candidate without
+    descriptions gives an empty result, and its receipt is not read for this."""
     candidate = Path(candidate)
     paths = {name_path(name): name for name in applied['records']}
     for relative in change['records']:
@@ -1472,6 +1503,20 @@ def apply_written(canon, candidate, change, applied, revision, change_id, contri
     addition = candidate / 'bibliography.bib'
     if addition.is_file():
         merge_bibliography(canon.bibliography, addition.read_text(encoding='utf-8-sig'))
+    # Loaded here and not with this module: canon_index imports this module.
+    import canon_index
+    described = canon_index.candidate_descriptions(candidate)
+    if not (described['modules'] or described['folders']):
+        return {'modules': {}, 'folders': {}}
+    # The revision of the canon the descriptions were prepared against, the sequence of the latest publication
+    # then, which `prepare` records with the descriptions of a session that was asked for them
+    # (canon_tool.build_candidate). A receipt without it gives the revision of the Lean library at the
+    # preparation, which is no later.
+    receipt = read_json(candidate / PREPARED)
+    against = (receipt.get('descriptions') or {}).get('revision', receipt['revision'])
+    return canon_index.apply_descriptions(canon, described, canon_index.test_results(candidate),
+                                          index if index is not None else canon.load_index(), revision, change_id,
+                                          against)
 
 
 BIB_ENTRY = re.compile(r'@\w+\s*\{\s*([^,\s]+)\s*,')

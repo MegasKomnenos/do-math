@@ -6,9 +6,10 @@ here starts Lean to read. `prepare` and `verify` build through the instance's Le
 """
 import argparse
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import sys
 
+import canon_index
 from canon import (BESIDE_CANDIDATE, EXTRACTION, PREPARED, Canon, CanonError, apply_lean, apply_rearrangement,
                    build_outcome, candidate_records, check_applied, check_definition_modules, copy_canon,
                    declaration_text, drop_modules,
@@ -291,13 +292,111 @@ def entry_info(index, name, written):
             'statement_uses': entry['statement_uses'], 'axioms': entry['axioms']}
 
 
-def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout, role, fresh=False):
+def module_names(folder):
+    """The modules whose files stand under a module root, by name; none when the folder is not there."""
+    folder = Path(folder)
+    return sorted('.'.join(path.relative_to(folder).with_suffix('').parts)
+                  for path in folder.rglob('*.lean') if path.is_file()) if folder.is_dir() else []
+
+
+def modules_after(candidate, change, index, role, organization):
+    """The names of the modules of the canon as a change leaves it: those of the index and those the change
+    adds, and for an organizer also the modules of its rearrangement, without the modules it deletes."""
+    added = ['.'.join(PurePosixPath(relative).with_suffix('').parts) for relative in change['modules']]
+    modules = set(index['modules']) | set(added)
+    if role == 'organizer':
+        modules = (modules | set(module_names(Path(candidate) / 'rewrite/lean'))) - set(organization.get('delete', []))
+    return modules
+
+
+def description_errors(candidate, change, index, role, organization, instance, session):
+    """What `prepare` finds wrong with the descriptions of a change; empty when they are in order.
+
+    Asked only of a session that was launched with the guides that ask for descriptions (build_candidate).
+    Every module the change creates has its line. A peer carries the lines of the modules it adds and
+    nothing else; an organizer may carry the line of any module and the description of any folder that
+    exist after its change. A report of descriptions/reports.json names a folder or module and an element
+    of the canon. And every
+    description the change carries has passed the blind descent test on the text it has now: a module line
+    on one purpose at least and a folder description on three different purposes, as the command
+    `descent-test` records them in descriptions/tests.json. That file counts only as the receipt of a test
+    that this session, `session`, had taken (canon_index.taken_results). A result that says the reader was
+    unavailable stands where a passed one would, and a description with such results only is published as
+    untested (canon_index.apply_descriptions).
+
+    Everything here is read from the files of the candidate, the index of the canon and the folder of the
+    test, so a candidate that fails is refused before anything is compiled."""
+    candidate = Path(candidate)
+    described = canon_index.candidate_descriptions(candidate)
+    path = lambda kind, name: 'descriptions/' + canon_index.KINDS[kind] + '/' + '/'.join(name.split('.')) + '.md'
+    added = ['.'.join(PurePosixPath(relative).with_suffix('').parts) for relative in change['modules']]
+    created, modules = set(added), modules_after(candidate, change, index, role, organization)
+    if role == 'organizer':
+        created |= set(module_names(candidate / 'rewrite/lean')) - set(index['modules'])
+    errors = [f"the module {name} has no line; write {path('module', name)}, one paragraph that says what the "
+              'module holds, and take the blind descent test on it'
+              for name in sorted(created) if name not in described['modules']]
+    if role == 'organizer':
+        existing = {'module': modules, 'folder': set(canon_index.folders_of(modules))}
+        errors += [f'{path(kind, name)} names no {kind} of the canon as it is after this change'
+                   for kind, key in canon_index.KINDS.items() for name in sorted(described[key])
+                   if name not in existing[kind]]
+    else:
+        errors += [f"{path('module', name)} is the line of a module this candidate does not add; a peer writes the "
+                   'line of each module it adds, and the lines of the other modules are the organizer\'s to write'
+                   for name in sorted(set(described['modules']) - set(added))]
+        errors += [f"{path('folder', name)}: the description of a folder is the organizer's to write; remove the file"
+                   for name in sorted(described['folders'])]
+    known = set(index['modules']) | set(canon_index.folders_of(index['modules']))
+    # The reports of the file descriptions/reports.json (canon_index.candidate_reports).
+    for report in change['index_reports']:
+        if report['description'] not in known:
+            errors.append(f'{canon_index.REPORTS} names no folder or module of the canon: ' + report['description'])
+        if report['element'] not in index['entries']:
+            errors.append(f'{canon_index.REPORTS} names no element of the canon: ' + report['element'])
+    results, refused = canon_index.taken_results(candidate, instance, session)
+    if refused:
+        # Said once, for the file: every description would otherwise be reported as one without a test.
+        return errors + [refused]
+    for kind, key in canon_index.KINDS.items():
+        required = canon_index.TESTS_REQUIRED[kind]
+        for name, text in sorted(described[key].items()):
+            label = ('the line of the module ' if kind == 'module' else 'the description of the folder ') + name
+            taken = canon_index.results_for(results, kind, name, text)
+            # Different purposes: one purpose written three times asks the reader one thing.
+            purposes = len({result.get('purpose') for result in taken})
+            if purposes < required:
+                errors.append(f'{label} has taken the blind descent test on {purposes} different '
+                              f'purpose{"" if purposes == 1 else "s"} with the text it has now and needs at least '
+                              f'{required}; give it {"a purpose" if required == 1 else str(required) + " different purposes"} '
+                              'in descriptions/purposes.json, each as {"target": "' + name + '", "purpose": "..."}, '
+                              'and run the canon command descent-test')
+            for result in taken:
+                if result.get('passed') is not True and not result.get('unavailable'):
+                    opened = ', '.join(str(item) for item in result.get('opened') or []) or 'nothing'
+                    errors.append(f'{label} did not pass the blind descent test for the purpose '
+                                  f'"{result.get("purpose")}": the reader opened {opened}. Rewrite the description '
+                                  f'so that it leads a reader with that purpose there, or the purpose if the {kind} '
+                                  'does not hold what it asks for, and run descent-test again')
+    return errors
+
+
+def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout, role, fresh=False,
+                    descriptions=False):
     """Apply a candidate to a copy of the current canon, build it and say what it adds and replaces.
 
     Returns None while the build runs, so that the caller can come back for it; the build is kept
     with the candidate's file identity, and is started again only when the candidate changed, the canon
     was published to, the build was made with another extraction than this code's (canon.EXTRACTION), or
-    the build ended without compiling."""
+    the build ended without compiling.
+
+    With `descriptions`, the descriptions of the change are checked as well (description_errors) and the
+    result names them, with the revision of the canon they are prepared against, and, for a change that
+    carries a description of a module or folder the canon already has, with the reports now listed against
+    the descriptions it carries (`open_reports`). `prepare` asks for that of a session whose input.json says it was launched with the
+    guides that ask for descriptions. For every other caller nothing is asked of them and the result has the
+    keys it always had: a session launched before those guides, review's `verify` and the publication take
+    a candidate without a line as they did."""
     canon = Canon(instance)
     meta = read_json(Path(instance) / 'instance.json')
     settings = read_json(Path(instance) / 'settings.json')
@@ -315,6 +414,53 @@ def build_candidate(instance, session_id, candidate, folder, expect_mb, timeout,
     organizer = role == 'organizer'
     organization = read_json(candidate / 'organization.json') if organizer else {}
     records = candidate_records(candidate, change)
+    if descriptions:
+        result['descriptions'] = {'modules': change['module_lines'], 'folders': change['folder_descriptions']}
+        if change['module_lines'] or change['folder_descriptions']:
+            # The revision of the canon these descriptions are written or confirmed against: the sequence of
+            # the latest publication, the number `index` shows. It becomes the revision of each description
+            # when the change is published (canon.apply_written). The revision of the result above is that of
+            # the Lean library, which a publication without a Lean part leaves as it is, and a report about a
+            # description can come with such a publication.
+            model = replay(instance, index)
+            result['descriptions']['revision'] = model['sequence']
+            # A description of a module or folder that the canon already has answers the reports listed
+            # against it, from the revision of this preparation on (canon_index.open_reports). This is the
+            # moment at which the session has to have those reports, so they are named here: each with
+            # whether a description prepared now answers it. A report that the runner kept at this very
+            # revision is not answered by this preparation and stays listed. A name that is both a module and
+            # a folder has two descriptions, and a report against it stays listed until both have reached it
+            # (canon_index.open_reports). So this preparation answers such a report only when it carries
+            # both, or when the one it does not carry already stands in the canon at a revision that
+            # reaches the report. Whether a name is a module, a folder or both is asked of the canon as this
+            # change leaves it, because the list is read from that canon once the change is published: a
+            # module that the change gives a module beneath it is then a folder as well, and a name whose
+            # module the change deletes is then a folder alone.
+            existing = {'modules': set(index['modules']), 'folders': set(canon_index.folders_of(index['modules']))}
+            carrying = {'modules': set(change['module_lines']), 'folders': set(change['folder_descriptions'])}
+            carried = (carrying['modules'] & existing['modules']) | (carrying['folders'] & existing['folders'])
+            if carried:
+                summary = canon_index.read_summary(instance)
+                left = modules_after(candidate, change, index, role, organization)
+                after = {'modules': left, 'folders': set(canon_index.folders_of(left))}
+
+                def answered(report):
+                    name, needs = report['description'], report['needs']
+                    return model['sequence'] >= needs and all(
+                        name in carrying[key] or (summary[key].get(name) or {}).get('revision', -1) >= needs
+                        for key in canon_index.KINDS.values() if name in after[key])
+
+                listed = canon_index.open_reports(model, summary, canon_index.kept_reports(instance))
+                result['open_reports'] = [
+                    {'description': report['description'], 'element': report['element'], 'purpose': report['purpose'],
+                     'from': report['from'], 'answered_at_this_revision': answered(report)}
+                    for report in listed if report['description'] in carried]
+        refused = description_errors(candidate, change, index, role, organization, instance, session_id)
+        if refused:
+            # Before the build: a correction changes the files of the candidate, and the build is made again
+            # for the changed candidate in any case.
+            result['errors'] = refused
+            return result
     # Taken with the index above, before any build is waited for: the proofs this candidate was written against.
     written_before = {item['declaration']: written_base(canon, item['declaration']) for item in change['replace']}
     state_path = folder / 'state.json'
@@ -395,6 +541,10 @@ def report(result):
         return 124
     summary = {key: result[key] for key in ('ok', 'build', 'added', 'replaced', 'records', 'errors')}
     summary['axioms'] = {name: info['axioms'] for name, info in result['entries'].items() if info['kind'] == 'theorem'}
+    if 'open_reports' in result:
+        # Only for a change that carries a description of a module or folder the canon already has
+        # (build_candidate): what `prepare` prints for every other change is what it always printed.
+        summary['open_reports'] = result['open_reports']
     print(json.dumps(summary, ensure_ascii=True, indent=2))
     return 0 if result['ok'] else 1
 
@@ -409,8 +559,10 @@ def prepare(session, expect_mb, timeout):
         raise CanonError('prepare is for the session that writes a change: a peer or an organizer; '
                          'a producing session builds its working Lean files through commands.lean')
     remove_derived(session / 'output')
+    # context.assemble writes `descriptions: true` into the input of every session it launches with the guides
+    # that ask for the lines of modules and the descriptions of folders.
     result = build_candidate(instance, inp['session'], session / 'output', session / 'work/prepare',
-                             expect_mb, timeout, inp['role'])
+                             expect_mb, timeout, inp['role'], descriptions=inp.get('descriptions') is True)
     if result is not None:
         write_json(session / 'output' / PREPARED, result)
     return report(result)
@@ -447,9 +599,17 @@ def checkout(session, target):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('frontier', 'view', 'list', 'question', 'questions', 'log', 'checkout', 'prepare', 'verify'):
+    for name in ('frontier', 'view', 'list', 'index', 'question', 'questions', 'log', 'checkout', 'prepare', 'verify',
+                 'descent-test'):
         p = sub.add_parser(name)
         p.add_argument('session', type=Path)
+        if name == 'index':
+            # The descent through the index of the canon, one level for each command (canon_index).
+            p.add_argument('name', nargs='?', help='a folder or a module; without it, the folder level')
+            p.add_argument('--due', action='store_true',
+                           help='what the index lacks and what has been reported about it')
+        if name == 'descent-test':
+            p.add_argument('--timeout', type=float, default=50.0)
         if name == 'view':
             p.add_argument('element')
             p.add_argument('--part', choices=('statement', 'explanation', 'proof', 'literature', 'approaches',
@@ -485,6 +645,15 @@ def main(argv=None):
     try:
         if args.command in ('prepare', 'verify', 'checkout') and (args.session / 'instance.json').is_file():
             raise CanonError(args.command + ' works in a session folder; the instance folder serves the reading commands only')
+        if args.command == 'descent-test':
+            # The blind descent test of the descriptions in a peer's or an organizer's output folder. It runs
+            # light sessions and is the search program's (search.py), which is loaded only for this command, so
+            # that no reading command depends on it. That program says for which folders the test is.
+            try:
+                import search
+            except ImportError as exc:
+                raise CanonError(f'the blind descent test cannot be run: runtime/search.py could not be loaded ({exc})') from None
+            return search.descent_test_command(args.session, args.timeout)
         if args.command in ('prepare', 'verify'):
             _, inp, instance = context(args.session)
             expect = args.expect_mb or read_json(instance / 'settings.json')['lean']['calibration_expect_mb']
@@ -510,6 +679,12 @@ def main(argv=None):
                 if name and name not in model['elements']:
                     raise CanonError('no such element: ' + name)
             text = listing(model, select(model, args), args.units)
+        elif args.command == 'index':
+            if args.due and args.name:
+                raise CanonError('index takes the name of a folder or a module, or --due, and not both')
+            summary = canon_index.read_summary(instance)
+            text = (canon_index.due_text(model, summary, canon_index.kept_reports(instance)) if args.due
+                    else canon_index.index_text(model, summary, args.name, head))
         elif args.command == 'question':
             text = question_view(instance, model, args.question, args.history)
         elif args.command == 'questions':

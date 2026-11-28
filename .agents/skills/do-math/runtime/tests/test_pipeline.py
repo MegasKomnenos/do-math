@@ -1,9 +1,12 @@
+import json
+import os
 from pathlib import Path
 import sys
 import time
 import unittest
 from unittest.mock import patch
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
+import canon_index
 from canon import Canon
 from cli_adapter import Command, provider_for_model
 from knowledge import replay
@@ -32,12 +35,35 @@ class PipelineTests(InstanceCase):
     def command(cli, model, effort, cwd, servers=None):
         return Command(provider_for_model(model), [sys.executable, '-B', str(HERE / 'pipeline_cli.py')], Path(cwd))
 
+    def light_reader(self):
+        """The stand-in for the Claude CLI of a light session (tests/light_cli.py), as a command file that the
+        settings can name: (the command file, the folder in which the stand-in records its calls).
+
+        The scripted peer adds the module Small.Step and takes the blind descent test on its line by the
+        command a session has. The reader of that test is a light session, and this one opens Small.Step for
+        every purpose it is given."""
+        scenario = self.root / 'reader'
+        scenario.mkdir()
+        write_json(scenario / 'script.json', [{'system': 'BEGIN LEVEL', 'answer': json.dumps(
+            {'answers': [{'purpose': 1, 'open': ['Small.Step']}]})}])
+        if os.name == 'nt':
+            cli = self.root / 'claude.cmd'
+            cli.write_text(f'@"{sys.executable}" -B "{HERE / "light_cli.py"}" "{scenario}" %*\r\n', encoding='utf-8')
+        else:
+            cli = self.root / 'claude'
+            cli.write_text(f'#!/bin/sh\nexec "{sys.executable}" -B "{HERE / "light_cli.py"}" "{scenario}" "$@"\n',
+                           encoding='utf-8')
+            cli.chmod(0o755)
+        return cli, scenario
+
     def test_full_pipeline_formalizes_and_drains_followups(self):
+        cli, scenario = self.light_reader()
         config = read_json(self.instance / 'settings.json')
         config.update(max_sessions=2, organizer_every_records=1,
                       # A reconsideration turn is launched by the session host with the configured CLI, which
-                      # the stand-in below does not replace; test_ending covers end reconsideration.
-                      max_end_resumptions=0)
+                      # the stand-in below does not replace; test_ending covers end reconsideration. The Claude
+                      # CLI that the settings name is the reader of the blind descent test and nothing else here.
+                      max_end_resumptions=0, cli={**config['cli'], 'claude': str(cli)})
         write_json(self.instance / 'settings.json', config)
         runner = Runner(self.instance, self.skill)
         self.addCleanup(self.cleanup_runner, runner)
@@ -80,6 +106,23 @@ class PipelineTests(InstanceCase):
         # The review that confirmed a Lean proof compiled it itself.
         changes = list((self.instance / 'knowledge/changes').iterdir())
         self.assertTrue(any((c / 'verify.json').is_file() for c in changes))
+        # The peer that added the module Small.Step wrote its line and took the blind descent test on it, by
+        # the command a session has, before `prepare` accepted the change: one light session read the level.
+        # The canon carries the line as tested, and the index shows it.
+        line = (canon.root / 'descriptions/modules/Small/Step.md').read_text(encoding='utf-8')
+        self.assertEqual(line, 'The passage from n terms of the sum of odd numbers to n + 1 terms, the step of an '
+                               'induction on it.\n')
+        described = canon_index.read_summary(self.instance)['modules']
+        self.assertEqual((sorted(described), described['Small.Step']['tested'], described['Small.Step']['text'] + '\n'),
+                         (['Small.Step'], True, line))
+        calls = [read_json(path) for path in (scenario / 'calls').glob('*.json')]
+        self.assertEqual(len(calls), 1)
+        self.assertIn('BEGIN LEVEL\nThe top of the library Small.\n', calls[0]['system'])
+        self.assertIn('- Small.Step\n  ' + line, calls[0]['system'])
+        code, text = self.command_line('index', self.instance)
+        self.assertEqual(code, 0, text)
+        self.assertIn('- Small.Step · 1 element — ' + line, text)
+        self.assertIn('- Small.Step · 1 element — ' + line, (self.instance / 'knowledge/folders.md').read_text(encoding='utf-8'))
 
         def published_bytes():
             return {p.relative_to(self.instance).as_posix(): p.read_bytes()

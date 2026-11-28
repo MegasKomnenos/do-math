@@ -8,11 +8,12 @@ This guide gives the form of a candidate. The formats of a record, of an approac
 
 The common introduction states the rule on which publication rests: the statement of an element is never changed in place. A candidate is accordingly made of additions and of replacements that leave every statement as it is.
 
-- It **adds elements**: new modules of the library, and a record for every declaration in them.
+- It **adds elements**: new modules of the library, a record for every declaration in them, and for each new module its **line**, the description under which the index of the canon shows the module.
 - It **replaces the proof** of a statement of the canon, leaving the name and the statement as they are. Giving a first proof to a statement that stands without one is a replacement in this sense: what is replaced is the body `by sorry`.
 - It **replaces written texts**: the record of an element, an approach entry, the understanding so far of a question. It also adds new approach entries.
 - It **proposes** questions, and resolutions of existing questions.
 - It adds files of evidence and entries of the bibliography.
+- It **reports** a description of the canon that did not lead a session to an element.
 
 A candidate cannot change the statement of an existing declaration, change an existing definition, remove a declaration, or add a declaration to an existing file. A statement that should read differently enters as a new declaration under a new name, as the section on superseding statements below describes. A definition that should be different enters as a new definition, together with a statement of how the two are related.
 
@@ -26,6 +27,10 @@ output/
   lean/<Library>/...           new modules
   replace/<file>.lean          the new text of a declaration whose proof is replaced
   records/<Name>.md            new records, and records that replace existing ones
+  descriptions/modules/<Module>.md   the line of each new module
+  descriptions/purposes.json   the purposes on which the lines are tested
+  descriptions/tests.json      written by the canon command descent-test
+  descriptions/reports.json    reports that a description of the canon did not lead a session to an element
   approaches/<Name>/<id>.md    new approach entries, and entries that replace existing ones
   questions/<question>.md      an understanding text that replaces the existing one
   evidence/<Name>/...          files that records refer to
@@ -62,6 +67,52 @@ The folders mirror the canon, so a file's place in the candidate is its place in
 A new module is a file under `lean/`, at the path its module name gives: `lean/Small/Step.lean` is the module `Small.Step`. A path that already exists in the canon is refused, because no existing file is edited to add a declaration. The module is written by the Lean conventions of [The canon](canon.md).
 
 Every declaration a new module adds needs a record at `records/<Name>.md`, in the record format of [The written texts of the canon](records.md).
+
+## The line of each new module
+
+Every module the candidate adds needs its line at `descriptions/modules/<Module>.md`, where the path follows the name of the module: the line of `Small.Step`, whose file is `lean/Small/Step.lean`, is `descriptions/modules/Small/Step.md`. The line is one paragraph of plain text, a line or two, that says what the module holds. The index of the canon shows it beside the module's name, and a session that reads the folder decides from it whether to open the module. [The written texts of the canon](records.md) gives the form of the text, the standard it is written to and how it is written, under "The module line and the folder description".
+
+A peer's candidate carries the line of each module it adds and no other description. The line of a module that already stands in the canon and the description of a folder are the organizer's to write, also where a module of yours opens a folder that the canon did not have: that folder has no description until an organizer writes one, and the canon command `index --due` lists it for the organizer.
+
+## The blind descent test
+
+Each line is put through the blind descent test before the candidate is prepared; [The written texts of the canon](records.md) says what the test is and what makes a purpose a fair one. You write the purposes, and a command has a reader take the test and writes the receipt.
+
+The purposes are in `descriptions/purposes.json`: a nonempty array of objects with exactly the keys `target`, the name of the module whose line is tested, and `purpose`, what a session is looking for, in plain words. Give each line at least one purpose.
+
+```json
+[
+  {"target": "Small.Step", "purpose": "how the sum of the first odd numbers changes when one more term is added"}
+]
+```
+
+The test is the command `descent-test` of `commands.canon`, with your session directory and nothing else but an optional `--timeout <seconds>`, which is 50 when omitted:
+
+```text
+python <canon tool> descent-test <session directory>
+```
+
+For each target the command takes the level in which the module stands: the folders and the modules directly inside the folder that holds it, or the top of the library for a module directly under the library. The level is the canon's as it is now, with the modules your candidate adds standing in it under the lines you wrote. A reader, one light session without tools for each level, is given the names and the descriptions of that level and the purposes that belong to it, and names for each purpose at most five items it would open. Your line passes for a purpose when its module is among them. The reader runs under `settings.search` of the instance, as a search does, and [The canon](canon.md) says under "Searching the canon by meaning" what a light session is.
+
+The command prints what the reader did and writes the receipt, `descriptions/tests.json`:
+
+```text
+Blind descent test · revision 1 · reader claude/<model> at <effort> effort
+
+Passed (1)
+- Small.Step at the level Small — purpose: how the sum of the first odd numbers changes when one more term is added — the reader opened: Small.Step and Small.Defs
+
+1 purpose: 1 passed, 0 failed, 0 not tested.
+The receipt is <session directory>\output\descriptions\tests.json.
+```
+
+A purpose that failed stands under `Failed`, with the items the reader opened instead, or `nothing`. Rewrite the line, or the purpose where the purpose was not a fair one, and run the command again. While the test is still under way the command prints `{"waiting": true, "hint": "the test continues; run the same command again"}` and exits with code 124, and the same command comes back for the result. It exits with 0 when no purpose failed and with 1 when one did, or on an error, which it prints as a JSON object with the key `error`.
+
+The reader can be out of reach: the provider can refuse the light session, for instance at a usage limit, or the call can fail. The command then records each purpose of that level as not tested, with the reason, under `Not tested, recorded as unavailable`, and exits with 0. The same command, given again, has the test taken for those purposes, which is worth one more try where the cause may have passed. A record of this kind satisfies the preparation as it stands, so your work is not held up by the reader. The line is then published as not tested, and `index --due` lists it for the organizer, who has it tested.
+
+Where a level holds a folder and a module of the same name, the reader is shown them as two items, with `(folder)` or `(module)` after the name, and each description is judged by its own item: the line of the module passes when the reader names the module. A `target` can say which of the two it means in the same way, as `Small.Sums (module)`.
+
+You do not write or edit `tests.json`. It names, under `work`, the test that produced it, and the preparation counts it only as the receipt of a test that this session had taken, with the results that test gave. It records with each result which text was tested, as a hash of the line and not the line itself, so a result counts only for the line as it then read: after any change to a line, run `descent-test` again and then prepare again. Neither `purposes.json` nor `tests.json` enters the canon.
 
 ## Replacing a proof
 
@@ -125,11 +176,33 @@ A proposed question is an entry of `questions` with exactly three fields. `id` i
 
 A resolution is an entry of `resolutions`. It asserts that the understanding so far of an existing question now settles what the question asks. It has an `id`, a label of your choosing that consists of letters, digits, `_` and `-`, begins with a letter or a digit and is unique within the candidate, and `question`, the identifier of the question. A candidate with a resolution carries the text that settles the question, as `questions/<question>.md`. When the answer leaves something to be done, the same candidate carries that as well, as statements or as a proposed question; your role guide explains this. Question `q0`, the root problem as a whole, cannot be resolved this way; the common introduction explains how it is resolved.
 
+## Reports about the descriptions of the canon
+
+A report says that a description of the canon did not lead a session to an element it needed. The reports of a candidate are the file `descriptions/reports.json`, an array with one object for each report. The file is left out when there is nothing to report.
+
+```json
+[
+  {"description": "<name of a folder or a module>", "element": "<name of an element>", "purpose": "What the session was looking for."}
+]
+```
+
+A report has exactly these three fields, each nonempty text. `description` is the name of the folder or the module whose description fell short; a folder is named like a Lean name, as [The canon](canon.md) says under "Where the canon is". `element` is the name of the element that the session came to by another way. `purpose` says in plain words what the session was looking for when it read that level of the index. Both names have to exist in the canon as it is when you prepare: the report is about a description that sessions are reading now, so it does not name a module or an element that your own candidate adds.
+
+The reports come from two places. The producing session whose work you took over says in its report where the descriptions it read did not lead it to something, and you enter each such case after confirming the two names. Your own reading of the canon for this work can add further ones. The runner carries the reports to the organizers when the change is published, when review excludes the candidate, and when review accepts it and the runner then cannot publish it on the canon as the canon has become, so that the work goes to a new peer. A report therefore does not depend on what review decides about the rest of the candidate. From then on `index --due` lists each report for the organizer, who treats it as a defect of the description and rewrites it. The report stays listed until the description it names is written or confirmed against a revision of the canon that showed the report: for the report of a published change the revision of that change or a later one, and for a report of a candidate that was not published a later revision than the one the canon had when the runner kept the report.
+
 ## Preparing the candidate
 
 Before you end, have the candidate applied to the canon and compiled. `commands.prepare` in your `input.json` is the complete argument array for this; two options can be appended, `--expect-mb <MiB>`, your estimate of the peak memory of one module compile as [Lean](lean.md) explains it, and `--timeout <seconds>`, which is 50 when omitted. The command is for a peer and for an organizer that submits a change, and it refuses every other role.
 
-The command reads the manifest and the files, applies the candidate to a copy of the current library in your `work/` folder, compiles the result through the Lean broker, extracts the structural index of the modules that changed and of every module that imports one of them, and checks what a machine can decide:
+The command reads the manifest and the files. It first checks the descriptions, from the files of the candidate and the canon alone:
+
+- every module the candidate adds has its line, and a peer's candidate carries no line of another module and no description of a folder;
+- every line has, in `descriptions/tests.json`, the result of a blind descent test on at least one purpose, taken on the text the line has now by the `descent-test` command of this session, and every such result either passed or records that the reader was out of reach;
+- every report in `descriptions/reports.json` names a folder or a module of the canon and an element of the canon.
+
+When one of these fails, nothing is compiled: the summary has `"ok": false` and `"build": null`, and its `errors` say which file to write or which command to run. Correct the candidate, run `descent-test` again where a line changed, and prepare again.
+
+The command then applies the candidate to a copy of the current library in your `work/` folder, compiles the result through the Lean broker, extracts the structural index of the modules that changed and of every module that imports one of them, and checks what a machine can decide:
 
 - the library compiles with the candidate applied;
 - no statement of an existing declaration changed, and no existing declaration changed other than the ones the manifest replaces. A statement can change although its text did not: Lean reads a declaration in the environment its module imports, so when your change enlarges what an existing module imports, directly or through a module it imports, Lean can turn the same text into another term. An added Mathlib import has made `C ^ k` on natural numbers elaborate through `Monoid.npow`, with the text and the printed form of the statement unchanged. The check compares the terms and cannot say whether the meaning differs; in that case it did not. It reports such a statement by name, in the module that changed and in every module that imports it. The remedy is to leave the imports of the existing module as they are: put what the new proof needs into a new module and enter the proof there as a separate declaration, as the section "Another proof of a statement, and a refutation" describes, or declare an instance or a notation of your own `local` or `scoped`;
@@ -140,7 +213,7 @@ The command reads the manifest and the files, applies the candidate to a copy of
 - the candidate leaves the file of every module that the root's module imported when the instance was created, directly or through another, as the canon has it. Those modules hold the definitions the root was posed with. A replacement that changes the Lean text of a declaration in one of them, or adds an import to it, is refused before anything is compiled; a new Lean proof of a statement that stands there enters as a separate declaration in a new module, as the section "Another proof of a statement, and a refutation" describes;
 - for every record with `proves` or `refutes`, Lean confirmed that the statement is the same as, or the negation of, the statement named.
 
-It then writes `output/prepared.json` and prints a summary: `ok`, the build's ID, the elements `added` and the proofs `replaced`, the records, the `errors`, and for each statement the axioms it depends on. The command exits with 0 when the candidate is in order and with 1 when it is not; read `errors`, correct the candidate and run the command again. A compiler error is reported with Lean's own output. The exit code 124, with `"waiting": true`, means that the build has not finished within the timeout. The build continues, and running the same command again returns its result. The command starts a build afresh only when the candidate or the canon has changed in the meantime, or when the build it started before ended without compiling: a compile can end for a reason that is not in your files, such as a Lean process that the system ended or a cancellation.
+It then writes `output/prepared.json`, which also names under `descriptions` the lines the candidate carries, and prints a summary: `ok`, the build's ID, the elements `added` and the proofs `replaced`, the records, the `errors`, and for each statement the axioms it depends on. The command exits with 0 when the candidate is in order and with 1 when it is not; read `errors`, correct the candidate and run the command again. A compiler error is reported with Lean's own output. The exit code 124, with `"waiting": true`, means that the build has not finished within the timeout. The build continues, and running the same command again returns its result. The command starts a build afresh only when the candidate or the canon has changed in the meantime, or when the build it started before ended without compiling: a compile can end for a reason that is not in your files, such as a Lean process that the system ended or a cancellation.
 
 `added` and `replaced` are exactly the elements review will judge, one verdict each, so read the two lists as a check on your own intention. A declaration you meant to add and do not find there was not picked up as an element, for example because it is private.
 
@@ -163,6 +236,9 @@ output/
   replace/root.lean
   records/Small/oddSum_succ.md
   records/Small/root.md
+  descriptions/modules/Small/Step.md
+  descriptions/purposes.json
+  descriptions/tests.json
   approaches/Small/root/induction.md
 ```
 
@@ -239,6 +315,20 @@ For every natural number $n$, $1 + 3 + \dots + (2n - 1) = n^2$.
 By induction on $n$. For $n = 0$ the sum is empty and both sides are $0$. Suppose the sum of the first $k$ odd numbers is $k^2$. By `Small.oddSum_succ` the sum of the first $k + 1$ is $k^2 + (2k + 1) = (k + 1)^2$.
 ```
 
+`descriptions/modules/Small/Step.md`, the line of the new module:
+
+```text
+The step from n to n + 1 for the sum of the first n odd numbers: which odd number the next term adds.
+```
+
+`descriptions/purposes.json`, the purpose on which that line is tested. `descriptions/tests.json` is written by the `descent-test` command, which is run before the preparation:
+
+```json
+[
+  {"target": "Small.Step", "purpose": "how the sum of the first odd numbers changes when one more term is added"}
+]
+```
+
 `approaches/Small/root/induction.md`:
 
 ```markdown
@@ -277,4 +367,4 @@ Review will judge two elements. For `Small.oddSum_succ` it judges the statement 
 
 ## After your session
 
-When your session has ended the candidate is frozen: nothing in it changes during review, which writes its assessment in its own folder. At publication the runner runs the same checks as the preparation, on the canon as it then is and without the replacements that review declined. What happens when the candidate cannot be applied or does not build is described in the common introduction under "Turning a session's work into the canon".
+When your session has ended the candidate is frozen: nothing in it changes during review, which writes its assessment in its own folder. At publication the runner runs the same checks as the preparation, on the canon as it then is and without the replacements that review declined. It asks nothing of the descriptions then. It writes the line of each module that exists after the change into `canon/descriptions/modules/`, and the summary of the descriptions records with the line the revision of the canon against which the candidate was prepared and whether a blind descent test of the line passed. What happens when the candidate cannot be applied or does not build is described in the common introduction under "Turning a session's work into the canon".

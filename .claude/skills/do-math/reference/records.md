@@ -1,6 +1,6 @@
-# The written texts of the canon: records, approach entries and understanding texts
+# The written texts of the canon: records, approach entries, understanding texts and descriptions
 
-Beside its Lean library the canon keeps what Lean cannot hold: a record for each declaration, the approaches tried on a statement whose proof is not accepted, and the understanding so far of each question. The common introduction says what each of these is for. This guide gives their formats, the criteria for the weight of an element and, under "Writing the texts of the canon", how each text is written so that a later session can use it.
+Beside its Lean library the canon keeps what Lean cannot hold: a record for each declaration, the approaches tried on a statement whose proof is not accepted, the understanding so far of each question, and a description of each module and each folder. The common introduction says what each of these is for. This guide gives their formats, the criteria for the weight of an element and, under "Writing the texts of the canon", how each text is written so that a later session can use it. The line of a module and the description of a folder have a section of their own, "The module line and the folder description", which gives their form, the standard they are written to and the test they are put through.
 
 ## The record
 
@@ -52,7 +52,7 @@ The parts are the following. Each may occur at most once, in any order, and thei
 | `## Proof` | The proof in natural language. |
 | `## Literature` | For a result taken from the literature: the source, how much of it was read, and where the statement stands in what was read. For a statement that works of the literature pose or have earlier results on: those works, each cited by its key, with what it has of the statement and how much of it was read. |
 
-The self-description is the only part of the record that views of many elements show, so it has to be understandable without the rest. Say what the statement asserts or what the definition defines, completely enough that a session looking for that fact recognizes it. It is not the place for the element's history or for its role in some proof: a description such as "a lemma for the main estimate" tells a session that is choosing what to open nothing about the element.
+The self-description is the only part of the record that views of many elements show, so it has to be understandable without the rest. It is the lowest level of the index of the canon, and it is all that a search of the canon reads of the element. Say what the statement asserts or what the definition defines, completely enough that a session looking for that fact recognizes it. It is not the place for the element's history or for its role in some proof: a description such as "a lemma for the main estimate" tells a session that is choosing what to open nothing about the element.
 
 A statement counts as having a proof when its Lean proof is complete or when its record has a nonempty `## Proof`. Whatever stands under that heading is therefore offered as the proof, and review judges it as one. For a statement established by an exact computation, the proof is the account of that computation: what was computed, over which range and in which arithmetic, with the code and its output among the files of evidence. An idea of why the statement should hold belongs under `## Explanation`. An argument that got part of the way belongs among the approaches tried, described below.
 
@@ -110,6 +110,64 @@ The header has `title`, which is required, and `sessions`, the IDs of the sessio
 The understanding so far of a question is one file, `questions/<question>.md`, named by the question's identifier. It is free Markdown without a header. At publication the runner adds a part `## Review` at its end, as it does for an approach entry; the text a session writes therefore has no heading `## Review` of its own.
 
 The peer of each exploration of the question replaces the text as a whole. The text it replaces is kept in the question's history, as its difference from the new text, and `question <question> --history` prints it.
+
+## The module line and the folder description
+
+Above the self-description of an element the canon keeps a description of each module and of each folder. The three levels together are the index of the canon, which the common introduction describes under "Reading the canon". A session reads one level of the index at a time and decides from the names and the descriptions of that level which item to open. What it does not open it does not see, so the description of a module or a folder decides whether the mathematics beneath it is found.
+
+### Their form
+
+The **module line** is the description of a module. It is one paragraph, a line or two, in the file `descriptions/modules/<Module>.md`. The **folder description** is the description of a folder. It is one or more paragraphs, with no fixed maximum, in the file `descriptions/folders/<Folder>.md`. The path follows the name, one component for each part of it: the line of the module `Tri.Bounds.Gap` is `descriptions/modules/Tri/Bounds/Gap.md`, and the description of the folder `Tri.Bounds`, which is the directory `lean/Tri/Bounds/` of the library, is `descriptions/folders/Tri/Bounds.md`.
+
+A module line:
+
+```text
+The difference of two consecutive triangular numbers, and its comparison with n: the exact value of the difference, and the bounds on it that the estimates of this folder use.
+```
+
+A folder description:
+
+```text
+Bounds on the triangular numbers and on sums of them: upper and lower estimates, each with the range of n on which it holds. The estimates compare a triangular number with squares, with powers of two and with its neighbours.
+
+A session that needs to compare a triangular number with a square or with a neighbouring one finds the comparison here, and so does one that looks for the range in which such a comparison fails.
+
+Boundary: the two modules on the parity of triangular numbers were filed here with the bounds they were first used for. They are about divisibility and would belong with the folder Tri.Parity.
+```
+
+Both are plain text without a header. No line begins with `#` or with three backticks, because the text is shown inside views that have headings of their own. A module line has no empty line inside. A paragraph that begins with `Boundary:` has a meaning of its own in a folder description, which "A folder that does not follow a natural boundary" below gives; in a module line the word has no such meaning. The canon stores each text with the blanks at the ends of its lines removed and one empty line between paragraphs, and a listing prints each paragraph on one line.
+
+The peer that adds a module writes its line. The organizer writes the description of each folder, and the line of a module that has none.
+
+### The standard
+
+The user who runs this research set the standard in two statements. The first says what a description has to achieve: "it should be sufficient at providing the sessions with knowledge of what it can find from that folder. rule of thumb, a session who, for any purpose, would want to and benefit from knowing what lies below must be able to be aware of that existence by the description above". The second says how a description is written: "the folder must follow a natural boundary, and the description must be able to be grown. but, it must also be written such that the folder size does not necessarily increase its description size. e.g. a topic that contains a lot of info can still be described sufficiently with simple statements, on what it is, what it is needed for, what it can do, what it is doing. etc etc". The user spoke of folders. The first statement is applied in the same way one level down: the line of a module is sufficient when a session that would want what one of the module's elements holds can tell from the line that it is there.
+
+The first statement speaks of any purpose, and the purposes of the sessions that come later are not the purpose of the session that wrote the mathematics. A module may have been written as a step toward one proof. A later session comes to it for a base case, for a tool, for a definition it was about to introduce, for a counterexample that closes the approach it had in mind, or to see where an earlier line of work stopped. A description that says only what the material was made for serves the first of these readers and none of the others. So a description says what lies beneath as mathematics: which objects it is about, what is established or stated about them, and in which range or under which hypotheses.
+
+The second statement says how this is done without the description growing with every module. A description characterises its topic, and it does not list the contents. A list of the modules of a folder has to be extended with each new module, and it tells a reader nothing about a thing that is not yet on it. Statements of the kind the user names, what the topic is, what it is needed for, what can be done with it, what is being done in it, let a reader infer whether a given thing must lie beneath, including a thing that was added after the description was written. The user's list is open, and other statements serve in the same way: which objects the part is about, which kinds of result it holds, which methods it develops, how it stands to the root. Which of them a given folder needs is a judgment about that folder.
+
+It follows that the size of a folder does not decide the length of its description. A folder that holds hundreds of elements about one topic can be characterised in a few sentences, because every one of those elements is an instance of what the sentences say. A small folder whose modules have little in common needs a sentence for each kind of thing it holds. For the same reason a folder is not divided because it has become large, and a description has no fixed maximum: when a folder receives material that its description does not let a reader expect there, the description gains the statement that covers it.
+
+The words of a description matter as much as its content, because the reader comes without the canon's vocabulary. A session that is looking for a fact has its own words for it, and it meets the names that earlier sessions coined only when it opens the element. A description that says what a folder holds by the Lean names of its definitions tells such a reader nothing. Say what each thing is in the ordinary language of the mathematics, and add the canon's name where a reader who does know it would look for it.
+
+A module line is held to the same standard at a smaller scale. It says what the declarations of the module establish and about which objects, so that a session which needs any one of them recognises that it is there. The reader of a line is choosing among the modules of one folder, so the line has to tell its module apart from the modules beside it: what this module holds that they do not.
+
+### A folder that does not follow a natural boundary
+
+The second statement begins with a condition on the folder itself: "the folder must follow a natural boundary". A folder follows a natural boundary when what it holds is one part of the mathematics, so that statements of the kind above can characterise it. A folder can fail this. It may hold two topics that have nothing to do with each other, or part of a topic whose other part is filed elsewhere.
+
+Such a folder is described as it is. The description says what the folder holds, also where that is mixed, so that a session is led to everything that is in fact there. It then ends with a paragraph that begins with `Boundary:` and says in what the folder departs from a natural boundary and where the material would belong, as the example above does. The label stands at the head of the last paragraph and nowhere else, it is followed by text, and it is never the whole description. A session that reads the level sees the paragraph and knows that the folder holds more than its name suggests, and `index --due` lists every folder that carries one, for the organizer. The paragraph stays until an organizer has moved the modules to where they belong and rewrites the description without it.
+
+### The blind descent test
+
+Whether a description leads a reader to what lies beneath is tested before the description is published. In the **blind descent test** a reader is given one level of the index, the level in which the item under test stands: the names and the descriptions of the folders and the modules of that level, without counts and without anything of what lies inside them. It is also given a purpose in plain words. It names the items it would open for that purpose, at most five, and the description passes for the purpose when its item is among them. The reader is a model without tools that has been given the level and the purposes and nothing else, so it cannot know more than the descriptions say. The writer of the description supplies the purposes and has the test taken, the peer for the line of a module and the organizer for the description of a folder. A module line is tested on at least one purpose and a folder description on at least three different ones. [The candidate change](change-format.md) gives the file of the purposes, the command and its receipt under "The blind descent test".
+
+The test is taken at the level, among the neighbours. A description can be accurate and still fail, because the description of the folder or module beside it reads as the better place for the purpose. That failure is a true finding about the level: a session with that purpose would have opened the neighbour.
+
+What the test shows depends on whether the purposes are fair. A fair purpose is drawn from what lies beneath. Take an element of the module, or a module of the folder, and write what a session would be looking for, or about to work out, when that element is what it needs. Write it in the words such a session has before it has found the element: its own description of the mathematics, without the name of the declaration, the name of the module, or the phrases of the description under test. A reader that is handed the description's own words finds the item whatever the description fails to say, and the test then shows nothing. Draw the purposes for a folder from different parts of what it holds, and include the part that is least like the rest, since the standard speaks of any purpose and the material that a description most easily fails is the material that does not fit its first sentence. A purpose also has to ask for something the item holds. When the reader does not open the item because the purpose asks for something that is not there, the purpose is what needs correcting.
+
+When a purpose fails, the answer names the items the reader opened instead. Read them as what the level told the reader. Usually the description lacks a statement from which the need could be inferred, or it says the thing in terms that a session without the canon's names does not connect with its need. Rewrite the description so that it says what the folder or the module holds for purposes of that kind. Copying the phrase of the failed purpose into the description makes that one purpose pass and leaves the next purpose of the same kind where it was.
 
 ## Writing the texts of the canon
 

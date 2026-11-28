@@ -22,6 +22,7 @@ The assessment has this form. The values are placeholders.
   "resolutions": [{"proposal": "<proposal ID>", "resolved": true, "reason": "..."}],
   "concerns": [],
   "findings": [],
+  "index_reports": [{"description": "<name of a folder or a module>", "element": "<declaration name>", "purpose": "..."}],
   "formal_check": {"build": "<build ID that commands.verify reported>"}
 }
 ```
@@ -37,6 +38,7 @@ The assessment has this form. The values are placeholders.
 | `resolutions` | Exactly one entry for each resolution the candidate proposes. Omit the field or use an empty array when it proposes none. |
 | `concerns` | New concerns about elements, or an empty array. |
 | `findings` | Findings on published elements or existing concerns, or an empty array. |
+| `index_reports` | Descriptions of the index that do not lead a session to an element, described below under "Reports about descriptions". Omit the field or use an empty array when you have none. |
 | `formal_check` | Required when you confirm a proof that is complete in Lean. |
 
 The feedback covers the important mathematical assertions of the candidate, including what its records say in prose, and not only the fields above. Explain missing source content, defects, restrictions, checks you did not perform and valuable work.
@@ -91,6 +93,12 @@ An entry of `questions` has `proposal`, the ID of the proposed question, `verdic
 
 An entry of `resolutions` has `proposal`, the ID of the proposed resolution, `resolved` as a Boolean, and `reason`. An accepted resolution says in its reason why the text that the candidate carries as the question's understanding so far answers what the question's statement asks, and names what remains to be done when the candidate does not carry it. The assertions the text relies on are elements, so their verdicts, in this assessment or already in the canon, are part of what you weigh. Question `q0` is not resolved in this way.
 
+## Reports about descriptions
+
+An entry of `index_reports` says that a description in the index of the canon does not lead a session to an element. It has exactly three fields, each nonempty text: `description`, the name of the folder or the module whose description falls short; `element`, the name of the element that a session would not be led to; and `purpose`, what such a session is looking for, in plain words. Your role guide names the two occasions under "What you judge of each element". One is the line of a module that the candidate adds, which you have judged against the module: `description` is then that module and `element` one of its elements. The other is a description the canon already holds, where your own reading of the canon came to an element that the description had not led you to: `description` is then a folder or a module of the canon, and `element` an element of the canon or one the candidate adds. The transport check refuses a name that is none of these.
+
+The reports reach the organizers whether you publish the candidate or exclude it. At publication they go with the change. When you exclude the candidate nothing is published, and the runner keeps the reports of your assessment apart from the canon. It keeps them in the same way when you decide to publish and the runner then cannot publish the candidate on the canon as the canon has become: the work goes to a new peer and its candidate to a new review, and no later session is pointed to your assessment, so the reports are taken from it at that point. In each of these cases the canon command `index --due` lists each report whose description the canon holds, with where it came from and with the note that it came from the review. A report stays listed until the description it names is written or confirmed against a revision of the canon that showed the report: for a report that went with a published change the revision of that change or a later one, and for a report the runner kept a later revision than the one the canon had when it was kept. The organizer treats a report as a defect of the description and rewrites it. A report about the line of a module that the candidate adds names, when the candidate is not published, a module the canon does not have, and it is not listed as long as the canon has no module of that name.
+
 ## Evidence for a proof that is complete in Lean
 
 `commands.verify` applies the frozen candidate to a copy of the canon as it is now, compiles the modules the candidate changes afresh in your own session, and reports whether the build succeeded, the build's ID, and for each added or replaced statement the axioms its proof depends on through everything of the canon it uses. The command is for the review of a candidate and refuses every other role. It makes the same checks as the peer's `commands.prepare`, writes its result to `work/verify/outcome.json` and prints the same summary, with the same exit codes and the same two options, all of which [The candidate change](change-format.md) describes under "Preparing the candidate". For a candidate that touches Lean, this is how you see that it builds on the current canon, that every element a proof names exists and fits, and what each proof depends on.
@@ -111,7 +119,7 @@ If the compile cannot be completed, do not confirm a proof on the strength of it
 
 `publish: false` is for a candidate with nothing worth keeping, and for one whose Lean text the canon's modules do not take in whatever the candidate's value, as your role guide explains under "Publication". If `publish` is false, nothing of the candidate enters the canon. The assessment may then admit no question, accept no resolution, and report no concern and no finding, because an excluded candidate cannot change shared state; the transport check rejects an exclusion that contains any of these. In every other respect an exclusion is checked like any assessment, so it is as complete as one: `reason`, `contribution` and `feedback`; one entry for each element, with `replaces` for each replaced one that already has a proof in the canon, although these entries then change nothing; one entry for each proposed question, with the verdict `declined` or `revise`; one entry for each proposed resolution, with `resolved: false`; and `formal_check` if an entry confirms a proof that is complete in Lean. Preserve your grounds in the feedback. The runner retains the completed exclusion as an operational outcome. It finishes the producer's peer and review processing and ends the occupancy its pipeline held: the sections recorded for its producer and peers, including a formalizer's whole element, or the exploration's question.
 
-At publication the runner adds `change.json`, `applied.json`, `provenance.json` and `verify.json` beside your output files. Do not use those names at the top level of your output: the transport check rejects them.
+At publication the runner adds `change.json`, `applied.json`, `provenance.json` and `verify.json` beside your output files, and `index_reports.json` where the candidate carried reports about descriptions. Do not use those names at the top level of your output: the transport check rejects the first four, and a file of yours with the fifth name is replaced or removed at publication.
 
 ## Concerns and later findings
 

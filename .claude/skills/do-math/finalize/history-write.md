@@ -41,8 +41,9 @@ A line of the first sort is a publication: something that entered the research's
 |---|---|
 | `change` | A change to the library: definitions, statements and proofs that were added or replaced, with their records. |
 | `review` | The result of a reviewing session that examined once more proofs that had already been published. |
-| `organization` | A rearrangement of the library by a session that joins what says the same. |
+| `organization` | Work of a session that keeps the library usable as one body: a rearrangement that joins what says the same, or descriptions of the library's modules and folders that the session wrote or brought up to date. |
 | `questions` | Questions that the operator put to the research. |
+| `descriptions` | Descriptions of modules and folders of the library that the operator published. |
 
 `title` and `description` are the publication's own words about itself, except the `title` of a line that is no `change`, which the program supplied. `elements` names the elements it added or replaced. For an `organization` it names the elements that were added, and not a declaration whose proof was changed only to name another declaration in the place of one that the organization removed; for a `review`, it names the elements whose proofs that review found valid or invalid. `questions` says which questions the publication proposed, resolved, reopened or merged. `by` is the kind of session whose work the publication carries, in the research's own word, and it is empty where the record does not say.
 
@@ -51,7 +52,7 @@ A line of the first sort is a publication: something that entered the research's
 | `attempt` | A session that worked on proving a statement. |
 | `explore` | A session that investigated a question about the problem. |
 | `formalizer` | A session that wrote the Lean proof of a statement that was already proved in words. |
-| `organizer` | A session that joins what is the same and rearranges the library. |
+| `organizer` | A session that joins what is the same, rearranges the library and keeps the descriptions of its modules and folders current. |
 | `operator` | The person or agent who runs the research. |
 | `review` | A reviewing session that examined published proofs once more. |
 

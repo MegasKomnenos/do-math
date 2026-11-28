@@ -1496,6 +1496,13 @@ def ledger(members):
                        elements=sorted({name for f in findings for name in f.get('invalidates', []) + f.get('validates', [])}),
                        questions=[f'reopens {q}' for f in findings for q in f.get('reopens', [])],
                        record=folder + '/assessment.json')
+        elif event['kind'] == 'organization' and event.get('source') == 'operator':
+            # Descriptions of modules and folders that the operator published (the runner's describe command).
+            # Its event has the kind of an organization, because the code of a session host that was started
+            # before the index had descriptions knows no other; its own record is descriptions.json.
+            data = load(folder + '/descriptions.json')
+            row.update(kind='descriptions', by='operator', title='Descriptions of modules and folders published '
+                       'by the operator', description=data.get('reason', ''), record=folder + '/descriptions.json')
         elif event['kind'] == 'organization':
             data, applied = load(folder + '/organization.json'), load(folder + '/applied.json')
             row.update(title='An organization of the canon', elements=applied.get('added', []),
@@ -1551,7 +1558,8 @@ SESSION_OF = {'organization': 'organizer', 'questions': 'operator', 'review': 'r
 # an entry beyond these bounds.
 HISTORY_TEXT_WORDS, HISTORY_ITEM_WORDS = 120, 30
 PUBLICATION = {'change': 'change', 'review': 'review of published proofs', 'organization': 'organization of the library',
-               'questions': 'questions placed by the operator'}
+               'questions': 'questions placed by the operator',
+               'descriptions': 'descriptions of modules and folders published by the operator'}
 
 
 def entry_problems(event, text, groups):

@@ -269,25 +269,27 @@ All runner commands have the form `python <skill>/runtime/runner.py <command> <i
 | `review --element <name>` | Request a comprehensive review of published elements. `--element` takes the declaration's name and may be repeated; `--concern <id>` and `--reason <text>` can identify the issue. |
 | `organize` | Request an organizer for the published changes that no organizer has examined yet. |
 | `questions --file <file>` | Place questions of your own on the frontier from a JSON file, without a peer or a review; the operating guide gives the format and the standard such a question should meet. A question cannot be withdrawn afterwards. |
+| `describe --folder <folder> --reason <text>` | Publish descriptions of folders and modules of your own, without a session or a review; the operating guide gives the layout of the folder, the test to take first and the options `--revision` and `--withdraw`. |
 | `kill-session <id>` | End the identified session's CLI process and its session host; session IDs are in the `status` output. The session ends as an interruption, so work it retained still goes to a peer. |
 | `render` | Rebuild the derived views when no runner process is alive. |
 | `restart-broker` | Replace the Lean broker after a change of the Lean environment. Stop launching first and let the running turns, publications and compiles finish. When Lean or one of its libraries has changed, also give `lean.cache_epoch` a new value in the instance's `settings.json` before you run the command, so that modules compiled in the earlier environment are not reused; the operating guide describes the whole procedure under "Changing Lean". |
 
-A request made with `review`, `organize`, `reconsider-attempts` or `questions` is read by the runner on its next pass, so one made while no runner is alive waits until `start`. The runner's commands refuse an instance that the earlier runtime of do-math created, whose knowledge was a repository of written records and not a Lean library.
+A request made with `review`, `organize`, `reconsider-attempts`, `questions` or `describe` is read by the runner on its next pass, so one made while no runner is alive waits until `start`. The runner's commands refuse an instance that the earlier runtime of do-math created, whose knowledge was a repository of written records and not a Lean library.
 
 ## Reading the results
 
-Start with `knowledge/frontier.md` and `knowledge/index.md`, which the README describes. For one element, the commands with which the sessions read the canon work on the instance folder as well, from the moment `init` has finished:
+Start with `knowledge/frontier.md`, `knowledge/folders.md` and `knowledge/index.md`, which the README describes. For one element, and for one folder or module of the index, the commands with which the sessions read the canon work on the instance folder as well, from the moment `init` has finished:
 
 ```powershell
 python "$skill/runtime/canon_tool.py" frontier $instance
+python "$skill/runtime/canon_tool.py" index $instance
 python "$skill/runtime/canon_tool.py" view $instance OddSum.sum_eq_square --full
 python "$skill/runtime/canon_tool.py" list $instance --about OddSum.oddSum
 python "$skill/runtime/canon_tool.py" question $instance q0
 python "$skill/runtime/canon_tool.py" log $instance --last 10
 ```
 
-`frontier` prints the frontier as it is now. `view` prints one element: its Lean statement, what its proof rests on with the standing of each statement, whether it is settled and formal, what uses it, the review's judgment with its reason, any concerns, and the approaches tried; `--full` adds the parts of the record. `list` prints one line for each element it selects: the elements of a module, what an element uses or is used by, everything the canon states about a definition, or, with `--remaining`, the work that remains. `question` prints a question with its understanding so far, and `log` the recent changes with the review's assessment of what each contributed.
+`frontier` prints the frontier as it is now. `index` prints the folders of the canon with their descriptions; with the name of a folder it prints what lies directly inside that folder, and with the name of a module the elements of that module, each listing complete and counted. `view` prints one element: its Lean statement, what its proof rests on with the standing of each statement, whether it is settled and formal, what uses it, the review's judgment with its reason, any concerns, and the approaches tried; `--full` adds the parts of the record. `list` prints one line for each element it selects: the elements of a module, what an element uses or is used by, everything the canon states about a definition, or, with `--remaining`, the work that remains. `question` prints a question with its understanding so far, and `log` the recent changes with the review's assessment of what each contributed.
 
 ## The dependency map, the paper and the root check
 

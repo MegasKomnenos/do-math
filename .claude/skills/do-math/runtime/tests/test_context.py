@@ -24,7 +24,8 @@ ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
 # research views, the user conditions, the settings and the commands follow the guides, in this order.
 OPENING = ['# Root statement', '# The root in Lean', '# Your assignment']
 VIEWS = ['# Frontier at launch',
-         '# Understanding so far of the root problem as a whole (question q0)', '# Board at launch',
+         '# Understanding so far of the root problem as a whole (question q0)',
+         '# Index of the canon at launch: the folder level', '# Board at launch',
          '# User conditions supplied at launch', '# Settings at launch', '# Executable commands']
 ROOT_RECORD = record_text('The sum of the first n odd numbers equals n times n.', weight='unit',
                           short='odd numbers sum to a square',
@@ -215,12 +216,19 @@ class ContextTests(InstanceCase):
                 self.assertIn('As Lean prints it: `Small.root (n : Nat) : oddSum n = n * n`', opening[OPENING[1]])
                 self.assertIn(frontier, section[VIEWS[0]])
                 self.assertIn('No exploration has written it yet.', section[VIEWS[1]])
-                self.assertIn(board, section[VIEWS[2]])
-                self.assertIn('## 001.txt\n\nUse convention K in new work.', section[VIEWS[3]])
-                # The index is a derived view a session asks for; it is not delivered at launch.
+                # The folder level of the index of the canon, as knowledge/folders.md holds it, with the sentences
+                # that say what it is and how to descend from it.
+                self.assertIn((knowledge / 'folders.md').read_text(encoding='utf-8'), section[VIEWS[2]])
+                self.assertIn('Nothing below this level is in your context.', section[VIEWS[2]])
+                self.assertIn('`index <folder>`', section[VIEWS[2]])
+                self.assertIn(board, section[VIEWS[3]])
+                self.assertIn('## 001.txt\n\nUse convention K in new work.', section[VIEWS[4]])
+                # The index below the folder level, one line for each element, is a derived view a session asks
+                # for; it is not delivered at launch.
                 for delivered in (lead, views):
                     self.assertNotIn('index.md', delivered)
-                    self.assertNotIn('# Index of the canon', delivered)
+                    self.assertNotIn('\n# Index of the canon\n', delivered)
+                    self.assertNotIn('- `Small.root` · unit', delivered)
 
         # An exploration's change writes the understanding so far of q0. Later launches receive it with the
         # frontier as it then is; the packs of sessions already launched stay as they were.
@@ -288,7 +296,10 @@ class ContextTests(InstanceCase):
             'message': [python, coordination, 'message', session, '<recipient>', '--file', '<file>'],
             'check': [python, str(runtime / 'check.py'), session],
             'lean': [python, str(runtime / 'lean_broker.py'), '<command>', str(self.instance)],
+            'search': [python, str(runtime / 'search.py'), session],
         })
+        # The mark of a session launched with the guides that ask for descriptions (canon_tool.build_candidate).
+        self.assertIs(inp['descriptions'], True)
         for name, argv in inp['commands'].items():
             with self.subTest(command=name):
                 self.assertTrue(Path(argv[1]).is_file())

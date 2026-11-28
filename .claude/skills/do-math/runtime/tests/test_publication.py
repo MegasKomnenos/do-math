@@ -2377,7 +2377,7 @@ theorem lead (n : Nat) : evenSum n = oddSum n + n := by
         self.assert_refused(self.organizer_errors(organization, change, prepare=False),
                             'the candidate has not been prepared; run commands.prepare')
         self.assert_refused(self.organizer_errors(organization, {'title': 'Agreements'}), 'change.json needs a nonempty "description"')
-        only = 'an organizer change holds Lean modules, replacements and records only'
+        only = 'an organizer change holds Lean modules, replacements, records and descriptions only'
         proposal = {'id': 'sorganizer-why', 'statement': 'Why?', 'grounds': 'Unexplained.'}
         cases = (
             (only, {'change': {**change, 'questions': [proposal]}}),

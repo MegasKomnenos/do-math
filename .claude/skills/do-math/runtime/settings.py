@@ -41,6 +41,11 @@ def defaults():
             # Two considerations review weighs before accepting a correct proof (roles/review.md).
             'acceptance': {'decline_reducible_proofs': True,
                            'decline_uncomprehended_computation': True},
+            # The light sessions that read the index of the canon for a search or a blind descent test
+            # (search.py): their model, which is a Claude model, their effort, and how many of them run at one
+            # time in the instance. A default in code: an instance whose settings.json has no `search` runs on
+            # these values, and nothing writes the key into the file of an instance that exists.
+            'search': {'model': 'claude/sonnet', 'effort': 'medium', 'parallel': 2},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
                      'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
@@ -55,7 +60,7 @@ RETIRED = ('lean.judge',)
 def validate(raw):
     if not isinstance(raw, dict) or raw.get('schema', 1) != 1:
         raise ValueError('settings must be a schema 1 object')
-    sections = ('cli', 'lean', 'acceptance')
+    sections = ('cli', 'lean', 'acceptance', 'search')
     for section in sections:
         if not isinstance(raw.get(section, {}), dict):
             raise ValueError(section + ' must be an object')
@@ -86,6 +91,15 @@ def validate(raw):
             raise ValueError(f'acceptance.{key} must be true or false')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
+    search = value['search']
+    if not isinstance(search['model'], str) or not search['model'].startswith('claude/'):
+        # A light session is a call of the Claude CLI without tools (light.py); there is no such call of Codex.
+        raise ValueError(f"search.model must be a Claude model, claude/<model>; got: {search['model']!r}")
+    # Refuses an effort the Claude CLI does not take. The executable is asked for only where a light session
+    # is run, so settings without a Claude CLI stay valid for an instance that searches nothing.
+    build_command('claude', search['model'], search['effort'], Path.cwd())
+    if type(search['parallel']) is not int or search['parallel'] < 1:
+        raise ValueError('search.parallel must be a positive integer')
     if not isinstance(value['roles'], dict):
         raise ValueError('roles must be an object')
     if not isinstance(value['mcp_servers'], dict) or not all(isinstance(k, str) and isinstance(v, dict) for k, v in value['mcp_servers'].items()):

@@ -85,6 +85,7 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
         'message': [sys.executable, str(runtime / 'coordination.py'), 'message', str(session), '<recipient>', '--file', '<file>'],
         'check': [sys.executable, str(runtime / 'check.py'), str(session)],
         'lean': [sys.executable, str(runtime / 'lean_broker.py'), '<command>', str(instance)],
+        'search': [sys.executable, str(runtime / 'search.py'), str(session)],
     }
     documents = ['reference/common.md', 'roles/' + role + '.md', 'reference/writing.md', 'reference/canon.md',
                  'reference/lean.md', 'reference/tools.md']
@@ -96,10 +97,13 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     judges = role == 'review' and 'candidate' in task and (Path(task['candidate']) / 'questions/q0.md').is_file()
     if writes or judges:
         documents.append('reference/q0-account.md')
+    # `descriptions` marks a session that was launched with the guides that ask for the lines of modules and
+    # the descriptions of folders. `prepare` asks for them of such a session only (canon_tool.build_candidate):
+    # a session launched before those guides has no such key, and its candidate is prepared as it always was.
     inp = {'schema': 1, 'instance': str(instance), 'session': session.name, 'role': role,
            'pipeline': pipeline, 'task': task, 'revision': revision,
            'references': str(context / 'reference'), 'documents': documents,
-           'user_inputs': inputs, 'settings': settings, 'commands': commands}
+           'user_inputs': inputs, 'settings': settings, 'commands': commands, 'descriptions': True}
     write_json(session / 'input.json', inp)
 
     def view(name, path, text=None):
@@ -150,6 +154,20 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     parts += view('Frontier at launch', instance / 'knowledge/frontier.md')
     parts += view('Understanding so far of the root problem as a whole (question q0)', understanding,
                   None if understanding.is_file() else 'No exploration has written it yet.\n')
+    # The top of the index of the canon, and nothing below it: the whole index is several times a session's
+    # context, and from this level every module and every element is reached by descent.
+    folders = instance / 'knowledge/folders.md'
+    parts += view('Index of the canon at launch: the folder level', folders,
+                  'This is the top of the index of the canon as it stood at your launch: every folder that lies '
+                  'directly under the library, with its description and with the number of modules and elements '
+                  'beneath it, and the modules that lie directly under the library. Nothing below this level is in '
+                  'your context. You reach it by descent with `commands.canon`: `index <folder>` lists the folders '
+                  'and the modules inside a folder with their descriptions, `index <module>` lists the elements of a '
+                  'module, each with its self-description, and `view <element>` shows one element; `commands.search` '
+                  'searches the index by meaning.\n\n'
+                  + (folders.read_text(encoding='utf-8-sig') if folders.is_file() else
+                     'The runner has not rendered this view yet. The command `index` of `commands.canon` prints '
+                     'the folder level as it is now.\n'))
     parts += view('Board at launch', instance / 'knowledge/board.md')
     parts += ['# User conditions supplied at launch', '',
               'The following inputs apply in listed order. Later conditions override earlier conditions on the same matter. '
